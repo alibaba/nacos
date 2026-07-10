@@ -159,7 +159,8 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 | `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
 
 `aliases` 用于静态配置兼容读取，也可以作为迁移兼容的 API 输入。完成归一化后，alias
-不应写入运行时持久化文件或 local-only 内存表。
+不应写入运行时持久化文件或 local-only 内存表。如果输入同时包含同一配置项的多个
+alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
 
 ### 配置来源与值元数据
 

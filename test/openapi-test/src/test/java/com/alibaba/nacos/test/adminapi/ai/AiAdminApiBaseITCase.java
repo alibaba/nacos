@@ -50,6 +50,10 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String DEFAULT_NAMESPACE = "public";
 
+    private static final int MCP_DELETE_MAX_RETRIES = 60;
+
+    private static final long MCP_DELETE_RETRY_INTERVAL_MILLIS = 250L;
+
     protected static final String ADMIN_A2A_PATH = nacosPath(Constants.A2A.ADMIN_PATH);
 
     protected static final String ADMIN_A2A_LIST_PATH = ADMIN_A2A_PATH + "/list";
@@ -147,23 +151,30 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected void assertMcpServerAbsentEventually(String path, String mcpId) throws Exception {
         HttpResponse lastResponse = null;
-        for (int i = 0; i < 20; i++) {
+        for (int retry = 0; retry <= MCP_DELETE_MAX_RETRIES; retry++) {
             lastResponse = getRaw(path, mcpIdentityQuery(null, mcpId, null));
-            if (404 == lastResponse.code() && isMcpNotFoundResponse(lastResponse)) {
+            if (isMcpErrorResponse(lastResponse, ErrorCode.MCP_SERVER_NOT_FOUND)) {
                 return;
             }
-            Thread.sleep(250L);
+            if (200 != lastResponse.code()
+                    && !isMcpErrorResponse(lastResponse,
+                ErrorCode.MCP_SEVER_VERSION_NOT_FOUND)) {
+                assertError(lastResponse, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+            }
+            if (retry < MCP_DELETE_MAX_RETRIES) {
+                Thread.sleep(MCP_DELETE_RETRY_INTERVAL_MILLIS);
+            }
         }
-        assertEquals(404, lastResponse.code(), lastResponse.body());
-        assertTrue(isMcpNotFoundResponse(lastResponse), lastResponse.body());
+        assertError(lastResponse, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
     }
 
-    private boolean isMcpNotFoundResponse(HttpResponse response) {
+    private boolean isMcpErrorResponse(HttpResponse response, ErrorCode expectedError) {
+        if (404 != response.code()) {
+            return false;
+        }
         JsonNode root = JacksonUtils.toObj(response.body());
-        int errorCode = root.get("code").asInt();
-        boolean mcpNotFound = ErrorCode.MCP_SERVER_NOT_FOUND.getCode() == errorCode
-                || ErrorCode.MCP_SEVER_VERSION_NOT_FOUND.getCode() == errorCode;
-        return mcpNotFound && root.get("data").asText().contains("not found");
+        return expectedError.getCode() == root.path("code").asInt()
+                && root.path("data").asText().contains("not found");
     }
 
     protected void assertMcpDetail(JsonNode data, String mcpName, String version, String description,

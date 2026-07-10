@@ -105,6 +105,24 @@ class PluginConfigKeyResolverTest {
     }
     
     @Test
+    void testNormalizeConfigUsesFirstDeclaredAlias() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("timeout");
+        definition.setAliases(Arrays.asList("firstTimeout", "secondTimeout"));
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(Arrays.asList(definition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("secondTimeout", "2000");
+        input.put("firstTimeout", "1000");
+        
+        Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
+        
+        assertEquals("1000", result.get("timeout"));
+        assertEquals(1, result.size());
+    }
+    
+    @Test
     void testNormalizeConfigCanonicalKeyWinsAliasCollision() {
         ConfigItemDefinition timeoutDefinition = new ConfigItemDefinition();
         timeoutDefinition.setKey("timeout");

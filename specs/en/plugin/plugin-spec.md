@@ -180,7 +180,9 @@ Config definitions may declare the following metadata:
 
 `aliases` are used when reading compatible static configuration and may also be
 accepted as migration-compatible API input. After normalization, aliases must
-not be written into runtime persistence files or local-only memory maps.
+not be written into runtime persistence files or local-only memory maps. If an
+input contains multiple aliases for the same item, the first alias declared in
+the definition takes effect and the server logs the ignored aliases.
 
 ### Config Sources And Value Metadata
 
