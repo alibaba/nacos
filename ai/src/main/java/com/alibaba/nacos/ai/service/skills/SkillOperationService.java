@@ -57,6 +57,18 @@ public interface SkillOperationService {
         List<SkillUploadPrecheckRequest> requests) throws NacosException;
     
     /**
+     * Batch precheck multiple skill uploads from a single zip archive.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes containing multiple skill subdirectories
+     * @param targetVersion target version specified by the caller
+     * @return list of precheck results
+     * @throws NacosException if zip parsing fails entirely
+     */
+    List<SkillUploadPrecheckResult> batchPrecheckUploadSkillFromZip(String namespaceId,
+        byte[] zipBytes, String targetVersion) throws NacosException;
+    
+    /**
      * Batch upload multiple skills from a single zip archive. The zip must contain one-level subdirectories,
      * each with its own SKILL.md. Uses best-effort strategy: processes all skills individually, returning
      * succeeded and failed lists.
