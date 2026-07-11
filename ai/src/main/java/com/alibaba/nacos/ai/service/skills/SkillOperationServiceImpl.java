@@ -199,6 +199,49 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return results;
     }
     
+    @Override
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkillFromZip(String namespaceId,
+        byte[] zipBytes, String targetVersion) throws NacosException {
+        SkillZipParser.MultiSkillParseResult parseResult =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
+        List<SkillUploadPrecheckResult> results = new ArrayList<>(
+            parseResult.getFailures().size() + parseResult.getSkills().size());
+        for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
+            results.add(buildPrecheckParseFailureResult(namespaceId, failure));
+        }
+        List<SkillUploadPrecheckRequest> requests =
+            new ArrayList<>(parseResult.getSkills().size());
+        for (Skill skill : parseResult.getSkills()) {
+            requests.add(buildPrecheckRequest(namespaceId, skill, targetVersion));
+        }
+        results.addAll(batchPrecheckUploadSkill(requests));
+        return results;
+    }
+    
+    private SkillUploadPrecheckRequest buildPrecheckRequest(String namespaceId, Skill skill,
+        String targetVersion) {
+        UploadVersionCandidate uploadVersion =
+            resolveUploadVersionCandidate(skill.getSkillMd(), null, targetVersion);
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName(skill.getName());
+        request.setDescription(skill.getDescription());
+        request.setParsedVersion(uploadVersion.resolveDisplayVersion(targetVersion));
+        request.setVersionSource(uploadVersion.getSource());
+        request.setTargetVersion(targetVersion);
+        return request;
+    }
+    
+    private SkillUploadPrecheckResult buildPrecheckParseFailureResult(String namespaceId,
+        SkillZipParser.ParseFailure failure) {
+        SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
+        result.setNamespaceId(namespaceId);
+        result.setSkillName(failure.getFolder());
+        result.setStatus(SkillUploadPrecheckResult.STATUS_FORBIDDEN);
+        result.addError(failure.getReason());
+        return result;
+    }
+    
     /**
      * Precheck a single skill upload. Internal helper used by batchPrecheckUploadSkill.
      */

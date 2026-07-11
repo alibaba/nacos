@@ -247,6 +247,31 @@ public class SkillAdminController {
     }
     
     /**
+     * Batch precheck multiple skill uploads from a single zip file.
+     *
+     * @param request HTTP servlet request
+     * @param namespaceId namespace ID
+     * @param targetVersion target version specified by the caller
+     * @param file zip file containing multiple skill subdirectories
+     * @return list of precheck results
+     * @throws NacosException if zip parsing fails entirely
+     */
+    @Since("3.3.0")
+    @PostMapping(value = "/upload/batch/precheck", consumes = "multipart/form-data")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
+    public Result<List<SkillUploadPrecheckResult>> batchPrecheckUploadSkillFromZip(
+        HttpServletRequest request,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "targetVersion", required = false) String targetVersion,
+        @RequestParam("file") MultipartFile file) throws NacosException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
+        return Result.success(skillOperationService.batchPrecheckUploadSkillFromZip(namespaceId,
+            zipBytes, targetVersion));
+    }
+    
+    /**
      * Batch upload multiple skills from a single zip file. The zip must contain one-level subdirectories,
      * each with its own SKILL.md. Uses best-effort strategy.
      *

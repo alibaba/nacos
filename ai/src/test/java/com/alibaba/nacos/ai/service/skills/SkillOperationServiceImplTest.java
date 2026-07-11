@@ -624,6 +624,26 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testPrecheckUploadSkillFromZipUsesParsedSkill() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("2.3");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(null);
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkillFromZip(namespaceId, zipBytes, null);
+        
+        assertEquals(1, results.size());
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals("test-skill", result.getSkillName());
+        assertEquals("Test skill description", result.getDescription());
+        assertEquals("2.3", result.getParsedVersion());
+        assertEquals("2.3.0", result.getResolvedVersion());
+        assertEquals(SkillUploadPrecheckResult.STATUS_VALID, result.getStatus());
+        assertEquals("2.3.0", result.getActions().get(0).getResultVersion());
+    }
+    
+    @Test
     void testPrecheckUploadSkillReturnsRawInvalidVersionForNewSkill() throws NacosException {
         String namespaceId = "test-namespace";
         SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
