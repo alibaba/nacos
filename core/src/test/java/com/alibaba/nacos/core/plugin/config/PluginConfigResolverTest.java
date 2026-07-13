@@ -144,6 +144,27 @@ class PluginConfigResolverTest {
     }
     
     @Test
+    void testGetConfigReadsEverySourceIndependentlyFromUpdateCapability() {
+        ConfigItemDefinition definition = createDefinition("timeout", "1000", false);
+        definition.setAliases(Collections.singletonList("nacos.legacy.timeout"));
+        PluginInfo pluginInfo = createPluginInfo(definition);
+        environment.setProperty("nacos.legacy.timeout", "2000");
+        resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED,
+            pluginInfo.getPluginId(), Collections.singletonMap("timeout", "3000"));
+        resolver.updateConfig(PluginConfigSourceType.LOCAL_ONLY, pluginInfo.getPluginId(),
+            Collections.singletonMap("timeout", "4000"));
+        
+        assertEquals("1000",
+            resolver.getConfig(PluginConfigSourceType.DEFAULT, pluginInfo).get("timeout"));
+        assertEquals("2000",
+            resolver.getConfig(PluginConfigSourceType.STATIC, pluginInfo).get("timeout"));
+        assertEquals("3000", resolver.getConfig(PluginConfigSourceType.RUNTIME_PERSISTED,
+            pluginInfo).get("timeout"));
+        assertEquals("4000",
+            resolver.getConfig(PluginConfigSourceType.LOCAL_ONLY, pluginInfo).get("timeout"));
+    }
+    
+    @Test
     void testUpdateConfigRejectsReadOnlySource() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             () -> resolver.updateConfig(PluginConfigSourceType.STATIC, "trace:demo",

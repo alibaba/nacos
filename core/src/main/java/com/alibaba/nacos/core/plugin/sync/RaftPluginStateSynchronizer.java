@@ -95,6 +95,20 @@ public class RaftPluginStateSynchronizer implements PluginStateSynchronizer {
             
             Response response = cpProtocol.write(request);
             if (!response.getSuccess()) {
+                if (response.getErrMsg().startsWith(
+                    PluginStateOperation.INVALID_PARAM_ERROR_PREFIX)) {
+                    String message = response.getErrMsg().substring(
+                        PluginStateOperation.INVALID_PARAM_ERROR_PREFIX.length());
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                        ErrorCode.PARAMETER_VALIDATE_ERROR, message);
+                }
+                if (response.getErrMsg().startsWith(
+                    PluginStateOperation.CONFIG_APPLY_ERROR_PREFIX)) {
+                    String message = response.getErrMsg().substring(
+                        PluginStateOperation.CONFIG_APPLY_ERROR_PREFIX.length());
+                    throw new NacosApiException(NacosException.SERVER_ERROR,
+                        ErrorCode.SERVER_ERROR, message);
+                }
                 throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                     "Failed to submit plugin state to Raft: " + response.getErrMsg());
             }

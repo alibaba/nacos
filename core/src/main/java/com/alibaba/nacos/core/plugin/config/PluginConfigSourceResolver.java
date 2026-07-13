@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.plugin.config;
 
-import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
@@ -30,15 +29,12 @@ import java.util.Map;
 interface PluginConfigSourceResolver {
     
     /**
-     * Resolve source value for one config item.
+     * Get source config for one plugin.
      *
      * @param pluginInfo plugin info
-     * @param definition config item definition
-     * @param candidate config key candidate
-     * @return source value
+     * @return source config using canonical item keys
      */
-    PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        PluginConfigKeyCandidate candidate);
+    Map<String, String> getConfig(PluginInfo pluginInfo);
     
     /**
      * Whether this source supports runtime updates.

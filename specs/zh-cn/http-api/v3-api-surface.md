@@ -129,6 +129,10 @@ Admin API 兼容开关。
 - AI Prompt 在同一个 Controller 中同时包含已废弃兼容端点和新的生命周期端点。
 - Plugin detail 在已有 `config` 字段中返回当前 effective plugin config，并可以
   追加来源、overridden 等值元数据，不改变已有字段。
+- Plugin config 更新保持完整 override map 替换语义。运行时更新必须拒绝
+  restart-effective 字段的变化，包括通过省略 key 移除 override。敏感字段脱敏输入只
+  保留同一目标 source 的原始值；目标 source 不存在该值时忽略此项，不创建 override。
+  source 更新成功但插件 apply 失败时返回明确的服务端错误，且不自动回滚。
 
 ## 6. Console API 已实现行为
 

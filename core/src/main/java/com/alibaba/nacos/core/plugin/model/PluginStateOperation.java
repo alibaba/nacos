@@ -31,6 +31,16 @@ public class PluginStateOperation implements Serializable {
     private static final long serialVersionUID = 1L;
     
     /**
+     * Prefix used to preserve parameter validation semantics across Raft responses.
+     */
+    public static final String INVALID_PARAM_ERROR_PREFIX = "[INVALID_PARAM] ";
+    
+    /**
+     * Prefix used to report an accepted config that failed during plugin apply.
+     */
+    public static final String CONFIG_APPLY_ERROR_PREFIX = "[CONFIG_APPLY_FAILED] ";
+    
+    /**
      * Operation type enum.
      */
     public enum OperationType {

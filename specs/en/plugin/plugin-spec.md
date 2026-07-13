@@ -209,6 +209,14 @@ Runtime persisted config and local-only config store only values by
 `pluginId + itemKey`. They do not store normalized full keys, alias keys,
 source, or version information.
 
+Every internal source resolver must expose its canonical item-key map through
+`getConfig(PluginInfo)`. Reading is independent from update capability:
+`DEFAULT` reads definition defaults, `STATIC` reads normalized and alias keys
+from the environment, and the two runtime sources read their internal maps.
+`isUpdatable` is checked only when replacing a source map. An update replaces
+the complete map; an empty map clears all overrides for that plugin and source.
+The source contract does not require separate remove or restore operations.
+
 ### Config Update Compatibility
 
 Plugin detail APIs must remain additively compatible: existing `config` and
@@ -221,11 +229,51 @@ full override map update semantics. `localOnly=true` updates only the current
 node local-only override; otherwise the request updates the cluster-wide runtime
 persisted override. Key normalization and `effectMode` checks are server-side
 logic and are not exposed as new API parameters. Fields marked
-`effectMode=RESTART` must not be applied immediately by runtime updates.
+`effectMode=RESTART` must not be applied immediately by runtime updates. The
+server compares the previous and submitted full map for the target source, so
+adding, changing, or removing a `RESTART` item is rejected. Omitting a key from
+the submitted map therefore removes its override only when that item is
+runtime-effective.
 Canonical item keys, normalized full keys, and compatible alias keys are
 normalized to item keys before validation and storage. An undefined key or an
 alias that ambiguously matches multiple config items must produce a parameter
 validation error.
+
+For an item declared `sensitive=true`, a submitted value containing the
+standard `******` marker is treated as a masked display value. If the target
+source already contains that item, the server preserves the original value
+from that same source. If the target source does not contain the item, the
+input is ignored and no override is created. This rule also covers values such
+as `a******z` and `ab******yz`; it must not copy an effective value from another
+source such as `STATIC` into a runtime override. The server logs a warning with
+only `pluginId`, item key, and target source, and must not log the value.
+
+### Initialization And Runtime Apply
+
+Startup and runtime updates use the same source resolver and effective config
+calculation:
+
+1. Startup loads all `plugin-configs.json` entries into the runtime persisted
+   source before applying any plugin config.
+2. Every loaded configurable plugin is then resolved and applied, including
+   plugins without a persisted override. Startup may apply both `RUNTIME` and
+   `RESTART` fields because the plugin is being initialized.
+3. A runtime request replaces one complete `RUNTIME_PERSISTED` or `LOCAL_ONLY`
+   source map. The server resolves all sources again and invokes the plugin for
+   each accepted request, including a same-map request used as a manual retry.
+
+Updates for the same plugin are serialized. A runtime persisted update first
+persists the normalized complete source map, replaces the resolver source,
+resolves and validates the effective config, and then applies it to the plugin.
+If persistence fails, the resolver source and plugin are not changed and no
+rollback is attempted. If apply fails after the source update, the accepted
+source map remains persisted and resolved; the server does not issue an
+automatic rollback or compensation update. The API returns an explicit server
+error that the config was updated but apply failed, and the server logs the
+plugin ID and source without config values. Repeating the same complete map is
+a supported manual apply retry. A `LOCAL_ONLY` update follows the same
+replace-resolve-apply behavior without persistence or synchronization; its new
+local source map also remains when apply fails.
 
 ## Admin API
 

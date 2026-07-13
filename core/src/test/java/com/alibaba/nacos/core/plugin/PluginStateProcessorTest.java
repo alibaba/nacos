@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.google.protobuf.ByteString;
@@ -34,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -138,7 +141,6 @@ class PluginStateProcessorTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         verify(pluginManager, times(1)).applyConfigChange("trace:otel", config);
-        verify(persistence, times(1)).saveConfig("trace:otel", config);
     }
     
     @Test
@@ -152,6 +154,50 @@ class PluginStateProcessorTest {
         assertNotNull(response);
         assertFalse(response.getSuccess());
         assertNotNull(response.getErrMsg());
+    }
+    
+    @Test
+    void onApplyUpdateConfigPreservesInvalidParameterError() throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("endpoint", "invalid");
+        doThrow(new IllegalArgumentException("invalid config")).when(pluginManager)
+            .applyConfigChange("trace:otel", config);
+        PluginStateOperation operation = PluginStateOperation.builder()
+            .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
+            .pluginId("trace:otel")
+            .config(config)
+            .build();
+        WriteRequest request = WriteRequest.newBuilder()
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
+        
+        Response response = processor.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().startsWith(
+            PluginStateOperation.INVALID_PARAM_ERROR_PREFIX));
+    }
+    
+    @Test
+    void onApplyUpdateConfigReportsApplyFailureAfterUpdate() throws Exception {
+        Map<String, String> config = Collections.singletonMap("endpoint", "invalid");
+        doThrow(new PluginConfigApplyException("config updated but apply failed",
+            new IllegalStateException("apply failed"))).when(pluginManager)
+            .applyConfigChange("trace:otel", config);
+        PluginStateOperation operation = PluginStateOperation.builder()
+            .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
+            .pluginId("trace:otel")
+            .config(config)
+            .build();
+        WriteRequest request = WriteRequest.newBuilder()
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
+        
+        Response response = processor.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().startsWith(
+            PluginStateOperation.CONFIG_APPLY_ERROR_PREFIX));
     }
     
     @Test

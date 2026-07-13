@@ -36,7 +36,7 @@ public interface PluginStateApplier {
     void applyStateChange(String pluginId, boolean enabled);
     
     /**
-     * Apply plugin config change.
+     * Apply plugin config change and persist the accepted runtime source snapshot.
      *
      * @param pluginId plugin ID
      * @param config configuration map

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.core.plugin.condition.ConditionOnStandaloneMode;
+import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.slf4j.Logger;
@@ -71,10 +72,15 @@ public class StandalonePluginStateSynchronizer implements PluginStateSynchronize
         throws NacosApiException {
         try {
             applier.applyConfigChange(pluginId, config);
-            persistence.saveConfig(pluginId, config);
-        } catch (PluginPersistenceException e) {
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+        } catch (PluginConfigApplyException e) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
-                "Failed to persist plugin config: " + pluginId);
+                e.getMessage());
+        } catch (RuntimeException e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                "Failed to apply or persist plugin config: " + pluginId);
         }
     }
 }

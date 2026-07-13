@@ -156,8 +156,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
             Map<String, Map<String, String>> configs = snapshot.getConfigs();
             if (configs != null) {
                 for (Map.Entry<String, Map<String, String>> entry : configs.entrySet()) {
-                    persistence.saveConfig(entry.getKey(), entry.getValue());
-                    pluginManager.applyConfigChange(entry.getKey(), entry.getValue());
+                    pluginManager.restoreConfigChange(entry.getKey(), entry.getValue());
                 }
             }
             

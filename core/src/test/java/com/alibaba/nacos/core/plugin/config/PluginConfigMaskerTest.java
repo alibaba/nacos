@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginConfigMaskerTest {
     
@@ -50,6 +52,15 @@ class PluginConfigMaskerTest {
         ConfigItemDefinition definition = sensitiveDefinition();
         
         assertEquals("ab******kl", PluginConfigMasker.mask(definition, "abcdefghijkl"));
+    }
+    
+    @Test
+    void testIsMaskedValueRecognizesMarkerAtAnyPosition() {
+        assertTrue(PluginConfigMasker.isMaskedValue("******"));
+        assertTrue(PluginConfigMasker.isMaskedValue("a******z"));
+        assertTrue(PluginConfigMasker.isMaskedValue("ab******yz"));
+        assertFalse(PluginConfigMasker.isMaskedValue("secret"));
+        assertFalse(PluginConfigMasker.isMaskedValue(null));
     }
     
     private ConfigItemDefinition sensitiveDefinition() {

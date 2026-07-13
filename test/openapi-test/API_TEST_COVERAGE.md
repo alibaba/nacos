@@ -61,6 +61,14 @@ partial set is limited to operations whose remaining success paths mutate
 shared runtime/storage state, require publish-pipeline plugin data, or require
 an external LLM provider.
 
+Plugin management API IT covers detail metadata, request validation, not-found
+responses, and rejection of config updates for non-configurable plugins. The
+runtime-configurable success path remains partial because the standalone test
+distribution currently has no built-in plugin implementing `PluginConfigSpec`;
+full-map replacement, source fallback, effect mode checks, masking, same-source
+sensitive value preservation, and retained-source apply failure/retry are
+covered in core unit tests.
+
 Config scenario rows cover the current 3.3 Config model. Blank or omitted
 namespace inputs are expected to use `public`, and beta/tag gray behavior is
 verified through the current gray model. Removed pre-3.0 compatibility

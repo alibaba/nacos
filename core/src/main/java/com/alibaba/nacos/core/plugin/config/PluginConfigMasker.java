@@ -53,6 +53,16 @@ public final class PluginConfigMasker {
         return value;
     }
     
+    /**
+     * Check whether a value contains the standard masked marker.
+     *
+     * @param value value to check
+     * @return true if the value contains the masked marker
+     */
+    public static boolean isMaskedValue(String value) {
+        return value != null && value.contains(MASKED_VALUE);
+    }
+    
     private static String maskValue(String value) {
         int length = value.length();
         if (length <= TINY_VALUE_MAX_LENGTH) {
