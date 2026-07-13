@@ -72,6 +72,23 @@ Dialect implementations provide `DatabaseDialect`.
 | `getPageLastNum(page, pageSize)` | Return second pagination parameter. |
 | `getReturnPrimaryKeys()` | Return generated key columns. |
 | `getFunction(functionName)` | Map logical function names to dialect SQL functions. |
+| `isDuplicateKeyException(throwable)` | Classify whether a datasource throwable is a duplicate unique-key conflict. The default recognizes a Spring `DuplicateKeyException` in the cause chain; dialects may override for driver-specific detection. |
+
+`isDuplicateKeyException(throwable)` is the single entry point config repositories
+use to decide whether a failed insert was a duplicate unique-key conflict. The
+default implementation walks the throwable cause chain and returns `true` when it
+finds Spring's `DuplicateKeyException`, matched by class name so the datasource
+plugin modules stay free of a Spring dependency. This reproduces the previous
+database-agnostic classification as the safe baseline and deliberately does not
+treat a raw vendor SQLState such as `23505` as a duplicate on its own.
+
+Dialects such as PostgreSQL, MySQL, Derby, or Oracle may override this to also
+inspect the original driver exception (SQLState or vendor error code) when the
+standard Spring exception translation is not precise enough, typically combining
+their check with a call to the default via
+`DatabaseDialect.super.isDuplicateKeyException(throwable)`. Classification must
+remain conservative — non-duplicate integrity failures must not be reported as
+duplicates.
 
 Table mapper plugins implement `com.alibaba.nacos.plugin.datasource.mapper.Mapper`
 for table-specific SQL. Dialect and mapper implementations must be packaged and

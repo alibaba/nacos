@@ -23,6 +23,12 @@ package com.alibaba.nacos.plugin.datasource.dialect;
 public interface DatabaseDialect {
     
     /**
+     * Fully-qualified name of Spring's {@code DuplicateKeyException}. Matched by name rather than
+     * type so that the datasource plugin modules keep their Spring-free dependency footprint.
+     */
+    String SPRING_DUPLICATE_KEY_EXCEPTION = "org.springframework.dao.DuplicateKeyException";
+    
+    /**
      * get database type.
      * @return return database type name
      */
@@ -90,4 +96,36 @@ public interface DatabaseDialect {
      * @return function
      */
     String getFunction(String functionName);
+    
+    /**
+     * Judge whether the given throwable represents a duplicate unique-key conflict for this dialect.
+     *
+     * <p>The default implementation walks the throwable cause chain and reports a duplicate when it
+     * finds Spring's {@code DuplicateKeyException} (matched by class name, so the plugin modules
+     * stay free of a Spring dependency). This mirrors the database-agnostic classification that the
+     * config persistence layer relied on before, and deliberately does not treat a raw vendor
+     * SQLState such as {@code 23505} as a duplicate on its own.
+     *
+     * <p>Specific dialects such as PostgreSQL, MySQL, Derby, or Oracle may override this to also
+     * inspect the original driver exception (SQLState or vendor error code) when the standard Spring
+     * exception translation is not precise enough, typically combining their check with a call to
+     * this default via {@code DatabaseDialect.super.isDuplicateKeyException(throwable)}.
+     *
+     * @param throwable throwable thrown by a datasource operation, may be a wrapped exception
+     * @return {@code true} if the throwable represents a duplicate unique-key conflict
+     */
+    default boolean isDuplicateKeyException(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause != null) {
+            Class<?> type = cause.getClass();
+            while (type != null) {
+                if (SPRING_DUPLICATE_KEY_EXCEPTION.equals(type.getName())) {
+                    return true;
+                }
+                type = type.getSuperclass();
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
 }

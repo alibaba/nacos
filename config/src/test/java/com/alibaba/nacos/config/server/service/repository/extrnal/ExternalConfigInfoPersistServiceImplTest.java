@@ -36,6 +36,8 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
+import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -411,6 +413,64 @@ class ExternalConfigInfoPersistServiceImplTest {
         
         assertEquals(exception, thrown);
         verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenDialectClassifiesDuplicateKey() {
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class);
+        Mockito.when(dialect.isDuplicateKeyException(any(Throwable.class))).thenReturn(true);
+        DatabaseDialectManager manager = Mockito.mock(DatabaseDialectManager.class);
+        Mockito.when(manager.getDialect(anyString())).thenReturn(dialect);
+        try (MockedStatic<DatabaseDialectManager> managerStatic =
+            Mockito.mockStatic(DatabaseDialectManager.class)) {
+            managerStatic.when(DatabaseDialectManager::getInstance).thenReturn(manager);
+            // Spring translates this vendor unique conflict to BadSqlGrammarException, not
+            // DuplicateKeyException, so only the dialect classification can recognize it.
+            SQLException vendorDuplicate =
+                new SQLException("duplicate key value violates unique constraint", "23505");
+            BadSqlGrammarException exception =
+                new BadSqlGrammarException("insert", "sql", vendorDuplicate);
+            ConfigOperateResult result = insertOrUpdateAfterInsertException(exception);
+            
+            assertTrue(result.isSuccess());
+            assertEquals(100L, result.getId());
+            verifyConfigInfoUpdated();
+        }
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenDialectClassifiesDuplicateKey() {
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class);
+        Mockito.when(dialect.isDuplicateKeyException(any(Throwable.class))).thenReturn(true);
+        DatabaseDialectManager manager = Mockito.mock(DatabaseDialectManager.class);
+        Mockito.when(manager.getDialect(anyString())).thenReturn(dialect);
+        try (MockedStatic<DatabaseDialectManager> managerStatic =
+            Mockito.mockStatic(DatabaseDialectManager.class)) {
+            managerStatic.when(DatabaseDialectManager::getInstance).thenReturn(manager);
+            SQLException vendorDuplicate =
+                new SQLException("duplicate key value violates unique constraint", "23505");
+            BadSqlGrammarException exception =
+                new BadSqlGrammarException("insert", "sql", vendorDuplicate);
+            ConfigOperateResult result = insertOrUpdateCasAfterInsertException(exception);
+            
+            assertFalse(result.isSuccess());
+            verifyConfigInfoNotUpdated();
+        }
+    }
+    
+    @Test
+    void testDialectDefaultRecognizesSpringDuplicateKeyException() {
+        // The DatabaseDialect default classifies a Spring DuplicateKeyException (matched by class
+        // name in the plugin module) anywhere in the cause chain, while a raw vendor SQLState that
+        // Spring could not translate is left for vendor dialects to opt into.
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class, Mockito.CALLS_REAL_METHODS);
+        assertTrue(dialect.isDuplicateKeyException(new DuplicateKeyException("duplicate")));
+        assertTrue(dialect.isDuplicateKeyException(
+            new DataIntegrityViolationException("wrapped",
+                new DuplicateKeyException("duplicate"))));
+        assertFalse(dialect.isDuplicateKeyException(new DataIntegrityViolationException("plain")));
+        assertFalse(dialect.isDuplicateKeyException(new BadSqlGrammarException("insert", "sql",
+            new SQLException("duplicate key value violates unique constraint", "23505"))));
     }
     
     @Test

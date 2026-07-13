@@ -64,6 +64,17 @@ dialect 和另一个数据库的 mapper 是无效行为。
 | `getPageLastNum(page, pageSize)` | 返回第二个分页参数。 |
 | `getReturnPrimaryKeys()` | 返回生成主键列。 |
 | `getFunction(functionName)` | 将逻辑函数名映射到方言 SQL 函数。 |
+| `isDuplicateKeyException(throwable)` | 判定数据源抛出的异常是否为唯一键重复冲突。默认识别异常因果链中的 Spring `DuplicateKeyException`，方言可重写以实现驱动级别的判定。 |
+
+`isDuplicateKeyException(throwable)` 是 config 仓储判断插入失败是否为唯一键重复冲突的
+统一入口。默认实现会遍历异常因果链，当发现 Spring 的 `DuplicateKeyException` 时返回
+`true`，并通过类名匹配以保证数据源插件模块不引入 Spring 依赖。这复现了此前与数据库无关
+的分类作为安全基线，并刻意不将裸的厂商 SQLState（如 `23505`）本身当作重复。
+
+PostgreSQL、MySQL、Derby、Oracle 等方言可以重写该方法，在标准 Spring 异常转换不够精确
+时进一步检查原始驱动异常（SQLState 或厂商错误码），通常会通过
+`DatabaseDialect.super.isDuplicateKeyException(throwable)` 调用默认实现并与自身判定组合。
+分类必须保持保守——非重复的完整性约束失败不得被误报为重复。
 
 表级 mapper 插件实现 `com.alibaba.nacos.plugin.datasource.mapper.Mapper`，用于提供具体表的
 SQL。一个数据库族的方言和 mapper 实现必须一起打包和加载。

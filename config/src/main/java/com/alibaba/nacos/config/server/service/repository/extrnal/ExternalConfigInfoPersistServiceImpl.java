@@ -49,6 +49,8 @@ import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
+import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -310,6 +312,13 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     private boolean isDuplicateKeyException(Throwable exception) {
+        DatabaseDialect dialect = resolveDatabaseDialect();
+        if (dialect != null) {
+            return dialect.isDuplicateKeyException(exception);
+        }
+        // Fallback when no dialect can be resolved (for example before datasource plugins are
+        // loaded): keep the database-agnostic Spring DuplicateKeyException classification, which is
+        // exactly what the active dialect applies as its default behavior.
         Throwable cause = exception;
         while (cause != null) {
             if (cause instanceof DuplicateKeyException) {
@@ -318,6 +327,28 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             cause = cause.getCause();
         }
         return false;
+    }
+    
+    /**
+     * Resolve the active datasource dialect for duplicate-key classification.
+     *
+     * <p>All duplicate-key judgement is delegated to {@link DatabaseDialect#isDuplicateKeyException},
+     * whose default already recognizes Spring {@link DuplicateKeyException} and which vendor dialects
+     * may extend with driver-specific detection. Returns {@code null} when no dialect can be resolved
+     * (for example before datasource plugins are loaded), so the caller falls back to the
+     * database-agnostic Spring classification.
+     *
+     * @return the active dialect, or {@code null} when it cannot be resolved
+     */
+    DatabaseDialect resolveDatabaseDialect() {
+        try {
+            return DatabaseDialectManager.getInstance()
+                .getDialect(dataSourceService.getDataSourceType());
+        } catch (IllegalStateException stateException) {
+            LogUtil.DEFAULT_LOG.warn("[duplicate-key] cannot resolve datasource dialect, fallback "
+                + "to spring-standard classification, msg: {}", stateException.getMessage());
+            return null;
+        }
     }
     
     @Override
