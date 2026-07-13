@@ -21,6 +21,11 @@ import requestUtils from '../../utils/request';
 
 const FormItem = Form.Item;
 
+const findBaseUrl = (provider, protocol, region) => {
+  const protocolMetadata = provider?.protocols?.find(item => item.name === protocol);
+  return protocolMetadata?.endpoints?.find(item => item.region === region)?.baseUrl || '';
+};
+
 class CopilotConfig extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
@@ -33,6 +38,7 @@ class CopilotConfig extends React.Component {
     this.state = {
       loading: false,
       config: null,
+      providers: [],
     };
   }
 
@@ -47,21 +53,36 @@ class CopilotConfig extends React.Component {
   loadConfig = async () => {
     try {
       this.setState({ loading: true });
-      const response = await requestUtils.get('v3/console/copilot/config');
+      const [response, providersResponse] = await Promise.all([
+        requestUtils.get('v3/console/copilot/config'),
+        requestUtils.get('v3/console/copilot/config/providers'),
+      ]);
       // Result format: {code: 0, message: "...", data: {...}}
       const config = (response && response.data) ? response.data : (response || {});
-      this.setState({ config });
+      let providers = [];
+      if (providersResponse && providersResponse.data) {
+        providers = providersResponse.data;
+      } else if (Array.isArray(providersResponse)) {
+        providers = providersResponse;
+      }
+      const providerName = config.provider || 'DashScope';
+      const providerMetadata = providers.find(item => item.name === providerName);
+      const protocol = config.protocol || providerMetadata?.defaultProtocol || '';
+      const region = config.region || providerMetadata?.defaultRegion || '';
+      this.setState({ config, providers });
       // Process studioUrl: remove trailing slash if exists
       let studioUrl = config.studioUrl || '';
       if (studioUrl && studioUrl.endsWith('/')) {
         studioUrl = studioUrl.slice(0, -1);
       }
-      // Set form values - only apiKey, model, studioUrl and studioProject
+      // Set all console-managed configuration values.
       this.field.setValues({
         apiKey: config.apiKey || '',
-        provider: config.provider || 'DashScope',
-        model: config.model || 'qwen-turbo',
-        baseUrl: config.baseUrl || '',
+        provider: providerName,
+        protocol,
+        region,
+        model: config.model || providerMetadata?.defaultModel || 'qwen-turbo',
+        baseUrl: config.baseUrl || findBaseUrl(providerMetadata, protocol, region),
         studioUrl,
         studioProject: config.studioProject || 'NacosCopilot',
       });
@@ -84,10 +105,12 @@ class CopilotConfig extends React.Component {
       if (studioUrl && studioUrl.endsWith('/')) {
         studioUrl = studioUrl.slice(0, -1);
       }
-      // Only send apiKey, model, studioUrl and studioProject
+      // Send all console-managed configuration values.
       const config = {
         apiKey: values.apiKey || '',
         provider: values.provider || 'DashScope',
+        protocol: values.protocol || '',
+        region: values.region || '',
         model: values.model || 'qwen-turbo',
         baseUrl: values.baseUrl || '',
         studioUrl,
@@ -118,27 +141,51 @@ class CopilotConfig extends React.Component {
     }
   };
 
+  handleProviderChange = value => {
+    const provider = this.state.providers.find(item => item.name === value);
+    const protocol = provider?.defaultProtocol || '';
+    const region = provider?.defaultRegion || '';
+    this.field.setValues({
+      provider: value,
+      protocol,
+      region,
+      model: provider?.defaultModel || 'qwen-turbo',
+      baseUrl: findBaseUrl(provider, protocol, region),
+    });
+  };
+
+  handleProtocolChange = value => {
+    const providerName = this.field.getValue('provider') || 'DashScope';
+    const provider = this.state.providers.find(item => item.name === providerName);
+    const region = this.field.getValue('region') || provider?.defaultRegion || '';
+    this.field.setValues({
+      protocol: value,
+      baseUrl: findBaseUrl(provider, value, region),
+    });
+  };
+
+  handleRegionChange = value => {
+    const providerName = this.field.getValue('provider') || 'DashScope';
+    const provider = this.state.providers.find(item => item.name === providerName);
+    const protocol = this.field.getValue('protocol') || provider?.defaultProtocol || '';
+    this.field.setValues({
+      region: value,
+      baseUrl: findBaseUrl(provider, protocol, value),
+    });
+  };
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
-
-    // Copilot LLM model list
-    const copilotModels = [
-      { value: 'qwen-turbo', label: 'qwen-turbo (DashScope 快速版)' },
-      { value: 'qwen-plus', label: 'qwen-plus (DashScope 增强版)' },
-      { value: 'qwen-max', label: 'qwen-max (DashScope 最强版)' },
-      { value: 'qwen-7b-chat', label: 'qwen-7b-chat (DashScope)' },
-      { value: 'qwen-14b-chat', label: 'qwen-14b-chat (DashScope)' },
-      { value: 'qwen-72b-chat', label: 'qwen-72b-chat (DashScope)' },
-      { value: 'qwen3-turbo', label: 'qwen3-turbo (DashScope 千问3快速版)' },
-      { value: 'qwen3-plus', label: 'qwen3-plus (DashScope 千问3增强版)' },
-      { value: 'qwen3-max', label: 'qwen3-max (DashScope 千问3最强版)' },
-      { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct (DashScope)' },
-      { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct (DashScope)' },
-      { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct (DashScope)' },
-      { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct (DashScope)' },
-      { value: 'MiniMax-M3', label: 'MiniMax-M3 (MiniMax)' },
-    ];
+    const providerName = this.field.getValue('provider') || 'DashScope';
+    const provider = this.state.providers.find(item => item.name === providerName);
+    const protocolName = this.field.getValue('protocol') || provider?.defaultProtocol || '';
+    const protocol = provider?.protocols?.find(item => item.name === protocolName);
+    const region = this.field.getValue('region') || provider?.defaultRegion || '';
+    const modelOptions = (provider?.models || []).map(item => ({
+      value: item.modelId,
+      label: item.modelId,
+    }));
 
     return (
       <div style={{ width: '100%', maxWidth: '800px' }}>
@@ -182,34 +229,65 @@ class CopilotConfig extends React.Component {
             {...init('provider', {
               initValue: 'DashScope',
             })}
-            dataSource={[
-              { value: 'DashScope', label: 'DashScope' },
-              { value: 'MiniMax', label: 'MiniMax' },
-            ]}
-            placeholder="请选择 Provider"
+            dataSource={this.state.providers.map(item => ({ value: item.name, label: item.name }))}
+            onChange={this.handleProviderChange}
+            placeholder="Select provider"
             style={{ width: '100%' }}
           />
         </FormItem>
+
+        {provider?.protocols?.length > 0 && (
+          <FormItem label="Protocol">
+            <Select
+              {...init('protocol', {
+                initValue: provider.defaultProtocol || '',
+              })}
+              dataSource={provider.protocols.map(item => ({ value: item.name, label: item.name }))}
+              onChange={this.handleProtocolChange}
+              placeholder="Select protocol"
+              style={{ width: '100%' }}
+            />
+          </FormItem>
+        )}
+
+        {protocol && (
+          <FormItem label="Region">
+            <Select
+              {...init('region', {
+                initValue: provider.defaultRegion || '',
+              })}
+              dataSource={protocol.endpoints.map(item => ({
+                value: item.region,
+                label: item.region,
+              }))}
+              onChange={this.handleRegionChange}
+              placeholder="Select region"
+              style={{ width: '100%' }}
+            />
+          </FormItem>
+        )}
 
         <FormItem label={locale.copilotLlmModelName || 'Model'}>
           <Select
             {...init('model', {
               initValue: 'qwen-turbo',
             })}
-            dataSource={copilotModels}
+            dataSource={modelOptions}
             placeholder={locale.copilotLlmModelNamePlaceholder || '请选择模型'}
             style={{ width: '100%' }}
           />
         </FormItem>
 
-        <FormItem label="Base URL">
-          <Input
-            {...init('baseUrl', {
-              initValue: '',
-            })}
-            placeholder="https://api.minimax.io/v1"
-          />
-        </FormItem>
+        {protocol && (
+          <FormItem label="Base URL">
+            <Input
+              {...init('baseUrl', {
+                initValue: '',
+              })}
+              placeholder={findBaseUrl(provider, protocolName, region)}
+            />
+          </FormItem>
+        )}
 
         <FormItem label={locale.copilotStudioUrl || 'Studio URL'}>
           <Input

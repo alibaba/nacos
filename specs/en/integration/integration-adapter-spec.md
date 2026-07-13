@@ -173,8 +173,20 @@ Current enablement and surface:
 - stream operations use server-sent events rather than the ordinary JSON
   response wrapper;
 - LLM access is configured through `nacos.copilot.apiKey`,
-  `nacos.copilot.model`, `nacos.copilot.studioUrl`, and
-  `nacos.copilot.studioProject`.
+  `nacos.copilot.provider`, `nacos.copilot.protocol`,
+  `nacos.copilot.region`, `nacos.copilot.model`,
+  `nacos.copilot.baseUrl`, `nacos.copilot.studioUrl`, and
+  `nacos.copilot.studioProject`;
+- `GET /v3/console/copilot/config/providers` is the source of truth for the
+  provider, model, protocol, region, streaming, thinking, modality, context,
+  and default endpoint options shown by the console;
+- the MiniMax provider exposes `MiniMax-M3` and `MiniMax-M2.7` through both
+  `openai` and `anthropic` protocols in the `global_en` and `cn_zh` regions;
+- the global OpenAI and Anthropic Base URLs are `https://api.minimax.io/v1`
+  and `https://api.minimax.io/anthropic`; the China Base URLs are
+  `https://api.minimaxi.com/v1` and `https://api.minimaxi.com/anthropic`;
+- Anthropic Base URLs end at `/anthropic`; the Anthropic client appends
+  `/v1/messages` when it sends a request.
 
 Rules:
 

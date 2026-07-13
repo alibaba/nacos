@@ -88,14 +88,28 @@ class CopilotPropertiesTest {
     void testProvider() {
         // Given
         CopilotProperties properties = new CopilotProperties();
-
+        
         // When
         properties.setProvider("MiniMax");
-
+        
         // Then
         assertEquals("MiniMax", properties.getProvider());
     }
-
+    
+    @Test
+    void testProtocol() {
+        CopilotProperties properties = new CopilotProperties();
+        properties.setProtocol("anthropic");
+        assertEquals("anthropic", properties.getProtocol());
+    }
+    
+    @Test
+    void testRegion() {
+        CopilotProperties properties = new CopilotProperties();
+        properties.setRegion("cn_zh");
+        assertEquals("cn_zh", properties.getRegion());
+    }
+    
     @Test
     void testModel() {
         // Given
@@ -112,14 +126,14 @@ class CopilotPropertiesTest {
     void testBaseUrl() {
         // Given
         CopilotProperties properties = new CopilotProperties();
-
+        
         // When
         properties.setBaseUrl("https://api.minimax.io/v1");
-
+        
         // Then
         assertEquals("https://api.minimax.io/v1", properties.getBaseUrl());
     }
-
+    
     @Test
     void testStudioUrl() {
         // Given

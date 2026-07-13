@@ -21,26 +21,38 @@ import {
 interface CopilotConfig {
   apiKey: string;
   provider: string;
+  protocol: string;
+  region: string;
   model: string;
   baseUrl: string;
 }
 
-const COPILOT_MODELS = [
-  { value: 'qwen-turbo', label: 'qwen-turbo', desc: 'DashScope Fast' },
-  { value: 'qwen-plus', label: 'qwen-plus', desc: 'DashScope Enhanced' },
-  { value: 'qwen-max', label: 'qwen-max', desc: 'DashScope Strongest' },
-  { value: 'qwen-7b-chat', label: 'qwen-7b-chat', desc: 'DashScope 7B' },
-  { value: 'qwen-14b-chat', label: 'qwen-14b-chat', desc: 'DashScope 14B' },
-  { value: 'qwen-72b-chat', label: 'qwen-72b-chat', desc: 'DashScope 72B' },
-  { value: 'qwen3-turbo', label: 'qwen3-turbo', desc: 'DashScope Qwen3 Fast' },
-  { value: 'qwen3-plus', label: 'qwen3-plus', desc: 'DashScope Qwen3 Enhanced' },
-  { value: 'qwen3-max', label: 'qwen3-max', desc: 'DashScope Qwen3 Strongest' },
-  { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct', desc: 'DashScope 7B' },
-  { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct', desc: 'DashScope 14B' },
-  { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct', desc: 'DashScope 32B' },
-  { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct', desc: 'DashScope 72B' },
-  { value: 'MiniMax-M3', label: 'MiniMax-M3', desc: 'MiniMax' },
-];
+interface ModelMetadata {
+  modelId: string;
+}
+
+interface EndpointMetadata {
+  region: string;
+  baseUrl: string;
+}
+
+interface ProtocolMetadata {
+  name: string;
+  endpoints: EndpointMetadata[];
+}
+
+interface ProviderMetadata {
+  name: string;
+  defaultModel: string;
+  defaultProtocol?: string;
+  defaultRegion?: string;
+  models: ModelMetadata[];
+  protocols: ProtocolMetadata[];
+}
+
+const findBaseUrl = (provider: ProviderMetadata | undefined, protocol: string, region: string) =>
+  provider?.protocols.find((item) => item.name === protocol)?.endpoints
+    .find((item) => item.region === region)?.baseUrl || '';
 
 export default function SettingCenterPage() {
   const { t } = useTranslation();
@@ -59,20 +71,35 @@ export default function SettingCenterPage() {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const [apiKey, setApiKey] = useState('');
+  const [providers, setProviders] = useState<ProviderMetadata[]>([]);
   const [provider, setProvider] = useState('DashScope');
+  const [protocol, setProtocol] = useState('');
+  const [region, setRegion] = useState('');
   const [model, setModel] = useState('qwen-turbo');
   const [baseUrl, setBaseUrl] = useState('');
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await client.get('v3/console/copilot/config');
-      const body = response as unknown as { data: CopilotConfig };
-      const config = body.data || ({} as CopilotConfig);
+      const [configResponse, providersResponse] = await Promise.all([
+        client.get('v3/console/copilot/config'),
+        client.get('v3/console/copilot/config/providers'),
+      ]);
+      const configBody = configResponse as unknown as { data: CopilotConfig };
+      const providersBody = providersResponse as unknown as { data: ProviderMetadata[] };
+      const config = configBody.data || ({} as CopilotConfig);
+      const providerOptions = providersBody.data || [];
+      const providerName = config.provider || 'DashScope';
+      const providerMetadata = providerOptions.find((item) => item.name === providerName);
+      const protocolName = config.protocol || providerMetadata?.defaultProtocol || '';
+      const regionName = config.region || providerMetadata?.defaultRegion || '';
+      setProviders(providerOptions);
       setApiKey(config.apiKey || '');
-      setProvider(config.provider || 'DashScope');
-      setModel(config.model || 'qwen-turbo');
-      setBaseUrl(config.baseUrl || '');
+      setProvider(providerName);
+      setProtocol(protocolName);
+      setRegion(regionName);
+      setModel(config.model || providerMetadata?.defaultModel || 'qwen-turbo');
+      setBaseUrl(config.baseUrl || findBaseUrl(providerMetadata, protocolName, regionName));
     } catch {
       // Error handled by interceptor
     } finally {
@@ -92,6 +119,8 @@ export default function SettingCenterPage() {
       const config: CopilotConfig = {
         apiKey: apiKey.trim(),
         provider: provider || 'DashScope',
+        protocol,
+        region,
         model: model || 'qwen-turbo',
         baseUrl: baseUrl.trim(),
       };
@@ -106,6 +135,30 @@ export default function SettingCenterPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const selectedProvider = providers.find((item) => item.name === provider);
+  const selectedProtocol = selectedProvider?.protocols.find((item) => item.name === protocol);
+
+  const handleProviderChange = (value: string) => {
+    const metadata = providers.find((item) => item.name === value);
+    const nextProtocol = metadata?.defaultProtocol || '';
+    const nextRegion = metadata?.defaultRegion || '';
+    setProvider(value);
+    setProtocol(nextProtocol);
+    setRegion(nextRegion);
+    setModel(metadata?.defaultModel || 'qwen-turbo');
+    setBaseUrl(findBaseUrl(metadata, nextProtocol, nextRegion));
+  };
+
+  const handleProtocolChange = (value: string) => {
+    setProtocol(value);
+    setBaseUrl(findBaseUrl(selectedProvider, value, region));
+  };
+
+  const handleRegionChange = (value: string) => {
+    setRegion(value);
+    setBaseUrl(findBaseUrl(selectedProvider, protocol, value));
   };
 
   return (
@@ -167,16 +220,49 @@ export default function SettingCenterPage() {
                 {/* Provider */}
                 <div className="space-y-2.5">
                   <Label>Provider</Label>
-                  <Select value={provider} onValueChange={setProvider}>
+                  <Select value={provider} onValueChange={handleProviderChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select provider" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DashScope">DashScope</SelectItem>
-                      <SelectItem value="MiniMax">MiniMax</SelectItem>
+                      {providers.map((item) => (
+                        <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {selectedProvider && selectedProvider.protocols.length > 0 && (
+                  <div className="space-y-2.5">
+                    <Label>Protocol</Label>
+                    <Select value={protocol} onValueChange={handleProtocolChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select protocol" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedProvider.protocols.map((item) => (
+                          <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {selectedProtocol && (
+                  <div className="space-y-2.5">
+                    <Label>Region</Label>
+                    <Select value={region} onValueChange={handleRegionChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedProtocol.endpoints.map((item) => (
+                          <SelectItem key={item.region} value={item.region}>{item.region}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Model */}
                 <div className="space-y-2.5">
@@ -186,10 +272,9 @@ export default function SettingCenterPage() {
                       <SelectValue placeholder={t('settings.modelPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {COPILOT_MODELS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          <span>{m.label}</span>
-                          <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
+                      {selectedProvider?.models.map((item) => (
+                        <SelectItem key={item.modelId} value={item.modelId}>
+                          {item.modelId}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -197,14 +282,16 @@ export default function SettingCenterPage() {
                 </div>
 
                 {/* Base URL */}
-                <div className="space-y-2.5">
-                  <Label>Base URL</Label>
-                  <Input
-                    placeholder="https://api.minimax.io/v1"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                  />
-                </div>
+                {selectedProtocol && (
+                  <div className="space-y-2.5">
+                    <Label>Base URL</Label>
+                    <Input
+                      placeholder={findBaseUrl(selectedProvider, protocol, region)}
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

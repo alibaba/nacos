@@ -47,17 +47,27 @@ public class CopilotProperties {
      * LLM provider name.
      */
     private String provider = "DashScope";
-
+    
+    /**
+     * Provider API protocol.
+     */
+    private String protocol;
+    
+    /**
+     * Provider endpoint region.
+     */
+    private String region;
+    
     /**
      * Model name.
      */
     private String model = "qwen-turbo";
-
+    
     /**
      * OpenAI-compatible base URL.
      */
     private String baseUrl;
-
+    
     /**
      * AgentScope Studio URL.
      */
@@ -110,7 +120,7 @@ public class CopilotProperties {
     public String getProvider() {
         return provider;
     }
-
+    
     /**
      * Set provider name.
      *
@@ -119,7 +129,43 @@ public class CopilotProperties {
     public void setProvider(String provider) {
         this.provider = provider;
     }
-
+    
+    /**
+     * Get provider API protocol.
+     *
+     * @return provider API protocol
+     */
+    public String getProtocol() {
+        return protocol;
+    }
+    
+    /**
+     * Set provider API protocol.
+     *
+     * @param protocol provider API protocol
+     */
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+    
+    /**
+     * Get provider endpoint region.
+     *
+     * @return provider endpoint region
+     */
+    public String getRegion() {
+        return region;
+    }
+    
+    /**
+     * Set provider endpoint region.
+     *
+     * @param region provider endpoint region
+     */
+    public void setRegion(String region) {
+        this.region = region;
+    }
+    
     /**
      * Get model name.
      *
@@ -146,7 +192,7 @@ public class CopilotProperties {
     public String getBaseUrl() {
         return baseUrl;
     }
-
+    
     /**
      * Set OpenAI-compatible base URL.
      *
@@ -155,7 +201,7 @@ public class CopilotProperties {
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
-
+    
     /**
      * Get Studio URL.
      *

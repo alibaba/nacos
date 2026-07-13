@@ -23,7 +23,9 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
+import com.alibaba.nacos.copilot.config.CopilotModelProviderRegistry;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
+import com.alibaba.nacos.copilot.config.CopilotProviderMetadata;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -65,12 +70,15 @@ class ConsoleCopilotConfigControllerTest {
     @Mock
     private ConfigProxy configProxy;
     
+    @Mock
+    private CopilotModelProviderRegistry providerRegistry;
+    
     private MockMvc mockMvc;
     
     @BeforeEach
     void setUp() {
         ConsoleCopilotConfigController controller =
-            new ConsoleCopilotConfigController(agentManager, configProxy);
+            new ConsoleCopilotConfigController(agentManager, configProxy, providerRegistry);
         ReflectionTestUtils.setField(controller, "configNamespace", NAMESPACE);
         mockMvc = MockMvcBuilders.standaloneSetup(
             controller).build();
@@ -80,7 +88,11 @@ class ConsoleCopilotConfigControllerTest {
     void testGetConfigReturnsSimplifiedConfig() throws Exception {
         CopilotProperties config = new CopilotProperties();
         config.setApiKey("test-key");
-        config.setModel("qwen-plus");
+        config.setProvider("MiniMax");
+        config.setProtocol("anthropic");
+        config.setRegion("cn_zh");
+        config.setModel("MiniMax-M3");
+        config.setBaseUrl("https://api.minimaxi.com/anthropic");
         config.setStudioUrl("http://studio.example.com");
         config.setStudioProject("TestProject");
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
@@ -95,9 +107,30 @@ class ConsoleCopilotConfigControllerTest {
             });
         assertNotNull(result.getData());
         assertEquals("test-key", result.getData().getApiKey());
-        assertEquals("qwen-plus", result.getData().getModel());
+        assertEquals("MiniMax", result.getData().getProvider());
+        assertEquals("anthropic", result.getData().getProtocol());
+        assertEquals("cn_zh", result.getData().getRegion());
+        assertEquals("MiniMax-M3", result.getData().getModel());
+        assertEquals("https://api.minimaxi.com/anthropic", result.getData().getBaseUrl());
         assertEquals("http://studio.example.com", result.getData().getStudioUrl());
         assertEquals("TestProject", result.getData().getStudioProject());
+    }
+    
+    @Test
+    void testGetProvidersReturnsRegistryMetadata() throws Exception {
+        CopilotProviderMetadata metadata = new CopilotProviderMetadata("MiniMax", "MiniMax-M3",
+            "openai", "global_en", true, List.of(), List.of());
+        when(providerRegistry.getProviderMetadata()).thenReturn(List.of(metadata));
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            get("/v3/console/copilot/config/providers"))
+            .andExpect(status().isOk()).andReturn().getResponse();
+        Result<List<Map<String, Object>>> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(1, result.getData().size());
+        assertEquals("MiniMax", result.getData().get(0).get("name"));
+        assertEquals("MiniMax-M3", result.getData().get(0).get("defaultModel"));
     }
     
     @Test
@@ -120,7 +153,9 @@ class ConsoleCopilotConfigControllerTest {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
-        String body = "{\"apiKey\":\"new-key\",\"model\":\"qwen-max\","
+        String body = "{\"apiKey\":\"new-key\",\"provider\":\"MiniMax\","
+            + "\"protocol\":\"openai\",\"region\":\"global_en\","
+            + "\"model\":\"MiniMax-M3\",\"baseUrl\":\"https://api.minimax.io/v1\","
             + "\"studioUrl\":\"http://new.url\",\"studioProject\":\"Proj\"}";
         
         MockHttpServletResponse response = mockMvc.perform(
@@ -146,6 +181,13 @@ class ConsoleCopilotConfigControllerTest {
         assertEquals("Copilot configuration", configFormCaptor.getValue().getDesc());
         assertEquals("json", configFormCaptor.getValue().getType());
         assertEquals("http", requestInfoCaptor.getValue().getSrcType());
+        CopilotProperties saved = JacksonUtils.toObj(configFormCaptor.getValue().getContent(),
+            CopilotProperties.class);
+        assertEquals("MiniMax", saved.getProvider());
+        assertEquals("openai", saved.getProtocol());
+        assertEquals("global_en", saved.getRegion());
+        assertEquals("MiniMax-M3", saved.getModel());
+        assertEquals("https://api.minimax.io/v1", saved.getBaseUrl());
     }
     
     @Test
@@ -190,14 +232,19 @@ class ConsoleCopilotConfigControllerTest {
     void testSaveConfigWithExplicitNullFieldsPreservesExisting() throws Exception {
         CopilotProperties existing = new CopilotProperties();
         existing.setApiKey("keep-this");
+        existing.setProvider("MiniMax");
+        existing.setProtocol("anthropic");
+        existing.setRegion("cn_zh");
         existing.setModel("keep-model");
+        existing.setBaseUrl("https://api.minimaxi.com/anthropic");
         existing.setStudioUrl("keep-url");
         existing.setStudioProject("keep-proj");
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
             .thenReturn(configDetail(existing));
         when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
-        String body = "{\"apiKey\":null,\"model\":null,\"studioUrl\":null,"
+        String body = "{\"apiKey\":null,\"provider\":null,\"protocol\":null,"
+            + "\"region\":null,\"model\":null,\"baseUrl\":null,\"studioUrl\":null,"
             + "\"studioProject\":null}";
         
         mockMvc.perform(post("/v3/console/copilot/config")
@@ -209,7 +256,11 @@ class ConsoleCopilotConfigControllerTest {
         CopilotProperties actual = JacksonUtils.toObj(captor.getValue().getContent(),
             CopilotProperties.class);
         assertEquals("keep-this", actual.getApiKey());
+        assertEquals("MiniMax", actual.getProvider());
+        assertEquals("anthropic", actual.getProtocol());
+        assertEquals("cn_zh", actual.getRegion());
         assertEquals("keep-model", actual.getModel());
+        assertEquals("https://api.minimaxi.com/anthropic", actual.getBaseUrl());
         assertEquals("keep-url", actual.getStudioUrl());
         assertEquals("keep-proj", actual.getStudioProject());
     }

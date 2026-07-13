@@ -31,7 +31,9 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
+import com.alibaba.nacos.copilot.config.CopilotModelProviderRegistry;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
+import com.alibaba.nacos.copilot.config.CopilotProviderMetadata;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -43,6 +45,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Console Copilot configuration controller.
@@ -70,20 +74,23 @@ public class ConsoleCopilotConfigController {
     
     private final ConfigProxy configProxy;
     
+    private final CopilotModelProviderRegistry providerRegistry;
+    
     @Value("${nacos.copilot.config.namespace:public}")
     private String configNamespace;
     
     @Autowired
     public ConsoleCopilotConfigController(CopilotAgentManager agentManager,
-        ConfigProxy configProxy) {
+        ConfigProxy configProxy, CopilotModelProviderRegistry providerRegistry) {
         this.agentManager = agentManager;
         this.configProxy = configProxy;
+        this.providerRegistry = providerRegistry;
     }
     
     /**
-     * Get current Copilot configuration. Only returns apiKey, model, studioUrl and studioProject fields.
+     * Get current Copilot configuration.
      *
-     * @return Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
+     * @return console-managed Copilot configuration
      */
     @Since("3.2.0")
     @GetMapping
@@ -95,10 +102,14 @@ public class ConsoleCopilotConfigController {
             config = new CopilotProperties();
         }
         
-        // Create simplified config with only apiKey, model, studioUrl and studioProject
+        // Return only fields managed by the console.
         CopilotProperties simplifiedConfig = new CopilotProperties();
         simplifiedConfig.setApiKey(config.getApiKey());
+        simplifiedConfig.setProvider(config.getProvider());
+        simplifiedConfig.setProtocol(config.getProtocol());
+        simplifiedConfig.setRegion(config.getRegion());
         simplifiedConfig.setModel(config.getModel());
+        simplifiedConfig.setBaseUrl(config.getBaseUrl());
         simplifiedConfig.setStudioUrl(config.getStudioUrl());
         simplifiedConfig.setStudioProject(config.getStudioProject());
         
@@ -106,11 +117,22 @@ public class ConsoleCopilotConfigController {
     }
     
     /**
-     * Create or update Copilot configuration. Only accepts apiKey, model, studioUrl and studioProject fields, other
-     * fields use defaults.
+     * Get available Copilot providers and their configuration options.
+     *
+     * @return provider metadata
+     */
+    @Since("3.2.0")
+    @GetMapping("/providers")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<List<CopilotProviderMetadata>> getProviders() {
+        return Result.success(providerRegistry.getProviderMetadata());
+    }
+    
+    /**
+     * Create or update Copilot configuration.
      *
      * @param request HTTP servlet request.
-     * @param config Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
+     * @param config console-managed Copilot configuration
      * @return success result
      */
     @Since("3.2.0")
@@ -128,25 +150,42 @@ public class ConsoleCopilotConfigController {
         CopilotProperties fullConfig;
         
         if (existingConfig != null) {
-            // Use existing config and only update apiKey, model, studioUrl and studioProject
+            // Preserve fields that are not managed by the console.
             fullConfig = existingConfig;
         } else {
             // Create new config with default values
             fullConfig = new CopilotProperties();
         }
         
-        // Update only apiKey, model, studioUrl and studioProject
+        // Update only fields managed by the console.
         if (config.getApiKey() != null) {
             fullConfig.setApiKey(config.getApiKey());
         }
+        if (config.getProvider() != null) {
+            fullConfig.setProvider(config.getProvider());
+        }
+        if (config.getProtocol() != null) {
+            fullConfig.setProtocol(config.getProtocol());
+        }
+        if (config.getRegion() != null) {
+            fullConfig.setRegion(config.getRegion());
+        }
         if (config.getModel() != null) {
             fullConfig.setModel(config.getModel());
+        }
+        if (config.getBaseUrl() != null) {
+            fullConfig.setBaseUrl(config.getBaseUrl());
         }
         if (config.getStudioUrl() != null) {
             fullConfig.setStudioUrl(config.getStudioUrl());
         }
         if (config.getStudioProject() != null) {
             fullConfig.setStudioProject(config.getStudioProject());
+        }
+        try {
+            providerRegistry.validate(fullConfig);
+        } catch (IllegalArgumentException e) {
+            throw new NacosException(NacosException.INVALID_PARAM, e.getMessage());
         }
         
         boolean success = publishStoredConfig(request, fullConfig);
