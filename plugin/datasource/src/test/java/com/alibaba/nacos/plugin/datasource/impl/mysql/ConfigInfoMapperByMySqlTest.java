@@ -207,9 +207,17 @@ class ConfigInfoMapperByMySqlTest {
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfo4Export(context);
         assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
+                        + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?)  AND tenant_id = ? ");
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId}, mapperResult.getParamList().toArray());
+
+        context.putWhereParameter(FieldConstant.TENANT_ID, null);
+        mapperResult = configInfoMapperByMySql.findAllConfigInfo4Export(context);
+        assertEquals(mapperResult.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
                         + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?) ");
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
         
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.IDS, null);
         mapperResult = configInfoMapperByMySql.findAllConfigInfo4Export(context);
         assertEquals(mapperResult.getSql(),
@@ -285,6 +293,13 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfosByIds() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfosByIds(context);
+        assertEquals(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?)  AND tenant_id = ? ",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId}, mapperResult.getParamList().toArray());
+
+        context.putWhereParameter(FieldConstant.TENANT_ID, null);
+        mapperResult = configInfoMapperByMySql.findConfigInfosByIds(context);
         assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ",
                 mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
@@ -293,6 +308,12 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testRemoveConfigInfoByIdsAtomic() {
         MapperResult mapperResult = configInfoMapperByMySql.removeConfigInfoByIdsAtomic(context);
+        assertEquals("DELETE FROM config_info WHERE id IN (?, ?, ?, ?, ?)  AND tenant_id = ? ",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId}, mapperResult.getParamList().toArray());
+
+        context.putWhereParameter(FieldConstant.TENANT_ID, null);
+        mapperResult = configInfoMapperByMySql.removeConfigInfoByIdsAtomic(context);
         assertEquals("DELETE FROM config_info WHERE id IN (?, ?, ?, ?, ?) ", mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
     }

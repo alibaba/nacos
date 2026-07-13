@@ -254,6 +254,11 @@ public interface ConfigInfoMapper extends Mapper {
                 paramList.add(ids.get(i));
             }
             where.append(") ");
+            Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+            if (tenantId != null) {
+                where.append(" AND tenant_id = ? ");
+                paramList.add(tenantId);
+            }
         } else {
             where.append(" tenant_id = ? ");
             paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
@@ -450,6 +455,11 @@ public interface ConfigInfoMapper extends Mapper {
             paramList.add(ids.get(i));
         }
         sql.append(") ");
+        Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+        if (tenantId != null) {
+            sql.append(" AND tenant_id = ? ");
+            paramList.add(tenantId);
+        }
         return new MapperResult(sql.toString(), paramList);
     }
     
@@ -473,6 +483,11 @@ public interface ConfigInfoMapper extends Mapper {
             paramList.add(ids.get(i));
         }
         sql.append(") ");
+        Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+        if (tenantId != null) {
+            sql.append(" AND tenant_id = ? ");
+            paramList.add(tenantId);
+        }
         return new MapperResult(sql.toString(), paramList);
     }
     

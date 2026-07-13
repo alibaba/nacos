@@ -940,10 +940,10 @@ public class ClientWorker implements Closeable {
         private ExecutorService ensureSyncExecutor(String taskId) {
             return multiTaskExecutor.computeIfAbsent(taskId, k -> new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<>(), r -> {
-                        Thread thread = new Thread(r, "nacos.client.config.listener.task-" + taskId);
-                        thread.setDaemon(true);
-                        return thread;
-                    }));
+                Thread thread = new Thread(r, "nacos.client.config.listener.task-" + taskId);
+                thread.setDaemon(true);
+                return thread;
+            }));
         }
         
         private void refreshContentAndCheck(RpcClient rpcClient, String groupKey, boolean notify) {

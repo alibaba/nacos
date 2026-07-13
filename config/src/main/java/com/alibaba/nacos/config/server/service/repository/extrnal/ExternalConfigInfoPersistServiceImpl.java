@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.constant.Symbols;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -81,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -420,20 +422,32 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+        return removeConfigInfoByIds(ids, NamespaceUtil.getNamespaceDefaultId(), srcIp, srcUser);
+    }
+
+    @Override
+    public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String tenant, final String srcIp,
+            final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
         ids.removeAll(Collections.singleton(null));
+        if (CollectionUtils.isEmpty(ids)) {
+            return null;
+        }
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         return tjt.execute(new TransactionCallback<List<ConfigAllInfo>>() {
             final Timestamp time = new Timestamp(System.currentTimeMillis());
             
             @Override
             public List<ConfigAllInfo> doInTransaction(TransactionStatus status) {
                 try {
-                    String idsStr = StringUtils.join(ids, StringUtils.COMMA);
-                    List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, null, null, ids);
+                    List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, tenantTmp, null,
+                            ids);
                     if (!CollectionUtils.isEmpty(oldConfigAllInfoList)) {
-                        removeConfigInfoByIdsAtomic(idsStr);
+                        String filteredIdsStr = oldConfigAllInfoList.stream().map(ConfigInfo::getId)
+                                .map(String::valueOf).collect(Collectors.joining(StringUtils.COMMA));
+                        removeConfigInfoByIdsAtomic(filteredIdsStr, tenantTmp);
                         for (ConfigAllInfo configAllInfo : oldConfigAllInfoList) {
                             removeTagByIdAtomic(configAllInfo.getId());
                             historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(),
@@ -479,6 +493,11 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public void removeConfigInfoByIdsAtomic(final String ids) {
+        removeConfigInfoByIdsAtomic(ids, null);
+    }
+
+    @Override
+    public void removeConfigInfoByIdsAtomic(final String ids, final String tenant) {
         if (StringUtils.isBlank(ids)) {
             return;
         }
@@ -491,6 +510,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, paramList);
+        if (tenant != null) {
+            context.putWhereParameter(FieldConstant.TENANT_ID, StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant);
+        }
         MapperResult result = configInfoMapper.removeConfigInfoByIdsAtomic(context);
         try {
             jt.update(result.getSql(), result.getParamList().toArray());
@@ -945,6 +967,11 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigInfo> findConfigInfosByIds(final String ids) {
+        return findConfigInfosByIds(ids, null);
+    }
+
+    @Override
+    public List<ConfigInfo> findConfigInfosByIds(final String ids, final String tenant) {
         if (StringUtils.isBlank(ids)) {
             return null;
         }
@@ -957,10 +984,22 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, paramList);
+        String tenantTmp = null;
+        if (tenant != null) {
+            tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+            context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        }
         MapperResult mapperResult = configInfoMapper.findConfigInfosByIds(context);
         
         try {
-            return this.jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(), CONFIG_INFO_ROW_MAPPER);
+            List<ConfigInfo> result = this.jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+                    CONFIG_INFO_ROW_MAPPER);
+            if (tenantTmp == null || CollectionUtils.isEmpty(result)) {
+                return result;
+            }
+            final String filteredTenant = tenantTmp;
+            return result.stream().filter(configInfo -> Objects.equals(filteredTenant, configInfo.getTenant()))
+                    .collect(Collectors.toList());
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -1059,6 +1098,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1075,6 +1117,11 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             List<ConfigAllInfo> configAllInfos = jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
                     CONFIG_ALL_INFO_ROW_MAPPER);
+            if (!CollectionUtils.isEmpty(ids) && tenant != null && CollectionUtils.isNotEmpty(configAllInfos)) {
+                configAllInfos = configAllInfos.stream()
+                        .filter(configInfo -> Objects.equals(tenantTmp, configInfo.getTenant()))
+                        .collect(Collectors.toList());
+            }
             
             if (CollectionUtils.isEmpty(configAllInfos)) {
                 return configAllInfos;

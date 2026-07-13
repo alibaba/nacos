@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.constant.Symbols;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -430,16 +431,27 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+        return removeConfigInfoByIds(ids, NamespaceUtil.getNamespaceDefaultId(), srcIp, srcUser);
+    }
+
+    @Override
+    public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String tenant, final String srcIp,
+            final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
         ids.removeAll(Collections.singleton(null));
+        if (CollectionUtils.isEmpty(ids)) {
+            return null;
+        }
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final Timestamp time = new Timestamp(System.currentTimeMillis());
         try {
-            String idsStr = StringUtils.join(ids, StringUtils.COMMA);
-            List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, null, null, ids);
+            List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, tenantTmp, null, ids);
             if (CollectionUtils.isNotEmpty(oldConfigAllInfoList)) {
-                removeConfigInfoByIdsAtomic(idsStr);
+                String filteredIdsStr = oldConfigAllInfoList.stream().map(ConfigInfo::getId).map(String::valueOf)
+                        .collect(Collectors.joining(StringUtils.COMMA));
+                removeConfigInfoByIdsAtomic(filteredIdsStr, tenantTmp);
                 for (ConfigAllInfo configAllInfo : oldConfigAllInfoList) {
                     removeTagByIdAtomic(configAllInfo.getId());
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(), configAllInfo,
@@ -483,6 +495,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public void removeConfigInfoByIdsAtomic(final String ids) {
+        removeConfigInfoByIdsAtomic(ids, null);
+    }
+
+    @Override
+    public void removeConfigInfoByIdsAtomic(final String ids, final String tenant) {
         if (StringUtils.isBlank(ids)) {
             return;
         }
@@ -495,6 +512,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, paramList);
+        if (tenant != null) {
+            context.putWhereParameter(FieldConstant.TENANT_ID, StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant);
+        }
         MapperResult result = configInfoMapper.removeConfigInfoByIdsAtomic(context);
         EmbeddedStorageContextHolder.addSqlContext(result.getSql(), result.getParamList().toArray());
     }
@@ -904,6 +924,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigInfo> findConfigInfosByIds(final String ids) {
+        return findConfigInfosByIds(ids, null);
+    }
+
+    @Override
+    public List<ConfigInfo> findConfigInfosByIds(final String ids, final String tenant) {
         if (StringUtils.isBlank(ids)) {
             return null;
         }
@@ -916,9 +941,20 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, paramList);
+        String tenantTmp = null;
+        if (tenant != null) {
+            tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+            context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        }
         MapperResult mapperResult = configInfoMapper.findConfigInfosByIds(context);
-        return databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+        List<ConfigInfo> result = databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
                 CONFIG_INFO_ROW_MAPPER);
+        if (tenantTmp == null || CollectionUtils.isEmpty(result)) {
+            return result;
+        }
+        final String filteredTenant = tenantTmp;
+        return result.stream().filter(configInfo -> Objects.equals(filteredTenant, configInfo.getTenant()))
+                .collect(Collectors.toList());
         
     }
     
@@ -987,6 +1023,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1003,6 +1042,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperResult mapperResult = configInfoMapper.findAllConfigInfo4Export(context);
         List<ConfigAllInfo> configAllInfos = databaseOperate.queryMany(mapperResult.getSql(),
                 mapperResult.getParamList().toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
+        if (!CollectionUtils.isEmpty(ids) && tenant != null && CollectionUtils.isNotEmpty(configAllInfos)) {
+            configAllInfos = configAllInfos.stream()
+                    .filter(configInfo -> Objects.equals(tenantTmp, configInfo.getTenant()))
+                    .collect(Collectors.toList());
+        }
         
         if (CollectionUtils.isEmpty(configAllInfos)) {
             return configAllInfos;

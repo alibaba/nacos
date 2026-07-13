@@ -52,6 +52,7 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigCloneSourceNamespaceAuthUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -124,6 +125,8 @@ public class ConfigController {
     
     private NamespacePersistService namespacePersistService;
     
+    private final ConfigCloneSourceNamespaceAuthUtil cloneSourceNamespaceAuthUtil;
+
     private final ConfigOperationService configOperationService;
     
     private final ConfigSubService configSubService;
@@ -131,13 +134,15 @@ public class ConfigController {
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ConfigCloneSourceNamespaceAuthUtil cloneSourceNamespaceAuthUtil) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
+        this.cloneSourceNamespaceAuthUtil = cloneSourceNamespaceAuthUtil;
     }
     
     /**
@@ -299,16 +304,27 @@ public class ConfigController {
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
+    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "srcUser", required = false) String srcUser) {
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         String clientIp = RequestUtil.getRemoteIp(request);
-        String srcUser = RequestUtil.getSrcUserName(request);
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
         try {
-            for (Long id : ids) {
-                ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
-                if (configInfo == null) {
-                    LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
-                    continue;
-                }
+            List<Long> filteredIds = new ArrayList<>(ids);
+            filteredIds.removeAll(Collections.singleton(null));
+            if (CollectionUtils.isEmpty(filteredIds)) {
+                return RestResultUtils.success(true);
+            }
+            String idsStr = StringUtils.join(filteredIds, StringUtils.COMMA);
+            List<ConfigInfo> configInfoList = configInfoPersistService.findConfigInfosByIds(idsStr, tenant);
+            if (CollectionUtils.isEmpty(configInfoList)) {
+                return RestResultUtils.success(true);
+            }
+            for (ConfigInfo configInfo : configInfoList) {
                 configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
             }
@@ -849,6 +865,7 @@ public class ConfigController {
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "tenant") String namespace,
+            @RequestParam(value = "sourceTenant", required = false) String sourceTenant,
             @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
@@ -858,11 +875,19 @@ public class ConfigController {
         }
         configBeansList.removeAll(Collections.singleton(null));
         
+        ParamUtils.checkTenant(sourceTenant);
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
+        sourceTenant = StringUtils.isBlank(sourceTenant) ? namespace : NamespaceUtil.processNamespaceParameter(sourceTenant);
         if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
+        if (StringUtils.isNotBlank(sourceTenant)
+                && namespacePersistService.tenantInfoCountByTenantId(sourceTenant) <= 0) {
+            failedData.put("succCount", 0);
+            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+        }
+        cloneSourceNamespaceAuthUtil.checkReadPermission(sourceTenant);
         
         List<Long> idList = new ArrayList<>(configBeansList.size());
         Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
@@ -871,8 +896,8 @@ public class ConfigController {
                     return cfg;
                 }, (k1, k2) -> k1));
         
-        List<ConfigAllInfo> queryedDataList = configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
-                idList);
+        List<ConfigAllInfo> queryedDataList = configInfoPersistService.findAllConfigInfo4Export(null, null,
+                sourceTenant, null, idList);
         
         if (queryedDataList == null || queryedDataList.isEmpty()) {
             failedData.put("succCount", 0);

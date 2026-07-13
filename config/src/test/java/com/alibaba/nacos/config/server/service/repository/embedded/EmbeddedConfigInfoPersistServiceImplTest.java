@@ -430,19 +430,20 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         final ConfigAllInfo configAllInfo2 = new ConfigAllInfo();
         configAllInfo1.setDataId("dataId1");
         configAllInfo1.setGroup("group1");
-        configAllInfo1.setTenant("tenant1");
+        configAllInfo1.setTenant(StringUtils.EMPTY);
         configAllInfo1.setAppName("app1");
         configAllInfo2.setDataId("dataId2");
         configAllInfo2.setGroup("group2");
-        configAllInfo2.setTenant("tenant2");
+        configAllInfo2.setTenant(StringUtils.EMPTY);
         configAllInfo2.setAppName("app2");
         configAllInfos.add(configAllInfo1);
         configAllInfos.add(configAllInfo2);
         List<Long> deleteIds = Arrays.asList(12344L, 3456789L);
         configAllInfos.get(0).setId(12344L);
         configAllInfos.get(1).setId(3456789L);
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(deleteIds.toArray()), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
-                .thenReturn(configAllInfos);
+        Mockito.when(databaseOperate.queryMany(anyString(),
+                eq(new Object[] {deleteIds.get(0), deleteIds.get(1), StringUtils.EMPTY}),
+                eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(configAllInfos);
         String srcIp = "srcIp1234";
         String srcUser = "srcUser";
         Mockito.when(databaseOperate.update(any())).thenReturn(true);
@@ -453,7 +454,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect delete config to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(deleteId0), eq(deleteId1)), times(1));
+                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(deleteId0), eq(deleteId1),
+                        eq(StringUtils.EMPTY)), times(1));
         //expect delete config tag to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(deleteId0)), times(1));
@@ -860,6 +862,16 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         assertEquals(result.size(), configInfosByIds.size());
         assertEquals(result.get(2).getDataId(), configInfosByIds.get(2).getDataId());
         
+        String tenant = "tenant13245";
+        result.forEach(configInfo -> configInfo.setTenant(tenant));
+        ConfigInfo otherTenantConfigInfo = createMockConfigInfo(3);
+        otherTenantConfigInfo.setTenant("otherTenant");
+        result.add(otherTenantConfigInfo);
+        when(databaseOperate.queryMany(anyString(), eq(new Object[] {123L, 1232345L, tenant}),
+                eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
+        configInfosByIds = embeddedConfigInfoPersistService.findConfigInfosByIds(ids, tenant);
+        assertEquals(3, configInfosByIds.size());
+
         //blank ids.
         List<ConfigInfo> nullResultBlankIds = embeddedConfigInfoPersistService.findConfigInfosByIds("");
         assertTrue(nullResultBlankIds == null);
@@ -954,8 +966,9 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         String tenant = "tenant13245";
         String appName = "appName1243";
         List<Long> ids = Arrays.asList(132L, 1343L, 245L);
+        mockConfigs.forEach(configAllInfo -> configAllInfo.setTenant(tenant));
         
-        when(databaseOperate.queryMany(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(databaseOperate.queryMany(anyString(), eq(new Object[] {132L, 1343L, 245L, tenant}),
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosIds = embeddedConfigInfoPersistService.findAllConfigInfo4Export(dataId, group,
