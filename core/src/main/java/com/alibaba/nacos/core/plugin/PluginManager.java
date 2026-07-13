@@ -80,11 +80,6 @@ public class PluginManager
     private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
     /**
-     * Configuration property for datasource platform (legacy).
-     */
-    private static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
-    
-    /**
      * Default datasource platform.
      */
     private static final String DATASOURCE_PLATFORM_DEFAULT = "derby";
@@ -302,6 +297,25 @@ public class PluginManager
     }
     
     /**
+     * Refresh static configuration for all configurable plugins.
+     */
+    public void refreshStaticPluginConfigs() {
+        for (Map.Entry<String, PluginInfo> entry : pluginRegistry.entrySet()) {
+            PluginInfo pluginInfo = entry.getValue();
+            if (!pluginInfo.isConfigurable()) {
+                continue;
+            }
+            try {
+                pluginConfigService.refreshStaticConfig(pluginInfo,
+                    pluginInstances.get(entry.getKey()));
+            } catch (RuntimeException e) {
+                LOGGER.error("[PluginManager] Failed to refresh static plugin config, "
+                    + "pluginId={}", entry.getKey(), e);
+            }
+        }
+    }
+    
+    /**
      * Get local plugin IDs.
      *
      * @return set of plugin IDs
@@ -412,9 +426,11 @@ public class PluginManager
         switch (type) {
             case AUTH:
                 String authType = EnvUtil.getProperty(AUTH_TYPE_PROPERTY, AUTH_TYPE_DEFAULT);
+                logSelectionMigration(type, AUTH_TYPE_PROPERTY, authType);
                 return pluginName.equalsIgnoreCase(authType);
             case DATASOURCE_DIALECT:
                 String platform = getDatasourcePlatform();
+                logSelectionMigration(type, DATASOURCE_PLATFORM_PROPERTY, platform);
                 return pluginName.equalsIgnoreCase(platform);
             default:
                 // Non-exclusive plugins are enabled by default
@@ -429,10 +445,16 @@ public class PluginManager
      */
     private String getDatasourcePlatform() {
         String platform = EnvUtil.getProperty(DATASOURCE_PLATFORM_PROPERTY);
-        if (StringUtils.isBlank(platform)) {
-            platform = EnvUtil.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD);
-        }
         return StringUtils.isBlank(platform) ? DATASOURCE_PLATFORM_DEFAULT : platform;
+    }
+    
+    private void logSelectionMigration(PluginType type, String property, String pluginName) {
+        if (EnvUtil.containsProperty(property)) {
+            LOGGER.warn("[PluginManager] Plugin {} initial selection '{}' is read from legacy "
+                + "selection property '{}'. Persisted plugin state takes precedence; use the "
+                + "plugin management API for future selection changes.", type.getType(),
+                pluginName, property);
+        }
     }
     
     /**

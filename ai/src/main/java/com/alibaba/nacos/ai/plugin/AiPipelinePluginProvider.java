@@ -33,9 +33,9 @@ import java.util.Map;
  * <p>Publish pipeline nodes are <b>optional</b>: if none are configured or all fail to load, publishing
  * still proceeds without pipeline interception.</p>
  *
- * <p>Listing and enable/disable in {@code PluginManager} are not yet wired into pipeline execution;
- * disabling here does not stop {@link com.alibaba.nacos.ai.pipeline.PublishPipelineManager} until
- * that integration exists.</p>
+ * <p>{@code PluginManager} state is enforced by
+ * {@link com.alibaba.nacos.ai.pipeline.PublishPipelineManager} while selecting pipeline services
+ * for execution.</p>
  *
  * @author nacos
  */

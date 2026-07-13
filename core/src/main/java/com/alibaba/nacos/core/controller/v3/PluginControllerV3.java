@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -185,19 +184,8 @@ public class PluginControllerV3 {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setExclusive(isExclusiveType(pluginInfo.getPluginType()));
+        vo.setExclusive(pluginInfo.getPluginType().isExclusive());
         return vo;
-    }
-    
-    /**
-     * Check if the plugin type is exclusive (only one can be active at a time). Exclusive types: AUTH,
-     * DATASOURCE_DIALECT.
-     *
-     * @param type plugin type
-     * @return true if exclusive
-     */
-    private boolean isExclusiveType(PluginType type) {
-        return type == PluginType.AUTH || type == PluginType.DATASOURCE_DIALECT;
     }
     
     private PluginDetailVO convertToDetailVO(PluginInfo pluginInfo) {

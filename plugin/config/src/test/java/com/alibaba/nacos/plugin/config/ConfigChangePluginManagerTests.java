@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.config;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeRequest;
@@ -50,6 +52,7 @@ class ConfigChangePluginManagerTests {
     
     @BeforeEach
     void initPluginServices() {
+        PluginStateCheckerHolder.setInstance(null);
         ConfigChangePluginManager.reset();
         ConfigChangePluginManager.join(new ConfigChangePluginService() {
             
@@ -178,6 +181,7 @@ class ConfigChangePluginManagerTests {
     
     @AfterEach
     void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
         ConfigChangePluginManager.reset();
     }
     
@@ -223,6 +227,21 @@ class ConfigChangePluginManagerTests {
     void testGetAllPluginsUnmodifiable() {
         assertThrows(UnsupportedOperationException.class,
             () -> ConfigChangePluginManager.getInstance().getAllPlugins().clear());
+    }
+    
+    @Test
+    void testFindPluginServicesFiltersDisabledPlugin() {
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !PluginType.CONFIG_CHANGE.getType().equals(pluginType)
+                || !"test2".equals(pluginName));
+        
+        List<ConfigChangePluginService> services =
+            ConfigChangePluginManager.findPluginServicesByPointcut(
+                ConfigChangePointCutTypes.PUBLISH_BY_RPC);
+        
+        assertEquals(2, services.size());
+        assertFalse(
+            services.stream().anyMatch(service -> "test2".equals(service.getServiceType())));
     }
     
     @Test

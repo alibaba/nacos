@@ -311,6 +311,26 @@ class PluginManagerTest {
     }
     
     @Test
+    void calculateDefaultEnabledUsesCurrentSelectionPropertiesTest() {
+        environment.setProperty("nacos.core.auth.system.type", "custom");
+        environment.setProperty("spring.sql.init.platform", "mysql");
+        
+        assertTrue(calculateDefaultEnabled(PluginType.AUTH, "custom"));
+        assertFalse(calculateDefaultEnabled(PluginType.AUTH, "nacos"));
+        assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
+        assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "derby"));
+        assertTrue(calculateDefaultEnabled(PluginType.TRACE, "test"));
+    }
+    
+    @Test
+    void calculateDefaultEnabledIgnoresRemovedDatasourcePropertyTest() {
+        environment.setProperty("spring.datasource.platform", "mysql");
+        
+        assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "derby"));
+        assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
+    }
+    
+    @Test
     void loadPersistedConfigsTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
@@ -535,6 +555,30 @@ class PluginManagerTest {
     }
     
     @Test
+    void refreshStaticPluginConfigsContinuesAfterPluginFailureTest() {
+        TestConfigurablePlugin failedPlugin = new TestConfigurablePlugin();
+        TestConfigurablePlugin successfulPlugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "failed", failedPlugin);
+        registerConfigurablePlugin("trace", "successful", successfulPlugin);
+        registerTestPlugin("trace", "plain", false, false, true);
+        PluginInfo failedInfo = manager.getPlugin("trace:failed").get();
+        PluginInfo successfulInfo = manager.getPlugin("trace:successful").get();
+        PluginConfigService configService = mock(PluginConfigService.class);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        doThrow(new IllegalStateException("refresh failed")).doNothing().when(configService)
+            .refreshStaticConfig(failedInfo, failedPlugin);
+        doThrow(new IllegalStateException("refresh failed")).doNothing().when(configService)
+            .refreshStaticConfig(successfulInfo, successfulPlugin);
+        
+        manager.refreshStaticPluginConfigs();
+        manager.refreshStaticPluginConfigs();
+        
+        verify(configService, times(2)).refreshStaticConfig(failedInfo, failedPlugin);
+        verify(configService, times(2)).refreshStaticConfig(successfulInfo, successfulPlugin);
+        verify(configService, times(4)).refreshStaticConfig(any(), any());
+    }
+    
+    @Test
     void getLocalPluginIdsTest() {
         registerTestPlugin("trace", "test1", false, false, false);
         registerTestPlugin("auth", "test2", false, false, false);
@@ -689,6 +733,11 @@ class PluginManagerTest {
             }
         }
         return null;
+    }
+    
+    private boolean calculateDefaultEnabled(PluginType type, String pluginName) {
+        return Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(manager,
+            "calculateDefaultEnabled", type, pluginName));
     }
     
     @SuppressWarnings("unchecked")

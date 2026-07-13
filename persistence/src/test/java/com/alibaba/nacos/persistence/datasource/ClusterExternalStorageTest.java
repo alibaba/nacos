@@ -72,7 +72,7 @@ class ClusterExternalStorageTest {
     void test005WithClusterAndNullDatabase() {
         // 模拟设置环境05：指定集群，未指定数据库，UseExternalDB是true，数据库类型是""
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
@@ -88,7 +88,7 @@ class ClusterExternalStorageTest {
     void test006WithClusterAndMysqlDatabase() {
         // 模拟设置环境06：指定集群，指定数据库mysql，UseExternalDB是true，数据库类型是mysql
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
@@ -104,7 +104,7 @@ class ClusterExternalStorageTest {
     void test007WithClusterAndDerbyDatabase() {
         // 模拟设置环境07：指定集群，指定数据库derby，UseExternalDB是false，数据库类型是derby
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         DatasourceConfiguration.setEmbeddedStorage(true);
         
@@ -120,7 +120,7 @@ class ClusterExternalStorageTest {
     void test008WithClusterAndOtherDatabase() {
         // 模拟设置环境08: 指定集群，指定数据库其他，UseExternalDB是true，数据库类型是其他
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         

@@ -105,6 +105,7 @@ public class PluginConfigService {
      */
     public void initializePluginConfig(PluginInfo pluginInfo, Object pluginInstance) {
         synchronized (getPluginLock(pluginInfo.getPluginId())) {
+            resolver.initializeStaticConfig(pluginInfo);
             PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
             try {
                 checker.validateEffectiveConfig(pluginInfo, resolution.getConfig());
@@ -114,6 +115,33 @@ public class PluginConfigService {
                     + "pluginId={}", pluginInfo.getPluginId(), e);
                 throw new PluginConfigApplyException(
                     "Failed to initialize plugin config: " + pluginInfo.getPluginId(), e);
+            }
+            pluginInfo.setConfig(copyConfig(resolution.getConfig()));
+        }
+    }
+    
+    /**
+     * Refresh runtime-effective static configuration and apply an effective change.
+     *
+     * @param pluginInfo plugin info
+     * @param pluginInstance plugin instance
+     */
+    public void refreshStaticConfig(PluginInfo pluginInfo, Object pluginInstance) {
+        synchronized (getPluginLock(pluginInfo.getPluginId())) {
+            PluginConfigResolution previousResolution = resolver.resolve(pluginInfo, false);
+            resolver.refreshStaticConfig(pluginInfo);
+            PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
+            if (previousResolution.getConfig().equals(resolution.getConfig())) {
+                return;
+            }
+            try {
+                checker.validateEffectiveConfig(pluginInfo, resolution.getConfig());
+                applier.apply(pluginInfo.getPluginId(), pluginInstance, resolution.getConfig());
+            } catch (RuntimeException e) {
+                LOGGER.error("[PluginConfigService] Static plugin config was refreshed but failed "
+                    + "to apply, pluginId={}", pluginInfo.getPluginId(), e);
+                throw new PluginConfigApplyException("Static plugin config was refreshed but "
+                    + "failed to apply: " + pluginInfo.getPluginId(), e);
             }
             pluginInfo.setConfig(copyConfig(resolution.getConfig()));
         }

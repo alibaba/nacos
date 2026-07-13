@@ -18,9 +18,12 @@ package com.alibaba.nacos.ai.pipeline;
 
 import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -47,6 +50,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class PublishPipelineManagerTest {
+    
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
+    }
     
     private static List<BuilderDescriptorSet> sampleBuilderDescriptorSets() {
         List<BuilderDescriptorSet> list = new ArrayList<>();
@@ -231,6 +239,23 @@ class PublishPipelineManagerTest {
         assertEquals(2, result.size());
         assertEquals("first-by-config", result.get(0).pipelineId());
         assertEquals("first-by-default", result.get(1).pipelineId());
+    }
+    
+    @Test
+    void disabledPipelineShouldNotParticipate() {
+        PublishPipelineManager manager = new PublishPipelineManager();
+        manager.initWithBuilders(Collections.singletonList(createServiceBuilder(
+            new ServiceDescriptor("disabled", 1, PublishPipelineResourceType.values()))),
+            new PipelineConfig());
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !PluginType.AI_PIPELINE.getType().equals(pluginType)
+                || !"disabled".equals(pluginName));
+        
+        List<PublishPipelineService> result = manager.getPipelineServices(
+            PublishPipelineResourceType.SKILL,
+            Collections.singletonList(createNode("disabled", 1)));
+        
+        assertTrue(result.isEmpty());
     }
     
     private PublishPipelineServiceBuilder createMockBuilder(BuilderDescriptor desc) {

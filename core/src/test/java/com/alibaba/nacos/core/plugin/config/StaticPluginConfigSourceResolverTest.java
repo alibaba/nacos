@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.plugin.config;
 
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
@@ -79,6 +80,79 @@ class StaticPluginConfigSourceResolverTest {
             resolver.getConfig(createPluginInfo(Arrays.asList(blankDefinition, definition)));
         
         assertEquals(Collections.singletonMap("token", "first-value"), config);
+    }
+    
+    @Test
+    void testRefreshAcceptsRuntimeFieldAndKeepsRestartField() {
+        ConfigItemDefinition blankDefinition = definition(" ", ConfigItemEffectMode.RUNTIME);
+        ConfigItemDefinition runtimeDefinition =
+            definition("runtime", ConfigItemEffectMode.RUNTIME);
+        ConfigItemDefinition restartDefinition =
+            definition("restart", ConfigItemEffectMode.RESTART);
+        PluginInfo pluginInfo = createPluginInfo(
+            Arrays.asList(blankDefinition, runtimeDefinition, restartDefinition));
+        environment.setProperty("nacos.plugin.trace.demo.runtime", "runtime-old");
+        environment.setProperty("nacos.plugin.trace.demo.restart", "restart-old");
+        resolver.initializeConfig(pluginInfo);
+        
+        MockEnvironment refreshedEnvironment = new MockEnvironment();
+        refreshedEnvironment.setProperty("nacos.plugin.trace.demo.runtime", "runtime-new");
+        refreshedEnvironment.setProperty("nacos.plugin.trace.demo.restart", "restart-new");
+        EnvUtil.setEnvironment(refreshedEnvironment);
+        resolver.refreshConfig(pluginInfo);
+        
+        Map<String, String> config = resolver.getConfig(pluginInfo);
+        assertEquals("runtime-new", config.get("runtime"));
+        assertEquals("restart-old", config.get("restart"));
+    }
+    
+    @Test
+    void testRefreshRemovesRuntimeFieldAndKeepsRemovedRestartField() {
+        ConfigItemDefinition runtimeDefinition =
+            definition("runtime", ConfigItemEffectMode.RUNTIME);
+        ConfigItemDefinition restartDefinition =
+            definition("restart", ConfigItemEffectMode.RESTART);
+        PluginInfo pluginInfo =
+            createPluginInfo(Arrays.asList(runtimeDefinition, restartDefinition));
+        environment.setProperty("nacos.plugin.trace.demo.runtime", "runtime-old");
+        environment.setProperty("nacos.plugin.trace.demo.restart", "restart-old");
+        resolver.initializeConfig(pluginInfo);
+        
+        EnvUtil.setEnvironment(new MockEnvironment());
+        resolver.refreshConfig(pluginInfo);
+        
+        assertEquals(Collections.singletonMap("restart", "restart-old"),
+            resolver.getConfig(pluginInfo));
+    }
+    
+    @Test
+    void testRefreshBeforeInitializationAcceptsCurrentEnvironment() {
+        ConfigItemDefinition restartDefinition =
+            definition("restart", ConfigItemEffectMode.RESTART);
+        PluginInfo pluginInfo = createPluginInfo(Collections.singletonList(restartDefinition));
+        environment.setProperty("nacos.plugin.trace.demo.restart", "restart-current");
+        
+        resolver.refreshConfig(pluginInfo);
+        
+        assertEquals(Collections.singletonMap("restart", "restart-current"),
+            resolver.getConfig(pluginInfo));
+    }
+    
+    @Test
+    void testRefreshWithNullDefinitionsKeepsSnapshot() {
+        PluginInfo pluginInfo = createPluginInfo(null);
+        resolver.initializeConfig(pluginInfo);
+        
+        resolver.refreshConfig(pluginInfo);
+        
+        assertTrue(resolver.getConfig(pluginInfo).isEmpty());
+    }
+    
+    private ConfigItemDefinition definition(String key, ConfigItemEffectMode effectMode) {
+        ConfigItemDefinition result = new ConfigItemDefinition();
+        result.setKey(key);
+        result.setEffectMode(effectMode);
+        return result;
     }
     
     private PluginInfo createPluginInfo(List<ConfigItemDefinition> definitions) {

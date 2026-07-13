@@ -64,8 +64,8 @@ documented server feature.
 
 ## Selection
 
-Nacos selects the database type from `spring.sql.init.platform`, with legacy
-compatibility for `spring.datasource.platform`.
+Nacos selects the initial database type from `spring.sql.init.platform`.
+`spring.datasource.platform` is no longer supported.
 
 When the selected type is `mysql`, MySQL mappers and MySQL-compatible default
 dialect behavior are used. When the selected type is `derby`, Derby remains the

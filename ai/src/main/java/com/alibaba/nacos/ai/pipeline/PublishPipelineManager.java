@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.pipeline;
 
 import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
@@ -123,6 +125,8 @@ public class PublishPipelineManager {
         
         return serviceMap.values().stream()
             .filter(service -> nodeConfigMap.containsKey(service.pipelineId()))
+            .filter(service -> PluginStateCheckerHolder.isPluginEnabled(
+                PluginType.AI_PIPELINE.getType(), service.pipelineId()))
             .filter(service -> supportsResourceType(service, resourceType))
             .sorted(Comparator.comparingInt(service -> getEffectiveOrder(service, nodeConfigMap)))
             .collect(Collectors.toList());

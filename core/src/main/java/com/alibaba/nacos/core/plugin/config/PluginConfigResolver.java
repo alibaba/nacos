@@ -23,7 +23,6 @@ import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -40,21 +39,15 @@ public class PluginConfigResolver {
     
     private final PluginConfigKeyResolver keyResolver = new PluginConfigKeyResolver();
     
-    private final LocalOnlyPluginConfigSourceResolver localOnlySourceResolver =
-        new LocalOnlyPluginConfigSourceResolver();
+    private final PluginConfigSourceRegistry sourceRegistry;
     
-    private final RuntimePersistedPluginConfigSourceResolver runtimePersistedSourceResolver =
-        new RuntimePersistedPluginConfigSourceResolver();
+    public PluginConfigResolver() {
+        this(new PluginConfigSourceRegistry());
+    }
     
-    private final StaticPluginConfigSourceResolver staticSourceResolver =
-        new StaticPluginConfigSourceResolver();
-    
-    private final DefaultPluginConfigSourceResolver defaultSourceResolver =
-        new DefaultPluginConfigSourceResolver();
-    
-    private final List<PluginConfigSourceResolver> sourceResolvers = Arrays.asList(
-        localOnlySourceResolver, runtimePersistedSourceResolver, staticSourceResolver,
-        defaultSourceResolver);
+    PluginConfigResolver(PluginConfigSourceRegistry sourceRegistry) {
+        this.sourceRegistry = sourceRegistry;
+    }
     
     /**
      * Normalize config keys with plugin config definitions.
@@ -68,6 +61,24 @@ public class PluginConfigResolver {
     }
     
     /**
+     * Initialize the static source snapshot for one plugin.
+     *
+     * @param pluginInfo plugin info
+     */
+    public void initializeStaticConfig(PluginInfo pluginInfo) {
+        sourceRegistry.initializeConfig(PluginConfigSourceType.STATIC, pluginInfo);
+    }
+    
+    /**
+     * Refresh runtime-effective fields in the static source snapshot.
+     *
+     * @param pluginInfo plugin info
+     */
+    public void refreshStaticConfig(PluginInfo pluginInfo) {
+        sourceRegistry.refreshConfig(PluginConfigSourceType.STATIC, pluginInfo);
+    }
+    
+    /**
      * Replace config in an updatable source.
      *
      * @param sourceType source type
@@ -76,7 +87,7 @@ public class PluginConfigResolver {
      */
     public void updateConfig(PluginConfigSourceType sourceType, String pluginId,
         Map<String, String> config) {
-        PluginConfigSourceResolver sourceResolver = getSourceResolver(sourceType);
+        PluginConfigSourceResolver sourceResolver = sourceRegistry.getSourceResolver(sourceType);
         if (!sourceResolver.isUpdatable()) {
             throw new IllegalArgumentException("Plugin config source is not updatable: "
                 + sourceType);
@@ -93,7 +104,7 @@ public class PluginConfigResolver {
      */
     public Map<String, String> getConfig(PluginConfigSourceType sourceType,
         PluginInfo pluginInfo) {
-        return getSourceResolver(sourceType).getConfig(pluginInfo);
+        return sourceRegistry.getSourceResolver(sourceType).getConfig(pluginInfo);
     }
     
     /**
@@ -128,9 +139,9 @@ public class PluginConfigResolver {
     private PluginConfigResolution resolveWithoutDefinitions(PluginInfo pluginInfo) {
         Map<String, String> config = new LinkedHashMap<>();
         Map<String, String> runtimeConfig =
-            runtimePersistedSourceResolver.getConfig(pluginInfo);
+            getConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo);
         Map<String, String> localOnlyConfig =
-            localOnlySourceResolver.getConfig(pluginInfo);
+            getConfig(PluginConfigSourceType.LOCAL_ONLY, pluginInfo);
         if (runtimeConfig == null && localOnlyConfig == null && pluginInfo.getConfig() != null) {
             config.putAll(pluginInfo.getConfig());
         }
@@ -163,7 +174,7 @@ public class PluginConfigResolver {
     private Map<PluginConfigSourceType, Map<String, String>> getSourceConfigs(
         PluginInfo pluginInfo) {
         Map<PluginConfigSourceType, Map<String, String>> result = new LinkedHashMap<>();
-        for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
+        for (PluginConfigSourceResolver sourceResolver : sourceRegistry.getSourceResolvers()) {
             result.put(sourceResolver.getSourceType(), sourceResolver.getConfig(pluginInfo));
         }
         return result;
@@ -171,6 +182,7 @@ public class PluginConfigResolver {
     
     private List<PluginConfigSourceValue> resolveSourceValues(ConfigItemDefinition definition,
         Map<PluginConfigSourceType, Map<String, String>> sourceConfigs) {
+        List<PluginConfigSourceResolver> sourceResolvers = sourceRegistry.getSourceResolvers();
         List<PluginConfigSourceValue> result = new ArrayList<>(sourceResolvers.size());
         for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
             PluginConfigSourceType sourceType = sourceResolver.getSourceType();
@@ -184,15 +196,6 @@ public class PluginConfigResolver {
             }
         }
         return result;
-    }
-    
-    private PluginConfigSourceResolver getSourceResolver(PluginConfigSourceType sourceType) {
-        for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
-            if (sourceResolver.getSourceType() == sourceType) {
-                return sourceResolver;
-            }
-        }
-        throw new IllegalArgumentException("Plugin config source not found: " + sourceType);
     }
     
     private PluginConfigSourceValue firstPresent(List<PluginConfigSourceValue> values) {

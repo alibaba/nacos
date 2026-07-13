@@ -29,6 +29,22 @@ import java.util.Map;
 interface PluginConfigSourceResolver {
     
     /**
+     * Initialize this source for one plugin during startup.
+     *
+     * @param pluginInfo plugin info
+     */
+    default void initializeConfig(PluginInfo pluginInfo) {
+    }
+    
+    /**
+     * Refresh this source for one plugin at runtime.
+     *
+     * @param pluginInfo plugin info
+     */
+    default void refreshConfig(PluginInfo pluginInfo) {
+    }
+    
+    /**
      * Get source config for one plugin.
      *
      * @param pluginInfo plugin info

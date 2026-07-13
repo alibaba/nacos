@@ -68,6 +68,10 @@ opaque key. `AiResourceStorageRouter` routes by provider. Storage plugins must
 not parse Nacos resource identity from opaque keys unless their own provider
 contract defines that encoding.
 
+Before selecting the registered provider, the router checks unified plugin
+state for `ai-storage:{provider}`. A disabled provider fails routing explicitly
+and must not receive content operations.
+
 The default provider is `nacos_config`, which stores AI resource content through
 Nacos config storage.
 
@@ -85,10 +89,3 @@ Implementations must document:
 - whether reads are strongly consistent or eventually consistent;
 - backup and migration behavior;
 - whether storage keys can be exposed in API responses or logs.
-
-## Current Integration Note
-
-The core plugin manager can list loaded AI storage plugins. Current code notes
-that enable or disable through unified plugin management is not yet wired into
-`AiResourceStorageRouter`. Routing is controlled by registered storage
-providers until that integration is completed.

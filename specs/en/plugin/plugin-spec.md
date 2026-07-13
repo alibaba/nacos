@@ -150,6 +150,13 @@ select one default implementation:
 | `auth` | The implementation named by `nacos.core.auth.system.type`, default `nacos`. |
 | `datasource-dialect` | The configured SQL platform, default `derby`. |
 
+Only `auth` and `datasource-dialect` are reported as exclusive plugin types.
+Their historical selection properties provide the initial state when no
+persisted plugin state exists. A persisted state entry takes precedence after
+startup loading. Selection through the plugin management API is the canonical
+management path; use of a historical selection property is logged as a
+migration hint.
+
 Critical plugins cannot be disabled while the server depends on them. The
 current critical set includes built-in data source dialects and the default AI
 storage plugin required by the server.
@@ -179,7 +186,8 @@ Config definitions may declare the following metadata:
 | `effectMode` | Effect mode. `RUNTIME` can take effect at runtime, and `RESTART` requires restart. |
 
 `aliases` are used when reading compatible static configuration and may also be
-accepted as migration-compatible API input. After normalization, aliases must
+accepted as migration-compatible API input. Alias use is logged as a migration
+hint. After normalization, aliases must
 not be written into runtime persistence files or local-only memory maps. If an
 input contains multiple aliases for the same item, the first alias declared in
 the definition takes effect and the server logs the ignored aliases.
@@ -216,6 +224,34 @@ from the environment, and the two runtime sources read their internal maps.
 `isUpdatable` is checked only when replacing a source map. An update replaces
 the complete map; an empty map clears all overrides for that plugin and source.
 The source contract does not require separate remove or restore operations.
+
+The core source registry owns the enabled resolver set and their fixed order.
+The four built-in sources are always registered in the order shown above;
+internal storage implementations may replace a resolver at the same source
+layer but must not insert a new priority above `LOCAL_ONLY` or merge `DEFAULT`
+into `STATIC`. Source implementation selection is a startup concern and is not
+changed by plugin config update APIs.
+
+### Runtime State Enforcement
+
+Plugin types whose implementations are selected for each runtime operation must
+check unified plugin state before invoking an extension. The runtime-routable
+types currently enforcing this contract are `auth`, `datasource-dialect`,
+`encryption`, `trace`, `visibility`, `config-change`, `ai-pipeline`, and
+`ai-storage`. A disabled plugin remains loaded and visible to management APIs
+but does not participate in domain execution.
+
+Whether a plugin type is exclusive is a type capability and must come from the
+shared `PluginType` definition. Core and Console API adapters must not maintain
+separate hard-coded exclusive-type lists.
+
+Bootstrap or build-time types cannot satisfy this contract with a late runtime
+check. `control` caches managers built before unified persisted state is loaded,
+and `environment` transforms Spring properties before the core plugin manager
+is ready. Their status capability and restart/bootstrap semantics must be
+defined before management APIs can report a state update as effective.
+`ai-resource-import` is not currently exposed through `PluginProvider` and is
+outside unified state management.
 
 ### Config Update Compatibility
 
@@ -261,6 +297,22 @@ calculation:
 3. A runtime request replaces one complete `RUNTIME_PERSISTED` or `LOCAL_ONLY`
    source map. The server resolves all sources again and invokes the plugin for
    each accepted request, including a same-map request used as a manual retry.
+
+The `STATIC` resolver keeps an accepted per-plugin snapshot instead of reading
+live environment values independently for every detail query. Startup captures
+all defined static fields and may apply both effect modes. After startup,
+`ServerConfigChangeEvent` refreshes the snapshot and runs the same
+resolve-validate-apply flow for every configurable plugin whose effective
+runtime config changed.
+
+During a static refresh, only fields declared `effectMode=RUNTIME` are accepted
+into the running snapshot. An added, changed, or removed `RESTART` field keeps
+its startup snapshot value until server restart and produces a warning that
+contains the plugin ID and item keys but no config values. Detail queries keep
+returning the accepted effective snapshot, so they do not report an unapplied
+restart-required environment value as effective. A static change hidden by a
+higher-priority source updates source metadata but does not require another
+plugin apply when the effective config is unchanged.
 
 Updates for the same plugin are serialized. A runtime persisted update first
 persists the normalized complete source map, replaces the resolver source,

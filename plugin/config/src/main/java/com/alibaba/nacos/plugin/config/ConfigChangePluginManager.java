@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.config;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -31,6 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * All config change plugin manager.
@@ -118,7 +121,11 @@ public class ConfigChangePluginManager {
      */
     public static List<ConfigChangePluginService> findPluginServicesByPointcut(
         ConfigChangePointCutTypes pointcutName) {
-        return CONFIG_CHANGE_PLUGIN_SERVICES_MAP.getOrDefault(pointcutName, new ArrayList<>());
+        return CONFIG_CHANGE_PLUGIN_SERVICES_MAP.getOrDefault(pointcutName, new ArrayList<>())
+            .stream()
+            .filter(service -> PluginStateCheckerHolder.isPluginEnabled(
+                PluginType.CONFIG_CHANGE.getType(), service.getServiceType()))
+            .collect(Collectors.toList());
     }
     
     private static void addPluginServiceByPointCut(

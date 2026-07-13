@@ -112,6 +112,11 @@ public class PluginConfigKeyResolver {
         ResolvedConfigValue currentValue = resolvedValues.get(itemKey);
         if (currentValue == null || resolvedValue.hasHigherPriorityThan(currentValue)) {
             resolvedValues.put(itemKey, resolvedValue);
+            if (resolvedValue.isAlias()) {
+                LOGGER.warn("[PluginConfigKeyResolver] Legacy alias '{}' is used for plugin {} "
+                    + "config {}, prefer the canonical item key or normalized key.", key,
+                    pluginInfo.getPluginId(), itemKey);
+            }
         } else if (resolvedValue.isAlias() && currentValue.isAlias()) {
             LOGGER.warn("[PluginConfigKeyResolver] Multiple aliases are provided for plugin {} "
                 + "config {}, use '{}' and ignore '{}'.", pluginInfo.getPluginId(), itemKey,
