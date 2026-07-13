@@ -278,9 +278,11 @@ class DatasourceMapperDefaultMethodTest {
         
         MapperContext idsContext = new MapperContext();
         idsContext.putWhereParameter(FieldConstant.IDS, Arrays.asList(1L, 2L));
+        idsContext.putWhereParameter(FieldConstant.TENANT_ID, "tenantId");
         MapperResult idsExport = mapper.findAllConfigInfo4Export(idsContext);
         assertTrue(idsExport.getSql().contains("id IN (?, ?)"));
-        assertEquals(Arrays.asList(1L, 2L), idsExport.getParamList());
+        assertTrue(idsExport.getSql().contains("tenant_id = ?"));
+        assertEquals(Arrays.asList(1L, 2L, "tenantId"), idsExport.getParamList());
         
         MapperResult filteredExport = mapper.findAllConfigInfo4Export(context);
         assertTrue(filteredExport.getSql().contains("tenant_id = ?"));

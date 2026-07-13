@@ -1580,8 +1580,9 @@ class ExternalConfigInfoPersistServiceImplTest {
         String tenant = "tenant13245";
         String appName = "appName1243";
         List<Long> ids = Arrays.asList(132L, 1343L, 245L);
+        mockConfigs.forEach(config -> config.setTenant(tenant));
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosIds =
@@ -1590,7 +1591,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect check
         assertEquals(mockConfigs, configAllInfosIds);
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, appName}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosWithDataId =
@@ -1600,7 +1601,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals(mockConfigs, configAllInfosWithDataId);
         
         //mock CannotGetJdbcConnectionException
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER)))
             .thenThrow(new CannotGetJdbcConnectionException("mock exp11"));
         //expect throw exception.
@@ -2034,6 +2035,23 @@ class ExternalConfigInfoPersistServiceImplTest {
             "dataId", "group", "", null, null);
         
         assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportFiltersMismatchedTenantForIds() {
+        ConfigAllInfo matchedConfig = createMockConfigAllInfo(1);
+        matchedConfig.setTenant("tenant");
+        ConfigAllInfo mismatchedConfig = createMockConfigAllInfo(2);
+        mismatchedConfig.setTenant("otherTenant");
+        Mockito.when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(Arrays.asList(matchedConfig, mismatchedConfig));
+        
+        List<ConfigAllInfo> result = externalConfigInfoPersistService.findAllConfigInfo4Export(
+            null, null, "tenant", null, Arrays.asList(1L, 2L));
+        
+        assertEquals(1, result.size());
+        assertEquals("tenant", result.get(0).getTenant());
     }
     
     @Test

@@ -186,12 +186,15 @@ public class ConsoleConfigController {
     @DeleteMapping("/batchDelete")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> batchDeleteConfigs(HttpServletRequest request,
-        @RequestParam(value = "ids") List<Long> ids)
+        @RequestParam(value = "ids") List<Long> ids,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId)
         throws NacosException {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
+        String requestNamespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         
-        return Result.success(configProxy.batchDeleteConfigs(ids, clientIp, srcUser));
+        return Result.success(configProxy.batchDeleteConfigs(ids, requestNamespaceId, clientIp,
+            srcUser));
     }
     
     /**
@@ -382,7 +385,8 @@ public class ConsoleConfigController {
      *
      * @param request         HTTP servlet request.
      * @param srcUser         Source user string value.
-     * @param namespaceId     Namespace string value.
+     * @param namespaceId     Source namespace string value.
+     * @param targetNamespaceId Target namespace string value.
      * @param configBeansList List of configuration beans.
      * @param policy          Policy model.
      * @return Result containing a map of the clone status.
@@ -395,20 +399,23 @@ public class ConsoleConfigController {
             com.alibaba.nacos.plugin.auth.constant.Constants.Tag.SECURED_SPECIAL_TAGS})
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(required = false) String srcUser,
-        @RequestParam(value = "targetNamespaceId") String namespaceId,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam(value = "targetNamespaceId") String targetNamespaceId,
         @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
         @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy)
         throws NacosException {
         configBeansList.removeAll(Collections.singleton(null));
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        targetNamespaceId = NamespaceUtil.processNamespaceParameter(targetNamespaceId);
+        String sourceNamespaceId = StringUtils.isBlank(namespaceId)
+            ? targetNamespaceId : NamespaceUtil.processNamespaceParameter(namespaceId);
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         
-        return configProxy.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp,
-            requestIpApp);
+        return configProxy.cloneConfig(srcUser, sourceNamespaceId, targetNamespaceId,
+            configBeansList, policy, srcIp, requestIpApp);
     }
     
     /**

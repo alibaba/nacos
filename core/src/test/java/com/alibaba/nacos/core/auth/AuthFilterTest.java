@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,6 +108,25 @@ class AuthFilterTest {
     
     @Test
     @Secured
+    void testDoFilterDisabledAuthSetsIdentityContext()
+        throws ServletException, IOException, NoSuchMethodException {
+        when(methodsCache.getMethod(request)).thenReturn(
+            this.getClass().getDeclaredMethod("testDoFilterDisabledAuthSetsIdentityContext"));
+        when(authConfig.isAuthEnabled()).thenReturn(false);
+        IdentityContext identityContext = new IdentityContext();
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        doReturn(identityContext).when(protocolAuthService).parseIdentity(eq(request));
+        
+        authFilter.doFilter(request, response, filterChain);
+        
+        verify(filterChain).doFilter(request, response);
+        verify(response, never()).sendError(anyInt(), anyString());
+        assertSame(identityContext,
+            RequestContextHolder.getContext().getAuthContext().getIdentityContext());
+    }
+    
+    @Test
+    @Secured
     void testDoFilterWithoutServerIdentity()
         throws ServletException, IOException, NoSuchMethodException {
         when(methodsCache.getMethod(request)).thenReturn(
@@ -132,9 +152,18 @@ class AuthFilterTest {
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
+        IdentityContext identityContext = new IdentityContext();
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        doReturn(identityContext).when(protocolAuthService).parseIdentity(eq(request));
+        
         authFilter.doFilter(request, response, filterChain);
+        
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
+        assertSame(identityContext,
+            RequestContextHolder.getContext().getAuthContext().getIdentityContext());
+        assertTrue(RequestContextHolder.getContext().getAuthContext().getIdentityContext()
+            .getParameter(Constants.Identity.SERVER_IDENTITY, Boolean.FALSE));
     }
     
     @Test
@@ -220,6 +249,8 @@ class AuthFilterTest {
         
         verify(filterChain, never()).doFilter(request, response);
         verify(response).setStatus(eq(403));
+        assertSame(Resource.EMPTY_RESOURCE,
+            RequestContextHolder.getContext().getAuthContext().getResource());
         assertTrue(out.toString().contains("\"code\":10001"));
     }
     
@@ -284,6 +315,8 @@ class AuthFilterTest {
         when(request.getHeader("1")).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
             this.getClass().getDeclaredMethod("testDoFilterWithUnexpectedExceptionShouldRethrow"));
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doThrow(new RuntimeException("mock-chain-error")).when(filterChain).doFilter(request,
             response);
         

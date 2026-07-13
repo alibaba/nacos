@@ -50,6 +50,7 @@ class ConstantsTest {
         assertEquals("identity_id", Constants.Identity.IDENTITY_ID);
         assertEquals("X-Real-IP", Constants.Identity.X_REAL_IP);
         assertEquals("remote_ip", Constants.Identity.REMOTE_IP);
+        assertEquals("server_identity", Constants.Identity.SERVER_IDENTITY);
     }
     
     @Test

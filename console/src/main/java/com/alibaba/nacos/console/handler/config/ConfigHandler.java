@@ -103,13 +103,15 @@ public interface ConfigHandler {
     /**
      * Deletes multiple configurations based on their IDs.
      *
-     * @param ids      A list of IDs of the configurations to delete.
-     * @param clientIp The IP address of the client requesting the deletion.
-     * @param srcUser  The source user requesting the deletion.
+     * @param ids         A list of IDs of the configurations to delete.
+     * @param namespaceId The namespace identifier.
+     * @param clientIp    The IP address of the client requesting the deletion.
+     * @param srcUser     The source user requesting the deletion.
      * @return A Boolean indicating whether the deletion was successful.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser)
+    Boolean batchDeleteConfigs(List<Long> ids, String namespaceId, String clientIp,
+        String srcUser)
         throws NacosException;
     
     /**
@@ -192,7 +194,8 @@ public interface ConfigHandler {
      * Clones an existing configuration to a different namespace.
      *
      * @param srcUser         The source user performing the clone operation.
-     * @param namespaceId     The namespace identifier where the configuration will be cloned to.
+     * @param sourceNamespaceId The namespace identifier where source configurations are selected from.
+     * @param targetNamespaceId The namespace identifier where the configuration will be cloned to.
      * @param configBeansList A list of configurations to be cloned.
      * @param policy          The policy for handling existing configurations in the target namespace.
      * @param srcIp           The IP address of the source.
@@ -200,9 +203,9 @@ public interface ConfigHandler {
      * @return A Result object containing the status and additional information about the operation.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-        List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
-        String requestIpApp) throws NacosException;
+    Result<Map<String, Object>> cloneConfig(String srcUser, String sourceNamespaceId,
+        String targetNamespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
+        SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException;
     
     /**
      * Remove beta configuration based on dataId, group, and namespaceId.

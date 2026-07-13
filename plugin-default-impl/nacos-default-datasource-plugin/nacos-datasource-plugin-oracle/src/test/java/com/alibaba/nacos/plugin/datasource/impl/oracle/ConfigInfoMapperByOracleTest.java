@@ -226,7 +226,9 @@ class ConfigInfoMapperByOracleTest {
         MapperResult mapperResult = configInfoMapperByOracle.findAllConfigInfo4Export(context);
         assertTrue(mapperResult.getSql().contains(
             "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified"));
-        assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
+        assertTrue(mapperResult.getSql().contains(" id IN (?, ?, ?, ?, ?)  AND tenant_id = ? "));
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId},
+            mapperResult.getParamList().toArray());
         
         context.putWhereParameter(FieldConstant.IDS, null);
         mapperResult = configInfoMapperByOracle.findAllConfigInfo4Export(context);

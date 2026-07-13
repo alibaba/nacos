@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.postgresql;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -49,6 +52,8 @@ class ConfigInfoMapperByPostgresqlTest {
     
     String id = "id";
     
+    List<Long> ids = Arrays.asList(1L, 2L, 3L, 5L, 144L);
+    
     MapperContext context;
     
     private ConfigInfoMapperByPostgresql configInfoMapperByPostgresql;
@@ -64,6 +69,7 @@ class ConfigInfoMapperByPostgresqlTest {
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.IDS, ids);
         
     }
     
@@ -115,6 +121,27 @@ class ConfigInfoMapperByPostgresqlTest {
             "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc "
                 + "FROM config_info WHERE  tenant_id LIKE ?  AND data_id LIKE ?  AND group_id LIKE ?  AND app_name = ?   "
                 + "OFFSET " + startRow + " LIMIT " + pageSize,
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName},
+            mapperResult.getParamList().toArray());
+    }
+    
+    @Test
+    void testFindAllConfigInfo4Export() {
+        MapperResult mapperResult = configInfoMapperByPostgresql.findAllConfigInfo4Export(context);
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
+                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?)  AND tenant_id = ? ",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId},
+            mapperResult.getParamList().toArray());
+        
+        context.putWhereParameter(FieldConstant.IDS, null);
+        mapperResult = configInfoMapperByPostgresql.findAllConfigInfo4Export(context);
+        assertEquals(
+            "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
+                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  tenant_id = ? "
+                + " AND data_id LIKE ?  AND group_id= ?  AND app_name= ? ",
             mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName},
             mapperResult.getParamList().toArray());

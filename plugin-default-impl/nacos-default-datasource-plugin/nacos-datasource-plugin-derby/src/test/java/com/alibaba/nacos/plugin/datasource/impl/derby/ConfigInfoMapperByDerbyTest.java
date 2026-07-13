@@ -239,16 +239,19 @@ class ConfigInfoMapperByDerbyTest {
     @Test
     void testFindAllConfigInfo4Export() {
         MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
-        assertEquals(mapperResult.getSql(),
+        assertEquals(
             "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
-                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?) ");
-        assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
+                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?)  AND tenant_id = ? ",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {1L, 2L, 3L, 5L, 144L, tenantId},
+            mapperResult.getParamList().toArray());
         
         context.putWhereParameter(FieldConstant.IDS, null);
         mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
-        assertEquals(mapperResult.getSql(),
+        assertEquals(
             "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
-                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  tenant_id = ?  AND app_name= ? ");
+                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  tenant_id = ?  AND app_name= ? ",
+            mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
         
     }
