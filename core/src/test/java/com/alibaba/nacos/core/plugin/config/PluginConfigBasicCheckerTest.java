@@ -95,7 +95,9 @@ class PluginConfigBasicCheckerTest {
         ConfigItemDefinition mode = definition("mode", ConfigItemType.ENUM,
             ConfigItemEffectMode.RUNTIME);
         mode.setEnumValues(Arrays.asList("A", "B"));
-        PluginInfo pluginInfo = pluginInfo(required, number, bool, mode);
+        ConfigItemDefinition blank = definition(" ", ConfigItemType.STRING,
+            ConfigItemEffectMode.RUNTIME);
+        PluginInfo pluginInfo = pluginInfo(blank, required, number, bool, mode);
         
         assertThrows(IllegalArgumentException.class,
             () -> checker.validateEffectiveConfig(pluginInfo, Collections.emptyMap()));

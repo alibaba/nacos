@@ -164,6 +164,18 @@ class PluginInnerHandlerTest {
     }
     
     @Test
+    void testGetPluginDetailFallsBackToPluginConfig() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        pluginInfo.setConfig(Collections.singletonMap("legacy", "value"));
+        when(pluginManager.getPlugin("auth:test")).thenReturn(Optional.of(pluginInfo));
+        when(pluginManager.resolvePluginConfig(pluginInfo)).thenReturn(null);
+        
+        PluginDetailVO result = pluginInnerHandler.getPluginDetail("auth", "test");
+        
+        assertEquals("value", result.getConfig().get("legacy"));
+    }
+    
+    @Test
     void testGetPluginDetailNotFoundTest() {
         when(pluginManager.getPlugin("auth:notexist")).thenReturn(Optional.empty());
         

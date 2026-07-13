@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
+import com.alibaba.nacos.core.plugin.config.PluginConfigService;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
@@ -56,7 +57,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -400,6 +403,46 @@ class PluginManagerTest {
     }
     
     @Test
+    void updatePluginConfigLocalOnlyMapsValidationFailure() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        PluginInfo pluginInfo = manager.getPlugin("trace:test").get();
+        Map<String, String> config = Collections.singletonMap("key", "value");
+        PluginConfigService configService = mock(PluginConfigService.class);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        when(configService.prepareRuntimeUpdate(pluginInfo, config,
+            PluginConfigSourceType.LOCAL_ONLY)).thenReturn(config);
+        doThrow(new IllegalArgumentException("invalid config")).when(configService)
+            .updateLocalOnlyConfig(pluginInfo, plugin, config);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config, true));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("invalid config"));
+    }
+    
+    @Test
+    void updatePluginConfigLocalOnlyMapsUnexpectedFailure() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        PluginInfo pluginInfo = manager.getPlugin("trace:test").get();
+        Map<String, String> config = Collections.singletonMap("key", "value");
+        PluginConfigService configService = mock(PluginConfigService.class);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        when(configService.prepareRuntimeUpdate(pluginInfo, config,
+            PluginConfigSourceType.LOCAL_ONLY)).thenReturn(config);
+        doThrow(new IllegalStateException("unexpected")).when(configService)
+            .updateLocalOnlyConfig(pluginInfo, plugin, config);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config, true));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("Failed to apply local-only plugin config"));
+    }
+    
+    @Test
     void updatePluginConfigNormalizesStandardKeyTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
@@ -531,6 +574,18 @@ class PluginManagerTest {
         manager.applyConfigChange("trace:test", config);
         
         assertEquals("v", plugin.getCurrentConfig().get("k"));
+        verify(persistence).saveConfig("trace:test", config);
+    }
+    
+    @Test
+    void restoreConfigChangeDirectTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        Map<String, String> config = Collections.singletonMap("k", "restored");
+        
+        manager.restoreConfigChange("trace:test", config);
+        
+        assertEquals("restored", plugin.getCurrentConfig().get("k"));
         verify(persistence).saveConfig("trace:test", config);
     }
     

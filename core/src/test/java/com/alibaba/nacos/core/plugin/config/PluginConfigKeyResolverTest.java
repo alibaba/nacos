@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -46,6 +47,18 @@ class PluginConfigKeyResolverTest {
         assertEquals("nacos.plugin.trace.demo.timeout", candidate.getStandardKey());
         assertEquals("nacos.legacy.timeout", candidate.getAliasKeys().get(0));
         assertEquals("nacos.plugin.trace.demo.oldTimeout", candidate.getAliasKeys().get(1));
+    }
+    
+    @Test
+    void testResolveIgnoresBlankAliases() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("timeout");
+        definition.setAliases(Arrays.asList(null, " ", "oldTimeout"));
+        
+        PluginConfigKeyCandidate candidate = resolver.resolve(createPluginInfo(), definition);
+        
+        assertEquals(Collections.singletonList("nacos.plugin.trace.demo.oldTimeout"),
+            candidate.getAliasKeys());
     }
     
     @Test
@@ -162,6 +175,31 @@ class PluginConfigKeyResolverTest {
         assertTrue(exception.getMessage().contains("Ambiguous plugin config key"));
         assertTrue(exception.getMessage().contains("timeout"));
         assertTrue(exception.getMessage().contains("retry"));
+    }
+    
+    @Test
+    void testNormalizeConfigIgnoresBlankDefinitionsAndAliases() {
+        ConfigItemDefinition blankDefinition = new ConfigItemDefinition();
+        blankDefinition.setKey(" ");
+        ConfigItemDefinition timeoutDefinition = new ConfigItemDefinition();
+        timeoutDefinition.setKey("timeout");
+        timeoutDefinition.setAliases(null);
+        ConfigItemDefinition retryDefinition = new ConfigItemDefinition();
+        retryDefinition.setKey("retry");
+        retryDefinition.setAliases(Arrays.asList(" ", "oldRetry"));
+        PluginInfo pluginInfo = createPluginInfo();
+        pluginInfo.setConfigDefinitions(
+            Arrays.asList(blankDefinition, timeoutDefinition, retryDefinition));
+        
+        Map<String, String> input = new LinkedHashMap<>();
+        input.put("timeout", "1000");
+        input.put("oldRetry", "3");
+        
+        Map<String, String> result = resolver.normalizeConfig(pluginInfo, input);
+        
+        assertEquals("1000", result.get("timeout"));
+        assertEquals("3", result.get("retry"));
+        assertEquals(2, result.size());
     }
     
     private PluginInfo createPluginInfo() {

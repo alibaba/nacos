@@ -35,6 +35,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -83,6 +84,15 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(namingMaintainerService).listPlugins("auth");
+    }
+    
+    @Test
+    void testListPluginsReturnsEmptyForNullResponse() throws NacosException {
+        when(namingMaintainerService.listPlugins(null)).thenReturn(null);
+        
+        List<PluginInfoVO> result = pluginRemoteHandler.listPlugins(null);
+        
+        assertTrue(result.isEmpty());
     }
     
     @Test
@@ -229,6 +239,19 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals(ConfigItemType.STRING, result.getConfigDefinitions().get(0).getType());
         assertEquals(PluginConfigSourceType.DEFAULT,
             result.getConfigValueMetas().get("unknown").getSource());
+    }
+    
+    @Test
+    void testConvertNullDefinitionAndValueMetaTest() throws NacosException {
+        Map<String, Object> mockDetail = createMockPluginDetailData();
+        mockDetail.put("configDefinitions", Collections.singletonList(null));
+        mockDetail.put("configValueMetas", Collections.singletonMap("unknown", null));
+        when(namingMaintainerService.getPluginDetail("auth", "test")).thenReturn(mockDetail);
+        
+        PluginDetailVO result = pluginRemoteHandler.getPluginDetail("auth", "test");
+        
+        assertNull(result.getConfigDefinitions().get(0));
+        assertNull(result.getConfigValueMetas().get("unknown"));
     }
     
     private Map<String, Object> createMockPluginData() {
