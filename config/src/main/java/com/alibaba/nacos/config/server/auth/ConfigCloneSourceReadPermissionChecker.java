@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Properties;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Permission checker for config clone source namespace read authorization.
@@ -43,7 +44,23 @@ import java.util.Optional;
  */
 @Service
 public class ConfigCloneSourceReadPermissionChecker {
-    
+
+    private final Function<String, NacosAuthConfig> authConfigProvider;
+
+    private final Function<String, Optional<AuthPluginService>> authPluginProvider;
+
+    public ConfigCloneSourceReadPermissionChecker() {
+        this(apiType -> NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType),
+            authType -> AuthPluginManager.getInstance().findAuthServiceSpiImpl(authType));
+    }
+
+    ConfigCloneSourceReadPermissionChecker(
+        Function<String, NacosAuthConfig> authConfigProvider,
+        Function<String, Optional<AuthPluginService>> authPluginProvider) {
+        this.authConfigProvider = authConfigProvider;
+        this.authPluginProvider = authPluginProvider;
+    }
+
     /**
      * Check whether current request identity can read configs in the clone source namespace.
      *
@@ -112,14 +129,13 @@ public class ConfigCloneSourceReadPermissionChecker {
         if (authConfig == null || StringUtils.isBlank(authConfig.getNacosAuthSystemType())) {
             return Optional.empty();
         }
-        return AuthPluginManager.getInstance()
-            .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
+        return authPluginProvider.apply(authConfig.getNacosAuthSystemType());
     }
     
     private NacosAuthConfig getAuthConfig(String apiType) {
         if (StringUtils.isBlank(apiType)) {
             return null;
         }
-        return NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType);
+        return authConfigProvider.apply(apiType);
     }
 }

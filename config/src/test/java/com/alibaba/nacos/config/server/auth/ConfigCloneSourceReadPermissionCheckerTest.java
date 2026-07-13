@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
-import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -28,12 +27,10 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 
 import java.util.Optional;
 
@@ -44,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,8 +51,7 @@ class ConfigCloneSourceReadPermissionCheckerTest {
     
     private static final String TEST_AUTH_TYPE = "testAuth";
     
-    private final ConfigCloneSourceReadPermissionChecker checker =
-        new ConfigCloneSourceReadPermissionChecker();
+    private ConfigCloneSourceReadPermissionChecker checker;
     
     @AfterEach
     void tearDown() {
@@ -171,51 +166,29 @@ class ConfigCloneSourceReadPermissionCheckerTest {
     private MockedAuthContext mockAuthContext(boolean authEnabled, boolean readAuthEnabled,
         AuthResult<?> validateResult)
         throws AccessException {
-        MockedStatic<NacosAuthConfigHolder> authConfigHolderStatic =
-            mockStatic(NacosAuthConfigHolder.class);
-        MockedStatic<AuthPluginManager> authPluginManagerStatic =
-            mockStatic(AuthPluginManager.class);
-        NacosAuthConfigHolder authConfigHolder = mock(NacosAuthConfigHolder.class);
         NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
-        AuthPluginManager authPluginManager = mock(AuthPluginManager.class);
         AuthPluginService authPluginService = mock(AuthPluginService.class);
-        authConfigHolderStatic.when(NacosAuthConfigHolder::getInstance)
-            .thenReturn(authConfigHolder);
-        when(authConfigHolder.getNacosAuthConfigByScope(TEST_API_TYPE)).thenReturn(authConfig);
         when(authConfig.isAuthEnabled()).thenReturn(authEnabled);
         when(authConfig.getNacosAuthSystemType()).thenReturn(TEST_AUTH_TYPE);
-        authPluginManagerStatic.when(AuthPluginManager::getInstance)
-            .thenReturn(authPluginManager);
-        when(authPluginManager.findAuthServiceSpiImpl(TEST_AUTH_TYPE))
-            .thenReturn(Optional.of(authPluginService));
         when(authPluginService.enableAuth(ActionTypes.READ, SignType.CONFIG))
             .thenReturn(readAuthEnabled);
         when(authPluginService.validateAuthority(any(IdentityContext.class),
             any(Permission.class))).thenReturn(validateResult);
-        return new MockedAuthContext(authConfigHolderStatic, authPluginManagerStatic,
-            authPluginService);
+        checker = new ConfigCloneSourceReadPermissionChecker(apiType -> authConfig,
+            authType -> Optional.of(authPluginService));
+        return new MockedAuthContext(authPluginService);
     }
     
     private static class MockedAuthContext implements AutoCloseable {
         
-        private final MockedStatic<NacosAuthConfigHolder> authConfigHolderStatic;
-        
-        private final MockedStatic<AuthPluginManager> authPluginManagerStatic;
-        
         private final AuthPluginService authPluginService;
         
-        MockedAuthContext(MockedStatic<NacosAuthConfigHolder> authConfigHolderStatic,
-            MockedStatic<AuthPluginManager> authPluginManagerStatic,
-            AuthPluginService authPluginService) {
-            this.authConfigHolderStatic = authConfigHolderStatic;
-            this.authPluginManagerStatic = authPluginManagerStatic;
+        MockedAuthContext(AuthPluginService authPluginService) {
             this.authPluginService = authPluginService;
         }
         
         @Override
         public void close() {
-            authPluginManagerStatic.close();
-            authConfigHolderStatic.close();
         }
     }
 }
