@@ -56,7 +56,7 @@ beta/tag 灰度表的运行时 Config 迁移 mapper。仍保留 pre-3.0 `config_
 
 ## 选择
 
-Nacos 从 `spring.sql.init.platform` 选择数据库类型，并兼容旧配置
+Nacos 从 `spring.sql.init.platform` 选择初始数据库类型，不再支持
 `spring.datasource.platform`。
 
 当选择类型为 `mysql` 时，使用 MySQL mapper 和 MySQL 兼容的默认 dialect 行为。当选择类型

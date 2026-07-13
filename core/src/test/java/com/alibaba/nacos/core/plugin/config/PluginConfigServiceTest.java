@@ -122,6 +122,61 @@ class PluginConfigServiceTest {
     }
     
     @Test
+    void refreshStaticConfigAppliesRuntimeFieldAndKeepsRestartField() {
+        ConfigItemDefinition runtimeDefinition = runtimeDefinition("runtime", "runtime-default");
+        ConfigItemDefinition restartDefinition = new ConfigItemDefinition("restart", "restart",
+            ConfigItemType.STRING);
+        restartDefinition.setDefaultValue("restart-default");
+        PluginInfo pluginInfo = pluginInfo(runtimeDefinition, restartDefinition);
+        RecordingPlugin plugin = new RecordingPlugin(pluginInfo.getConfigDefinitions());
+        environment.setProperty("nacos.plugin.trace.test.runtime", "runtime-old");
+        environment.setProperty("nacos.plugin.trace.test.restart", "restart-old");
+        service.initializePluginConfig(pluginInfo, plugin);
+        
+        MockEnvironment refreshedEnvironment = new MockEnvironment();
+        refreshedEnvironment.setProperty("nacos.plugin.trace.test.runtime", "runtime-new");
+        refreshedEnvironment.setProperty("nacos.plugin.trace.test.restart", "restart-new");
+        EnvUtil.setEnvironment(refreshedEnvironment);
+        service.refreshStaticConfig(pluginInfo, plugin);
+        
+        assertEquals("runtime-new", plugin.getCurrentConfig().get("runtime"));
+        assertEquals("restart-old", plugin.getCurrentConfig().get("restart"));
+        assertEquals(plugin.getCurrentConfig(), pluginInfo.getConfig());
+        assertEquals(2, plugin.getApplyCount());
+        assertEquals("restart-old",
+            service.resolve(pluginInfo, false).getConfig().get("restart"));
+    }
+    
+    @Test
+    void refreshStaticConfigSkipsApplyWhenEffectiveConfigIsUnchanged() {
+        ConfigItemDefinition definition = runtimeDefinition("endpoint", "default");
+        PluginInfo pluginInfo = pluginInfo(definition);
+        RecordingPlugin plugin = new RecordingPlugin(pluginInfo.getConfigDefinitions());
+        service.initializePluginConfig(pluginInfo, plugin);
+        
+        service.refreshStaticConfig(pluginInfo, plugin);
+        
+        assertEquals(1, plugin.getApplyCount());
+    }
+    
+    @Test
+    void refreshStaticConfigKeepsAcceptedSourceWhenApplyFails() {
+        ConfigItemDefinition definition = runtimeDefinition("endpoint", "default");
+        PluginInfo pluginInfo = pluginInfo(definition);
+        FailOncePlugin plugin = new FailOncePlugin(pluginInfo.getConfigDefinitions());
+        service.initializePluginConfig(pluginInfo, plugin);
+        environment.setProperty("nacos.plugin.trace.test.endpoint", "bad");
+        
+        PluginConfigApplyException exception = assertThrows(PluginConfigApplyException.class,
+            () -> service.refreshStaticConfig(pluginInfo, plugin));
+        
+        assertTrue(exception.getMessage().contains("Static plugin config was refreshed"));
+        assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
+        assertEquals("default", pluginInfo.getConfig().get("endpoint"));
+        assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
+    }
+    
+    @Test
     void runtimeUpdatePersistsCanonicalMapAndEmptyMapFallsBack() {
         ConfigItemDefinition definition = runtimeDefinition("endpoint", "default");
         PluginInfo pluginInfo = pluginInfo(definition);
@@ -187,6 +242,10 @@ class PluginConfigServiceTest {
         assertEquals("default", pluginInfo.getConfig().get("endpoint"));
         assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
         verify(persistence).saveConfig(PLUGIN_ID, failedConfig);
+        
+        service.refreshStaticConfig(pluginInfo, plugin);
+        
+        assertEquals(1, plugin.getApplyCount());
         
         service.applyRuntimePersistedConfig(PLUGIN_ID, pluginInfo, plugin, failedConfig);
         
@@ -284,12 +343,16 @@ class PluginConfigServiceTest {
     }
     
     private PluginInfo pluginInfo(ConfigItemDefinition definition) {
+        return pluginInfo(new ConfigItemDefinition[] {definition});
+    }
+    
+    private PluginInfo pluginInfo(ConfigItemDefinition... definitions) {
         PluginInfo result = new PluginInfo();
         result.setPluginId(PLUGIN_ID);
         result.setPluginType(PluginType.TRACE);
         result.setPluginName("test");
         result.setConfigurable(true);
-        result.setConfigDefinitions(Collections.singletonList(definition));
+        result.setConfigDefinitions(java.util.Arrays.asList(definitions));
         result.setConfig(new HashMap<>());
         return result;
     }

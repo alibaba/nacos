@@ -47,6 +47,9 @@ class PluginConfigSourceResolverTest {
         UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
             () -> resolver.updateConfig("trace:demo", Collections.emptyMap()));
         
+        resolver.initializeConfig(new PluginInfo());
+        resolver.refreshConfig(new PluginInfo());
+        
         assertFalse(resolver.isUpdatable());
         assertTrue(exception.getMessage().contains("STATIC"));
     }

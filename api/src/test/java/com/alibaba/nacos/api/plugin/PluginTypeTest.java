@@ -20,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginTypeTest {
     
@@ -114,5 +116,13 @@ class PluginTypeTest {
         assertEquals(PluginType.ENCRYPTION, PluginType.valueOf("ENCRYPTION"));
         assertEquals(PluginType.AI_PIPELINE, PluginType.valueOf("AI_PIPELINE"));
         assertEquals(PluginType.AI_RESOURCE_IMPORT, PluginType.valueOf("AI_RESOURCE_IMPORT"));
+    }
+    
+    @Test
+    @DisplayName("test exclusive type capability")
+    void testExclusiveTypeCapability() {
+        assertTrue(PluginType.AUTH.isExclusive());
+        assertTrue(PluginType.DATASOURCE_DIALECT.isExclusive());
+        assertFalse(PluginType.TRACE.isExclusive());
     }
 }

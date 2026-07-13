@@ -27,12 +27,12 @@ public enum PluginType {
     /**
      * Authentication plugin.
      */
-    AUTH("auth", "Authentication plugin"),
+    AUTH("auth", "Authentication plugin", true),
     
     /**
      * Datasource dialect plugin.
      */
-    DATASOURCE_DIALECT("datasource-dialect", "Datasource dialect plugin"),
+    DATASOURCE_DIALECT("datasource-dialect", "Datasource dialect plugin", true),
     
     /**
      * Config change plugin.
@@ -83,9 +83,16 @@ public enum PluginType {
     
     private final String description;
     
+    private final boolean exclusive;
+    
     PluginType(String type, String description) {
+        this(type, description, false);
+    }
+    
+    PluginType(String type, String description, boolean exclusive) {
         this.type = type;
         this.description = description;
+        this.exclusive = exclusive;
     }
     
     public String getType() {
@@ -94,6 +101,15 @@ public enum PluginType {
     
     public String getDescription() {
         return description;
+    }
+    
+    /**
+     * Whether implementations of this plugin type are mutually exclusive.
+     *
+     * @return true if only one implementation should be enabled
+     */
+    public boolean isExclusive() {
+        return exclusive;
     }
     
 }

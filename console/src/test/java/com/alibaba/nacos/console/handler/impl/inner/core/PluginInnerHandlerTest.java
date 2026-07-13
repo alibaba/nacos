@@ -256,7 +256,7 @@ class PluginInnerHandlerTest {
         assertNotNull(authVo);
         assertNotNull(traceVo);
         assertTrue(authVo.getExclusive());
-        assertTrue(traceVo.getExclusive());
+        assertFalse(traceVo.getExclusive());
     }
     
     @Test

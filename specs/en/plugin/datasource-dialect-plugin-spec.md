@@ -22,10 +22,9 @@ The data source dialect plugin type isolates database-specific SQL behavior from
 Nacos persistence logic. It covers SQL dialect functions, pagination, generated
 primary keys, and mapper implementations for Nacos tables.
 
-This is an exclusive-selection plugin. The active dialect is selected by the SQL
-platform configuration, currently `spring.sql.init.platform` with legacy
-compatibility for `spring.datasource.platform`. Common lifecycle and state
-rules are defined by the [Nacos Plugin Spec](plugin-spec.md), and bundled
+This is an exclusive-selection plugin. The initial active dialect is selected
+by `spring.sql.init.platform`. Common lifecycle and state rules are defined by
+the [Nacos Plugin Spec](plugin-spec.md), and bundled
 database families are defined by the
 [Default Data Source Dialect Implementation Spec](default-datasource-dialect-plugin-spec.md).
 
@@ -101,6 +100,10 @@ The core plugin manager exposes this plugin type as `datasource-dialect`.
 Only the configured dialect should be enabled by default. Built-in critical
 dialects required by the server cannot be disabled while in use.
 
+The SQL platform property supplies bootstrap selection only. Persisted unified
+plugin state takes precedence after it is loaded. Future selection changes
+should use plugin management rather than modifying the bootstrap property.
+
 If a requested dialect is disabled, startup or persistence operations must fail
 explicitly. If the requested dialect is missing, the current manager searches for
 another enabled dialect and logs the fallback. This fallback is compatibility
@@ -118,11 +121,8 @@ The SQL platform is selected by:
 spring.sql.init.platform=${databaseType}
 ```
 
-For compatibility with older deployments:
-
-```properties
-spring.datasource.platform=${databaseType}
-```
+The removed `spring.datasource.platform` property is no longer read. Deployments
+still using it must migrate to `spring.sql.init.platform` before upgrade.
 
 Datasource connection properties remain owned by Nacos persistence configuration
 and the database driver. The dialect plugin must not reinterpret unrelated
