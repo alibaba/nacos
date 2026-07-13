@@ -43,6 +43,12 @@ CAS 发布必须比较请求携带的 `casMd5` 和已存储 md5。md5 不匹配�
 Config 变更事件。删除灰度配置只会移除指定灰度版本。
 
 兼容接口允许删除不存在的配置表现为成功，但新的管理流程不应把这种结果展示为该资源曾经存在。
+按存储 ID 批量删除属于管理操作；请求必须携带或默认出归一化后的 `namespaceId`，实现只能删除该
+namespace 内匹配的 ID。不存在的 ID 或属于其他 namespace 的 ID 可以被跳过，但不得删除其他
+namespace 的配置。
+
+当前批量删除 API 中的 `ids` 参数属于已废弃并待移除的兼容选择器。后续批量删除 API 应按
+`namespaceId`、`groupName`、`dataId`，或这些身份元组的显式列表选择配置，而不是透出持久化 ID。
 
 ## 3. 运行时查询链
 
@@ -93,13 +99,19 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 - 导出打包配置内容和元数据；
 - 导入要求元数据和内容互相匹配，应用请求指定的同名配置策略，并为成功写入发布变更事件；
 - 克隆将选中的配置复制到目标 namespace，并可选择目标 group 或目标 dataId；
+- 克隆中的源配置 ID 只能在归一化后的源 namespace 内解析，克隆结果写入归一化后的目标
+  namespace；缺省源 namespace 时默认等于目标 namespace，以保持同 namespace 克隆兼容；
 - 导入和导出必须保留配置类型、描述、应用名、group、dataId、内容和加密语义。
+- 当导出通过存储 ID 选择配置时，导出结果必须限制在请求中归一化后的 `namespaceId` 内。
+- 当前导出 API 中的 `ids` 选择器属于已废弃并待移除的兼容路径；后续导出选择应基于
+  `namespaceId`、`groupName`、`dataId` 身份，而不是持久化 ID。
 
 ## 7. 接口规则
 
 | 接口面 | 规则 |
 | --- | --- |
 | HTTP Open API | 通过 `/v3/client/cs/config` 查询单个已知配置，不提供 HTTP 监听或大范围管理行为。 |
-| HTTP Admin API | CRUD、元数据、列表/搜索、导入、导出、克隆、beta 查询/删除、监听、容量、指标和运维使用 `/v3/admin/cs/*`。 |
+| HTTP Admin API | CRUD、元数据、列表/搜索、导入、导出、克隆、beta 查询/删除、监听、容量、指标和运维使用 `/v3/admin/cs/*`；Admin 克隆中 `namespaceId` 表示目标 namespace，可选 `sourceNamespaceId` 表示源 namespace。 |
+| HTTP Console API | Console 克隆中 `namespaceId` 表示源 namespace，`targetNamespaceId` 表示目标 namespace；缺省 `namespaceId` 时源 namespace 默认等于目标 namespace。 |
 | gRPC API | 查询、兼容发布、兼容删除、监听、模糊订阅和推送消息必须保持同一套 Config 身份和 md5 语义。 |
 | Client SDK | 应用应优先使用运行时查询和监听 API；大范围管理 API 属于 Maintainer SDK。 |

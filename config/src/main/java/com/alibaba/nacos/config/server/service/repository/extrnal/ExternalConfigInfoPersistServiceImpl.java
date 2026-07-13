@@ -83,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -1297,6 +1298,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1317,6 +1321,12 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             if (CollectionUtils.isEmpty(configAllInfos)) {
                 return configAllInfos;
+            }
+            if (!CollectionUtils.isEmpty(ids) && tenant != null) {
+                configAllInfos = configAllInfos.stream()
+                    .filter(configAllInfo -> StringUtils.equals(tenantTmp,
+                        configAllInfo.getTenant()))
+                    .collect(Collectors.toList());
             }
             for (ConfigAllInfo configAllInfo : configAllInfos) {
                 List<String> configTagList =

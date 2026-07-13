@@ -50,14 +50,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     update metadata, and delete configuration through the admin API.</li>
  *     <li>Boundary/validation: missing config and invalid required publish
  *     parameters fail with controlled SDK exceptions.</li>
- *     <li>Error handling: batch delete by storage ID succeeds and cleanup
- *     tolerates already deleted resources.</li>
+ *     <li>Error handling: namespace-scoped batch delete by storage ID succeeds,
+ *     ignores ids outside the requested namespace, and cleanup tolerates
+ *     already deleted resources.</li>
  * </ul>
  *
  * @author xiweng.yy
  */
 class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
-    
+
     @Test
     void shouldManageConfigLifecycle() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -72,12 +73,12 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String updatedDesc = "updated maintainer sdk integration test config";
         String updatedTags = "maintainer,updated";
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
-        
+
         assertThrows(NacosException.class,
                 () -> maintainerService.getConfig(dataId, group, namespaceId));
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, content, appName,
                 "maintainer", configTags, desc, ConfigType.YAML.getType()));
-        
+
         ConfigDetailInfo detail = maintainerService.getConfig(dataId, group, namespaceId);
         assertConfigDetail(detail, dataId, group, namespaceId, content);
         assertEquals(ConfigType.YAML.getType(), detail.getType());
@@ -85,7 +86,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertEquals(desc, detail.getDesc());
         assertEquals(configTags, detail.getConfigTags());
         assertNotNull(detail.getId());
-        
+
         Page<ConfigBasicInfo> exactPage =
                 maintainerService.listConfigs(dataId, group, namespaceId, ConfigType.YAML.getType());
         assertContainsConfig(exactPage, dataId, group);
@@ -98,22 +99,22 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertTrue(configsByNamespace.stream()
                 .anyMatch(config -> dataId.equals(config.getDataId())
                         && group.equals(config.getGroupName())));
-        
+
         assertTrue(maintainerService.updateConfigMetadata(dataId, group, namespaceId, updatedDesc,
                 updatedTags));
         ConfigDetailInfo metadataUpdated = maintainerService.getConfig(dataId, group, namespaceId);
         assertEquals(updatedDesc, metadataUpdated.getDesc());
         assertEquals(updatedTags, metadataUpdated.getConfigTags());
-        
+
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, updatedContent));
         ConfigDetailInfo updated = maintainerService.getConfig(dataId, group, namespaceId);
         assertConfigDetail(updated, dataId, group, namespaceId, updatedContent);
-        
+
         assertTrue(maintainerService.deleteConfig(dataId, group, namespaceId));
         assertThrows(NacosException.class,
                 () -> maintainerService.getConfig(dataId, group, namespaceId));
     }
-    
+
     @Test
     void shouldDeleteConfigByStorageId() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -121,17 +122,40 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String group = randomGroup("config");
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
-        
+
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId,
                 "maintainer.config.batch.delete=true"));
         ConfigDetailInfo detail = maintainerService.getConfig(dataId, group, namespaceId);
         assertNotNull(detail.getId());
-        
+
         assertTrue(maintainerService.deleteConfigs(Collections.singletonList(detail.getId())));
         assertThrows(NacosException.class,
                 () -> maintainerService.getConfig(dataId, group, namespaceId));
+
+        String otherNamespaceId = randomMaintainerName("batch-delete-ns");
+        assertTrue(maintainerService.createNamespace(otherNamespaceId, "batch delete namespace",
+                "created by maintainer sdk it"));
+        addCleanup(() -> maintainerService.deleteNamespace(otherNamespaceId));
+        String otherDataId = randomDataId("batch-delete-other-ns");
+        String otherGroup = randomGroup("config");
+        String otherContent = "maintainer.config.batch.delete.other.namespace=true";
+        addCleanup(() -> maintainerService.deleteConfig(otherDataId, otherGroup, otherNamespaceId));
+        assertTrue(maintainerService.publishConfig(otherDataId, otherGroup, otherNamespaceId,
+                otherContent));
+        ConfigDetailInfo otherDetail =
+                maintainerService.getConfig(otherDataId, otherGroup, otherNamespaceId);
+
+        assertTrue(maintainerService.deleteConfigs(Collections.singletonList(otherDetail.getId())));
+        ConfigDetailInfo stillExists =
+                maintainerService.getConfig(otherDataId, otherGroup, otherNamespaceId);
+        assertConfigDetail(stillExists, otherDataId, otherGroup, otherNamespaceId, otherContent);
+
+        assertTrue(maintainerService.deleteConfigs(Collections.singletonList(otherDetail.getId()),
+                otherNamespaceId));
+        assertThrows(NacosException.class,
+                () -> maintainerService.getConfig(otherDataId, otherGroup, otherNamespaceId));
     }
-    
+
     @Test
     void shouldCloneConfigWithinNamespace() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -143,19 +167,19 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String content = "maintainer.config.clone=true";
         addCleanup(() -> maintainerService.deleteConfig(targetDataId, targetGroup, namespaceId));
         addCleanup(() -> maintainerService.deleteConfig(sourceDataId, sourceGroup, namespaceId));
-        
+
         assertTrue(maintainerService.publishConfig(sourceDataId, sourceGroup, namespaceId, content,
                 "maintainer-sdk-it", null, "clone", "clone source config",
                 ConfigType.PROPERTIES.getType()));
         ConfigDetailInfo source = maintainerService.getConfig(sourceDataId, sourceGroup,
                 namespaceId);
-        
+
         Map<String, Object> cloneResult = maintainerService.cloneConfig(namespaceId,
                 Collections.singletonList(cloneInfo(source.getId(), targetDataId, targetGroup)),
                 "maintainer-sdk-it", SameConfigPolicy.ABORT);
         assertEquals(1, intValue(cloneResult, "succCount"));
         assertEquals(0, intValue(cloneResult, "skipCount"));
-        
+
         ConfigDetailInfo target = maintainerService.getConfig(targetDataId, targetGroup,
                 namespaceId);
         assertConfigDetail(target, targetDataId, targetGroup, namespaceId, content);
@@ -163,7 +187,81 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertEquals("maintainer-sdk-it", target.getAppName());
         assertEquals("clone source config", target.getDesc());
     }
-    
+
+    @Test
+    void shouldCloneConfigAcrossNamespaces() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String sourceNamespaceId = randomMaintainerName("clone-source-ns");
+        String targetNamespaceId = randomMaintainerName("clone-target-ns");
+        assertTrue(maintainerService.createNamespace(sourceNamespaceId, "clone source namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(targetNamespaceId, "clone target namespace",
+                "created by maintainer sdk it"));
+        String sourceDataId = randomDataId("clone-source-cross");
+        String sourceGroup = randomGroup("config");
+        String targetDataId = randomDataId("clone-target-cross");
+        String targetGroup = randomGroup("config");
+        String content = "maintainer.config.clone.cross.namespace=true";
+        addCleanup(() -> maintainerService.deleteNamespace(sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(targetNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(sourceDataId, sourceGroup,
+                sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(targetDataId, targetGroup,
+                targetNamespaceId));
+
+        assertTrue(maintainerService.publishConfig(sourceDataId, sourceGroup, sourceNamespaceId,
+                content));
+        ConfigDetailInfo source = maintainerService.getConfig(sourceDataId, sourceGroup,
+                sourceNamespaceId);
+
+        Map<String, Object> cloneResult = maintainerService.cloneConfig(sourceNamespaceId,
+                targetNamespaceId,
+                Collections.singletonList(cloneInfo(source.getId(), targetDataId, targetGroup)),
+                "maintainer-sdk-it", SameConfigPolicy.ABORT);
+
+        assertEquals(1, intValue(cloneResult, "succCount"));
+        ConfigDetailInfo target = maintainerService.getConfig(targetDataId, targetGroup,
+                targetNamespaceId);
+        assertConfigDetail(target, targetDataId, targetGroup, targetNamespaceId, content);
+    }
+
+    @Test
+    void shouldSkipCloneIdsOutsideSourceNamespace() throws Exception {
+        ConfigMaintainerService maintainerService = createConfigMaintainerService();
+        String sourceNamespaceId = randomMaintainerName("clone-source-mismatch");
+        String targetNamespaceId = randomMaintainerName("clone-target-mismatch");
+        String otherNamespaceId = randomMaintainerName("clone-other-mismatch");
+        assertTrue(maintainerService.createNamespace(sourceNamespaceId, "clone source namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(targetNamespaceId, "clone target namespace",
+                "created by maintainer sdk it"));
+        assertTrue(maintainerService.createNamespace(otherNamespaceId, "clone other namespace",
+                "created by maintainer sdk it"));
+        String otherDataId = randomDataId("clone-other");
+        String otherGroup = randomGroup("config");
+        String targetDataId = randomDataId("clone-target-mismatch");
+        String targetGroup = randomGroup("config");
+        addCleanup(() -> maintainerService.deleteNamespace(sourceNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(targetNamespaceId));
+        addCleanup(() -> maintainerService.deleteNamespace(otherNamespaceId));
+        addCleanup(() -> maintainerService.deleteConfig(otherDataId, otherGroup,
+                otherNamespaceId));
+
+        assertTrue(maintainerService.publishConfig(otherDataId, otherGroup, otherNamespaceId,
+                "maintainer.config.clone.other.namespace=true"));
+        ConfigDetailInfo other = maintainerService.getConfig(otherDataId, otherGroup,
+                otherNamespaceId);
+
+        Map<String, Object> cloneResult = maintainerService.cloneConfig(sourceNamespaceId,
+                targetNamespaceId,
+                Collections.singletonList(cloneInfo(other.getId(), targetDataId, targetGroup)),
+                "maintainer-sdk-it", SameConfigPolicy.ABORT);
+
+        assertEquals(0, intValue(cloneResult, "succCount"));
+        assertThrows(NacosException.class,
+                () -> maintainerService.getConfig(targetDataId, targetGroup, targetNamespaceId));
+    }
+
     @Test
     void shouldApplyCloneConflictPolicies() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -176,7 +274,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String targetContent = "maintainer.config.clone.target=true";
         addCleanup(() -> maintainerService.deleteConfig(targetDataId, targetGroup, namespaceId));
         addCleanup(() -> maintainerService.deleteConfig(sourceDataId, sourceGroup, namespaceId));
-        
+
         assertTrue(maintainerService.publishConfig(sourceDataId, sourceGroup, namespaceId,
                 sourceContent));
         assertTrue(maintainerService.publishConfig(targetDataId, targetGroup, namespaceId,
@@ -184,7 +282,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         ConfigDetailInfo source = maintainerService.getConfig(sourceDataId, sourceGroup,
                 namespaceId);
         ConfigCloneInfo cloneInfo = cloneInfo(source.getId(), targetDataId, targetGroup);
-        
+
         Map<String, Object> skipResult = maintainerService.cloneConfig(namespaceId,
                 Collections.singletonList(cloneInfo), "maintainer-sdk-it", SameConfigPolicy.SKIP);
         assertEquals(0, intValue(skipResult, "succCount"));
@@ -192,7 +290,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         ConfigDetailInfo skippedTarget = maintainerService.getConfig(targetDataId, targetGroup,
                 namespaceId);
         assertConfigDetail(skippedTarget, targetDataId, targetGroup, namespaceId, targetContent);
-        
+
         Map<String, Object> overwriteResult = maintainerService.cloneConfig(namespaceId,
                 Collections.singletonList(cloneInfo), "maintainer-sdk-it",
                 SameConfigPolicy.OVERWRITE);
@@ -202,18 +300,18 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertConfigDetail(overwrittenTarget, targetDataId, targetGroup, namespaceId,
                 sourceContent);
     }
-    
+
     @Test
     void shouldReturnCloneFailureDataForEmptySelection() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
-        
+
         Map<String, Object> cloneResult = maintainerService.cloneConfig(
                 Constants.DEFAULT_NAMESPACE_ID, Collections.emptyList(), "maintainer-sdk-it",
                 SameConfigPolicy.ABORT);
-        
+
         assertEquals(0, intValue(cloneResult, "succCount"));
     }
-    
+
     @Test
     void shouldQueryConfigHistory() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -223,19 +321,19 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String firstContent = "maintainer.config.history.first=true";
         String secondContent = "maintainer.config.history.second=true";
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
-        
+
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, firstContent));
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, secondContent));
         ConfigDetailInfo currentConfig = maintainerService.getConfig(dataId, group, namespaceId);
         assertConfigDetail(currentConfig, dataId, group, namespaceId, secondContent);
         assertNotNull(currentConfig.getId());
-        
+
         Page<ConfigHistoryBasicInfo> historyPage =
                 maintainerService.listConfigHistory(dataId, group, namespaceId, 1, 10);
         assertNotNull(historyPage);
         assertTrue(historyPage.getTotalCount() >= 2,
                 "two publishes should produce at least two history rows");
-        
+
         ConfigHistoryBasicInfo newestHistory = historyPage.getPageItems().get(0);
         assertEquals(dataId, newestHistory.getDataId());
         assertEquals(group, newestHistory.getGroupName());
@@ -258,14 +356,14 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
                         newestHistory.getId());
         assertEquals(firstContent, historyDetail.getContent());
-        
+
         ConfigHistoryDetailInfo previousDetail =
                 maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
                         currentConfig.getId());
         assertEquals(firstContent, previousDetail.getContent());
         assertEquals(newestHistory.getId(), previousDetail.getId());
     }
-    
+
     @Test
     void shouldManageBetaConfig() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -276,12 +374,12 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String betaIps = "127.0.0.1";
         addCleanup(() -> stopBetaIfPresent(maintainerService, dataId, group, namespaceId));
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
-        
+
         NacosException missingBetaIps = assertThrows(NacosException.class,
                 () -> maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
                         null, null, null, null, ConfigType.TEXT.getType(), ""));
         assertEquals(NacosException.INVALID_PARAM, missingBetaIps.getErrCode());
-        
+
         assertTrue(maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
                 "maintainer-sdk-it", "maintainer", "beta", "beta config",
                 ConfigType.TEXT.getType(), betaIps));
@@ -289,12 +387,12 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertConfigDetail(beta, dataId, group, namespaceId, content);
         assertEquals("beta", beta.getGrayName());
         assertNotNull(beta.getGrayRule());
-        
+
         assertTrue(maintainerService.stopBeta(dataId, group, namespaceId));
         assertThrows(NacosException.class, () -> maintainerService.queryBeta(dataId, group,
                 namespaceId));
     }
-    
+
     @Test
     void shouldQueryConfigListenerDiagnostics() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
@@ -302,7 +400,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String group = randomGroup("config");
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
-        
+
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId,
                 "maintainer.config.listener=true"));
         ConfigListenerInfo configListeners =
@@ -310,7 +408,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertNotNull(configListeners);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_CONFIG, configListeners.getQueryType());
         assertNotNull(configListeners.getListenersStatus());
-        
+
         ConfigListenerInfo ipListeners =
                 maintainerService.getAllSubClientConfigByIp("127.0.0.1", true, namespaceId,
                         false);
@@ -318,22 +416,22 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, ipListeners.getQueryType());
         assertNotNull(ipListeners.getListenersStatus());
     }
-    
+
     @Test
     void shouldRunConfigOpsMaintenanceCommands() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
-        
+
         assertEquals("Local cache updated from store successfully!",
                 maintainerService.updateLocalCacheFromStore());
         assertEquals("Log level updated successfully! Module: config-server, Log Level: INFO",
                 maintainerService.setLogLevel("config-server", "INFO"));
     }
-    
+
     @Test
     void shouldRejectInvalidConfigParameters() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
         String group = randomGroup("config");
-        
+
         assertThrows(NacosException.class,
                 () -> maintainerService.publishConfig("", group, Constants.DEFAULT_NAMESPACE_ID,
                         "invalid-data-id"));
@@ -344,7 +442,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 () -> maintainerService.publishConfig(randomDataId("invalid-content"), group,
                         Constants.DEFAULT_NAMESPACE_ID, ""));
     }
-    
+
     private void assertConfigDetail(ConfigDetailInfo detail, String dataId, String group,
             String namespaceId, String content) {
         assertNotNull(detail);
@@ -353,7 +451,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertEquals(namespaceId, detail.getNamespaceId());
         assertEquals(content, detail.getContent());
     }
-    
+
     private void assertContainsConfig(Page<ConfigBasicInfo> page, String dataId, String group) {
         assertNotNull(page);
         assertTrue(page.getTotalCount() > 0, "config page should contain at least one item");
@@ -361,7 +459,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 .anyMatch(config -> dataId.equals(config.getDataId())
                         && group.equals(config.getGroupName())));
     }
-    
+
     private ConfigCloneInfo cloneInfo(Long configId, String targetDataId, String targetGroup) {
         ConfigCloneInfo result = new ConfigCloneInfo();
         result.setConfigId(configId);
@@ -369,7 +467,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         result.setTargetGroupName(targetGroup);
         return result;
     }
-    
+
     private void stopBetaIfPresent(ConfigMaintainerService maintainerService, String dataId,
             String group, String namespaceId) throws NacosException {
         try {
@@ -380,7 +478,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
             }
         }
     }
-    
+
     private int intValue(Map<String, Object> result, String key) {
         assertNotNull(result);
         assertNotNull(result.get(key));

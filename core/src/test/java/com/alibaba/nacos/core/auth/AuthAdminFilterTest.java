@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,7 +81,8 @@ class AuthAdminFilterTest {
         when(authConfig.isAuthEnabled()).thenReturn(true);
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
-        when(request.getHeader("1")).thenReturn("2");
+        when(request.getHeader(anyString()))
+            .thenAnswer(invocation -> "1".equals(invocation.getArgument(0)) ? "2" : null);
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredAdminApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
