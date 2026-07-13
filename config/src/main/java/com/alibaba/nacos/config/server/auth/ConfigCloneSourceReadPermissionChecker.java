@@ -44,23 +44,23 @@ import java.util.function.Function;
  */
 @Service
 public class ConfigCloneSourceReadPermissionChecker {
-
+    
     private final Function<String, NacosAuthConfig> authConfigProvider;
-
+    
     private final Function<String, Optional<AuthPluginService>> authPluginProvider;
-
+    
     public ConfigCloneSourceReadPermissionChecker() {
         this(apiType -> NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType),
             authType -> AuthPluginManager.getInstance().findAuthServiceSpiImpl(authType));
     }
-
+    
     ConfigCloneSourceReadPermissionChecker(
         Function<String, NacosAuthConfig> authConfigProvider,
         Function<String, Optional<AuthPluginService>> authPluginProvider) {
         this.authConfigProvider = authConfigProvider;
         this.authPluginProvider = authPluginProvider;
     }
-
+    
     /**
      * Check whether current request identity can read configs in the clone source namespace.
      *
