@@ -139,7 +139,7 @@
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <grpc-java.version>1.64.2</grpc-java.version>
+        <grpc-java.version>1.75.0</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.25.5</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
@@ -156,9 +156,9 @@
 
         <!-- override dependency version -->
         <spring.version>5.3.39</spring.version>
-        <spring-security.version>5.8.15</spring-security.version>
+        <spring-security.version>5.8.16</spring-security.version>
         <tomcat.version>9.0.118</tomcat.version>
-        <jackson.version>2.16.2</jackson.version>
+        <jackson.version>2.18.9</jackson.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -1114,4 +1114,3 @@
     </dependencyManagement>
 
 </project>
-
