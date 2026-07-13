@@ -117,7 +117,7 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertError(putRaw(CONSOLE_PLUGIN_PATH + "/config",
                 Query.newInstance().addParam("pluginType", nonConfigurable.get("pluginType").asText())
                         .addParam("pluginName", nonConfigurable.get("pluginName").asText())
-                        .addParam("config[probe]", "value")),
+                        .addParam("config%5Bprobe%5D", "value")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "does not support configuration");
     }
 }
