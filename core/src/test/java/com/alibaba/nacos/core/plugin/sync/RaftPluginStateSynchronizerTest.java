@@ -15,11 +15,13 @@
 
 package com.alibaba.nacos.core.plugin.sync;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -100,6 +103,34 @@ class RaftPluginStateSynchronizerTest {
         
         assertThrows(NacosApiException.class,
             () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
+    }
+    
+    @Test
+    void syncConfigChangePreservesInvalidParameterError() throws Exception {
+        Response failure = Response.newBuilder().setSuccess(false)
+            .setErrMsg(PluginStateOperation.INVALID_PARAM_ERROR_PREFIX + "invalid config")
+            .build();
+        when(cpProtocol.write(any(WriteRequest.class))).thenReturn(failure);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.emptyMap()));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void syncConfigChangeReportsAcceptedConfigApplyFailure() throws Exception {
+        Response failure = Response.newBuilder().setSuccess(false)
+            .setErrMsg(PluginStateOperation.CONFIG_APPLY_ERROR_PREFIX
+                + "config updated but apply failed")
+            .build();
+        when(cpProtocol.write(any(WriteRequest.class))).thenReturn(failure);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.emptyMap()));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals("config updated but apply failed", exception.getErrMsg());
     }
     
     @Test

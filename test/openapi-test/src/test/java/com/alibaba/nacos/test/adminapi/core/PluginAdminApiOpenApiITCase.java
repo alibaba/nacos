@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -32,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: plugin list exposes discovered plugin inventory, pluginType filters narrow results, and
  *     plugin detail returns the same identity plus mutable-state fields.</li>
  *     <li>Boundary/validation: unknown pluginType filters return an empty list; status update requires
- *     {@code pluginName}; config update requires {@code config}; missing plugin detail is reported as not found.</li>
+ *     {@code pluginName}; config update requires {@code config} and rejects non-configurable plugins; missing plugin
+ *     detail is reported as not found.</li>
  *     <li>Exception/error handling: plugin state/config mutation success paths are intentionally not executed because
  *     they change runtime extension state; required-parameter and detail not-found failures are verified as controlled
  *     v3 error envelopes.</li>
@@ -89,5 +91,24 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/config",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
                 400, ErrorCode.PARAMETER_MISSING, "config");
+    }
+
+    @Test
+    public void testNonConfigurablePluginRejectsConfigUpdate() throws Exception {
+        JsonNode plugins = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list", Query.newInstance()).get("data");
+        JsonNode nonConfigurable = null;
+        for (JsonNode plugin : plugins) {
+            if (!plugin.get("configurable").asBoolean()) {
+                nonConfigurable = plugin;
+                break;
+            }
+        }
+        assertNotNull(nonConfigurable, plugins.toString());
+
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/config",
+                Query.newInstance().addParam("pluginType", nonConfigurable.get("pluginType").asText())
+                        .addParam("pluginName", nonConfigurable.get("pluginName").asText())
+                        .addParam("config", "{}")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "does not support configuration");
     }
 }

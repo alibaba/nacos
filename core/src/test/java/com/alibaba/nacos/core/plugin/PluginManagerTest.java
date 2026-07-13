@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
@@ -56,6 +57,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -213,13 +215,16 @@ class PluginManagerTest {
         ConfigItemDefinition definition = new ConfigItemDefinition();
         definition.setKey("requiredKey");
         definition.setRequired(true);
+        definition.setEffectMode(ConfigItemEffectMode.RUNTIME);
         plugin.setConfigDefinitions(Collections.singletonList(definition));
         registerConfigurablePlugin("trace", "test", plugin);
         
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        NacosApiException exception = assertThrows(NacosApiException.class,
             () -> manager.updatePluginConfig("trace:test", new HashMap<>(), true));
         
-        assertTrue(exception.getMessage().contains("Required config missing: requiredKey"));
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains(
+            "Plugin config source was updated but failed to apply"));
     }
     
     @Test
@@ -228,6 +233,7 @@ class PluginManagerTest {
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
         requiredDef.setKey("requiredKey");
         requiredDef.setRequired(true);
+        requiredDef.setEffectMode(ConfigItemEffectMode.RUNTIME);
         
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(requiredDef);
@@ -316,6 +322,21 @@ class PluginManagerTest {
         manager.onApplicationEvent(applicationReadyEvent);
         
         assertEquals("value", plugin.getCurrentConfig().get("key"));
+        verify(persistence, never()).saveConfig(any(), anyMap());
+    }
+    
+    @Test
+    void initializeConfigWithoutPersistedOverrideTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("endpoint");
+        definition.setDefaultValue("default");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        manager.onApplicationEvent(applicationReadyEvent);
+        
+        assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
     }
     
     @Test
@@ -384,6 +405,7 @@ class PluginManagerTest {
         ConfigItemDefinition requiredDef = new ConfigItemDefinition();
         requiredDef.setKey("requiredKey");
         requiredDef.setRequired(true);
+        requiredDef.setEffectMode(ConfigItemEffectMode.RUNTIME);
         
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(requiredDef);
@@ -402,12 +424,47 @@ class PluginManagerTest {
     }
     
     @Test
+    void updatePluginConfigRejectsRestartFieldTest() throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("endpoint");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test",
+                Collections.singletonMap("endpoint", "new")));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        verify(synchronizer, never()).syncConfigChange(any(), anyMap());
+    }
+    
+    @Test
+    void updatePluginConfigIgnoresMaskedSensitiveValueWithoutTargetOverrideTest()
+        throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("secret");
+        definition.setDefaultValue("secret-value");
+        definition.setSensitive(true);
+        definition.setEffectMode(ConfigItemEffectMode.RUNTIME);
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        manager.updatePluginConfig("trace:test",
+            Collections.singletonMap("secret", "se******ue"));
+        
+        verify(synchronizer).syncConfigChange("trace:test", Collections.emptyMap());
+    }
+    
+    @Test
     void resolvePluginConfigWithLayeredSourcesTest() throws NacosApiException {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         ConfigItemDefinition definition = new ConfigItemDefinition();
         definition.setKey("secret");
         definition.setDefaultValue("default-secret");
         definition.setSensitive(true);
+        definition.setEffectMode(ConfigItemEffectMode.RUNTIME);
         
         List<ConfigItemDefinition> definitions = new ArrayList<>();
         definitions.add(definition);
@@ -474,6 +531,7 @@ class PluginManagerTest {
         manager.applyConfigChange("trace:test", config);
         
         assertEquals("v", plugin.getCurrentConfig().get("k"));
+        verify(persistence).saveConfig("trace:test", config);
     }
     
     @Test
@@ -499,6 +557,7 @@ class PluginManagerTest {
         config.put("k", "v");
         
         assertThrows(RuntimeException.class, () -> manager.applyConfigChange("trace:test", config));
+        verify(persistence).saveConfig("trace:test", config);
     }
     
     @Test

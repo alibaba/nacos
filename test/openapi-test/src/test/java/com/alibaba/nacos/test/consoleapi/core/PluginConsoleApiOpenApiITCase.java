@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -32,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: list exposes discovered plugin inventory, pluginType filtering narrows results, detail
  *     returns identity and mutable-state fields, and availability returns the cluster-node availability map.</li>
  *     <li>Boundary/validation: unknown pluginType list filter returns an empty list; detail/status/config/availability
- *     require plugin identity parameters; config mutation requires a configuration map.</li>
+ *     require plugin identity parameters; config mutation requires a configuration map and rejects non-configurable
+ *     plugins.</li>
  *     <li>Exception/error handling: plugin state/config success mutations are intentionally not executed because they
  *     change runtime extension state; missing plugin detail and validation errors are verified as controlled v3
  *     envelopes.</li>
@@ -98,5 +100,24 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertError(putRaw(CONSOLE_PLUGIN_PATH + "/config",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "configuration");
+    }
+
+    @Test
+    public void testNonConfigurablePluginRejectsConfigUpdate() throws Exception {
+        JsonNode plugins = getJsonOk(CONSOLE_PLUGIN_LIST_PATH, Query.newInstance()).get("data");
+        JsonNode nonConfigurable = null;
+        for (JsonNode plugin : plugins) {
+            if (!plugin.get("configurable").asBoolean()) {
+                nonConfigurable = plugin;
+                break;
+            }
+        }
+        assertNotNull(nonConfigurable, plugins.toString());
+
+        assertError(putRaw(CONSOLE_PLUGIN_PATH + "/config",
+                Query.newInstance().addParam("pluginType", nonConfigurable.get("pluginType").asText())
+                        .addParam("pluginName", nonConfigurable.get("pluginName").asText())
+                        .addParam("config%5Bprobe%5D", "value")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "does not support configuration");
     }
 }

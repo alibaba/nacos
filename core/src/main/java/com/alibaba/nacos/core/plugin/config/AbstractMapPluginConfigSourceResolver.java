@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.plugin.config;
 
-import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
@@ -50,32 +49,18 @@ abstract class AbstractMapPluginConfigSourceResolver implements PluginConfigSour
     /**
      * Get source config for one plugin.
      *
-     * @param pluginId plugin id
+     * @param pluginInfo plugin info
      * @return source config
      */
-    Map<String, String> getConfig(String pluginId) {
-        Map<String, String> config = configs.get(pluginId);
-        return config == null ? null : new HashMap<>(config);
-    }
-    
     @Override
-    public PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        PluginConfigKeyCandidate candidate) {
-        return resolveFromConfig(configs.get(pluginInfo.getPluginId()), definition);
+    public Map<String, String> getConfig(PluginInfo pluginInfo) {
+        Map<String, String> config = configs.get(pluginInfo.getPluginId());
+        return config == null ? null : new HashMap<>(config);
     }
     
     @Override
     public boolean isUpdatable() {
         return true;
-    }
-    
-    PluginConfigSourceValue resolveFromConfig(Map<String, String> config,
-        ConfigItemDefinition definition) {
-        String key = definition.getKey();
-        if (config != null && config.containsKey(key) && config.get(key) != null) {
-            return PluginConfigSourceValue.present(config.get(key), getSourceType());
-        }
-        return PluginConfigSourceValue.absent(getSourceType());
     }
     
     @Override

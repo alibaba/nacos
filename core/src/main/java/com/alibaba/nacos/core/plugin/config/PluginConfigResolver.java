@@ -85,6 +85,18 @@ public class PluginConfigResolver {
     }
     
     /**
+     * Get the current config snapshot of a source.
+     *
+     * @param sourceType source type
+     * @param pluginInfo plugin info
+     * @return source config, or {@code null} if no map-based snapshot exists
+     */
+    public Map<String, String> getConfig(PluginConfigSourceType sourceType,
+        PluginInfo pluginInfo) {
+        return getSourceResolver(sourceType).getConfig(pluginInfo);
+    }
+    
+    /**
      * Resolve effective plugin config from source resolvers.
      *
      * @param pluginInfo plugin info
@@ -100,13 +112,15 @@ public class PluginConfigResolver {
         if (definitions == null || definitions.isEmpty()) {
             return resolveWithoutDefinitions(pluginInfo);
         }
+        Map<PluginConfigSourceType, Map<String, String>> sourceConfigs =
+            getSourceConfigs(pluginInfo);
         Map<String, String> config = new LinkedHashMap<>();
         Map<String, PluginConfigValueMeta> metas = new LinkedHashMap<>(definitions.size());
         for (ConfigItemDefinition definition : definitions) {
             if (StringUtils.isBlank(definition.getKey())) {
                 continue;
             }
-            resolveItem(pluginInfo, definition, maskSensitive, config, metas);
+            resolveItem(definition, sourceConfigs, maskSensitive, config, metas);
         }
         return new PluginConfigResolution(config, metas);
     }
@@ -114,9 +128,9 @@ public class PluginConfigResolver {
     private PluginConfigResolution resolveWithoutDefinitions(PluginInfo pluginInfo) {
         Map<String, String> config = new LinkedHashMap<>();
         Map<String, String> runtimeConfig =
-            runtimePersistedSourceResolver.getConfig(pluginInfo.getPluginId());
+            runtimePersistedSourceResolver.getConfig(pluginInfo);
         Map<String, String> localOnlyConfig =
-            localOnlySourceResolver.getConfig(pluginInfo.getPluginId());
+            localOnlySourceResolver.getConfig(pluginInfo);
         if (runtimeConfig == null && localOnlyConfig == null && pluginInfo.getConfig() != null) {
             config.putAll(pluginInfo.getConfig());
         }
@@ -129,12 +143,11 @@ public class PluginConfigResolver {
         return new PluginConfigResolution(config, Collections.emptyMap());
     }
     
-    private void resolveItem(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        boolean maskSensitive, Map<String, String> config,
+    private void resolveItem(ConfigItemDefinition definition,
+        Map<PluginConfigSourceType, Map<String, String>> sourceConfigs, boolean maskSensitive,
+        Map<String, String> config,
         Map<String, PluginConfigValueMeta> metas) {
-        PluginConfigKeyCandidate candidate = keyResolver.resolve(pluginInfo, definition);
-        List<PluginConfigSourceValue> sourceValues =
-            resolveSourceValues(pluginInfo, definition, candidate);
+        List<PluginConfigSourceValue> sourceValues = resolveSourceValues(definition, sourceConfigs);
         PluginConfigSourceValue effectiveValue = firstPresent(sourceValues);
         if (effectiveValue.getValue() != null) {
             String value = effectiveValue.getValue();
@@ -147,11 +160,28 @@ public class PluginConfigResolver {
             effectiveValue.getSource(), countOverrideSources(sourceValues) > 1));
     }
     
-    private List<PluginConfigSourceValue> resolveSourceValues(PluginInfo pluginInfo,
-        ConfigItemDefinition definition, PluginConfigKeyCandidate candidate) {
+    private Map<PluginConfigSourceType, Map<String, String>> getSourceConfigs(
+        PluginInfo pluginInfo) {
+        Map<PluginConfigSourceType, Map<String, String>> result = new LinkedHashMap<>();
+        for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
+            result.put(sourceResolver.getSourceType(), sourceResolver.getConfig(pluginInfo));
+        }
+        return result;
+    }
+    
+    private List<PluginConfigSourceValue> resolveSourceValues(ConfigItemDefinition definition,
+        Map<PluginConfigSourceType, Map<String, String>> sourceConfigs) {
         List<PluginConfigSourceValue> result = new ArrayList<>(sourceResolvers.size());
         for (PluginConfigSourceResolver sourceResolver : sourceResolvers) {
-            result.add(sourceResolver.resolve(pluginInfo, definition, candidate));
+            PluginConfigSourceType sourceType = sourceResolver.getSourceType();
+            Map<String, String> sourceConfig = sourceConfigs.get(sourceType);
+            String itemKey = definition.getKey();
+            if (sourceConfig != null && sourceConfig.containsKey(itemKey)
+                && sourceConfig.get(itemKey) != null) {
+                result.add(PluginConfigSourceValue.present(sourceConfig.get(itemKey), sourceType));
+            } else {
+                result.add(PluginConfigSourceValue.absent(sourceType));
+            }
         }
         return result;
     }

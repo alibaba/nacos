@@ -137,6 +137,12 @@ Implemented behavior to document more explicitly:
 - Plugin detail returns the current effective plugin config in its existing
   `config` field and may add value metadata such as source and overridden state
   without changing existing fields.
+- Plugin config update keeps full override map replacement semantics. Runtime
+  updates reject restart-effective changes, including removal by omission, and
+  preserve a masked sensitive input only from the same target source. If that
+  source has no value, the masked item is ignored instead of creating an
+  override. An accepted source update that fails during plugin apply returns an
+  explicit server error and is not automatically rolled back.
 
 ## 6. Console API Implemented Behavior
 

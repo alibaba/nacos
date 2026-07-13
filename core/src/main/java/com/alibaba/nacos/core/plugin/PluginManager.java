@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.plugin;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginStateChecker;
@@ -27,8 +26,9 @@ import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
-import com.alibaba.nacos.core.plugin.config.PluginConfigResolver;
+import com.alibaba.nacos.core.plugin.config.PluginConfigService;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
@@ -44,8 +44,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +104,7 @@ public class PluginManager
      */
     private final Map<String, Object> pluginInstances = new ConcurrentHashMap<>();
     
-    private final PluginConfigResolver pluginConfigResolver = new PluginConfigResolver();
+    private final PluginConfigService pluginConfigService;
     
     private final PluginStatePersistenceService persistence;
     
@@ -119,6 +117,7 @@ public class PluginManager
         @Lazy PluginStateSynchronizer synchronizer) {
         this.persistence = persistence;
         this.synchronizer = synchronizer;
+        this.pluginConfigService = new PluginConfigService(persistence);
     }
     
     @Override
@@ -236,21 +235,34 @@ public class PluginManager
                 "Plugin does not support configuration: " + pluginId);
         }
         
+        PluginConfigSourceType sourceType = localOnly ? PluginConfigSourceType.LOCAL_ONLY
+            : PluginConfigSourceType.RUNTIME_PERSISTED;
         Map<String, String> normalizedConfig;
         try {
-            normalizedConfig = normalizeConfig(info, config);
+            normalizedConfig = pluginConfigService.prepareRuntimeUpdate(info, config, sourceType);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
         }
-        validateConfigKeys(info, normalizedConfig);
         
         // LocalOnly mode: only update local memory, skip cluster sync
         if (localOnly) {
             LOGGER.warn(
                 "[PluginManager] LocalOnly mode: applying config change to this node only, pluginId={}",
                 pluginId);
-            applyLocalConfigChange(pluginId, normalizedConfig);
+            try {
+                pluginConfigService.updateLocalOnlyConfig(info, pluginInstances.get(pluginId),
+                    normalizedConfig);
+            } catch (IllegalArgumentException e) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+            } catch (PluginConfigApplyException e) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                    e.getMessage());
+            } catch (RuntimeException e) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                    "Failed to apply local-only plugin config: " + pluginId);
+            }
             return;
         }
         
@@ -286,7 +298,7 @@ public class PluginManager
      * @return plugin config resolution with masked sensitive values
      */
     public PluginConfigResolution resolvePluginConfig(PluginInfo pluginInfo) {
-        return pluginConfigResolver.resolve(pluginInfo, true);
+        return pluginConfigService.resolve(pluginInfo, true);
     }
     
     /**
@@ -377,43 +389,14 @@ public class PluginManager
         // Load configs
         Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
         configs.forEach((pluginId, config) -> {
-            if (pluginRegistry.containsKey(pluginId)) {
-                applyConfigChange(pluginId, config);
+            PluginInfo info = pluginRegistry.get(pluginId);
+            pluginConfigService.loadRuntimePersistedConfig(info, pluginId, config);
+        });
+        pluginRegistry.forEach((pluginId, info) -> {
+            if (info.isConfigurable()) {
+                pluginConfigService.initializePluginConfig(info, pluginInstances.get(pluginId));
             }
         });
-    }
-    
-    private void validateConfigKeys(PluginInfo info, Map<String, String> config)
-        throws NacosApiException {
-        List<ConfigItemDefinition> definitions = info.getConfigDefinitions();
-        if (definitions == null || definitions.isEmpty()) {
-            return;
-        }
-        Set<String> definedKeys = new HashSet<>();
-        for (ConfigItemDefinition definition : definitions) {
-            if (StringUtils.isNotBlank(definition.getKey())) {
-                definedKeys.add(definition.getKey());
-            }
-        }
-        for (String key : config.keySet()) {
-            if (!definedKeys.contains(key)) {
-                throw new NacosApiException(NacosException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Unknown plugin config key: " + key);
-            }
-        }
-    }
-    
-    private void applyConfigToPlugin(String pluginId, Map<String, String> config) {
-        Object instance = pluginInstances.get(pluginId);
-        if (instance instanceof PluginConfigSpec) {
-            try {
-                ((PluginConfigSpec) instance).applyConfig(config);
-            } catch (Exception e) {
-                LOGGER.error("[PluginManager] Failed to apply config to plugin {}", pluginId, e);
-                throw new RuntimeException("Failed to apply config to plugin: " + pluginId, e);
-            }
-        }
     }
     
     /**
@@ -478,53 +461,20 @@ public class PluginManager
     @Override
     public void applyConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
-        Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        pluginConfigResolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginId,
-            normalizedConfig);
-        applyEffectiveConfig(pluginId);
+        pluginConfigService.applyRuntimePersistedConfig(pluginId, info,
+            pluginInstances.get(pluginId), config);
     }
     
-    private void applyLocalConfigChange(String pluginId, Map<String, String> config) {
+    /**
+     * Restore config change from a consensus snapshot.
+     *
+     * @param pluginId plugin ID
+     * @param config configuration
+     */
+    public void restoreConfigChange(String pluginId, Map<String, String> config) {
         PluginInfo info = pluginRegistry.get(pluginId);
-        Map<String, String> normalizedConfig = normalizeConfig(info, config);
-        pluginConfigResolver.updateConfig(PluginConfigSourceType.LOCAL_ONLY, pluginId,
-            normalizedConfig);
-        applyEffectiveConfig(pluginId);
-    }
-    
-    private Map<String, String> normalizeConfig(PluginInfo info, Map<String, String> config) {
-        Map<String, String> configToNormalize = config == null ? Collections.emptyMap() : config;
-        if (info == null) {
-            return new HashMap<>(configToNormalize);
-        }
-        return new HashMap<>(pluginConfigResolver.normalizeConfig(info, configToNormalize));
-    }
-    
-    private void applyEffectiveConfig(String pluginId) {
-        PluginInfo info = pluginRegistry.get(pluginId);
-        Map<String, String> effectiveConfig;
-        if (info != null) {
-            effectiveConfig = pluginConfigResolver.resolve(info, false).getConfig();
-            validateEffectiveConfig(info, effectiveConfig);
-            info.setConfig(effectiveConfig);
-        } else {
-            effectiveConfig = Collections.emptyMap();
-        }
-        applyConfigToPlugin(pluginId, effectiveConfig);
-    }
-    
-    private void validateEffectiveConfig(PluginInfo info, Map<String, String> config) {
-        List<ConfigItemDefinition> definitions = info.getConfigDefinitions();
-        if (definitions == null) {
-            return;
-        }
-        for (ConfigItemDefinition definition : definitions) {
-            String value = config.get(definition.getKey());
-            if (definition.isRequired() && StringUtils.isEmpty(value)) {
-                throw new IllegalArgumentException(
-                    "Required config missing: " + definition.getKey());
-            }
-        }
+        pluginConfigService.restoreRuntimePersistedConfig(pluginId, info,
+            pluginInstances.get(pluginId), config);
     }
     
     /**

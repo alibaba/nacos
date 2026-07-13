@@ -20,6 +20,10 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Resolver for default plugin configuration source.
  *
@@ -28,13 +32,18 @@ import com.alibaba.nacos.core.plugin.model.PluginInfo;
 class DefaultPluginConfigSourceResolver implements PluginConfigSourceResolver {
     
     @Override
-    public PluginConfigSourceValue resolve(PluginInfo pluginInfo, ConfigItemDefinition definition,
-        PluginConfigKeyCandidate candidate) {
-        if (definition.getDefaultValue() != null) {
-            return PluginConfigSourceValue.present(definition.getDefaultValue(),
-                PluginConfigSourceType.DEFAULT);
+    public Map<String, String> getConfig(PluginInfo pluginInfo) {
+        Map<String, String> result = new LinkedHashMap<>();
+        List<ConfigItemDefinition> definitions = pluginInfo.getConfigDefinitions();
+        if (definitions == null) {
+            return result;
         }
-        return PluginConfigSourceValue.absent(PluginConfigSourceType.DEFAULT);
+        for (ConfigItemDefinition definition : definitions) {
+            if (definition.getKey() != null && definition.getDefaultValue() != null) {
+                result.put(definition.getKey(), definition.getDefaultValue());
+            }
+        }
+        return result;
     }
     
     @Override
