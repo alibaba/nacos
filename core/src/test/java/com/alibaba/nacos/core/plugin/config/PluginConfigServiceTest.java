@@ -109,6 +109,19 @@ class PluginConfigServiceTest {
     }
     
     @Test
+    void initializePluginConfigWrapsValidationFailure() {
+        ConfigItemDefinition definition = runtimeDefinition("required", null);
+        definition.setRequired(true);
+        PluginInfo pluginInfo = pluginInfo(definition);
+        RecordingPlugin plugin = new RecordingPlugin(pluginInfo.getConfigDefinitions());
+        
+        PluginConfigApplyException exception = assertThrows(PluginConfigApplyException.class,
+            () -> service.initializePluginConfig(pluginInfo, plugin));
+        
+        assertTrue(exception.getMessage().contains("Failed to initialize plugin config"));
+    }
+    
+    @Test
     void runtimeUpdatePersistsCanonicalMapAndEmptyMapFallsBack() {
         ConfigItemDefinition definition = runtimeDefinition("endpoint", "default");
         PluginInfo pluginInfo = pluginInfo(definition);
@@ -246,6 +259,28 @@ class PluginConfigServiceTest {
         assertEquals("restored", plugin.getCurrentConfig().get("endpoint"));
         verify(persistence).saveConfig(PLUGIN_ID,
             Collections.singletonMap("endpoint", "restored"));
+    }
+    
+    @Test
+    void applyRuntimePersistedConfigWithoutLocalPluginPersistsInput() {
+        Map<String, String> config = Collections.singletonMap("legacy", "value");
+        
+        service.applyRuntimePersistedConfig(PLUGIN_ID, null, null, config);
+        service.applyRuntimePersistedConfig(PLUGIN_ID, null, null, null);
+        
+        verify(persistence).saveConfig(PLUGIN_ID, config);
+        verify(persistence).saveConfig(PLUGIN_ID, Collections.emptyMap());
+    }
+    
+    @Test
+    void prepareRuntimeUpdateRejectsReadOnlySource() {
+        PluginInfo pluginInfo = pluginInfo(runtimeDefinition("endpoint", "default"));
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> service.prepareRuntimeUpdate(pluginInfo, Collections.emptyMap(),
+                PluginConfigSourceType.STATIC));
+        
+        assertTrue(exception.getMessage().contains("not runtime updatable"));
     }
     
     private PluginInfo pluginInfo(ConfigItemDefinition definition) {

@@ -138,6 +138,18 @@ class PluginControllerV3Test {
     }
     
     @Test
+    void testGetPluginDetailFallsBackToPluginConfig() throws NacosApiException {
+        PluginInfo info = createPluginInfo("auth:nacos", PluginType.AUTH, "nacos");
+        info.setConfig(Collections.singletonMap("legacy", "value"));
+        when(unifiedPluginManager.getPlugin("auth:nacos")).thenReturn(Optional.of(info));
+        when(unifiedPluginManager.resolvePluginConfig(info)).thenReturn(null);
+        
+        Result<PluginDetailVO> result = pluginControllerV3.getPluginDetail("auth", "nacos");
+        
+        assertEquals("value", result.getData().getConfig().get("legacy"));
+    }
+    
+    @Test
     void testGetPluginDetailNotFound() {
         when(unifiedPluginManager.getPlugin("auth:missing")).thenReturn(Optional.empty());
         

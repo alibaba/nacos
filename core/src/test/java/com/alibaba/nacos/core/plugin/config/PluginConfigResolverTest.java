@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -171,6 +172,42 @@ class PluginConfigResolverTest {
                 Collections.emptyMap()));
         
         assertTrue(exception.getMessage().contains("not updatable"));
+    }
+    
+    @Test
+    void testResolveWithoutDefinitionsUsesPluginConfig() {
+        PluginInfo pluginInfo = createPluginInfo(null);
+        pluginInfo.setConfigDefinitions(null);
+        pluginInfo.setConfig(Collections.singletonMap("legacy", "value"));
+        
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
+        
+        assertEquals("value", resolution.getConfig().get("legacy"));
+        assertTrue(resolution.getValueMetas().isEmpty());
+        assertTrue(resolver.getConfig(PluginConfigSourceType.DEFAULT, pluginInfo).isEmpty());
+    }
+    
+    @Test
+    void testResolveSkipsBlankDefinition() {
+        ConfigItemDefinition blankDefinition = createDefinition(" ", null, false);
+        ConfigItemDefinition timeoutDefinition = createDefinition("timeout", "1000", false);
+        PluginInfo pluginInfo = createPluginInfo(timeoutDefinition);
+        pluginInfo.setConfigDefinitions(Arrays.asList(blankDefinition, timeoutDefinition));
+        
+        PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
+        
+        assertEquals(Collections.singletonMap("timeout", "1000"), resolution.getConfig());
+        assertEquals(1, resolution.getValueMetas().size());
+    }
+    
+    @Test
+    void testGetConfigRejectsUnknownSource() {
+        PluginInfo pluginInfo = createPluginInfo(createDefinition("timeout", "1000", false));
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> resolver.getConfig(null, pluginInfo));
+        
+        assertTrue(exception.getMessage().contains("source not found"));
     }
     
     private void assertMeta(PluginConfigValueMeta meta, String key,
