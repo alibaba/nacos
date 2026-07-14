@@ -375,6 +375,24 @@ function RequestTemplateSection({ data }: { data: Record<string, unknown> }) {
   );
 }
 
+// ===== Args Position Section =====
+
+function ArgsPositionSection({ data }: { data: Record<string, string> }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="overflow-hidden">
+      <div className="flex items-center gap-2 mb-2.5">
+        <Braces className="h-3.5 w-3.5 text-violet-500" />
+        <h5 className="text-sm font-semibold">{t('mcp.argsPosition')}</h5>
+      </div>
+      <pre className="text-xs font-mono rounded-lg border border-violet-200/60 dark:border-violet-800/40 bg-violet-50/30 dark:bg-violet-950/10 p-3 overflow-x-auto max-w-full break-all whitespace-pre-wrap">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
 // ===== Response Template Section =====
 
 function ResponseTemplateSection({ data }: { data: Record<string, unknown> }) {
@@ -408,6 +426,24 @@ function ResponseTemplateSection({ data }: { data: Record<string, unknown> }) {
           <div key={key}>{renderCodeBlock(key, value)}</div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ===== Error Response Template Section =====
+
+function ErrorResponseTemplateSection({ data }: { data: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="overflow-hidden">
+      <div className="flex items-center gap-2 mb-2.5">
+        <FileOutput className="h-3.5 w-3.5 text-red-500" />
+        <h5 className="text-sm font-semibold">{t('mcp.errorResponseTemplate')}</h5>
+      </div>
+      <pre className="text-xs font-mono rounded-lg border border-red-200/60 dark:border-red-800/40 bg-red-50/30 dark:bg-red-950/10 p-3 overflow-x-auto max-w-full break-all whitespace-pre-wrap">
+        {data}
+      </pre>
     </div>
   );
 }
@@ -455,9 +491,18 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
   const security = tmpl ? (tmpl as Record<string, unknown>).security : undefined;
   const hasRequestTemplate =
     tmpl?.requestTemplate && Object.keys(tmpl.requestTemplate).length > 0;
+  const hasArgsPosition =
+    tmpl?.argsPosition && Object.keys(tmpl.argsPosition).length > 0;
   const hasResponseTemplate =
     tmpl?.responseTemplate && Object.keys(tmpl.responseTemplate).length > 0;
-  const hasTemplates = hasRequestTemplate || hasResponseTemplate || !!security;
+  const hasErrorResponseTemplate =
+    typeof tmpl?.errorResponseTemplate === 'string' && tmpl.errorResponseTemplate.length > 0;
+  const hasTemplates =
+    hasRequestTemplate ||
+    hasArgsPosition ||
+    hasResponseTemplate ||
+    hasErrorResponseTemplate ||
+    !!security;
 
   return (
     <div
@@ -708,11 +753,21 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
                     />
                   )}
 
+                  {/* Args Position */}
+                  {hasArgsPosition && (
+                    <ArgsPositionSection data={tmpl!.argsPosition as Record<string, string>} />
+                  )}
+
                   {/* Response Template */}
                   {hasResponseTemplate && (
                     <ResponseTemplateSection
                       data={tmpl!.responseTemplate as Record<string, unknown>}
                     />
+                  )}
+
+                  {/* Error Response Template */}
+                  {hasErrorResponseTemplate && (
+                    <ErrorResponseTemplateSection data={tmpl!.errorResponseTemplate as string} />
                   )}
                 </div>
               )}
