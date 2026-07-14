@@ -54,7 +54,7 @@ for %%a in (%*) do (
     set /a i+=1
 )
 
-call :Process_required_config "nacos.core.auth.plugin.nacos.token.secret.key" %BASE_DIR%\conf\application.properties
+call :Process_compatible_base64_config "nacos.plugin.auth.nacos.token.secret.key" "nacos.core.auth.plugin.nacos.token.secret.key" %BASE_DIR%\conf\application.properties
 call :Process_required_config "nacos.core.auth.server.identity.key" %BASE_DIR%\conf\application.properties
 call :Process_required_config "nacos.core.auth.server.identity.value" %BASE_DIR%\conf\application.properties
 
@@ -122,6 +122,84 @@ rem start nacos command
 pause
 
 goto :EOF
+
+:Process_compatible_base64_config
+    setlocal enabledelayedexpansion
+    set "canonical_key=%~1"
+    set "legacy_key=%~2"
+    set "target_file=%~3"
+    set "target_file=!target_file:"=!"
+    call :Read_config_value "!canonical_key!" "!target_file!" canonical_value
+    call :Read_config_value "!legacy_key!" "!target_file!" legacy_value
+    if defined canonical_value (
+        if defined legacy_value echo Both `!canonical_key!` and legacy `!legacy_key!` are configured; the preferred key wins.
+        endlocal
+        exit /b
+    )
+    if defined legacy_value (
+        call :Validate_base64 "!legacy_value!"
+        if !errorlevel! == 0 (
+            call :Write_config_value "!canonical_key!" "!legacy_value!" "!target_file!"
+            echo Migrated legacy `!legacy_key!` to preferred `!canonical_key!`.
+            endlocal
+            exit /b
+        )
+    )
+    echo The initial key used to generate JWT tokens must decode to at least 32 bytes.
+    :Prompt_base64_config
+    set /p "input_val=!canonical_key! is missing, please set with Base64 string: "
+    call :Validate_base64 "!input_val!"
+    if not !errorlevel! == 0 (
+        echo Invalid Base64 token secret, please input again.
+        goto Prompt_base64_config
+    )
+    call :Write_config_value "!canonical_key!" "!input_val!" "!target_file!"
+    echo `!canonical_key!` updated.
+    endlocal
+    exit /b
+
+:Read_config_value
+    setlocal enabledelayedexpansion
+    set "result="
+    for /f "usebackq delims=" %%a in ("%~2") do (
+        for /f "tokens=1 delims==" %%b in ("%%a") do (
+            if "%%b"=="%~1" (
+                set "line=%%a"
+                set "result=!line:*==!"
+            )
+        )
+    )
+    endlocal & set "%~3=%result%"
+    exit /b
+
+:Validate_base64
+    setlocal
+    set "NACOS_SECRET_TO_VALIDATE=%~1"
+    powershell -NoProfile -NonInteractive -Command "try {$v=[Convert]::FromBase64String($env:NACOS_SECRET_TO_VALIDATE); if ($v.Length -lt 32) {exit 1}} catch {exit 1}" >nul 2>&1
+    set "validation_result=%errorlevel%"
+    endlocal & exit /b %validation_result%
+
+:Write_config_value
+    setlocal enabledelayedexpansion
+    set "key_pattern=%~1"
+    set "input_val=%~2"
+    set "target_file=%~3"
+    set "temp_file=%TEMP%\temp_%RANDOM%.tmp"
+    set "key_pattern_with_equal=!key_pattern!="
+    set "updated=false"
+    for /f "usebackq delims=" %%a in ("!target_file!") do (
+        set "line=%%a"
+        if "!line!"=="!key_pattern_with_equal!" (
+            echo %%a!input_val!>>"!temp_file!"
+            set "updated=true"
+        ) else (
+            echo %%a>>"!temp_file!"
+        )
+    )
+    if "!updated!"=="false" echo !key_pattern!=!input_val!>>"!temp_file!"
+    move /Y "!temp_file!" "!target_file!" >nul
+    endlocal
+    exit /b
 
 :Process_required_config
     setlocal

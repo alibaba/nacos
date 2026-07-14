@@ -47,7 +47,7 @@ AUTH_DISABLED_ARGS := -Dnacos.core.auth.enabled=false \
                       -Dnacos.core.auth.console.enabled=false
 AUTH_ARGS := -Dnacos.core.auth.server.identity.key=testKey \
              -Dnacos.core.auth.server.identity.value=testValue \
-             -Dnacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg= \
+             -Dnacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg= \
              $(AUTH_DISABLED_ARGS)
 
 # Mark additional targets as phony

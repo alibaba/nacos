@@ -24,13 +24,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * Nacos Server auth configurations.
@@ -40,8 +35,6 @@ import java.util.Properties;
 public class NacosServerAuthConfig extends AbstractDynamicConfig implements NacosAuthConfig {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosServerAuthConfig.class);
-    
-    private static final String PREFIX = "nacos.core.auth.plugin";
     
     public static final String NACOS_SERVER_AUTH_SCOPE = ApiType.OPEN_API.name();
     
@@ -58,8 +51,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     private String serverIdentityKey;
     
     private String serverIdentityValue;
-    
-    private volatile Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public NacosServerAuthConfig() {
         super("NacosServerAuth");
@@ -81,26 +72,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
         if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
             throw new NacosRuntimeException(AuthErrorCode.EMPTY_IDENTITY.getCode(),
                 AuthErrorCode.EMPTY_IDENTITY.getMsg());
-        }
-    }
-    
-    private void refreshPluginProperties() {
-        try {
-            Map<String, Properties> newProperties = new HashMap<>(1);
-            Properties properties =
-                PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
-            if (properties != null) {
-                for (String each : properties.stringPropertyNames()) {
-                    int typeIndex = each.indexOf('.');
-                    String type = each.substring(0, typeIndex);
-                    String subKey = each.substring(typeIndex + 1);
-                    newProperties.computeIfAbsent(type, key -> new Properties())
-                        .setProperty(subKey, properties.getProperty(each));
-                }
-            }
-            authPluginProperties = newProperties;
-        } catch (Exception e) {
-            LOGGER.warn("Refresh plugin properties failed ", e);
         }
     }
     
@@ -139,15 +110,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
         return serverIdentityValue;
     }
     
-    public Properties getAuthPluginProperties(String authType) {
-        Properties properties = authPluginProperties.get(authType);
-        if (properties == null) {
-            LOGGER.warn("Can't find properties for type {}, will use empty properties", authType);
-            return new Properties();
-        }
-        return properties;
-    }
-    
     @Override
     protected void getConfigFromEnv() {
         try {
@@ -159,7 +121,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
                 EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue =
                 EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
-            refreshPluginProperties();
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }
@@ -175,6 +136,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
         return "NacosServerAuthConfig{" + "authEnabled=" + authEnabled + ", nacosAuthSystemType='"
             + nacosAuthSystemType
             + '\'' + ", serverIdentityKey='" + serverIdentityKey + '\'' + ", serverIdentityValue='"
-            + serverIdentityValue + '\'' + ", authPluginProperties=" + authPluginProperties + '}';
+            + serverIdentityValue + '\'' + '}';
     }
 }

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.UserController;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
@@ -34,10 +33,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 public class NacosAuthPluginOldControllerConfig {
     
     @Bean
-    public UserController userController(AuthConfigs authConfigs,
-        IAuthenticationManager iAuthenticationManager,
+    public UserController userController(IAuthenticationManager iAuthenticationManager,
         TokenManagerDelegate jwtTokenManager, AuthenticationManager authenticationManager) {
-        return new UserController(jwtTokenManager, authConfigs, iAuthenticationManager,
-            authenticationManager);
+        return new UserController(jwtTokenManager, iAuthenticationManager, authenticationManager);
     }
 }

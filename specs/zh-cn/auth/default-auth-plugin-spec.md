@@ -31,7 +31,7 @@ Java 客户端为默认插件暴露的用户名/密码和 token 流程提供
 默认实现用于在可信内网环境中降低误用风险。它不是面向恶意公网环境的完整强鉴权方案。
 如果需要暴露到公网，应使用外部安全边界，或选择更强的鉴权插件。
 
-## 必要配置
+## 模块配置
 
 | 配置 | 目的 |
 |------|------|
@@ -39,15 +39,39 @@ Java 客户端为默认插件暴露的用户名/密码和 token 流程提供
 | `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 |
 | `nacos.core.auth.console.enabled` | 启用 Console API 鉴权和默认登录行为。 |
 | `nacos.core.auth.system.type` | 选择鉴权插件，默认 `nacos`。 |
-| `nacos.core.auth.plugin.nacos.token.secret.key` | 默认 token 签名密钥，部署时必须配置。 |
-| `nacos.core.auth.plugin.nacos.token.expire.seconds` | token 过期时间。 |
-| `nacos.core.auth.plugin.nacos.token.cache.enable` | 启用 token 解析和校验缓存。 |
 | `nacos.core.auth.server.identity.key` | 服务端之间调用的身份 key。 |
 | `nacos.core.auth.server.identity.value` | 服务端之间调用的身份 value。 |
-| `nacos.core.auth.caching.enabled` | 启用用户、角色和权限缓存。 |
-| `nacos.core.auth.nacos.anonymous.ai.enabled` | 当端点明确选择匿名访问时，允许匿名 AI 访问。 |
 
-token 密钥和服务端身份值必须由部署环境独立配置。使用默认值或共享值是不安全的。
+这些配置负责鉴权模块、API 范围、插件选择和服务端身份，不属于 `auth:nacos` 插件自身的
+配置项。服务端身份值必须由部署环境独立配置。
+
+## 统一管理的插件配置
+
+`nacos` 实现直接实现 `PluginConfigSpec`，并以可配置插件 `auth:nacos` 注册。其 canonical
+配置前缀为 `nacos.plugin.auth.nacos.`。
+
+| item key | canonical 静态 key | 历史静态 alias | 类型 | 生效模式 | 默认值 | 敏感 |
+|----------|--------------------|----------------|------|----------|--------|------|
+| `token.secret.key` | `nacos.plugin.auth.nacos.token.secret.key` | `nacos.core.auth.plugin.nacos.token.secret.key` | String | `RESTART` | 空 | 是 |
+| `token.expire.seconds` | `nacos.plugin.auth.nacos.token.expire.seconds` | `nacos.core.auth.plugin.nacos.token.expire.seconds` | Number | `RUNTIME` | `18000` | 否 |
+| `token.cache.enable` | `nacos.plugin.auth.nacos.token.cache.enable` | `nacos.core.auth.plugin.nacos.token.cache.enable` | Boolean | `RUNTIME` | `false` | 否 |
+| `caching.enabled` | `nacos.plugin.auth.nacos.caching.enabled` | `nacos.core.auth.caching.enabled` | Boolean | `RUNTIME` | `true` | 否 |
+| `anonymous.ai.enabled` | `nacos.plugin.auth.nacos.anonymous.ai.enabled` | `nacos.core.auth.nacos.anonymous.ai.enabled` | Boolean | `RUNTIME` | `false` | 否 |
+
+`token.expire.seconds` 必须大于零。当任一 Nacos API 鉴权范围需要 token 能力时，
+`token.secret.key` 必须是有效的 Base64 内容，且解码后不少于 32 字节。token 密钥必须由
+部署环境独立设置，使用默认值或共享值是不安全的。插件管理 API 必须返回脱敏后的密钥，
+并禁止通过运行时更新修改该字段。
+
+canonical key 与历史 alias 同时存在时，canonical key 优先。历史 alias 为兼容已有部署
+继续可读，并在使用时输出不包含配置值的迁移提示。运行时和 localOnly 更新使用表中的
+item key，并遵循 [Nacos 插件化规范](../plugin/plugin-spec.md)定义的 source 完整 Map 语义。
+
+插件持有不可变的 effective 配置快照。应用新快照时更新 token 过期时间、token 缓存选择、
+鉴权信息缓存和匿名访问，消费者不再直接读取 Spring 环境。JWT parser 由已接受的
+restart-only 密钥构建。开启 token 缓存时，在同一个基础 manager 外选择缓存包装；关闭时
+切回基础 manager，并清空 token 缓存。token 过期时间变化时也会清空包装缓存，使下一次
+取 token 使用新的运行时有效期；已经返回给客户端的 token 仍按签名中的原过期时间有效。
 
 `ldap` 插件变体额外使用 `nacos.core.auth.ldap.*` 配置族。LDAP 只改变身份认证方式，授权仍然
 使用 Nacos 角色和权限。
@@ -69,10 +93,17 @@ token 密钥和服务端身份值必须由部署环境独立配置。使用默�
 匿名 AI 访问只有在以下条件同时满足时才允许：
 
 - 端点标记该请求允许匿名访问。
-- `nacos.core.auth.nacos.anonymous.ai.enabled` 已启用。
+- `auth:nacos` 的 `anonymous.ai.enabled` 已启用。
 - 默认插件将请求接受为内置匿名身份。
 
-当匿名 AI 访问启用时，实现会初始化保留的匿名用户和角色，并授予 `public:*:ai/*` 读权限。
+开启匿名访问后，只会立即开启匿名身份接受。后台协调任务随后保证保留的匿名用户和角色
+存在；首次初始化时增加 `public:*:ai/*` 读权限，并最后写入匿名角色绑定，将该绑定作为
+持久化完成标记。多节点并发创建发生冲突时，只有重新读取到预期持久化状态才视为成功。
+
+如果匿名角色绑定已经存在，则视为已经初始化，协调任务不会重新补回宽泛的默认权限，
+从而保留管理员自定义的匿名权限范围。关闭匿名访问只会停止匿名身份接受，不删除保留的
+用户、角色或权限。协调任务的本地状态只用于减少数据库操作，不参与鉴权判断；当找不到
+匹配的角色或权限时，普通 RBAC 权限校验仍然必须拒绝匿名身份。
 
 ## 默认 Java 客户端鉴权集成
 
@@ -180,9 +211,13 @@ API 和存储集成在补齐后必须使用该结构。
 旧端点或兼容端点可以为已有客户端保留，但新的文档和新的开发应以 v3 鉴权 API 以及本文档
 定义的插件契约为准。
 
+统一管理表中的历史静态 alias 继续兼容。新的发行版模板使用 canonical key，并在注释中
+标明历史 key。canonical token 密钥缺失或为空时，启动脚本会把合法的历史密钥迁移到
+canonical key；二者同时存在时 canonical 值优先。迁移过程不得输出密钥内容。
+
 ## 待处理问题
 
-- `ldap` 插件当前通过继承 `NacosAuthPluginService` 耦合在默认鉴权实现包中。从概念上看，
-  LDAP 是由外部身份提供方支撑的独立鉴权插件，不属于默认 Nacos 用户名/密码和 token
-  实现。后续应将它拆分为独立鉴权插件包和规范，同时保持已有
-  `nacos.core.auth.system.type=ldap` 部署兼容。
+- `ldap` 插件当前仍通过共享认证行为和 token 基础设施与默认鉴权实现耦合。从概念上看，
+  LDAP 是由外部身份提供方支撑的独立鉴权插件，不属于默认 Nacos 用户名/密码实现。
+  LDAP 全面接入阶段需要明确其 `PluginConfigSpec` 所有权和共享 token 配置边界，同时保持
+  已有 `nacos.core.auth.system.type=ldap` 部署兼容。

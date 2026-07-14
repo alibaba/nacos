@@ -77,6 +77,39 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
     }
 
     @Test
+    public void testNacosAuthPluginConfigMetadata() throws Exception {
+        JsonNode detail = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/detail",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "nacos"))
+                .get("data");
+        assertTrue(detail.get("configurable").asBoolean(), detail.toString());
+
+        JsonNode definitions = detail.get("configDefinitions");
+        assertEquals(5, definitions.size(), definitions.toString());
+        assertDefinition(definitions, "token.secret.key",
+                "nacos.core.auth.plugin.nacos.token.secret.key", "STRING", "RESTART", true);
+        assertDefinition(definitions, "token.expire.seconds",
+                "nacos.core.auth.plugin.nacos.token.expire.seconds", "NUMBER", "RUNTIME", false);
+        assertDefinition(definitions, "token.cache.enable",
+                "nacos.core.auth.plugin.nacos.token.cache.enable", "BOOLEAN", "RUNTIME", false);
+        assertDefinition(definitions, "caching.enabled", "nacos.core.auth.caching.enabled",
+                "BOOLEAN", "RUNTIME", false);
+        assertDefinition(definitions, "anonymous.ai.enabled",
+                "nacos.core.auth.nacos.anonymous.ai.enabled", "BOOLEAN", "RUNTIME", false);
+
+        JsonNode config = detail.get("config");
+        assertTrue(config.get("token.secret.key").asText().contains("******"), config.toString());
+        assertEquals("18000", config.get("token.expire.seconds").asText(), config.toString());
+        assertEquals("false", config.get("token.cache.enable").asText(), config.toString());
+        assertEquals("true", config.get("caching.enabled").asText(), config.toString());
+        assertEquals("false", config.get("anonymous.ai.enabled").asText(), config.toString());
+
+        JsonNode metas = detail.get("configValueMetas");
+        assertEquals("STATIC", metas.get("token.secret.key").get("source").asText(), metas.toString());
+        assertEquals("DEFAULT", metas.get("anonymous.ai.enabled").get("source").asText(),
+                metas.toString());
+    }
+
+    @Test
     public void testPluginDetailNotFoundReturnsControlledError() throws Exception {
         assertError(getRaw(ADMIN_CORE_PLUGIN_PATH + "/detail",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
@@ -110,5 +143,24 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
                         .addParam("pluginName", nonConfigurable.get("pluginName").asText())
                         .addParam("config", "{}")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "does not support configuration");
+    }
+
+    private void assertDefinition(JsonNode definitions, String key, String alias, String type,
+            String effectMode, boolean sensitive) {
+        JsonNode definition = findDefinition(definitions, key);
+        assertNotNull(definition, definitions.toString());
+        assertEquals(type, definition.get("type").asText(), definition.toString());
+        assertEquals(effectMode, definition.get("effectMode").asText(), definition.toString());
+        assertEquals(sensitive, definition.get("sensitive").asBoolean(), definition.toString());
+        assertEquals(alias, definition.get("aliases").get(0).asText(), definition.toString());
+    }
+
+    private JsonNode findDefinition(JsonNode definitions, String key) {
+        for (JsonNode definition : definitions) {
+            if (key.equals(definition.get("key").asText())) {
+                return definition;
+            }
+        }
+        return null;
     }
 }

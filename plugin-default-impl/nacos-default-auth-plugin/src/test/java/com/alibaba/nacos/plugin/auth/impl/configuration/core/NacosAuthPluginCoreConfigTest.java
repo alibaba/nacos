@@ -21,15 +21,16 @@ import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthPluginService;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
-import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,9 +46,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -64,12 +70,13 @@ class NacosAuthPluginCoreConfigTest {
     private ControllerMethodsCache methodsCache;
     
     @Mock
-    private AuthConfigs authConfigs;
-    
-    @Mock
     private NacosRoleService roleService;
     
     private Map<String, NacosAuthConfig> cachedConfigMap;
+    
+    private Map<String, AuthPluginService> cachedPluginMap;
+    
+    private NacosAuthPluginService pluginService;
     
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -77,6 +84,11 @@ class NacosAuthPluginCoreConfigTest {
         setValidEnvironment(AuthSystemTypes.NACOS.name());
         cachedConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
             NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+        Map<String, AuthPluginService> pluginMap = getMutablePluginMap();
+        cachedPluginMap = new LinkedHashMap<>(pluginMap);
+        pluginMap.clear();
+        pluginService = new NacosAuthPluginService();
+        pluginMap.put(AuthConstants.AUTH_PLUGIN_TYPE, pluginService);
     }
     
     @AfterEach
@@ -84,6 +96,9 @@ class NacosAuthPluginCoreConfigTest {
         EnvUtil.setEnvironment(null);
         ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
             cachedConfigMap);
+        Map<String, AuthPluginService> pluginMap = getMutablePluginMap();
+        pluginMap.clear();
+        pluginMap.putAll(cachedPluginMap);
     }
     
     @Test
@@ -116,15 +131,25 @@ class NacosAuthPluginCoreConfigTest {
     void testBeanFactories() {
         NacosAuthPluginCoreConfig config =
             new NacosAuthPluginCoreConfig(userDetailsService, methodsCache);
-        TokenManager tokenManager = config.tokenManager(authConfigs);
-        TokenManagerDelegate delegate = config.tokenManagerDelegate(tokenManager);
+        NacosAuthPluginConfigProvider provider =
+            NacosAuthPluginCoreConfig.nacosAuthPluginConfigProvider();
+        TokenManagerDelegate delegate = NacosAuthPluginCoreConfig.tokenManagerDelegate();
         
         assertTrue(config.passwordEncoder() instanceof PasswordEncoder);
         assertTrue(config.defaultAuthenticationManager(userDetailsService, delegate,
             roleService) instanceof DefaultAuthenticationManager);
-        assertTrue(tokenManager instanceof JwtTokenManager);
-        assertTrue(config.cachedTokenManager(authConfigs) instanceof CachedJwtTokenManager);
+        assertFalse(provider instanceof NacosAuthPluginService);
+        assertNotSame(pluginService, provider);
+        assertSame(pluginService.getConfig(), provider.getConfig());
+        assertSame(pluginService.getTokenManagerDelegate(), delegate);
         assertNotNull(delegate);
+    }
+    
+    @Test
+    void testBeanFactoriesFailWithoutBuiltInPlugin() {
+        getMutablePluginMap().clear();
+        assertThrows(IllegalStateException.class,
+            NacosAuthPluginCoreConfig::nacosAuthPluginConfigProvider);
     }
     
     private static void setValidAuthEnvironment(String systemType) {
@@ -144,6 +169,12 @@ class NacosAuthPluginCoreConfigTest {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "value");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
         EnvUtil.setEnvironment(environment);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Map<String, AuthPluginService> getMutablePluginMap() {
+        return (Map<String, AuthPluginService>) ReflectionTestUtils.getField(
+            AuthPluginManager.getInstance(), "authServiceMap");
     }
     
     private static final class TestNacosAuthConfig implements NacosAuthConfig {

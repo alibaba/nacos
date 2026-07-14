@@ -26,7 +26,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  *
  * @author onewe
  */
-public class LdapAuthPluginService extends NacosAuthPluginService {
+public class LdapAuthPluginService extends AbstractNacosAuthPluginService {
     
     @Override
     public String getAuthServiceName() {

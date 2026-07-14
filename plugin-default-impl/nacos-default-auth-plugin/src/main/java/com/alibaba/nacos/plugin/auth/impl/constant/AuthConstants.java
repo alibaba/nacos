@@ -58,14 +58,44 @@ public class AuthConstants {
     
     public static final String NACOS_USER_KEY = "nacosuser";
     
+    /**
+     * Legacy token secret key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.nacos.token.secret.key} instead.
+     */
+    @Deprecated
     public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";
     
     public static final String DEFAULT_TOKEN_SECRET_KEY = "";
     
+    /**
+     * Legacy token expiration key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.nacos.token.expire.seconds} instead.
+     */
+    @Deprecated
     public static final String TOKEN_EXPIRE_SECONDS =
         "nacos.core.auth.plugin.nacos.token.expire.seconds";
     
     public static final Long DEFAULT_TOKEN_EXPIRE_SECONDS = 18_000L;
+    
+    /**
+     * Legacy token cache key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.nacos.token.cache.enable} instead.
+     */
+    @Deprecated
+    public static final String TOKEN_CACHE_ENABLE =
+        "nacos.core.auth.plugin.nacos.token.cache.enable";
+    
+    /**
+     * Legacy authorization cache key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.nacos.caching.enabled} instead.
+     */
+    @Deprecated
+    public static final String NACOS_CORE_AUTH_CACHING_ENABLED =
+        "nacos.core.auth.caching.enabled";
     
     public static final String NACOS_CORE_AUTH_LDAP_URL = "nacos.core.auth.ldap.url";
     
@@ -126,8 +156,11 @@ public class AuthConstants {
     public static final String TAG_ALLOW_ANONYMOUS = Constants.Tag.ALLOW_ANONYMOUS;
     
     /**
-     * Configuration key controlling whether anonymous access to AI resources is enabled.
+     * Legacy configuration key controlling whether anonymous AI access is enabled.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.nacos.anonymous.ai.enabled} instead.
      */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_NACOS_ANONYMOUS_AI_ENABLED =
         "nacos.core.auth.nacos.anonymous.ai.enabled";
 }

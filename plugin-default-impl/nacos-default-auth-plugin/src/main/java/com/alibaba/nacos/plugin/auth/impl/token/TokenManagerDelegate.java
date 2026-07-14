@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,78 @@
 package com.alibaba.nacos.plugin.auth.impl.token;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
+import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
+import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 
+import java.util.Objects;
+
 /**
- * token manager delegate.
+ * Stable token manager facade whose delegate is selected by plugin configuration.
  *
  * @author majorhe
  */
 public class TokenManagerDelegate implements TokenManager {
     
-    public static final String NACOS_AUTH_TOKEN_CACHING_ENABLED =
-        "nacos.core.auth.plugin.nacos.token.cache.enable";
+    private final NacosAuthPluginConfigProvider configProvider;
     
-    private final TokenManager delegate;
+    private volatile JwtTokenManager tokenManager;
     
-    public TokenManagerDelegate(TokenManager delegate) {
-        this.delegate = delegate;
+    private volatile CachedJwtTokenManager cachedTokenManager;
+    
+    private NacosAuthPluginConfig lastAppliedConfig;
+    
+    public TokenManagerDelegate(NacosAuthPluginConfigProvider configProvider) {
+        this.configProvider = configProvider;
     }
     
     private TokenManager getExecuteTokenManager() {
-        return delegate;
+        JwtTokenManager direct = tokenManager;
+        CachedJwtTokenManager cached = cachedTokenManager;
+        if (direct == null || cached == null) {
+            throw new IllegalStateException("Nacos auth plugin has not been initialized");
+        }
+        return configProvider.getConfig().isTokenCacheEnabled() ? cached : direct;
+    }
+    
+    /**
+     * Initialize token managers once and clear cached state after relevant config changes.
+     */
+    public synchronized void applyTokenConfig() {
+        NacosAuthPluginConfig current = configProvider.getConfig();
+        if (lastAppliedConfig != null && !Objects.equals(lastAppliedConfig.getTokenSecretKey(),
+            current.getTokenSecretKey())) {
+            throw new IllegalArgumentException("Token secret key change requires restart");
+        }
+        if (tokenManager == null) {
+            JwtTokenManager direct = new JwtTokenManager(configProvider);
+            CachedJwtTokenManager cached = new CachedJwtTokenManager(direct, configProvider);
+            tokenManager = direct;
+            cachedTokenManager = cached;
+        } else if (shouldClearCache(current)) {
+            cachedTokenManager.clear();
+        }
+        lastAppliedConfig = current;
+    }
+    
+    private boolean shouldClearCache(NacosAuthPluginConfig current) {
+        return lastAppliedConfig.getTokenExpireSeconds() != current.getTokenExpireSeconds()
+            || lastAppliedConfig.isTokenCacheEnabled() != current.isTokenCacheEnabled();
+    }
+    
+    /**
+     * Clean expired tokens when the active delegate has a token cache.
+     */
+    @Scheduled(initialDelay = 30000, fixedDelay = 60000)
+    public void cleanExpiredToken() {
+        CachedJwtTokenManager current = cachedTokenManager;
+        if (current != null && configProvider.getConfig().isTokenCacheEnabled()) {
+            current.cleanExpiredToken();
+        }
     }
     
     @Override
@@ -74,5 +125,4 @@ public class TokenManagerDelegate implements TokenManager {
     public long getTokenTtlInSeconds(String token) throws AccessException {
         return getExecuteTokenManager().getTokenTtlInSeconds(token);
     }
-    
 }

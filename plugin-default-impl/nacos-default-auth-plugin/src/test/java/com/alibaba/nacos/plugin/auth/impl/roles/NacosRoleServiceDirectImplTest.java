@@ -17,7 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -49,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,7 +64,10 @@ import static org.mockito.Mockito.when;
 class NacosRoleServiceDirectImplTest {
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthPluginConfigProvider configProvider;
+    
+    @Mock
+    private NacosAuthPluginConfig config;
     
     @Mock
     private RolePersistService rolePersistService;
@@ -78,8 +84,10 @@ class NacosRoleServiceDirectImplTest {
     @BeforeEach
     void setup() throws Exception {
         nacosRoleService =
-            new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
+            new NacosRoleServiceDirectImpl(configProvider, rolePersistService, userDetailsService,
                 permissionPersistService);
+        lenient().when(configProvider.getConfig()).thenReturn(config);
+        lenient().when(config.isCachingEnabled()).thenReturn(false);
     }
     
     @Test
@@ -130,7 +138,7 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void getRolesLoadsAndCachesRoleItems() {
         RoleInfo roleInfo = roleInfo("role-admin", "nacos");
-        when(authConfigs.isCachingEnabled()).thenReturn(true);
+        when(config.isCachingEnabled()).thenReturn(true);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
         
@@ -156,7 +164,7 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void getPermissions() {
-        boolean cachingEnabled = authConfigs.isCachingEnabled();
+        boolean cachingEnabled = config.isCachingEnabled();
         assertFalse(cachingEnabled);
         List<PermissionInfo> permissions = nacosRoleService.getPermissions("role-admin");
         assertEquals(permissions, Collections.emptyList());
@@ -217,7 +225,7 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void getPermissionsLoadsAndCachesPermissionItems() {
         PermissionInfo permissionInfo = permissionInfo("role-admin", "resource", "rw");
-        when(authConfigs.isCachingEnabled()).thenReturn(true);
+        when(config.isCachingEnabled()).thenReturn(true);
         when(permissionPersistService.getPermissions("role-admin", 1,
             Integer.MAX_VALUE)).thenReturn(permissionPage(
                 Collections.singletonList(
@@ -279,14 +287,13 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void addAdminRoleBindsFirstAdminAndMarksConfig() {
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
-        when(authConfigs.isHasGlobalAdminRole()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.emptyList()));
         
         nacosRoleService.addAdminRole("nacos");
         
         verify(rolePersistService).addRole(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos");
-        verify(authConfigs).setHasGlobalAdminRole(true);
+        assertTrue(nacosRoleService.hasGlobalAdminRole());
         assertTrue(nacosRoleService.getCachedRoleSet().contains(AuthConstants.GLOBAL_ADMIN_ROLE));
     }
     
@@ -295,7 +302,7 @@ class NacosRoleServiceDirectImplTest {
         assertThrows(IllegalArgumentException.class, () -> nacosRoleService.addAdminRole("nacos"));
         
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
-        when(authConfigs.isHasGlobalAdminRole()).thenReturn(true);
+        ReflectionTestUtils.setField(nacosRoleService, "hasGlobalAdminRole", true);
         
         assertThrows(IllegalArgumentException.class, () -> nacosRoleService.addAdminRole("nacos"));
     }
@@ -392,7 +399,7 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void hasPermissionReturnsTrueForGlobalAdminRole() {
         RoleInfo roleInfo = roleInfo(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
         NacosUser nacosUser = new NacosUser("nacos");
@@ -409,7 +416,7 @@ class NacosRoleServiceDirectImplTest {
     void hasPermissionReturnsTrueForMatchedPermissionPattern() {
         RoleInfo roleInfo = roleInfo("reader", "nacos");
         PermissionInfo permissionInfo = permissionInfo("reader", "public:group:naming/*", "rw");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
         when(permissionPersistService.getPermissions("reader", 1,
@@ -427,7 +434,7 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void hasPermissionReturnsFalseForConsoleResourceWithoutGlobalAdmin() {
         RoleInfo roleInfo = roleInfo("reader", "nacos");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(roleInfo)));
         Permission permission = new Permission();
@@ -443,7 +450,7 @@ class NacosRoleServiceDirectImplTest {
         RoleInfo emptyRole = roleInfo("empty", "nacos");
         RoleInfo reader = roleInfo("reader", "nacos");
         PermissionInfo permissionInfo = permissionInfo("reader", ":group:naming/service", "rw");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(java.util.Arrays.asList(emptyRole, reader)));
         when(permissionPersistService.getPermissions("empty", 1,
@@ -462,13 +469,13 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void hasGlobalAdminRoleChecksUserAndCachedAllRoles() {
         RoleInfo adminRole = roleInfo(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(rolePersistService.getRolesByUserNameAndRoleName("nacos", "", 1,
             Integer.MAX_VALUE)).thenReturn(rolePage(Collections.singletonList(adminRole)));
         
         assertTrue(nacosRoleService.hasGlobalAdminRole("nacos"));
         
-        when(authConfigs.isHasGlobalAdminRole()).thenReturn(true);
+        ReflectionTestUtils.setField(nacosRoleService, "hasGlobalAdminRole", true);
         assertTrue(nacosRoleService.hasGlobalAdminRole());
     }
     
