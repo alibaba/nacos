@@ -176,6 +176,10 @@ public abstract class GrpcClient extends RpcClient {
         grpcExecutor.allowCoreThreadTimeOut(clientConfig.allowCoreThreadTimeOut());
         return grpcExecutor;
     }
+
+    protected Integer configuredRpcPortOffset() {
+        return clientConfig.rpcPortOffset();
+    }
     
     @Override
     public void shutdown() throws NacosException {

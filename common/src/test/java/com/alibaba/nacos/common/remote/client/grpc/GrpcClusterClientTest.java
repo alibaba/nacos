@@ -58,6 +58,16 @@ class GrpcClusterClientTest {
         grpcClusterClient = new GrpcClusterClient("test", 8, 8, Collections.emptyMap());
         assertEquals(10001, grpcClusterClient.rpcPortOffset());
     }
+
+    @Test
+    void testRpcPortOffsetFromClientConfig() {
+        Properties properties = new Properties();
+        properties.setProperty(GrpcConstants.GRPC_PORT_OFFSET, "1002");
+        GrpcClientConfig config =
+            DefaultGrpcClientConfig.newBuilder().buildClusterFromProperties(properties).build();
+        grpcClusterClient = new GrpcClusterClient(config);
+        assertEquals(1002, grpcClusterClient.rpcPortOffset());
+    }
     
     @Test
     void testGrpcClientByConfig() {

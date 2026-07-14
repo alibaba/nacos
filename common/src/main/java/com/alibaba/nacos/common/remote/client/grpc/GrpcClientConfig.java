@@ -117,4 +117,11 @@ public interface GrpcClientConfig extends RpcClientConfig {
      * @return allowCoreThreadTimeOut flag
      */
     boolean allowCoreThreadTimeOut();
+
+    /**
+     * get configured rpc port offset.
+     *
+     * @return configured rpc port offset.
+     */
+    Integer rpcPortOffset();
 }

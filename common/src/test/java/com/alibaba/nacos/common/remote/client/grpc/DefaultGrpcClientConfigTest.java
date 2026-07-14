@@ -86,6 +86,7 @@ class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, "3000");
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         properties.setProperty(GrpcConstants.GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT, "false");
+        properties.setProperty(GrpcConstants.GRPC_PORT_OFFSET, "1002");
         
         DefaultGrpcClientConfig config =
             (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
@@ -107,6 +108,7 @@ class DefaultGrpcClientConfigTest {
         assertEquals(3000, config.healthCheckTimeOut());
         assertEquals(5000, config.capabilityNegotiationTimeout());
         assertEquals(false, config.allowCoreThreadTimeOut());
+        assertEquals(1002, config.rpcPortOffset());
         assertEquals(1, config.labels().size());
         assertNotNull(config.tlsConfig());
     }
@@ -291,5 +293,14 @@ class DefaultGrpcClientConfigTest {
         builder.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
         config = (DefaultGrpcClientConfig) builder.build();
         assertEquals(allowCoreThreadTimeOut, config.allowCoreThreadTimeOut());
+    }
+
+    @Test
+    void testSetRpcPortOffset() {
+        int rpcPortOffset = 1002;
+        DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
+        builder.setRpcPortOffset(rpcPortOffset);
+        DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
+        assertEquals(rpcPortOffset, config.rpcPortOffset());
     }
 }

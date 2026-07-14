@@ -34,6 +34,9 @@ import java.util.Set;
 public class GrpcConstants {
     
     public static final String NACOS_SERVER_GRPC_PORT_OFFSET_KEY = "nacos.server.grpc.port.offset";
+
+    @GRpcConfigLabel
+    public static final String GRPC_PORT_OFFSET = "grpc.port.offset";
     
     public static final String NACOS_CLIENT_GRPC = "nacos.remote.client.grpc";
     
