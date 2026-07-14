@@ -55,7 +55,12 @@ public class SkillSummary extends SkillBasicInfo {
      * Label -> version mapping, e.g. {"latest":"v3","stable":"v2"}.
      */
     private Map<String, String> labels;
-    
+
+    /**
+     * YAML front matter parsed from SKILL.md of the display version.
+     */
+    private Map<String, String> frontMatter;
+
     /**
      * The version currently being edited (draft).
      */
@@ -123,7 +128,15 @@ public class SkillSummary extends SkillBasicInfo {
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-    
+
+    public Map<String, String> getFrontMatter() {
+        return frontMatter;
+    }
+
+    public void setFrontMatter(Map<String, String> frontMatter) {
+        this.frontMatter = frontMatter;
+    }
+
     public String getEditingVersion() {
         return editingVersion;
     }

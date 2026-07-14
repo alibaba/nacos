@@ -261,6 +261,9 @@ class SkillOperationServiceImplTest {
         meta.setName("test-skill");
         meta.setDesc("Test description");
         meta.setBizTags("[\"ops\"]");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        meta.setExt("{\"frontMatter\":{\"name\":\"test-skill\",\"description\":\"Test description\","
+            + "\"alias\":\"Test Skill\"}}");
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
@@ -277,6 +280,10 @@ class SkillOperationServiceImplTest {
         assertEquals(1, result.getPageItems().size());
         assertEquals("[\"ops\"]", result.getPageItems().get(0).getBizTags());
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
+        assertEquals("Test Skill", result.getPageItems().get(0).getFrontMatter().get("alias"));
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
+            anyString(), anyString());
+        verify(storage, never()).get(any(StorageKey.class));
     }
     
     @Test

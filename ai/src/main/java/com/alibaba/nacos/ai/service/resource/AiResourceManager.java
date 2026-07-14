@@ -173,6 +173,31 @@ public class AiResourceManager {
                 });
         handleStrictCasResult(result);
     }
+
+    /**
+     * CAS-update the versionInfo and ext fields of a resource meta row.
+     */
+    public void updateVersionInfoAndExtCas(String namespaceId, AiResource meta,
+        ResourceVersionInfo info, String ext) throws NacosException {
+        if (meta == null || meta.getMetaVersion() == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "Meta version missing");
+        }
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(meta.getDesc());
+        newValue.setBizTags(meta.getBizTags());
+        newValue.setExt(ext);
+        newValue.setVersionInfo(JacksonUtils.toJson(info));
+        CasResult result =
+            doCasLoop(namespaceId, meta.getName(), meta.getType(), meta.getMetaVersion(), newValue,
+                (nv, latest) -> {
+                    nv.setStatus(latest.getStatus());
+                    nv.setDesc(latest.getDesc());
+                    nv.setBizTags(latest.getBizTags());
+                });
+        handleStrictCasResult(result);
+    }
     
     /**
      * CAS-update the bizTags field of a resource meta row.
@@ -246,6 +271,28 @@ public class AiResourceManager {
                 nv.setStatus(latest.getStatus());
                 nv.setBizTags(latest.getBizTags());
                 nv.setExt(latest.getExt());
+                nv.setVersionInfo(latest.getVersionInfo());
+            });
+    }
+
+    /**
+     * Best-effort CAS-update description and ext fields of a resource meta row.
+     */
+    public void bumpMetaDescriptionAndExt(String namespaceId, AiResource meta, String description,
+        String ext) {
+        if (meta == null || meta.getMetaVersion() == null) {
+            return;
+        }
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(description);
+        newValue.setBizTags(meta.getBizTags());
+        newValue.setExt(ext);
+        newValue.setVersionInfo(meta.getVersionInfo());
+        doCasLoop(namespaceId, meta.getName(), meta.getType(), meta.getMetaVersion(), newValue,
+            (nv, latest) -> {
+                nv.setStatus(latest.getStatus());
+                nv.setBizTags(latest.getBizTags());
                 nv.setVersionInfo(latest.getVersionInfo());
             });
     }
@@ -957,6 +1004,17 @@ public class AiResourceManager {
         String description,
         String bizTags, String version, AiResource existedMeta, boolean isNew)
         throws NacosException {
+        initOrUpdateMetaForDraft(namespaceId, name, type, description, bizTags, version,
+            existedMeta, isNew, existedMeta == null ? null : existedMeta.getExt());
+    }
+
+    /**
+     * Create a new meta row or CAS-update the editing pointer and ext on an existing one.
+     */
+    public void initOrUpdateMetaForDraft(String namespaceId, String name, String type,
+        String description, String bizTags, String version, AiResource existedMeta, boolean isNew,
+        String ext)
+        throws NacosException {
         if (isNew) {
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
             String defaultScope = VisibilityHelper.resolveDefaultScopeForCreate(type);
@@ -967,6 +1025,7 @@ public class AiResourceManager {
             meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
             meta.setDesc(description);
             meta.setBizTags(bizTags);
+            meta.setExt(ext);
             meta.setOwner(currentUser);
             meta.setScope(defaultScope);
             ResourceVersionInfo info = new ResourceVersionInfo();
@@ -979,7 +1038,7 @@ public class AiResourceManager {
         } else if (existedMeta != null) {
             ResourceVersionInfo info = requireVersionInfo(existedMeta);
             info.setEditingVersion(version);
-            updateVersionInfoCas(namespaceId, existedMeta, info);
+            updateVersionInfoAndExtCas(namespaceId, existedMeta, info, ext);
         }
     }
     

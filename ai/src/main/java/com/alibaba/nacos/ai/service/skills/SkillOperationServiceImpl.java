@@ -121,7 +121,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
     
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
-    
+
+    private static final String EXT_FRONT_MATTER_KEY = "frontMatter";
+
     private static final String SCOPE_SKILL = "skill";
     
     private final AiResourceStorageRouter storageRouter;
@@ -469,7 +471,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.updateVersionStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL,
             editing,
             buildStorageJson(namespaceId, skill.getName(), editing, files));
-        resourceManager.bumpMetaDescription(namespaceId, meta, skill.getDescription());
+        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, skill.getDescription(),
+            buildSkillMetaExt(meta.getExt(), skill));
     }
     
     /**
@@ -668,6 +671,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setDownloadCount(meta.getDownloadCount());
             if (versionInfo != null) {
                 item.setLabels(versionInfo.getLabels());
+                item.setFrontMatter(parseFrontMatterFromExt(meta.getExt()));
                 item.setEditingVersion(versionInfo.getEditingVersion());
                 item.setReviewingVersion(versionInfo.getReviewingVersion());
                 item.setOnlineCnt(versionInfo.getOnlineCnt());
@@ -677,7 +681,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         return AiResourceManager.buildPageResult(items, metaPage, pageNo);
     }
-    
+
     /**
      * Create a new draft version for an existing or brand-new skill.
      *
@@ -814,7 +818,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 storageJson);
         }
-        resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
+        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, draftSkill.getDescription(),
+            buildSkillMetaExt(meta.getExt(), draftSkill));
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing,
             AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -1189,7 +1194,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // 3) create or update meta for editingVersion
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, version, existedMeta, isNewSkill);
+            skill.getDescription(), null, version, existedMeta, isNewSkill,
+            buildSkillMetaExt(existedMeta == null ? null : existedMeta.getExt(), skill));
     }
     
     /**
@@ -1498,7 +1504,47 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             skill.setDescription(frontMatter.get("description"));
         }
     }
-    
+
+    private static String buildSkillMetaExt(String currentExt, Skill skill) {
+        Map<String, Object> ext = parseExt(currentExt);
+        Map<String, String> frontMatter = skill == null ? null
+            : SkillZipParser.parseYamlFrontMatterFromMarkdown(skill.getSkillMd());
+        if (frontMatter == null || frontMatter.isEmpty()) {
+            ext.remove(EXT_FRONT_MATTER_KEY);
+        } else {
+            ext.put(EXT_FRONT_MATTER_KEY, new LinkedHashMap<>(frontMatter));
+        }
+        return ext.isEmpty() ? null : JacksonUtils.toJson(ext);
+    }
+
+    private static Map<String, String> parseFrontMatterFromExt(String extJson) {
+        Map<String, Object> ext = parseExt(extJson);
+        Object frontMatter = ext.get(EXT_FRONT_MATTER_KEY);
+        if (!(frontMatter instanceof Map)) {
+            return null;
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        ((Map<?, ?>) frontMatter).forEach((key, value) -> {
+            if (key != null && value != null) {
+                result.put(String.valueOf(key), String.valueOf(value));
+            }
+        });
+        return result.isEmpty() ? null : result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseExt(String extJson) {
+        if (StringUtils.isBlank(extJson)) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> ext = JacksonUtils.toObj(extJson, Map.class);
+            return ext == null ? new LinkedHashMap<>() : new LinkedHashMap<>(ext);
+        } catch (Exception ignored) {
+            return new LinkedHashMap<>();
+        }
+    }
+
     /**
      * Delete all storage files for a given skill version using the file list from storageJson.
      */
