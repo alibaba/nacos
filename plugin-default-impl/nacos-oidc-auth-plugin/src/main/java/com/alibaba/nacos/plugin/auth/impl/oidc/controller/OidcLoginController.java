@@ -20,8 +20,7 @@ import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.OidcAuthPluginService;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import jakarta.servlet.http.Cookie;
@@ -61,9 +60,11 @@ public class OidcLoginController {
      */
     private static final int COOKIE_EXPIRATION_SECONDS = 60;
     
-    private volatile AuthorizationCodeHandler authHandler;
+    private final OidcAuthPluginService pluginService;
     
-    private volatile OidcAuthConfig config;
+    public OidcLoginController(OidcAuthPluginService pluginService) {
+        this.pluginService = pluginService;
+    }
     
     /**
      * Initiate OIDC login - redirects user to IdP.
@@ -76,13 +77,11 @@ public class OidcLoginController {
     @GetMapping("/login")
     public void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            initializeIfNeeded();
-            
             // Build callback URL
             String callbackUrl = buildCallbackUrl(request);
             
             // Get authorization URL
-            String authUrl = authHandler.buildAuthorizationUrl(callbackUrl);
+            String authUrl = pluginService.buildAuthorizationUrl(callbackUrl);
             
             LOGGER.info("Redirecting to IdP for authentication");
             response.sendRedirect(authUrl);
@@ -116,8 +115,6 @@ public class OidcLoginController {
         HttpServletResponse response) throws IOException {
         
         try {
-            initializeIfNeeded();
-            
             // Check for error response from IdP
             if (StringUtils.isNotBlank(error)) {
                 LOGGER.warn("OIDC authentication error: {} - {}", error, errorDescription);
@@ -146,7 +143,7 @@ public class OidcLoginController {
             String callbackUrl = buildCallbackUrl(request);
             
             // Exchange code for tokens and get user
-            OidcUser user = authHandler.exchangeCodeForUser(code, state, callbackUrl);
+            OidcUser user = pluginService.exchangeCodeForUser(code, state, callbackUrl);
             
             LOGGER.info("OIDC authentication successful for user: {}", user.getUsername());
             
@@ -212,12 +209,10 @@ public class OidcLoginController {
         HttpServletResponse response) throws IOException {
         
         try {
-            initializeIfNeeded();
-            
             // If redirect requested and IdP supports RP-initiated logout
             if (redirect) {
                 String postLogoutUri = buildBaseUrl(request);
-                String logoutUrl = authHandler.buildLogoutUrl(idToken, postLogoutUri);
+                String logoutUrl = pluginService.buildLogoutUrl(idToken, postLogoutUri);
                 
                 if (StringUtils.isNotBlank(logoutUrl)) {
                     LOGGER.info("Redirecting to IdP for logout");
@@ -245,10 +240,8 @@ public class OidcLoginController {
     @GetMapping("/config")
     public Result<Map<String, Object>> getConfig() {
         try {
-            initializeIfNeeded();
-            
             Map<String, Object> configInfo = new HashMap<>(8);
-            configInfo.put("enabled", config.isValid());
+            configInfo.put("enabled", pluginService.isConfigurationValid());
             configInfo.put("authType", "oidc");
             configInfo.put("loginUrl", "/v1/auth/oidc/login");
             // When OIDC is enabled, user/role/permission management is handled by IdP
@@ -302,20 +295,6 @@ public class OidcLoginController {
         
         url.append(contextPath);
         return url.toString();
-    }
-    
-    /**
-     * Initialize components lazily.
-     */
-    private void initializeIfNeeded() {
-        if (config == null) {
-            synchronized (this) {
-                if (config == null) {
-                    config = OidcAuthConfig.getInstance();
-                    authHandler = AuthorizationCodeHandler.getInstance();
-                }
-            }
-        }
     }
     
     /**

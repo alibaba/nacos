@@ -16,29 +16,19 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.identity;
 
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import com.alibaba.nacos.plugin.auth.impl.oidc.token.JwtTokenValidator;
 import com.nimbusds.jwt.JWTClaimsSet;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class OidcUserMapperTest {
-    
-    @AfterEach
-    void tearDown() {
-        ReflectionTestUtils.setField(OidcUserMapper.class, "instance", null);
-    }
     
     @Test
     void testMapToUserCopiesClaimsAndValidatorAttributes() {
@@ -89,13 +79,6 @@ class OidcUserMapperTest {
     }
     
     private OidcUserMapper newMapper(JwtTokenValidator tokenValidator) {
-        ReflectionTestUtils.setField(OidcUserMapper.class, "instance", null);
-        try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-            MockedStatic<JwtTokenValidator> validatorStatic =
-                mockStatic(JwtTokenValidator.class)) {
-            configStatic.when(OidcAuthConfig::getInstance).thenReturn(mock(OidcAuthConfig.class));
-            validatorStatic.when(JwtTokenValidator::getInstance).thenReturn(tokenValidator);
-            return OidcUserMapper.getInstance();
-        }
+        return new OidcUserMapper(tokenValidator);
     }
 }

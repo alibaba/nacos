@@ -16,12 +16,9 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.authorization;
 
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,19 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class AuthorizationClientTest {
     
-    @AfterEach
-    void tearDown() {
-        ReflectionTestUtils.setField(AuthorizationClient.class, "instance", null);
-    }
-    
     @Test
     void testAuthorizeAllowsWhenEndpointIsMissing() {
-        OidcAuthConfig config = mockConfig("");
+        OidcAuthPluginConfig config = mockConfig("");
         AuthorizationClient client = newClient(config);
         
         AuthorizationResponse response = client.authorize(request());
@@ -57,7 +48,7 @@ class AuthorizationClientTest {
     
     @Test
     void testAuthorizeDeniesWhenEndpointIsInvalid() {
-        OidcAuthConfig config = mockConfig("://bad-endpoint");
+        OidcAuthPluginConfig config = mockConfig("://bad-endpoint");
         AuthorizationClient client = newClient(config);
         
         AuthorizationResponse response = client.authorize(request());
@@ -88,22 +79,22 @@ class AuthorizationClientTest {
     
     @Test
     void testAuthorizeHandlesTransportExceptions() throws Exception {
-        AuthorizationClient ioClient = newClient(mockConfig("http://idp/evaluate"));
         HttpClient ioHttpClient = mock(HttpClient.class);
         when(ioHttpClient.<String>send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new IOException("down"));
-        ReflectionTestUtils.setField(ioClient, "httpClient", ioHttpClient);
+        AuthorizationClient ioClient = new AuthorizationClient(
+            mockConfig("http://idp/evaluate"), ioHttpClient);
         
         AuthorizationResponse ioResponse = ioClient.authorize(request());
         
         assertFalse(ioResponse.isAllowed());
         assertTrue(ioResponse.getReason().contains("unavailable"));
         
-        AuthorizationClient interruptedClient = newClient(mockConfig("http://idp/evaluate"));
         HttpClient interruptedHttpClient = mock(HttpClient.class);
         when(interruptedHttpClient.<String>send(any(HttpRequest.class),
             any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("stop"));
-        ReflectionTestUtils.setField(interruptedClient, "httpClient", interruptedHttpClient);
+        AuthorizationClient interruptedClient = new AuthorizationClient(
+            mockConfig("http://idp/evaluate"), interruptedHttpClient);
         
         AuthorizationResponse interruptedResponse = interruptedClient.authorize(request());
         
@@ -112,18 +103,14 @@ class AuthorizationClientTest {
         assertTrue(Thread.interrupted());
     }
     
-    private AuthorizationClient newClient(OidcAuthConfig config) {
-        ReflectionTestUtils.setField(AuthorizationClient.class, "instance", null);
-        try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class)) {
-            configStatic.when(OidcAuthConfig::getInstance).thenReturn(config);
-            return AuthorizationClient.getInstance();
-        }
+    private AuthorizationClient newClient(OidcAuthPluginConfig config) {
+        return new AuthorizationClient(config);
     }
     
-    private OidcAuthConfig mockConfig(String endpoint) {
-        OidcAuthConfig config = mock(OidcAuthConfig.class);
+    private OidcAuthPluginConfig mockConfig(String endpoint) {
+        OidcAuthPluginConfig config = mock(OidcAuthPluginConfig.class);
         when(config.getAuthorizationTimeoutMs()).thenReturn(1000L);
-        when(config.getAuthorizationEvaluateEndpoint()).thenReturn(endpoint);
+        when(config.getAuthorizationEndpoint()).thenReturn(endpoint);
         return config;
     }
     
