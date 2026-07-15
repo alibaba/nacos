@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2023 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>nacos-plugin-default-impl</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    
+    <artifactId>nacos-default-plugin-all</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-auth-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-ldap-auth-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-oidc-auth-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-control-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-default-ai-pipeline-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-default-ai-importer-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-default-ai-trace-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-mysql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-derby</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-postgresql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-oracle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-db-schema-sql-to-distribution-conf</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.basedir}/../../distribution/conf"/>
+                                <mkdir dir="${project.basedir}/../../distribution/plugins"/>
+                                <delete>
+                                    <fileset dir="${project.basedir}/../../distribution/plugins">
+                                        <include name="spring-ldap-core-*.jar"/>
+                                    </fileset>
+                                </delete>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-null-tenant-id.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-upgrade-null-tenant-id.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/oracle-schema.sql" overwrite="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>verify-db-schema-sql-source-and-output</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
+                                           property="schema.source.derby.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
+                                           property="schema.source.mysql.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
+                                           property="schema.source.pg.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
+                                           property="schema.source.pg.grant.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
+                                           property="schema.source.oracle.exists"/>
+                                <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
+                                <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
+                                <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
+                                <fail unless="schema.source.pg.grant.exists" message="Missing postgresql read/write grant script in datasource plugin."/>
+                                <fail unless="schema.source.oracle.exists" message="Missing oracle schema source in datasource plugin."/>
+
+                                <available file="${project.basedir}/../../distribution/conf/derby-schema.sql"
+                                           property="schema.output.derby.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/mysql-schema.sql"
+                                           property="schema.output.mysql.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/pg-schema.sql"
+                                           property="schema.output.pg.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql"
+                                           property="schema.output.pg.grant.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/oracle-schema.sql"
+                                           property="schema.output.oracle.exists"/>
+                                <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.pg.grant.exists" message="Missing postgresql grant script in distribution/conf after packaging."/>
+                                <fail unless="schema.output.oracle.exists" message="Missing oracle schema in distribution/conf after packaging."/>
+
+                                <available file="${project.basedir}/../../distribution/plugins/nacos-ldap-auth-plugin-${project.version}.jar"
+                                           property="plugin.output.ldap.exists"/>
+                                <fail unless="plugin.output.ldap.exists" message="Missing nacos-ldap-auth-plugin in distribution/plugins after packaging."/>
+                                <available file="${project.basedir}/../../distribution/plugins/nacos-default-ai-trace-plugin-${project.version}.jar"
+                                           property="plugin.output.ai.trace.exists"/>
+                                <fail unless="plugin.output.ai.trace.exists"
+                                      message="Missing nacos-default-ai-trace-plugin in distribution/plugins after packaging."/>
+
+                                <condition property="plugin.output.spring.ldap.missing">
+                                    <resourcecount count="0" when="equal">
+                                        <fileset dir="${project.basedir}/../../distribution/plugins">
+                                            <include name="spring-ldap-core-*.jar"/>
+                                        </fileset>
+                                    </resourcecount>
+                                </condition>
+                                <fail unless="plugin.output.spring.ldap.missing"
+                                      message="spring-ldap-core should not exist in distribution/plugins by default."/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-plugins</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
+                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

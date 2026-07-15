@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class MockInstanceExtensionHandler implements InstanceExtensionHandler {
     

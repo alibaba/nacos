@@ -32,21 +32,9 @@ import java.util.concurrent.TimeUnit;
  *
  * @author nacos
  */
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckReactor {
     
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
-    
-    /**
-     * Schedule health check task.
-     *
-     * @param task health check task
-     * @return scheduled future
-     */
-    public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
-        task.setStartTime(System.currentTimeMillis());
-        return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
-    }
     
     /**
      * Schedule health check task for v2.
@@ -56,7 +44,8 @@ public class HealthCheckReactor {
     public static void scheduleCheck(HealthCheckTaskV2 task) {
         task.setStartTime(System.currentTimeMillis());
         Runnable wrapperTask = new HealthCheckTaskInterceptWrapper(task);
-        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(),
+            TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -66,10 +55,12 @@ public class HealthCheckReactor {
      */
     public static void scheduleCheck(BeatCheckTask task) {
         Runnable wrapperTask =
-                task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
-                        : task;
+            task instanceof NacosHealthCheckTask
+                ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
+                : task;
         futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
+            k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000,
+                TimeUnit.MILLISECONDS));
     }
     
     /**

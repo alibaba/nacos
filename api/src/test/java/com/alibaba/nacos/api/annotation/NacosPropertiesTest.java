@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.api.annotation;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import static com.alibaba.nacos.api.annotation.NacosProperties.ACCESS_KEY_PLACEHOLDER;
@@ -28,58 +27,66 @@ import static com.alibaba.nacos.api.annotation.NacosProperties.ENDPOINT_PLACEHOL
 import static com.alibaba.nacos.api.annotation.NacosProperties.NAMESPACE_PLACEHOLDER;
 import static com.alibaba.nacos.api.annotation.NacosProperties.SECRET_KEY_PLACEHOLDER;
 import static com.alibaba.nacos.api.annotation.NacosProperties.SERVER_ADDR_PLACEHOLDER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class NacosPropertiesTest {
+class NacosPropertiesTest {
     
     @Test
-    public void testPlaceholders() {
-        Assert.assertEquals("${nacos.endpoint:}", ENDPOINT_PLACEHOLDER);
-        Assert.assertEquals("${nacos.namespace:}", NAMESPACE_PLACEHOLDER);
-        Assert.assertEquals("${nacos.access-key:}", ACCESS_KEY_PLACEHOLDER);
-        Assert.assertEquals("${nacos.secret-key:}", SECRET_KEY_PLACEHOLDER);
-        Assert.assertEquals("${nacos.server-addr:}", SERVER_ADDR_PLACEHOLDER);
-        Assert.assertEquals("${nacos.context-path:}", CONTEXT_PATH_PLACEHOLDER);
-        Assert.assertEquals("${nacos.cluster-name:}", CLUSTER_NAME_PLACEHOLDER);
-        Assert.assertEquals("${nacos.encode:UTF-8}", ENCODE_PLACEHOLDER);
+    void testPlaceholders() {
+        assertEquals("${nacos.endpoint:}", ENDPOINT_PLACEHOLDER);
+        assertEquals("${nacos.namespace:}", NAMESPACE_PLACEHOLDER);
+        assertEquals("${nacos.access-key:}", ACCESS_KEY_PLACEHOLDER);
+        assertEquals("${nacos.secret-key:}", SECRET_KEY_PLACEHOLDER);
+        assertEquals("${nacos.server-addr:}", SERVER_ADDR_PLACEHOLDER);
+        assertEquals("${nacos.context-path:}", CONTEXT_PATH_PLACEHOLDER);
+        assertEquals("${nacos.cluster-name:}", CLUSTER_NAME_PLACEHOLDER);
+        assertEquals("${nacos.encode:UTF-8}", ENCODE_PLACEHOLDER);
     }
     
     @Test
-    public void testResolvePlaceholders() {
+    void testResolvePlaceholders() {
         testResolvePlaceholder(ENDPOINT_PLACEHOLDER, "nacos.endpoint", "test-value", "test-value");
         testResolvePlaceholder(ENDPOINT_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(NAMESPACE_PLACEHOLDER, "nacos.namespace", "test-value", "test-value");
+        testResolvePlaceholder(NAMESPACE_PLACEHOLDER, "nacos.namespace", "test-value",
+            "test-value");
         testResolvePlaceholder(NAMESPACE_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(ACCESS_KEY_PLACEHOLDER, "nacos.access-key", "test-value", "test-value");
+        testResolvePlaceholder(ACCESS_KEY_PLACEHOLDER, "nacos.access-key", "test-value",
+            "test-value");
         testResolvePlaceholder(ACCESS_KEY_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(SECRET_KEY_PLACEHOLDER, "nacos.secret-key", "test-value", "test-value");
+        testResolvePlaceholder(SECRET_KEY_PLACEHOLDER, "nacos.secret-key", "test-value",
+            "test-value");
         testResolvePlaceholder(SECRET_KEY_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(SERVER_ADDR_PLACEHOLDER, "nacos.server-addr", "test-value", "test-value");
+        testResolvePlaceholder(SERVER_ADDR_PLACEHOLDER, "nacos.server-addr", "test-value",
+            "test-value");
         testResolvePlaceholder(SERVER_ADDR_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(CONTEXT_PATH_PLACEHOLDER, "nacos.context-path", "test-value", "test-value");
+        testResolvePlaceholder(CONTEXT_PATH_PLACEHOLDER, "nacos.context-path", "test-value",
+            "test-value");
         testResolvePlaceholder(CONTEXT_PATH_PLACEHOLDER, "", "test-value", "");
         
-        testResolvePlaceholder(CLUSTER_NAME_PLACEHOLDER, "nacos.cluster-name", "test-value", "test-value");
+        testResolvePlaceholder(CLUSTER_NAME_PLACEHOLDER, "nacos.cluster-name", "test-value",
+            "test-value");
         testResolvePlaceholder(CLUSTER_NAME_PLACEHOLDER, "", "test-value", "");
         
         testResolvePlaceholder(ENCODE_PLACEHOLDER, "nacos.encode", "test-value", "test-value");
         testResolvePlaceholder(ENCODE_PLACEHOLDER, "", "test-value", "UTF-8");
     }
     
-    private void testResolvePlaceholder(String placeholder, String propertyName, String propertyValue,
-            String expectValue) {
+    private void testResolvePlaceholder(String placeholder, String propertyName,
+        String propertyValue,
+        String expectValue) {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(propertyName, propertyValue);
         String resolvedValue = environment.resolvePlaceholders(placeholder);
-        Assert.assertEquals(expectValue, resolvedValue);
+        assertEquals(expectValue, resolvedValue);
     }
     
     @Test
-    public void testSort() {
-    
+    void testSort() {
+        
     }
 }

@@ -23,12 +23,4 @@ package com.alibaba.nacos.api.config.filter;
  */
 public abstract class AbstractConfigFilter implements IConfigFilter {
     
-    /**
-     * init.
-     *
-     * @param filterConfig Filter Config
-     */
-    @Override
-    public void init(IFilterConfig filterConfig) {
-    }
 }

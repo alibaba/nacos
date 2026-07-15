@@ -66,9 +66,6 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         // Used to process http content_encoding, when content_encoding is GZIP, use GZIPInputStream
         if (CONTENT_ENCODING.equals(contentEncoding)) {
             byte[] bytes = IoUtils.tryDecompress(this.responseStream);
-            if (bytes == null) {
-                throw new IOException("decompress http response error");
-            }
             return new ByteArrayInputStream(bytes);
         }
         return this.responseStream;
@@ -77,11 +74,6 @@ public class JdkHttpClientResponse implements HttpClientResponse {
     @Override
     public int getStatusCode() throws IOException {
         return this.conn.getResponseCode();
-    }
-    
-    @Override
-    public String getStatusText() throws IOException {
-        return this.conn.getResponseMessage();
     }
     
     @Override

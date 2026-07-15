@@ -18,17 +18,18 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -43,8 +44,9 @@ import java.io.IOException;
 public class ServiceNameFilter implements Filter {
     
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+        FilterChain filterChain)
+        throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
         try {
@@ -60,15 +62,25 @@ public class ServiceNameFilter implements Filter {
             
             // use groupName@@serviceName as new service name:
             String groupedServiceName = serviceName;
-            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+            if (StringUtils.isNotBlank(serviceName)
+                && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
             }
-            OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+            if (StringUtils.isNotBlank(groupedServiceName)) {
+                try {
+                    NamingUtils.checkServiceNameFormat(groupedServiceName);
+                } catch (IllegalArgumentException e) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
+                }
+            }
+            OverrideParameterRequestWrapper requestWrapper =
+                OverrideParameterRequestWrapper.buildRequest(request);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, servletResponse);
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
+                "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
         }
     }
 }

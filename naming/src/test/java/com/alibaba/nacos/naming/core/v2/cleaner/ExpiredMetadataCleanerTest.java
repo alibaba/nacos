@@ -21,52 +21,86 @@ import com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExpiredMetadataCleanerTest extends TestCase {
-
+@ExtendWith(MockitoExtension.class)
+class ExpiredMetadataCleanerTest {
+    
     private ExpiredMetadataCleaner expiredMetadataCleaner;
-
+    
     @Mock
     private NamingMetadataManager metadataManagerMock;
-
+    
     @Mock
     private NamingMetadataOperateService metadataOperateServiceMock;
-
+    
     private Set<ExpiredMetadataInfo> set = new ConcurrentHashSet<>();
-
+    
     @Mock
     private ExpiredMetadataInfo expiredMetadataInfoMock;
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    
+    @BeforeEach
+    void setUp() throws Exception {
         EnvUtil.setEnvironment(new MockEnvironment());
-        expiredMetadataCleaner = new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
-
+        expiredMetadataCleaner =
+            new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
+        
         set.add(expiredMetadataInfoMock);
-
-        when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
-        when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
-        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService())).thenReturn(true);
+        
+        Mockito.lenient().when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
+        Mockito.lenient().when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
     }
-
+    
     @Test
-    public void testDoClean() {
+    void testGetType() {
+        assertEquals("expiredMetadata", expiredMetadataCleaner.getType());
+    }
+    
+    @Test
+    void testDoClean() {
+        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService()))
+            .thenReturn(true);
+        
         expiredMetadataCleaner.doClean();
+        
         verify(metadataManagerMock).getExpiredMetadataInfos();
-        verify(metadataOperateServiceMock).deleteServiceMetadata(expiredMetadataInfoMock.getService());
+        verify(metadataOperateServiceMock)
+            .deleteServiceMetadata(expiredMetadataInfoMock.getService());
+    }
+    
+    @Test
+    void testDoCleanSkipsUnexpiredMetadata() {
+        when(expiredMetadataInfoMock.getCreateTime()).thenReturn(System.currentTimeMillis());
+        
+        expiredMetadataCleaner.doClean();
+        
+        verify(metadataOperateServiceMock, never()).deleteServiceMetadata(any());
+        verify(metadataOperateServiceMock, never()).deleteInstanceMetadata(any(), any());
+    }
+    
+    @Test
+    void testDoCleanRemovesInstanceMetadata() {
+        when(expiredMetadataInfoMock.getMetadataId()).thenReturn("1.1.1.1:8848");
+        when(metadataManagerMock.containInstanceMetadata(expiredMetadataInfoMock.getService(),
+            "1.1.1.1:8848")).thenReturn(true);
+        
+        expiredMetadataCleaner.doClean();
+        
+        verify(metadataOperateServiceMock)
+            .deleteInstanceMetadata(expiredMetadataInfoMock.getService(), "1.1.1.1:8848");
     }
 }

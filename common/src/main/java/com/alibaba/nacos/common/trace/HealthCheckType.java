@@ -22,6 +22,7 @@ package com.alibaba.nacos.common.trace;
  * @author yanda
  */
 public enum HealthCheckType {
+    
     /**
      * Instance heart beat timeout.
      */
@@ -41,7 +42,7 @@ public enum HealthCheckType {
     
     private String prefix;
     
-    private HealthCheckType(String prefix) {
+    HealthCheckType(String prefix) {
         this.prefix = prefix;
     }
     

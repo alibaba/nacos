@@ -16,17 +16,29 @@
 
 package com.alibaba.nacos.naming.pojo;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SubscriberTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SubscriberTest {
     
     @Test
-    public void subscriberBeanTest() {
-        Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 0);
+    void testDefaultConstructor() {
+        Subscriber subscriber = new Subscriber();
+        
+        assertNotNull(subscriber);
+    }
+    
+    @Test
+    void subscriberBeanTest() {
+        Subscriber subscriber =
+            new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 0);
         subscriber.setAddrStr("127.0.0.1:8080");
         subscriber.setIp("127.0.0.1");
         subscriber.setApp("app");
@@ -47,13 +59,40 @@ public class SubscriberTest {
         subscribers.setSubscribers(subscriberList);
         subscribers.getSubscribers();
         
-        Assert.assertNotNull(subscriberList);
-        Assert.assertEquals(1, subscriberList.size());
-        Assert.assertEquals("127.0.0.1:8080", subscriberList.get(0).getAddrStr());
-        Assert.assertEquals("127.0.0.1", subscriberList.get(0).getIp());
-        Assert.assertEquals("app", subscriberList.get(0).getApp());
-        Assert.assertEquals("agent", subscriberList.get(0).getAgent());
-        Assert.assertEquals("public", subscriberList.get(0).getNamespaceId());
-        Assert.assertEquals("test", subscriberList.get(0).getServiceName());
+        assertNotNull(subscriberList);
+        assertEquals(1, subscriberList.size());
+        assertEquals("127.0.0.1:8080", subscriberList.get(0).getAddrStr());
+        assertEquals("127.0.0.1", subscriberList.get(0).getIp());
+        assertEquals("app", subscriberList.get(0).getApp());
+        assertEquals("agent", subscriberList.get(0).getAgent());
+        assertEquals("public", subscriberList.get(0).getNamespaceId());
+        assertEquals("test", subscriberList.get(0).getServiceName());
+    }
+    
+    @Test
+    void testEqualsHashCodeAndToString() {
+        Subscriber subscriber =
+            new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 8080,
+                "cluster");
+        Subscriber same =
+            new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 8848,
+                "anotherCluster");
+        Subscriber other =
+            new Subscriber("127.0.0.2:8080", "agent", "app", "127.0.0.2", "public", "test", 8080);
+        
+        assertEquals(subscriber, subscriber);
+        assertEquals(subscriber, same);
+        assertEquals(subscriber.hashCode(), same.hashCode());
+        assertNotEquals(subscriber, other);
+        assertNotEquals(subscriber, null);
+        assertNotEquals(subscriber, "subscriber");
+        assertTrue(subscriber.toString().contains("127.0.0.1:8080"));
+        assertEquals(8080, subscriber.getPort());
+        assertEquals("cluster", subscriber.getCluster());
+        
+        subscriber.setPort(8848);
+        subscriber.setCluster("newCluster");
+        assertEquals(8848, subscriber.getPort());
+        assertEquals("newCluster", subscriber.getCluster());
     }
 }

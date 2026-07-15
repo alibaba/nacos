@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.net.InetAddress;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,10 +26,14 @@ import java.util.regex.Pattern;
  *
  * @author Nacos
  */
-@SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class InternetAddressUtil {
     
-    public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
+    private InternetAddressUtil() {
+    }
+    
+    public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(
+        System.getProperty("java.net.preferIPv6Addresses"));
     
     public static final String IPV6_START_MARK = "[";
     
@@ -50,22 +55,34 @@ public class InternetAddressUtil {
     
     private static final String CHECK_OK = "ok";
     
-    private static final Pattern DOMAIN_PATTERN = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile(
+        "[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
     private static final String IPV4_TUPLE = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
     
-    private static final Pattern IPV4_PATTERN = Pattern
-            .compile("(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "(?!\\d)");
+    private static final Pattern IPV4_PATTERN = Pattern.compile(
+        "(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE
+            + "(?!\\d)");
     
     /**
      * get localhost ip.
+     *
      * @return java.lang.String
      */
-    public static String localHostIP() {
-        if (PREFER_IPV6_ADDRESSES) {
+    public static String localHostIp() {
+        if (isPreferIpv6Addresses()) {
             return LOCAL_HOST_IP_V6;
         }
         return LOCAL_HOST_IP_V4;
+    }
+    
+    /**
+     * Whether IPv6 address is preferred.
+     *
+     * @return true if IPv6 address is preferred
+     */
+    public static boolean isPreferIpv6Addresses() {
+        return PREFER_IPV6_ADDRESSES;
     }
     
     /**
@@ -74,8 +91,8 @@ public class InternetAddressUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIPv4(String addr) {
-        return InetAddressValidator.isIPv4Address(addr);
+    public static boolean isIpv4(String addr) {
+        return InetAddressValidator.isIpv4Address(addr);
     }
     
     /**
@@ -84,8 +101,8 @@ public class InternetAddressUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIPv6(String addr) {
-        return InetAddressValidator.isIPv6Address(removeBrackets(addr));
+    public static boolean isIpv6(String addr) {
+        return InetAddressValidator.isIpv6Address(removeBrackets(addr));
     }
     
     /**
@@ -94,28 +111,28 @@ public class InternetAddressUtil {
      * @param addr ip address str
      * @return boolean
      */
-    public static boolean isIP(String addr) {
-        return isIPv4(addr) || isIPv6(addr);
+    public static boolean isIp(String addr) {
+        return isIpv4(addr) || isIpv6(addr);
     }
     
     /**
-     * Check if the address contains a port.
-     * 2020/9/3 14:53
+     * Check if the address contains a port. 2020/9/3 14:53
+     *
      * @param address address string
      * @return boolean
      */
     public static boolean containsPort(String address) {
-        return splitIPPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
+        return splitIpPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
     
     /**
-     * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with [].
-     * Illegal IP will get abnormal results.
+     * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with []. Illegal IP will get
+     * abnormal results.
      *
      * @param str ip and port string
      * @return java.lang.String[]
      */
-    public static String[] splitIPPortStr(String str) {
+    public static String[] splitIpPortStr(String str) {
         if (StringUtils.isBlank(str)) {
             throw new IllegalArgumentException("ip and port string cannot be empty!");
         }
@@ -137,17 +154,20 @@ public class InternetAddressUtil {
     
     /**
      * Resolve the IP from the string containing the IP address.
+     *
      * @param str string containing IP address
      * @return java.lang.String
      */
-    public static String getIPFromString(String str) {
+    public static String getIpFromString(String str) {
         if (StringUtils.isBlank(str)) {
             return "";
         }
         String result = "";
-        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str, IPV6_END_MARK)) {
+        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK)
+            && StringUtils.containsIgnoreCase(str,
+                IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
-            if (!isIPv6(result)) {
+            if (!isIpv6(result)) {
                 result = "";
             }
         } else {
@@ -165,7 +185,7 @@ public class InternetAddressUtil {
      * @param ips ips
      * @return 'ok' if check passed, otherwise illegal ip
      */
-    public static String checkIPs(String... ips) {
+    public static String checkIps(String... ips) {
         
         if (ips == null || ips.length == 0) {
             
@@ -174,7 +194,7 @@ public class InternetAddressUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (InternetAddressUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIp(ip)) {
                 continue;
             }
             illegalResponse.append(ip).append(",");
@@ -188,19 +208,20 @@ public class InternetAddressUtil {
     }
     
     /**
-     * Check whether checkIPs result is "ok".
-     * @param checkIPsResult checkIPs result
+     * Check whether checkIps result is "ok".
+     *
+     * @param checkIpsResult checkIps result
      * @return boolean
      */
-    public static boolean checkOK(String checkIPsResult) {
-        return CHECK_OK.equals(checkIPsResult);
+    public static boolean checkOk(String checkIpsResult) {
+        return CHECK_OK.equals(checkIpsResult);
     }
     
     /**
      * remove brackets "[]".
      *
      * @param str is ipv6 address
-     * @return
+     * @return string removed brackets
      */
     public static String removeBrackets(String str) {
         if (StringUtils.isBlank(str)) {
@@ -210,7 +231,7 @@ public class InternetAddressUtil {
     }
     
     /**
-     * judge str is right domain.（Check only rule）
+     * judge str is right domain.（Check only rule）.
      *
      * @param str nacosIP
      * @return nacosIP is domain
@@ -225,4 +246,45 @@ public class InternetAddressUtil {
         return DOMAIN_PATTERN.matcher(str).matches();
     }
     
+    /**
+     * convert ip address to int.
+     *
+     * @param ip ip address.
+     * @return int
+     */
+    public static int ipToInt(String ip) {
+        try {
+            return bytesToInt(ipToBytesByInet(ip));
+        } catch (Exception e) {
+            throw new IllegalArgumentException(ip + " is invalid IP");
+        }
+    }
+    
+    /**
+     * convert byte array to int.
+     *
+     * @param bytes byte array.
+     * @return int
+     */
+    public static int bytesToInt(byte[] bytes) {
+        int addr = bytes[3] & 0xFF;
+        addr |= ((bytes[2] << 8) & 0xFF00);
+        addr |= ((bytes[1] << 16) & 0xFF0000);
+        addr |= ((bytes[0] << 24) & 0xFF000000);
+        return addr;
+    }
+    
+    /**
+     * convert ip address to byte array.
+     *
+     * @param ip ip address.
+     * @return byte[]
+     */
+    public static byte[] ipToBytesByInet(String ip) {
+        try {
+            return InetAddress.getByName(ip).getAddress();
+        } catch (Exception e) {
+            throw new IllegalArgumentException(ip + " is invalid IP");
+        }
+    }
 }

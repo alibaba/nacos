@@ -16,24 +16,28 @@
 
 package com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.context.GrpcIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.grpc.AbstractGrpcResourceParser;
+import com.alibaba.nacos.auth.parser.grpc.AiGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.ConfigGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.NamingGrpcResourceParser;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Auth Service for Http protocol.
+ * Auth Service for Grpc protocol.
  *
  * @author xiweng.yy
  */
@@ -43,16 +47,18 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
     
     private final GrpcIdentityContextBuilder identityContextBuilder;
     
-    public GrpcProtocolAuthService(AuthConfigs authConfigs) {
-        super(authConfigs);
+    public GrpcProtocolAuthService(NacosAuthConfig authConfig) {
+        super(authConfig);
         resourceParserMap = new HashMap<>(2);
-        identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
+        identityContextBuilder = new GrpcIdentityContextBuilder(authConfig);
     }
     
     @Override
     public void initialize() {
+        super.initialize();
         resourceParserMap.put(SignType.NAMING, new NamingGrpcResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigGrpcResourceParser());
+        resourceParserMap.put(SignType.AI, new AiGrpcResourceParser());
     }
     
     @Override
@@ -61,15 +67,31 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
             return parseSpecifiedResource(secured);
         }
         String type = secured.signType();
-        if (!resourceParserMap.containsKey(type)) {
+        AbstractGrpcResourceParser parser = resourceParserMap.get(type);
+        if (parser == null) {
             Loggers.AUTH.warn("Can't find Grpc request resourceParser for type {}", type);
             return useSpecifiedParserToParse(secured, request);
         }
-        return resourceParserMap.get(type).parse(request, secured);
+        return parser.parse(request, secured);
     }
     
     @Override
     public IdentityContext parseIdentity(Request request) {
         return identityContextBuilder.build(request);
+    }
+    
+    @Override
+    public ServerIdentityResult checkServerIdentity(Request request, Secured secured) {
+        if (ApiType.INNER_API != secured.apiType()) {
+            return ServerIdentityResult.noMatched();
+        }
+        return super.checkServerIdentity(request, secured);
+    }
+    
+    @Override
+    protected ServerIdentity parseServerIdentity(Request request) {
+        String serverIdentityKey = authConfig.getServerIdentityKey();
+        String serverIdentity = request.getHeader(serverIdentityKey);
+        return new ServerIdentity(serverIdentityKey, serverIdentity);
     }
 }

@@ -16,16 +16,23 @@
 
 package com.alibaba.nacos.plugin.auth.spi.server;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.plugin.auth.spi.mock.MockAuthPluginService;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link AuthPluginManager} unit test.
@@ -34,38 +41,62 @@ import java.util.Optional;
  * @date 2021-08-12 12:56
  */
 
-@RunWith(MockitoJUnitRunner.class)
-public class AuthPluginManagerTest {
+@ExtendWith(MockitoExtension.class)
+class AuthPluginManagerTest {
+    
+    private static final String TYPE = "test";
     
     private AuthPluginManager authPluginManager;
     
     @Mock
     private AuthPluginService authPluginService;
     
-    private static final String TYPE = "test";
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
+    }
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         authPluginManager = AuthPluginManager.getInstance();
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins
-                .get(authPluginManager);
+        Map<String, AuthPluginService> authServiceMap =
+            (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
         authServiceMap.put(TYPE, authPluginService);
     }
     
     @Test
-    public void testGetInstance() {
+    void testGetInstance() {
         AuthPluginManager instance = AuthPluginManager.getInstance();
         
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testFindAuthServiceSpiImpl() {
-        Optional<AuthPluginService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
-        Assert.assertTrue(authServiceImpl.isPresent());
+    void testFindAuthServiceSpiImpl() {
+        Optional<AuthPluginService> authServiceImpl =
+            authPluginManager.findAuthServiceSpiImpl(TYPE);
+        assertTrue(authServiceImpl.isPresent());
+    }
+    
+    @Test
+    void testFindAuthServiceSpiImplWhenPluginDisabled() {
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
+        
+        Optional<AuthPluginService> authServiceImpl =
+            authPluginManager.findAuthServiceSpiImpl(TYPE);
+        
+        assertFalse(authServiceImpl.isPresent());
+    }
+    
+    @Test
+    void testDefaultAuthPluginServiceMethods() {
+        AuthPluginService service = new MockAuthPluginService();
+        
+        assertFalse(service.isLoginEnabled());
+        assertTrue(service.isAdminRequest());
     }
     
 }

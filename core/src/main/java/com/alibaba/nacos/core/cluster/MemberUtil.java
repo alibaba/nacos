@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -44,13 +44,14 @@ public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
     private static final int DEFAULT_RAFT_OFFSET_PORT = 1000;
     
-    private static final String MEMBER_FAIL_ACCESS_CNT_PROPERTY = "nacos.core.member.fail-access-cnt";
+    private static final String MEMBER_FAIL_ACCESS_CNT_PROPERTY =
+        "nacos.core.member.fail-access-cnt";
     
     private static final int DEFAULT_MEMBER_FAIL_ACCESS_CNT = 3;
     
@@ -67,6 +68,7 @@ public class MemberUtil {
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
         oldMember.setAbilities(newMember.getAbilities());
+        oldMember.setGrpcReportEnabled(newMember.isGrpcReportEnabled());
     }
     
     /**
@@ -75,15 +77,15 @@ public class MemberUtil {
      * @param member ip:port
      * @return {@link Member}
      */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
-        int defaultPort = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
+        int defaultPort =
+            EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         // Set the default Raft port information for securit
         
         String address = member;
         int port = defaultPort;
-        String[] info = InternetAddressUtil.splitIPPortStr(address);
+        String[] info = InternetAddressUtil.splitIpPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
@@ -92,9 +94,12 @@ public class MemberUtil {
         Member target = Member.builder().ip(address).port(port).state(NodeState.UP).build();
         Map<String, Object> extendInfo = new HashMap<>(4);
         // The Raft Port information needs to be set by default
-        extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
+        extendInfo.put(MemberMetaDataConstants.RAFT_PORT,
+            String.valueOf(calculateRaftPort(target)));
         extendInfo.put(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         target.setExtendInfo(extendInfo);
+        // use grpc to report default
+        target.setGrpcReportEnabled(true);
         return target;
     }
     
@@ -108,26 +113,14 @@ public class MemberUtil {
         if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
             return false;
         }
-        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        boolean oldVerJudge = member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        return member.isGrpcReportEnabled() || oldVerJudge;
     }
     
     public static int calculateRaftPort(Member member) {
         return member.getPort() - DEFAULT_RAFT_OFFSET_PORT;
-    }
-    
-    /**
-     * Resolves to Member list.
-     *
-     * @param addresses ip list, example [127.0.0.1:8847,127.0.0.1:8848,127.0.0.1:8849]
-     * @return member list
-     */
-    public static Collection<Member> multiParse(Collection<String> addresses) {
-        List<Member> members = new ArrayList<>(addresses.size());
-        for (String address : addresses) {
-            Member member = singleParse(address);
-            members.add(member);
-        }
-        return members;
     }
     
     /**
@@ -145,6 +138,32 @@ public class MemberUtil {
         }
     }
     
+    /**
+     * Successful processing of the operation on the node and update metadata.
+     *
+     * @param member {@link Member}
+     * @since 2.1.2
+     */
+    public static void onSuccess(final ServerMemberManager manager, final Member member,
+        final Member receivedMember) {
+        if (isMetadataChanged(member, receivedMember)) {
+            manager.getMemberAddressInfos().add(member.getAddress());
+            member.setState(NodeState.UP);
+            member.setFailAccessCnt(0);
+            member.setExtendInfo(receivedMember.getExtendInfo());
+            member.setAbilities(receivedMember.getAbilities());
+            manager.notifyMemberChange(member);
+        } else {
+            onSuccess(manager, member);
+        }
+    }
+    
+    private static boolean isMetadataChanged(Member expected, Member actual) {
+        return !Objects.equals(expected.getAbilities(), actual.getAbilities())
+            || isBasicInfoChangedInExtendInfo(
+                expected, actual);
+    }
+    
     public static void onFail(final ServerMemberManager manager, final Member member) {
         // To avoid null pointer judgments, pass in one NONE_EXCEPTION
         onFail(manager, member, ExceptionUtil.NONE_EXCEPTION);
@@ -156,17 +175,20 @@ public class MemberUtil {
      * @param member {@link Member}
      * @param ex     {@link Throwable}
      */
-    public static void onFail(final ServerMemberManager manager, final Member member, Throwable ex) {
+    public static void onFail(final ServerMemberManager manager, final Member member,
+        Throwable ex) {
         manager.getMemberAddressInfos().remove(member.getAddress());
         final NodeState old = member.getState();
         member.setState(NodeState.SUSPICIOUS);
         member.setFailAccessCnt(member.getFailAccessCnt() + 1);
-        int maxFailAccessCnt = EnvUtil.getProperty(MEMBER_FAIL_ACCESS_CNT_PROPERTY, Integer.class, DEFAULT_MEMBER_FAIL_ACCESS_CNT);
+        int maxFailAccessCnt = EnvUtil
+            .getProperty(MEMBER_FAIL_ACCESS_CNT_PROPERTY, Integer.class,
+                DEFAULT_MEMBER_FAIL_ACCESS_CNT);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
         if (member.getFailAccessCnt() > maxFailAccessCnt || StringUtils
-                .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
+            .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
             member.setState(NodeState.DOWN);
         }
         if (!Objects.equals(old, member.getState())) {
@@ -188,36 +210,9 @@ public class MemberUtil {
             }
             EnvUtil.writeClusterConf(builder.toString());
         } catch (Throwable ex) {
-            Loggers.CLUSTER.error("cluster member node persistence failed : {}", ExceptionUtil.getAllExceptionMsg(ex));
+            Loggers.CLUSTER.error("cluster member node persistence failed : {}",
+                ExceptionUtil.getAllExceptionMsg(ex));
         }
-    }
-    
-    /**
-     * We randomly pick k nodes.
-     *
-     * @param members member list
-     * @param filter  filter {@link Predicate}
-     * @param k       node number
-     * @return target members
-     */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
-    public static Collection<Member> kRandom(Collection<Member> members, Predicate<Member> filter, int k) {
-        
-        Set<Member> kMembers = new HashSet<>();
-        
-        // Here thinking similar consul gossip protocols random k node
-        int totalSize = members.size();
-        Member[] membersArray = members.toArray(new Member[totalSize]);
-        ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
-        for (int i = 0; i < 3 * totalSize && kMembers.size() < k; i++) {
-            int idx = threadLocalRandom.nextInt(totalSize);
-            Member member = membersArray[idx];
-            if (filter.test(member)) {
-                kMembers.add(member);
-            }
-        }
-        
-        return kMembers;
     }
     
     /**
@@ -241,7 +236,8 @@ public class MemberUtil {
      * @param filter  filter
      * @return target members
      */
-    public static Set<Member> selectTargetMembers(Collection<Member> members, Predicate<Member> filter) {
+    public static Set<Member> selectTargetMembers(Collection<Member> members,
+        Predicate<Member> filter) {
         return members.stream().filter(filter).collect(Collectors.toSet());
     }
     
@@ -253,7 +249,7 @@ public class MemberUtil {
      */
     public static List<String> simpleMembers(Collection<Member> members) {
         return members.stream().map(Member::getAddress).sorted()
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+            .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
     
     /**
@@ -261,11 +257,11 @@ public class MemberUtil {
      *
      * @param actual   actual member
      * @param expected expected member
-     * @return true if all content is same, otherwise false
+     * @return true if one content is different, otherwise false
      */
     public static boolean isBasicInfoChanged(Member actual, Member expected) {
         if (null == expected) {
-            return null == actual;
+            return null != actual;
         }
         if (!expected.getIp().equals(actual.getIp())) {
             return true;
@@ -280,7 +276,8 @@ public class MemberUtil {
             return true;
         }
         
-        if (!expected.getAbilities().equals(actual.getAbilities())) {
+        // if change
+        if (expected.isGrpcReportEnabled() != actual.isGrpcReportEnabled()) {
             return true;
         }
         
@@ -289,7 +286,8 @@ public class MemberUtil {
     
     private static boolean isBasicInfoChangedInExtendInfo(Member expected, Member actual) {
         for (String each : MemberMetaDataConstants.BASIC_META_KEYS) {
-            if (expected.getExtendInfo().containsKey(each) != actual.getExtendInfo().containsKey(each)) {
+            if (expected.getExtendInfo().containsKey(each) != actual.getExtendInfo()
+                .containsKey(each)) {
                 return true;
             }
             if (!Objects.equals(expected.getExtendVal(each), actual.getExtendVal(each))) {

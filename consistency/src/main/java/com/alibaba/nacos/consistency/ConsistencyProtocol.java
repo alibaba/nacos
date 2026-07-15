@@ -37,7 +37,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ConsistencyProtocol<T extends Config, P extends RequestProcessor> extends CommandOperations {
+public interface ConsistencyProtocol<T extends Config, P extends RequestProcessor>
+    extends CommandOperations {
     
     /**
      * Consistency protocol initialization: perform initialization operations based on the incoming.
@@ -106,6 +107,13 @@ public interface ConsistencyProtocol<T extends Config, P extends RequestProcesso
      * @param addresses [ip:port, ip:port, ...]
      */
     void memberChange(Set<String> addresses);
+    
+    /**
+     * Whether protocol is ready to work, such as contain leader, finish load snapshot and so on.
+     *
+     * @return {@code true} when protocol ready to work, otherwise {@code false}
+     */
+    boolean isReady();
     
     /**
      * Consistency agreement service shut down .

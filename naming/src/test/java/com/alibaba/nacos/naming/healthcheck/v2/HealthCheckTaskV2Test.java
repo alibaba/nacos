@@ -18,28 +18,43 @@ package com.alibaba.nacos.naming.healthcheck.v2;
 
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2Delegate;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HealthCheckTaskV2Test {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class HealthCheckTaskV2Test {
     
     private HealthCheckTaskV2 healthCheckTaskV2;
     
@@ -55,24 +70,41 @@ public class HealthCheckTaskV2Test {
     @Mock
     private Service service;
     
-    @Before
-    public void setUp() {
+    @Mock
+    private InstancePublishInfo instancePublishInfo;
+    
+    @Mock
+    private HealthCheckProcessorV2Delegate processorDelegate;
+    
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(HealthCheckTaskV2.class, "switchDomain", null);
+        ReflectionTestUtils.setField(HealthCheckTaskV2.class, "metadataManager", null);
         ApplicationUtils.injectContext(context);
         when(context.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
         when(context.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
+        when(context.getBean(HealthCheckProcessorV2Delegate.class)).thenReturn(processorDelegate);
         healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
+    @AfterEach
+    void tearDown() {
+        ReflectionTestUtils.setField(HealthCheckTaskV2.class, "switchDomain", null);
+        ReflectionTestUtils.setField(HealthCheckTaskV2.class, "metadataManager", null);
+        ApplicationUtils.injectContext(null);
+    }
+    
     @Test
-    public void testDoHealthCheck() {
+    void testDoHealthCheck() {
         when(ipPortBasedClient.getAllPublishedService()).thenReturn(returnService());
         
         healthCheckTaskV2.setCheckRtWorst(1);
         healthCheckTaskV2.setCheckRtLastLast(1);
-        Assert.assertEquals(1, healthCheckTaskV2.getCheckRtWorst());
-        Assert.assertEquals(1, healthCheckTaskV2.getCheckRtLastLast());
+        healthCheckTaskV2.setCancelled(true);
+        assertEquals(1, healthCheckTaskV2.getCheckRtWorst());
+        assertEquals(1, healthCheckTaskV2.getCheckRtLastLast());
         
         healthCheckTaskV2.run();
         healthCheckTaskV2.passIntercept();
@@ -87,27 +119,73 @@ public class HealthCheckTaskV2Test {
     }
     
     @Test
-    public void testGetClient() {
-        Assert.assertNotNull(healthCheckTaskV2.getClient());
+    void testGetClient() {
+        assertNotNull(healthCheckTaskV2.getClient());
     }
     
     @Test
-    public void testGetAndSet() {
+    void testGetAndSet() {
         healthCheckTaskV2.setCheckRtBest(1);
         healthCheckTaskV2.setCheckRtNormalized(1);
         healthCheckTaskV2.setCheckRtLast(1);
         healthCheckTaskV2.setCancelled(true);
         healthCheckTaskV2.setStartTime(1615796485783L);
         
-        Assert.assertEquals(1, healthCheckTaskV2.getCheckRtBest());
-        Assert.assertEquals(1, healthCheckTaskV2.getCheckRtNormalized());
-        Assert.assertEquals(1, healthCheckTaskV2.getCheckRtLast());
-        Assert.assertTrue(healthCheckTaskV2.isCancelled());
-        Assert.assertEquals(1615796485783L, healthCheckTaskV2.getStartTime());
+        assertEquals(1, healthCheckTaskV2.getCheckRtBest());
+        assertEquals(1, healthCheckTaskV2.getCheckRtNormalized());
+        assertEquals(1, healthCheckTaskV2.getCheckRtLast());
+        assertTrue(healthCheckTaskV2.isCancelled());
+        assertEquals(1615796485783L, healthCheckTaskV2.getStartTime());
     }
     
     @Test
-    public void testAfterIntercept() {
+    void testAfterIntercept() {
         healthCheckTaskV2.afterIntercept();
+    }
+    
+    @Test
+    void testDoHealthCheckProcessesEnabledService() {
+        when(ipPortBasedClient.getAllPublishedService()).thenReturn(returnService());
+        when(service.getGroupedServiceName()).thenReturn("group@@service");
+        when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
+        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(instancePublishInfo);
+        healthCheckTaskV2.setCancelled(true);
+        
+        healthCheckTaskV2.doHealthCheck();
+        
+        verify(processorDelegate).process(eq(healthCheckTaskV2), eq(service), any());
+    }
+    
+    @Test
+    void testDoHealthCheckCatchesProcessorFailure() {
+        when(ipPortBasedClient.getAllPublishedService()).thenReturn(returnService());
+        when(service.getGroupedServiceName()).thenReturn("group@@service");
+        when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
+        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(instancePublishInfo);
+        when(context.getBean(HealthCheckProcessorV2Delegate.class))
+            .thenThrow(new RuntimeException("failed"));
+        healthCheckTaskV2.setCancelled(true);
+        
+        healthCheckTaskV2.doHealthCheck();
+        
+        verify(ipPortBasedClient).getClientId();
+    }
+    
+    @Test
+    void testDoHealthCheckSchedulesNextCheckAndUpdatesLastRt() {
+        when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.emptyList());
+        healthCheckTaskV2.setCheckRtNormalized(1000);
+        healthCheckTaskV2.setCheckRtWorst(10);
+        healthCheckTaskV2.setCheckRtLast(20);
+        healthCheckTaskV2.setCheckRtLastLast(10);
+        
+        try (MockedStatic<HealthCheckReactor> reactor =
+            Mockito.mockStatic(HealthCheckReactor.class)) {
+            healthCheckTaskV2.doHealthCheck();
+            
+            reactor.verify(() -> HealthCheckReactor.scheduleCheck(healthCheckTaskV2));
+        }
+        
+        assertEquals(20, healthCheckTaskV2.getCheckRtLastLast());
     }
 }

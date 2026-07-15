@@ -16,17 +16,23 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.ServiceQueryRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
@@ -36,21 +42,28 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("2.0.0")
 @Component
-public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
+public class ServiceQueryRequestHandler
+    extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
     private final ServiceStorage serviceStorage;
     
     private final NamingMetadataManager metadataManager;
     
-    public ServiceQueryRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
+    public ServiceQueryRequestHandler(ServiceStorage serviceStorage,
+        NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
     }
     
     @Override
+    @NamespaceValidation
+    @TpsControl(pointName = "RemoteNamingServiceQuery", name = "RemoteNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
-    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
+    @ExtractorManager.Extractor(rpcExtractor = ServiceQueryRequestParamExtractor.class)
+    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta)
+        throws NacosException {
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();
         String serviceName = request.getServiceName();
@@ -59,8 +72,9 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster, healthyOnly, true,
-                meta.getClientIp());
+        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster,
+            healthyOnly, true,
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta));
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }

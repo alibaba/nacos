@@ -17,13 +17,17 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
@@ -41,6 +45,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.HashMap;
 
 /**
  * Its own configuration information manipulation tool class.
@@ -56,6 +63,10 @@ public class EnvUtil {
     public static final String FUNCTION_MODE_CONFIG = "config";
     
     public static final String FUNCTION_MODE_NAMING = "naming";
+    
+    public static final String FUNCTION_MODE_MICROSERVICE = "microservice";
+    
+    public static final String FUNCTION_MODE_AI = "ai";
     
     /**
      * The key of nacos home.
@@ -74,7 +85,7 @@ public class EnvUtil {
     
     private static final String FILE_PREFIX = "file:";
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
@@ -84,9 +95,10 @@ public class EnvUtil {
     
     private static final String NACOS_HOME_PROPERTY = "user.home";
     
-    private static final String CUSTOM_CONFIG_LOCATION_PROPERTY = "spring.config.additional-location";
+    private static final String CUSTOM_CONFIG_LOCATION_PROPERTY =
+        "spring.config.additional-location";
     
-    private static final String DEFAULT_CONFIG_LOCATION  = "application.properties";
+    private static final String DEFAULT_CONFIG_LOCATION = "application.properties";
     
     private static final String DEFAULT_RESOURCE_PATH = "/application.properties";
     
@@ -100,6 +112,11 @@ public class EnvUtil {
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
     
+    private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED =
+        "nacos.custom.environment.enabled";
+    
+    private static final String NACOS_CUSTOM_CONFIG_NAME = "customFirstNacosConfig";
+    
     @JustForTest
     private static String confPath = "";
     
@@ -107,6 +124,27 @@ public class EnvUtil {
     private static String nacosHomePath = null;
     
     private static ConfigurableEnvironment environment;
+    
+    private static DeploymentType deploymentType;
+    
+    /**
+     * customEnvironment.
+     */
+    public static void customEnvironment() {
+        boolean enableCustom = getProperty(NACOS_CUSTOM_ENVIRONMENT_ENABLED, Boolean.class, false);
+        if (enableCustom) {
+            Set<String> propertyKeys =
+                CustomEnvironmentPluginManager.getInstance().getPropertyKeys();
+            Map<String, Object> sourcePropertyMap = new HashMap<>(propertyKeys.size());
+            for (String key : propertyKeys) {
+                sourcePropertyMap.put(key, getProperty(key, Object.class));
+            }
+            Map<String, Object> targetMap = CustomEnvironmentPluginManager.getInstance()
+                .getCustomValues(sourcePropertyMap);
+            MutablePropertySources propertySources = environment.getPropertySources();
+            propertySources.addFirst(new MapPropertySource(NACOS_CUSTOM_CONFIG_NAME, targetMap));
+        }
+    }
     
     public static ConfigurableEnvironment getEnvironment() {
         return environment;
@@ -140,8 +178,27 @@ public class EnvUtil {
         return environment.getRequiredProperty(key);
     }
     
-    public static <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+    public static <T> T getRequiredProperty(String key, Class<T> targetType)
+        throws IllegalStateException {
         return environment.getRequiredProperty(key, targetType);
+    }
+    
+    public static Properties getProperties() {
+        Properties properties = new Properties();
+        for (PropertySource<?> propertySource : environment.getPropertySources()) {
+            if (propertySource instanceof EnumerablePropertySource) {
+                EnumerablePropertySource<?> enumerablePropertySource =
+                    (EnumerablePropertySource<?>) propertySource;
+                String[] propertyNames = enumerablePropertySource.getPropertyNames();
+                for (String propertyName : propertyNames) {
+                    Object propertyValue = enumerablePropertySource.getProperty(propertyName);
+                    if (propertyValue != null) {
+                        properties.put(propertyName, propertyValue.toString());
+                    }
+                }
+            }
+        }
+        return properties;
     }
     
     public static String resolvePlaceholders(String text) {
@@ -178,6 +235,10 @@ public class EnvUtil {
         EnvUtil.localAddress = localAddress;
     }
     
+    public static void systemExit() {
+        System.exit(0);
+    }
+    
     public static int getPort() {
         if (port == -1) {
             port = getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
@@ -206,17 +267,6 @@ public class EnvUtil {
     @JustForTest
     public static void setIsStandalone(Boolean isStandalone) {
         EnvUtil.isStandalone = isStandalone;
-    }
-    
-    /**
-     * Whether open upgrade from 1.X nacos server. Might effect `doubleWrite` and `Old raft`.
-     *
-     * @since 2.1.0
-     * @return {@code true} open upgrade feature, otherwise {@code false}, default {@code false}
-     * @deprecated 2.2.0
-     */
-    public static boolean isSupportUpgradeFrom1X() {
-        return ConvertUtils.toBoolean(getProperty(Constants.SUPPORT_UPGRADE_FROM_1X), false);
     }
     
     /**
@@ -252,7 +302,9 @@ public class EnvUtil {
         if (StringUtils.isBlank(nacosHomePath)) {
             String nacosHome = System.getProperty(NACOS_HOME_KEY);
             if (StringUtils.isBlank(nacosHome)) {
-                nacosHome = Paths.get(System.getProperty(NACOS_HOME_PROPERTY), NACOS_HOME_ADDITIONAL_FILEPATH).toString();
+                nacosHome = Paths
+                    .get(System.getProperty(NACOS_HOME_PROPERTY), NACOS_HOME_ADDITIONAL_FILEPATH)
+                    .toString();
             }
             return nacosHome;
         }
@@ -265,15 +317,6 @@ public class EnvUtil {
         EnvUtil.nacosHomePath = nacosHomePath;
     }
     
-    public static List<String> getIPsBySystemEnv(String key) {
-        String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<>();
-        if (StringUtils.isNotEmpty(env)) {
-            ips = Arrays.asList(env.split(","));
-        }
-        return ips;
-    }
-    
     public static String getSystemEnv(String key) {
         return System.getenv(key);
     }
@@ -281,13 +324,15 @@ public class EnvUtil {
     public static float getLoad() {
         return (float) OperatingSystemBeanManager.getOperatingSystemBean().getSystemLoadAverage();
     }
-
+    
     public static float getCpu() {
         return (float) OperatingSystemBeanManager.getSystemCpuUsage();
     }
     
     public static float getMem() {
-        return (float) (1 - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
+        return (float) (1
+            - (double) OperatingSystemBeanManager.getFreePhysicalMem()
+                / (double) OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
@@ -303,7 +348,8 @@ public class EnvUtil {
     }
     
     public static String getClusterConfFilePath() {
-        return Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH, DEFAULT_ADDITIONAL_FILE).toString();
+        return Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH, DEFAULT_ADDITIONAL_FILE)
+            .toString();
     }
     
     /**
@@ -313,8 +359,8 @@ public class EnvUtil {
      * @throws IOException ioexception {@link IOException}
      */
     public static List<String> readClusterConf() throws IOException {
-        try (Reader reader = new InputStreamReader(new FileInputStream(new File(getClusterConfFilePath())),
-                StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(getClusterConfFilePath()),
+            StandardCharsets.UTF_8)) {
             return analyzeClusterConf(reader);
         } catch (FileNotFoundException ignore) {
             List<String> tmp = new ArrayList<>();
@@ -364,7 +410,8 @@ public class EnvUtil {
     }
     
     public static void writeClusterConf(String content) throws IOException {
-        DiskUtils.writeFile(new File(getClusterConfFilePath()), content.getBytes(StandardCharsets.UTF_8), false);
+        DiskUtils.writeFile(new File(getClusterConfFilePath()),
+            content.getBytes(StandardCharsets.UTF_8), false);
     }
     
     public static String getMemberList() {
@@ -424,15 +471,15 @@ public class EnvUtil {
      * Get available processor numbers from environment.
      *
      * <p>
-     *     If there are setting of {@code nacos.core.sys.basic.processors} in config/JVM/system, use it.
-     *     If no setting, use the one time {@code ThreadUtils.getSuitableThreadCount()}.
+     * If there are setting of {@code nacos.core.sys.basic.processors} in config/JVM/system, use it. If no setting, use
+     * the one time {@code ThreadUtils.getSuitableThreadCount()}.
      * </p>
      *
      * @return available processor numbers from environment, will not lower than 1.
      */
     public static int getAvailableProcessors() {
         int result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
-                ThreadUtils.getSuitableThreadCount(1));
+            ThreadUtils.getSuitableThreadCount(1));
         return result > 0 ? result : 1;
     }
     
@@ -447,7 +494,8 @@ public class EnvUtil {
             throw new IllegalArgumentException("processors multiple must upper than 1");
         }
         Integer processor = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, Integer.class);
-        return null != processor && processor > 0 ? processor * multiple : ThreadUtils.getSuitableThreadCount(multiple);
+        return null != processor && processor > 0 ? processor * multiple
+            : ThreadUtils.getSuitableThreadCount(multiple);
     }
     
     /**
@@ -460,8 +508,18 @@ public class EnvUtil {
         if (scale < 0 || scale > 1) {
             throw new IllegalArgumentException("processors scale must between 0 and 1");
         }
-        double result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
-                ThreadUtils.getSuitableThreadCount(1)) * scale;
+        double result =
+            getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                ThreadUtils.getSuitableThreadCount(1))
+                * scale;
         return result > 1 ? (int) result : 1;
+    }
+    
+    public static DeploymentType getDeploymentType() {
+        return deploymentType;
+    }
+    
+    public static void setDeploymentType(DeploymentType deploymentType) {
+        EnvUtil.deploymentType = deploymentType;
     }
 }

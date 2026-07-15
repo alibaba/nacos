@@ -19,28 +19,43 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConnectionBasedClientManagerTest {
-    
-    ConnectionBasedClientManager connectionBasedClientManager;
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ConnectionBasedClientManagerTest {
     
     private final String connectionId = System.currentTimeMillis() + "_127.0.0.1_80";
+    
+    ConnectionBasedClientManager connectionBasedClientManager;
     
     @Mock
     private ConnectionBasedClient client;
@@ -54,44 +69,128 @@ public class ConnectionBasedClientManagerTest {
     @Mock
     private ClientAttributes clientAttributes;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeAll
+    static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
+    @BeforeEach
+    void setUp() throws Exception {
         connectionBasedClientManager = new ConnectionBasedClientManager();
         when(client.isNative()).thenReturn(true);
         when(connectionMeta.getConnectionId()).thenReturn(connectionId);
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
-        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
+        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE))
+            .thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
         
-        assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        when(clientAttributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(0);
+        assertTrue(
+            connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         connectionBasedClientManager.clientConnected(connection);
         
     }
     
     @Test
-    public void testAllClientId() {
+    void testAllClientId() {
         Collection<String> allClientIds = connectionBasedClientManager.allClientId();
         assertEquals(1, allClientIds.size());
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(allClientIds.contains(connectionId));
     }
     
     @Test
-    public void testContainsConnectionId() {
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+    void testContainsConnectionId() {
+        assertTrue(
+            connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(connectionBasedClientManager.contains(connectionId));
         String unUsedClientId = "127.0.0.1:8888#true";
-        assertFalse(connectionBasedClientManager.verifyClient(unUsedClientId));
+        assertFalse(connectionBasedClientManager
+            .verifyClient(new DistroClientVerifyInfo(unUsedClientId, 0)));
         assertFalse(connectionBasedClientManager.contains(unUsedClientId));
     }
     
     @Test
-    public void testIsResponsibleClient() {
+    void testGetClient() {
+        assertNotNull(connectionBasedClientManager.getClient(connectionId));
+    }
+    
+    @Test
+    void testClientConnectedIgnoresNonNamingConnection() {
+        Connection configConnection = mock(Connection.class);
+        ConnectionMeta configConnectionMeta = mock(ConnectionMeta.class);
+        when(configConnection.getMetaInfo()).thenReturn(configConnectionMeta);
+        when(configConnectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn("config");
+        
+        connectionBasedClientManager.clientConnected(configConnection);
+        
+        assertEquals(1, connectionBasedClientManager.allClientId().size());
+    }
+    
+    @Test
+    void testClientDisconnectedIgnoresNonNamingConnection() {
+        Connection configConnection = mock(Connection.class);
+        ConnectionMeta configConnectionMeta = mock(ConnectionMeta.class);
+        when(configConnection.getMetaInfo()).thenReturn(configConnectionMeta);
+        when(configConnectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn("config");
+        
+        connectionBasedClientManager.clientDisConnected(configConnection);
+        
+        assertTrue(connectionBasedClientManager.contains(connectionId));
+    }
+    
+    @Test
+    void testClientDisconnectedWithoutClient() {
+        assertTrue(connectionBasedClientManager.clientDisconnected("missing"));
+    }
+    
+    @Test
+    void testIsResponsibleClient() {
         assertTrue(connectionBasedClientManager.isResponsibleClient(client));
     }
     
-    @After
-    public void tearDown() {
+    @Test
+    void testIsResponsibleClientWithOtherClientType() {
+        assertFalse(connectionBasedClientManager.isResponsibleClient(mock(Client.class)));
+    }
+    
+    @Test
+    void testVerifyClientWithDifferentRevision() {
+        String verifyClientId = "verifyClientId";
+        ConnectionBasedClient verifyClient = mock(ConnectionBasedClient.class);
+        when(verifyClient.getClientId()).thenReturn(verifyClientId);
+        when(verifyClient.getRevision()).thenReturn(1L);
+        connectionBasedClientManager.clientConnected(verifyClient);
+        
+        assertFalse(
+            connectionBasedClientManager
+                .verifyClient(new DistroClientVerifyInfo(verifyClientId, 2L)));
+    }
+    
+    @Test
+    void testExpiredClientCleaner() throws Exception {
+        String expiredClientId = "expiredClientId";
+        ConnectionBasedClient expiredClient = mock(ConnectionBasedClient.class);
+        when(expiredClient.getClientId()).thenReturn(expiredClientId);
+        when(expiredClient.isNative()).thenReturn(true);
+        when(expiredClient.isExpire(anyLong())).thenReturn(true);
+        connectionBasedClientManager.clientConnected(expiredClient);
+        Constructor<?> constructor =
+            Class.forName(ConnectionBasedClientManager.class.getName() + "$ExpiredClientCleaner")
+                .getDeclaredConstructor(ConnectionBasedClientManager.class);
+        constructor.setAccessible(true);
+        Runnable cleaner = (Runnable) constructor.newInstance(connectionBasedClientManager);
+        
+        cleaner.run();
+        
+        assertFalse(connectionBasedClientManager.contains(expiredClientId));
+        verify(expiredClient).release();
+    }
+    
+    @AfterEach
+    void tearDown() {
         connectionBasedClientManager.clientDisConnected(connection);
     }
 }

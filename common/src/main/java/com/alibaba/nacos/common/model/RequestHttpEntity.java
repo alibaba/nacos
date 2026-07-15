@@ -42,7 +42,7 @@ public class RequestHttpEntity {
     }
     
     public RequestHttpEntity(Header header, Object body) {
-        this(null, header, null, body);
+        this(null, header, body);
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {
@@ -57,7 +57,8 @@ public class RequestHttpEntity {
         this(httpClientConfig, header, null, body);
     }
     
-    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query, Object body) {
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query,
+        Object body) {
         handleHeader(header);
         this.httpClientConfig = httpClientConfig;
         this.query = query;

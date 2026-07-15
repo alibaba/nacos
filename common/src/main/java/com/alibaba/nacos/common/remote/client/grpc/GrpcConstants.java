@@ -53,13 +53,15 @@ public class GrpcConstants {
     public static final String GRPC_TIMEOUT_MILLS = NACOS_CLIENT_GRPC + ".timeout";
     
     @GRpcConfigLabel
-    public static final String GRPC_CONNECT_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".connect.keep.alive";
+    public static final String GRPC_CONNECT_KEEP_ALIVE_TIME =
+        NACOS_CLIENT_GRPC + ".connect.keep.alive";
     
     @GRpcConfigLabel
     public static final String GRPC_THREADPOOL_MAX_SIZE = NACOS_CLIENT_GRPC + ".pool.max.size";
     
     @GRpcConfigLabel
-    public static final String GRPC_SERVER_CHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".server.check.timeout";
+    public static final String GRPC_SERVER_CHECK_TIMEOUT =
+        NACOS_CLIENT_GRPC + ".server.check.timeout";
     
     @GRpcConfigLabel
     public static final String GRPC_QUEUESIZE = NACOS_CLIENT_GRPC + ".queue.size";
@@ -71,10 +73,24 @@ public class GrpcConstants {
     public static final String GRPC_HEALTHCHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".health.timeout";
     
     @GRpcConfigLabel
-    public static final String GRPC_MAX_INBOUND_MESSAGE_SIZE = NACOS_CLIENT_GRPC + ".maxinbound.message.size";
+    public static final String GRPC_MAX_INBOUND_MESSAGE_SIZE =
+        NACOS_CLIENT_GRPC + ".maxinbound.message.size";
     
     @GRpcConfigLabel
-    public static final String GRPC_CHANNEL_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".channel.keep.alive";
+    public static final String GRPC_CHANNEL_KEEP_ALIVE_TIME =
+        NACOS_CLIENT_GRPC + ".channel.keep.alive";
+    
+    @GRpcConfigLabel
+    public static final String GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT =
+        NACOS_CLIENT_GRPC + ".channel.keep.alive.timeout";
+    
+    @GRpcConfigLabel
+    public static final String GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT =
+        NACOS_CLIENT_GRPC + ".channel.capability.negotiation.timeout";
+    
+    @GRpcConfigLabel
+    public static final String GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT =
+        NACOS_CLIENT_GRPC + ".pool.core.timeout";
     
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     
@@ -82,7 +98,7 @@ public class GrpcConstants {
     @Target(ElementType.FIELD)
     @Retention(RetentionPolicy.RUNTIME)
     protected @interface GRpcConfigLabel {
-    
+        
     }
     
     static {
@@ -91,11 +107,10 @@ public class GrpcConstants {
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    GRpcConfigLabel.class)) {
+                GRpcConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                } catch (IllegalAccessException ignored) {
                 }
             }
         }

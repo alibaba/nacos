@@ -18,6 +18,8 @@ package com.alibaba.nacos.common.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -27,6 +29,9 @@ import java.util.Objects;
  * @since 1.2.0
  */
 public class ExceptionUtil {
+    
+    private ExceptionUtil() {
+    }
     
     /**
      * Represents an empty exception, that is, no exception occurs, only a constant.
@@ -59,9 +64,14 @@ public class ExceptionUtil {
         }
         
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final PrintStream ps = new PrintStream(out);
-        t.printStackTrace(ps);
-        ps.flush();
-        return out.toString();
+        try {
+            final PrintStream ps = new PrintStream(out, false, StandardCharsets.UTF_8.name());
+            t.printStackTrace(ps);
+            ps.flush();
+            return new String(out.toByteArray(), StandardCharsets.UTF_8);
+        } catch (UnsupportedEncodingException e) {
+            // Should never happen since UTF-8 is always supported
+            throw new IllegalStateException(e);
+        }
     }
 }

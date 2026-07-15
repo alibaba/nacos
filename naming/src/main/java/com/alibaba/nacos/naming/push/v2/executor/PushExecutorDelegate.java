@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
-import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
@@ -29,17 +30,13 @@ import java.util.Optional;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class PushExecutorDelegate implements PushExecutor {
     
     private final PushExecutorRpcImpl rpcPushExecuteService;
     
-    private final PushExecutorUdpImpl udpPushExecuteService;
-    
-    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService, PushExecutorUdpImpl udpPushExecuteService) {
+    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService) {
         this.rpcPushExecuteService = rpcPushExecuteService;
-        this.udpPushExecuteService = udpPushExecuteService;
     }
     
     @Override
@@ -49,17 +46,27 @@ public class PushExecutorDelegate implements PushExecutor {
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            NamingPushCallback callBack) {
-        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
+        NamingPushCallback callBack) {
+        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data,
+            callBack);
+    }
+    
+    @Override
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId,
+        AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
+        PushCallBack callBack) {
+        // only support fuzzy watch by rpc
+        rpcPushExecuteService.doFuzzyWatchNotifyPushWithCallBack(clientId, watchNotifyRequest,
+            callBack);
     }
     
     private PushExecutor getPushExecuteService(String clientId, Subscriber subscriber) {
         Optional<SpiPushExecutor> result = SpiImplPushExecutorHolder.getInstance()
-                .findPushExecutorSpiImpl(clientId, subscriber);
+            .findPushExecutorSpiImpl(clientId, subscriber);
         if (result.isPresent()) {
             return result.get();
         }
         // use nacos default push executor
-        return clientId.contains(IpPortBasedClient.ID_DELIMITER) ? udpPushExecuteService : rpcPushExecuteService;
+        return rpcPushExecuteService;
     }
 }

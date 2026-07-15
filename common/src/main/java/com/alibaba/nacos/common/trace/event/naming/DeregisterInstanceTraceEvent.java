@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 
 /**
  * Naming deregister instance trace event.
+ *
  * @author yanda
  */
 public class DeregisterInstanceTraceEvent extends NamingTraceEvent {
@@ -30,9 +31,9 @@ public class DeregisterInstanceTraceEvent extends NamingTraceEvent {
     
     private final boolean rpc;
     
-    private String instanceIp;
+    private final String instanceIp;
     
-    private int instancePort;
+    private final int instancePort;
     
     public final DeregisterInstanceReason reason;
     
@@ -60,9 +61,12 @@ public class DeregisterInstanceTraceEvent extends NamingTraceEvent {
         return reason;
     }
     
-    public DeregisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, DeregisterInstanceReason reason,
-            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("DEREGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+    public DeregisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc,
+        DeregisterInstanceReason reason,
+        String serviceNamespace, String serviceGroup, String serviceName, String instanceIp,
+        int instancePort) {
+        super("DEREGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+            serviceName);
         this.clientIp = clientIp;
         this.reason = reason;
         this.rpc = rpc;

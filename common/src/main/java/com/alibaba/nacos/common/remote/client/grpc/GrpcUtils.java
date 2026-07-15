@@ -23,10 +23,10 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.exception.RemoteException;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
+import com.alibaba.nacos.common.utils.ByteBufferInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -55,16 +55,16 @@ public class GrpcUtils {
         Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getSimpleName());
+            metaBuilder.putAllHeaders(request.getHeaders())
+                .setType(request.getClass().getSimpleName());
         }
-        metaBuilder.setClientIp(NetUtils.localIP());
+        metaBuilder.setClientIp(NetUtils.localIp());
         payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
         byte[] jsonBytes = convertRequestToByte(request);
         return payloadBuilder
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .build();
+            .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).build();
         
     }
     
@@ -77,15 +77,15 @@ public class GrpcUtils {
     public static Payload convert(Request request) {
         
         Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
-                .setClientIp(NetUtils.localIP()).putAllHeaders(request.getHeaders()).build();
+            .setClientIp(NetUtils.localIp()).putAllHeaders(request.getHeaders()).build();
         
         byte[] jsonBytes = convertRequestToByte(request);
         
         Payload.Builder builder = Payload.newBuilder();
         
         return builder
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(newMeta).build();
+            .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+            .setMetadata(newMeta).build();
         
     }
     
@@ -96,18 +96,19 @@ public class GrpcUtils {
      * @return payload.
      */
     public static Payload convert(Response response) {
-        byte[] jsonBytes = JacksonUtils.toJsonBytes(response);
+        byte[] jsonBytes = JsonUtils.toJsonBytes(response);
         
-        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
+        Metadata.Builder metaBuilder =
+            Metadata.newBuilder().setType(response.getClass().getSimpleName());
         return Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(metaBuilder.build()).build();
+            .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+            .setMetadata(metaBuilder.build()).build();
     }
     
     private static byte[] convertRequestToByte(Request request) {
         Map<String, String> requestHeaders = new HashMap<>(request.getHeaders());
         request.clearHeaders();
-        byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
+        byte[] jsonBytes = JsonUtils.toJsonBytes(request);
         request.putAllHeader(requestHeaders);
         return jsonBytes;
     }
@@ -123,59 +124,14 @@ public class GrpcUtils {
         if (classType != null) {
             ByteString byteString = payload.getBody().getValue();
             ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
-            Object obj = JacksonUtils.toObj(new ByteBufferBackedInputStream(byteBuffer), classType);
+            Object obj = JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
             return obj;
         } else {
             throw new RemoteException(NacosException.SERVER_ERROR,
-                    "Unknown payload type:" + payload.getMetadata().getType());
-        }
-        
-    }
-    
-    public static class PlainRequest {
-        
-        String type;
-        
-        Object body;
-        
-        /**
-         * Getter method for property <tt>type</tt>.
-         *
-         * @return property value of type
-         */
-        public String getType() {
-            return type;
-        }
-        
-        /**
-         * Setter method for property <tt>type</tt>.
-         *
-         * @param type value to be assigned to property type
-         */
-        public void setType(String type) {
-            this.type = type;
-        }
-        
-        /**
-         * Getter method for property <tt>body</tt>.
-         *
-         * @return property value of body
-         */
-        public Object getBody() {
-            return body;
-        }
-        
-        /**
-         * Setter method for property <tt>body</tt>.
-         *
-         * @param body value to be assigned to property body
-         */
-        public void setBody(Object body) {
-            this.body = body;
+                "Unknown payload type:" + payload.getMetadata().getType());
         }
     }
-    
 }

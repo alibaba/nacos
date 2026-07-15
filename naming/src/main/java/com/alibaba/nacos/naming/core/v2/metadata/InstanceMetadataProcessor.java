@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
@@ -57,7 +58,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     @SuppressWarnings("unchecked")
-    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager,
+        ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
@@ -68,7 +70,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
+        return Collections
+            .singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
     
     @Override
@@ -78,9 +81,10 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public Response onApply(WriteRequest request) {
-        MetadataOperation<InstanceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
         readLock.lock();
         try {
+            MetadataOperation<InstanceMetadata> op =
+                serializer.deserialize(request.getData().toByteArray(), processType);
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
                 case CHANGE:
@@ -91,11 +95,14 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false)
-                            .setErrMsg("Unsupported operation " + request.getOperation()).build();
+                        .setErrMsg("Unsupported operation " + request.getOperation()).build();
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (Exception e) {
-            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
+            Loggers.RAFT.error("onApply {} instance metadata operation failed. ",
+                request.getOperation(), e);
+            String errorMessage = null == e.getMessage() ? e.getClass().getName() : e.getMessage();
+            return Response.newBuilder().setSuccess(false).setErrMsg(errorMessage).build();
         } finally {
             readLock.unlock();
         }
@@ -105,7 +112,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service,
+            com.alibaba.nacos.api.common.Constants.ServiceChangedType.INSTANCE_CHANGED, true));
     }
     
     private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {

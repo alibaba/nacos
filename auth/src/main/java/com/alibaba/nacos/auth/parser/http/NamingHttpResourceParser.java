@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Properties;
 
 /**
@@ -33,7 +33,8 @@ public class NamingHttpResourceParser extends AbstractHttpResourceParser {
     
     @Override
     protected String getNamespaceId(HttpServletRequest request) {
-        return NamespaceUtil.processNamespaceParameter(request.getParameter(CommonParams.NAMESPACE_ID));
+        return NamespaceUtil
+            .processNamespaceParameter(request.getParameter(CommonParams.NAMESPACE_ID));
         
     }
     
@@ -57,7 +58,8 @@ public class NamingHttpResourceParser extends AbstractHttpResourceParser {
     @Override
     protected String getResourceName(HttpServletRequest request) {
         // See comment in #getGroup
-        String serviceName = NamingUtils.getServiceName(request.getParameter(CommonParams.SERVICE_NAME));
+        String serviceName =
+            NamingUtils.getServiceName(request.getParameter(CommonParams.SERVICE_NAME));
         return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
     }
     

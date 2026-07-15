@@ -16,236 +16,343 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
-import org.springframework.mock.web.MockServletContext;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.HashSet;
+import java.util.Set;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class MemberUtilTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class MemberUtilTest {
     
     private static final String IP = "1.1.1.1";
     
     private static final int PORT = 8848;
     
+    @Mock
+    private ServerMemberManager memberManager;
+    
     private ConfigurableEnvironment environment;
     
     private Member originalMember;
     
-    private ServerMemberManager memberManager;
+    private Set<String> mockMemberAddressInfos;
     
-    @Before
-    public void setUp() throws Exception {
+    private String nacosHome;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(true);
-        memberManager = new ServerMemberManager(new MockServletContext());
+        nacosHome = EnvUtil.getNacosHome();
+        EnvUtil.setNacosHomePath(nacosHome + File.separator + "MemberUtilTest");
         originalMember = buildMember();
+        mockMemberAddressInfos = new HashSet<>();
+        when(memberManager.getMemberAddressInfos()).thenReturn(mockMemberAddressInfos);
     }
     
     private Member buildMember() {
         return Member.builder().ip(IP).port(PORT).state(NodeState.UP).build();
     }
     
-    @After
-    public void tearDown() throws NacosException {
-        NotifyCenter.deregisterPublisher(MembersChangeEvent.class);
-        memberManager.shutdown();
+    @AfterEach
+    void tearDown() throws NacosException {
+        EnvUtil.setNacosHomePath(nacosHome);
     }
     
     @Test
-    public void testIsBasicInfoChangedNoChangeWithoutExtendInfo() {
+    void testCopy() {
+        Member expected = Member.builder().build();
+        expected.setIp("2.2.2.2");
+        expected.setPort(9999);
+        expected.setState(NodeState.SUSPICIOUS);
+        expected.setExtendVal(MemberMetaDataConstants.VERSION, "test");
+        expected.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        MemberUtil.copy(expected, originalMember);
+        assertEquals(expected.getIp(), originalMember.getIp());
+        assertEquals(expected.getPort(), originalMember.getPort());
+        assertEquals(expected.getAddress(), originalMember.getAddress());
+        assertEquals(NodeState.SUSPICIOUS, originalMember.getState());
+        assertEquals("test", originalMember.getExtendVal(MemberMetaDataConstants.VERSION));
+        assertTrue(originalMember.getAbilities().getRemoteAbility().isSupportRemoteConnection());
+    }
+    
+    @Test
+    void testSingleParseWithPort() {
+        Member actual = MemberUtil.singleParse(IP + ":2222");
+        assertEquals(IP, actual.getIp());
+        assertEquals(2222, actual.getPort());
+        assertEquals(IP + ":2222", actual.getAddress());
+        assertEquals(NodeState.UP, actual.getState());
+        assertTrue((Boolean) actual.getExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE));
+        assertEquals("1222", actual.getExtendVal(MemberMetaDataConstants.RAFT_PORT));
+        assertFalse(actual.getAbilities().getRemoteAbility().isSupportRemoteConnection());
+    }
+    
+    @Test
+    void testSingleParseWithoutPort() {
+        Member actual = MemberUtil.singleParse(IP);
+        assertEquals(IP, actual.getIp());
+        assertEquals(PORT, actual.getPort());
+        assertEquals(IP + ":" + PORT, actual.getAddress());
+        assertEquals(NodeState.UP, actual.getState());
+        assertTrue((Boolean) actual.getExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE));
+        assertEquals("7848", actual.getExtendVal(MemberMetaDataConstants.RAFT_PORT));
+        assertFalse(actual.getAbilities().getRemoteAbility().isSupportRemoteConnection());
+    }
+    
+    @Test
+    void testIsSupportedLongCon() {
+        assertFalse(MemberUtil.isSupportedLongCon(originalMember));
+        originalMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        assertTrue(MemberUtil.isSupportedLongCon(originalMember));
+        originalMember.getAbilities().setRemoteAbility(null);
+        assertFalse(MemberUtil.isSupportedLongCon(originalMember));
+        originalMember.setAbilities(null);
+        assertFalse(MemberUtil.isSupportedLongCon(originalMember));
+    }
+    
+    @Test
+    void testSyncToFile() throws IOException {
+        File file = new File(EnvUtil.getClusterConfFilePath());
+        file.getParentFile().mkdirs();
+        assertTrue(file.createNewFile());
+        MemberUtil.syncToFile(Collections.singleton(originalMember));
+        try (BufferedReader reader =
+            new BufferedReader(new FileReader(EnvUtil.getClusterConfFilePath()))) {
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                if (!line.startsWith("#")) {
+                    assertEquals(IP + ":" + PORT, line.trim());
+                    return;
+                }
+            }
+            fail("No found member info in cluster.conf");
+        } finally {
+            file.delete();
+        }
+    }
+    
+    @Test
+    void testReadServerConf() {
+        Collection<String> address = new HashSet<>();
+        address.add("1.1.1.1:3306");
+        address.add("1.1.1.1");
+        Collection<Member> actual = MemberUtil.readServerConf(address);
+        assertEquals(2, actual.size());
+    }
+    
+    @Test
+    void testSelectTargetMembers() {
+        Collection<Member> input = new HashSet<>();
+        input.add(originalMember);
+        Member member = buildMember();
+        member.setIp("2.2.2.2");
+        input.add(member);
+        Set<Member> actual =
+            MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
+        assertEquals(1, actual.size());
+    }
+    
+    @Test
+    void testSimpleMembers() {
+        Collection<Member> members = new HashSet<>();
+        members.add(originalMember);
+        Member other = buildMember();
+        other.setIp("2.2.2.2");
+        other.setPort(8849);
+        members.add(other);
+        java.util.List<String> addresses = MemberUtil.simpleMembers(members);
+        assertEquals(2, addresses.size());
+        assertEquals(IP + ":" + PORT, addresses.get(0));
+        assertEquals("2.2.2.2:8849", addresses.get(1));
+    }
+    
+    @Test
+    void testIsBasicInfoChangedNoChangeWithoutExtendInfo() {
         Member newMember = buildMember();
         assertFalse(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedNoChangeWithExtendInfo() {
+    void testIsBasicInfoChangedNoChangeWithExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal("test", "test");
         assertFalse(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForIp() {
+    void testIsBasicInfoChangedForIp() {
         Member newMember = buildMember();
         newMember.setIp("1.1.1.2");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForPort() {
+    void testIsBasicInfoChangedForPort() {
         Member newMember = buildMember();
         newMember.setPort(PORT + 1);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForAddress() {
+    void testIsBasicInfoChangedForAddress() {
         Member newMember = buildMember();
         newMember.setAddress("test");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForStatus() {
+    void testIsBasicInfoChangedForStatus() {
         Member newMember = buildMember();
         newMember.setState(NodeState.DOWN);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForMoreBasicExtendInfo() {
+    void testIsBasicInfoChangedForMoreBasicExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal(MemberMetaDataConstants.VERSION, "TEST");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testIsBasicInfoChangedForChangedBasicExtendInfo() {
+    void testIsBasicInfoChangedForChangedBasicExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal(MemberMetaDataConstants.WEIGHT, "100");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
     @Test
-    public void testMemberOnFailWhenReachMaxFailAccessCnt() {
+    void testIsBasicInfoChangedForChangedAbilities() {
+        Member newMember = buildMember();
+        newMember.setGrpcReportEnabled(true);
+        assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
+    }
+    
+    @Test
+    void testIsBasicInfoChangedForChangedNull() {
+        Member newMember = buildMember();
+        assertTrue(MemberUtil.isBasicInfoChanged(newMember, null));
+    }
+    
+    @Test
+    void testMemberOnFailWhenReachMaxFailAccessCnt() {
         final Member remote = buildMember();
-        memberManager.memberJoin(Collections.singletonList(remote));
-        
+        mockMemberAddressInfos.add(remote.getAddress());
+        remote.setState(NodeState.SUSPICIOUS);
         remote.setFailAccessCnt(2);
         MemberUtil.onFail(memberManager, remote);
-        
-        final Member search1 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(3, search1.getFailAccessCnt());
-        Assert.assertEquals(NodeState.SUSPICIOUS, search1.getState());
-        
+        assertEquals(3, remote.getFailAccessCnt());
+        assertEquals(NodeState.SUSPICIOUS, remote.getState());
+        verify(memberManager, never()).notifyMemberChange(remote);
+        assertTrue(mockMemberAddressInfos.isEmpty());
         MemberUtil.onFail(memberManager, remote);
-        
-        final Member search2 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(4, search2.getFailAccessCnt());
-        Assert.assertEquals(NodeState.DOWN, search2.getState());
-        
-        MemberUtil.onSuccess(memberManager, remote);
-        final Member search3 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(0, search3.getFailAccessCnt());
-        Assert.assertEquals(NodeState.UP, search3.getState());
+        assertEquals(4, remote.getFailAccessCnt());
+        assertEquals(NodeState.DOWN, remote.getState());
+        verify(memberManager).notifyMemberChange(remote);
     }
     
     @Test
-    public void testMemberOnFailWhenConnectRefused() {
+    void testMemberOnFailWhenConnectRefused() {
         final Member remote = buildMember();
-        memberManager.memberJoin(Collections.singletonList(remote));
-        
+        mockMemberAddressInfos.add(remote.getAddress());
         remote.setFailAccessCnt(1);
-        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
-        
-        final Member search1 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(2, search1.getFailAccessCnt());
-        Assert.assertEquals(NodeState.DOWN, search1.getState());
-        
-        MemberUtil.onSuccess(memberManager, remote);
-        final Member search2 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(0, search2.getFailAccessCnt());
-        Assert.assertEquals(NodeState.UP, search2.getState());
-    }
-    
-    @Test
-    public void testMemberOnFailListener() throws InterruptedException {
-        
-        final AtomicBoolean received = new AtomicBoolean(false);
-        final AtomicReference<MembersChangeEvent> reference = new AtomicReference<>();
-        
-        NotifyCenter.registerSubscriber(new MemberChangeListener() {
-            @Override
-            public void onEvent(MembersChangeEvent event) {
-                reference.set(event);
-                received.set(true);
-            }
-        });
-        
-        final Member remote = buildMember();
-        memberManager.memberJoin(Collections.singletonList(remote));
-        
-        remote.setFailAccessCnt(1);
-        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
-        ThreadUtils.sleep(4000);
-        Assert.assertTrue(received.get());
-        final MembersChangeEvent event1 = reference.get();
-        final Member member1 = event1.getMembers().stream()
-                .filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress())).findFirst()
-                .orElseThrow(() -> new AssertionError("member is null"));
-        Assert.assertEquals(2, member1.getFailAccessCnt());
-        Assert.assertEquals(NodeState.DOWN, member1.getState());
-        received.set(false);
-        
-        MemberUtil.onSuccess(memberManager, remote);
-        ThreadUtils.sleep(4000);
-        Assert.assertTrue(received.get());
-        final MembersChangeEvent event2 = reference.get();
-        final Member member2 = event2.getMembers().stream()
-                .filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress())).findFirst()
-                .orElseThrow(() -> new AssertionError("member is null"));
-        Assert.assertEquals(0, member2.getFailAccessCnt());
-        Assert.assertEquals(NodeState.UP, member2.getState());
-    }
-    
-    @Test
-    public void testMemberOnSuccessWhenMemberAlreadyUP() {
-        final AtomicBoolean received = new AtomicBoolean(false);
-        
-        NotifyCenter.registerSubscriber(new MemberChangeListener() {
-            @Override
-            public void onEvent(MembersChangeEvent event) {
-                received.set(true);
-            }
-        });
-        
-        final Member remote = buildMember();
-        memberManager.updateMember(remote);
-        
-        MemberUtil.onSuccess(memberManager, remote);
-        ThreadUtils.sleep(4000);
-        Assert.assertFalse(received.get());
+        MemberUtil.onFail(memberManager, remote,
+            new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        assertEquals(2, remote.getFailAccessCnt());
+        assertEquals(NodeState.DOWN, remote.getState());
+        assertTrue(mockMemberAddressInfos.isEmpty());
+        verify(memberManager).notifyMemberChange(remote);
     }
     
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     @Test
-    public void testMemberOnFailWhenMemberAlreadyNOUP() {
-        final AtomicBoolean received = new AtomicBoolean(false);
-        
-        NotifyCenter.registerSubscriber(new MemberChangeListener() {
-            @Override
-            public void onEvent(MembersChangeEvent event) {
-                received.set(true);
-            }
-        });
-        
+    void testMemberOnFailWhenMemberAlreadyNOUP() {
         final Member remote = buildMember();
-        remote.setState(NodeState.SUSPICIOUS);
-        memberManager.updateMember(remote);
-        
+        remote.setState(NodeState.DOWN);
+        remote.setFailAccessCnt(4);
         MemberUtil.onFail(memberManager, remote);
-        ThreadUtils.sleep(4000);
-        Assert.assertFalse(received.get());
+        verify(memberManager, never()).notifyMemberChange(remote);
     }
     
+    @Test
+    void testMemberOnSuccessFromDown() {
+        final Member remote = buildMember();
+        remote.setState(NodeState.DOWN);
+        remote.setFailAccessCnt(4);
+        MemberUtil.onSuccess(memberManager, remote);
+        assertEquals(NodeState.UP, remote.getState());
+        assertEquals(0, remote.getFailAccessCnt());
+        verify(memberManager).notifyMemberChange(remote);
+    }
+    
+    @Test
+    void testMemberOnSuccessWhenMemberAlreadyUP() {
+        final Member remote = buildMember();
+        memberManager.updateMember(remote);
+        MemberUtil.onSuccess(memberManager, remote);
+        verify(memberManager, never()).notifyMemberChange(remote);
+    }
+    
+    @Test
+    void testMemberOnSuccessWhenMemberNotUpdated() {
+        final Member remote = buildMember();
+        final Member reportResult = buildMember();
+        MemberUtil.onSuccess(memberManager, remote, reportResult);
+        assertFalse(remote.getAbilities().getRemoteAbility().isSupportRemoteConnection());
+        assertTrue(mockMemberAddressInfos.contains(remote.getAddress()));
+        verify(memberManager, never()).notifyMemberChange(remote);
+    }
+    
+    @Test
+    void testMemberOnSuccessWhenMemberUpdatedAbilities() {
+        final Member remote = buildMember();
+        final Member reportResult = buildMember();
+        reportResult.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        MemberUtil.onSuccess(memberManager, remote, reportResult);
+        assertTrue(remote.getAbilities().getRemoteAbility().isSupportRemoteConnection());
+        assertTrue(mockMemberAddressInfos.contains(remote.getAddress()));
+        verify(memberManager).notifyMemberChange(remote);
+    }
+    
+    @Test
+    void testMemberOnSuccessWhenMemberUpdatedExtendInfo() {
+        final Member remote = buildMember();
+        final Member reportResult = buildMember();
+        reportResult.setExtendVal(MemberMetaDataConstants.VERSION, "test");
+        MemberUtil.onSuccess(memberManager, remote, reportResult);
+        assertEquals("test", remote.getExtendVal(MemberMetaDataConstants.VERSION));
+        assertTrue(mockMemberAddressInfos.contains(remote.getAddress()));
+        verify(memberManager).notifyMemberChange(remote);
+    }
 }

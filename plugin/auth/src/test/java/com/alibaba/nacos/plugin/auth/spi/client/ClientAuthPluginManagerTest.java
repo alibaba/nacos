@@ -19,20 +19,26 @@ package com.alibaba.nacos.plugin.auth.spi.client;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link ClientAuthPluginManager} unit test.
@@ -41,8 +47,8 @@ import java.util.Set;
  * @date 2021-08-12 12:56
  */
 
-@RunWith(MockitoJUnitRunner.class)
-public class ClientAuthPluginManagerTest {
+@ExtendWith(MockitoExtension.class)
+class ClientAuthPluginManagerTest {
     
     private ClientAuthPluginManager clientAuthPluginManager;
     
@@ -52,37 +58,81 @@ public class ClientAuthPluginManagerTest {
     @Mock
     private NacosRestTemplate nacosRestTemplate;
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         clientAuthPluginManager = new ClientAuthPluginManager();
     }
     
-    @After
-    public void tearDown() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         getServiceLoaderMap().remove(AbstractClientAuthService.class);
         clientAuthPluginManager.shutdown();
     }
     
     private Map<Class<?>, Collection<Class<?>>> getServiceLoaderMap()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         Field servicesField = NacosServiceLoader.class.getDeclaredField("SERVICES");
         servicesField.setAccessible(true);
         return (Map<Class<?>, Collection<Class<?>>>) servicesField.get(null);
     }
     
     @Test
-    public void testGetAuthServiceSpiImplSet() {
+    void testGetAuthServiceSpiImplSet() {
         clientAuthPluginManager.init(serverlist, nacosRestTemplate);
-        Set<ClientAuthService> clientAuthServiceSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
-        Assert.assertFalse(clientAuthServiceSet.isEmpty());
+        Set<ClientAuthService> clientAuthServiceSet =
+            clientAuthPluginManager.getAuthServiceSpiImplSet();
+        assertFalse(clientAuthServiceSet.isEmpty());
     }
     
     @Test
-    public void testGetAuthServiceSpiImplSetForEmpty() throws NoSuchFieldException, IllegalAccessException {
+    void testGetAuthServiceSpiImplSetForEmpty()
+        throws NoSuchFieldException, IllegalAccessException {
         getServiceLoaderMap().put(AbstractClientAuthService.class, Collections.emptyList());
         clientAuthPluginManager.init(serverlist, nacosRestTemplate);
-        Set<ClientAuthService> clientAuthServiceSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
-        Assert.assertTrue(clientAuthServiceSet.isEmpty());
+        Set<ClientAuthService> clientAuthServiceSet =
+            clientAuthPluginManager.getAuthServiceSpiImplSet();
+        assertTrue(clientAuthServiceSet.isEmpty());
+    }
+    
+    @Test
+    void testRefreshServerListAndShutdown() throws Exception {
+        TestClientAuthService service = new TestClientAuthService();
+        clientAuthPluginManager.getAuthServiceSpiImplSet().add(service);
+        List<String> newServerList = Collections.singletonList("127.0.0.1:8848");
+        
+        clientAuthPluginManager.refreshServerList(newServerList);
+        clientAuthPluginManager.shutdown();
+        
+        assertEquals(newServerList, service.serverList);
+        assertTrue(service.shutdown);
+    }
+    
+    private static class TestClientAuthService extends AbstractClientAuthService {
+        
+        private List<String> serverList;
+        
+        private boolean shutdown;
+        
+        @Override
+        public void setServerList(List<String> serverList) {
+            super.setServerList(serverList);
+            this.serverList = serverList;
+        }
+        
+        @Override
+        public Boolean login(Properties properties) {
+            return true;
+        }
+        
+        @Override
+        public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
+            return null;
+        }
+        
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
     }
     
 }

@@ -25,13 +25,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Event implements Serializable {
-
+    
     private static final long serialVersionUID = -3731383194964997493L;
-
+    
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
+    
     private final long sequence = SEQUENCE.getAndIncrement();
     
     /**
@@ -51,5 +50,14 @@ public abstract class Event implements Serializable {
     public String scope() {
         return null;
     }
+    
+    /**
+     * Whether is plugin event. If so, the event can be dropped when no publish and subscriber without any hint. Default
+     * false
+     *
+     * @return {@code true} if is plugin event, otherwise {@code false}
+     */
+    public boolean isPluginEvent() {
+        return false;
+    }
 }
-

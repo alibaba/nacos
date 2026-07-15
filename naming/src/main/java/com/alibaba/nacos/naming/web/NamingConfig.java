@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.web.NacosWebBean;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,43 +29,72 @@ import org.springframework.context.annotation.Configuration;
  * @author nkorange
  */
 @Configuration
+@NacosWebBean
 public class NamingConfig {
     
-    private static final String UTL_PATTERNS = "/v1/ns/*";
+    private static final String URL_PATTERNS = "/v1/ns/*";
     
+    private static final String URL_PATTERNS_V2 = "/v2/ns/*";
+    
+    private static final String URL_PATTERNS_V3_CLIENT = "/v3/client/ns/*";
+    private static final String URL_PATTERNS_V3_ADMIN = "/v3/admin/ns/*";
     private static final String DISTRO_FILTER = "distroFilter";
     
     private static final String SERVICE_NAME_FILTER = "serviceNameFilter";
     
     private static final String TRAFFIC_REVISE_FILTER = "trafficReviseFilter";
     
+    private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
+    
+    private final ControllerMethodsCache methodsCache;
+    
+    public NamingConfig(ControllerMethodsCache methodsCache) {
+        this.methodsCache = methodsCache;
+    }
+    
+    @PostConstruct
+    public void init() {
+        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
+    }
+    
     @Bean
-    public FilterRegistrationBean distroFilterRegistration() {
+    public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
-        registration.addUrlPatterns(UTL_PATTERNS);
+        registration.addUrlPatterns(URL_PATTERNS, URL_PATTERNS_V3_CLIENT, URL_PATTERNS_V3_ADMIN);
         registration.setName(DISTRO_FILTER);
-        registration.setOrder(6);
+        registration.setOrder(7);
         return registration;
     }
     
     @Bean
-    public FilterRegistrationBean serviceNameFilterRegistration() {
+    public FilterRegistrationBean<ServiceNameFilter> serviceNameFilterRegistration() {
         FilterRegistrationBean<ServiceNameFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(serviceNameFilter());
-        registration.addUrlPatterns(UTL_PATTERNS);
+        registration.addUrlPatterns(URL_PATTERNS);
         registration.setName(SERVICE_NAME_FILTER);
         registration.setOrder(5);
         return registration;
     }
     
     @Bean
-    public FilterRegistrationBean trafficReviseFilterRegistration() {
+    public FilterRegistrationBean<TrafficReviseFilter> trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(trafficReviseFilter());
-        registration.addUrlPatterns(UTL_PATTERNS);
+        registration.addUrlPatterns(URL_PATTERNS);
         registration.setName(TRAFFIC_REVISE_FILTER);
         registration.setOrder(1);
+        return registration;
+    }
+    
+    @Bean
+    public FilterRegistrationBean<ClientAttributesFilter> clientAttributesFilterRegistration() {
+        FilterRegistrationBean<ClientAttributesFilter> registration =
+            new FilterRegistrationBean<>();
+        registration.setFilter(clientAttributesFilter());
+        registration.addUrlPatterns(URL_PATTERNS, URL_PATTERNS_V2);
+        registration.setName(CLIENT_ATTRIBUTES_FILTER);
+        registration.setOrder(8);
         return registration;
     }
     
@@ -81,4 +113,8 @@ public class NamingConfig {
         return new ServiceNameFilter();
     }
     
+    @Bean
+    public ClientAttributesFilter clientAttributesFilter() {
+        return new ClientAttributesFilter();
+    }
 }

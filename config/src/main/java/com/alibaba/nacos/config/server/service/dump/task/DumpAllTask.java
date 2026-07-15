@@ -26,6 +26,19 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpAllTask extends AbstractDelayTask {
     
+    private boolean startUp;
+    
+    public DumpAllTask() {
+    }
+    
+    public DumpAllTask(boolean startUp) {
+        this.startUp = startUp;
+    }
+    
+    public boolean isStartUp() {
+        return startUp;
+    }
+    
     @Override
     public void merge(AbstractDelayTask task) {
     }

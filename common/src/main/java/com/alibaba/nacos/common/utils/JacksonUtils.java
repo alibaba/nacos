@@ -40,6 +40,9 @@ import java.lang.reflect.Type;
  */
 public final class JacksonUtils {
     
+    private JacksonUtils() {
+    }
+    
     static ObjectMapper mapper = new ObjectMapper();
     
     static {

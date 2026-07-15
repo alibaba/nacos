@@ -1,0 +1,43 @@
+// 使用与MCP页面相同的全宽度布局
+.new-agent-container {
+  .next-form-item {
+    margin-bottom: 16px;
+  }
+
+  .next-textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  // 能力配置开关横向布局样式
+  .capabilities-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    
+    .capability-item {
+      display: flex;
+      flex-direction: column;
+      min-width: 150px;
+      
+      .capability-label {
+        font-weight: normal;
+        margin-bottom: 8px;
+        color: #333;
+      }
+      
+      .capability-switch {
+        display: flex;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      
+      .capability-description {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+      }
+    }
+  }
+}

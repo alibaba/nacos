@@ -30,24 +30,24 @@ import java.util.Set;
  * @author sunmengying
  */
 public abstract class AbstractHealthCheckProcessorExtend implements BeanFactoryAware {
-
+    
     protected SingletonBeanRegistry registry;
-
+    
     /**
-     * Add HealthCheckProcessor Or HealthCheckProcessorV2.
+     * Add HealthCheckProcessorV2.
      *
      * @param origin Origin Checker Type
      * @return Extend Processor Type
      */
     abstract Set<String> addProcessor(Set<String> origin);
-
+    
     protected String lowerFirstChar(String simpleName) {
         if (StringUtils.isBlank(simpleName)) {
             throw new IllegalArgumentException("can't find extend processor class name");
         }
         return String.valueOf(simpleName.charAt(0)).toLowerCase() + simpleName.substring(1);
     }
-
+    
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         if (beanFactory instanceof SingletonBeanRegistry) {

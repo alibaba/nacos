@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
 
 /**
  * ClientConnectionEventListener.
@@ -26,7 +25,6 @@ import javax.annotation.PostConstruct;
  * @author liuzunfei
  * @version $Id: ClientConnectionEventListener.java, v 0.1 2020年07月16日 3:06 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ClientConnectionEventListener {
     
     /**

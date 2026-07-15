@@ -18,102 +18,153 @@ package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import org.junit.Assert;
-import org.junit.Test;
+import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.Properties;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class InitUtilsTest {
+class InitUtilsTest {
     
-    @Test
-    public void testInitWebRootContext() {
-        String ctx = "/aaa";
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.CONTEXT_PATH, ctx);
-        InitUtils.initWebRootContext(properties);
-        Assert.assertEquals(ctx, UtilAndComs.webContext);
-        Assert.assertEquals(ctx + "/v1/ns", UtilAndComs.nacosUrlBase);
-        Assert.assertEquals(ctx + "/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+    @AfterEach
+    void tearDown() {
+        System.clearProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING);
+        System.clearProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
+        System.clearProperty(PropertyKeyConst.NAMESPACE);
+        System.clearProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE);
+        System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+        System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+        UtilAndComs.webContext = "/nacos";
+        UtilAndComs.nacosUrlBase = "/nacos/v1/ns";
+        UtilAndComs.nacosUrlInstance = "/nacos/v1/ns/instance";
     }
     
     /**
      * current namespace priority 1. system.Properties 2. user.Properties 3. default value
      */
     @Test
-    public void testInitNamespaceForNamingDefault() {
+    void testInitNamespaceForDefault() {
         //DEFAULT
-        Properties prop = new Properties();
-        String ns = InitUtils.initNamespaceForNaming(prop);
-        Assert.assertEquals("public", ns);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        String actual = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
     }
     
     @Test
-    public void testInitNamespaceForNamingFromProp() {
-        Properties prop = new Properties();
+    void testInitNamespaceFromAnsWithCloudParsing() {
+        String expect = "ans";
+        System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, expect);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "true");
+        String actual = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, actual);
+    }
+    
+    @Test
+    void testInitNamespaceFromAliwareWithCloudParsing() {
+        String expect = "aliware";
+        System.setProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "true");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE, expect);
+        String actual = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, actual);
+    }
+    
+    @Test
+    void testInitNamespaceFromJvmNamespaceWithCloudParsing() {
+        String expect = "jvm_namespace";
+        System.setProperty(PropertyKeyConst.NAMESPACE, expect);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        String ns = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, ns);
+    }
+    
+    @Test
+    void testInitNamespaceFromPropNamespaceWithCloudParsing() {
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         String expect = "ns1";
-        prop.put(PropertyKeyConst.NAMESPACE, expect);
-        String ns = InitUtils.initNamespaceForNaming(prop);
-        Assert.assertEquals(expect, ns);
+        properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
+        String ns = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, ns);
     }
     
     @Test
-    public void testInitNamespaceForNamingFromSystem() {
-        try {
-            String expect1 = "ns1";
-            System.setProperty(PropertyKeyConst.NAMESPACE, expect1);
-            Properties prop = new Properties();
-            prop.put(PropertyKeyConst.NAMESPACE, "cccccc");
-            String ns = InitUtils.initNamespaceForNaming(prop);
-            Assert.assertEquals(expect1, ns);
-        } finally {
-            System.clearProperty(PropertyKeyConst.NAMESPACE);
-        }
-    }
-    
-    /**
-     * 1. System.property  tenant.id 2. System.property  ans.namespace 2. System.env  ALIBABA_ALIWARE_NAMESPACE
-     */
-    @Test
-    public void testInitNamespaceForNamingFromCloud() {
-        try {
-            String expect1 = "ns1";
-            System.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, " true");
-            System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, expect1);
-            Properties prop = new Properties();
-            prop.put(PropertyKeyConst.NAMESPACE, "cccccc");
-            String ns = InitUtils.initNamespaceForNaming(prop);
-            Assert.assertEquals(expect1, ns);
-        } finally {
-            System.clearProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING);
-            System.clearProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
-            
-        }
+    void testInitNamespaceFromDefaultNamespaceWithCloudParsing() {
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "true");
+        String actual = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
     }
     
     @Test
-    public void testInitEndpoint() {
-        Properties prop = new Properties();
-        String endpoint = "1.1.1.1";
-        String endpointPort = "1234";
-        prop.put(PropertyKeyConst.ENDPOINT, endpoint);
-        prop.put(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
-        String actual = InitUtils.initEndpoint(prop);
-        Assert.assertEquals(endpoint + ":" + endpointPort, actual);
+    void testInitNamespaceFromJvmNamespaceWithoutCloudParsing() {
+        System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
+        String expect = "jvm_namespace";
+        System.setProperty(PropertyKeyConst.NAMESPACE, expect);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "false");
+        String ns = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, ns);
     }
     
     @Test
-    public void testInitEndpointAns() {
-        try {
-            System.setProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "true");
-            Properties prop = new Properties();
-            String endpoint = "${key:test.com}";
-            prop.put(PropertyKeyConst.ENDPOINT, endpoint);
-            String actual = InitUtils.initEndpoint(prop);
-            //defaultEndpointPort is  "8080";
-            Assert.assertEquals("test.com:8080", actual);
-        } finally {
-            System.clearProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE);
-        }
+    void testInitNamespaceFromPropNamespaceWithoutCloudParsing() {
+        System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
+        System.setProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "false");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        String expect = "ns1";
+        properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
+        String ns = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(expect, ns);
     }
     
+    @Test
+    void testInitNamespaceFromDefaultNamespaceWithoutCloudParsing() {
+        System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING, "false");
+        String actual = InitUtils.initNamespaceForNaming(properties);
+        assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
+    }
+    
+    @Test
+    void testInitWebRootContext() {
+        String ctx = "/aaa";
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, ctx);
+        InitUtils.initWebRootContext(properties);
+        assertEquals(ctx, UtilAndComs.webContext);
+        assertEquals(ctx + "/v1/ns", UtilAndComs.nacosUrlBase);
+        assertEquals(ctx + "/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+    }
+    
+    @Test
+    void testInitWebRootContextWithoutValue() {
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        InitUtils.initWebRootContext(properties);
+        assertEquals("/nacos", UtilAndComs.webContext);
+        assertEquals("/nacos/v1/ns", UtilAndComs.nacosUrlBase);
+        assertEquals("/nacos/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+    }
+    
+    @Test
+    void testInitSerializationRegistersSelectorSubtypes() {
+        InitUtils.initSerialization();
+        
+        AbstractSelector selector =
+            JsonUtils.toObj("{\"type\":\"LabelSelector\",\"expression\":\"k=v\"}",
+                AbstractSelector.class);
+        
+        assertEquals(ExpressionSelector.class, selector.getClass());
+        assertEquals("k=v", ((ExpressionSelector) selector).getExpression());
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new InitUtils());
+    }
 }

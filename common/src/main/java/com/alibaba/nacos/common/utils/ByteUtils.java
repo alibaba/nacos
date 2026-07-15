@@ -25,6 +25,9 @@ import java.nio.charset.StandardCharsets;
  */
 public final class ByteUtils {
     
+    private ByteUtils() {
+    }
+    
     public static final byte[] EMPTY = new byte[0];
     
     /**

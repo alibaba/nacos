@@ -18,3 +18,11 @@ test/logs
 derby.log
 yarn.lock
 .flattened-pom.xml
+lefthook.yml
+distribution/conf/*.sql
+distribution/plugins/*.jar
+dependency-reduced-pom.xml
+.jqwik-database
+.qoder/
+openspec/
+.codegraph

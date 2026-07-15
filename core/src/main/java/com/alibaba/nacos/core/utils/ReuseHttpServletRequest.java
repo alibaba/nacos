@@ -21,10 +21,10 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,13 +62,15 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
     
     @Override
     public Object getBody() throws Exception {
-        if (StringUtils.containsIgnoreCase(target.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
+        if (StringUtils.containsIgnoreCase(target.getContentType(),
+            MediaType.MULTIPART_FORM_DATA)) {
             return target.getParts();
         } else {
             String s = ByteUtils.toString(body);
             if (StringUtils.isBlank(s)) {
                 return HttpUtils
-                        .encodingParams(HttpUtils.translateParameterMap(stringMap), StandardCharsets.UTF_8.name());
+                    .encodingParams(HttpUtils.translateParameterMap(stringMap),
+                        StandardCharsets.UTF_8.name());
             }
             return s;
         }
@@ -86,7 +88,7 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
     
     @Override
     public BufferedReader getReader() throws IOException {
-        return new BufferedReader(new InputStreamReader(getInputStream()));
+        return new BufferedReader(new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
     }
     
     @Override
@@ -114,6 +116,7 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(body);
         
         return new ServletInputStream() {
+            
             @Override
             public int read() throws IOException {
                 return inputStream.read();

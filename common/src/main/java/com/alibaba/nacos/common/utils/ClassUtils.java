@@ -44,6 +44,9 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  */
 public final class ClassUtils {
     
+    private ClassUtils() {
+    }
+    
     public static final String ARRAY_SUFFIX = "[]";
     
     private static final String INTERNAL_ARRAY_PREFIX = "[";
@@ -62,12 +65,14 @@ public final class ClassUtils {
      * Map with primitive wrapper type as key and corresponding primitive type as value, for example: Integer.class ->
      * int.class.
      */
-    private static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPER_TYPE_MAP = new IdentityHashMap<>(9);
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPER_TYPE_MAP =
+        new IdentityHashMap<>(9);
     
     /**
      * Map with primitive type as key and corresponding wrapper type as value, for example: int.class -> Integer.class.
      */
-    private static final Map<Class<?>, Class<?>> PRIMITIVE_TYPE_TO_WRAPPER_MAP = new IdentityHashMap<>(9);
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_TYPE_TO_WRAPPER_MAP =
+        new IdentityHashMap<>(9);
     
     /**
      * Map with primitive type name as key and corresponding primitive type as value, for example: "int" ->
@@ -102,22 +107,27 @@ public final class ClassUtils {
         
         Set<Class<?>> primitiveTypes = new HashSet<>(32);
         primitiveTypes.addAll(PRIMITIVE_WRAPPER_TYPE_MAP.values());
-        Collections.addAll(primitiveTypes, boolean[].class, byte[].class, char[].class, double[].class, float[].class,
-                int[].class, long[].class, short[].class);
+        Collections.addAll(primitiveTypes, boolean[].class, byte[].class, char[].class,
+            double[].class, float[].class,
+            int[].class, long[].class, short[].class);
         for (Class<?> primitiveType : primitiveTypes) {
             PRIMITIVE_TYPE_NAME_MAP.put(primitiveType.getName(), primitiveType);
         }
         
-        registerCommonClasses(Boolean[].class, Byte[].class, Character[].class, Double[].class, Float[].class,
-                Integer[].class, Long[].class, Short[].class);
-        registerCommonClasses(Number.class, Number[].class, String.class, String[].class, Class.class, Class[].class,
-                Object.class, Object[].class);
+        registerCommonClasses(Boolean[].class, Byte[].class, Character[].class, Double[].class,
+            Float[].class,
+            Integer[].class, Long[].class, Short[].class);
+        registerCommonClasses(Number.class, Number[].class, String.class, String[].class,
+            Class.class, Class[].class,
+            Object.class, Object[].class);
         registerCommonClasses(Throwable.class, Exception.class, RuntimeException.class, Error.class,
-                StackTraceElement.class, StackTraceElement[].class);
-        registerCommonClasses(Enum.class, Iterable.class, Iterator.class, Enumeration.class, Collection.class,
-                List.class, Set.class, Map.class, Map.Entry.class, Optional.class);
+            StackTraceElement.class, StackTraceElement[].class);
+        registerCommonClasses(Enum.class, Iterable.class, Iterator.class, Enumeration.class,
+            Collection.class,
+            List.class, Set.class, Map.class, Map.Entry.class, Optional.class);
         
-        Class<?>[] javaLanguageInterfaceArray = {Serializable.class, Externalizable.class, Closeable.class,
+        Class<?>[] javaLanguageInterfaceArray =
+            {Serializable.class, Externalizable.class, Closeable.class,
                 AutoCloseable.class, Cloneable.class, Comparable.class};
         registerCommonClasses(javaLanguageInterfaceArray);
     }
@@ -236,9 +246,10 @@ public final class ClassUtils {
      * @throws LinkageError           if the class file could not be loaded
      * @see Class#forName(String, boolean, ClassLoader)
      */
-    public static Class<?> forName(String name, ClassLoader classLoader) throws ClassNotFoundException, LinkageError {
+    public static Class<?> forName(String name, ClassLoader classLoader)
+        throws ClassNotFoundException, LinkageError {
         
-        AbstractAssert.notNull(name, "Name must not be null");
+        Objects.requireNonNull(name, "Name must not be null");
         
         Class<?> clazz = resolvePrimitiveClassName(name);
         if (clazz == null) {
@@ -257,7 +268,8 @@ public final class ClassUtils {
         
         // "[Ljava.lang.String;" style arrays
         if (name.startsWith(NON_PRIMITIVE_ARRAY_PREFIX) && name.endsWith(SEMICOLON_SEPARATOR)) {
-            String elementName = name.substring(NON_PRIMITIVE_ARRAY_PREFIX.length(), name.length() - 1);
+            String elementName =
+                name.substring(NON_PRIMITIVE_ARRAY_PREFIX.length(), name.length() - 1);
             Class<?> elementClass = forName(elementName, classLoader);
             return Array.newInstance(elementClass, 0).getClass();
         }
@@ -279,7 +291,8 @@ public final class ClassUtils {
             int lastDotIndex = name.lastIndexOf(PACKAGE_SEPARATOR);
             if (lastDotIndex != -1) {
                 String nestedClassName =
-                        name.substring(0, lastDotIndex) + NESTED_CLASS_SEPARATOR + name.substring(lastDotIndex + 1);
+                    name.substring(0, lastDotIndex) + NESTED_CLASS_SEPARATOR
+                        + name.substring(lastDotIndex + 1);
                 try {
                     return Class.forName(nestedClassName, false, clToUse);
                 } catch (ClassNotFoundException e) {
@@ -383,7 +396,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String convertClassNameToResourcePath(String className) {
-        AbstractAssert.notNull(className, "Class name must not be null");
+        Objects.requireNonNull(className, "Class name must not be null");
         return className.replace(PACKAGE_SEPARATOR, PATH_SEPARATOR);
     }
     
@@ -394,7 +407,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String resourcePathToConvertClassName(String className) {
-        AbstractAssert.notNull(className, "Class name must not be null");
+        Objects.requireNonNull(className, "Class name must not be null");
         return className.replace(PATH_SEPARATOR, PACKAGE_SEPARATOR);
     }
 }

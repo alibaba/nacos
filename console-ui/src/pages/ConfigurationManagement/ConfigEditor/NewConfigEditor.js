@@ -49,6 +49,7 @@ const LANGUAGE_LIST = [
   { value: 'yaml', label: 'YAML' },
   { value: 'html', label: 'HTML' },
   { value: 'properties', label: 'Properties' },
+  { value: 'toml', label: 'TOML' },
 ];
 
 const TAB_LIST = ['production', 'beta'];
@@ -70,6 +71,7 @@ class ConfigEditor extends React.Component {
       isNewConfig: true,
       betaPublishSuccess: false,
       betaIps: '',
+      casMd5: '',
       tabActiveKey: '',
       form: {
         dataId: '', // 配置 ID
@@ -84,6 +86,7 @@ class ConfigEditor extends React.Component {
       subscriberDataSource: [],
       openAdvancedSettings: false,
       editorClass: 'editor-normal',
+      isSystemConfig: false,
     };
     this.successDialog = React.createRef();
     this.diffEditorDialog = React.createRef();
@@ -92,6 +95,7 @@ class ConfigEditor extends React.Component {
   componentDidMount() {
     const isNewConfig = !getParams('dataId');
     const group = getParams('group').trim();
+    this.tenant = getParams('namespace') || 'public';
     this.setState({ isNewConfig }, () => {
       if (!isNewConfig) {
         this.changeForm(
@@ -101,7 +105,7 @@ class ConfigEditor extends React.Component {
           },
           () => {
             this.getConfig(true).then(res => {
-              if (!res) {
+              if (res.code !== 0 || !res.data) {
                 this.getConfig();
                 return;
               }
@@ -136,8 +140,8 @@ class ConfigEditor extends React.Component {
       roundedSelection: false,
       readOnly: false,
       lineNumbersMinChars: true,
-      theme: 'vs-dark',
-      folding: false,
+      theme: 'vs-dark-enhanced',
+      folding: true,
       showFoldingControls: 'always',
       cursorStyle: 'line',
       automaticLayout: true,
@@ -241,30 +245,36 @@ class ConfigEditor extends React.Component {
   }
 
   _publishConfig(beta = false) {
-    const { betaIps, isNewConfig } = this.state;
+    const { betaIps, isNewConfig, isBeta } = this.state;
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (beta) {
       headers.betaIps = betaIps;
+    }
+    if (!isBeta) {
+      headers.casMd5 = this.state.casMd5;
     }
     const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
+    payload.groupName = form.group;
     let configTags = this.state.form.config_tags;
     if (configTags.length > 0) {
-      payload.config_tags = configTags.join(',');
+      payload.configTags = configTags.join(',');
     }
+    // #12046 console-ui should not offer encryptedDataKey field to API
+    payload.encryptedDataKey = '';
     const stringify = require('qs/lib/stringify');
     this.setState({ loading: true });
     return request({
-      url: 'v1/cs/configs',
+      url: 'v3/console/cs/config',
       method: 'post',
       data: stringify(payload),
       headers,
     }).then(
       res => {
-        if (res) {
+        if (res.data) {
           if (isNewConfig) {
             this.setState({ isNewConfig: false });
           }
@@ -278,6 +288,14 @@ class ConfigEditor extends React.Component {
         if (error.status && error.status === 403) {
           Dialog.alert({
             content: this.props.locale.publishFailed403,
+          });
+        } else if (
+          error.status &&
+          error.status === 500 &&
+          error.data.includes('Cas publish fail')
+        ) {
+          Dialog.alert({
+            content: this.props.locale.publishCasFailed,
           });
         }
       }
@@ -298,14 +316,13 @@ class ConfigEditor extends React.Component {
 
   stopBeta() {
     const { dataId, group } = this.state.form;
-    const tenant = getParams('namespace');
+    const namespaceId = getParams('namespace');
     return request
-      .delete('v1/cs/configs', {
+      .delete('v3/console/cs/config/beta', {
         params: {
-          beta: true,
           dataId,
-          group,
-          tenant,
+          groupName: group,
+          namespaceId,
         },
       })
       .then(res => {
@@ -375,26 +392,31 @@ class ConfigEditor extends React.Component {
     const { dataId, group } = this.state.form;
     const params = {
       dataId,
-      group,
+      groupName: group,
       namespaceId: namespace,
-      tenant: namespace,
     };
-    if (beta) {
-      params.beta = true;
-    } else {
-      params.show = 'all';
-    }
-    return request.get('v1/cs/configs', { params }).then(res => {
-      const form = beta ? res.data : res;
+    const url = beta ? 'v3/console/cs/config/beta' : 'v3/console/cs/config';
+    return request.get(url, { params }).then(res => {
+      const form = res.data;
       if (!form) return false;
-      const { type, content, configTags, betaIps } = form;
-      this.setState({ betaIps });
+      const { type, content, configTags, grayRule, md5 } = form;
+      if (grayRule) {
+        const parsedRule = JSON.parse(grayRule.replace(/\\"/g, '"'));
+        this.setState({ betaIps: parsedRule.expr });
+      }
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
       this.setState({
         tagDataSource: this.state.form.config_tags,
+        casMd5: md5,
       });
+      if (configTags) {
+        const isSystemConfig = configTags.includes('nacos.internal.config');
+        this.setState({
+          isSystemConfig,
+        });
+      }
       return res;
     });
   }
@@ -404,20 +426,20 @@ class ConfigEditor extends React.Component {
     const { dataId, group } = this.state.form;
     const params = {
       dataId,
-      group,
+      groupName: group,
       namespaceId: namespace,
       tenant: namespace,
     };
     // get subscribes of the namespace
-    return request.get('v1/cs/configs/listener', { params }).then(res => {
+    return request.get('v3/console/cs/config/listener', { params }).then(res => {
       const { subscriberDataSource } = this.state;
-      const lisentersGroupkeyIpMap = res.lisentersGroupkeyStatus;
+      const lisentersGroupkeyIpMap = res.data.listenersStatus;
       if (lisentersGroupkeyIpMap) {
         this.setState({
           subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),
         });
       }
-      return res;
+      return res.data;
     });
   }
 
@@ -493,6 +515,9 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="new-config-form" {...formItemLayout}>
+            <Form.Item label={locale.namespace} required>
+              <p>{this.tenant}</p>
+            </Form.Item>
             <Form.Item label="Data ID" required {...dataIdError}>
               <Input
                 value={form.dataId}
@@ -525,6 +550,7 @@ class ConfigEditor extends React.Component {
                     autoWidth
                     mode="tag"
                     filterLocal
+                    disabled={this.state.isSystemConfig}
                     value={form.config_tags}
                     dataSource={tagDataSource}
                     onChange={config_tags => this.setConfigTags(config_tags)}
@@ -567,6 +593,7 @@ class ConfigEditor extends React.Component {
             )}
             <Form.Item label={locale.format}>
               <Radio.Group
+                disabled={isBeta && tabActiveKey !== 'production'}
                 defaultValue="text"
                 value={form.type}
                 onChange={type => {
@@ -621,25 +648,34 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
-                <Button
-                  size="large"
-                  type="primary"
-                  disabled={!betaIps || betaPublishSuccess}
-                  onClick={() => this.openDiff('publishBeta')}
-                >
-                  {locale.release}
-                </Button>
+                <>
+                  <Button
+                    size="large"
+                    type="primary"
+                    disabled={!betaIps || betaPublishSuccess}
+                    onClick={() => this.openDiff('publishBeta')}
+                  >
+                    {locale.release}
+                  </Button>
+                </>
               )}
-              <Button
-                type="primary"
-                disabled={tabActiveKey === 'production'}
-                onClick={() => this.openDiff('publish')}
-              >
-                {locale.publish}
-              </Button>
-              <Button type="normal" onClick={() => this.goBack()}>
-                {locale.back}
-              </Button>
+              <Form>
+                <Form.Item
+                  help={this.state.isSystemConfig ? '系统配置无法修改' : null}
+                  validateState={'error'}
+                >
+                  <Button
+                    type="primary"
+                    disabled={tabActiveKey === 'production' || this.state.isSystemConfig}
+                    onClick={() => this.openDiff('publish')}
+                  >
+                    {locale.publish}
+                  </Button>
+                  <Button type="normal" onClick={() => this.goBack()}>
+                    {locale.back}
+                  </Button>
+                </Form.Item>
+              </Form>
             </Col>
           </Row>
           <DiffEditorDialog

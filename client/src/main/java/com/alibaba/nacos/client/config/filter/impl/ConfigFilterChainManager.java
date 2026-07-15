@@ -36,10 +36,12 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     
     private final List<IConfigFilter> filters = new ArrayList<>();
     
+    private final Properties initProperty;
+    
     public ConfigFilterChainManager(Properties properties) {
+        this.initProperty = properties;
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
         for (IConfigFilter configFilter : configFilters) {
-            configFilter.init(properties);
             addFilter(configFilter);
         }
     }
@@ -51,6 +53,8 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      * @return this
      */
     public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
+        // init
+        filter.init(this.initProperty);
         // ordered by order value
         int i = 0;
         while (i < this.filters.size()) {
@@ -88,7 +92,8 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         }
         
         @Override
-        public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
+        public void doFilter(final IConfigRequest request, final IConfigResponse response)
+            throws NacosException {
             if (this.currentPosition != this.additionalFilters.size()) {
                 this.currentPosition++;
                 IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);

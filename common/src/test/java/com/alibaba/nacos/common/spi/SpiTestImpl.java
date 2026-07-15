@@ -17,4 +17,12 @@
 package com.alibaba.nacos.common.spi;
 
 public class SpiTestImpl implements SpiTestInterface {
+    
+    public static boolean newInstanceException;
+    
+    public SpiTestImpl() throws IllegalAccessException {
+        if (newInstanceException) {
+            throw new IllegalAccessException("test");
+        }
+    }
 }

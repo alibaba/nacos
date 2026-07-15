@@ -31,7 +31,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.slf4j.Logger;
 
@@ -39,6 +39,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -55,14 +57,10 @@ public class ConfigHttpClientManager implements Closeable {
     
     private static final int CON_TIME_OUT_MILLIS = ParamUtil.getConnectTimeout();
     
-    private static final int READ_TIME_OUT_MILLIS = 3000;
+    private static final int READ_TIME_OUT_MILLIS = ParamUtil.getReadTimeout();
     
-    private static final NacosRestTemplate NACOS_REST_TEMPLATE;
-    
-    static {
-        NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
-        NACOS_REST_TEMPLATE.getInterceptors().add(new LimiterHttpClientRequestInterceptor());
-    }
+    private final LimiterHttpClientRequestInterceptor limiterHttpClientRequestInterceptor =
+        new LimiterHttpClientRequestInterceptor();
     
     private static class ConfigHttpClientManagerInstance {
         
@@ -75,14 +73,15 @@ public class ConfigHttpClientManager implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
         try {
-            HttpClientBeanHolder.shutdownNacostSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            NAMING_LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
+            NAMING_LOGGER.error(
+                "[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+                ExceptionUtil.getStackTrace(ex));
         }
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Destruction of the end");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     /**
@@ -101,7 +100,13 @@ public class ConfigHttpClientManager implements Closeable {
      * @return NacosRestTemplate
      */
     public NacosRestTemplate getNacosRestTemplate() {
-        return NACOS_REST_TEMPLATE;
+        NacosRestTemplate nacosRestTemplate =
+            HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
+        List<HttpClientRequestInterceptor> interceptors = nacosRestTemplate.getInterceptors();
+        if (!interceptors.contains(limiterHttpClientRequestInterceptor)) {
+            interceptors.add(limiterHttpClientRequestInterceptor);
+        }
+        return nacosRestTemplate;
     }
     
     /**
@@ -112,7 +117,7 @@ public class ConfigHttpClientManager implements Closeable {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).build();
+                .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).build();
         }
         
         @Override
@@ -124,11 +129,14 @@ public class ConfigHttpClientManager implements Closeable {
     /**
      * config Limiter implement.
      */
-    private static class LimiterHttpClientRequestInterceptor implements HttpClientRequestInterceptor {
+    private static class LimiterHttpClientRequestInterceptor
+        implements HttpClientRequestInterceptor {
         
         @Override
-        public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
-            final String body = requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
+        public boolean isIntercept(URI uri, String httpMethod,
+            RequestHttpEntity requestHttpEntity) {
+            final String body = requestHttpEntity.isEmptyBody() ? ""
+                : JsonUtils.toJson(requestHttpEntity.getBody());
             return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
         }
         
@@ -150,7 +158,8 @@ public class ConfigHttpClientManager implements Closeable {
         
         @Override
         public InputStream getBody() throws IOException {
-            return new ByteArrayInputStream("More than client-side current limit threshold".getBytes());
+            return new ByteArrayInputStream("More than client-side current limit threshold"
+                .getBytes(StandardCharsets.UTF_8));
         }
         
         @Override
@@ -159,13 +168,8 @@ public class ConfigHttpClientManager implements Closeable {
         }
         
         @Override
-        public String getStatusText() {
-            return null;
-        }
-        
-        @Override
         public void close() {
-        
+            
         }
     }
 }

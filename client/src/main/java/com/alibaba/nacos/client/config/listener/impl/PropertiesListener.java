@@ -30,7 +30,6 @@ import java.util.Properties;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class PropertiesListener extends AbstractListener {
     
     private static final Logger LOGGER = LogUtils.logger(PropertiesListener.class);

@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -25,8 +29,8 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,14 +49,15 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 @org.springframework.stereotype.Service
 public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberService {
     
-    private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
+    private static final String SUBSCRIBER_ON_SYNC_URL = "/subscribers";
     
     private final NamingSubscriberServiceLocalImpl subscriberServiceLocal;
     
     private final ServerMemberManager memberManager;
     
-    public NamingSubscriberServiceAggregationImpl(NamingSubscriberServiceLocalImpl subscriberServiceLocal,
-            ServerMemberManager serverMemberManager) {
+    public NamingSubscriberServiceAggregationImpl(
+        NamingSubscriberServiceLocalImpl subscriberServiceLocal,
+        ServerMemberManager serverMemberManager) {
         this.subscriberServiceLocal = subscriberServiceLocal;
         this.memberManager = serverMemberManager;
     }
@@ -60,7 +65,7 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
         Collection<Subscriber> result = new LinkedList<>(
-                subscriberServiceLocal.getSubscribers(namespaceId, serviceName));
+            subscriberServiceLocal.getSubscribers(namespaceId, serviceName));
         if (memberManager.getServerList().size() > 1) {
             getSubscribersFromRemotes(namespaceId, serviceName, result);
         }
@@ -69,9 +74,11 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
-        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getSubscribers(service));
+        Collection<Subscriber> result =
+            new LinkedList<>(subscriberServiceLocal.getSubscribers(service));
         if (memberManager.getServerList().size() > 1) {
-            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(),
+                result);
         }
         return result;
     }
@@ -79,7 +86,7 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
         Collection<Subscriber> result = new LinkedList<>(
-                subscriberServiceLocal.getFuzzySubscribers(namespaceId, serviceName));
+            subscriberServiceLocal.getFuzzySubscribers(namespaceId, serviceName));
         if (memberManager.getServerList().size() > 1) {
             getSubscribersFromRemotes(namespaceId, serviceName, result);
         }
@@ -88,26 +95,38 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
-        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getFuzzySubscribers(service));
+        Collection<Subscriber> result =
+            new LinkedList<>(subscriberServiceLocal.getFuzzySubscribers(service));
         if (memberManager.getServerList().size() > 1) {
-            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(),
+                result);
         }
         return result;
     }
     
-    private void getSubscribersFromRemotes(String namespaceId, String serviceName, Collection<Subscriber> result) {
+    private void getSubscribersFromRemotes(String namespaceId, String serviceName,
+        Collection<Subscriber> result) {
         for (Member server : memberManager.allMembersWithoutSelf()) {
             Map<String, String> paramValues = new HashMap<>(128);
-            paramValues.put(CommonParams.SERVICE_NAME, serviceName);
+            String groupName = NamingUtils.getGroupName(serviceName);
+            String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+            paramValues.put(CommonParams.GROUP_NAME, groupName);
+            paramValues.put(CommonParams.SERVICE_NAME, serviceNameWithoutGroup);
             paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
             paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
-            // TODO replace with gRPC
             RestResult<String> response = HttpClient.httpGet(
-                    HTTP_PREFIX + server.getAddress() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                            + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
+                HTTP_PREFIX + server.getAddress() + EnvUtil.getContextPath()
+                    + UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH + SUBSCRIBER_ON_SYNC_URL,
+                new ArrayList<>(), paramValues);
             if (response.ok()) {
-                Subscribers subscribers = JacksonUtils.toObj(response.getData(), Subscribers.class);
-                result.addAll(subscribers.getSubscribers());
+                Result<Page<SubscriberInfo>> subscribers = JacksonUtils.toObj(response.getData(),
+                    new TypeReference<>() {
+                    });
+                for (SubscriberInfo each : subscribers.getData().getPageItems()) {
+                    result.add(new Subscriber(each.getAddress(), each.getAgent(), each.getAppName(),
+                        each.getIp(),
+                        each.getNamespaceId(), serviceName, each.getPort()));
+                }
             }
         }
     }

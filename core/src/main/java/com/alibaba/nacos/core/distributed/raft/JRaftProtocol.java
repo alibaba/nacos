@@ -23,8 +23,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
-import com.alibaba.nacos.consistency.SerializeFactory;
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
@@ -35,6 +33,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
 
@@ -91,13 +90,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @SuppressWarnings("all")
 public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, RequestProcessor4CP>
-        implements CPProtocol<RaftConfig, RequestProcessor4CP> {
+    implements CPProtocol<RaftConfig, RequestProcessor4CP> {
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
     private final AtomicBoolean shutdowned = new AtomicBoolean(false);
-    
-    private final Serializer serializer = SerializeFactory.getDefault();
     
     private RaftConfig raftConfig;
     
@@ -124,6 +121,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
             NotifyCenter.registerSubscriber(new Subscriber<RaftEvent>() {
+                
                 @Override
                 public void onEvent(RaftEvent event) {
                     Loggers.RAFT.info("This Raft event changes : {}", event);
@@ -139,8 +137,11 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     // the information in the protocol metadata is updated.
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
                     MapUtil.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
-                    MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER,
+                        raftClusterInfo);
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
+                    MetricsMonitor.refreshRaftGroupMetrics(groupId, leader, term,
+                        raftConfig.getSelfMember());
                     
                     value.put(groupId, properties);
                     metaData.load(value);
@@ -223,5 +224,10 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
             throw new NoSuchRaftGroupException(group);
         }
         return node.isLeader();
+    }
+    
+    @Override
+    public boolean isReady() {
+        return raftServer.isReady();
     }
 }

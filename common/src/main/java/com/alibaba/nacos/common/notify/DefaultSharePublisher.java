@@ -32,7 +32,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DefaultSharePublisher extends DefaultPublisher implements ShardedEventPublisher {
     
-    private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<>();
+    private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings =
+        new ConcurrentHashMap<>();
     
     private final Lock lock = new ReentrantLock();
     
@@ -82,12 +83,14 @@ public class DefaultSharePublisher extends DefaultPublisher implements ShardedEv
         
         final long currentEventSequence = event.sequence();
         // get subscriber set based on the slow EventType.
-        final Class<? extends SlowEvent> slowEventType = (Class<? extends SlowEvent>) event.getClass();
+        final Class<? extends SlowEvent> slowEventType =
+            (Class<? extends SlowEvent>) event.getClass();
         
         // Get for Map, the algorithm is O(1).
         Set<Subscriber> subscribers = subMappings.get(slowEventType);
         if (null == subscribers) {
-            LOGGER.debug("[NotifyCenter] No subscribers for slow event {}", slowEventType.getName());
+            LOGGER.debug("[NotifyCenter] No subscribers for slow event {}",
+                slowEventType.getName());
             return;
         }
         
@@ -95,8 +98,9 @@ public class DefaultSharePublisher extends DefaultPublisher implements ShardedEv
         for (Subscriber subscriber : subscribers) {
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
-                LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
-                        event.getClass());
+                LOGGER.debug(
+                    "[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
+                    event.getClass());
                 continue;
             }
             

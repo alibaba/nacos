@@ -31,7 +31,6 @@ import java.util.Objects;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftMaintainService {
     
     private final JRaftServer raftServer;
@@ -69,7 +68,8 @@ public class JRaftMaintainService {
         return RestResultUtils.success();
     }
     
-    private RestResult<String> single(CliService cliService, String groupId, Node node, Map<String, String> args) {
+    private RestResult<String> single(CliService cliService, String groupId, Node node,
+        Map<String, String> args) {
         try {
             if (node == null) {
                 return RestResultUtils.failed("not this raft group : " + groupId);

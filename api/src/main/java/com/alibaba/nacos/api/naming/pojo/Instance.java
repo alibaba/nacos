@@ -17,14 +17,19 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Instance.
@@ -32,9 +37,11 @@ import java.util.Map;
  * @author nkorange
  */
 @JsonInclude(Include.NON_NULL)
-public class Instance implements Serializable {
+public class Instance implements NacosForm {
     
     private static final long serialVersionUID = -742906310567291979L;
+    
+    private static final int MAX_PORT = 65535;
     
     /**
      * unique id of this instance.
@@ -182,11 +189,33 @@ public class Instance implements Serializable {
     }
     
     @Override
+    public void validate() throws NacosApiException {
+        fillDefaultValue();
+        if (StringUtils.isBlank(ip)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'ip' type String is not present");
+        }
+        if (port < 0 || port > MAX_PORT) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Required parameter 'port' type int is require 0 ~ 65535");
+        }
+    }
+    
+    private void fillDefaultValue() {
+        if (StringUtils.isBlank(clusterName)) {
+            clusterName = Constants.DEFAULT_CLUSTER_NAME;
+        }
+    }
+    
+    @Override
     public String toString() {
-        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port + ", weight="
-                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
-                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\'' + ", metadata="
-                + metadata + '}';
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port="
+            + port + ", weight="
+            + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
+            + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\''
+            + ", metadata="
+            + metadata + '}';
     }
     
     public String toInetAddr() {
@@ -209,27 +238,27 @@ public class Instance implements Serializable {
     }
     
     private static boolean strEquals(final String str1, final String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
+        return Objects.equals(str1, str2);
     }
     
     public long getInstanceHeartBeatInterval() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL);
+            Constants.DEFAULT_HEART_BEAT_INTERVAL);
     }
     
     public long getInstanceHeartBeatTimeOut() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
-                Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+            Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
     
     public long getIpDeleteTimeout() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT,
-                Constants.DEFAULT_IP_DELETE_TIMEOUT);
+            Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
     
     public String getInstanceIdGenerator() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
-                Constants.DEFAULT_INSTANCE_ID_GENERATOR);
+            Constants.DEFAULT_INSTANCE_ID_GENERATOR);
     }
     
     /**

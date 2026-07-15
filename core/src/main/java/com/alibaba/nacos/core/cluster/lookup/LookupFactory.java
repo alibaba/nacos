@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.io.File;
 import java.util.Arrays;
@@ -44,21 +44,33 @@ public final class LookupFactory {
     /**
      * Create the target addressing pattern.
      *
+     * @return {@link MemberLookup}
+     * @throws NacosException NacosException
+     */
+    public static MemberLookup createLookUp() throws NacosException {
+        String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
+        LookupType type = chooseLookup(lookupType);
+        currentLookupType = type;
+        return find(type);
+    }
+    
+    /**
+     * Create the target addressing pattern.
+     *
      * @param memberManager {@link ServerMemberManager}
      * @return {@link MemberLookup}
      * @throws NacosException NacosException
      */
-    public static MemberLookup createLookUp(ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup createLookUp(ServerMemberManager memberManager)
+        throws NacosException {
         if (!EnvUtil.getStandaloneMode()) {
-            String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
-            LookupType type = chooseLookup(lookupType);
-            LOOK_UP = find(type);
-            currentLookupType = type;
+            LOOK_UP = createLookUp();
         } else {
             LOOK_UP = new StandaloneMemberLookup();
         }
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info("Current addressing mode selection : {}",
+            LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
     
@@ -70,13 +82,15 @@ public final class LookupFactory {
      * @return {@link MemberLookup}
      * @throws NacosException {@link NacosException}
      */
-    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager)
+        throws NacosException {
         LookupType lookupType = LookupType.sourceOf(name);
         
         if (Objects.isNull(lookupType)) {
             throw new IllegalArgumentException(
-                    "The addressing mode exists : " + name + ", just support : [" + Arrays.toString(LookupType.values())
-                            + "]");
+                "The addressing mode exists : " + name + ", just support : ["
+                    + Arrays.toString(LookupType.values())
+                    + "]");
         }
         
         if (Objects.equals(currentLookupType, lookupType)) {
@@ -89,7 +103,8 @@ public final class LookupFactory {
         }
         LOOK_UP = newLookup;
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info("Current addressing mode selection : {}",
+            LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
     

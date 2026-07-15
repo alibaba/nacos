@@ -60,8 +60,9 @@ public class RestResultUtils {
     public static <T> RestResult<T> failedWithMsg(int code, String errMsg) {
         return RestResult.<T>builder().withCode(code).withMsg(errMsg).build();
     }
-
+    
     public static <T> RestResult<T> buildResult(IResultCode resultCode, T data) {
-        return RestResult.<T>builder().withCode(resultCode.getCode()).withMsg(resultCode.getCodeMsg()).withData(data).build();
+        return RestResult.<T>builder().withCode(resultCode.getCode())
+            .withMsg(resultCode.getCodeMsg()).withData(data).build();
     }
 }

@@ -20,7 +20,7 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.concurrent.locks.Lock;
@@ -51,8 +51,9 @@ public abstract class AbstractSnapshotOperation implements SnapshotOperation {
             try {
                 callFinally.accept(writeSnapshot(writer), null);
             } catch (Throwable t) {
-                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}.", writer.getPath(),
-                        writer.listFiles(), t);
+                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}.",
+                    writer.getPath(),
+                    writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
@@ -70,7 +71,8 @@ public abstract class AbstractSnapshotOperation implements SnapshotOperation {
             return readSnapshot(reader);
         } catch (final Throwable t) {
             Loggers.RAFT
-                    .error("Fail to load snapshot, path={}, file list={}.", reader.getPath(), reader.listFiles(), t);
+                .error("Fail to load snapshot, path={}, file list={}.", reader.getPath(),
+                    reader.listFiles(), t);
             return false;
         } finally {
             lock.unlock();

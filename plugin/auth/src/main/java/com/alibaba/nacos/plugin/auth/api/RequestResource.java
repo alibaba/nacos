@@ -94,35 +94,57 @@ public class RequestResource {
         return result;
     }
     
+    /**
+     * Create new lock request resource builder.
+     *
+     * @return lock request resource builder
+     */
+    public static Builder lockBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.LOCK);
+        return result;
+    }
+    
+    /**
+     * Create new AI request resource builder.
+     *
+     * @return ai request resource builder
+     */
+    public static Builder aiBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.AI);
+        return result;
+    }
+    
     public static class Builder {
         
         private String type;
-    
+        
         private String namespace;
-    
+        
         private String group;
         
         private String resource;
-    
+        
         public void setType(String type) {
             this.type = type;
         }
-    
+        
         public Builder setNamespace(String namespace) {
             this.namespace = namespace;
             return this;
         }
-    
+        
         public Builder setGroup(String group) {
             this.group = group;
             return this;
         }
-    
+        
         public Builder setResource(String resource) {
             this.resource = resource;
             return this;
         }
-    
+        
         /**
          * Build request resource.
          *

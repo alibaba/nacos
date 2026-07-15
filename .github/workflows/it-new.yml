@@ -1,0 +1,96 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Integration Test
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  integration-test:
+    name: OpenAPI, Java SDK and Maintainer SDK Integration Test
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+
+      - name: Start Server Without Auth
+        run: |
+          echo "Configuring application.properties..."
+          PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
+          echo "Updating file: $PROP_FILE"
+          sed 's|^nacos.plugin.auth.nacos.token.secret.key=$|nacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=testKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=testValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+
+          echo "Starting server..."
+          bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
+
+      - name: Wait for Server Startup
+        run: |
+          echo "Waiting for server to launch on port 8080..."
+          if ! timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Server failed to start"
+            LOG_DIR=$(ls -d distribution/target/nacos-server-*/nacos/logs 2>/dev/null | head -n 1 || true)
+            if [ -n "$LOG_DIR" ]; then
+              echo "::group::Nacos startup.log"
+              if [ -f "$LOG_DIR/startup.log" ]; then
+                tail -300 "$LOG_DIR/startup.log"
+              else
+                echo "startup.log not found"
+              fi
+              echo "::endgroup::"
+              echo "::group::Nacos nacos.log"
+              if [ -f "$LOG_DIR/nacos.log" ]; then
+                tail -300 "$LOG_DIR/nacos.log"
+              else
+                echo "nacos.log not found"
+              fi
+              echo "::endgroup::"
+              echo "::group::Nacos log directory"
+              ls -la "$LOG_DIR"
+              echo "::endgroup::"
+            else
+              echo "Nacos log directory not found"
+            fi
+            exit 1
+          fi
+          echo "Server is up"
+
+      - name: Run IT Tests
+        run: |
+          cd test
+          mvn -B clean verify -Pintegration-test
+
+      - name: Run Java SDK IT Tests
+        run: mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test -DskipTests=false
+
+      - name: Run Maintainer SDK IT Tests
+        run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test -DskipTests=false
+
+      - name: Run Java SDK IT Tests With Jackson 3
+        run: mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test,jackson3-sdk-test -DskipTests=false
+
+      - name: Run Maintainer SDK IT Tests With Jackson 3
+        run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests=false

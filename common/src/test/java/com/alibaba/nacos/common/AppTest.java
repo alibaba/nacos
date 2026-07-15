@@ -16,21 +16,14 @@
 
 package com.alibaba.nacos.common;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
 
-public class AppTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class AppTest {
     
-    public AppTest(String testName) {
-        super(testName);
-    }
-    
-    public static Test suite() {
-        return new TestSuite(AppTest.class);
-    }
-    
-    public void testApp() {
+    @Test
+    void testApp() {
         assertTrue(true);
     }
 }

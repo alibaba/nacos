@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Naming Client Proxy.
@@ -35,14 +34,15 @@ import java.util.Set;
 public interface NamingClientProxy extends Closeable {
     
     /**
-     * Register a instance to service with specified instance properties.
+     * Register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service
      * @param instance    instance to register
      * @throws NacosException nacos exception
      */
-    void registerService(String serviceName, String groupName, Instance instance) throws NacosException;
+    void registerService(String serviceName, String groupName, Instance instance)
+        throws NacosException;
     
     /**
      * Batch register instance to service with specified instance properties.
@@ -53,7 +53,20 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      * @since 2.1.1
      */
-    void batchRegisterService(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    void batchRegisterService(String serviceName, String groupName, List<Instance> instances)
+        throws NacosException;
+    
+    /**
+     * Batch deRegister instance to service with specified instance properties.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances   deRegister instance
+     * @throws NacosException nacos exception
+     * @since 2.2.0
+     */
+    void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+        throws NacosException;
     
     /**
      * Deregister instance from a service.
@@ -63,7 +76,8 @@ public interface NamingClientProxy extends Closeable {
      * @param instance    instance
      * @throws NacosException nacos exception
      */
-    void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException;
+    void deregisterService(String serviceName, String groupName, Instance instance)
+        throws NacosException;
     
     /**
      * Update instance to service.
@@ -73,7 +87,8 @@ public interface NamingClientProxy extends Closeable {
      * @param instance    instance
      * @throws NacosException nacos exception
      */
-    void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
+    void updateInstance(String serviceName, String groupName, Instance instance)
+        throws NacosException;
     
     /**
      * Query instance list.
@@ -81,13 +96,13 @@ public interface NamingClientProxy extends Closeable {
      * @param serviceName service name
      * @param groupName   group name
      * @param clusters    clusters
-     * @param udpPort     udp port
      * @param healthyOnly healthy only
      * @return service info
      * @throws NacosException nacos exception
      */
-    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException;
+    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
+        boolean healthyOnly)
+        throws NacosException;
     
     /**
      * Query Service.
@@ -137,8 +152,9 @@ public interface NamingClientProxy extends Closeable {
      * @return list of service
      * @throws NacosException nacos exception
      */
-    ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
-            throws NacosException;
+    ListView<String> getServiceList(int pageNo, int pageSize, String groupName,
+        AbstractSelector selector)
+        throws NacosException;
     
     /**
      * Subscribe service.
@@ -149,7 +165,8 @@ public interface NamingClientProxy extends Closeable {
      * @return current service info of subscribe service
      * @throws NacosException nacos exception
      */
-    ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException;
+    ServiceInfo subscribe(String serviceName, String groupName, String clusters)
+        throws NacosException;
     
     /**
      * Unsubscribe service.
@@ -170,14 +187,8 @@ public interface NamingClientProxy extends Closeable {
      * @return {@code true} if subscribed, otherwise {@code false}
      * @throws NacosException nacos exception
      */
-    boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
-    
-    /**
-     * Update beat info.
-     *
-     * @param modifiedInstances modified instances
-     */
-    void updateBeatInfo(Set<Instance> modifiedInstances);
+    boolean isSubscribed(String serviceName, String groupName, String clusters)
+        throws NacosException;
     
     /**
      * Check Server healthy.

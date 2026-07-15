@@ -18,7 +18,6 @@ package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.util.IstioExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,47 +28,42 @@ import java.util.Map;
  */
 @Component
 public class NacosResourceManager {
-
+    
     private ResourceSnapshot resourceSnapshot;
-
+    
     @Autowired
     NacosServiceInfoResourceWatcher serviceInfoResourceWatcher;
-
+    
     @Autowired
     private IstioConfig istioConfig;
-
+    
     public NacosResourceManager() {
-        resourceSnapshot = new ResourceSnapshot();
+        resourceSnapshot = new ResourceSnapshot(istioConfig);
     }
-
-    public void start() {
-        IstioExecutor.registerNacosResourceWatcher(serviceInfoResourceWatcher, istioConfig.getMcpPushInterval() * 2L,
-                istioConfig.getMcpPushInterval());
-    }
-
+    
     public Map<String, IstioService> services() {
         return serviceInfoResourceWatcher.snapshot();
     }
-
+    
     public IstioConfig getIstioConfig() {
         return istioConfig;
     }
-
+    
     public synchronized ResourceSnapshot getResourceSnapshot() {
         return resourceSnapshot;
     }
-
+    
     public synchronized void setResourceSnapshot(ResourceSnapshot resourceSnapshot) {
         this.resourceSnapshot = resourceSnapshot;
     }
-
+    
     public void initResourceSnapshot() {
         ResourceSnapshot resourceSnapshot = getResourceSnapshot();
         resourceSnapshot.initResourceSnapshot(this);
     }
-
+    
     public ResourceSnapshot createResourceSnapshot() {
-        ResourceSnapshot resourceSnapshot = new ResourceSnapshot();
+        ResourceSnapshot resourceSnapshot = new ResourceSnapshot(istioConfig);
         resourceSnapshot.initResourceSnapshot(this);
         setResourceSnapshot(resourceSnapshot);
         return resourceSnapshot;

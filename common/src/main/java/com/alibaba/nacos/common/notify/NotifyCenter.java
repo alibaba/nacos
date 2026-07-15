@@ -54,7 +54,8 @@ public class NotifyCenter {
     
     private static final EventPublisherFactory DEFAULT_PUBLISHER_FACTORY;
     
-    private static final NotifyCenter INSTANCE = new NotifyCenter();
+    @SuppressWarnings("checkstyle:StaticVariableName")
+    private static NotifyCenter INSTANCE = new NotifyCenter();
     
     private DefaultSharePublisher sharePublisher;
     
@@ -113,7 +114,6 @@ public class NotifyCenter {
         return INSTANCE.publisherMap;
     }
     
-    @JustForTest
     public static EventPublisher getPublisher(Class<? extends Event> topic) {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, topic)) {
             return INSTANCE.sharePublisher;
@@ -121,7 +121,6 @@ public class NotifyCenter {
         return INSTANCE.publisherMap.get(topic.getCanonicalName());
     }
     
-    @JustForTest
     public static EventPublisher getSharePublisher() {
         return INSTANCE.sharePublisher;
     }
@@ -133,7 +132,7 @@ public class NotifyCenter {
         if (!CLOSED.compareAndSet(false, true)) {
             return;
         }
-        LOGGER.warn("[NotifyCenter] Start destroying Publisher");
+        LOGGER.info("[NotifyCenter] Start destroying Publisher");
         
         for (Map.Entry<String, EventPublisher> entry : INSTANCE.publisherMap.entrySet()) {
             try {
@@ -150,11 +149,11 @@ public class NotifyCenter {
             LOGGER.error("[SharePublisher] shutdown has error : ", e);
         }
         
-        LOGGER.warn("[NotifyCenter] Destruction of the end");
+        LOGGER.info("[NotifyCenter] Completed destruction of Publisher");
     }
     
     /**
-     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublihserMap will
+     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublisherMap will
      * preempt a placeholder Publisher with default EventPublisherFactory first.
      *
      * @param consumer subscriber
@@ -164,17 +163,19 @@ public class NotifyCenter {
     }
     
     /**
-     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublihserMap will
+     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublisherMap will
      * preempt a placeholder Publisher with specified EventPublisherFactory first.
      *
      * @param consumer subscriber
      * @param factory  publisher factory.
      */
-    public static void registerSubscriber(final Subscriber consumer, final EventPublisherFactory factory) {
+    public static void registerSubscriber(final Subscriber consumer,
+        final EventPublisherFactory factory) {
         // If you want to listen to multiple events, you do it separately,
         // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
-            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
+            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer)
+                .subscribeTypes()) {
                 // For case, producer: defaultSharePublisher -> consumer: smartSubscriber.
                 if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
                     INSTANCE.sharePublisher.addSubscriber(consumer, subscribeType);
@@ -202,13 +203,15 @@ public class NotifyCenter {
      * @param subscribeType subscribeType.
      * @param factory       publisher factory.
      */
-    private static void addSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType,
-            EventPublisherFactory factory) {
+    private static void addSubscriber(final Subscriber consumer,
+        Class<? extends Event> subscribeType,
+        EventPublisherFactory factory) {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         synchronized (NotifyCenter.class) {
             // MapUtils.computeIfAbsent is a unsafe method.
-            MapUtil.computeIfAbsent(INSTANCE.publisherMap, topic, factory, subscribeType, ringBufferSize);
+            MapUtil.computeIfAbsent(INSTANCE.publisherMap, topic, factory, subscribeType,
+                ringBufferSize);
         }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         if (publisher instanceof ShardedEventPublisher) {
@@ -225,7 +228,8 @@ public class NotifyCenter {
      */
     public static void deregisterSubscriber(final Subscriber consumer) {
         if (consumer instanceof SmartSubscriber) {
-            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
+            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer)
+                .subscribeTypes()) {
                 if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
                     INSTANCE.sharePublisher.removeSubscriber(consumer, subscribeType);
                 } else {
@@ -254,7 +258,8 @@ public class NotifyCenter {
      * @param subscribeType subscribeType.
      * @return whether remove subscriber successfully or not.
      */
-    private static boolean removeSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType) {
+    private static boolean removeSubscriber(final Subscriber consumer,
+        Class<? extends Event> subscribeType) {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         EventPublisher eventPublisher = INSTANCE.publisherMap.get(topic);
@@ -301,6 +306,9 @@ public class NotifyCenter {
         if (publisher != null) {
             return publisher.publish(event);
         }
+        if (event.isPluginEvent()) {
+            return true;
+        }
         LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
         return false;
     }
@@ -311,7 +319,8 @@ public class NotifyCenter {
      * @param eventType class Instances type of the event type.
      * @return share publisher instance.
      */
-    public static EventPublisher registerToSharePublisher(final Class<? extends SlowEvent> eventType) {
+    public static EventPublisher registerToSharePublisher(
+        final Class<? extends SlowEvent> eventType) {
         return INSTANCE.sharePublisher;
     }
     
@@ -321,7 +330,8 @@ public class NotifyCenter {
      * @param eventType    class Instances type of the event type.
      * @param queueMaxSize the publisher's queue max size.
      */
-    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize) {
+    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType,
+        final int queueMaxSize) {
         return registerToPublisher(eventType, DEFAULT_PUBLISHER_FACTORY, queueMaxSize);
     }
     
@@ -333,7 +343,7 @@ public class NotifyCenter {
      * @param queueMaxSize the publisher's queue max size.
      */
     public static EventPublisher registerToPublisher(final Class<? extends Event> eventType,
-            final EventPublisherFactory factory, final int queueMaxSize) {
+        final EventPublisherFactory factory, final int queueMaxSize) {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher;
         }
@@ -352,7 +362,8 @@ public class NotifyCenter {
      * @param eventType class Instances type of the event type.
      * @param publisher the specified event publisher
      */
-    public static void registerToPublisher(final Class<? extends Event> eventType, final EventPublisher publisher) {
+    public static void registerToPublisher(final Class<? extends Event> eventType,
+        final EventPublisher publisher) {
         if (null == publisher) {
             return;
         }

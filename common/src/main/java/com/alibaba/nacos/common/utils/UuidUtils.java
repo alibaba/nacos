@@ -25,6 +25,9 @@ import java.util.UUID;
  */
 public class UuidUtils {
     
+    private UuidUtils() {
+    }
+    
     public static String generateUuid() {
         return UUID.randomUUID().toString();
     }

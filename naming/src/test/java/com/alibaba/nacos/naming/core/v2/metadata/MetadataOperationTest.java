@@ -16,94 +16,96 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class MetadataOperationTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+@ExtendWith(MockitoExtension.class)
+class MetadataOperationTest {
     
     private MetadataOperation<String> metadataOperation;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         metadataOperation = new MetadataOperation();
     }
     
     @Test
-    public void testGetNamespace() {
+    void testGetNamespace() {
         String namespace = metadataOperation.getNamespace();
         
-        Assert.assertNull(namespace);
+        assertNull(namespace);
     }
     
     @Test
-    public void testSetNamespace() {
+    void testSetNamespace() {
         String namespace = "2398479283749823984";
         metadataOperation.setNamespace(namespace);
         
-        Assert.assertEquals(metadataOperation.getNamespace(), namespace);
+        assertEquals(metadataOperation.getNamespace(), namespace);
     }
     
     @Test
-    public void testGetGroup() {
+    void testGetGroup() {
         String group = metadataOperation.getGroup();
         
-        Assert.assertNull(group);
+        assertNull(group);
     }
     
     @Test
-    public void testSetGroup() {
+    void testSetGroup() {
         String group = "default";
         metadataOperation.setGroup(group);
         
-        Assert.assertEquals(metadataOperation.getGroup(), group);
+        assertEquals(metadataOperation.getGroup(), group);
     }
     
     @Test
-    public void testGetServiceName() {
+    void testGetServiceName() {
         String serviceName = metadataOperation.getServiceName();
         
-        Assert.assertNull(serviceName);
+        assertNull(serviceName);
     }
     
     @Test
-    public void testSetServiceName() {
+    void testSetServiceName() {
         String serviceName = "nacos";
         metadataOperation.setServiceName(serviceName);
         
-        Assert.assertEquals(metadataOperation.getServiceName(), serviceName);
+        assertEquals(metadataOperation.getServiceName(), serviceName);
     }
     
     @Test
-    public void testGetTag() {
+    void testGetTag() {
         String tag = metadataOperation.getTag();
         
-        Assert.assertNull(tag);
+        assertNull(tag);
     }
     
     @Test
-    public void testSetTag() {
+    void testSetTag() {
         String tag = "tag";
         metadataOperation.setTag(tag);
         
-        Assert.assertEquals(metadataOperation.getTag(), tag);
+        assertEquals(metadataOperation.getTag(), tag);
     }
     
     @Test
-    public void testGetMetadata() {
+    void testGetMetadata() {
         Object metadata = metadataOperation.getMetadata();
         
-        Assert.assertNull(metadata);
+        assertNull(metadata);
     }
     
     @Test
-    public void testSetMetadata() {
+    void testSetMetadata() {
         String metadata = "metadata";
         metadataOperation.setMetadata(metadata);
         
-        Assert.assertEquals(metadataOperation.getMetadata(), metadata);
+        assertEquals(metadataOperation.getMetadata(), metadata);
     }
 }

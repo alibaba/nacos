@@ -27,7 +27,6 @@ import java.util.Objects;
  * @author : ChenHao26
  * @ClassName: BatchInstancePublishInfo
  * @Date: 2022/4/21 16:19
- * @Description: TODO
  */
 public class BatchInstancePublishInfo extends InstancePublishInfo {
     
@@ -53,7 +52,8 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
             return false;
         }
         BatchInstancePublishInfo that = (BatchInstancePublishInfo) o;
-        return CollectionUtils.isEqualCollection(this.getInstancePublishInfos(), that.getInstancePublishInfos());
+        return CollectionUtils.isEqualCollection(this.getInstancePublishInfos(),
+            that.getInstancePublishInfos());
     }
     
     @Override
@@ -61,4 +61,3 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
         return Objects.hash(CollectionUtils.getCardinalityMap(instancePublishInfos));
     }
 }
-

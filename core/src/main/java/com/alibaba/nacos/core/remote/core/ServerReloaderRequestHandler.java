@@ -16,15 +16,20 @@
 
 package com.alibaba.nacos.core.remote.core;
 
+import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,17 +42,23 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: ServerReloaderRequestHandler.java, v 0.1 2020年11月09日 4:38 PM liuzunfei Exp $
  */
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
-public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
+@Since("2.0.0")
+public class ServerReloaderRequestHandler
+    extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
     
     @Autowired
     private ConnectionManager connectionManager;
     
     @Override
-    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
+    @Secured(resource = "serverReload", signType = SignType.SPECIFIED, apiType = ApiType.INNER_API)
+    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta)
+        throws NacosException {
         ServerReloadResponse response = new ServerReloadResponse();
-        Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",
-                request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
+        Loggers.REMOTE.info(
+            "server reload request receive,reload count={},redirectServer={},requestIp={}",
+            request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
         int reloadCount = request.getReloadCount();
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);

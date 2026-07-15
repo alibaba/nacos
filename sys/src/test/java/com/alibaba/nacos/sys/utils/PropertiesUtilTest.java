@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,29 @@
 
 package com.alibaba.nacos.sys.utils;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
 @ActiveProfiles("prefix")
 @SpringBootTest(classes = PropertiesUtilTest.class)
-public class PropertiesUtilTest {
+class PropertiesUtilTest {
     
     @Autowired
     private ConfigurableEnvironment environment;
     
     @Test
     @SuppressWarnings("unchecked")
-    public void testGetPropertiesWithPrefixForMap()
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Map<String, Object> actual = PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
+    void testGetPropertiesWithPrefixForMap() {
+        Map<String, Object> actual =
+            PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
         assertEquals(3, actual.size());
         for (Map.Entry<String, Object> entry : actual.entrySet()) {
             String key = entry.getKey();
@@ -64,9 +60,26 @@ public class PropertiesUtilTest {
     }
     
     @Test
-    public void testGetPropertiesWithPrefix()
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    void testGetPropertiesWithPrefix() {
         Properties actual = PropertiesUtil.getPropertiesWithPrefix(environment, "nacos.prefix");
         assertEquals(3, actual.size());
+    }
+    
+    @Test
+    void testHandleSpringBinder() {
+        Map properties = PropertiesUtil.handleSpringBinder(environment, "nacos.prefix", Map.class);
+        assertEquals(3, properties.size());
+    }
+    
+    @Test
+    void testHandleSpringBinderWithDotEndingPrefix() {
+        Map properties =
+            PropertiesUtil.handleSpringBinder(environment, "nacos.prefix.", Map.class);
+        assertEquals(3, properties.size());
+    }
+    
+    @Test
+    void testConstructor() {
+        new PropertiesUtil();
     }
 }

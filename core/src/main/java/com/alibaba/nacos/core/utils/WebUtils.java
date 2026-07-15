@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
@@ -25,8 +24,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -54,6 +53,12 @@ public class WebUtils {
     
     private static final String TMP_SUFFIX = ".tmp";
     
+    public static final String X_REAL_IP = "X-Real-IP";
+    
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    
+    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
+    
     /**
      * get target value from parameterMap, if not found will throw {@link IllegalArgumentException}.
      *
@@ -78,7 +83,8 @@ public class WebUtils {
      * @param defaultValue default value
      * @return value
      */
-    public static String optional(final HttpServletRequest req, final String key, final String defaultValue) {
+    public static String optional(final HttpServletRequest req, final String key,
+        final String defaultValue) {
         String value = req.getParameter(key);
         if (StringUtils.isBlank(value)) {
             return defaultValue;
@@ -106,40 +112,14 @@ public class WebUtils {
     }
     
     /**
-     * decode target value with UrlDecode.
-     *
-     * <p>Under Content-Type:application/x-www-form-urlencoded situation.
-     *
-     * @param value    value
-     * @param encoding encode
-     * @return Decoded data
-     */
-    private static String resolveValueWithUrlDecode(String value, String encoding) {
-        if (StringUtils.isEmpty(encoding)) {
-            encoding = StandardCharsets.UTF_8.name();
-        }
-        try {
-            value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
-        } catch (UnsupportedEncodingException ignore) {
-        } catch (Exception ex) {
-            // If the value contains a special character without encoding (such as "[IPv6]"),
-            // a URLDecoder exception is thrown, which is ignored and the original value is returned
-            final String seq = "URLDecoder";
-            if (!StringUtils.contains(ex.toString(), seq)) {
-                throw ex;
-            }
-        }
-        return value.trim();
-    }
-    
-    /**
      * get accept encode from request.
      *
      * @param req {@link HttpServletRequest}
      * @return accept encode
      */
     public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING), StandardCharsets.UTF_8.name());
+        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING),
+            StandardCharsets.UTF_8.name());
         encode = encode.contains(COMMA) ? encode.substring(0, encode.indexOf(COMMA)) : encode;
         return encode.contains(SEMI) ? encode.substring(0, encode.indexOf(SEMI)) : encode;
     }
@@ -155,7 +135,8 @@ public class WebUtils {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils
-                    .defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER), StringUtils.EMPTY);
+                .defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER),
+                    StringUtils.EMPTY);
         }
         return userAgent;
     }
@@ -168,7 +149,8 @@ public class WebUtils {
      * @param code     http code
      * @throws IOException IOException
      */
-    public static void response(HttpServletResponse response, String body, int code) throws IOException {
+    public static void response(HttpServletResponse response, String body, int code)
+        throws IOException {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(APPLICATION_JSON);
         response.getWriter().write(body);
@@ -183,7 +165,7 @@ public class WebUtils {
      * @param response      {@link DeferredResult}
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
-            DeferredResult<RestResult<String>> response) {
+        DeferredResult<RestResult<String>> response) {
         
         if (Objects.isNull(multipartFile) || multipartFile.isEmpty()) {
             response.setResult(RestResultUtils.failed("File is empty"));
@@ -212,7 +194,7 @@ public class WebUtils {
      * @param <T>            target type
      */
     public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
-            Function<Throwable, T> errorHandler) {
+        Function<Throwable, T> errorHandler) {
         
         deferredResult.onTimeout(future::join);
         
@@ -234,8 +216,9 @@ public class WebUtils {
      * @param errorHandler   {@link Function}
      * @param <T>            target type
      */
-    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success,
-            Function<Throwable, T> errorHandler) {
+    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
+        Runnable success,
+        Function<Throwable, T> errorHandler) {
         
         deferredResult.onTimeout(future::join);
         
@@ -247,5 +230,23 @@ public class WebUtils {
             success.run();
             deferredResult.setResult(t);
         });
+    }
+    
+    /**
+     * get real client ip
+     *
+     * <p>first use X-Forwarded-For header    https://zh.wikipedia.org/wiki/X-Forwarded-For next nginx X-Real-IP last
+     * {@link HttpServletRequest#getRemoteAddr()}
+     *
+     * @param request {@link HttpServletRequest}
+     * @return remote ip address.
+     */
+    public static String getRemoteIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
+        if (!StringUtils.isBlank(xForwardedFor)) {
+            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
+        }
+        String nginxHeader = request.getHeader(X_REAL_IP);
+        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
 }

@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -32,9 +32,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -51,28 +55,30 @@ public class HealthOperatorV2Impl implements HealthOperator {
     
     private final ClientOperationService clientOperationService;
     
-    public HealthOperatorV2Impl(NamingMetadataManager metadataManager, ClientManagerDelegate clientManager,
-            ClientOperationServiceProxy clientOperationService) {
+    public HealthOperatorV2Impl(NamingMetadataManager metadataManager,
+        ClientManagerDelegate clientManager,
+        ClientOperationServiceProxy clientOperationService) {
         this.metadataManager = metadataManager;
         this.clientManager = clientManager;
         this.clientOperationService = clientOperationService;
     }
     
     @Override
-    public void updateHealthStatusForPersistentInstance(String namespace, String fullServiceName, String clusterName,
-            String ip, int port, boolean healthy) throws NacosException {
-        String groupName = NamingUtils.getGroupName(fullServiceName);
-        String serviceName = NamingUtils.getServiceName(fullServiceName);
-        Service service = Service.newService(namespace, groupName, serviceName);
+    public void updateHealthStatusForPersistentInstance(String namespace, String groupName,
+        String serviceName,
+        String clusterName, String ip, int port, boolean healthy) throws NacosException {
+        Service service = Service.newService(namespace, groupName, serviceName, false);
         Optional<ServiceMetadata> serviceMetadata = metadataManager.getServiceMetadata(service);
-        if (!serviceMetadata.isPresent() || !serviceMetadata.get().getClusters().containsKey(clusterName)) {
-            throwHealthCheckerException(fullServiceName, clusterName);
+        if (serviceMetadata.isEmpty()
+            || !serviceMetadata.get().getClusters().containsKey(clusterName)) {
+            throwHealthCheckerException(groupName, serviceName, clusterName);
         }
         ClusterMetadata clusterMetadata = serviceMetadata.get().getClusters().get(clusterName);
         if (!HealthCheckType.NONE.name().equals(clusterMetadata.getHealthyCheckType())) {
-            throwHealthCheckerException(fullServiceName, clusterName);
+            throwHealthCheckerException(groupName, serviceName, clusterName);
         }
-        String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, false);
+        String clientId =
+            IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, false);
         Client client = clientManager.getClient(clientId);
         if (null == client) {
             return;
@@ -86,9 +92,29 @@ public class HealthOperatorV2Impl implements HealthOperator {
         clientOperationService.registerInstance(service, newInstance, clientId);
     }
     
-    private void throwHealthCheckerException(String fullServiceName, String clusterName) throws NacosException {
-        String errorInfo = String
-                .format("health check is still working, service: %s, cluster: %s", fullServiceName, clusterName);
+    @Override
+    public Map<String, AbstractHealthChecker> checkers() {
+        List<Class<? extends AbstractHealthChecker>> classes =
+            HealthCheckType.getLoadedHealthCheckerClasses();
+        Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
+        for (Class<? extends AbstractHealthChecker> clazz : classes) {
+            try {
+                AbstractHealthChecker checker = clazz.newInstance();
+                checkerMap.put(checker.getType(), checker);
+            } catch (InstantiationException | IllegalAccessException e) {
+                Loggers.EVT_LOG.error("checkers error ", e);
+            }
+        }
+        
+        return checkerMap;
+    }
+    
+    private void throwHealthCheckerException(String groupName, String serviceName,
+        String clusterName)
+        throws NacosException {
+        String errorInfo =
+            String.format("health check is still working, service: %s@@%s, cluster: %s", groupName,
+                serviceName, clusterName);
         throw new NacosException(NacosException.INVALID_PARAM, errorInfo);
     }
 }

@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,13 +51,13 @@ public final class TlsFileWatcher {
     
     private final int checkInterval = TlsSystemConfig.tlsFileCheckInterval;
     
-    private Map<String, String> fileMd5Map = new HashMap<>();
+    private Map<String, String> fileMd5Map = new ConcurrentHashMap<>();
     
     private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<>();
     
     private final ScheduledExecutorService service = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(TlsFileWatcher.class),
-                    new NameThreadFactory("com.alibaba.nacos.core.common.tls"));
+        .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(TlsFileWatcher.class),
+            new NameThreadFactory("com.alibaba.nacos.core.common.tls"));
     
     private static TlsFileWatcher tlsFileWatcher = new TlsFileWatcher();
     
@@ -77,14 +76,16 @@ public final class TlsFileWatcher {
      * @param filePaths          file paths
      * @throws IOException If an I/O error occurs
      */
-    public void addFileChangeListener(FileChangeListener fileChangeListener, String... filePaths) throws IOException {
+    public void addFileChangeListener(FileChangeListener fileChangeListener, String... filePaths)
+        throws IOException {
         for (String filePath : filePaths) {
             if (filePath != null && new File(filePath).exists()) {
                 watchFilesMap.put(filePath, fileChangeListener);
                 InputStream in = null;
                 try {
                     in = new FileInputStream(filePath);
-                    fileMd5Map.put(filePath, MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE));
+                    fileMd5Map.put(filePath,
+                        MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE));
                 } finally {
                     IoUtils.closeQuietly(in);
                 }
@@ -104,9 +105,11 @@ public final class TlsFileWatcher {
                     InputStream in = null;
                     try {
                         in = new FileInputStream(filePath);
-                        newHash = MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE);
+                        newHash = MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE),
+                            Constants.ENCODE);
                     } catch (Exception exception) {
-                        LOGGER.warn(" service has exception when calculate the file MD5. " + exception);
+                        LOGGER.warn(
+                            " service has exception when calculate the file MD5. " + exception);
                         continue;
                     } finally {
                         IoUtils.closeQuietly(in);

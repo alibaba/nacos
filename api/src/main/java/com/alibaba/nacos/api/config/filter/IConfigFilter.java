@@ -33,14 +33,6 @@ public interface IConfigFilter {
     /**
      * Init.
      *
-     * @param filterConfig Filter Config
-     */
-    @Deprecated
-    void init(IFilterConfig filterConfig);
-    
-    /**
-     * Init.
-     *
      * @param properties Filter Config
      */
     void init(Properties properties);
@@ -54,7 +46,7 @@ public interface IConfigFilter {
      * @throws NacosException exception
      */
     void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Get order.

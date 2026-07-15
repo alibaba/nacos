@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.code.condition;
 
 import org.springframework.util.ObjectUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -82,7 +82,8 @@ public class ParamRequestCondition {
                 this.value = null;
             } else {
                 this.isNegated = (separator > 0) && (expression.charAt(separator - 1) == '!');
-                this.name = isNegated ? expression.substring(0, separator - 1) : expression.substring(0, separator);
+                this.name = isNegated ? expression.substring(0, separator - 1)
+                    : expression.substring(0, separator);
                 this.value = expression.substring(separator + 1);
             }
         }
@@ -107,8 +108,9 @@ public class ParamRequestCondition {
         
         @Override
         public String toString() {
-            return "ParamExpression{" + "name='" + name + '\'' + ", value='" + value + '\'' + ", isNegated=" + isNegated
-                    + '}';
+            return "ParamExpression{" + "name='" + name + '\'' + ", value='" + value + '\''
+                + ", isNegated=" + isNegated
+                + '}';
         }
     }
 }

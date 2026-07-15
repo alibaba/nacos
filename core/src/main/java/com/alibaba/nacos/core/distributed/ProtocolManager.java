@@ -28,10 +28,10 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -52,11 +52,13 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     
     private final ServerMemberManager memberManager;
     
-    private boolean apInit = false;
+    private volatile boolean apInit = false;
     
-    private boolean cpInit = false;
+    private volatile boolean cpInit = false;
     
-    private Set<Member> oldMembers;
+    private final Object cpLock = new Object();
+    
+    private final Object apLock = new Object();
     
     public ProtocolManager(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -80,23 +82,35 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     }
     
     public CPProtocol getCpProtocol() {
-        synchronized (this) {
-            if (!cpInit) {
-                initCPProtocol();
-                cpInit = true;
+        if (!cpInit) {
+            synchronized (cpLock) {
+                if (!cpInit) {
+                    initCPProtocol();
+                    cpInit = true;
+                }
             }
         }
         return cpProtocol;
     }
     
     public APProtocol getApProtocol() {
-        synchronized (this) {
-            if (!apInit) {
-                initAPProtocol();
-                apInit = true;
+        if (!apInit) {
+            synchronized (apLock) {
+                if (!apInit) {
+                    initAPProtocol();
+                    apInit = true;
+                }
             }
         }
         return apProtocol;
+    }
+    
+    public boolean isCpInit() {
+        return cpInit;
+    }
+    
+    public boolean isApInit() {
+        return apInit;
     }
     
     @PreDestroy
@@ -133,7 +147,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     private void injectMembers4CP(Config config) {
         final Member selfMember = memberManager.getSelf();
         final String self = selfMember.getIp() + ":" + Integer
-                .parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+            .parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
         Set<String> others = toCPMembersInfo(memberManager.allMembers());
         config.setMembers(self, others);
     }
@@ -155,10 +169,12 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         // to avoid multiple tasks simultaneously carrying out the consistency layer of
         // node changes operation
         if (Objects.nonNull(apProtocol)) {
-            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
+            ProtocolExecutor
+                .apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
         }
         if (Objects.nonNull(cpProtocol)) {
-            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
+            ProtocolExecutor
+                .cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
         }
     }
 }

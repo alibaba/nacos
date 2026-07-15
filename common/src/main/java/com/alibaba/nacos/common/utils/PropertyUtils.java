@@ -23,6 +23,9 @@ package com.alibaba.nacos.common.utils;
  */
 public class PropertyUtils {
     
+    private PropertyUtils() {
+    }
+    
     private static final String PROCESSORS_ENV_NAME = "NACOS_COMMON_PROCESSORS";
     
     private static final String PROCESSORS_PROP_NAME = "nacos.common.processors";
@@ -44,7 +47,8 @@ public class PropertyUtils {
      * return {@link System#getProperty(String, String)} or {@code defaultValue}.
      */
     public static String getProperty(String propertyName, String envName, String defaultValue) {
-        return System.getenv().getOrDefault(envName, System.getProperty(propertyName, defaultValue));
+        return System.getenv().getOrDefault(envName,
+            System.getProperty(propertyName, defaultValue));
     }
     
     /**

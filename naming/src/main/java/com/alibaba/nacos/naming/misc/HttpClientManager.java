@@ -16,6 +16,18 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
+
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.hc.client5.http.HttpRoute;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.client5.http.nio.AsyncClientConnectionManager;
+import org.apache.hc.core5.pool.PoolStats;
+import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+
 import com.alibaba.nacos.common.http.AbstractApacheHttpClientFactory;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -26,11 +38,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.slf4j.Logger;
-
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
  * http Manager.
@@ -47,9 +54,11 @@ public class HttpClientManager {
     
     private static final HttpClientFactory ASYNC_HTTP_CLIENT_FACTORY = new AsyncHttpClientFactory();
     
-    private static final HttpClientFactory PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY = new ProcessorHttpClientFactory();
+    private static final HttpClientFactory PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY =
+        new ProcessorHttpClientFactory();
     
-    private static final HttpClientFactory APACHE_SYNC_HTTP_CLIENT_FACTORY = new ApacheSyncHttpClientFactory();
+    private static final HttpClientFactory APACHE_SYNC_HTTP_CLIENT_FACTORY =
+        new ApacheSyncHttpClientFactory();
     
     private static final NacosRestTemplate NACOS_REST_TEMPLATE;
     
@@ -62,10 +71,12 @@ public class HttpClientManager {
     static {
         // build nacos rest template
         NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(SYNC_HTTP_CLIENT_FACTORY);
-        APACHE_NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
-        NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
+        APACHE_NACOS_REST_TEMPLATE =
+            HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
+        NACOS_ASYNC_REST_TEMPLATE =
+            HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
         PROCESSOR_NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder
-                .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
+            .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
         
         ThreadUtils.addShutdownHook(HttpClientManager::shutdown);
     }
@@ -98,17 +109,22 @@ public class HttpClientManager {
     }
     
     private static void shutdown() {
-        SRV_LOG.warn("[NamingServerHttpClientManager] Start destroying HTTP-Client");
+        SRV_LOG.info("[NamingServerHttpClientManager] Start destroying HTTP-Client");
         try {
-            HttpClientBeanHolder.shutdownNacostSyncRest(SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
-            HttpClientBeanHolder.shutdownNacostSyncRest(APACHE_SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
-            HttpClientBeanHolder.shutdownNacosAsyncRest(ASYNC_HTTP_CLIENT_FACTORY.getClass().getName());
-            HttpClientBeanHolder.shutdownNacosAsyncRest(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder
+                .shutdownNacosSyncRest(SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder
+                .shutdownNacosSyncRest(APACHE_SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder
+                .shutdownNacosAsyncRest(ASYNC_HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder
+                .shutdownNacosAsyncRest(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            SRV_LOG.error("[NamingServerHttpClientManager] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
+            SRV_LOG.error(
+                "[NamingServerHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+                ExceptionUtil.getStackTrace(ex));
         }
-        SRV_LOG.warn("[NamingServerHttpClientManager] Destruction of the end");
+        SRV_LOG.info("[NamingServerHttpClientManager] Completed destruction of HTTP-Client");
     }
     
     private static class AsyncHttpClientFactory extends AbstractHttpClientFactory {
@@ -116,8 +132,8 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                    .setMaxConnTotal(-1).setMaxConnPerRoute(128).setMaxRedirects(0).build();
+                .setReadTimeOutMillis(TIME_OUT_MILLIS).setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                .setMaxConnTotal(-1).setMaxConnPerRoute(128).setMaxRedirects(0).build();
         }
         
         @Override
@@ -131,7 +147,7 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setMaxRedirects(0).build();
+                .setReadTimeOutMillis(TIME_OUT_MILLIS).setMaxRedirects(0).build();
         }
         
         @Override
@@ -144,9 +160,11 @@ public class HttpClientManager {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
-                    .setMaxConnTotal(EnvUtil.getAvailableProcessors(2))
-                    .setMaxConnPerRoute(EnvUtil.getAvailableProcessors()).setMaxRedirects(0).build();
+            return HttpClientConfig
+                .builder()
+                .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
+                .setMaxConnTotal(EnvUtil.getAvailableProcessors(2))
+                .setMaxConnPerRoute(EnvUtil.getAvailableProcessors()).setMaxRedirects(0).build();
         }
         
         @Override
@@ -155,18 +173,80 @@ public class HttpClientManager {
         }
     }
     
-    private static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
+    public static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConnectionRequestTimeout(500).setReadTimeOutMillis(500)
-                    .setConTimeOutMillis(500).setIoThreadCount(1).setContentCompressionEnabled(false).setMaxRedirects(0)
-                    .setMaxConnTotal(-1).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
+            return HttpClientConfig
+                .builder()
+                .setConnectionRequestTimeout(500)
+                .setReadTimeOutMillis(500)
+                .setConTimeOutMillis(500)
+                .setIoThreadCount(1)
+                .setContentCompressionEnabled(false)
+                .setMaxRedirects(0)
+                .setMaxConnTotal(5000)
+                .setMaxConnPerRoute(-1)
+                .setUserAgent("VIPServer")
+                .build();
         }
         
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
+        }
+        
+        @Override
+        protected void monitorAndExtension(AsyncClientConnectionManager connectionManager) {
+            GlobalExecutor.scheduleMonitorHealthCheckPool(
+                new MonitorHealthCheckPool(connectionManager), 60, 60, TimeUnit.SECONDS);
+        }
+    }
+    
+    private static class MonitorHealthCheckPool implements Runnable {
+        
+        private AsyncClientConnectionManager connectionManager;
+        
+        public MonitorHealthCheckPool(AsyncClientConnectionManager connectionManager) {
+            this.connectionManager = connectionManager;
+        }
+        
+        @Override
+        public void run() {
+            // release source
+            closeExpiredAndIdleConnections();
+            monitor();
+        }
+        
+        private void monitor() {
+            try {
+                PoolingAsyncClientConnectionManager manager =
+                    (PoolingAsyncClientConnectionManager) connectionManager;
+                // Get the status of each route
+                Set<HttpRoute> routes = manager.getRoutes();
+                if (routes != null && !routes.isEmpty()) {
+                    for (HttpRoute httpRoute : routes) {
+                        PoolStats stats = manager.getStats(httpRoute);
+                        SRV_LOG.debug("connectionManager every route: {}", stats);
+                    }
+                }
+                // Get the connection pool status of all routes
+                PoolStats totalStats = manager.getTotalStats();
+                SRV_LOG.debug("connectionManager total status: {}", totalStats);
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool monitor warn", e);
+            }
+        }
+        
+        private void closeExpiredAndIdleConnections() {
+            try {
+                PoolingAsyncClientConnectionManager manager =
+                    (PoolingAsyncClientConnectionManager) connectionManager;
+                manager.closeExpired();
+                manager.closeIdle(Timeout.of(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS));
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool clean warn", e);
+            }
         }
     }
 }

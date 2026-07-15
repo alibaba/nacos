@@ -64,7 +64,7 @@ public interface Selector<R, C, E> extends Serializable {
     String getType();
     
     /**
-     * Get the select context which usede by {@link #select(Object)}.
+     * Get the select context which used by {@link #select(Object)}.
      *
      * @return selector context type.
      */

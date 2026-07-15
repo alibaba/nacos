@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.config.server.constant;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.alibaba.nacos.config.server.constant.Constants.CAPACITY_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.COMMUNICATION_CONTROLLER_PATH;
@@ -29,26 +28,27 @@ import static com.alibaba.nacos.config.server.constant.Constants.METRICS_CONTROL
 import static com.alibaba.nacos.config.server.constant.Constants.NAMESPACE_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.OPS_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.RECV_WAIT_TIMEOUT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ConstantsTest {
+class ConstantsTest {
     
     @Test
-    public void testControllerPathsDefaultValues() {
+    void testControllerPathsDefaultValues() {
         
-        Assert.assertEquals("/v1/cs/ops", OPS_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/capacity", CAPACITY_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/communication", COMMUNICATION_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/configs", CONFIG_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/health", HEALTH_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/history", HISTORY_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/listener", LISTENER_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/namespaces", NAMESPACE_CONTROLLER_PATH);
-        Assert.assertEquals("/v1/cs/metrics", METRICS_CONTROLLER_PATH);
+        assertEquals("/v1/cs/ops", OPS_CONTROLLER_PATH);
+        assertEquals("/v1/cs/capacity", CAPACITY_CONTROLLER_PATH);
+        assertEquals("/v1/cs/communication", COMMUNICATION_CONTROLLER_PATH);
+        assertEquals("/v1/cs/configs", CONFIG_CONTROLLER_PATH);
+        assertEquals("/v1/cs/health", HEALTH_CONTROLLER_PATH);
+        assertEquals("/v1/cs/history", HISTORY_CONTROLLER_PATH);
+        assertEquals("/v1/cs/listener", LISTENER_CONTROLLER_PATH);
+        assertEquals("/v1/cs/namespaces", NAMESPACE_CONTROLLER_PATH);
+        assertEquals("/v1/cs/metrics", METRICS_CONTROLLER_PATH);
     }
     
     @Test
-    public void testRecvWaitTimeoutDefaultValue() {
+    void testRecvWaitTimeoutDefaultValue() {
         
-        Assert.assertEquals(10000, RECV_WAIT_TIMEOUT);
+        assertEquals(10000, RECV_WAIT_TIMEOUT);
     }
 }

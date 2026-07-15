@@ -32,7 +32,8 @@ public class NamingExecuteTaskDispatcher {
     private final NacosExecuteTaskExecuteEngine executeEngine;
     
     private NamingExecuteTaskDispatcher() {
-        executeEngine = new NacosExecuteTaskExecuteEngine(EnvUtil.FUNCTION_MODE_NAMING, Loggers.SRV_LOG);
+        executeEngine =
+            new NacosExecuteTaskExecuteEngine(EnvUtil.FUNCTION_MODE_NAMING, Loggers.SRV_LOG);
     }
     
     public static NamingExecuteTaskDispatcher getInstance() {
@@ -45,5 +46,9 @@ public class NamingExecuteTaskDispatcher {
     
     public String workersStatus() {
         return executeEngine.workersStatus();
+    }
+    
+    public void destroy() throws Exception {
+        executeEngine.shutdown();
     }
 }

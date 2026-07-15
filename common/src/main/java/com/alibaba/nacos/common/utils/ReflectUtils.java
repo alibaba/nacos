@@ -29,6 +29,9 @@ import java.lang.reflect.UndeclaredThrowableException;
  */
 public class ReflectUtils {
     
+    private ReflectUtils() {
+    }
+    
     /**
      * get filed value of  obj.
      *

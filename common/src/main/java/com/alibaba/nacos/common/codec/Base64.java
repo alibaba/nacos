@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.common.codec;
 
-import java.nio.charset.StandardCharsets;
-
 /**
- * Provides Base64 encoding and decoding as defined by <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
+ * From apache common codec, and remove some useless method. Provides Base64 encoding and decoding as defined by <a
+ * href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
  *
  * <p>This class implements section <cite>6.8. Base64 Content-Transfer-Encoding</cite> from RFC 2045
  *
@@ -66,18 +65,24 @@ public class Base64 {
      *
      * <p>http://svn.apache.org/repos/asf/webservices/commons/trunk/modules/util/
      */
-    private static final byte[] STANDARD_ENCODE_TABLE = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-            'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-            'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
+    private static final byte[] STANDARD_ENCODE_TABLE =
+        {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+            'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c',
+            'd', 'e', 'f', 'g',
+            'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+            'y', 'z', '0', '1',
             '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
     
     /**
      * This is a copy of the STANDARD_ENCODE_TABLE above, but with + and / changed to - and _ to make the encoded Base64
      * results more URL-SAFE. This table is only used when the Base64's mode is set to URL-SAFE.
      */
-    private static final byte[] URL_SAFE_ENCODE_TABLE = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-            'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-            'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
+    private static final byte[] URL_SAFE_ENCODE_TABLE =
+        {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+            'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c',
+            'd', 'e', 'f', 'g',
+            'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+            'y', 'z', '0', '1',
             '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'};
     
     /**
@@ -92,10 +97,14 @@ public class Base64 {
      *
      * <p>http://svn.apache.org/repos/asf/webservices/commons/trunk/modules/util/
      */
-    private static final byte[] DECODE_TABLE = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1,
-            62, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-            9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63, -1, 26, 27, 28, 29,
+    private static final byte[] DECODE_TABLE =
+        {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, 62, -1,
+            62, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2,
+            3, 4, 5, 6, 7, 8,
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63,
+            -1, 26, 27, 28, 29,
             30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
     
     /**
@@ -113,11 +122,6 @@ public class Base64 {
      * between the two modes.
      */
     private final byte[] encodeTable;
-    
-    /**
-     * Only one decode table currently; keep for consistency with Base32 code.
-     */
-    private final byte[] decodeTable = DECODE_TABLE;
     
     /**
      * Line separator for encoding. Not used when decoding. Only used if lineLength > 0.
@@ -168,28 +172,17 @@ public class Base64 {
      *                                  work!
      * @since 1.4
      */
-    public Base64(int lineLength, byte[] lineSeparator, boolean urlSafe) {
-        chunkSeparatorLength = lineSeparator == null ? 0 : lineSeparator.length;
+    private Base64(int lineLength, byte[] lineSeparator, boolean urlSafe) {
+        chunkSeparatorLength = lineSeparator.length;
         unencodedBlockSize = BYTES_PER_UNENCODED_BLOCK;
         encodedBlockSize = BYTES_PER_ENCODED_BLOCK;
         this.lineLength =
-                (lineLength > 0 && chunkSeparatorLength > 0) ? (lineLength / encodedBlockSize) * encodedBlockSize : 0;
-        // TODO could be simplified if there is no requirement to reject invalid line sep when length <=0
-        // @see test case Base64Test.testConstructors()
-        if (lineSeparator != null) {
-            if (containsAlphabetOrPad(lineSeparator)) {
-                String sep = null;
-                sep = new String(lineSeparator, StandardCharsets.UTF_8);
-                throw new IllegalArgumentException("lineSeparator must not contain base64 characters: [" + sep + "]");
-            }
-            if (lineLength > 0) {
-                this.encodeSize = BYTES_PER_ENCODED_BLOCK + lineSeparator.length;
-                this.lineSeparator = new byte[lineSeparator.length];
-                System.arraycopy(lineSeparator, 0, this.lineSeparator, 0, lineSeparator.length);
-            } else {
-                this.encodeSize = BYTES_PER_ENCODED_BLOCK;
-                this.lineSeparator = null;
-            }
+            (lineLength > 0 && chunkSeparatorLength > 0)
+                ? (lineLength / encodedBlockSize) * encodedBlockSize : 0;
+        if (lineLength > 0) {
+            this.encodeSize = BYTES_PER_ENCODED_BLOCK + lineSeparator.length;
+            this.lineSeparator = new byte[lineSeparator.length];
+            System.arraycopy(lineSeparator, 0, this.lineSeparator, 0, lineSeparator.length);
         } else {
             this.encodeSize = BYTES_PER_ENCODED_BLOCK;
             this.lineSeparator = null;
@@ -206,9 +199,6 @@ public class Base64 {
      */
     private byte[] encode(byte[] pArray) {
         reset();
-        if (pArray == null || pArray.length == 0) {
-            return pArray;
-        }
         encode(pArray, 0, pArray.length);
         encode(pArray, 0, -1);
         byte[] buf = new byte[pos - readPos];
@@ -403,7 +393,8 @@ public class Base64 {
      * @throws IllegalArgumentException Thrown when the input array needs an output array bigger than maxResultSize
      * @since 1.4
      */
-    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe, int maxResultSize) {
+    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe,
+        int maxResultSize) {
         if (binaryData == null || binaryData.length == 0) {
             return binaryData;
         }
@@ -411,10 +402,11 @@ public class Base64 {
         // Create this so can use the super-class method
         // Also ensures that the same roundings are performed by the ctor and the code
         Base64 b64 = isChunked ? new Base64(MIME_CHUNK_SIZE, CHUNK_SEPARATOR, urlSafe)
-                : new Base64(0, CHUNK_SEPARATOR, urlSafe);
+            : new Base64(0, CHUNK_SEPARATOR, urlSafe);
         long len = b64.getEncodedLength(binaryData);
         if (len > maxResultSize) {
-            throw new IllegalArgumentException("Input array too big, the output array would be bigger (" + len
+            throw new IllegalArgumentException(
+                "Input array too big, the output array would be bigger (" + len
                     + ") than the specified maximum size of " + maxResultSize);
         }
         
@@ -429,16 +421,6 @@ public class Base64 {
      */
     public static byte[] decodeBase64(byte[] base64Data) {
         return new Base64().decode(base64Data);
-    }
-    
-    /**
-     * Returns whether or not the <code>octet</code> is in the Base32 alphabet.
-     *
-     * @param octet The value to test
-     * @return <code>true</code> if the value is defined in the the Base32 alphabet <code>false</code> otherwise.
-     */
-    protected boolean isInAlphabet(byte octet) {
-        return octet >= 0 && octet < decodeTable.length && decodeTable[octet] != -1;
     }
     
     /**
@@ -579,26 +561,6 @@ public class Base64 {
     }
     
     /**
-     * Tests a given byte array to see if it contains any characters within the alphabet or PAD.
-     *
-     * <p>Intended for use in checking line-ending arrays
-     *
-     * @param arrayOctet byte array to test
-     * @return <code>true</code> if any byte is a valid character in the alphabet or PAD; <code>false</code> otherwise
-     */
-    private boolean containsAlphabetOrPad(byte[] arrayOctet) {
-        if (arrayOctet == null) {
-            return false;
-        }
-        for (int i = 0; i < arrayOctet.length; i++) {
-            if (PAD == arrayOctet[i] || isInAlphabet(arrayOctet[i])) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
      * Calculates the amount of space needed to encode the supplied array.
      *
      * @param pArray byte[] array which will later be encoded
@@ -608,7 +570,8 @@ public class Base64 {
     private long getEncodedLength(byte[] pArray) {
         // Calculate non-chunked size - rounded up to allow for padding
         // cast to long is needed to avoid possibility of overflow
-        long len = ((pArray.length + unencodedBlockSize - 1) / unencodedBlockSize) * (long) encodedBlockSize;
+        long len = ((pArray.length + unencodedBlockSize - 1) / unencodedBlockSize)
+            * (long) encodedBlockSize;
         if (lineLength > 0) {
             /*
              Round up to nearest multiple

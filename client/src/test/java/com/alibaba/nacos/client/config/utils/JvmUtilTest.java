@@ -18,14 +18,47 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class JvmUtilTest  {
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class JvmUtilTest {
+    
+    Method initMethod;
+    
+    @BeforeEach
+    void setUp() throws NoSuchMethodException {
+        initMethod = JvmUtil.class.getDeclaredMethod("init");
+        initMethod.setAccessible(true);
+    }
+    
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
+        System.clearProperty("isMultiInstance");
+        Field field = JvmUtil.class.getDeclaredField("isMultiInstance");
+        field.setAccessible(true);
+        field.set(JvmUtil.class, false);
+    }
     
     @Test
-    public void testIsMultiInstance() {
+    void testIsMultiInstance() throws InvocationTargetException, IllegalAccessException {
+        initMethod.invoke(JvmUtil.class);
         Boolean multiInstance = JvmUtil.isMultiInstance();
-        Assert.assertFalse(multiInstance);
+        assertFalse(multiInstance);
+    }
+    
+    @Test
+    void testIsMultiInstance2() throws InvocationTargetException, IllegalAccessException {
+        System.setProperty("isMultiInstance", "true");
+        initMethod.invoke(JvmUtil.class);
+        Boolean multiInstance = JvmUtil.isMultiInstance();
+        assertTrue(multiInstance);
     }
 }

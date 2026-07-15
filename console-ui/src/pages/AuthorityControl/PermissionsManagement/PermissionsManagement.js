@@ -16,9 +16,24 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import {
+  Button,
+  Dialog,
+  Pagination,
+  Table,
+  ConfigProvider,
+  Form,
+  Input,
+  Switch,
+  Message,
+} from '@alifd/next';
 import { connect } from 'react-redux';
-import { getPermissions, createPermission, deletePermission } from '../../../reducers/authority';
+import {
+  getPermissions,
+  checkPermission,
+  createPermission,
+  deletePermission,
+} from '../../../reducers/authority';
 import { getNamespaces } from '../../../reducers/namespace';
 import RegionGroup from '../../../components/RegionGroup';
 import NewPermissions from './NewPermissions';
@@ -39,7 +54,7 @@ class PermissionsManagement extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     permissions: PropTypes.object,
-    namespaces: PropTypes.object,
+    namespaces: PropTypes.array,
     getPermissions: PropTypes.func,
     getNamespaces: PropTypes.func,
   };
@@ -51,7 +66,10 @@ class PermissionsManagement extends React.Component {
       pageNo: 1,
       pageSize: 9,
       createPermission: false,
+      defaultFuzzySearch: true,
+      role: '',
     };
+    this.handleDefaultFuzzySwitchChange = this.handleDefaultFuzzySwitchChange.bind(this);
   }
 
   componentDidMount() {
@@ -62,8 +80,18 @@ class PermissionsManagement extends React.Component {
   getPermissions() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
+    let { role } = this.state;
+    let search = 'accurate';
+    if (this.state.defaultFuzzySearch) {
+      if (role && role !== '') {
+        role = `*${role}*`;
+      }
+    }
+    if (role && role.indexOf('*') !== -1) {
+      search = 'blur';
+    }
     this.props
-      .getPermissions({ pageNo, pageSize })
+      .getPermissions({ pageNo, pageSize, role, search })
       .then(() => {
         if (this.state.loading) {
           this.setState({ loading: false });
@@ -85,24 +113,61 @@ class PermissionsManagement extends React.Component {
     }[action];
   }
 
+  handleDefaultFuzzySwitchChange() {
+    this.setState({ defaultFuzzySearch: !this.state.defaultFuzzySearch });
+  }
+
   render() {
     const { permissions, namespaces = [], locale } = this.props;
     const { loading, pageSize, pageNo, createPermissionVisible } = this.state;
     return (
       <>
         <RegionGroup left={locale.privilegeManagement} />
-        <div className="filter-panel">
-          <Button
-            type="primary"
-            onClick={() => this.setState({ createPermissionVisible: true })}
-            style={{ marginRight: 20 }}
-          >
-            {locale.addPermission}
-          </Button>
-          <Button type="secondary" onClick={() => this.getPermissions()}>
-            {locale.refresh}
-          </Button>
-        </div>
+        <Form inline>
+          <Form.Item label={locale.role}>
+            <Input
+              value={this.state.role}
+              htmlType="text"
+              placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
+              style={{ width: 200 }}
+              onChange={role => {
+                this.setState({ role });
+              }}
+            />
+          </Form.Item>
+          <Form.Item label={locale.fuzzydMode}>
+            <Switch
+              checkedChildren=""
+              unCheckedChildren=""
+              defaultChecked={this.state.defaultFuzzySearch}
+              onChange={this.handleDefaultFuzzySwitchChange}
+              title={locale.fuzzyd}
+            />
+          </Form.Item>
+          <Form.Item label={''}>
+            <Button
+              type={'primary'}
+              style={{ marginRight: 10 }}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getPermissions();
+                });
+              }}
+              data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
+            >
+              {locale.query}
+            </Button>
+          </Form.Item>
+          <Form.Item style={{ float: 'right' }}>
+            <Button
+              type="primary"
+              onClick={() => this.setState({ createPermissionVisible: true })}
+              style={{ marginRight: 20 }}
+            >
+              {locale.addPermission}
+            </Button>
+          </Form.Item>
+        </Form>
         <Table dataSource={permissions.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
           <Table.Column title={locale.role} dataIndex="role" />
           <Table.Column
@@ -158,9 +223,17 @@ class PermissionsManagement extends React.Component {
         <NewPermissions
           visible={createPermissionVisible}
           onOk={permission =>
-            createPermission(permission).then(res => {
-              this.setState({ pageNo: 1 }, () => this.getPermissions());
-              return res;
+            checkPermission(permission).then(res => {
+              if (res) {
+                Message.error({
+                  content: locale.checkPermission,
+                });
+              } else {
+                createPermission(permission).then(res => {
+                  this.setState({ pageNo: 1 }, () => this.getPermissions());
+                  return res;
+                });
+              }
             })
           }
           onCancel={() => this.colseCreatePermission()}

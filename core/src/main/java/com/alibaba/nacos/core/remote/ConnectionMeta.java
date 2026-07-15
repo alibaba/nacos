@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.common.utils.ConnLabelsUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
@@ -83,11 +88,17 @@ public class ConnectionMeta {
     String appName;
     
     /**
-     * tenant.
+     * namespaceId.
      */
-    String tenant;
+    String namespaceId;
+    
+    long firstPushQueueBlockTime = 0;
+    
+    long lastPushQueueBlockTime = 0;
     
     protected Map<String, String> labels = new HashMap<>();
+    
+    boolean tlsProtected = false;
     
     public String getLabel(String labelKey) {
         return labels.get(labelKey);
@@ -97,8 +108,9 @@ public class ConnectionMeta {
         return labels.get(VIPSERVER_TAG);
     }
     
-    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort, int localPort,
-            String connectType, String version, String appName, Map<String, String> labels) {
+    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort,
+        int localPort,
+        String connectType, String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
@@ -142,6 +154,30 @@ public class ConnectionMeta {
     }
     
     /**
+     * get labels map with filter of starting with prefix #{@link Constants#APP_CONN_PREFIX}
+     * and return a new map trim the prefix #{@link Constants#APP_CONN_PREFIX}.
+     * @date 2024/2/29
+     * @return map of labels.
+     */
+    public Map<String, String> getAppLabels() {
+        HashMap<String, String> labelsMap = new HashMap<String, String>(8) {
+            
+            {
+                put(Constants.APPNAME, labels.get(Constants.APPNAME));
+                put(Constants.CLIENT_VERSION_KEY, version);
+            }
+        };
+        return ConnLabelsUtils.mergeMapByOrder(labelsMap, labels.entrySet().stream()
+            .filter(Objects::nonNull)
+            .filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
+                && e.getKey().length() > Constants.APP_CONN_PREFIX.length()
+                && StringUtils.isNotBlank(e.getValue()))
+            .collect(
+                Collectors.toMap(k -> k.getKey().substring(Constants.APP_CONN_PREFIX.length()),
+                    Map.Entry::getValue)));
+    }
+    
+    /**
      * Setter method for property <tt>labels</tt>.
      *
      * @param labels value to be assigned to property labels
@@ -166,6 +202,24 @@ public class ConnectionMeta {
      */
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
+    }
+    
+    /**
+     * Getter method for property <tt>remoteIp</tt>.
+     *
+     * @return property value of remoteIp
+     */
+    public String getRemoteIp() {
+        return remoteIp;
+    }
+    
+    /**
+     * Getter method for property <tt>remotePort</tt>.
+     *
+     * @return property value of remotePort
+     */
+    public int getRemotePort() {
+        return remotePort;
     }
     
     /**
@@ -284,20 +338,60 @@ public class ConnectionMeta {
         this.appName = appName;
     }
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
+    }
+    
+    /**
+     * recordPushQueueBlockTimes.
+     */
+    public void recordPushQueueBlockTimes() {
+        if (this.firstPushQueueBlockTime == 0) {
+            firstPushQueueBlockTime = System.currentTimeMillis();
+        } else {
+            lastPushQueueBlockTime = System.currentTimeMillis();
+        }
+    }
+    
+    /**
+     * clear push queue block times.
+     */
+    public void clearPushQueueBlockTimes() {
+        this.firstPushQueueBlockTime = 0;
+        this.lastPushQueueBlockTime = 0;
+    }
+    
+    public boolean isTlsProtected() {
+        return tlsProtected;
+    }
+    
+    public void setTlsProtected(boolean tlsProtected) {
+        this.tlsProtected = tlsProtected;
+    }
+    
+    /**
+     * check block greater than the specific time.
+     * @param timeMillsSeconds check times.
+     * @return
+     */
+    public boolean pushQueueBlockTimesLastOver(long timeMillsSeconds) {
+        return this.lastPushQueueBlockTime - this.firstPushQueueBlockTime > timeMillsSeconds;
     }
     
     @Override
     public String toString() {
-        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp + '\''
-                + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
-                + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
-                + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
-                + tenant + '\'' + ", labels=" + labels + '}';
+        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp
+            + '\''
+            + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort="
+            + localPort
+            + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\''
+            + ", createTime="
+            + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\''
+            + ", tenant='"
+            + namespaceId + '\'' + ", labels=" + labels + '}';
     }
 }

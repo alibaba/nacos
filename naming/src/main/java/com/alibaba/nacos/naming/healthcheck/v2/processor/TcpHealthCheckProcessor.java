@@ -81,7 +81,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
     
     private final Selector selector;
     
-    public TcpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon, SwitchDomain switchDomain) {
+    public TcpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon,
+        SwitchDomain switchDomain) {
         this.healthCheckCommon = healthCheckCommon;
         this.switchDomain = switchDomain;
         try {
@@ -95,16 +96,19 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
     @Override
     public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
         HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
-                .getInstancePublishInfo(service);
+            .getInstancePublishInfo(service);
         if (null == instance) {
             return;
         }
         // TODO handle marked(white list) logic like v1.x.
         if (!instance.tryStartCheck()) {
-            SRV_LOG.warn("[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
-                    service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
+            SRV_LOG.warn(
+                "[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
+                service.getNameSpaceGroupedServiceName(), instance.getCluster(), instance.getIp(),
+                instance.getPort());
             healthCheckCommon
-                    .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
+                .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
+                    switchDomain.getTcpHealthParams());
             return;
         }
         taskQueue.add(new Beat(task, service, metadata, instance));
@@ -181,8 +185,20 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 if (key.isValid() && key.isConnectable()) {
                     //connected
                     channel.finishConnect();
-                    beat.finishCheck(true, false, System.currentTimeMillis() - beat.getTask().getStartTime(),
-                            "tcp:ok+");
+                    beat.finishCheck(true, false,
+                        System.currentTimeMillis() - beat.getTask().getStartTime(),
+                        "tcp:ok+");
+                    // Connections are not reused (keep-alive disabled), so close the
+                    // channel as soon as the check succeeds to avoid leaking the FD.
+                    // Closing failures must not flip the already-successful result, so
+                    // they are swallowed here instead of falling into the catch below.
+                    try {
+                        key.cancel();
+                        channel.close();
+                    } catch (Exception ignore) {
+                        // ignore close failure
+                    }
+                    return;
                 }
                 
                 if (key.isValid() && key.isReadable()) {
@@ -194,16 +210,25 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     } else {
                         // not terminate request, ignore
                         SRV_LOG.warn(
-                                "Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
+                            "Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
                     }
                 }
             } catch (ConnectException e) {
                 // unable to connect, possibly port not opened
                 beat.finishCheck(false, true, switchDomain.getTcpHealthParams().getMax(),
-                        "tcp:unable2connect:" + e.getMessage());
+                    "tcp:unable2connect:" + e.getMessage());
+                // finishCheck() already removed this beat from keyMap, so the next round
+                // can no longer close this channel; close it here to avoid leaking the FD
+                // on the common connection-refused failure path.
+                try {
+                    key.cancel();
+                    channel.close();
+                } catch (Exception ignore) {
+                    // ignore close failure
+                }
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(),
-                        "tcp:error:" + e.getMessage());
+                    "tcp:error:" + e.getMessage());
                 
                 try {
                     key.cancel();
@@ -227,7 +252,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         long startTime = System.currentTimeMillis();
         
         public Beat(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata,
-                HealthCheckInstancePublishInfo instance) {
+            HealthCheckInstancePublishInfo instance) {
             this.task = task;
             this.service = service;
             this.metadata = metadata;
@@ -282,13 +307,14 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 keyMap.remove(toString());
             }
             
-            healthCheckCommon.reEvaluateCheckRT(rt, task, switchDomain.getTcpHealthParams());
+            healthCheckCommon.reEvaluateCheckRt(rt, task, switchDomain.getTcpHealthParams());
         }
         
         @Override
         public String toString() {
-            return service.getGroupedServiceName() + ":" + instance.getCluster() + ":" + instance.getIp() + ":"
-                    + instance.getPort();
+            return service.getNameSpaceGroupedServiceName() + ":" + instance.getCluster() + ":"
+                + instance.getIp() + ":"
+                + instance.getPort();
         }
         
         @Override
@@ -342,7 +368,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 }
                 
                 try {
-                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2, "tcp:timeout");
+                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2,
+                        "tcp:timeout");
                     key.cancel();
                     key.channel().close();
                 } catch (Exception ignore) {
@@ -392,20 +419,23 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 channel.socket().setTcpNoDelay(true);
                 
                 ClusterMetadata cluster = beat.getMetadata();
-                int port = cluster.isUseInstancePortForCheck() ? instance.getPort() : cluster.getHealthyCheckPort();
+                int port = cluster.isUseInstancePortForCheck() ? instance.getPort()
+                    : cluster.getHealthyCheckPort();
                 channel.connect(new InetSocketAddress(instance.getIp(), port));
                 
-                SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+                SelectionKey key =
+                    channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
                 key.attach(beat);
                 keyMap.put(beat.toString(), new BeatKey(key));
                 
                 beat.setStartTime(System.currentTimeMillis());
                 
                 GlobalExecutor
-                        .scheduleTcpSuperSenseTask(new TimeOutTask(key), CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    .scheduleTcpSuperSenseTask(new TimeOutTask(key), CONNECT_TIMEOUT_MS,
+                        TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(),
-                        "tcp:error:" + e.getMessage());
+                    "tcp:error:" + e.getMessage());
                 
                 if (channel != null) {
                     try {

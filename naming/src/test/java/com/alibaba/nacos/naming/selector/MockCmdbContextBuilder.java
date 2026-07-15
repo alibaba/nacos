@@ -33,7 +33,8 @@ import java.util.stream.Collectors;
  * @author chenglu
  * @date 2021-07-14 19:22
  */
-public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
+public class MockCmdbContextBuilder
+    implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
     
     @Override
     public CmdbContext build(String consumerIp, List<Instance> provider) {
@@ -44,22 +45,19 @@ public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContex
         CmdbContext cmdbContext = new CmdbContext();
         cmdbContext.setConsumer(con);
         
-        List<CmdbContext.CmdbInstance> providers = provider
-                .stream()
-                .map(p -> {
-                    Entity entity = new Entity();
-                    entity.setType("mockType");
-                    entity.setName("mockName");
-                    Map<String, String> labels = new HashMap<>();
-                    labels.put("key", "value");
-                    entity.setLabels(labels);
-                    
-                    CmdbContext.CmdbInstance<Instance> pro = new CmdbContext.CmdbInstance<>();
-                    pro.setInstance(p);
-                    pro.setEntity(entity);
-                    return pro;
-                })
-                .collect(Collectors.toList());
+        List<CmdbContext.CmdbInstance> providers = provider.stream().map(p -> {
+            Entity entity = new Entity();
+            entity.setType("mockType");
+            entity.setName("mockName");
+            Map<String, String> labels = new HashMap<>();
+            labels.put("key", "value");
+            entity.setLabels(labels);
+            
+            CmdbContext.CmdbInstance<Instance> pro = new CmdbContext.CmdbInstance<>();
+            pro.setInstance(p);
+            pro.setEntity(entity);
+            return pro;
+        }).collect(Collectors.toList());
         cmdbContext.setProviders(providers);
         return cmdbContext;
     }

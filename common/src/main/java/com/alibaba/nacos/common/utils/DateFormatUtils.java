@@ -25,6 +25,9 @@ import java.util.Date;
  */
 public class DateFormatUtils {
     
+    private DateFormatUtils() {
+    }
+    
     public static final String YYYYMMDD = "yyyyMMdd";
     
     public static final String YYMMDD = "yyMMdd";
@@ -62,5 +65,5 @@ public class DateFormatUtils {
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
         return sdf.format(date);
     }
-
+    
 }

@@ -1,0 +1,77 @@
+name: "Issue Assignment"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  handle-command:
+    if: github.event_name == 'issue_comment' && !github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment;
+            const issue = context.payload.issue;
+            const commenter = comment.user.login;
+            const body = comment.body.trim();
+
+            // /assign command
+            if (/^\/assign\s*$/.test(body)) {
+              const assignees = issue.assignees.map(a => a.login);
+
+              if (assignees.length === 0) {
+                // No assignee — assign commenter
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  assignees: [commenter]
+                });
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `@${commenter} has been assigned to this issue / 已被分配到此 Issue.`
+                });
+              } else if (assignees.includes(commenter)) {
+                // Already assigned to commenter — ignore silently
+              } else {
+                // Assigned to someone else — reject
+                const currentAssignee = assignees[0];
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `This issue is currently assigned to @${currentAssignee} / 此 Issue 当前已分配给 @${currentAssignee}. Please wait or discuss in the comments / 请等待其释放或在评论中沟通。`
+                });
+              }
+              return;
+            }
+
+            // /unassign command
+            if (/^\/unassign\s*$/.test(body)) {
+              const assignees = issue.assignees.map(a => a.login);
+
+              if (assignees.includes(commenter)) {
+                await github.rest.issues.removeAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  assignees: [commenter]
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `@${commenter} has been unassigned from this issue / 已取消认领此 Issue. It is now available for others / 现在可供其他人认领。`
+                });
+              }
+              // If commenter is not assignee — ignore
+              return;
+            }

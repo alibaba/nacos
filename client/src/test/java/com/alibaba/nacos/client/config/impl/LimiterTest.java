@@ -16,22 +16,52 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.google.common.cache.Cache;
+import com.google.common.util.concurrent.RateLimiter;
+import org.junit.jupiter.api.Test;
 
-public class LimiterTest {
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class LimiterTest {
     
     @Test
-    public void testIsLimit() {
+    void testIsLimit() {
         String keyId = "a";
         //For initiating.
-        Assert.assertFalse(Limiter.isLimit(keyId));
+        assertFalse(Limiter.isLimit(keyId));
         long start = System.currentTimeMillis();
         for (int j = 0; j < 5; j++) {
-            Assert.assertFalse(Limiter.isLimit(keyId));
+            assertFalse(Limiter.isLimit(keyId));
         }
         long elapse = System.currentTimeMillis() - start;
         // assert  < limit 5qps
-        Assert.assertTrue(elapse > 980);
+        assertTrue(elapse > 980);
     }
+    
+    @Test
+    void testIsLimitConstructor() {
+        // class loading; ensure default ctor is exercised for coverage.
+        assertNotNull(new Limiter());
+    }
+    
+    @Test
+    void testIsLimitTriggered() throws Exception {
+        // Replace cache with a low-rate limiter so a rapid burst triggers the limited path
+        Field cacheField = Limiter.class.getDeclaredField("CACHE");
+        cacheField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Cache<String, RateLimiter> cache = (Cache<String, RateLimiter>) cacheField.get(null);
+        cache.invalidateAll();
+        // Use very small rate so subsequent acquires get limited
+        RateLimiter slowLimiter = RateLimiter.create(0.0001);
+        cache.put("limited-key", slowLimiter);
+        // Drain initial permit; subsequent call should be limited
+        slowLimiter.tryAcquire();
+        assertTrue(Limiter.isLimit("limited-key"));
+    }
+    
 }

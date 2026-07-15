@@ -35,6 +35,8 @@ public class SwitchEntry {
     
     public static final String CLIENT_C = "c";
     
+    public static final String CLIENT_CSHARP = "csharp";
+    
     public static final String CLIENT_GO = "go";
     
     public static final String CLIENT_PYTHON = "python";
@@ -49,11 +51,15 @@ public class SwitchEntry {
     
     public static final String CHECK = "check";
     
+    public static final String HEALTH_CHECK_ENABLED = "healthCheckEnabled";
+    
     public static final String PUSH_ENABLED = "pushEnabled";
     
-    public static final String SERVICE_STATUS_SYNC_PERIOD = "serviceStatusSynchronizationPeriodMillis";
+    public static final String SERVICE_STATUS_SYNC_PERIOD =
+        "serviceStatusSynchronizationPeriodMillis";
     
-    public static final String SERVER_STATUS_SYNC_PERIOD = "serverStatusSynchronizationPeriodMillis";
+    public static final String SERVER_STATUS_SYNC_PERIOD =
+        "serverStatusSynchronizationPeriodMillis";
     
     public static final String HEALTH_CHECK_TIMES = "healthCheckTimes";
     
@@ -64,6 +70,12 @@ public class SwitchEntry {
     public static final String LIMITED_URL_MAP = "limitedUrlMap";
     
     public static final String ENABLE_STANDALONE = "enableStandalone";
+    
+    public static final String HTTP_HEALTH_PARAMS = "httpHealthParams";
+    
+    public static final String TCP_HEALTH_PARAMS = "tcpHealthParams";
+    
+    public static final String MYSQL_HEALTH_PARAMS = "mysqlHealthParams";
     
     public static final int MIN_PUSH_CACHE_TIME_MIILIS = 10000;
     

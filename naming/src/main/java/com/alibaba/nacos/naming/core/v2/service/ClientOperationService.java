@@ -43,7 +43,8 @@ public interface ClientOperationService {
      * @param clientId id of client
      * @throws NacosException throws NacosException
      */
-    void registerInstance(Service service, Instance instance, String clientId) throws NacosException;
+    void registerInstance(Service service, Instance instance, String clientId)
+        throws NacosException;
     
     /**
      * Batch register instance to service.
@@ -71,7 +72,7 @@ public interface ClientOperationService {
      * @param clientId   id of client
      */
     default void subscribeService(Service service, Subscriber subscriber, String clientId) {
-    
+        
     }
     
     /**
@@ -82,8 +83,10 @@ public interface ClientOperationService {
      * @param clientId   id of client
      */
     default void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-    
+        
     }
+    
+    double EPSILON = 1e-10;
     
     /**
      * get publish info.
@@ -100,13 +103,14 @@ public interface ClientOperationService {
         if (StringUtils.isNotEmpty(instance.getInstanceId())) {
             extendDatum.put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
         }
-        if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
+        if (Math.abs(Constants.DEFAULT_INSTANCE_WEIGHT - instance.getWeight()) >= EPSILON) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
         }
         if (!instance.isEnabled()) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
         }
-        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+        String clusterName =
+            StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
         result.setCluster(clusterName);

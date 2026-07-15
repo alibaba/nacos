@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
 import java.io.Serializable;
@@ -56,7 +57,8 @@ public class Service implements Serializable {
         return newService(namespace, group, name, true);
     }
     
-    public static Service newService(String namespace, String group, String name, boolean ephemeral) {
+    public static Service newService(String namespace, String group, String name,
+        boolean ephemeral) {
         return new Service(namespace, group, name, ephemeral);
     }
     
@@ -96,6 +98,11 @@ public class Service implements Serializable {
         return NamingUtils.getGroupedName(name, group);
     }
     
+    public String getNameSpaceGroupedServiceName() {
+        //do not String.intern
+        return namespace + Constants.SERVICE_INFO_SPLITER + NamingUtils.getGroupedName(name, group);
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -105,7 +112,8 @@ public class Service implements Serializable {
             return false;
         }
         Service service = (Service) o;
-        return namespace.equals(service.namespace) && group.equals(service.group) && name.equals(service.name);
+        return namespace.equals(service.namespace) && group.equals(service.group)
+            && name.equals(service.name);
     }
     
     @Override
@@ -115,7 +123,8 @@ public class Service implements Serializable {
     
     @Override
     public String toString() {
-        return "Service{" + "namespace='" + namespace + '\'' + ", group='" + group + '\'' + ", name='" + name + '\''
-                + ", ephemeral=" + ephemeral + ", revision=" + revision + '}';
+        return "Service{" + "namespace='" + namespace + '\'' + ", group='" + group + '\''
+            + ", name='" + name + '\''
+            + ", ephemeral=" + ephemeral + ", revision=" + revision + '}';
     }
 }

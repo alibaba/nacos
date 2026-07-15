@@ -1,0 +1,34 @@
+{
+  "rules": [
+    {
+      "includeClasses": "com.alibaba.nacos.**"
+    },
+    {
+      "excludeClasses": "org.mockito.**"
+    },
+    {
+      "excludeClasses": "java.lang.management.**"
+    },
+    {
+      "excludeClasses": "net.bytebuddy.**"
+    },
+    {
+      "excludeClasses": "junit.**"
+    },
+    {
+      "excludeClasses": "org.junit.**"
+    },
+    {
+      "excludeClasses": "org.graalvm.**"
+    },
+    {
+      "excludeClasses": "jdk.**"
+    },
+    {
+      "excludeClasses": "org.hamcrest.**"
+    }
+  ],
+  "regexRules": [
+    {"excludeClasses": ".*Test$"}
+  ]
+}

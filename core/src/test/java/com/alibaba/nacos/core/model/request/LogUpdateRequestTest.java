@@ -16,18 +16,72 @@
 
 package com.alibaba.nacos.core.model.request;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import org.junit.jupiter.api.Test;
 
-public class LogUpdateRequestTest {
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class LogUpdateRequestTest {
     
     @Test
-    public void test() {
+    void testGettersAndSetters() {
         LogUpdateRequest request = new LogUpdateRequest();
         request.setLogName("test");
         request.setLogLevel("info");
+        
+        assertEquals("test", request.getLogName());
+        assertEquals("info", request.getLogLevel());
+    }
     
-        Assert.assertEquals(request.getLogName(), "test");
-        Assert.assertEquals(request.getLogLevel(), "info");
+    @Test
+    void validateShouldThrowWhenLogNameMissing() {
+        LogUpdateRequest request = new LogUpdateRequest();
+        request.setLogLevel("info");
+        NacosApiException exception = assertThrows(NacosApiException.class, request::validate);
+        assertTrue(exception.getErrMsg().contains("Log name is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenLogLevelMissing() {
+        LogUpdateRequest request = new LogUpdateRequest();
+        request.setLogName("test");
+        NacosApiException exception = assertThrows(NacosApiException.class, request::validate);
+        assertTrue(exception.getErrMsg().contains("Log level is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenBothMissing() {
+        LogUpdateRequest request = new LogUpdateRequest();
+        NacosApiException exception = assertThrows(NacosApiException.class, request::validate);
+        assertTrue(exception.getErrMsg().contains("Log name is required"));
+    }
+    
+    @Test
+    void validateShouldNotThrowWhenBothPresent() throws NacosApiException {
+        LogUpdateRequest request = new LogUpdateRequest();
+        request.setLogName("test");
+        request.setLogLevel("info");
+        assertDoesNotThrow(request::validate);
+    }
+    
+    @Test
+    void validateShouldThrowWhenLogNameBlank() {
+        LogUpdateRequest request = new LogUpdateRequest();
+        request.setLogName("");
+        request.setLogLevel("info");
+        NacosApiException exception = assertThrows(NacosApiException.class, request::validate);
+        assertTrue(exception.getErrMsg().contains("Log name is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenLogLevelBlank() {
+        LogUpdateRequest request = new LogUpdateRequest();
+        request.setLogName("test");
+        request.setLogLevel("");
+        NacosApiException exception = assertThrows(NacosApiException.class, request::validate);
+        assertTrue(exception.getErrMsg().contains("Log level is required"));
     }
 }

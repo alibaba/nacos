@@ -33,24 +33,25 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public class TraceEventPublisherFactory implements EventPublisherFactory {
+    
     private static final TraceEventPublisherFactory INSTANCE = new TraceEventPublisherFactory();
-
+    
     private final Map<Class<? extends Event>, TraceEventPublisher> publisher;
     
     private final Set<Class<? extends Event>> publisherEvents;
-
+    
     private TraceEventPublisherFactory() {
         publisher = new ConcurrentHashMap<>();
         publisherEvents = new ConcurrentHashSet<>();
     }
-
+    
     public static TraceEventPublisherFactory getInstance() {
         return INSTANCE;
     }
-
+    
     @Override
-    public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
-        // Like ClientEvent$ClientChangeEvent cache by ClientEvent
+    public EventPublisher apply(final Class<? extends Event> eventType,
+        final Integer maxQueueSize) {
         Class<? extends Event> cachedEventType = TraceEvent.class;
         
         for (Class<? extends Event> publisherEvent : publisherEvents) {
@@ -60,14 +61,13 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
             }
         }
         
-        publisher.computeIfAbsent(cachedEventType, eventClass -> {
+        return publisher.computeIfAbsent(cachedEventType, eventClass -> {
             TraceEventPublisher result = new TraceEventPublisher();
             result.init(eventClass, maxQueueSize);
             return result;
         });
-        return publisher.get(cachedEventType);
     }
-
+    
     public String getAllPublisherStatues() {
         StringBuilder result = new StringBuilder("Trace event publisher statues:\n");
         for (TraceEventPublisher each : publisher.values()) {

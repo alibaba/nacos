@@ -54,10 +54,7 @@ public class NacosServiceLoader {
     }
     
     private static <T> void cacheServiceClass(final Class<T> service, final T instance) {
-        if (!SERVICES.containsKey(service)) {
-            SERVICES.put(service, new LinkedHashSet<>());
-        }
-        SERVICES.get(service).add(instance.getClass());
+        SERVICES.computeIfAbsent(service, k -> new LinkedHashSet<>()).add(instance.getClass());
     }
     
     /**
@@ -68,7 +65,8 @@ public class NacosServiceLoader {
      * @return service instances
      */
     public static <T> Collection<T> newServiceInstances(final Class<T> service) {
-        return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service) : Collections.<T>emptyList();
+        return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service)
+            : Collections.<T>emptyList();
     }
     
     @SuppressWarnings("unchecked")

@@ -27,16 +27,6 @@ import java.util.Set;
 public interface PackageScan {
     
     /**
-     * Scan all appropriate Class object through the package name and Class object.
-     *
-     * @param pkg          package name,for example, com.alibaba.nacos.common
-     * @param requestClass super class
-     * @param <T>          Class type
-     * @return a set contains Class
-     */
-    <T> Set<Class<T>> getSubTypesOf(String pkg, Class<T> requestClass);
-    
-    /**
      * Scan all appropriate Class object through the package name and annotation.
      *
      * @param pkg        package name,for example, com.alibaba.nacos.common

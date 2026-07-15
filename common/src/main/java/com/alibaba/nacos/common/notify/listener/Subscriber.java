@@ -26,7 +26,6 @@ import java.util.concurrent.Executor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Subscriber<T extends Event> {
     
     /**
@@ -69,6 +68,6 @@ public abstract class Subscriber<T extends Event> {
      * @return Whether the event's scope matches current subscriber
      */
     public boolean scopeMatches(T event) {
-        return event.scope() == null;
+        return true;
     }
 }

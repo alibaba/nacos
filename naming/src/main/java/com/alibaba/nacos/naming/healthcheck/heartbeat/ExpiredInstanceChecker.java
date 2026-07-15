@@ -62,24 +62,31 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
     private long getTimeout(Service service, InstancePublishInfo instance) {
         Optional<Object> timeout = getTimeoutFromMetadata(service, instance);
         if (!timeout.isPresent()) {
-            timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
+            timeout = Optional
+                .ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
         }
         return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
     
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
-        Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
+        Optional<InstanceMetadata> instanceMetadata =
+            ApplicationUtils.getBean(NamingMetadataManager.class)
                 .getInstanceMetadata(service, instance.getMetadataId());
-        return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
+        return instanceMetadata
+            .map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
     }
     
     private void deleteIp(Client client, Service service, InstancePublishInfo instance) {
-        Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.toString(), JacksonUtils.toJson(instance));
+        Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.toString(),
+            JacksonUtils.toJson(instance));
         client.removeServiceInstance(service);
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
-        NotifyCenter.publishEvent(new MetadataEvent.InstanceMetadataEvent(service, instance.getMetadataId(), true));
+        NotifyCenter.publishEvent(
+            new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+        NotifyCenter.publishEvent(
+            new MetadataEvent.InstanceMetadataEvent(service, instance.getMetadataId(), true));
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, DeregisterInstanceReason.HEARTBEAT_EXPIRE, service.getNamespace(), service.getGroup(),
-                service.getName(), instance.getIp(), instance.getPort()));
+            false, DeregisterInstanceReason.HEARTBEAT_EXPIRE, service.getNamespace(),
+            service.getGroup(),
+            service.getName(), instance.getIp(), instance.getPort()));
     }
 }

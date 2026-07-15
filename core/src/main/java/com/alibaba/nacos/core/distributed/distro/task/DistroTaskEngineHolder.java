@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskProcessor;
 import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteTaskExecuteEngine;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,14 +30,17 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class DistroTaskEngineHolder {
+public class DistroTaskEngineHolder implements DisposableBean {
     
-    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
+    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine =
+        new DistroDelayTaskExecuteEngine();
     
-    private final DistroExecuteTaskExecuteEngine executeWorkersManager = new DistroExecuteTaskExecuteEngine();
+    private final DistroExecuteTaskExecuteEngine executeWorkersManager =
+        new DistroExecuteTaskExecuteEngine();
     
     public DistroTaskEngineHolder(DistroComponentHolder distroComponentHolder) {
-        DistroDelayTaskProcessor defaultDelayTaskProcessor = new DistroDelayTaskProcessor(this, distroComponentHolder);
+        DistroDelayTaskProcessor defaultDelayTaskProcessor =
+            new DistroDelayTaskProcessor(this, distroComponentHolder);
         delayTaskExecuteEngine.setDefaultTaskProcessor(defaultDelayTaskProcessor);
     }
     
@@ -50,5 +54,11 @@ public class DistroTaskEngineHolder {
     
     public void registerNacosTaskProcessor(Object key, NacosTaskProcessor nacosTaskProcessor) {
         this.delayTaskExecuteEngine.addProcessor(key, nacosTaskProcessor);
+    }
+    
+    @Override
+    public void destroy() throws Exception {
+        this.delayTaskExecuteEngine.shutdown();
+        this.executeWorkersManager.shutdown();
     }
 }

@@ -16,69 +16,120 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigChangeListenContextTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+@ExtendWith(MockitoExtension.class)
+class ConfigChangeListenContextTest {
+    
     private ConfigChangeListenContext configChangeListenContext;
-
-    @Before
-    public void setUp() throws Exception {
+    
+    @BeforeEach
+    void setUp() throws Exception {
         configChangeListenContext = new ConfigChangeListenContext();
     }
-
+    
     @Test
-    public void testAddListen() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
+    void testAddListen() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testRemoveListen() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
+    void testRemoveListen() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         configChangeListenContext.removeListen("groupKey", "connectionId");
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertNull(groupKey);
+        assertNull(groupKey);
     }
-
+    
     @Test
-    public void testGetListeners() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
+    void testGetListeners() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testClearContextForConnectionId() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
-        Map<String, String> connectionIdBefore = configChangeListenContext.getListenKeys("connectionId");
-        Assert.assertNotNull(connectionIdBefore);
+    void testClearContextForConnectionId() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
+        Map<String, String> connectionIdBefore =
+            configChangeListenContext.getListenKeys("connectionId");
+        assertNotNull(connectionIdBefore);
         configChangeListenContext.clearContextForConnectionId("connectionId");
-        Map<String, String> connectionIdAfter = configChangeListenContext.getListenKeys("connectionId");
-        Assert.assertNull(connectionIdAfter);
+        Map<String, String> connectionIdAfter =
+            configChangeListenContext.getListenKeys("connectionId");
+        assertNull(connectionIdAfter);
     }
-
+    
     @Test
-    public void testGetListenKeys() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
+    void testClearContextForMissingConnectionId() {
+        configChangeListenContext.clearContextForConnectionId("missingConnectionId");
+        
+        assertEquals(0, configChangeListenContext.getConnectionCount());
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testClearContextRemovesMissingGroupKeyContext() {
+        ConcurrentHashMap<String, HashMap<String, ConfigListenState>> connectionIdContext =
+            (ConcurrentHashMap<String, HashMap<String, ConfigListenState>>) ReflectionTestUtils
+                .getField(configChangeListenContext, "connectionIdContext");
+        HashMap<String, ConfigListenState> listenStates = new HashMap<>(1);
+        listenStates.put("groupKey", new ConfigListenState("md5"));
+        connectionIdContext.put("connectionId", listenStates);
+        
+        configChangeListenContext.clearContextForConnectionId("connectionId");
+        
+        assertNull(configChangeListenContext.getListenKeys("connectionId"));
+    }
+    
+    @Test
+    void testGetListenKeys() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testGetListenKeyMd5() {
-        configChangeListenContext.addListen("groupKey", "md5", "connectionId");
+    void testGetListenKeyMd5() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
         String listenKeyMd5 = configChangeListenContext.getListenKeyMd5("connectionId", "groupKey");
-        Assert.assertEquals("md5", listenKeyMd5);
+        assertEquals("md5", listenKeyMd5);
     }
-
+    
+    @Test
+    void testGetConfigListenState() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
+        ConfigListenState configListenState = configChangeListenContext
+            .getConfigListenState("connectionId", "groupKey");
+        assertEquals("md5", configListenState.getMd5());
+        assertFalse(configListenState.isNamespaceTransfer());
+    }
+    
+    @Test
+    void testGetConfigListenStates() {
+        configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
+        Map<String, ConfigListenState> configListenStates = configChangeListenContext
+            .getConfigListenStates("connectionId");
+        assertEquals(1, configListenStates.size());
+        assertEquals("md5", configListenStates.get("groupKey").getMd5());
+        assertFalse(configListenStates.get("groupKey").isNamespaceTransfer());
+    }
+    
 }

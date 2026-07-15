@@ -25,15 +25,16 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Filter incoming traffic to refuse or revise unexpected requests.
@@ -51,7 +52,7 @@ public class TrafficReviseFilter implements Filter {
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
-            throws IOException, ServletException {
+        throws IOException, ServletException {
         
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
@@ -86,22 +87,25 @@ public class TrafficReviseFilter implements Filter {
         
         // write operation should be let pass in WRITE_ONLY status:
         if (serverStatusManager.getServerStatus() == ServerStatus.WRITE_ONLY && !HttpMethod.GET
-                .equals(req.getMethod())) {
+            .equals(req.getMethod())) {
             filterChain.doFilter(req, resp);
             return;
         }
         
         // read operation should be let pass in READ_ONLY status:
-        if (serverStatusManager.getServerStatus() == ServerStatus.READ_ONLY && HttpMethod.GET.equals(req.getMethod())) {
+        if (serverStatusManager.getServerStatus() == ServerStatus.READ_ONLY
+            && HttpMethod.GET.equals(req.getMethod())) {
             filterChain.doFilter(req, resp);
             return;
         }
         
-        final String statusMsg = "server is " + serverStatusManager.getServerStatus().name() + "now";
-        if (serverStatusManager.getErrorMsg().isPresent()) {
-            resp.getWriter().write(statusMsg + ", detailed error message: " + serverStatusManager.getErrorMsg());
+        final String statusMsg =
+            "server is " + serverStatusManager.getServerStatus().name() + "now";
+        Optional<String> errorMsg = serverStatusManager.getErrorMsg();
+        if (errorMsg.isPresent()) {
+            resp.getWriter().write(statusMsg + ", detailed error message: " + errorMsg.get());
         } else {
-            resp.getWriter().write(statusMsg  + ", please try again later!");
+            resp.getWriter().write(statusMsg + ", please try again later!");
         }
         resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
     }

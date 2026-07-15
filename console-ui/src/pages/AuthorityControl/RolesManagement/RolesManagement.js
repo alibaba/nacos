@@ -16,7 +16,16 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import {
+  Button,
+  Dialog,
+  Pagination,
+  Table,
+  ConfigProvider,
+  Form,
+  Switch,
+  Input,
+} from '@alifd/next';
 import { connect } from 'react-redux';
 import { getRoles, createRole, deleteRole } from '../../../reducers/authority';
 import RegionGroup from '../../../components/RegionGroup';
@@ -41,7 +50,10 @@ class RolesManagement extends React.Component {
       loading: true,
       pageNo: 1,
       pageSize: 9,
+      role: '',
+      defaultFuzzySearch: true,
     };
+    this.handleDefaultFuzzySwitchChange = this.handleDefaultFuzzySwitchChange.bind(this);
   }
 
   componentDidMount() {
@@ -51,8 +63,26 @@ class RolesManagement extends React.Component {
   getRoles() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
+    let { username, role } = this.state;
+    let search = 'accurate';
+
+    if (this.state.defaultFuzzySearch) {
+      if (username && username !== '') {
+        username = `*${username}*`;
+      }
+      if (role && role !== '') {
+        role = `*${role}*`;
+      }
+    }
+    if (role && role.indexOf('*') !== -1) {
+      search = 'blur';
+    }
+    if (username && username.indexOf('*') !== -1) {
+      search = 'blur';
+    }
+
     this.props
-      .getRoles({ pageNo, pageSize })
+      .getRoles({ pageNo, pageSize, role, username, search })
       .then(() => {
         if (this.state.loading) {
           this.setState({ loading: false });
@@ -65,24 +95,75 @@ class RolesManagement extends React.Component {
     this.setState({ createRoleVisible: false });
   }
 
+  handleDefaultFuzzySwitchChange() {
+    this.setState({
+      defaultFuzzySearch: !this.state.defaultFuzzySearch,
+    });
+  }
+
   render() {
     const { roles, locale } = this.props;
     const { loading, pageSize, pageNo, createRoleVisible, passwordResetUser } = this.state;
     return (
       <>
         <RegionGroup left={locale.roleManagement} />
-        <div className="filter-panel">
-          <Button
-            type="primary"
-            onClick={() => this.setState({ createRoleVisible: true })}
-            style={{ marginRight: 20 }}
-          >
-            {locale.bindingRoles}
-          </Button>
-          <Button type="secondary" onClick={() => this.getRoles()}>
-            {locale.refresh}
-          </Button>
-        </div>
+
+        <Form inline>
+          <Form.Item label={locale.username}>
+            <Input
+              value={this.state.username}
+              htmlType="text"
+              placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
+              style={{ width: 200 }}
+              onChange={username => {
+                this.setState({ username });
+              }}
+            />
+          </Form.Item>
+          <Form.Item label={locale.role}>
+            <Input
+              value={this.state.role}
+              htmlType="text"
+              placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
+              style={{ width: 200 }}
+              onChange={role => {
+                this.setState({ role });
+              }}
+            />
+          </Form.Item>
+          <Form.Item label={locale.fuzzydMode}>
+            <Switch
+              checkedChildren=""
+              unCheckedChildren=""
+              defaultChecked={this.state.defaultFuzzySearch}
+              onChange={this.handleDefaultFuzzySwitchChange}
+              title={locale.fuzzyd}
+            />
+          </Form.Item>
+          <Form.Item label={''}>
+            <Button
+              type={'primary'}
+              style={{ marginRight: 10 }}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getRoles();
+                });
+              }}
+              data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
+            >
+              {locale.query}
+            </Button>
+          </Form.Item>
+          <Form.Item style={{ float: 'right' }}>
+            <Button
+              type="primary"
+              onClick={() => this.setState({ createRoleVisible: true })}
+              style={{ marginRight: 20 }}
+            >
+              {locale.bindingRoles}
+            </Button>
+          </Form.Item>
+        </Form>
         <Table dataSource={roles.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
           <Table.Column title={locale.role} dataIndex="role" />
           <Table.Column title={locale.username} dataIndex="username" />

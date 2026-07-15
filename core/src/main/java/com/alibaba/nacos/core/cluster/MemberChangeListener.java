@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class MemberChangeListener extends Subscriber<MembersChangeEvent> {
     
     /**

@@ -25,6 +25,9 @@ import java.util.Objects;
  */
 public class Preconditions {
     
+    private Preconditions() {
+    }
+    
     /**
      * check precondition.
      * @param expression a boolean expression
@@ -47,12 +50,15 @@ public class Preconditions {
      * @param errorMessageArgs the arguments to be substituted into the message template.
      * @throws IllegalArgumentException if {@code expression} is false
      */
-    public static void checkArgument(boolean expression, String errorMessageTemplate, Object... errorMessageArgs) {
+    public static void checkArgument(boolean expression, String errorMessageTemplate,
+        Object... errorMessageArgs) {
         if (Objects.isNull(errorMessageArgs) || Objects.isNull(errorMessageTemplate)) {
-            throw new IllegalArgumentException("errorMessageTemplate or errorMessage cannot be null.");
+            throw new IllegalArgumentException(
+                "errorMessageTemplate or errorMessage cannot be null.");
         }
         if (!expression) {
-            throw new IllegalArgumentException(String.format(errorMessageTemplate, errorMessageArgs));
+            throw new IllegalArgumentException(
+                String.format(errorMessageTemplate, errorMessageArgs));
         }
     }
 }

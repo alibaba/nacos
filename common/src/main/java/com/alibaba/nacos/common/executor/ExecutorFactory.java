@@ -20,11 +20,8 @@ import com.alibaba.nacos.common.JustForTest;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Unified thread pool creation factory, and actively create thread pool resources by ThreadPoolManager for unified life
@@ -36,8 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings({"PMD.ThreadPoolCreationRule", "checkstyle:overloadmethodsdeclarationorder",
-        "checkstyle:missingjavadocmethod"})
+@SuppressWarnings({"checkstyle:overloadmethodsdeclarationorder", "checkstyle:missingjavadocmethod"})
 public final class ExecutorFactory {
     
     public static ExecutorService newSingleExecutorService() {
@@ -52,30 +48,27 @@ public final class ExecutorFactory {
         return Executors.newFixedThreadPool(nThreads);
     }
     
-    public static ExecutorService newFixedExecutorService(final int nThreads, final ThreadFactory threadFactory) {
+    public static ExecutorService newFixedExecutorService(final int nThreads,
+        final ThreadFactory threadFactory) {
         return Executors.newFixedThreadPool(nThreads, threadFactory);
     }
     
-    public static ScheduledExecutorService newSingleScheduledExecutorService(final ThreadFactory threadFactory) {
+    public static ScheduledExecutorService newSingleScheduledExecutorService(
+        final ThreadFactory threadFactory) {
         return Executors.newScheduledThreadPool(1, threadFactory);
     }
     
     public static ScheduledExecutorService newScheduledExecutorService(final int nThreads,
-            final ThreadFactory threadFactory) {
+        final ThreadFactory threadFactory) {
         return Executors.newScheduledThreadPool(nThreads, threadFactory);
-    }
-    
-    public static ThreadPoolExecutor newCustomerThreadExecutor(final int coreThreads, final int maxThreads,
-            final long keepAliveTimeMs, final ThreadFactory threadFactory) {
-        return new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(), threadFactory);
     }
     
     public static final class Managed {
         
         private static final String DEFAULT_NAMESPACE = "nacos";
         
-        private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
+        private static final ThreadPoolManager THREAD_POOL_MANAGER =
+            ThreadPoolManager.getInstance();
         
         /**
          * Create a new single executor service with default thread factory and register to manager.
@@ -96,7 +89,8 @@ public final class ExecutorFactory {
          * @param threadFactory thread factory
          * @return new single executor service
          */
-        public static ExecutorService newSingleExecutorService(final String group, final ThreadFactory threadFactory) {
+        public static ExecutorService newSingleExecutorService(final String group,
+            final ThreadFactory threadFactory) {
             ExecutorService executorService = Executors.newFixedThreadPool(1, threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
@@ -109,7 +103,8 @@ public final class ExecutorFactory {
          * @param nThreads thread number
          * @return new fixed executor service
          */
-        public static ExecutorService newFixedExecutorService(final String group, final int nThreads) {
+        public static ExecutorService newFixedExecutorService(final String group,
+            final int nThreads) {
             ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
@@ -123,8 +118,9 @@ public final class ExecutorFactory {
          * @param threadFactory thread factory
          * @return new fixed executor service
          */
-        public static ExecutorService newFixedExecutorService(final String group, final int nThreads,
-                final ThreadFactory threadFactory) {
+        public static ExecutorService newFixedExecutorService(final String group,
+            final int nThreads,
+            final ThreadFactory threadFactory) {
             ExecutorService executorService = Executors.newFixedThreadPool(nThreads, threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
@@ -138,8 +134,9 @@ public final class ExecutorFactory {
          * @return new single scheduled executor service
          */
         public static ScheduledExecutorService newSingleScheduledExecutorService(final String group,
-                final ThreadFactory threadFactory) {
-            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, threadFactory);
+            final ThreadFactory threadFactory) {
+            ScheduledExecutorService executorService =
+                Executors.newScheduledThreadPool(1, threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
         }
@@ -152,31 +149,15 @@ public final class ExecutorFactory {
          * @param threadFactory thread factory
          * @return new scheduled executor service
          */
-        public static ScheduledExecutorService newScheduledExecutorService(final String group, final int nThreads,
-                final ThreadFactory threadFactory) {
-            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(nThreads, threadFactory);
+        public static ScheduledExecutorService newScheduledExecutorService(final String group,
+            final int nThreads,
+            final ThreadFactory threadFactory) {
+            ScheduledExecutorService executorService =
+                Executors.newScheduledThreadPool(nThreads, threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
         }
         
-        /**
-         * Create a new custom executor service and register to manager.
-         *
-         * @param group           group name
-         * @param coreThreads     core thread number
-         * @param maxThreads      max thread number
-         * @param keepAliveTimeMs keep alive time milliseconds
-         * @param threadFactory   thread factory
-         * @return new custom executor service
-         */
-        public static ThreadPoolExecutor newCustomerThreadExecutor(final String group, final int coreThreads,
-                final int maxThreads, final long keepAliveTimeMs, final ThreadFactory threadFactory) {
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs,
-                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
-            THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
-            return executor;
-        }
-    
         @JustForTest
         public static ThreadPoolManager getThreadPoolManager() {
             return THREAD_POOL_MANAGER;

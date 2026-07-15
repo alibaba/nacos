@@ -16,24 +16,37 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.config.server.service.dump.DumpRequest;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.remote.control.TpsControl;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 /**
- * handller to handler config change from other servers.
+ * handler to handler config change from other servers.
  *
  * @author liuzunfei
  * @version $Id: ConfigChangeClusterSyncRequestHandler.java, v 0.1 2020年08月11日 4:35 PM liuzunfei Exp $
  */
+@Since("2.0.0")
 @Component
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 public class ConfigChangeClusterSyncRequestHandler
-        extends RequestHandler<ConfigChangeClusterSyncRequest, ConfigChangeClusterSyncResponse> {
+    extends RequestHandler<ConfigChangeClusterSyncRequest, ConfigChangeClusterSyncResponse> {
     
     private final DumpService dumpService;
     
@@ -41,20 +54,22 @@ public class ConfigChangeClusterSyncRequestHandler
         this.dumpService = dumpService;
     }
     
-    @TpsControl(pointName = "ClusterConfigChangeNotify")
     @Override
-    public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
-            RequestMeta meta) throws NacosException {
+    @NamespaceValidation
+    @TpsControl(pointName = "ClusterConfigChangeNotify")
+    @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
+    @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
+    public ConfigChangeClusterSyncResponse handle(
+        ConfigChangeClusterSyncRequest configChangeSyncRequest,
+        RequestMeta meta) throws NacosException {
         
-        if (configChangeSyncRequest.isBeta()) {
-            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp(),
-                    true);
-        } else {
-            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        }
+        ParamUtils.checkParam(configChangeSyncRequest.getTag());
+        DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
+            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+            configChangeSyncRequest.getLastModified(), meta.getClientIp());
+        
+        dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
+        dumpService.dump(dumpRequest);
         return new ConfigChangeClusterSyncResponse();
     }
-    
 }

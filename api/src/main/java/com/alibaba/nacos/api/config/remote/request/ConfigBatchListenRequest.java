@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,13 +98,14 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
         String tenant;
         
         public ConfigListenContext() {
-        
+            
         }
         
         @Override
         public String toString() {
-            return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\'' + ", dataId='" + dataId
-                    + '\'' + ", tenant='" + tenant + '\'' + '}';
+            return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\''
+                + ", dataId='" + dataId
+                + '\'' + ", tenant='" + tenant + '\'' + '}';
         }
         
         /**

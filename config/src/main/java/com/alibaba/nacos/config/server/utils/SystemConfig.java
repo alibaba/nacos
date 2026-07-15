@@ -41,7 +41,7 @@ public class SystemConfig {
         if (StringUtils.isNotEmpty(address)) {
             return address;
         } else {
-            address = InternetAddressUtil.localHostIP();
+            address = InternetAddressUtil.localHostIp();
         }
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
@@ -52,7 +52,7 @@ public class SystemConfig {
                     InetAddress ip = ads.nextElement();
                     // Compatible group does not regulate 11 network segments
                     if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1
-                        /* && ip.isSiteLocalAddress() */) {
+                    /* && ip.isSiteLocalAddress() */) {
                         return ip.getHostAddress();
                     }
                 }

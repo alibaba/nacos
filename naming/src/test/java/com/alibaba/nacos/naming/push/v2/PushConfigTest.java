@@ -16,21 +16,21 @@
 
 package com.alibaba.nacos.naming.push.v2;
 
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.PushConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PushConfigTest {
+class PushConfigTest {
     
     private PushConfig pushConfig;
     
@@ -42,18 +42,20 @@ public class PushConfigTest {
     
     private long pushTaskRetryDelay = PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY * 2;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockEnvironment = new MockEnvironment();
         EnvUtil.setEnvironment(mockEnvironment);
         pushConfig = PushConfig.getInstance();
     }
     
     @Test
-    public void testUpgradeConfig() throws InterruptedException {
+    void testUpgradeConfig() throws InterruptedException {
         mockEnvironment.setProperty(PushConstants.PUSH_TASK_DELAY, String.valueOf(pushTaskDelay));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT, String.valueOf(pushTaskTimeout));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY, String.valueOf(pushTaskRetryDelay));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT,
+            String.valueOf(pushTaskTimeout));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY,
+            String.valueOf(pushTaskRetryDelay));
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
         assertEquals(pushTaskDelay, pushConfig.getPushTaskDelay());
@@ -62,17 +64,19 @@ public class PushConfigTest {
     }
     
     @Test
-    public void testInitConfigFormEnv()
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    void testInitConfigFormEnv() throws NoSuchMethodException, InvocationTargetException,
+        InstantiationException, IllegalAccessException {
         mockEnvironment.setProperty(PushConstants.PUSH_TASK_DELAY, String.valueOf(pushTaskDelay));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT, String.valueOf(pushTaskTimeout));
-        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY, String.valueOf(pushTaskRetryDelay));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT,
+            String.valueOf(pushTaskTimeout));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY,
+            String.valueOf(pushTaskRetryDelay));
         Constructor<PushConfig> declaredConstructor = PushConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         PushConfig pushConfig = declaredConstructor.newInstance();
         assertEquals(pushTaskDelay, pushConfig.getPushTaskDelay());
         assertEquals(pushTaskTimeout, pushConfig.getPushTaskTimeout());
         assertEquals(pushTaskRetryDelay, pushConfig.getPushTaskRetryDelay());
-    
+        
     }
 }

@@ -16,19 +16,20 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * MediaTypeTest.
  *
  * @author mai.jh
  */
-public class MediaTypeTest {
+class MediaTypeTest {
     
     @Test
-    public void testValueOf() {
+    void testValueOf() {
         MediaType mediaType = MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED);
         String type = "application/x-www-form-urlencoded";
         String charset = "UTF-8";
@@ -38,8 +39,9 @@ public class MediaTypeTest {
     }
     
     @Test
-    public void testValueOf2() {
-        MediaType mediaType = MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, "ISO-8859-1");
+    void testValueOf2() {
+        MediaType mediaType =
+            MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, "ISO-8859-1");
         String type = "application/x-www-form-urlencoded";
         String charset = "ISO-8859-1";
         String excepted = "application/x-www-form-urlencoded;charset=ISO-8859-1";
@@ -49,7 +51,7 @@ public class MediaTypeTest {
     }
     
     @Test
-    public void testValueOf3() {
+    void testValueOf3() {
         MediaType mediaType = MediaType.valueOf("application/x-www-form-urlencoded", "ISO-8859-1");
         String type = "application/x-www-form-urlencoded";
         String charset = "ISO-8859-1";
@@ -59,4 +61,17 @@ public class MediaTypeTest {
         assertEquals(excepted, mediaType.toString());
     }
     
+    @Test
+    void testValueOfWithEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            MediaType.valueOf("");
+        });
+    }
+    
+    @Test
+    void testValueOfWithEmpty2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            MediaType.valueOf("", "UTF-8");
+        });
+    }
 }

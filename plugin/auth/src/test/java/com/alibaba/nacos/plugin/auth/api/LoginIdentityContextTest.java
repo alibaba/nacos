@@ -16,38 +16,40 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LoginIdentityContextTest {
+class LoginIdentityContextTest {
     
     private static final String TEST = "test";
     
     private LoginIdentityContext loginIdentityContext;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         loginIdentityContext = new LoginIdentityContext();
     }
     
     @Test
-    public void testSetParameter() {
+    void testSetParameter() {
         assertNull(loginIdentityContext.getParameter(TEST));
+        assertEquals("default", loginIdentityContext.getParameter(TEST, "default"));
         assertTrue(loginIdentityContext.getAllKey().isEmpty());
         loginIdentityContext.setParameter(TEST, TEST);
         assertEquals(TEST, loginIdentityContext.getParameter(TEST));
+        assertEquals(TEST, loginIdentityContext.getParameter(TEST, "default"));
         assertEquals(1, loginIdentityContext.getAllKey().size());
     }
     
     @Test
-    public void testSetParameters() {
+    void testSetParameters() {
         assertNull(loginIdentityContext.getParameter(TEST));
         assertTrue(loginIdentityContext.getAllKey().isEmpty());
         Map<String, String> map = new HashMap<>(2);

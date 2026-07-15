@@ -16,23 +16,23 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class GrpcConstantsTest {
+class GrpcConstantsTest {
     
     @Test
-    public void testGetRpcParams() {
+    void testGetRpcParams() {
         Class clazz = GrpcConstants.class;
         Field[] declaredFields = clazz.getDeclaredFields();
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    GrpcConstants.GRpcConfigLabel.class)) {
+                GrpcConstants.GRpcConfigLabel.class)) {
                 i++;
             }
         }

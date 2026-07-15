@@ -28,10 +28,10 @@ import com.alibaba.nacos.cmdb.utils.CmdbExecutor;
 import com.alibaba.nacos.cmdb.utils.Loggers;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,9 +118,12 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         initCmdbService();
         load();
         
-        CmdbExecutor.scheduleCmdbTask(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
-        CmdbExecutor.scheduleCmdbTask(new CmdbLabelTask(), switches.getLabelTaskInterval(), TimeUnit.SECONDS);
-        CmdbExecutor.scheduleCmdbTask(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
+        CmdbExecutor.scheduleCmdbTask(new CmdbDumpTask(), switches.getDumpTaskInterval(),
+            TimeUnit.SECONDS);
+        CmdbExecutor.scheduleCmdbTask(new CmdbLabelTask(), switches.getLabelTaskInterval(),
+            TimeUnit.SECONDS);
+        CmdbExecutor.scheduleCmdbTask(new CmdbEventTask(), switches.getEventTaskInterval(),
+            TimeUnit.SECONDS);
     }
     
     @Override
@@ -138,11 +141,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             return null;
         }
         return entity.getLabels().get(labelName);
-    }
-    
-    @Override
-    public List<Entity> queryEntitiesByLabel(String labelName, String labelValue) {
-        throw new UnsupportedOperationException("Not available now!");
     }
     
     /**
@@ -195,7 +193,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                     }
                     
                     if (Loggers.MAIN.isDebugEnabled()) {
-                        Loggers.MAIN.debug("LABEL-TASK {}", "got label map:" + JacksonUtils.toJson(tmpLabelMap));
+                        Loggers.MAIN.debug("LABEL-TASK {}",
+                            "got label map:" + JacksonUtils.toJson(tmpLabelMap));
                     }
                     
                     labelMap = tmpLabelMap;
@@ -204,7 +203,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("CMDB-LABEL-TASK {}", "dump failed!", e);
             } finally {
-                CmdbExecutor.scheduleCmdbTask(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
+                CmdbExecutor.scheduleCmdbTask(this, switches.getLabelTaskInterval(),
+                    TimeUnit.SECONDS);
             }
         }
     }
@@ -226,7 +226,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("DUMP-TASK {}", "dump failed!", e);
             } finally {
-                CmdbExecutor.scheduleCmdbTask(this, switches.getDumpTaskInterval(), TimeUnit.SECONDS);
+                CmdbExecutor.scheduleCmdbTask(this, switches.getDumpTaskInterval(),
+                    TimeUnit.SECONDS);
             }
         }
     }
@@ -248,7 +249,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 eventTimestamp = current;
                 
                 if (Loggers.MAIN.isDebugEnabled()) {
-                    Loggers.MAIN.debug("EVENT-TASK {}", "got events size:" + ", events:" + JacksonUtils.toJson(events));
+                    Loggers.MAIN.debug("EVENT-TASK {}",
+                        "got events size:" + ", events:" + JacksonUtils.toJson(events));
                 }
                 
                 if (events != null && !events.isEmpty()) {
@@ -259,7 +261,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                                 removeEntity(event.getEntityName(), event.getEntityType());
                                 break;
                             case ENTITY_ADD_OR_UPDATE:
-                                updateEntity(cmdbService.getEntity(event.getEntityName(), event.getEntityType()));
+                                updateEntity(cmdbService.getEntity(event.getEntityName(),
+                                    event.getEntityType()));
                                 break;
                             default:
                                 break;
@@ -270,7 +273,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("CMDB-EVENT {}", "event task failed!", e);
             } finally {
-                CmdbExecutor.scheduleCmdbTask(this, switches.getEventTaskInterval(), TimeUnit.SECONDS);
+                CmdbExecutor.scheduleCmdbTask(this, switches.getEventTaskInterval(),
+                    TimeUnit.SECONDS);
             }
         }
     }

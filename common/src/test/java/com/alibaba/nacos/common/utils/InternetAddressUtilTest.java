@@ -16,184 +16,203 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * test IpUtil.
+ *
  * @ClassName: IpUtilTest
  * @date 2020/9/3 10:31
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class InternetAddressUtilTest {
     
-    @Test
-    public void testIsIPv4() {
-        Assert.assertTrue(InternetAddressUtil.isIPv4("127.0.0.1"));
-        Assert.assertFalse(InternetAddressUtil.isIPv4("[::1]"));
-        Assert.assertFalse(InternetAddressUtil.isIPv4("asdfasf"));
-        Assert.assertFalse(InternetAddressUtil.isIPv4("ffgertert"));
-        Assert.assertFalse(InternetAddressUtil.isIPv4("127.100.19"));
-    }
-    
-    @Test
-    public void testIsIPv6() {
-        Assert.assertTrue(InternetAddressUtil.isIPv6("[::1]"));
-        Assert.assertFalse(InternetAddressUtil.isIPv6("127.0.0.1"));
-        Assert.assertFalse(InternetAddressUtil.isIPv6("er34234"));
-    }
-    
-    @Test
-    public void testIsIP() {
-        Assert.assertTrue(InternetAddressUtil.isIP("[::1]"));
-        Assert.assertTrue(InternetAddressUtil.isIP("127.0.0.1"));
-        Assert.assertFalse(InternetAddressUtil.isIP("er34234"));
-        Assert.assertFalse(InternetAddressUtil.isIP("127.100.19"));
-    }
-    
-    @Test
-    public void testGetIPFromString() {
-        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("127.0.0.1",
-                InternetAddressUtil.getIPFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("127.0.0.1", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString("http://[::1:666"));
-    
-        Assert.assertEquals("",
-                InternetAddressUtil.getIPFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
-                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(""));
-        Assert.assertEquals("", InternetAddressUtil.getIPFromString(null));
-    }
-    
-    @Test
-    public void testSplitIpPort() {
-        checkSplitIPPortStr("[::1]:88", false, "[::1]", "88");
-        checkSplitIPPortStr("[::1]", false, "[::1]");
-        checkSplitIPPortStr("127.0.0.1:88", false, "127.0.0.1", "88");
-        checkSplitIPPortStr("127.0.0.1", false, "127.0.0.1");
-        checkSplitIPPortStr("[2001:db8:0:0:1:0:0:1]:88", false, "[2001:db8:0:0:1:0:0:1]", "88");
-        checkSplitIPPortStr("[2001:0db8:0:0:1:0:0:1]:88", false, "[2001:0db8:0:0:1:0:0:1]", "88");
-        checkSplitIPPortStr("[2001:db8::1:0:0:1]:88", false, "[2001:db8::1:0:0:1]", "88");
-        checkSplitIPPortStr("[2001:db8::0:1:0:0:1]:88", false, "[2001:db8::0:1:0:0:1]", "88");
-        checkSplitIPPortStr("[2001:0db8::1:0:0:1]:88", false, "[2001:0db8::1:0:0:1]", "88");
-        checkSplitIPPortStr("[2001:db8:0:0:1::1]:88", false, "[2001:db8:0:0:1::1]", "88");
-        checkSplitIPPortStr("[2001:db8:0000:0:1::1]:88", false, "[2001:db8:0000:0:1::1]", "88");
-        checkSplitIPPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
-        checkSplitIPPortStr("localhost:8848", false, "localhost", "8848");
-        checkSplitIPPortStr("[dead::beef]:88", false, "[dead::beef]", "88");
-    
-        // illegal ip will get abnormal results
-        checkSplitIPPortStr("::1:88", false, "", "", "1", "88");
-        checkSplitIPPortStr("[::1:88", false, "[", "", "1", "88");
-        checkSplitIPPortStr("[127.0.0.1]:88", false, "[127.0.0.1]", "88");
-        checkSplitIPPortStr("[dead:beef]:88", false, "[dead:beef]", "88");
-        checkSplitIPPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
-        checkSplitIPPortStr("[fe80::3]e6]:88", false, "[fe80::3]", "6]:88");
-        checkSplitIPPortStr("", true);
-    }
-    
-    @Test
-    public void testCheckIPs() {
-        Assert.assertEquals("ok", InternetAddressUtil.checkIPs("127.0.0.1"));
-        Assert.assertEquals("ok", InternetAddressUtil.checkIPs());
-        Assert.assertEquals("ok", InternetAddressUtil.checkIPs());
-        Assert.assertEquals("ok", InternetAddressUtil.checkIPs(null));
-        
-        Assert.assertEquals("illegal ip: 127.100.19", InternetAddressUtil.checkIPs("127.100.19", "127.0.0.1"));
-    }
-    
-    @Test
-    public void testIsDomain() {
-        Assert.assertTrue(InternetAddressUtil.isDomain("localhost"));
-        Assert.assertTrue(InternetAddressUtil.isDomain("github.com"));
-        Assert.assertTrue(InternetAddressUtil.isDomain("prefix.infix.suffix"));
-        Assert.assertTrue(InternetAddressUtil.isDomain("p-hub.com"));
-        
-        Assert.assertFalse(InternetAddressUtil.isDomain(""));
-        Assert.assertFalse(InternetAddressUtil.isDomain(null));
-    }
-    
-    @Test
-    public void testRemoveBrackets() {
-        Assert.assertEquals(InternetAddressUtil.removeBrackets("[2001:DB8:0:0:1::1]"), "2001:DB8:0:0:1::1");
-        Assert.assertEquals(InternetAddressUtil.removeBrackets("[2077[]]]"), "2077");
-        Assert.assertEquals(InternetAddressUtil.removeBrackets(""), "");
-        Assert.assertEquals(InternetAddressUtil.removeBrackets(null), "");
-    }
-    
-    @Test
-    public void testCheckOk() {
-        Assert.assertTrue(InternetAddressUtil.checkOK("ok"));
-        Assert.assertFalse(InternetAddressUtil.checkOK("ojbk"));
-    }
-    
-    @Test
-    public void testContainsPort() {
-        Assert.assertTrue(InternetAddressUtil.containsPort("127.0.0.1:80"));
-        Assert.assertFalse(InternetAddressUtil.containsPort("127.0.0.1:80:80"));
-    }
-    
-    @Test
-    public void testLocalHostIP() throws NoSuchFieldException, IllegalAccessException {
-        Field field = InternetAddressUtil.class.getField("PREFER_IPV6_ADDRESSES");
-        field.setAccessible(true);
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        
-        field.set(null, false);
-        Assert.assertEquals("127.0.0.1", InternetAddressUtil.localHostIP());
-        
-        field.set(null, true);
-        Assert.assertEquals("[::1]", InternetAddressUtil.localHostIP());
-    }
-    
     /**
-     * checkSplitIpPortStr.
-     * 2020/9/4 14:12
-     * @param addr addr
-     * @param isEx isEx
+     * checkSplitIpPortStr. 2020/9/4 14:12
+     *
+     * @param addr       addr
+     * @param isEx       isEx
      * @param equalsStrs equalsStrs
      */
-    public static void checkSplitIPPortStr(String addr, boolean isEx, String... equalsStrs) {
+    public static void checkSplitIpPortStr(String addr, boolean isEx, String... equalsStrs) {
         try {
-            String[] array = InternetAddressUtil.splitIPPortStr(addr);
-            Assert.assertEquals(array.length, equalsStrs.length);
+            String[] array = InternetAddressUtil.splitIpPortStr(addr);
+            assertEquals(array.length, equalsStrs.length);
             for (int i = 0; i < array.length; i++) {
-                Assert.assertEquals(array[i], equalsStrs[i]);
+                assertEquals(array[i], equalsStrs[i]);
             }
         } catch (Exception ex) {
             if (!isEx) {
                 // No exception is expected here, but an exception has occurred
-                Assert.fail("Unexpected exception");
+                fail("Unexpected exception");
             }
         }
     }
     
+    @Test
+    void testIsIpv4() {
+        assertTrue(InternetAddressUtil.isIpv4("127.0.0.1"));
+        assertFalse(InternetAddressUtil.isIpv4("[::1]"));
+        assertFalse(InternetAddressUtil.isIpv4("asdfasf"));
+        assertFalse(InternetAddressUtil.isIpv4("ffgertert"));
+        assertFalse(InternetAddressUtil.isIpv4("127.100.19"));
+    }
+    
+    @Test
+    void testIsIpv6() {
+        assertTrue(InternetAddressUtil.isIpv6("[::1]"));
+        assertFalse(InternetAddressUtil.isIpv6("127.0.0.1"));
+        assertFalse(InternetAddressUtil.isIpv6("er34234"));
+    }
+    
+    @Test
+    void testIsIp() {
+        assertTrue(InternetAddressUtil.isIp("[::1]"));
+        assertTrue(InternetAddressUtil.isIp("127.0.0.1"));
+        assertFalse(InternetAddressUtil.isIp("er34234"));
+        assertFalse(InternetAddressUtil.isIp("127.100.19"));
+    }
+    
+    @Test
+    void testGetIpFromString() {
+        assertEquals("[::1]", InternetAddressUtil
+            .getIpFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("[::1]", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("127.0.0.1",
+            InternetAddressUtil
+                .getIpFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("127.0.0.1", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString("http://[::1:666"));
+        
+        assertEquals("", InternetAddressUtil
+            .getIpFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(
+            "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        assertEquals("", InternetAddressUtil.getIpFromString(""));
+        assertEquals("", InternetAddressUtil.getIpFromString(null));
+    }
+    
+    @Test
+    void testSplitIpPort() {
+        checkSplitIpPortStr("[::1]:88", false, "[::1]", "88");
+        checkSplitIpPortStr("[::1]", false, "[::1]");
+        checkSplitIpPortStr("127.0.0.1:88", false, "127.0.0.1", "88");
+        checkSplitIpPortStr("127.0.0.1", false, "127.0.0.1");
+        checkSplitIpPortStr("[2001:db8:0:0:1:0:0:1]:88", false, "[2001:db8:0:0:1:0:0:1]", "88");
+        checkSplitIpPortStr("[2001:0db8:0:0:1:0:0:1]:88", false, "[2001:0db8:0:0:1:0:0:1]", "88");
+        checkSplitIpPortStr("[2001:db8::1:0:0:1]:88", false, "[2001:db8::1:0:0:1]", "88");
+        checkSplitIpPortStr("[2001:db8::0:1:0:0:1]:88", false, "[2001:db8::0:1:0:0:1]", "88");
+        checkSplitIpPortStr("[2001:0db8::1:0:0:1]:88", false, "[2001:0db8::1:0:0:1]", "88");
+        checkSplitIpPortStr("[2001:db8:0:0:1::1]:88", false, "[2001:db8:0:0:1::1]", "88");
+        checkSplitIpPortStr("[2001:db8:0000:0:1::1]:88", false, "[2001:db8:0000:0:1::1]", "88");
+        checkSplitIpPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
+        checkSplitIpPortStr("localhost:8848", false, "localhost", "8848");
+        checkSplitIpPortStr("[dead::beef]:88", false, "[dead::beef]", "88");
+        
+        // illegal ip will get abnormal results
+        checkSplitIpPortStr("::1:88", false, "", "", "1", "88");
+        checkSplitIpPortStr("[::1:88", false, "[", "", "1", "88");
+        checkSplitIpPortStr("[127.0.0.1]:88", false, "[127.0.0.1]", "88");
+        checkSplitIpPortStr("[dead:beef]:88", false, "[dead:beef]", "88");
+        checkSplitIpPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false,
+            "[fe80::3ce6:7132:808e:707a%19]", "88");
+        checkSplitIpPortStr("[fe80::3]e6]:88", false, "[fe80::3]", "6]:88");
+        checkSplitIpPortStr("", true);
+    }
+    
+    @Test
+    void testCheckIPs() {
+        assertEquals("ok", InternetAddressUtil.checkIps("127.0.0.1"));
+        assertEquals("ok", InternetAddressUtil.checkIps());
+        assertEquals("ok", InternetAddressUtil.checkIps());
+        assertEquals("ok", InternetAddressUtil.checkIps(null));
+        
+        assertEquals("illegal ip: 127.100.19",
+            InternetAddressUtil.checkIps("127.100.19", "127.0.0.1"));
+    }
+    
+    @Test
+    void testIsDomain() {
+        assertTrue(InternetAddressUtil.isDomain("localhost"));
+        assertTrue(InternetAddressUtil.isDomain("github.com"));
+        assertTrue(InternetAddressUtil.isDomain("prefix.infix.suffix"));
+        assertTrue(InternetAddressUtil.isDomain("p-hub.com"));
+        
+        assertFalse(InternetAddressUtil.isDomain(""));
+        assertFalse(InternetAddressUtil.isDomain(null));
+    }
+    
+    @Test
+    void testRemoveBrackets() {
+        assertEquals("2001:DB8:0:0:1::1",
+            InternetAddressUtil.removeBrackets("[2001:DB8:0:0:1::1]"));
+        assertEquals("2077", InternetAddressUtil.removeBrackets("[2077[]]]"));
+        assertEquals("", InternetAddressUtil.removeBrackets(""));
+        assertEquals("", InternetAddressUtil.removeBrackets(null));
+    }
+    
+    @Test
+    void testCheckOk() {
+        assertTrue(InternetAddressUtil.checkOk("ok"));
+        assertFalse(InternetAddressUtil.checkOk("ojbk"));
+    }
+    
+    @Test
+    void testContainsPort() {
+        assertTrue(InternetAddressUtil.containsPort("127.0.0.1:80"));
+        assertFalse(InternetAddressUtil.containsPort("127.0.0.1:80:80"));
+    }
+    
+    @Test
+    void testLocalHostIp() {
+        try (MockedStatic<InternetAddressUtil> mocked =
+            Mockito.mockStatic(InternetAddressUtil.class, Mockito.CALLS_REAL_METHODS)) {
+            mocked.when(InternetAddressUtil::isPreferIpv6Addresses).thenReturn(false);
+            assertEquals("127.0.0.1", InternetAddressUtil.localHostIp());
+            
+            mocked.when(InternetAddressUtil::isPreferIpv6Addresses).thenReturn(true);
+            assertEquals("[::1]", InternetAddressUtil.localHostIp());
+        }
+    }
+    
+    @Test
+    void testIpToInt() {
+        assertEquals(2130706433, InternetAddressUtil.ipToInt("127.0.0.1"));
+        assertEquals(-1062731775, InternetAddressUtil.ipToInt("192.168.0.1"));
+    }
+    
+    @Test
+    void testIllegalIpToInt() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            InternetAddressUtil.ipToInt("127.0.0.256");
+        });
+    }
 }

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-import com.alibaba.nacos.common.utils.AbstractAssert;
+import com.alibaba.nacos.common.packagescan.util.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -186,18 +186,12 @@ public class DefaultResourceLoader implements ResourceLoader {
     }
 
     /**
-     * ClassPathResource that explicitly expresses a context-relative path
-     * through implementing the ContextResource interface.
+     * ClassPathResource for paths resolved against this loader's classpath context.
      */
-    protected static class ClassPathContextResource extends ClassPathResource implements ContextResource {
+    protected static class ClassPathContextResource extends ClassPathResource {
 
         public ClassPathContextResource(String path, ClassLoader classLoader) {
             super(path, classLoader);
-        }
-
-        @Override
-        public String getPathWithinContext() {
-            return getPath();
         }
 
         @Override

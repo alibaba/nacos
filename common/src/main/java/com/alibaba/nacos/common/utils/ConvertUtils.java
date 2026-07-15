@@ -25,6 +25,9 @@ import java.util.Set;
  */
 public final class ConvertUtils {
     
+    private ConvertUtils() {
+    }
+    
     private static final String NULL_STR = "null";
     
     public static final Set<String> TRUE_SET = CollectionUtils.set("y", "yes", "on", "true", "t");
@@ -192,7 +195,7 @@ public final class ConvertUtils {
     @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
         String formatStr = (str == null ? StringUtils.EMPTY : str).toLowerCase();
-    
+        
         if (TRUE_SET.contains(formatStr)) {
             return true;
         } else if (FALSE_SET.contains(formatStr)) {

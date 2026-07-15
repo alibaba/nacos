@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.model.SubscriberStatus;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,30 +27,6 @@ import java.util.concurrent.ConcurrentMap;
  * @author Nacos
  */
 public class ClientTrackService {
-    
-    /**
-     * Track client's md5 value.
-     */
-    public static void trackClientMd5(String ip, Map<String, String> clientMd5Map) {
-        ClientRecord record = getClientRecord(ip);
-        record.setLastTime(System.currentTimeMillis());
-        record.getGroupKey2md5Map().putAll(clientMd5Map);
-    }
-    
-    /**
-     * TrackClientMd5.
-     *
-     * @param ip                     ip string value.
-     * @param clientMd5Map           clientMd5Map.
-     * @param clientLastPollingTsMap clientLastPollingTsMap.
-     */
-    public static void trackClientMd5(String ip, Map<String, String> clientMd5Map,
-            Map<String, Long> clientLastPollingTsMap) {
-        ClientRecord record = getClientRecord(ip);
-        record.setLastTime(System.currentTimeMillis());
-        record.getGroupKey2md5Map().putAll(clientMd5Map);
-        record.getGroupKey2pollingTsMap().putAll(clientLastPollingTsMap);
-    }
     
     /**
      * Put the specified value(ip/groupKey/clientMd5) into clientRecords Map.
@@ -91,74 +65,19 @@ public class ClientTrackService {
     }
     
     /**
-     * Groupkey ->  SubscriberStatus.
-     */
-    public static Map<String, SubscriberStatus> listSubStatus(String ip) {
-        Map<String, SubscriberStatus> status = new HashMap<>(100);
-
-        // record here is non-null
-        ClientRecord record = getClientRecord(ip);
-        for (Map.Entry<String, String> entry : record.getGroupKey2md5Map().entrySet()) {
-            String groupKey = entry.getKey();
-            String clientMd5 = entry.getValue();
-            long lastPollingTs = record.getGroupKey2pollingTsMap().get(groupKey);
-            boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-            
-            status.put(groupKey, new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
-        }
-        
-        return status;
-    }
-    
-    /**
-     * Ip ->  SubscriberStatus.
-     */
-    public static Map<String, SubscriberStatus> listSubsByGroup(String groupKey) {
-        Map<String, SubscriberStatus> subs = new HashMap<>(100);
-        
-        for (ClientRecord clientRec : clientRecords.values()) {
-            String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
-            Long lastPollingTs = clientRec.getGroupKey2pollingTsMap().get(groupKey);
-            
-            if (null != clientMd5 && null != lastPollingTs) {
-                Boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-                subs.put(clientRec.getIp(), new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
-            }
-            
-        }
-        return subs;
-    }
-    
-    /**
      * Specify subscriber's ip and look up whether data is latest.
      * groupKey -> isUptodate.
      */
     public static Map<String, Boolean> isClientUptodate(String ip) {
         Map<String, Boolean> result = new HashMap<>(100);
-        for (Map.Entry<String, String> entry : getClientRecord(ip).getGroupKey2md5Map().entrySet()) {
+        for (Map.Entry<String, String> entry : getClientRecord(ip).getGroupKey2md5Map()
+            .entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
             Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
             result.put(groupKey, isuptodate);
         }
         return result;
-    }
-    
-    /**
-     * Specify groupKey and look up whether subscriber and data is latest.
-     * IP -> isUptodate.
-     */
-    public static Map<String, Boolean> listSubscriberByGroup(String groupKey) {
-        Map<String, Boolean> subs = new HashMap<>(100);
-        
-        for (ClientRecord clientRec : clientRecords.values()) {
-            String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
-            if (null != clientMd5) {
-                Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-                subs.put(clientRec.getIp(), isuptodate);
-            }
-        }
-        return subs;
     }
     
     /**
@@ -173,8 +92,8 @@ public class ClientTrackService {
             return record;
         }
         ClientRecord clientRecord = new ClientRecord(clientIp);
-        clientRecords.putIfAbsent(clientIp, clientRecord);
-        return clientRecord;
+        record = clientRecords.putIfAbsent(clientIp, clientRecord);
+        return null == record ? clientRecord : record;
     }
     
     public static void refreshClientRecord() {
@@ -186,5 +105,3 @@ public class ClientTrackService {
      */
     static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<>();
 }
-
-

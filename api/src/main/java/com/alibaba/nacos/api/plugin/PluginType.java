@@ -1,0 +1,115 @@
+/*
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.api.plugin;
+
+/**
+ * Plugin type enumeration, supports all Nacos plugin types.
+ *
+ * @author WangzJi
+ * @since 3.2.0
+ */
+public enum PluginType {
+    
+    /**
+     * Authentication plugin.
+     */
+    AUTH("auth", "Authentication plugin", true),
+    
+    /**
+     * Datasource dialect plugin.
+     */
+    DATASOURCE_DIALECT("datasource-dialect", "Datasource dialect plugin", true),
+    
+    /**
+     * Config change plugin.
+     */
+    CONFIG_CHANGE("config-change", "Config change plugin"),
+    
+    /**
+     * Encryption plugin.
+     */
+    ENCRYPTION("encryption", "Encryption plugin"),
+    
+    /**
+     * Trace plugin.
+     */
+    TRACE("trace", "Trace plugin"),
+    
+    /**
+     * Environment plugin.
+     */
+    ENVIRONMENT("environment", "Environment plugin"),
+    
+    /**
+     * Control plugin.
+     */
+    CONTROL("control", "Control plugin"),
+    
+    /**
+     * Visibility plugin.
+     */
+    VISIBILITY("visibility", "Visibility plugin"),
+    
+    /**
+     * AI publish pipeline plugin.
+     */
+    AI_PIPELINE("ai-pipeline", "AI publish pipeline plugin"),
+    
+    /**
+     * AI resource storage plugin.
+     */
+    AI_STORAGE("ai-storage", "AI resource storage plugin"),
+    
+    /**
+     * AI resource import plugin.
+     */
+    AI_RESOURCE_IMPORT("ai-resource-import", "AI resource import plugin");
+    
+    private final String type;
+    
+    private final String description;
+    
+    private final boolean exclusive;
+    
+    PluginType(String type, String description) {
+        this(type, description, false);
+    }
+    
+    PluginType(String type, String description, boolean exclusive) {
+        this.type = type;
+        this.description = description;
+        this.exclusive = exclusive;
+    }
+    
+    public String getType() {
+        return type;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    /**
+     * Whether implementations of this plugin type are mutually exclusive.
+     *
+     * @return true if only one implementation should be enabled
+     */
+    public boolean isExclusive() {
+        return exclusive;
+    }
+    
+}

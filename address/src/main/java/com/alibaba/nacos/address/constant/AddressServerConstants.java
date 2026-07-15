@@ -27,7 +27,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  */
 public interface AddressServerConstants {
     
-    
     /**
      * the default server port when create the Instance object.
      */
@@ -67,6 +66,6 @@ public interface AddressServerConstants {
      * the url for address server prefix.
      */
     String ADDRESS_SERVER_REQUEST_URL =
-            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
+        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
     
 }

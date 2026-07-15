@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.ConstructorException;
+import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +39,8 @@ import java.util.Map;
  */
 public class YmlChangeParser extends AbstractConfigChangeParser {
     
-    private static final String INVALID_CONSTRUCTOR_ERROR_INFO = "could not determine a constructor for the tag";
+    private static final String INVALID_CONSTRUCTOR_ERROR_INFO =
+        "could not determine a constructor for the tag";
     
     private static final String CONFIG_TYPE = "yaml";
     
@@ -46,11 +49,12 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
     
     @Override
-    public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) {
+    public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent,
+        String type) {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
         try {
-            Yaml yaml = new Yaml(new SafeConstructor());
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             if (StringUtils.isNotBlank(oldContent)) {
                 oldMap = yaml.load(oldContent);
                 oldMap = getFlattenedMap(oldMap);
@@ -59,19 +63,20 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
                 newMap = yaml.load(newContent);
                 newMap = getFlattenedMap(newMap);
             }
-        } catch (ConstructorException e) {
+        } catch (MarkedYAMLException e) {
             handleYamlException(e);
         }
         
         return filterChangeData(oldMap, newMap);
     }
     
-    private void handleYamlException(ConstructorException e) {
-        if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO)) {
+    private void handleYamlException(MarkedYAMLException e) {
+        if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO)
+            || e instanceof ComposerException) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
-                            + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",
-                    e);
+                "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
+                    + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",
+                e);
         }
         throw e;
     }
@@ -82,8 +87,10 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
         return result;
     }
     
-    private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source, String path) {
-        for (Iterator<Map.Entry<String, Object>> itr = source.entrySet().iterator(); itr.hasNext(); ) {
+    private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source,
+        String path) {
+        for (Iterator<Map.Entry<String, Object>> itr = source.entrySet().iterator(); itr
+            .hasNext();) {
             Map.Entry<String, Object> e = itr.next();
             String key = e.getKey();
             if (StringUtils.isNotBlank(path)) {
@@ -96,16 +103,19 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
             if (e.getValue() instanceof String) {
                 result.put(key, e.getValue());
             } else if (e.getValue() instanceof Map) {
-                @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>) e.getValue();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) e.getValue();
                 buildFlattenedMap(result, map, key);
             } else if (e.getValue() instanceof Collection) {
-                @SuppressWarnings("unchecked") Collection<Object> collection = (Collection<Object>) e.getValue();
+                @SuppressWarnings("unchecked")
+                Collection<Object> collection = (Collection<Object>) e.getValue();
                 if (collection.isEmpty()) {
                     result.put(key, "");
                 } else {
                     int count = 0;
                     for (Object object : collection) {
-                        buildFlattenedMap(result, Collections.singletonMap("[" + (count++) + "]", object), key);
+                        buildFlattenedMap(result,
+                            Collections.singletonMap("[" + (count++) + "]", object), key);
                     }
                 }
             } else {

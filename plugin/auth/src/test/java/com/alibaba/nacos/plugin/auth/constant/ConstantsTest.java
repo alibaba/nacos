@@ -16,25 +16,29 @@
 
 package com.alibaba.nacos.plugin.auth.constant;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import java.lang.reflect.Constructor;
 
-public class ConstantsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ConstantsTest {
     
     @Test
-    public void testConstantsForAuth() {
+    void testConstantsForAuth() {
         assertEquals("nacos.core.auth.enabled", Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         assertEquals("nacos.core.auth.system.type", Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE);
-        assertEquals("nacos.core.auth.caching.enabled", Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED);
-        assertEquals("nacos.core.auth.server.identity.key", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY);
-        assertEquals("nacos.core.auth.server.identity.value", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE);
-        assertEquals("nacos.core.auth.enable.userAgentAuthWhite",
-                Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE);
+        assertEquals("nacos.core.auth.caching.enabled",
+            Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED);
+        assertEquals("nacos.core.auth.server.identity.key",
+            Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY);
+        assertEquals("nacos.core.auth.server.identity.value",
+            Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE);
     }
     
     @Test
-    public void testConstantsForResource() {
+    void testConstantsForResource() {
         assertEquals(":", Constants.Resource.SPLITTER);
         assertEquals("*", Constants.Resource.ANY);
         assertEquals("action", Constants.Resource.ACTION);
@@ -42,17 +46,32 @@ public class ConstantsTest {
     }
     
     @Test
-    public void testConstantsForIdentity() {
+    void testConstantsForIdentity() {
         assertEquals("identity_id", Constants.Identity.IDENTITY_ID);
         assertEquals("X-Real-IP", Constants.Identity.X_REAL_IP);
         assertEquals("remote_ip", Constants.Identity.REMOTE_IP);
+        assertEquals("server_identity", Constants.Identity.SERVER_IDENTITY);
     }
     
     @Test
-    public void testConstantsForSignType() {
+    void testConstantsForSignType() {
         assertEquals("naming", SignType.NAMING);
         assertEquals("config", SignType.CONFIG);
         assertEquals("console", SignType.CONSOLE);
         assertEquals("specified", SignType.SPECIFIED);
+    }
+    
+    @Test
+    void testConstantClassesConstructors() throws Exception {
+        assertNotNull(new Constants());
+        assertNotNull(new Constants.Auth());
+        assertNotNull(new Constants.Resource());
+        assertNotNull(new Constants.Identity());
+        assertNotNull(new Constants.Tag());
+        assertNotNull(new SignType());
+        Constructor<OidcProtocolConstants> constructor =
+            OidcProtocolConstants.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        assertNotNull(constructor.newInstance());
     }
 }

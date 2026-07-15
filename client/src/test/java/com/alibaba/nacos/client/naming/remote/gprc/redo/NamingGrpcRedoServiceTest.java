@@ -16,30 +16,37 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
+import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingGrpcRedoServiceTest {
+@ExtendWith(MockitoExtension.class)
+class NamingGrpcRedoServiceTest {
     
     private static final String SERVICE = "service";
     
@@ -50,31 +57,77 @@ public class NamingGrpcRedoServiceTest {
     @Mock
     private NamingGrpcClientProxy clientProxy;
     
+    @Mock
+    private NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
+    
     private NamingGrpcRedoService redoService;
     
-    @Before
-    public void setUp() throws Exception {
-        redoService = new NamingGrpcRedoService(clientProxy);
-        ScheduledExecutorService redoExecutor = (ScheduledExecutorService) ReflectUtils
-                .getFieldValue(redoService, "redoExecutor");
+    @BeforeEach
+    void setUp() throws Exception {
+        Properties prop = new Properties();
+        NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder,
+            nacosClientProperties);
+        ScheduledExecutorService redoExecutor =
+            (ScheduledExecutorService) ReflectUtils.getFieldValue(redoService,
+                "redoExecutor");
         redoExecutor.shutdownNow();
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         redoService.shutdown();
     }
     
     @Test
-    public void testOnConnected() {
+    void testDefaultProperties() throws Exception {
+        Field redoThreadCountField =
+            NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        redoThreadCountField.setAccessible(true);
+        
+        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
+        redoDelayTimeField.setAccessible(true);
+        
+        Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
+        Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
+        
+        assertEquals(Long.valueOf(3000L), redoDelayTimeValue);
+        assertEquals(Integer.valueOf(1), redoThreadCountValue);
+    }
+    
+    @Test
+    void testCustomProperties() throws Exception {
+        Properties prop = new Properties();
+        prop.setProperty(PropertyKeyConst.REDO_DELAY_TIME, "4000");
+        prop.setProperty(PropertyKeyConst.REDO_DELAY_THREAD_COUNT, "2");
+        NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy,
+            namingFuzzyWatchServiceListHolder, nacosClientProperties);
+        
+        Field redoThreadCountField =
+            NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        redoThreadCountField.setAccessible(true);
+        
+        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
+        redoDelayTimeField.setAccessible(true);
+        
+        Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
+        Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
+        assertEquals(Long.valueOf(4000L), redoDelayTimeValue);
+        assertEquals(Integer.valueOf(2), redoThreadCountValue);
+    }
+    
+    @Test
+    void testOnConnected() {
         assertFalse(redoService.isConnected());
-        redoService.onConnected();
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         assertTrue(redoService.isConnected());
     }
     
     @Test
-    public void testOnDisConnect() {
-        redoService.onConnected();
+    void testOnDisConnect() {
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceRegistered(SERVICE, GROUP);
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
@@ -82,14 +135,14 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(redoService.isConnected());
         assertTrue(redoService.findInstanceRedoData().isEmpty());
         assertTrue(redoService.findSubscriberRedoData().isEmpty());
-        redoService.onDisConnect();
+        redoService.onDisConnect(new TestConnection(new RpcClient.ServerInfo()));
         assertFalse(redoService.isConnected());
         assertFalse(redoService.findInstanceRedoData().isEmpty());
         assertFalse(redoService.findSubscriberRedoData().isEmpty());
     }
     
     @Test
-    public void testCacheInstanceForRedo() {
+    void testCacheInstanceForRedo() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         assertTrue(registeredInstances.isEmpty());
         Instance instance = new Instance();
@@ -101,10 +154,11 @@ public class NamingGrpcRedoServiceTest {
         assertEquals(instance, actual.get());
         assertFalse(actual.isRegistered());
         assertFalse(actual.isUnregistering());
+        assertTrue(actual.isExpectedRegistered());
     }
     
     @Test
-    public void testCacheInstanceForRedoByBatchInstanceRedoData() {
+    void testCacheInstanceForRedoByBatchInstanceRedoData() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         assertTrue(registeredInstances.isEmpty());
         Instance instance = new Instance();
@@ -112,7 +166,9 @@ public class NamingGrpcRedoServiceTest {
         instanceList.add(instance);
         redoService.cacheInstanceForRedo(SERVICE, GROUP, instanceList);
         assertFalse(registeredInstances.isEmpty());
-        BatchInstanceRedoData actual = (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next().getValue();
+        BatchInstanceRedoData actual =
+            (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next()
+                .getValue();
         assertEquals(SERVICE, actual.getServiceName());
         assertEquals(GROUP, actual.getGroupName());
         assertEquals(instanceList, actual.getInstances());
@@ -121,7 +177,7 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testInstanceRegistered() {
+    void testInstanceRegistered() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceRegistered(SERVICE, GROUP);
@@ -130,26 +186,38 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testInstanceDeregister() {
+    void testInstanceDeregister() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceDeregister(SERVICE, GROUP);
         InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
         assertTrue(actual.isUnregistering());
+        assertFalse(actual.isExpectedRegistered());
     }
     
     @Test
-    public void testRemoveInstanceForRedo() {
+    void testInstanceDeregistered() {
+        ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
+        redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
+        redoService.instanceDeregistered(SERVICE, GROUP);
+        InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
+        assertFalse(actual.isRegistered());
+        assertTrue(actual.isUnregistering());
+    }
+    
+    @Test
+    void testRemoveInstanceForRedo() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         assertTrue(registeredInstances.isEmpty());
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         assertFalse(registeredInstances.isEmpty());
+        redoService.instanceDeregister(SERVICE, GROUP);
         redoService.removeInstanceForRedo(SERVICE, GROUP);
         assertTrue(registeredInstances.isEmpty());
     }
     
     @Test
-    public void testFindInstanceRedoData() {
+    void testFindInstanceRedoData() {
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         assertFalse(redoService.findInstanceRedoData().isEmpty());
         redoService.instanceRegistered(SERVICE, GROUP);
@@ -160,11 +228,12 @@ public class NamingGrpcRedoServiceTest {
     
     @SuppressWarnings("all")
     private ConcurrentMap<String, InstanceRedoData> getInstanceRedoDataMap() {
-        return (ConcurrentMap<String, InstanceRedoData>) ReflectUtils.getFieldValue(redoService, "registeredInstances");
+        return (ConcurrentMap<String, InstanceRedoData>) ReflectUtils.getFieldValue(redoService,
+            "registeredInstances");
     }
     
     @Test
-    public void testCacheSubscriberForRedo() {
+    void testCacheSubscriberForRedo() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         assertTrue(subscribes.isEmpty());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
@@ -178,7 +247,7 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testSubscriberRegistered() {
+    void testSubscriberRegistered() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
@@ -187,7 +256,7 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testSubscriberDeregister() {
+    void testSubscriberDeregister() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
@@ -196,17 +265,26 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testRemoveSubscriberForRedo() {
+    void testIsSubscriberRegistered() {
+        assertFalse(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
+        assertTrue(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+    }
+    
+    @Test
+    void testRemoveSubscriberForRedo() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         assertTrue(subscribes.isEmpty());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertFalse(subscribes.isEmpty());
+        redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
         redoService.removeSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertTrue(subscribes.isEmpty());
     }
     
     @Test
-    public void testFindSubscriberRedoData() {
+    void testFindSubscriberRedoData() {
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertFalse(redoService.findSubscriberRedoData().isEmpty());
         redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
@@ -217,6 +295,7 @@ public class NamingGrpcRedoServiceTest {
     
     @SuppressWarnings("all")
     private ConcurrentMap<String, SubscriberRedoData> getSubscriberRedoDataMap() {
-        return (ConcurrentMap<String, SubscriberRedoData>) ReflectUtils.getFieldValue(redoService, "subscribes");
+        return (ConcurrentMap<String, SubscriberRedoData>) ReflectUtils.getFieldValue(redoService,
+            "subscribes");
     }
 }

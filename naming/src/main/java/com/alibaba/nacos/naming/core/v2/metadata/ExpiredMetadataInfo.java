@@ -47,7 +47,8 @@ public class ExpiredMetadataInfo {
         return new ExpiredMetadataInfo(service, null);
     }
     
-    public static ExpiredMetadataInfo newExpiredInstanceMetadata(Service service, String metadataId) {
+    public static ExpiredMetadataInfo newExpiredInstanceMetadata(Service service,
+        String metadataId) {
         return new ExpiredMetadataInfo(service, metadataId);
     }
     
@@ -82,7 +83,8 @@ public class ExpiredMetadataInfo {
     
     @Override
     public String toString() {
-        return "ExpiredMetadataInfo{" + "service=" + service + ", metadataId='" + metadataId + '\'' + ", createTime="
-                + new Date(createTime) + '}';
+        return "ExpiredMetadataInfo{" + "service=" + service + ", metadataId='" + metadataId + '\''
+            + ", createTime="
+            + new Date(createTime) + '}';
     }
 }

@@ -25,6 +25,9 @@ import org.slf4j.Logger;
  */
 public final class LoggerUtils {
     
+    private LoggerUtils() {
+    }
+    
     public static final String TRACE = "TRACE";
     
     public static final String INFO = "INFO";

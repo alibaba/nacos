@@ -19,24 +19,20 @@ package com.alibaba.nacos.config.server.manager;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.slf4j.Logger;
 
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
- * TaskManager, is aim to process the task which is need to be done.
- * And this class process the task by single thread to ensure task should be process successfully.
+ * TaskManager, is aim to process the task which is need to be done. And this class process the task by single thread to
+ * ensure task should be process successfully.
  *
  * @author huali
  */
-public final class TaskManager extends NacosDelayTaskExecuteEngine implements TaskManagerMBean {
+public final class TaskManager extends NacosDelayTaskExecuteEngine {
     
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
     
@@ -45,7 +41,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     Condition notEmpty = this.lock.newCondition();
     
     public TaskManager(String name) {
-        super(name, LOGGER, 100L);
+        super(name, 32, LOGGER, 100L);
         this.name = name;
     }
     
@@ -79,7 +75,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
      * Await for lock by timeout.
      *
      * @param timeout timeout value.
-     * @param unit time unit.
+     * @param unit    time unit.
      * @return success or not.
      * @throws InterruptedException InterruptedException.
      */
@@ -123,32 +119,4 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
         }
     }
     
-    @Override
-    public String getTaskInfos() {
-        StringBuilder sb = new StringBuilder();
-        for (Object taskType : getAllProcessorKey()) {
-            sb.append(taskType).append(':');
-            AbstractDelayTask task = this.tasks.get(taskType);
-            if (task != null) {
-                sb.append(new Date(task.getLastProcessTime()));
-            } else {
-                sb.append("finished");
-            }
-            sb.append(Constants.NACOS_LINE_SEPARATOR);
-        }
-        
-        return sb.toString();
-    }
-    
-    /**
-     * Init and register the mbean object.
-     */
-    public void init() {
-        try {
-            ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
-            ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
-        } catch (Exception e) {
-            LOGGER.error("registerMBean_fail", e);
-        }
-    }
 }

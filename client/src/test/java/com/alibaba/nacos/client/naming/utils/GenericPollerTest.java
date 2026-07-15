@@ -16,29 +16,30 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-public class GenericPollerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class GenericPollerTest {
     
     @Test
-    public void testNext() {
+    void testNext() {
         String item1 = "item1";
         String item2 = "item2";
         GenericPoller<String> poller = new GenericPoller<>(Arrays.asList(item1, item2));
-        Assert.assertEquals(item1, poller.next());
-        Assert.assertEquals(item2, poller.next());
-        Assert.assertEquals(item1, poller.next());
+        assertEquals(item1, poller.next());
+        assertEquals(item2, poller.next());
+        assertEquals(item1, poller.next());
     }
     
     @Test
-    public void testRefresh() {
+    void testRefresh() {
         String item1 = "item1";
         String item2 = "item2";
         GenericPoller<String> poller = new GenericPoller<>(Arrays.asList(item1, item2));
         Poller<String> poller1 = poller.refresh(Arrays.asList(item2));
-        Assert.assertEquals(item2, poller1.next());
+        assertEquals(item2, poller1.next());
     }
 }

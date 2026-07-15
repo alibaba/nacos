@@ -16,8 +16,14 @@
 
 package com.alibaba.nacos.api.config;
 
+import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+
+import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * Config Service Interface.
@@ -35,7 +41,30 @@ public interface ConfigService {
      * @return config value
      * @throws NacosException NacosException
      */
+    @Since("0.2.0")
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
+    
+    /**
+     * Get config with full result including MD5.
+     *
+     * <p>This method returns a {@link ConfigQueryResult} containing both
+     * the configuration content and its MD5 hash, which can be used for
+     * CAS (Compare-And-Swap) operations.</p>
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config query result containing content and md5
+     * @throws NacosException NacosException
+     * @since 3.2.0
+     */
+    @Since("3.2.0")
+    default ConfigQueryResult getConfigWithResult(String dataId, String group, long timeoutMs)
+        throws NacosException {
+        // Default implementation returns content only, without MD5
+        String content = getConfig(dataId, group, timeoutMs);
+        return new ConfigQueryResult(content, null);
+    }
     
     /**
      * Get config and register Listener.
@@ -52,8 +81,9 @@ public interface ConfigService {
      * @return config value
      * @throws NacosException NacosException
      */
+    @Since("1.1.0")
     String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Add a listener to the configuration, after the server modified the configuration, the client will use the
@@ -66,6 +96,7 @@ public interface ConfigService {
      * @param listener listener
      * @throws NacosException NacosException
      */
+    @Since("0.2.0")
     void addListener(String dataId, String group, Listener listener) throws NacosException;
     
     /**
@@ -77,8 +108,8 @@ public interface ConfigService {
      * @return Whether publish
      * @throws NacosException NacosException
      */
+    @Since("0.2.0")
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
-    
     
     /**
      * Publish config.
@@ -90,7 +121,9 @@ public interface ConfigService {
      * @return Whether publish
      * @throws NacosException NacosException
      */
-    boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
+    @Since("1.4.1")
+    boolean publishConfig(String dataId, String group, String content, String type)
+        throws NacosException;
     
     /**
      * Cas Publish config.
@@ -102,7 +135,9 @@ public interface ConfigService {
      * @return Whether publish
      * @throws NacosException NacosException
      */
-    boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException;
+    @Since("2.0.0")
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5)
+        throws NacosException;
     
     /**
      * Cas Publish config.
@@ -115,8 +150,10 @@ public interface ConfigService {
      * @return Whether publish
      * @throws NacosException NacosException
      */
-    boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
-            throws NacosException;
+    @Since("2.0.0")
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5,
+        String type)
+        throws NacosException;
     
     /**
      * Remove config.
@@ -126,6 +163,7 @@ public interface ConfigService {
      * @return whether remove
      * @throws NacosException NacosException
      */
+    @Since("0.2.0")
     boolean removeConfig(String dataId, String group) throws NacosException;
     
     /**
@@ -135,6 +173,7 @@ public interface ConfigService {
      * @param group    group
      * @param listener listener
      */
+    @Since("0.2.0")
     void removeListener(String dataId, String group, Listener listener);
     
     /**
@@ -142,12 +181,111 @@ public interface ConfigService {
      *
      * @return whether health
      */
+    @Since("0.2.0")
     String getServerStatus();
+    
+    /**
+     * add config filter.
+     * It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to expand the filter.
+     *
+     * @param configFilter filter
+     * @since 2.3.0
+     */
+    @Since("2.3.0")
+    void addConfigFilter(IConfigFilter configFilter);
     
     /**
      * Shutdown the resource service.
      *
      * @throws NacosException exception.
      */
+    @Since("1.3.1")
     void shutDown() throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy listeners allow for
+     * pattern-based subscription to configurations, where the fixed group name represents the group and dataId patterns
+     * specified for subscription.
+     *
+     * @param groupNamePattern The  group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * dataId pattern and fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy
+     * listeners allow for pattern-based subscription to configurations.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param groupNamePattern The pattern to match group name representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy listener to be added.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    void fuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
+        throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified fixed group name.
+     * Fuzzy listeners allow for pattern-based subscription to configs, where the fixed group name represents the group
+     * and dataId patterns specified for subscription.
+     *
+     * @param groupNamePattern The  group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @return CompletableFuture containing collection of configs that match the specified fixed group name.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern,
+        FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified dataId pattern and
+     * fixed group name. Fuzzy listeners allow for pattern-based subscription to configs.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param groupNamePattern The group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @return CompletableFuture containing collection of configs that match the specified dataId pattern and fixed
+     * group name.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String groupNamePattern,
+        FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified fixed group name.
+     *
+     * @param groupNamePattern The  group name pattern for fuzzy watch.
+     * @param watcher       The event watcher to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher)
+        throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified service name pattern and fixed group name.
+     *
+     * @param dataIdPattern   The pattern to match dataId for fuzzy watch.
+     * @param groupNamePattern The group name pattern for fuzzy watch.
+     * @param watcher       The event listener to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     * @since 3.0
+     */
+    @Since("3.0.0")
+    void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern,
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException;
+    
 }

@@ -32,7 +32,8 @@ public class InstanceRequest extends AbstractNamingRequest {
     public InstanceRequest() {
     }
     
-    public InstanceRequest(String namespace, String serviceName, String groupName, String type, Instance instance) {
+    public InstanceRequest(String namespace, String serviceName, String groupName, String type,
+        Instance instance) {
         super(namespace, serviceName, groupName);
         this.type = type;
         this.instance = instance;

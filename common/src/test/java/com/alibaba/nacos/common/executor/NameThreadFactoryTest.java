@@ -16,23 +16,24 @@
 
 package com.alibaba.nacos.common.executor;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class NameThreadFactoryTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class NameThreadFactoryTest {
     
     @Test
-    public void test() {
+    void test() {
         NameThreadFactory threadFactory = new NameThreadFactory("test");
         Thread t1 = threadFactory.newThread(() -> {
-        
+            
         });
         Thread t2 = threadFactory.newThread(() -> {
-        
+            
         });
         
-        Assert.assertEquals(t1.getName(), "test.0");
-        Assert.assertEquals(t2.getName(), "test.1");
+        assertEquals("test.0", t1.getName());
+        assertEquals("test.1", t2.getName());
     }
     
 }

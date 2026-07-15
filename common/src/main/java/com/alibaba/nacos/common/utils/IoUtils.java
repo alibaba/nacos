@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -24,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +34,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +47,11 @@ import java.util.zip.GZIPOutputStream;
  */
 public class IoUtils {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(IoUtils.class);
+    
+    private IoUtils() {
+    }
+    
     /**
      * Try decompress by GZIP from stream.
      *
@@ -55,7 +60,7 @@ public class IoUtils {
      */
     public static byte[] tryDecompress(InputStream raw) throws IOException {
         try (GZIPInputStream gis = new GZIPInputStream(raw);
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             copy(gis, out);
             return out.toByteArray();
         }
@@ -72,11 +77,7 @@ public class IoUtils {
         if (!isGzipStream(raw)) {
             return raw;
         }
-        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(raw));
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            copy(gis, out);
-            return out.toByteArray();
-        }
+        return tryDecompress(new ByteArrayInputStream(raw));
     }
     
     /**
@@ -94,13 +95,15 @@ public class IoUtils {
         try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
             gzip.write(str.getBytes(encoding));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to compress string with GZIP (encoding={}, length={}); "
+                + "callers will receive a possibly-incomplete byte[]", encoding, str.length(), e);
         }
         return out.toByteArray();
     }
     
     private static BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
+        return reader instanceof BufferedReader ? (BufferedReader) reader
+            : new BufferedReader(reader);
     }
     
     /**
@@ -111,7 +114,8 @@ public class IoUtils {
      * @param encoding encoding of string
      * @throws IOException io exception
      */
-    public static void writeStringToFile(File file, String data, String encoding) throws IOException {
+    public static void writeStringToFile(File file, String data, String encoding)
+        throws IOException {
         try (OutputStream os = new FileOutputStream(file)) {
             os.write(data.getBytes(encoding));
             os.flush();
@@ -154,7 +158,7 @@ public class IoUtils {
             return StringUtils.EMPTY;
         }
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
-                : toString(new InputStreamReader(input, encoding));
+            : toString(new InputStreamReader(input, encoding));
     }
     
     /**
@@ -181,7 +185,7 @@ public class IoUtils {
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
+        for (int n = 0; (n = input.read(buffer)) >= 0;) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -274,31 +278,6 @@ public class IoUtils {
     }
     
     /**
-     * Copy File.
-     *
-     * @param source source file path
-     * @param target target file path
-     * @throws IOException io exception
-     */
-    public static void copyFile(String source, String target) throws IOException {
-        File sf = new File(source);
-        if (!sf.exists()) {
-            throw new IllegalArgumentException("source file does not exist.");
-        }
-        File tf = new File(target);
-        if (!tf.getParentFile().mkdirs()) {
-            throw new RuntimeException("failed to create parent directory.");
-        }
-        if (!tf.exists() && !tf.createNewFile()) {
-            throw new RuntimeException("failed to create target file.");
-        }
-        try (FileChannel sc = new FileInputStream(sf).getChannel();
-                FileChannel tc = new FileOutputStream(tf).getChannel()) {
-            sc.transferTo(0, sc.size(), tc);
-        }
-    }
-    
-    /**
      * Judge whether is Gzip stream.
      *
      * @param bytes byte array
@@ -346,4 +325,3 @@ public class IoUtils {
         Arrays.stream(closeable).forEach(IoUtils::closeQuietly);
     }
 }
-

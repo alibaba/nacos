@@ -23,13 +23,15 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link InstanceRequestHandler} unit tests.
@@ -37,8 +39,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author chenglu
  * @date 2021-09-17 12:49
  */
-@RunWith(MockitoJUnitRunner.class)
-public class InstanceRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class InstanceRequestHandlerTest {
     
     @InjectMocks
     private InstanceRequestHandler instanceRequestHandler;
@@ -47,24 +49,46 @@ public class InstanceRequestHandlerTest {
     private EphemeralClientOperationServiceImpl clientOperationService;
     
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         InstanceRequest instanceRequest = new InstanceRequest();
         instanceRequest.setType(NamingRemoteConstants.REGISTER_INSTANCE);
+        instanceRequest.setServiceName("service1");
+        instanceRequest.setGroupName("group1");
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         instanceRequest.setInstance(instance);
         RequestMeta requestMeta = new RequestMeta();
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
-    
+        Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
+        
         instanceRequest.setType(NamingRemoteConstants.DE_REGISTER_INSTANCE);
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(),
+            Mockito.anyString());
         
         instanceRequest.setType("xxx");
         try {
             instanceRequestHandler.handle(instanceRequest, requestMeta);
         } catch (Exception e) {
-            Assert.assertEquals(((NacosException) e).getErrCode(), NacosException.INVALID_PARAM);
+            assertEquals(NacosException.INVALID_PARAM, ((NacosException) e).getErrCode());
         }
+    }
+    
+    @Test
+    void testHandleRegisterWithBlankIp() throws NacosException {
+        InstanceRequest instanceRequest = new InstanceRequest();
+        instanceRequest.setType(NamingRemoteConstants.REGISTER_INSTANCE);
+        instanceRequest.setServiceName("service1");
+        instanceRequest.setGroupName("group1");
+        Instance instance = new Instance();
+        instance.setIp("  ");
+        instanceRequest.setInstance(instance);
+        RequestMeta requestMeta = new RequestMeta();
+        NacosException exception = assertThrows(NacosException.class,
+            () -> instanceRequestHandler.handle(instanceRequest, requestMeta));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        Mockito.verify(clientOperationService, Mockito.never())
+            .registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
     }
 }

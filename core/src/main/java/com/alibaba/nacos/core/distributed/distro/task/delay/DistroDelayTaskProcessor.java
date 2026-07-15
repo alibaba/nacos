@@ -36,7 +36,7 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
     private final DistroComponentHolder distroComponentHolder;
     
     public DistroDelayTaskProcessor(DistroTaskEngineHolder distroTaskEngineHolder,
-            DistroComponentHolder distroComponentHolder) {
+        DistroComponentHolder distroComponentHolder) {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
         this.distroComponentHolder = distroComponentHolder;
     }
@@ -50,13 +50,17 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
         DistroKey distroKey = distroDelayTask.getDistroKey();
         switch (distroDelayTask.getAction()) {
             case DELETE:
-                DistroSyncDeleteTask syncDeleteTask = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
-                distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, syncDeleteTask);
+                DistroSyncDeleteTask syncDeleteTask =
+                    new DistroSyncDeleteTask(distroKey, distroComponentHolder);
+                distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey,
+                    syncDeleteTask);
                 return true;
             case CHANGE:
             case ADD:
-                DistroSyncChangeTask syncChangeTask = new DistroSyncChangeTask(distroKey, distroComponentHolder);
-                distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, syncChangeTask);
+                DistroSyncChangeTask syncChangeTask =
+                    new DistroSyncChangeTask(distroKey, distroComponentHolder);
+                distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey,
+                    syncChangeTask);
                 return true;
             default:
                 return false;

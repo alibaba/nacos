@@ -24,7 +24,6 @@ import com.alibaba.nacos.core.utils.Loggers;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
     
     protected volatile boolean shutdown = false;
@@ -54,7 +53,7 @@ public abstract class Task implements Runnable {
      * after executeBody should do.
      */
     protected void after() {
-    
+        
     }
     
     public void shutdown() {

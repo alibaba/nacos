@@ -21,7 +21,6 @@ package com.alibaba.nacos.core.distributed.raft.utils;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftConstants {
     
     public static final String JRAFT_EXTEND_INFO_KEY = JRaftLogOperation.class.getCanonicalName();
@@ -43,10 +42,10 @@ public class JRaftConstants {
     public static final String REMOVE_PEERS = "removePeers";
     
     public static final String CHANGE_PEERS = "changePeers";
-
+    
     /**
      * resetPeers.
      */
     public static final String RESET_PEERS = "resetPeers";
-
+    
 }

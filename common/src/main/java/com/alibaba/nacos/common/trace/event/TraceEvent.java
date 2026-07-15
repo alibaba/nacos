@@ -24,7 +24,10 @@ import com.alibaba.nacos.common.notify.Event;
  * @author yanda
  */
 public class TraceEvent extends Event {
-    private String type;
+    
+    private static final long serialVersionUID = -3065900892505697062L;
+    
+    private final String type;
     
     private final long eventTime;
     
@@ -54,7 +57,8 @@ public class TraceEvent extends Event {
         return name;
     }
     
-    public TraceEvent(String eventType, long eventTime, String namespace, String group, String name) {
+    public TraceEvent(String eventType, long eventTime, String namespace, String group,
+        String name) {
         this.type = eventType;
         this.eventTime = eventTime;
         this.namespace = namespace;

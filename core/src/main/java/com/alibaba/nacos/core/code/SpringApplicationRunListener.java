@@ -18,29 +18,32 @@ package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.core.listener.NacosApplicationListener;
-import org.springframework.boot.ConfigurableBootstrapContext;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.context.event.EventPublishingRunListener;
+import org.springframework.boot.bootstrap.ConfigurableBootstrapContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
+import java.time.Duration;
 import java.util.Collection;
 
 /**
- * {@link org.springframework.boot.SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
+ * {@link org.springframework.boot.SpringApplicationRunListener} before
+ * {@see org.springframework.boot.context.event.EventPublishingRunListener} execution.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
-public class SpringApplicationRunListener implements org.springframework.boot.SpringApplicationRunListener, Ordered {
+public class SpringApplicationRunListener
+    implements org.springframework.boot.SpringApplicationRunListener, Ordered {
     
     private final SpringApplication application;
     
     private final String[] args;
-
-    Collection<NacosApplicationListener> nacosApplicationListeners = NacosServiceLoader.load(NacosApplicationListener.class);
-
+    
+    Collection<NacosApplicationListener> nacosApplicationListeners =
+        NacosServiceLoader.load(NacosApplicationListener.class);
+    
     public SpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
@@ -55,7 +58,7 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext,
-            ConfigurableEnvironment environment) {
+        ConfigurableEnvironment environment) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.environmentPrepared(environment);
         }
@@ -76,16 +79,16 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     }
     
     @Override
-    public void started(ConfigurableApplicationContext context) {
+    public void started(ConfigurableApplicationContext context, Duration timeTaken) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.started(context);
         }
     }
     
     @Override
-    public void running(ConfigurableApplicationContext context) {
+    public void ready(ConfigurableApplicationContext context, Duration timeTaken) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
-            nacosApplicationListener.running(context);
+            nacosApplicationListener.ready(context);
         }
     }
     
@@ -97,7 +100,7 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     }
     
     /**
-     * Before {@link EventPublishingRunListener}.
+     * Before {@see org.springframework.boot.context.event.EventPublishingRunListener}.
      *
      * @return HIGHEST_PRECEDENCE
      */

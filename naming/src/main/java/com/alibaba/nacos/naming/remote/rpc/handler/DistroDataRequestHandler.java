@@ -16,13 +16,18 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
@@ -34,8 +39,11 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("2.0.0")
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
-public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, DistroDataResponse> {
+public class DistroDataRequestHandler
+    extends RequestHandler<DistroDataRequest, DistroDataResponse> {
     
     private final DistroProtocol distroProtocol;
     
@@ -44,7 +52,9 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
     }
     
     @Override
-    public DistroDataResponse handle(DistroDataRequest request, RequestMeta meta) throws NacosException {
+    @Secured(apiType = ApiType.INNER_API)
+    public DistroDataResponse handle(DistroDataRequest request, RequestMeta meta)
+        throws NacosException {
         try {
             switch (request.getDataOperation()) {
                 case VERIFY:
@@ -63,6 +73,7 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
         } catch (Exception e) {
             Loggers.DISTRO.error("[DISTRO-FAILED] distro handle with exception", e);
             DistroDataResponse result = new DistroDataResponse();
+            result.setResultCode(ResponseCode.FAIL.getCode());
             result.setErrorCode(ResponseCode.FAIL.getCode());
             result.setMessage("handle distro request with exception");
             return result;
@@ -72,7 +83,8 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
     private DistroDataResponse handleVerify(DistroData distroData, RequestMeta meta) {
         DistroDataResponse result = new DistroDataResponse();
         if (!distroProtocol.onVerify(distroData, meta.getClientIp())) {
-            result.setErrorInfo(ResponseCode.FAIL.getCode(), "[DISTRO-FAILED] distro data verify failed");
+            result.setErrorInfo(ResponseCode.FAIL.getCode(),
+                "[DISTRO-FAILED] distro data verify failed");
         }
         return result;
     }

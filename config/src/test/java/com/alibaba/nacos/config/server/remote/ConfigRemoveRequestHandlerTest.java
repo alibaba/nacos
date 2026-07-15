@@ -18,35 +18,50 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigRemoveRequestHandlerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
+class ConfigRemoveRequestHandlerTest {
+    
     private ConfigRemoveRequestHandler configRemoveRequestHandler;
-
+    
     @Mock
-    private PersistService persistService;
-
-    @Before
-    public void setUp() throws Exception {
-        configRemoveRequestHandler = new ConfigRemoveRequestHandler(persistService);
-        Mockito.mockStatic(ConfigTraceService.class);
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    @Mock
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    
+    @Mock
+    private ConfigOperationService configOperationService;
+    
+    @BeforeEach
+    void setUp() throws Exception {
+        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
+            configInfoGrayPersistService, configOperationService);
     }
-
+    
     @Test
-    public void testHandle() {
+    void testHandleSuccess() throws Exception {
         ConfigRemoveRequest configRemoveRequest = new ConfigRemoveRequest();
         configRemoveRequest.setRequestId("requestId");
         configRemoveRequest.setGroup("group");
@@ -54,12 +69,53 @@ public class ConfigRemoveRequestHandlerTest {
         configRemoveRequest.setTenant("tenant");
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
-        try {
-            ConfigRemoveResponse configRemoveResponse = configRemoveRequestHandler.handle(configRemoveRequest, meta);
-            Assert.assertEquals(ResponseCode.SUCCESS.getCode(), configRemoveResponse.getResultCode());
-        } catch (NacosException e) {
-            e.printStackTrace();
-        }
+        
+        when(configOperationService.deleteConfig(
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC))).thenReturn(true);
+        
+        ConfigRemoveResponse response =
+            configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        verify(configOperationService, times(1)).deleteConfig(
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC));
     }
-
+    
+    @Test
+    void testHandleException() throws Exception {
+        ConfigRemoveRequest configRemoveRequest = new ConfigRemoveRequest();
+        configRemoveRequest.setRequestId("requestId");
+        configRemoveRequest.setGroup("group");
+        configRemoveRequest.setDataId("dataId");
+        configRemoveRequest.setTenant("tenant");
+        RequestMeta meta = new RequestMeta();
+        meta.setClientIp("1.1.1.1");
+        
+        when(configOperationService.deleteConfig(
+            anyString(),
+            anyString(),
+            anyString(),
+            isNull(),
+            eq("1.1.1.1"),
+            isNull(),
+            eq(Constants.RPC))).thenThrow(new RuntimeException("test exception"));
+        
+        ConfigRemoveResponse response =
+            configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        
+        assertNotEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        assertTrue(response.getMessage().contains("test exception"));
+    }
 }

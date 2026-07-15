@@ -56,7 +56,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     protected volatile Long lastEventSequence = -1L;
     
-    private static final AtomicReferenceFieldUpdater<DefaultPublisher, Long> UPDATER = AtomicReferenceFieldUpdater
+    private static final AtomicReferenceFieldUpdater<DefaultPublisher, Long> UPDATER =
+        AtomicReferenceFieldUpdater
             .newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
     
     @Override
@@ -65,7 +66,10 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<>(bufferSize);
+        if (this.queueMaxSize == -1) {
+            this.queueMaxSize = ringBufferSize;
+        }
+        this.queue = new ArrayBlockingQueue<>(this.queueMaxSize);
         start();
     }
     
@@ -78,9 +82,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         if (!initialized) {
             // start just called once
             super.start();
-            if (queueMaxSize == -1) {
-                queueMaxSize = ringBufferSize;
-            }
             initialized = true;
         }
     }
@@ -102,22 +103,19 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
-            for (; ; ) {
-                if (shutdown || hasSubscriber() || waitTimes <= 0) {
-                    break;
-                }
+            while (!shutdown && !hasSubscriber() && waitTimes > 0) {
                 ThreadUtils.sleep(1000L);
                 waitTimes--;
             }
             
-            for (; ; ) {
-                if (shutdown) {
-                    break;
-                }
+            while (!shutdown) {
                 final Event event = queue.take();
                 receiveEvent(event);
-                UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
+                UPDATER.compareAndSet(this, lastEventSequence,
+                    Math.max(lastEventSequence, event.sequence()));
             }
+        } catch (InterruptedException e) {
+            // [issue #13752] ignore stack log
         } catch (Throwable ex) {
             LOGGER.error("Event listener exception : ", ex);
         }
@@ -142,7 +140,9 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
-            LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
+            LOGGER.warn(
+                "Unable to plug in due to interruption, synchronize sending time, event : {}",
+                event);
             receiveEvent(event);
             return true;
         }
@@ -159,6 +159,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     public void shutdown() {
         this.shutdown = true;
         this.queue.clear();
+        // Interrupt the thread to stop processing events: queue.take().
+        this.interrupt();
     }
     
     public boolean isInitialized() {
@@ -186,8 +188,9 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
-                LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
-                        event.getClass());
+                LOGGER.debug(
+                    "[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
+                    event.getClass());
                 continue;
             }
             

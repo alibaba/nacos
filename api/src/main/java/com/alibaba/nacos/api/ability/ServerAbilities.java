@@ -29,6 +29,7 @@ import java.util.Objects;
  * @author liuzunfei
  * @version $Id: ServerAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
+@Deprecated
 public class ServerAbilities implements Serializable {
     
     private static final long serialVersionUID = -2120543002911304171L;
@@ -72,8 +73,9 @@ public class ServerAbilities implements Serializable {
             return false;
         }
         ServerAbilities that = (ServerAbilities) o;
-        return Objects.equals(remoteAbility, that.remoteAbility) && Objects.equals(configAbility, that.configAbility)
-                && Objects.equals(namingAbility, that.namingAbility);
+        return Objects.equals(remoteAbility, that.remoteAbility)
+            && Objects.equals(configAbility, that.configAbility)
+            && Objects.equals(namingAbility, that.namingAbility);
     }
     
     @Override

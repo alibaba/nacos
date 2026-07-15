@@ -42,7 +42,7 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
     private final String resourceType;
     
     public DistroVerifyExecuteTask(DistroTransportAgent transportAgent, List<DistroData> verifyData,
-            String targetServer, String resourceType) {
+        String targetServer, String resourceType) {
         this.transportAgent = transportAgent;
         this.verifyData = verifyData;
         this.targetServer = targetServer;
@@ -60,7 +60,8 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
                 }
             } catch (Exception e) {
                 Loggers.DISTRO
-                        .error("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer, e);
+                    .error("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType,
+                        targetServer, e);
             }
         }
     }
@@ -78,7 +79,8 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         @Override
         public void onSuccess() {
             if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("[DISTRO] verify data for type {} to {} success", resourceType, targetServer);
+                Loggers.DISTRO.debug("[DISTRO] verify data for type {} to {} success", resourceType,
+                    targetServer);
             }
         }
         
@@ -88,8 +90,9 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
             distroRecord.verifyFail();
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO
-                        .debug("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer,
-                                throwable);
+                    .debug("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType,
+                        targetServer,
+                        throwable);
             }
         }
     }

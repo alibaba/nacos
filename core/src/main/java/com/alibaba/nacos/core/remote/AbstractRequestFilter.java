@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -46,17 +46,6 @@ public abstract class AbstractRequestFilter {
         requestFilters.registerFilter(this);
     }
     
-    protected Class getResponseClazz(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
-        try {
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-            return Class.forName(actualTypeArguments[1].getTypeName());
-            
-        } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e);
-        }
-    }
-    
     protected Method getHandleMethod(Class handlerClazz) throws NacosException {
         try {
             Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
@@ -67,7 +56,8 @@ public abstract class AbstractRequestFilter {
     }
     
     protected <T> Response getDefaultResponseInstance(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
+        ParameterizedType parameterizedType =
+            (ParameterizedType) handlerClazz.getGenericSuperclass();
         try {
             Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
             return (Response) Class.forName(actualTypeArguments[1].getTypeName()).newInstance();
@@ -86,5 +76,6 @@ public abstract class AbstractRequestFilter {
      * @return response
      * @throws NacosException NacosException.
      */
-    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException;
+    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz)
+        throws NacosException;
 }

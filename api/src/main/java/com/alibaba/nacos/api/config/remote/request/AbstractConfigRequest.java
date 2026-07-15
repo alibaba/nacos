@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,42 @@ import com.alibaba.nacos.api.remote.request.Request;
 
 /**
  * abstract request of config module request,all config module request should extends this class.
+ *
  * @author liuzunfei
  * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
  */
 public abstract class AbstractConfigRequest extends Request {
-
+    
+    private String dataId;
+    
+    private String group;
+    
+    private String tenant;
+    
+    public String getDataId() {
+        return dataId;
+    }
+    
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
+    
+    public String getGroup() {
+        return group;
+    }
+    
+    public void setGroup(String group) {
+        this.group = group;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+    
     @Override
     public String getModule() {
         return Constants.Config.CONFIG_MODULE;

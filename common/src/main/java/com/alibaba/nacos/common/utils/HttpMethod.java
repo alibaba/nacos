@@ -24,6 +24,9 @@ package com.alibaba.nacos.common.utils;
  */
 public class HttpMethod {
     
+    private HttpMethod() {
+    }
+    
     public static final String GET = "GET";
     
     /**

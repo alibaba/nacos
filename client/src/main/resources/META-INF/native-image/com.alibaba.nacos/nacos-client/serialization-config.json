@@ -1,0 +1,12 @@
+{
+  "types":[
+    {
+      "name":"com.alibaba.nacos.client.naming.event.InstancesChangeEvent",
+      "customTargetConstructorClass":"java.lang.Object"
+    }
+  ],
+  "lambdaCapturingTypes":[
+  ],
+  "proxies":[
+  ]
+}

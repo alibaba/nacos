@@ -29,7 +29,6 @@ import com.google.protobuf.ZeroByteStringHelper;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 interface JSnapshotOperation {
     
     /**
@@ -62,9 +61,10 @@ interface JSnapshotOperation {
      * @return {@link LocalFileMetaOutter.LocalFileMeta}
      * @throws Exception Exception
      */
-    default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) throws Exception {
+    default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata)
+        throws Exception {
         return metadata == null ? null : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata))).build();
+            .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata))).build();
     }
     
 }

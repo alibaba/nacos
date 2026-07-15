@@ -20,21 +20,24 @@ import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,29 +51,34 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class EmbeddedDumpService extends DumpService {
     
-    private final ProtocolManager protocolManager;
-    
     /**
      * If it's just a normal reading failure, it can be resolved by retrying.
      */
-    final String[] retryMessages = new String[] {"The conformance protocol is temporarily unavailable for reading"};
+    final String[] retryMessages =
+        new String[] {"The conformance protocol is temporarily unavailable for reading"};
     
     /**
      * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying.
      */
     final String[] errorMessages = new String[] {"FSMCaller is overload.", "STATE_ERROR"};
     
+    private final ProtocolManager protocolManager;
+    
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}
      * @param protocolManager {@link ProtocolManager}
      */
-    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager,
-            ProtocolManager protocolManager) {
-        super(persistService, memberManager);
+    public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
+        NamespacePersistService namespacePersistService,
+        HistoryConfigInfoPersistService historyConfigInfoPersistService,
+        ConfigInfoGrayPersistService configInfoGrayPersistService,
+        ServerMemberManager memberManager,
+        ProtocolManager protocolManager) {
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
+            configInfoGrayPersistService, memberManager);
         this.protocolManager = protocolManager;
     }
     
@@ -78,7 +86,7 @@ public class EmbeddedDumpService extends DumpService {
     @Override
     protected void init() throws Throwable {
         if (EnvUtil.getStandaloneMode()) {
-            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+            dumpOperate();
             return;
         }
         
@@ -101,14 +109,17 @@ public class EmbeddedDumpService extends DumpService {
                         return;
                     }
                     // Identify without a timeout mechanism
-                    EmbeddedStorageContextUtils.putExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA, "true");
+                    EmbeddedStorageContextHolder.putExtendInfo(
+                        PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
+                        "true");
                     // Remove your own listening to avoid task accumulation
                     boolean canEnd = false;
-                    for (; ; ) {
+                    for (;;) {
                         try {
-                            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
-                            protocol.protocolMetaData()
-                                    .unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, this);
+                            dumpOperate();
+                            protocol.protocolMetaData().unSubscribe(
+                                PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
+                                MetadataKey.LEADER_META_DATA, this);
                             canEnd = true;
                         } catch (Throwable ex) {
                             if (!shouldRetry(ex)) {
@@ -122,13 +133,14 @@ public class EmbeddedDumpService extends DumpService {
                         }
                         ThreadUtils.sleep(500L);
                     }
-                    EmbeddedStorageContextUtils.cleanAllContext();
+                    EmbeddedStorageContextHolder.cleanAllContext();
                 });
             }
         };
         
         protocol.protocolMetaData()
-                .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, observer);
+            .subscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA,
+                observer);
         
         // We must wait for the dump task to complete the callback operation before
         // continuing with the initialization
@@ -165,6 +177,6 @@ public class EmbeddedDumpService extends DumpService {
         }
         // if is derby + raft mode, only leader can execute
         CPProtocol protocol = protocolManager.getCpProtocol();
-        return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return protocol.isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP);
     }
 }

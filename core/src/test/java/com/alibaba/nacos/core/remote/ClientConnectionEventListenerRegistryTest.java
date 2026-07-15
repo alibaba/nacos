@@ -17,14 +17,16 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link ClientConnectionEventListenerRegistry} uint test.
@@ -32,8 +34,8 @@ import java.util.Objects;
  * @author chenglu
  * @date 2021-07-02 14:43
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ClientConnectionEventListenerRegistryTest {
+@ExtendWith(MockitoExtension.class)
+class ClientConnectionEventListenerRegistryTest {
     
     @InjectMocks
     private ClientConnectionEventListenerRegistry registry;
@@ -42,7 +44,7 @@ public class ClientConnectionEventListenerRegistryTest {
     private Connection connection;
     
     @Test
-    public void testRegistryMethods() {
+    void testRegistryMethods() {
         try {
             registry.registerClientConnectionEventListener(new MockClientConnectionEventListener());
             
@@ -52,20 +54,39 @@ public class ClientConnectionEventListenerRegistryTest {
             
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
+    }
+    
+    @Test
+    void testNotifyWhenListenerThrowsDoesNotPropagate() {
+        registry.registerClientConnectionEventListener(new ClientConnectionEventListener() {
+            
+            @Override
+            public void clientConnected(Connection connect) {
+                throw new RuntimeException("connected throw");
+            }
+            
+            @Override
+            public void clientDisConnected(Connection connect) {
+                throw new RuntimeException("disconnected throw");
+            }
+        });
+        registry.registerClientConnectionEventListener(new MockClientConnectionEventListener());
+        registry.notifyClientConnected(connection);
+        registry.notifyClientDisConnected(connection);
     }
     
     class MockClientConnectionEventListener extends ClientConnectionEventListener {
         
         @Override
         public void clientConnected(Connection connect) {
-            Assert.assertTrue(Objects.nonNull(connect));
+            assertTrue(Objects.nonNull(connect));
         }
         
         @Override
         public void clientDisConnected(Connection connect) {
-            Assert.assertTrue(Objects.nonNull(connect));
+            assertTrue(Objects.nonNull(connect));
         }
     }
 }

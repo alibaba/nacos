@@ -23,11 +23,24 @@ import { Redirect } from 'react-router-dom';
 class Welcome extends React.Component {
   static propTypes = {
     functionMode: PropTypes.string,
+    authAdminRequest: PropTypes.string,
   };
 
   render() {
-    const { functionMode } = this.props;
-    const path = functionMode === 'naming' ? 'serviceManagement' : 'configurationManagement';
+    const { functionMode, authAdminRequest } = this.props;
+    if (authAdminRequest && authAdminRequest === 'true') {
+      return (
+        <>
+          <Redirect to="/register" />
+        </>
+      );
+    }
+    let path = 'configurationManagement';
+    if (functionMode === 'naming') {
+      path = 'serviceManagement';
+    } else if (functionMode === 'ai') {
+      path = 'skillManagement';
+    }
     return <>{functionMode !== '' && <Redirect to={`/${path}`} />}</>;
   }
 }

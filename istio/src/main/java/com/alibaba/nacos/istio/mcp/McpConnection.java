@@ -26,28 +26,29 @@ import istio.mcp.v1alpha1.Mcp;
  * @author special.fy
  */
 public class McpConnection extends AbstractConnection<Mcp.Resources> {
-
+    
     public McpConnection(StreamObserver<Mcp.Resources> streamObserver) {
         super(streamObserver);
     }
-
+    
     @Override
-    public void push(Mcp.Resources response, WatchedStatus watchedStatus) {
+    public synchronized void push(Mcp.Resources response, WatchedStatus watchedStatus) {
         if (Loggers.MAIN.isDebugEnabled()) {
             Loggers.MAIN.debug("Mcp.Resources: {}", response.toString());
         }
-
+        
         this.streamObserver.onNext(response);
-
+        
         // Update watched status
         watchedStatus.setLatestVersion(response.getSystemVersionInfo());
         watchedStatus.setLatestNonce(response.getNonce());
-
-        Loggers.MAIN.info("mcp: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
-                watchedStatus.getType(),
-                getConnectionId(),
-                response.getSystemVersionInfo(),
-                response.getNonce(),
-                response.getResourcesCount());
+        
+        Loggers.MAIN.info(
+            "mcp: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+            watchedStatus.getType(),
+            getConnectionId(),
+            response.getSystemVersionInfo(),
+            response.getNonce(),
+            response.getResourcesCount());
     }
 }

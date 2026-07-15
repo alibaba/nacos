@@ -22,6 +22,9 @@ package com.alibaba.nacos.common.utils;
  */
 public class NumberUtils {
     
+    private NumberUtils() {
+    }
+    
     /**
      * Convert a <code>String</code> to an <code>int</code>, returning
      * <code>zero</code> if the conversion fails.
@@ -91,7 +94,7 @@ public class NumberUtils {
             return defaultValue;
         }
     }
-
+    
     /**
      * Checks whether the <code>String</code> contains only
      * digit characters.

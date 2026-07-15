@@ -33,7 +33,7 @@ public class Loggers {
     public static final Logger AUTH = LoggerFactory.getLogger("com.alibaba.nacos.auth");
     
     public static void setLogLevel(String logName, String level) {
-    
+        
         if (AUTH_LOG_NAME.equals(logName)) {
             ((ch.qos.logback.classic.Logger) AUTH).setLevel(Level.valueOf(level));
         }

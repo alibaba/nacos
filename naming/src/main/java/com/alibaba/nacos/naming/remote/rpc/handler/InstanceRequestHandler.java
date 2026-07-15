@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
@@ -26,9 +28,15 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.InstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +45,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("2.0.0")
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
     
@@ -47,10 +56,17 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     @Override
+    @NamespaceValidation
+    @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister",
+        name = "RemoteNamingInstanceRegisterDeregister")
     @Secured(action = ActionTypes.WRITE)
-    public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service
-                .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
+    @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
+    public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+        throws NacosException {
+        Service service = Service.newService(request.getNamespace(), request.getGroupName(),
+            request.getServiceName(),
+            true);
+        InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
                 return registerInstance(service, request, meta);
@@ -58,24 +74,37 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
                 return deregisterInstance(service, request, meta);
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
-                        String.format("Unsupported request type %s", request.getType()));
+                    String.format("Unsupported request type %s", request.getType()));
         }
     }
     
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
-            throws NacosException {
-        clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
+    private InstanceResponse registerInstance(Service service, InstanceRequest request,
+        RequestMeta meta)
+        throws NacosException {
+        Instance instance = request.getInstance();
+        if (null == instance) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "Required parameter 'instance' is missing.");
+        }
+        instance.validate();
+        clientOperationService.registerInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                meta.getClientIp(), true, service.getNamespace(), service.getGroup(), service.getName(),
-                request.getInstance().getIp(), request.getInstance().getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+            service.getGroup(),
+            service.getName(), instance.getIp(), instance.getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
-    private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
-        clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
+    private InstanceResponse deregisterInstance(Service service, InstanceRequest request,
+        RequestMeta meta) {
+        clientOperationService.deregisterInstance(service, request.getInstance(),
+            meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                meta.getClientIp(), true, DeregisterInstanceReason.REQUEST, service.getNamespace(),
-                service.getGroup(), service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
+            NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+            DeregisterInstanceReason.REQUEST,
+            service.getNamespace(), service.getGroup(), service.getName(),
+            request.getInstance().getIp(),
+            request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     

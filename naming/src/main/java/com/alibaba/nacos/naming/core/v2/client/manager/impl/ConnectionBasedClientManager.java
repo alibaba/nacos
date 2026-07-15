@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
@@ -44,23 +46,25 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 @Component("connectionBasedClientManager")
-public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
+public class ConnectionBasedClientManager extends ClientConnectionEventListener
+    implements ClientManager {
     
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
     
     public ConnectionBasedClientManager() {
-        GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
-                        TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
+            Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
     }
     
     @Override
     public void clientConnected(Connection connect) {
-        if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+        if (!RemoteConstants.LABEL_MODULE_NAMING
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
         ClientAttributes attributes = new ClientAttributes();
-        attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE, connect.getMetaInfo().getConnectType());
+        attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
+            connect.getMetaInfo().getConnectType());
         attributes.addClientAttribute(ClientConstants.CONNECTION_METADATA, connect.getMetaInfo());
         clientConnected(connect.getMetaInfo().getConnectionId(), attributes);
     }
@@ -90,18 +94,26 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public void clientDisConnected(Connection connect) {
+        if (!RemoteConstants.LABEL_MODULE_NAMING
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+            return;
+        }
         clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
     
     @Override
     public boolean clientDisconnected(String clientId) {
-        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", clientId);
+        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers",
+            clientId);
         ConnectionBasedClient client = clients.remove(clientId);
         if (null == client) {
             return true;
         }
         client.release();
-        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsibleClient(client)));
+        boolean isResponsible = isResponsibleClient(client);
+        NotifyCenter
+            .publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         return true;
     }
     
@@ -122,15 +134,23 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public boolean isResponsibleClient(Client client) {
-        return (client instanceof ConnectionBasedClient) && ((ConnectionBasedClient) client).isNative();
+        return (client instanceof ConnectionBasedClient)
+            && ((ConnectionBasedClient) client).isNative();
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
-        ConnectionBasedClient client = clients.get(clientId);
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
+        ConnectionBasedClient client = clients.get(verifyData.getClientId());
         if (null != client) {
-            client.setLastRenewTime();
-            return true;
+            // remote node of old version will always verify with zero revision
+            if (0 == verifyData.getRevision() || client.getRevision() == verifyData.getRevision()) {
+                client.setLastRenewTime();
+                return true;
+            } else {
+                Loggers.DISTRO.info(
+                    "[DISTRO-VERIFY-FAILED] ConnectionBasedClient[{}] revision local={}, remote={}",
+                    client.getClientId(), client.getRevision(), verifyData.getRevision());
+            }
         }
         return false;
     }
@@ -147,7 +167,8 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         public void run() {
             long currentTime = System.currentTimeMillis();
             for (String each : clientManager.allClientId()) {
-                ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
+                ConnectionBasedClient client =
+                    (ConnectionBasedClient) clientManager.getClient(each);
                 if (null != client && client.isExpire(currentTime)) {
                     clientManager.clientDisconnected(each);
                 }
