@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.controller.v3.AiVisibilityGrantControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
@@ -24,6 +25,8 @@ import com.alibaba.nacos.plugin.auth.impl.controller.v3.UserControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.DefaultAiVisibilityGrantService;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -51,5 +54,16 @@ public class NacosAuthPluginControllerConfig {
     @Bean
     public PermissionControllerV3 permissionControllerV3(NacosRoleService roleService) {
         return new PermissionControllerV3(roleService);
+    }
+    
+    @Bean
+    public AiVisibilityGrantService aiVisibilityGrantService(NacosRoleService roleService) {
+        return new DefaultAiVisibilityGrantService(roleService);
+    }
+    
+    @Bean
+    public AiVisibilityGrantControllerV3 aiVisibilityGrantControllerV3(
+        AiVisibilityGrantService aiVisibilityGrantService) {
+        return new AiVisibilityGrantControllerV3(aiVisibilityGrantService);
     }
 }

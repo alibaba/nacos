@@ -103,8 +103,9 @@ nacos.plugin.visibility.type=nacos
 | `OWNER` | 限制为 `owner=identity`；如果身份为空或 owner 冲突，则返回空集。 |
 | `PUBLIC_AND_OWNER` | 限制为 `scope=PUBLIC OR owner=identity`；匿名调用方退化为仅公开资源。 |
 
-如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认实现当前
-保持该列表为空，并将该字段作为显式资源授权的扩展点。
+如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认 AI
+可见性实现会从当前鉴权插件管理的显式授权中填充该列表。存储态写授权会隐式包含读权限，
+而只读授权仅影响读/列表查询。
 
 ## 插件状态与配置
 
@@ -135,6 +136,11 @@ nacos.plugin.visibility.{serviceName}.*
 这保留了职责分离：可见性决定候选资源，鉴权仍然是权限判断来源。
 [默认鉴权插件实现](default-auth-plugin-spec.md)提供当前内置的可见性实现。
 
+当插件自带的授权管理 API 需要校验资源存在性或 owner 元数据时，领域模块可以提供类似
+`VisibilityResourceLocator` 的轻量查询桥接，让鉴权/可见性插件在不直接依赖领域持久化
+类型的前提下解析 `namespaceId`、`resourceType`、`resourceName`、`owner` 和
+`scope`。
+
 ## API 要求
 
 任何返回具备可见性语义资源的 API 都必须：
@@ -142,6 +148,7 @@ nacos.plugin.visibility.{serviceName}.*
 - 对单资源读写操作调用 `validateVisibility`。
 - 在列表或搜索操作返回数据前应用 `adviseQuery`。
 - 在资源创建或更新时保留 owner 和 scope 元数据。
+- 如果领域暴露显式授权管理 API，在变更 grant 前必须校验资源存在性和管理权限。
 - 避免通过数量、错误信息或部分列表响应暴露私有资源名。
 - 当 API 需要隐藏资源存在性时，单资源读拒绝应返回 not found。
 - 写拒绝应返回 access denied。

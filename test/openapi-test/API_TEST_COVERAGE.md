@@ -54,12 +54,14 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 35 | 30 | 5 | 0 | 85.71% | 92.86% |
 | Console API | 27 | 25 | 2 | 0 | 92.59% | 96.30% |
-| Total | 70 | 63 | 7 | 0 | 90.00% | 95.00% |
+| Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
+| Total | 74 | 63 | 8 | 3 | 85.14% | 90.54% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
-shared runtime/storage state, require publish-pipeline plugin data, or require
-an external LLM provider.
+shared runtime/storage state, require publish-pipeline plugin data, require an
+external LLM provider, or depend on auth-enabled bootstrap state that the
+default standalone IT profile does not enable.
 
 ## Coverage Documents
 
@@ -68,3 +70,4 @@ an external LLM provider.
 | Client OpenAPI | [CLIENT_API_TEST_SCENARIOS.md](CLIENT_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/openapi/client` |
 | Admin API | [ADMIN_API_TEST_SCENARIOS.md](ADMIN_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi` |
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
+| Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth` |

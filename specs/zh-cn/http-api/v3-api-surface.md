@@ -84,6 +84,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | 默认鉴权插件中的用户登录和管理。 |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | 默认鉴权插件中的角色管理。 |
 | `/v3/auth/permission` | 4 | GET, POST, DELETE | 默认鉴权插件中的权限管理。 |
+| `/v3/auth/ai/visibility` | 3 | GET, POST, DELETE | 默认鉴权插件中的插件自有 AI 可见性授权管理。 |
 
 ## 4. Open API 已实现行为
 
@@ -154,6 +155,7 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 /v3/auth/user
 /v3/auth/role
 /v3/auth/permission
+/v3/auth/ai/visibility
 ```
 
 已实现行为：
@@ -161,6 +163,7 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 - 用户管理支持创建、删除、密码更新、登录、列表和搜索。
 - 角色管理支持添加、删除、列表和搜索。
 - 权限管理支持添加、删除和列表。
+- AI 可见性授权管理支持对显式 AI 资源可见性访问执行 grant、revoke 和 list。
 - 第一个管理员初始化由 `POST /v3/auth/user/admin` 实现。
 
 默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP API 规范和
@@ -182,8 +185,8 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
   文档没有一致描述这个高权限操作。
 - AgentSpec version meta：代码中有
   `GET /v3/admin/ai/agentspecs/version/meta`；admin API 文档未记录。
-- Auth v3：代码暴露 `/v3/auth/user`、`/role` 和 `/permission`；三份网站
-  API 文档未覆盖这个 API 面。
+- Auth v3：代码暴露 `/v3/auth/user`、`/role`、`/permission` 和
+  `/ai/visibility`；三份网站 API 文档未覆盖这个 API 面。
 - Config Open API 异常处理：`ConfigOpenApiController` 没有 `@NacosApi`，
   而大多数 v3 Controller 都有；Open API 文档假设统一响应。
 - Config 和 Naming ExceptionHandler：Config 和 Naming 仍有历史模块级

@@ -112,8 +112,9 @@ before count and page queries run. The base predicate maps as follows:
 | `PUBLIC_AND_OWNER` | Restrict to `scope=PUBLIC OR owner=identity`; anonymous callers degrade to public-only. |
 
 If `AuthorizedResources` is populated, it is added as an OR branch with the base
-predicate. The default implementation currently leaves this list empty and keeps
-the field as the extension point for explicit resource grants.
+predicate. The default AI visibility implementation populates this list from
+plugin-owned explicit grants stored by the selected auth plugin. Stored write
+grants imply read visibility, while read grants only affect read/list queries.
 
 ## Plugin State And Configuration
 
@@ -149,6 +150,12 @@ resources, while auth remains the source of permission decisions. The
 [default auth plugin implementation](default-auth-plugin-spec.md) provides the
 current built-in visibility implementation.
 
+When a plugin-owned grant-management API needs to verify resource existence or
+owner metadata, the domain may expose a lightweight lookup bridge such as
+`VisibilityResourceLocator` so the auth/visibility plugin can resolve
+`namespaceId`, `resourceType`, `resourceName`, `owner`, and `scope` without
+taking a direct compile-time dependency on domain persistence classes.
+
 ## API Requirements
 
 Any API that returns visibility-aware resources must:
@@ -156,6 +163,8 @@ Any API that returns visibility-aware resources must:
 - Validate single-resource read/write operations with `validateVisibility`.
 - Apply `adviseQuery` to list or search operations before returning data.
 - Preserve owner and scope metadata when resources are created or updated.
+- If the domain exposes explicit grant-management APIs, validate resource
+  existence and management authority before mutating grants.
 - Avoid exposing private resource names through counts, errors, or partial list
   responses.
 - Return not found for denied single-resource reads when the API needs to hide

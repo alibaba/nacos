@@ -41,6 +41,7 @@ class AuthConstantTest {
         assertEquals("ldap", AuthConstants.LDAP_AUTH_PLUGIN_TYPE);
         assertEquals("ROLE_ADMIN", AuthConstants.GLOBAL_ADMIN_ROLE);
         assertEquals("/v3/auth/user", AuthConstants.USER_PATH);
+        assertEquals("/v3/auth/ai/visibility", AuthConstants.AI_VISIBILITY_PATH);
         assertEquals("__nacos_anonymous__", AuthConstants.ANONYMOUS_USER);
         assertEquals("__nacos_anonymous_role__", AuthConstants.ANONYMOUS_ROLE);
     }

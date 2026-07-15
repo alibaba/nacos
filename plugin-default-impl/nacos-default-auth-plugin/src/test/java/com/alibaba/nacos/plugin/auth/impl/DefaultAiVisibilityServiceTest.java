@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
@@ -33,14 +34,17 @@ import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -83,6 +87,7 @@ class DefaultAiVisibilityServiceTest {
     void tearDown() {
         RequestContextHolder.removeContext();
         com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(null);
+        ApplicationUtils.injectContext(null);
     }
     
     @Test
@@ -338,6 +343,44 @@ class DefaultAiVisibilityServiceTest {
         } finally {
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
                 cachedConfigMap);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void adviseQueryShouldIncludeAuthorizedResourcesFromGrantService() {
+        DefaultAiVisibilityService service = new DefaultAiVisibilityService();
+        Map<String, NacosAuthConfig> cachedConfigMap =
+            (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+                NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+        try {
+            NacosAuthConfig authConfig = mock(NacosAuthConfig.class);
+            when(authConfig.getAuthScope()).thenReturn("ADMIN_API");
+            when(authConfig.isAuthEnabled()).thenReturn(true);
+            Map<String, NacosAuthConfig> map = new HashMap<>();
+            map.put("ADMIN_API", authConfig);
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                map);
+            AiVisibilityGrantService grantService = mock(AiVisibilityGrantService.class);
+            when(grantService.findAuthorizedResourceNames("userA", "public", "skill",
+                VisibilityConstants.ACTION_READ)).thenReturn(List.of("skillA", "skillB"));
+            ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+            when(context.getBean(AiVisibilityGrantService.class)).thenReturn(grantService);
+            ApplicationUtils.injectContext(context);
+            VisibilityQueryContext queryContext = new VisibilityQueryContext();
+            queryContext.setNamespaceId("public");
+            queryContext.setResourceType("skill");
+            
+            QueryAdvisor advisor =
+                service.adviseQuery("userA", VisibilityConstants.ACTION_READ, "ADMIN_API",
+                    queryContext);
+            
+            assertEquals(List.of("skillA", "skillB"),
+                advisor.getAuthorizedPredicate().getResources());
+        } finally {
+            ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+                cachedConfigMap);
+            ApplicationUtils.injectContext(null);
         }
     }
     

@@ -157,6 +157,7 @@ The default plugin owns these v3 API families:
 | `/v3/auth/user/admin` | Administrator bootstrap when no global admin exists. |
 | `/v3/auth/role` | Role management. |
 | `/v3/auth/permission` | Permission management. |
+| `/v3/auth/ai/visibility` | Explicit AI visibility grant management. |
 
 Management endpoints must be protected by console-scoped `@Secured` resources
 such as `console/users`, `console/roles`, `console/permissions`, and
@@ -167,6 +168,12 @@ only for the no-admin initialization state and must be rejected after a global
 administrator exists. These APIs are part of the
 [V3 API Surface](../http-api/v3-api-surface.md) and must follow the
 [HTTP Authorization Spec](../http-api/authorization-spec.md).
+
+The AI visibility grant API is plugin-owned, not part of the generic AI
+controller family. It uses identity-only request authentication and enforces
+resource management authority in the grant service. When auth is enabled, only
+the resource owner or a global administrator may grant, revoke, or list
+explicit visibility access for that AI resource.
 
 ## Default Visibility Implementation
 
@@ -190,10 +197,27 @@ Explicit visibility permission resources use:
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
+AI explicit visibility grants are managed through:
+
+```text
+/v3/auth/ai/visibility
+```
+
+Grant behavior:
+
+- Read grants store action `r`.
+- Write or read-write grant requests store action `rw`, and `rw` implies read
+  visibility when list/search queries are advised.
+- Grant data reuses the default RBAC persistence by storing plugin-owned
+  internal roles and permissions in the auth backend.
+- Resource existence and owner metadata are resolved through a domain-provided
+  visibility resource locator instead of a direct compile-time dependency from
+  the auth plugin to AI persistence types.
+
 Range queries must combine the base visibility predicate with explicitly
-authorized resources. The current default implementation exposes the structure
-for explicit authorized resources; API and storage integrations must use it as
-that integration is completed.
+authorized resources. The default AI visibility implementation populates
+explicit authorized resources from the grant service so list/search paths can
+include private resources that were granted to the caller.
 
 For AI list and search paths, visibility must be converted into repository query
 conditions before count and page queries run. This keeps `totalCount` aligned
