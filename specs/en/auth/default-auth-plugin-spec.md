@@ -89,9 +89,38 @@ and clears the token cache. Changing token expiration also clears the wrapper
 cache so the next token request uses the accepted runtime lifetime; tokens
 already returned to clients remain valid until their signed expiration.
 
-The `ldap` plugin variant additionally uses the `nacos.core.auth.ldap.*`
-configuration family. LDAP changes identity authentication only; authorization
-continues to use Nacos roles and permissions.
+The `ldap` implementation also implements `PluginConfigSpec` and is registered
+as configurable plugin `auth:ldap`. Its canonical configuration prefix is
+`nacos.plugin.auth.ldap.`.
+
+| Item key | Canonical static key | Legacy static alias | Type | Effect | Default | Sensitive |
+|----------|----------------------|---------------------|------|--------|---------|-----------|
+| `url` | `nacos.plugin.auth.ldap.url` | `nacos.core.auth.ldap.url` | String | `RESTART` | `ldap://localhost:389` | No |
+| `base-dn` | `nacos.plugin.auth.ldap.base-dn` | `nacos.core.auth.ldap.basedc` | String | `RESTART` | `dc=example,dc=org` | No |
+| `timeout` | `nacos.plugin.auth.ldap.timeout` | `nacos.core.auth.ldap.timeout` | Number | `RESTART` | `3000` | No |
+| `user-dn` | `nacos.plugin.auth.ldap.user-dn` | `nacos.core.auth.ldap.userDn` | String | `RESTART` | `cn=admin,dc=example,dc=org` | No |
+| `password` | `nacos.plugin.auth.ldap.password` | `nacos.core.auth.ldap.password` | String | `RESTART` | `password` | Yes |
+| `filter-prefix` | `nacos.plugin.auth.ldap.filter-prefix` | `nacos.core.auth.ldap.filter.prefix` | String | `RESTART` | `uid` | No |
+| `case-sensitive` | `nacos.plugin.auth.ldap.case-sensitive` | `nacos.core.auth.ldap.case.sensitive` | Boolean | `RESTART` | `true` | No |
+| `ignore-partial-result-exception` | `nacos.plugin.auth.ldap.ignore-partial-result-exception` | `nacos.core.auth.ldap.ignore.partial.result.exception` | Boolean | `RESTART` | `false` | No |
+
+The timeout is expressed in milliseconds and must be greater than zero. The
+bind password is masked by plugin management APIs. All LDAP-owned fields are
+restart-only in the first managed version, so runtime and local-only updates
+that add, modify, or remove one of these fields are rejected.
+
+Canonical keys take precedence over the legacy aliases. The unused historical
+template key `nacos.core.auth.ldap.userdn` is not a supported alias because no
+production implementation consumed it and its intended user-DN-pattern
+semantics were ambiguous.
+
+The LDAP plugin owns an immutable effective configuration snapshot. Spring
+LDAP context and template construction reads that accepted snapshot lazily;
+LDAP consumers do not read a second set of `@Value` properties. LDAP changes
+identity authentication only. Token signing and lifetime, Nacos user and role
+storage, and authorization continue to use the infrastructure configured by
+`auth:nacos`; those shared settings are not duplicated in `auth:ldap`
+definitions.
 
 ## Identity
 
@@ -258,10 +287,8 @@ canonical value wins. Secret values must never be printed during migration.
 
 ## Pending Issues
 
-- The `ldap` plugin is currently coupled into the default auth implementation
-  package through shared authentication behavior and token infrastructure.
-  Conceptually LDAP is a separate identity-provider-backed auth plugin, not
-  part of the default Nacos username/password implementation. Its complete
-  `PluginConfigSpec` ownership and shared token configuration boundary must be
-  resolved in the LDAP integration phase while preserving compatibility for
-  existing `nacos.core.auth.system.type=ldap` deployments.
+- The `ldap` plugin now owns its LDAP connection and lookup configuration
+  through `PluginConfigSpec`, but still consumes token, user, role, and
+  authorization infrastructure configured by `auth:nacos`. A later refactor
+  should move those shared capabilities behind an explicit auth-module service
+  so the identity-provider plugin does not depend on default-plugin ownership.

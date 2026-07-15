@@ -18,6 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.authenticate;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapTemplateProvider;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
@@ -32,6 +34,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -145,6 +150,31 @@ public class LdapAuthenticationManagerTest {
         assertEquals("token", actual.getToken());
         verify(userDetailsService).createUser(AuthConstants.LDAP_PREFIX + username,
             AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
+    }
+    
+    @Test
+    void testAuthenticateUsesAcceptedPluginConfig() throws AccessException {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put(LdapAuthPluginConfig.FILTER_PREFIX, "mail");
+        values.put(LdapAuthPluginConfig.CASE_SENSITIVE, "false");
+        LdapAuthPluginConfig config = LdapAuthPluginConfig.from(values);
+        LdapTemplateProvider templateProvider = () -> ldapTemplate;
+        LdapAuthenticationManager manager = new LdapAuthenticationManager(templateProvider,
+            userDetailsService, jwtTokenManager, roleService, () -> config);
+        User ldapUser = createUser(AuthConstants.LDAP_PREFIX + "user",
+            AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+        when(userDetailsService.loadUserByUsername("user"))
+            .thenThrow(new UsernameNotFoundException("missing"));
+        when(ldapTemplate.authenticate("", "(mail=user)", "password")).thenReturn(true);
+        when(userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + "user"))
+            .thenReturn(new NacosUserDetails(ldapUser));
+        when(jwtTokenManager.createToken(AuthConstants.LDAP_PREFIX + "user"))
+            .thenReturn("token");
+        
+        NacosUser actual = manager.authenticate("USER", "password");
+        
+        assertEquals(AuthConstants.LDAP_PREFIX + "user", actual.getUserName());
+        assertEquals("token", actual.getToken());
     }
     
     @Test

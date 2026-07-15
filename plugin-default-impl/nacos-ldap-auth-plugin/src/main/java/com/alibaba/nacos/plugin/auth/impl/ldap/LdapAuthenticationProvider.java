@@ -48,20 +48,41 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private final NacosRoleService nacosRoleService;
     
-    private final LdapTemplate ldapTemplate;
+    private final LdapTemplateProvider ldapTemplateProvider;
     
     private final String filterPrefix;
     
     private final boolean caseSensitive;
     
+    private final LdapAuthPluginConfigProvider configProvider;
+    
     public LdapAuthenticationProvider(LdapTemplate ldapTemplate,
         NacosUserService userDetailsService,
         NacosRoleService nacosRoleService, String filterPrefix, boolean caseSensitive) {
-        this.ldapTemplate = ldapTemplate;
+        this(() -> ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
+            caseSensitive);
+    }
+    
+    public LdapAuthenticationProvider(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, NacosRoleService nacosRoleService,
+        String filterPrefix, boolean caseSensitive) {
+        this.ldapTemplateProvider = ldapTemplateProvider;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
         this.filterPrefix = filterPrefix;
         this.caseSensitive = caseSensitive;
+        this.configProvider = null;
+    }
+    
+    public LdapAuthenticationProvider(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, NacosRoleService nacosRoleService,
+        LdapAuthPluginConfigProvider configProvider) {
+        this.ldapTemplateProvider = ldapTemplateProvider;
+        this.nacosRoleService = nacosRoleService;
+        this.userDetailsService = userDetailsService;
+        this.filterPrefix = null;
+        this.caseSensitive = true;
+        this.configProvider = configProvider;
     }
     
     @Override
@@ -80,7 +101,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             }
         }
         
-        if (!caseSensitive) {
+        if (!isCaseSensitive()) {
             username = StringUtils.lowerCase(username);
         }
         
@@ -123,7 +144,22 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     }
     
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
-        return ldapTemplate.authenticate("", "(" + filterPrefix + "=" + username + ")", password);
+        return ldapTemplateProvider.getLdapTemplate().authenticate("",
+            "(" + getFilterPrefix() + "=" + username + ")", password);
+    }
+    
+    private String getFilterPrefix() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? filterPrefix : config.getFilterPrefix();
+    }
+    
+    private boolean isCaseSensitive() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? caseSensitive : config.isCaseSensitive();
+    }
+    
+    private LdapAuthPluginConfig getConfig() {
+        return configProvider == null ? null : configProvider.getConfig();
     }
     
     @Override
