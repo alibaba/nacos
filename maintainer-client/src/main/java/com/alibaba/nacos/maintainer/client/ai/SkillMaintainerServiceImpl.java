@@ -20,19 +20,23 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -62,7 +66,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<SkillMeta> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<SkillMeta>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<SkillMeta>>() {
             });
         return result.getData();
     }
@@ -82,7 +86,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Skill> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Skill>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Skill>>() {
             });
         return result.getData();
     }
@@ -100,7 +104,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -141,8 +145,8 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_SKILL_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<Page<SkillSummary>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<SkillSummary>>>() {
+        Result<Page<SkillSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<SkillSummary>>>() {
             });
         return result.getData();
     }
@@ -150,17 +154,59 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     @Override
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null, null);
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg)
+        throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion, commitMsg,
+            null);
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg, String uploadAction)
+        throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
-        Map<String, String> params = new HashMap<>(4);
+        Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("overwrite", String.valueOf(overwrite));
+        putIfNotBlank(params, "targetVersion", targetVersion);
+        putIfNotBlank(params, "commitMsg", commitMsg);
+        putIfNotBlank(params, "uploadAction", uploadAction);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
             .setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH)
             .setParamValue(params).setFileUpload(zipBytes, "skill.zip", "file").build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        if (requests == null || requests.isEmpty()) {
+            return Collections.emptyList();
+        }
+        for (SkillUploadPrecheckRequest req : requests) {
+            if (req != null) {
+                req.setNamespaceId(resolveNamespace(req.getNamespaceId()));
+            }
+        }
+        String firstNs = requests.get(0) != null ? requests.get(0).getNamespaceId() : null;
+        HttpRequest httpRequest = buildHttpRequestBuilder(
+            buildRequestResource(firstNs, null))
+            .setHttpMethod(HttpMethod.POST)
+            .setPath(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_PRECHECK_ADMIN_PATH)
+            .setBody(JsonUtils.toJson(requests)).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<List<SkillUploadPrecheckResult>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<List<SkillUploadPrecheckResult>>>() {
             });
         return result.getData();
     }
@@ -178,8 +224,8 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             .setPath(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_ADMIN_PATH)
             .setParamValue(params).setFileUpload(zipBytes, "skills.zip", "file").build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<BatchUploadResult> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<BatchUploadResult>>() {
+        Result<BatchUploadResult> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<BatchUploadResult>>() {
             });
         return result.getData();
     }
@@ -204,7 +250,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -227,7 +273,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -245,7 +291,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -265,7 +311,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -289,7 +335,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -313,7 +359,27 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
+    public boolean redraft(String namespaceId, String skillName, String version)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("version", version);
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/redraft")
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -333,7 +399,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -353,7 +419,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -376,7 +442,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -396,7 +462,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }

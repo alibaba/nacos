@@ -182,11 +182,11 @@ class AbstractConsistencyProtocolTest {
         }
         
         int getProcessorCount() {
-            return allProcessor().size();
+            return processorMap.size();
         }
         
         boolean hasProcessor(String group) {
-            return allProcessor().containsKey(group);
+            return processorMap.containsKey(group);
         }
     }
 }

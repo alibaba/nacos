@@ -28,7 +28,7 @@ AI Registry 负责：
 - AI 资源元数据、版本、标签、状态、scope、owner 和业务标签；
 - MCP Server、A2A Agent、Prompt、Skill、AgentSpec 等资源类型契约；
 - 已支持 AI 资源的运行时查询和订阅行为；
-- draft 创建、审核、发布、强制发布、上线/下线、删除、上传和下载等管理流程；
+- draft 创建、审核、发布、强制发布、上线/下线、删除、上传、导入和下载等管理流程；
 - AI 发布流水线、存储插件、可见性、鉴权和 Trace 钩子的领域使用方式。
 
 AI Registry 不负责：
@@ -36,7 +36,7 @@ AI Registry 不负责：
 - Config 资源语义，即使默认 AI 存储实现通过 Config 保存资源内容；
 - Naming service 语义，即使 MCP 或 A2A endpoint 通过 Naming service 和 instance 表达；
 - [AI Registry 适配器规范](ai-registry-adaptor-spec.md)暴露的社区 registry 协议定义；
-- 插件扩展契约。流水线、存储、可见性和 Trace 的扩展规则由对应插件规范定义。
+- 插件扩展契约。流水线、存储、资源导入、可见性和 Trace 的扩展规则由对应插件规范定义。
 
 ## 2. 设计原则
 
@@ -48,7 +48,8 @@ AI Registry 不负责：
 - **资源身份稳定**：`resourceType` 是第二层身份。AI 资源不应引入 Config 风格的
   `groupName` 身份，除非兼容路径必须保留。
 - **插件组合**：可见性、存储、Trace 和发布流水线应通过插件组合，并在本领域规范中
-  建立链接，不应定义隐藏的 AI 专用扩展机制。
+  建立链接。外部资源导入也应使用相同插件模型，并把导入 artifact 路由回资源
+  Operator。不应定义隐藏的 AI 专用扩展机制。
 - **允许快速演进**：AI 协议和资源格式变化很快。当 MCP、A2A、Agent 包格式或
   模型工具生态变化时，规范可能需要不兼容或大幅调整。调整必须按照
   [兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)说明迁移、兼容和废弃行为。
@@ -109,6 +110,10 @@ AI Registry 通过多个接口面暴露：
 - 发布流水线扩展行为必须使用
   [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)。
 - 资源存储扩展行为必须使用 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)。
+- 外部 AI 资源导入行为必须使用
+  [AI 资源导入插件规范](../plugin/ai-resource-import-plugin-spec.md)。导入插件负责把
+  运维配置的外部来源转换为导入 artifact；资源 Operator 负责把 artifact 应用到当前存储和
+  生命周期模型。
 - Trace 和审计事件应使用 [Trace 插件规范](../plugin/trace-plugin-spec.md)和共享
   可观测规则。
 

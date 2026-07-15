@@ -112,7 +112,7 @@ public class InetUtils {
             tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
         }
         
-        if (InternetAddressUtil.PREFER_IPV6_ADDRESSES
+        if (InternetAddressUtil.isPreferIpv6Addresses()
             && !tmpSelfIp.startsWith(InternetAddressUtil.IPV6_START_MARK)
             && !tmpSelfIp.endsWith(InternetAddressUtil.IPV6_END_MARK)) {
             tmpSelfIp =
@@ -213,10 +213,9 @@ public class InetUtils {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs
                             .hasMoreElements();) {
                             InetAddress address = addrs.nextElement();
-                            boolean isLegalIpVersion =
-                                InternetAddressUtil.PREFER_IPV6_ADDRESSES
-                                    ? address instanceof Inet6Address
-                                    : address instanceof Inet4Address;
+                            boolean isLegalIpVersion = InternetAddressUtil.isPreferIpv6Addresses()
+                                ? address instanceof Inet6Address
+                                : address instanceof Inet4Address;
                             if (isLegalIpVersion && !address.isLoopbackAddress()
                                 && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());

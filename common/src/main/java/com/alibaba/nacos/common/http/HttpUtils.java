@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -101,7 +101,7 @@ public final class HttpUtils {
                 entity = new ByteArrayEntity((byte[]) body, contentType);
             } else {
                 entity = new StringEntity(
-                    body instanceof String ? (String) body : JacksonUtils.toJson(body),
+                    body instanceof String ? (String) body : JsonUtils.toJson(body),
                     contentType);
             }
             request.setEntity(entity);

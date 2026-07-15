@@ -26,6 +26,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -87,8 +89,22 @@ class SkillNoopHandlerTest {
     
     @Test
     void testUploadSkillFromZipThrowsNotImplemented() {
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId("public")
+            .zipBytes(new byte[0]).build();
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> skillNoopHandler.uploadSkillFromZip("public", new byte[0]));
+            () -> skillNoopHandler.uploadSkillFromZip(request));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkillThrowsNotImplemented() {
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId("public");
+        request.setSkillName("test-skill");
+        java.util.List<SkillUploadPrecheckRequest> requests =
+            java.util.Collections.singletonList(request);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> skillNoopHandler.batchPrecheckUploadSkill(requests));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
@@ -152,6 +168,13 @@ class SkillNoopHandlerTest {
     void testForcePublishThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> skillNoopHandler.forcePublish(new SkillPublishForm()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
+    
+    @Test
+    void testRedraftThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> skillNoopHandler.redraft(new SkillPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
 }

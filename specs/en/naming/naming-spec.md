@@ -124,10 +124,10 @@ view.
 ### 5.5 Push Updates The Client View
 
 gRPC subscription push carries updated `ServiceInfo` state for a subscribed
-service. Clients store the pushed state in local memory and disk cache, compare
-instance diffs, notify listeners, and may re-query on reconnect, cache miss, or
-polling fallback. HTTP Open API does not provide long polling or push
-subscription.
+service. Clients store the pushed state in local memory, refresh disk cache
+asynchronously, compare instance diffs, notify listeners, and may re-query on
+reconnect, cache miss, or polling fallback. HTTP Open API does not provide long
+polling or push subscription.
 
 ### 5.6 Extensible Cross-cutting Behavior
 

@@ -77,11 +77,6 @@ public class JdkHttpClientResponse implements HttpClientResponse {
     }
     
     @Override
-    public String getStatusText() throws IOException {
-        return this.conn.getResponseMessage();
-    }
-    
-    @Override
     public void close() {
         IoUtils.closeQuietly(this.responseStream);
     }

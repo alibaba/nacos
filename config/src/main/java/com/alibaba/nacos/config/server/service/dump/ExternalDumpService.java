@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 /**
  * External dump service.
@@ -36,7 +34,7 @@ import javax.annotation.PostConstruct;
  */
 @Conditional(ConditionOnExternalStorage.class)
 @Component
-@DependsOn({"rpcConfigChangeNotifier", "configMigrateService"})
+@DependsOn("rpcConfigChangeNotifier")
 public class ExternalDumpService extends DumpService {
     
     /**
@@ -49,10 +47,9 @@ public class ExternalDumpService extends DumpService {
         NamespacePersistService namespacePersistService,
         HistoryConfigInfoPersistService historyConfigInfoPersistService,
         ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ServerMemberManager memberManager,
-        ConfigMigrateService configMigrateService) {
+        ServerMemberManager memberManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-            configInfoGrayPersistService, memberManager, configMigrateService);
+            configInfoGrayPersistService, memberManager);
     }
     
     @PostConstruct

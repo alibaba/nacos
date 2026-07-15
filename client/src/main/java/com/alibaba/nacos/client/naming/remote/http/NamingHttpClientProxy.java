@@ -28,6 +28,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -45,10 +47,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.core5.http.HttpStatus;
 
 import java.util.Collections;
@@ -66,6 +65,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  *
  * @author nkorange
  */
+@Deprecated
 public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final NacosRestTemplate nacosRestTemplate =
@@ -93,12 +93,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String PROTECT_THRESHOLD_PARAM = "protectThreshold";
     
-    private static final String CLUSTERS_PARAM = "clusters";
-    
-    private static final String CLIENT_IP_PARAM = "clientIP";
-    
-    private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
-    
     private static final String REGISTER_ENABLE_PARAM = "enable";
     
     private final String namespaceId;
@@ -111,6 +105,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private boolean enableClientMetrics = true;
     
+    // TODO: Remove this deprecated HTTP naming proxy after naming client fully relies on gRPC.
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy,
         NamingServerListManager serverListManager,
         NacosClientProperties properties) {
@@ -157,7 +152,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(REGISTER_ENABLE_PARAM, String.valueOf(instance.isEnabled()));
         params.put(HEALTHY_PARAM, String.valueOf(instance.isHealthy()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
-        params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
+        params.put(META_PARAM, JsonUtils.toJson(instance.getMetadata()));
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.POST);
     }
     
@@ -212,7 +207,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(WEIGHT_PARAM, String.valueOf(instance.getWeight()));
         params.put(ENABLE_PARAM, String.valueOf(instance.isEnabled()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
-        params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
+        params.put(META_PARAM, JsonUtils.toJson(instance.getMetadata()));
         
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.PUT);
     }
@@ -236,7 +231,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
         
         String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
-        return JacksonUtils.toObj(result, Service.class);
+        return JsonUtils.toObj(result, Service.class);
     }
     
     @Override
@@ -249,8 +244,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
         params.put(PROTECT_THRESHOLD_PARAM, String.valueOf(service.getProtectThreshold()));
-        params.put(META_PARAM, JacksonUtils.toJson(service.getMetadata()));
-        params.put(SELECTOR_PARAM, JacksonUtils.toJson(selector));
+        params.put(META_PARAM, JsonUtils.toJson(service.getMetadata()));
+        params.put(SELECTOR_PARAM, JsonUtils.toJson(selector));
         
         reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.POST);
         
@@ -280,8 +275,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
         params.put(PROTECT_THRESHOLD_PARAM, String.valueOf(service.getProtectThreshold()));
-        params.put(META_PARAM, JacksonUtils.toJson(service.getMetadata()));
-        params.put(SELECTOR_PARAM, JacksonUtils.toJson(selector));
+        params.put(META_PARAM, JsonUtils.toJson(service.getMetadata()));
+        params.put(SELECTOR_PARAM, JsonUtils.toJson(selector));
         
         reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.PUT);
     }
@@ -291,9 +286,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         try {
             String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness",
                 new HashMap<>(8), HttpMethod.GET);
-            JsonNode json = JacksonUtils.toObj(result);
-            int statusCode = json.get("code").asInt();
-            return 0 == statusCode;
+            Map<String, Object> json =
+                JsonUtils.toObj(result, new NacosTypeReference<Map<String, Object>>() {
+                });
+            Object statusCode = json.get("code");
+            return statusCode instanceof Number && 0 == ((Number) statusCode).intValue();
         } catch (Exception e) {
             return false;
         }
@@ -316,7 +313,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     break;
                 case label:
                     ExpressionSelector expressionSelector = (ExpressionSelector) selector;
-                    params.put(SELECTOR_PARAM, JacksonUtils.toJson(expressionSelector));
+                    params.put(SELECTOR_PARAM, JsonUtils.toJson(expressionSelector));
                     break;
                 default:
                     break;
@@ -325,11 +322,14 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
         String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
         
-        JsonNode json = JacksonUtils.toObj(result);
+        Map<String, Object> json =
+            JsonUtils.toObj(result, new NacosTypeReference<Map<String, Object>>() {
+            });
         ListView<String> listView = new ListView<>();
-        listView.setCount(json.get("count").asInt());
-        listView.setData(
-            JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
+        Object count = json.get("count");
+        listView.setCount(count instanceof Number ? ((Number) count).intValue() : 0);
+        listView.setData(JsonUtils.toObj(JsonUtils.toJson(json.get("doms")),
+            new NacosTypeReference<List<String>>() {
             }));
         
         return listView;

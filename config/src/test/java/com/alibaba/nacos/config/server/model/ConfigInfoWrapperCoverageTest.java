@@ -42,16 +42,6 @@ class ConfigInfoWrapperCoverageTest {
     }
     
     @Test
-    void testConfigInfoBetaWrapperDelegatesEqualsAndHashCode() {
-        ConfigInfoBetaWrapper wrapper = new ConfigInfoBetaWrapper();
-        wrapper.setLastModified(100L);
-        
-        assertEquals(100L, wrapper.getLastModified());
-        assertEquals(wrapper.hashCode(), wrapper.hashCode());
-        assertTrue(wrapper.equals(wrapper));
-    }
-    
-    @Test
     void testConfigInfoGrayWrapperDelegatesEqualsAndHashCode() {
         ConfigInfoGrayWrapper wrapper = new ConfigInfoGrayWrapper();
         wrapper.setLastModified(100L);
@@ -67,13 +57,4 @@ class ConfigInfoWrapperCoverageTest {
         assertTrue(wrapper.equals(wrapper));
     }
     
-    @Test
-    void testConfigInfoTagWrapperDelegatesEqualsAndHashCode() {
-        ConfigInfoTagWrapper wrapper = new ConfigInfoTagWrapper();
-        wrapper.setLastModified(100L);
-        
-        assertEquals(100L, wrapper.getLastModified());
-        assertEquals(wrapper.hashCode(), wrapper.hashCode());
-        assertTrue(wrapper.equals(wrapper));
-    }
 }

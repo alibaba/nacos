@@ -55,7 +55,6 @@ class DefaultClientHttpResponseTest {
     void setUp() throws Exception {
         when(response.getBody()).thenReturn(simpleBody);
         when(response.getHeaders()).thenReturn(new Header[] {header});
-        when(response.getReasonPhrase()).thenReturn("test");
         when(header.getName()).thenReturn("testName");
         when(header.getValue()).thenReturn("testValue");
         clientHttpResponse = new DefaultClientHttpResponse(response);
@@ -69,11 +68,6 @@ class DefaultClientHttpResponseTest {
     @Test
     void testGetStatusCode() {
         assertEquals(0, clientHttpResponse.getStatusCode());
-    }
-    
-    @Test
-    void testGetStatusText() {
-        assertEquals("test", clientHttpResponse.getStatusText());
     }
     
     @Test

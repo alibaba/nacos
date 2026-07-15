@@ -27,13 +27,8 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.alibaba.nacos.config.server.model.SubscriberStatus;
-
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
@@ -77,30 +72,6 @@ class ClientTrackServiceTest {
         ConfigCacheService.updateMd5(groupKey, md5 + "111", content, System.currentTimeMillis(),
             "");
         assertFalse(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
-    }
-    
-    @Test
-    void testListSubStatus() {
-        String clientIp = "2.2.2.2";
-        String dataId = "com.taobao.session.xml";
-        String group = "online";
-        String groupKey = GroupKey2.getKey(dataId, group);
-        String md5 = "aabbcc";
-        String content = "data";
-        
-        ConfigCacheService.updateMd5(groupKey, md5, content,
-            System.currentTimeMillis(), "");
-        ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
-        
-        Map<String, SubscriberStatus> status =
-            ClientTrackService.listSubStatus(clientIp);
-        assertNotNull(status);
-        assertEquals(1, status.size());
-        SubscriberStatus sub = status.get(groupKey);
-        assertNotNull(sub);
-        assertEquals(groupKey, sub.getGroupKey());
-        assertTrue(sub.getStatus());
-        assertEquals(md5, sub.getMd5());
     }
     
     @Test

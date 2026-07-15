@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
@@ -50,6 +51,7 @@ import org.springframework.stereotype.Component;
  * @author liuzunfei
  * @author xiweng.yy
  */
+@Since("2.0.0")
 @Component
 public class SubscribeServiceRequestHandler
     extends RequestHandler<SubscribeServiceRequest, SubscribeServiceResponse> {

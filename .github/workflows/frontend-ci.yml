@@ -8,9 +8,13 @@ on:
 
 permissions: read-all
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   frontend-ci:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-nodejs]
     timeout-minutes: 30
     steps:
       - name: "Checkout"
@@ -27,7 +31,7 @@ jobs:
         run: npm ci && npm run build
 
   check-min-release-age:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-nodejs]
     timeout-minutes: 30
     steps:
       - name: "Checkout"

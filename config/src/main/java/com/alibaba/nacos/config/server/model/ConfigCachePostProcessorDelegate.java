@@ -31,7 +31,8 @@ import java.util.Collection;
  */
 public class ConfigCachePostProcessorDelegate {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheFactoryDelegate.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ConfigCachePostProcessorDelegate.class);
     
     private static ConfigCachePostProcessorDelegate instance =
         new ConfigCachePostProcessorDelegate();

@@ -40,7 +40,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
@@ -207,7 +207,7 @@ public abstract class GrpcClient extends RpcClient {
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
         LOGGER.info("grpc client connection server: {} ip, serverPort: {}, grpcTslConfig: {}",
             serverIp, serverPort,
-            JacksonUtils.toJson(clientConfig.tlsConfig()));
+            JsonUtils.toJson(clientConfig.tlsConfig()));
         ManagedChannelBuilder<?> managedChannelBuilder =
             buildChannel(serverIp, serverPort, buildSslContext()).executor(
                 grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())

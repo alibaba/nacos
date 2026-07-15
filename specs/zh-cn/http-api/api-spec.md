@@ -133,6 +133,7 @@ Agent 指南文件、AI skill、Controller 模板和 API 合规校验工具，�
 - HTTP Method 语义；
 - `Result<T>` 响应形态和已记录的例外；
 - `@Secured` 声明、action、sign type 和 API type；
+- 新增 Controller 方法上的 `@Since` 声明；
 - 已废弃兼容端点及其迁移状态。
 
 ## 3. 当前 V3 文档
@@ -151,10 +152,12 @@ Agent 指南文件、AI skill、Controller 模板和 API 合规校验工具，�
 2. 按稳定路径形态选择模块和资源路径。
 3. 按第 2.3 节的语义使用 HTTP Method。
 4. 声明鉴权和动作语义。
-5. JSON 响应使用 `Result<T>`，除非存在已记录的例外。
-6. 在 form 对象或专用 validator 中实现参数校验。
-7. 对有意义的变更增加路由、校验、鉴权和响应形态测试。
-8. 在同一个变更中更新对应规范和网站文档。
+5. 新增 Controller 方法必须添加 `@Since`，声明该 API 起始支持的 Nacos 版本号。
+6. JSON 响应使用 `Result<T>`，除非存在已记录的例外。
+7. 在 form 对象或专用 validator 中实现参数校验。
+8. 按照 [API 集成测试规范](../testing/api-integration-test-spec.md) 新增或
+   更新 API IT，覆盖有意义变更的路由、校验、鉴权、响应形态和场景契约。
+9. 在同一个变更中更新对应规范和网站文档。
 
 新增 Open API 需要明确的兼容性说明。新增 Admin API 或 Console API 需要
 明确的鉴权说明。新增非 `Result<T>` API 需要明确的响应形态说明。

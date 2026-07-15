@@ -16,21 +16,25 @@
 
 package com.alibaba.nacos.plugin.config;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeRequest;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeResponse;
 import com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -48,6 +52,8 @@ class ConfigChangePluginManagerTests {
     
     @BeforeEach
     void initPluginServices() {
+        PluginStateCheckerHolder.setInstance(null);
+        ConfigChangePluginManager.reset();
         ConfigChangePluginManager.join(new ConfigChangePluginService() {
             
             @Override
@@ -173,6 +179,12 @@ class ConfigChangePluginManagerTests {
         
     }
     
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
+        ConfigChangePluginManager.reset();
+    }
+    
     @Test
     void testFindPluginServiceQueueByPointcut() {
         List<ConfigChangePluginService> configChangePluginServices =
@@ -203,23 +215,64 @@ class ConfigChangePluginManagerTests {
     }
     
     @Test
-    void testFindPluginServiceByServiceType() {
-        Optional<ConfigChangePluginService> configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance()
-                .findPluginServiceImpl("test1");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test2");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test3");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test4");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test5");
-        assertFalse(configChangePluginServiceOptional.isPresent());
+    void testGetAllPluginsByServiceType() {
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test1"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test2"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test3"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test4"));
+        assertFalse(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test5"));
+    }
+    
+    @Test
+    void testGetAllPluginsUnmodifiable() {
+        assertThrows(UnsupportedOperationException.class,
+            () -> ConfigChangePluginManager.getInstance().getAllPlugins().clear());
+    }
+    
+    @Test
+    void testFindPluginServicesFiltersDisabledPlugin() {
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !PluginType.CONFIG_CHANGE.getType().equals(pluginType)
+                || !"test2".equals(pluginName));
+        
+        List<ConfigChangePluginService> services =
+            ConfigChangePluginManager.findPluginServicesByPointcut(
+                ConfigChangePointCutTypes.PUBLISH_BY_RPC);
+        
+        assertEquals(2, services.size());
+        assertFalse(
+            services.stream().anyMatch(service -> "test2".equals(service.getServiceType())));
+    }
+    
+    @Test
+    void testSortPluginServiceByPointCut() throws Exception {
+        Method method = ConfigChangePluginManager.class.getDeclaredMethod(
+            "sortPluginServiceByPointCut");
+        method.setAccessible(true);
+        
+        method.invoke(null);
+        
+        List<ConfigChangePluginService> services =
+            ConfigChangePluginManager.findPluginServicesByPointcut(
+                ConfigChangePointCutTypes.PUBLISH_BY_RPC);
+        assertTrue(isSorted(services));
+    }
+    
+    @Test
+    void testLoadConfigChangeServicesFromSpi() throws Exception {
+        ConfigChangePluginManager.reset();
+        Method method = ConfigChangePluginManager.class.getDeclaredMethod(
+            "loadConfigChangeServices");
+        method.setAccessible(true);
+        
+        method.invoke(null);
+        
+        assertTrue(
+            ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("spi-config"));
+        assertFalse(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey(""));
+        assertTrue(ConfigChangePluginManager.findPluginServicesByPointcut(
+            ConfigChangePointCutTypes.PUBLISH_BY_HTTP).stream()
+            .anyMatch(each -> "spi-config".equals(each.getServiceType())));
     }
     
     private boolean isSorted(List<ConfigChangePluginService> list) {

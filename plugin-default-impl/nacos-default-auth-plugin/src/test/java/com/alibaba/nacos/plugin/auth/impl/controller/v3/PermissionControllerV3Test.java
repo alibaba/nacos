@@ -103,4 +103,16 @@ public class PermissionControllerV3Test {
         verify(nacosRoleService, times(1)).deletePermission("admin", "testResource", "write");
         assertEquals("delete permission ok!", result.getData());
     }
+    
+    @Test
+    void testIsDuplicatePermission() {
+        Result<Boolean> expected = Result.success(true);
+        when(nacosRoleService.isDuplicatePermission("admin", "testResource", "write"))
+            .thenReturn(expected);
+        
+        Result<Boolean> result =
+            permissionController.isDuplicatePermission("admin", "testResource", "write");
+        
+        assertEquals(expected, result);
+    }
 }

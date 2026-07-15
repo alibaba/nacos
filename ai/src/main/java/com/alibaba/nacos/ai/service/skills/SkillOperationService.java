@@ -18,12 +18,14 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,75 +40,21 @@ public interface SkillOperationService {
     /**
      * Upload skill from zip file.
      *
-     * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes
+     * @param request upload request
      * @return skill name
      * @throws NacosException if upload failed
      */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, false);
-    }
+    String uploadSkillFromZip(SkillUploadRequest request) throws NacosException;
     
     /**
-     * Upload skill from zip file with original upload file name.
+     * Batch precheck multiple skill uploads.
      *
-     * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes
-     * @param zipFileName uploaded zip file name (optional, used to infer version)
-     * @param overwrite whether to overwrite the current editable draft when the skill already exists
-     * @return skill name
-     * @throws NacosException if upload failed
+     * @param requests list of precheck requests
+     * @return list of precheck results (same order as input)
+     * @throws NacosException if precheck failed unexpectedly
      */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName,
-        boolean overwrite)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, zipFileName, overwrite, null);
-    }
-    
-    /**
-     * Upload skill from zip file with original upload file name and optional target version.
-     *
-     * @param namespaceId   namespace ID
-     * @param zipBytes      zip file bytes
-     * @param zipFileName   uploaded zip file name (optional, used to infer version)
-     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
-     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName,
-        boolean overwrite,
-        String targetVersion) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
-    }
-    
-    /**
-     * Upload skill from zip file.
-     *
-     * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes
-     * @param overwrite whether to overwrite the current editable draft when the skill already exists
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
-    }
-    
-    /**
-     * Upload skill from zip file with optional target version.
-     *
-     * @param namespaceId   namespace ID
-     * @param zipBytes      zip file bytes
-     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
-     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException;
+    List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException;
     
     /**
      * Batch upload multiple skills from a single zip archive. The zip must contain one-level subdirectories,
@@ -313,22 +261,33 @@ public interface SkillOperationService {
     
     /**
      * Publish a reviewing version. Must have pipeline all passed when pipeline exists.
+     *
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      */
     void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException;
     
     /**
      * Force-publish a skill version, bypassing pipeline validation.
-     * Accepts draft (pipeline-rejected) and reviewing (pipeline in-progress) versions.
+     * Accepts draft, reviewing, and reviewed versions.
      * Should only be invoked by admin users.
      *
      * @param namespaceId      namespace ID
      * @param name             skill name
      * @param version          version to force-publish
-     * @param updateLatestLabel whether to update the "latest" label
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      */
     void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException;
+    
+    /**
+     * Re-edit a reviewed version, transitioning it back to draft.
+     *
+     * @param namespaceId namespace
+     * @param name        skill name
+     * @param version     version to re-edit
+     */
+    void redraft(String namespaceId, String name, String version) throws NacosException;
     
     /**
      * Update labels mapping (label -> version) without changing any version status.
@@ -363,18 +322,6 @@ public interface SkillOperationService {
     void updateScope(String namespaceId, String name, String scope) throws NacosException;
     
     // ========== Client APIs ==========
-    
-    /**
-     * Search skills for runtime client usage. Only returns enabled skills that have at least one online version.
-     * Returns only name and description for client consumption.
-     *
-     * @param namespaceId namespace ID
-     * @param keyword keyword (optional)
-     * @param pageNo page number
-     * @param pageSize page size
-     */
-    Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
-        throws NacosException;
     
     /**
      * Query skill for runtime client usage. Priority: label > version > latest(label).

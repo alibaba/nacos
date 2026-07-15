@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Client service.
@@ -154,5 +155,5 @@ public interface ClientService {
      * @param port The port number of the client.
      * @return The responsible server information in JSON format.
      */
-    ObjectNode getResponsibleServer4Client(String ip, String port);
+    Map<String, Object> getResponsibleServer4Client(String ip, String port);
 }

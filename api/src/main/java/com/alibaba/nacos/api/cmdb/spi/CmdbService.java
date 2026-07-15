@@ -61,7 +61,9 @@ public interface CmdbService {
      * @param entityType entity type
      * @param labelName  target label name
      * @return label value
+     * @deprecated Unused by current server flows; kept temporarily for CMDB SPI compatibility.
      */
+    @Deprecated
     String getLabelValue(String entityName, String entityType, String labelName);
     
     /**
@@ -70,7 +72,9 @@ public interface CmdbService {
      * @param entityName entity name
      * @param entityType entity type
      * @return all label values
+     * @deprecated Unused by current server flows; kept temporarily for CMDB SPI compatibility.
      */
+    @Deprecated
     Map<String, String> getLabelValues(String entityName, String entityType);
     
     /**

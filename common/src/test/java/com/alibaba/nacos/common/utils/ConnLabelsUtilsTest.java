@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -34,21 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConnLabelsUtilsTest {
     
     @Test
-    void testParsePropertyValue2Map() {
-        Properties properties = new Properties();
-        String property = "property";
+    void testParseRawLabels() {
         String rawValue = "k1 = v1, k2 = v2";
-        properties.put(property, rawValue);
-        String property1 = "property2";
         String rawValue1 = "k11=v11, kk2";
-        properties.put(property1, rawValue1);
         
-        Map<String, String> m = ConnLabelsUtils.parsePropertyValue2Map(properties, property);
+        Map<String, String> m = ConnLabelsUtils.parseRawLabels(rawValue);
         assertEquals(2, m.size());
         assertEquals("v1", m.get("k1"));
         assertEquals("v2", m.get("k2"));
         
-        Map<String, String> m1 = ConnLabelsUtils.parsePropertyValue2Map(properties, property1);
+        Map<String, String> m1 = ConnLabelsUtils.parseRawLabels(rawValue1);
         assertEquals(1, m1.size());
         assertEquals("v11", m1.get("k11"));
         assertNull(m1.get("kk2"));

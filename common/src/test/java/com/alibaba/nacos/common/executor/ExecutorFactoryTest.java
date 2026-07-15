@@ -81,10 +81,6 @@ class ExecutorFactoryTest {
         assertEquals(Integer.MAX_VALUE, scheduledThreadPoolExecutor.getMaximumPoolSize());
         assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
         
-        threadPoolExecutor = ExecutorFactory.newCustomerThreadExecutor(10, 20, 1000, threadFactory);
-        assertEquals(10, threadPoolExecutor.getCorePoolSize());
-        assertEquals(20, threadPoolExecutor.getMaximumPoolSize());
-        assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
     }
     
     @Test
@@ -150,11 +146,5 @@ class ExecutorFactoryTest {
         assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
         assertEquals(6, resourcesManager.get("nacos").get(testGroup).size());
         
-        threadPoolExecutor = ExecutorFactory.Managed.newCustomerThreadExecutor(testGroup, 10, 20,
-            1000, threadFactory);
-        assertEquals(10, threadPoolExecutor.getCorePoolSize());
-        assertEquals(20, threadPoolExecutor.getMaximumPoolSize());
-        assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
-        assertEquals(7, resourcesManager.get("nacos").get(testGroup).size());
     }
 }

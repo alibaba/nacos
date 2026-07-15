@@ -131,13 +131,18 @@ The following items are current compatibility or deprecation examples:
 - AI Prompt legacy endpoints and legacy Pipeline REST-style endpoints;
 - Naming API-defined service selector fields and request parameters;
 - Config aggregation fields and related database columns;
-- Config beta/tag gray compatibility fields when mapped to `grayName`;
 - historical plugin configuration keys;
 - OIDC browser endpoints that remain under historical paths;
 - Distributed Lock, which is experimental until promoted to stable.
 
 This list is not exhaustive. Each domain spec remains responsible for exact
 domain behavior and migration details.
+
+For the Nacos 3.3 line, Config default-namespace storage migration between
+legacy empty tenant values and `public`, and Config beta/tag old-table migration
+to `config_info_gray`, are treated as removed compatibility behavior. Operators
+that upgrade from versions before 3.0 must complete the affected data migration
+before upgrading when they used the default namespace or beta gray release.
 
 ## 9. Legacy HTTP API Adapter
 

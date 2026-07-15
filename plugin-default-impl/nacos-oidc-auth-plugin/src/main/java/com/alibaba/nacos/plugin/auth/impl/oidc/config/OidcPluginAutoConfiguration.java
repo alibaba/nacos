@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.config;
 
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
+import com.alibaba.nacos.plugin.auth.impl.oidc.OidcAuthPluginService;
 import com.alibaba.nacos.plugin.auth.impl.oidc.controller.OidcLoginController;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +45,15 @@ public class OidcPluginAutoConfiguration {
      */
     @Bean
     public OidcLoginController oidcLoginController() {
-        return new OidcLoginController();
+        return new OidcLoginController(getOidcAuthPluginService());
+    }
+    
+    static OidcAuthPluginService getOidcAuthPluginService() {
+        AuthPluginService plugin = AuthPluginManager.getInstance().getAllPlugins()
+            .get(OidcProtocolConstants.AUTH_PLUGIN_TYPE);
+        if (!(plugin instanceof OidcAuthPluginService)) {
+            throw new IllegalStateException("Built-in OIDC auth plugin is not available");
+        }
+        return (OidcAuthPluginService) plugin;
     }
 }

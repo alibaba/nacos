@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +95,7 @@ public class NacosAgentCardCacheHolder implements Closeable {
         }
         if (isAgentCardChanged(oldAgentCard, detailInfo)) {
             LOGGER.info("agent card {} changed, from {} -> {}.", detailInfo.getName(),
-                JacksonUtils.toJson(oldAgentCard), JacksonUtils.toJson(detailInfo));
+                JsonUtils.toJson(oldAgentCard), JsonUtils.toJson(detailInfo));
             NotifyCenter.publishEvent(new AgentCardChangedEvent(detailInfo));
         }
     }
@@ -133,7 +133,7 @@ public class NacosAgentCardCacheHolder implements Closeable {
         AgentCardDetailInfo newAgentCard) {
         if (null == oldAgentCard) {
             LOGGER.info("init new agent card: {} -> {}", newAgentCard.getName(),
-                JacksonUtils.toJson(newAgentCard));
+                JsonUtils.toJson(newAgentCard));
             return true;
         }
         if (!Objects.equals(oldAgentCard.getVersion(), newAgentCard.getVersion())) {

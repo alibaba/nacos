@@ -202,7 +202,7 @@ inner server-to-server rules are defined by the
 | `ConfigFuzzyWatchChangeNotifyRequest` | `ConfigFuzzyWatchChangeNotifyResponse` | server push | `groupKey`, `changeType` | Notify client of fuzzy-watch resource changes. |
 | `ConfigFuzzyWatchSyncRequest` | `ConfigFuzzyWatchSyncResponse` | server push | `syncType`, `groupKeyPattern`, `contexts`, `totalBatch`, `currentBatch` | Sync fuzzy-watch initial or diff state. |
 | `ClientConfigMetricRequest` | `ClientConfigMetricResponse` | read | `metricsKeys` | Query client config metrics. |
-| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `isBeta`, `tag`, `grayName` | Sync config change events between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Config Notify semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). |
+| `ConfigChangeClusterSyncRequest` | `ConfigChangeClusterSyncResponse` | inner | `dataId`, `group`, `tenant`, `lastModified`, `grayName`, legacy `isBeta`/`tag` | Sync config change events between server nodes through the [internal RPC model](../design/foundation-internal-rpc-spec.md); Config Notify semantics are defined by the [AP Consistency Spec](../design/foundation-ap-consistency-spec.md). Starting with the Nacos 3.3 line, server-side handling must not use legacy `isBeta` or `tag` fields to migrate beta/tag changes into `grayName`. |
 
 ### 7.3 Naming
 
@@ -258,11 +258,13 @@ experimental and may change with that domain.
    `META-INF/services/com.alibaba.nacos.api.remote.Payload` file.
 3. Add a `RequestHandler<Request, Response>` bean and document its action,
    module, and source.
-4. Add `@Secured` for SDK-facing or inner protected operations.
-5. Add `@InvokeSource` for cluster-only payloads.
-6. Keep request fields explicit and JSON-compatible.
-7. Update this spec and the [SDK interface spec](../sdk/sdk-spec.md) when the
+4. Add `@Since` to the new handler class to declare the first Nacos version that
+   supports the gRPC API.
+5. Add `@Secured` for SDK-facing or inner protected operations.
+6. Add `@InvokeSource` for cluster-only payloads.
+7. Keep request fields explicit and JSON-compatible.
+8. Update this spec and the [SDK interface spec](../sdk/sdk-spec.md) when the
    operation is exposed through a public SDK interface.
-8. For server-to-server payloads, also update the
+9. For server-to-server payloads, also update the
    [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
    or the domain spec that owns the cluster request semantics.

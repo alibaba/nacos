@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
@@ -41,6 +42,7 @@ import org.springframework.stereotype.Component;
  *
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
+@Since("2.1.1")
 @Component("batchInstanceRequestHandler")
 public class BatchInstanceRequestHandler
     extends RequestHandler<BatchInstanceRequest, BatchInstanceResponse> {

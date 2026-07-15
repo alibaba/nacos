@@ -375,11 +375,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
             namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
                 generatePattern, abstractFuzzyWatchEventWatcher);
         
-        NamingFuzzyWatchChangeNotifyRequest namingFuzzyWatchChangeNotifyRequest =
-            new NamingFuzzyWatchChangeNotifyRequest(
-                serviceKey, ADD_SERVICE);
-        namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest,
-            connection);
+        namingFuzzyWatchContext.addReceivedServiceKey(serviceKey);
         //notify 1, fail
         namingFuzzyWatchContext.syncFuzzyWatchers();
         //notify 2,success

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming.pojo.maintainer;
 
 import com.alibaba.nacos.api.selector.Selector;
+import com.alibaba.nacos.api.selector.SelectorFactory;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -29,6 +30,10 @@ import java.util.Map;
 public class ServiceDetailInfo implements Serializable {
     
     private static final long serialVersionUID = 6351606608785841722L;
+    
+    static {
+        SelectorFactory.preload();
+    }
     
     private String namespaceId;
     

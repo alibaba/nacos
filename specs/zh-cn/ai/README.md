@@ -44,5 +44,6 @@ AI Registry 可以使用扩展点，但扩展契约由插件规范定义：
 
 - [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)
 - [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)
+- [AI 资源导入插件规范](../plugin/ai-resource-import-plugin-spec.md)
 - [可见性插件规范](../auth/visibility-plugin-spec.md)
 - [Trace 插件规范](../plugin/trace-plugin-spec.md)

@@ -188,19 +188,6 @@ public class LdsGenerator implements ApiGenerator<Any> {
     }
     
     /**
-     * Constructs a default listener configuration for static environments.
-     * This method is designed to provide configurations for scenarios where dynamic discovery services might not be used.
-     */
-    private static Any buildDefaultStaticListener(String listenerName, String listenerAddress,
-        int listenerPort,
-        String rdsName) {
-        if (INIT_LISTENER.equals(listenerName)) {
-            return buildBootstrapListener();
-        }
-        return buildDefaultListener(listenerName, listenerAddress, listenerPort, rdsName, false);
-    }
-    
-    /**
      * Constructs a listener configuration for environments using dynamic service discovery.
      * This method prepares the listener to utilize dynamic routing and service discovery services with rds.
      */

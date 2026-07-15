@@ -43,6 +43,7 @@
 - [gRPC API 规范](grpc-api/api-spec.md)
 - [SDK 规范](sdk/sdk-spec.md)
 - [Java SDK 实现规范](sdk/sdk-java-impl-spec.md)
+- [Java SDK JSON 适配规范](sdk/sdk-java-json-adapter-spec.md)
 - [客户端运行时规范](client/README.md)
 
 ## 领域模型
@@ -67,6 +68,11 @@
 - [OIDC 鉴权插件规范](auth/oidc-auth-plugin-spec.md)
 - [可见性插件规范](auth/visibility-plugin-spec.md)
 - [默认鉴权插件实现规范](auth/default-auth-plugin-spec.md)
+
+## 测试模型
+
+- [API 集成测试规范](testing/api-integration-test-spec.md)
+- [Java SDK 集成测试规范](testing/java-sdk-integration-test-spec.md)
 
 [AGENTS.md](../../AGENTS.md) 等 Agent 指南文件应只摘要这些规范以便本地执行。
 当人、AI agent、模板或校验工具使用 API 指南时，规范仍然是规则来源。

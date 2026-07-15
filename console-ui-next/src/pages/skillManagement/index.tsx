@@ -2,7 +2,18 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Trash2, Search, X, ChevronLeft, ChevronRight, Wand2, Upload, Plus, Tag } from 'lucide-react';
+import {
+  Trash2,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Wand2,
+  Upload,
+  Plus,
+  Tag,
+  Download,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +30,7 @@ import {
 import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
+import { ImportSkillDialog } from '@/components/ai/skill/ImportSkillDialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -59,7 +71,9 @@ export default function SkillManagementPage() {
   const [ownerInput, setOwnerInput] = useState(filterOwner);
   const [bizTagInput, setBizTagInput] = useState(filterBizTag);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [uploadInitialFile, setUploadInitialFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
 
@@ -91,7 +105,8 @@ export default function SkillManagementPage() {
   };
 
   const handleDetail = (name: string) => {
-    navigate(`/skill/${encodeURIComponent(name)}`);
+    const params = new URLSearchParams({ namespaceId });
+    navigate(`/skill/${encodeURIComponent(name)}?${params}`);
   };
 
   const handleDelete = async () => {
@@ -154,7 +169,7 @@ export default function SkillManagementPage() {
     }
   }, []);
 
-  const handlePageDrop = useCallback(async (e: React.DragEvent) => {
+  const handlePageDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current = 0;
@@ -165,41 +180,9 @@ export default function SkillManagementPage() {
       toast.error(t('skill.invalidZipFile'));
       return;
     }
-    try {
-      const res = await skillApi.batchUpload(namespaceId, droppedFile);
-      const data = (res as any)?.data;
-      if (data && (data.succeeded || data.failed)) {
-        const succeededList: string[] = data.succeeded ?? [];
-        const failedList: { name: string; reason: string }[] = data.failed ?? [];
-        if (failedList.length === 0) {
-          toast.success(t('skill.batchUploadAllSuccess', { count: succeededList.length }), { duration: 5000 });
-        } else {
-          const title = succeededList.length > 0
-            ? t('skill.batchUploadResult', { succeeded: succeededList.length, failed: failedList.length })
-            : t('skill.batchUploadAllFailed', { count: failedList.length });
-          const description = (
-            <div className="flex flex-col gap-0.5 text-xs">
-              {succeededList.map((name) => (
-                <div key={name} style={{ color: '#16a34a' }}>✓ {name}</div>
-              ))}
-              {failedList.map((item) => (
-                <div key={item.name} style={{ color: '#dc2626' }}>
-                  ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
-                </div>
-              ))}
-            </div>
-          );
-          const toastFn = succeededList.length > 0 ? toast.warning : toast.error;
-          toastFn(title, { description, duration: 8000 });
-        }
-      } else {
-        toast.success(t('skill.uploadSuccess'));
-      }
-      loadData();
-    } catch {
-      toast.error(t('skill.uploadFailed'));
-    }
-  }, [namespaceId, t, loadData]);
+    setUploadInitialFile(droppedFile);
+    setUploadOpen(true);
+  }, [t]);
 
   const totalPages = Math.ceil(total / pageSize);
   const allSelected = items.length > 0 && items.every((a) => selectedNames.has(a.name));
@@ -233,9 +216,20 @@ export default function SkillManagementPage() {
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {t('skill.dragDropHint')}
           </span>
-          <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setUploadInitialFile(null);
+              setUploadOpen(true);
+            }}
+          >
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {t('skill.upload')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {t('skill.importFromRegistry')}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -474,7 +468,21 @@ export default function SkillManagementPage() {
       {/* Upload dialog */}
       <UploadSkillDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
+        onOpenChange={(nextOpen) => {
+          setUploadOpen(nextOpen);
+          if (!nextOpen) {
+            setUploadInitialFile(null);
+          }
+        }}
+        namespaceId={namespaceId}
+        onSuccess={loadData}
+        initialFile={uploadInitialFile}
+      />
+
+      {/* Import dialog */}
+      <ImportSkillDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
         namespaceId={namespaceId}
         onSuccess={loadData}
       />
@@ -486,7 +494,7 @@ export default function SkillManagementPage() {
         namespaceId={namespaceId}
         onSuccess={(name) => {
           loadData();
-          navigate(`/skill/${encodeURIComponent(name)}`);
+          handleDetail(name);
         }}
       />
 

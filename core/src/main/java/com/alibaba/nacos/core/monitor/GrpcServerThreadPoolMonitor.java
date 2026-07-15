@@ -19,12 +19,12 @@ package com.alibaba.nacos.core.monitor;
 import com.alibaba.nacos.core.remote.grpc.GrpcClusterServer;
 import com.alibaba.nacos.core.remote.grpc.GrpcSdkServer;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.Resource;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.IntervalTask;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.time.Duration;
 import java.util.concurrent.ThreadPoolExecutor;
 

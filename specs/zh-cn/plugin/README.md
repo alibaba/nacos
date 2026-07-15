@@ -44,6 +44,7 @@
 
 - [AI 发布 Pipeline 插件规范](ai-pipeline-plugin-spec.md)
 - [AI 存储插件规范](ai-storage-plugin-spec.md)
+- [AI 资源导入插件规范](ai-resource-import-plugin-spec.md)
 
 ## 安全扩展
 

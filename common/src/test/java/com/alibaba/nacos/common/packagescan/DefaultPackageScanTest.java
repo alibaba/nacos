@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.common.packagescan.mock.AnnotationClass;
-import com.alibaba.nacos.common.packagescan.mock.MockClass;
 import com.alibaba.nacos.common.packagescan.mock.TestScan;
 import com.alibaba.nacos.common.packagescan.resource.PathMatchingResourcePatternResolver;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
@@ -53,29 +52,12 @@ class DefaultPackageScanTest {
     }
     
     @Test
-    void testGetSubTypesOf() {
-        packageScan = new DefaultPackageScan();
-        Set<Class<MockClass>> subTypesOf = packageScan.getSubTypesOf(AnnotationClass.class.getPackage().getName(),
-                MockClass.class);
-        assertEquals(3, subTypesOf.size());
-    }
-    
-    @Test
     void testGetTypesAnnotatedWith() {
         packageScan = new DefaultPackageScan();
         Set<Class<Object>> actual = packageScan.getTypesAnnotatedWith(AnnotationClass.class.getPackage().getName(),
                 TestScan.class);
         assertEquals(1, actual.size());
         assertEquals(AnnotationClass.class, actual.iterator().next());
-    }
-    
-    @Test
-    void testGetSubTypesOfWithException() throws NoSuchFieldException, IllegalAccessException, IOException {
-        setResolver();
-        String path = AnnotationClass.class.getPackage().getName();
-        when(pathMatchingResourcePatternResolver.getResources(anyString())).thenThrow(new IOException("test"));
-        Set<Class<MockClass>> subTypesOf = packageScan.getSubTypesOf(path, MockClass.class);
-        assertTrue(subTypesOf.isEmpty());
     }
     
     @Test
@@ -97,8 +79,8 @@ class DefaultPackageScanTest {
         when(resource.getInputStream()).thenReturn(inputStream);
         String path = AnnotationClass.class.getPackage().getName();
         when(pathMatchingResourcePatternResolver.getResources(anyString())).thenReturn(new Resource[] {resource});
-        Set<Class<MockClass>> subTypesOf = packageScan.getSubTypesOf(path, MockClass.class);
-        assertTrue(subTypesOf.isEmpty());
+        Set<Class<Object>> actual = packageScan.getTypesAnnotatedWith(path, TestScan.class);
+        assertTrue(actual.isEmpty());
     }
     
     private void setResolver() throws NoSuchFieldException, IllegalAccessException {

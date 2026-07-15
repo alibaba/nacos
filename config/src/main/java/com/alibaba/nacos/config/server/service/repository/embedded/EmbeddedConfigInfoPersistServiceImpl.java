@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -118,19 +117,6 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     private static final String RESOURCE_ROLE_ID = "role-id";
     
     private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
-    
-    private static final String DATA_ID = "dataId";
-    
-    private static final String GROUP = "group";
-    
-    private static final String APP_NAME = "appName";
-    
-    private static final String CONTENT = "content";
-    
-    private static final String TENANT = "tenant_id";
-    
-    private static final Set<String> SYSTEM_GROUP =
-        Set.of("mcp-server", "mcp-server-versions", "mcp-tools");
     
     private final DatabaseOperate databaseOperate;
     
@@ -1123,6 +1109,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
+    @Deprecated
     public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group,
         final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1199,6 +1186,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1218,6 +1208,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         if (CollectionUtils.isEmpty(configAllInfos)) {
             return configAllInfos;
+        }
+        if (!CollectionUtils.isEmpty(ids) && tenant != null) {
+            configAllInfos = configAllInfos.stream()
+                .filter(configAllInfo -> StringUtils.equals(tenantTmp, configAllInfo.getTenant()))
+                .collect(Collectors.toList());
         }
         for (ConfigAllInfo configAllInfo : configAllInfos) {
             List<String> configTagList =

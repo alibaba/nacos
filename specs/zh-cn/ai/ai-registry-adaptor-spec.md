@@ -97,13 +97,29 @@ registry 用法的 Skill discovery 端点：
 
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
-| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/index.json` | 返回 namespace 下的 Skill index。 |
-| `GET` | `/registry/{namespaceId}/.well-known/skills/index.json` | Skill index 的别名。 |
+| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/index.json` | 以 Agent Skills discovery v0.2.0 形态返回 namespace 下的 Skill index。 |
+| `GET` | `/registry/{namespaceId}/.well-known/skills/index.json` | 以 legacy v0.1 兼容形态返回 namespace 下的 Skill index。 |
 | `GET` | `/registry/{namespaceId}/api/search` | 搜索可导出的 Skills，返回 CLI 兼容搜索结果。 |
 | `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}/SKILL.md` | 返回导出的 `SKILL.md`。 |
 | `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}/SKILL.md` | 导出 `SKILL.md` 的别名。 |
+| `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}.zip` | 为 v0.2.0 `archive` 条目返回导出的 Skill archive。 |
+| `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}.zip` | 为已经解析到 legacy base path 的客户端提供 archive 别名。 |
 | `GET` | `/registry/{namespaceId}/.well-known/agent-skills/{skillName}/**` | 返回导出的文本资源。 |
 | `GET` | `/registry/{namespaceId}/.well-known/skills/{skillName}/**` | 导出文本资源的别名。 |
+
+`/.well-known/agent-skills/index.json` 是主要的 Skill well-known discovery surface。它必须返回
+顶层 `$schema` 字段，取值为
+`https://schemas.agentskills.io/discovery/0.2.0/schema.json`。每个条目必须包含
+`name`、`description`、`type`、`url` 和 `digest`。当 Skill 只包含 `SKILL.md`
+时，Nacos 应使用 `type=skill-md`，并将 `url` 指向 `{skillName}/SKILL.md`；
+当 Skill 包含可导出的文本资源时，Nacos 应使用 `type=archive`，并将 `url` 指向
+`{skillName}.zip`。`digest` 是 artifact 原始字节的 SHA-256 摘要，格式为
+`sha256:{hex}`。Nacos 可以包含已解析 latest `version` 等非标准扩展字段；按照 discovery
+协议，客户端必须忽略未知字段。
+
+`/.well-known/skills/index.json` 保留为 legacy 兼容面。它不返回 `$schema`，并继续以
+`files` 数组描述每个 Skill，使 v0.1 兼容客户端可以继续从 `/{skillName}/{file}` 路径获取
+`SKILL.md` 和文本资源。
 
 适配器只导出适合公开发现语义的 Skills：
 

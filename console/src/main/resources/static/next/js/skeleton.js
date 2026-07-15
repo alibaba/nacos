@@ -1,1 +1,1 @@
-import{j as o}from"./vendor-react.js";import{c as s}from"./button.js";function r({className:t,...e}){return o.jsx("div",{"data-slot":"skeleton",className:s("bg-accent animate-pulse rounded-md",t),...e})}export{r as S};
+import{a as e}from"./vendor-markdown.js";import{n as t}from"./button.js";var n=e();function r({className:e,...r}){return(0,n.jsx)(`div`,{"data-slot":`skeleton`,className:t(`bg-accent animate-pulse rounded-md`,e),...r})}export{r as t};

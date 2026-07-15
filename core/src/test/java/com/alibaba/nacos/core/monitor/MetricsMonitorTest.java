@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
@@ -137,6 +138,53 @@ class MetricsMonitorTest {
         assertEquals(0.5D, raftApplyReadTimer.totalTime(TimeUnit.MINUTES), 0.01);
         
         assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
+    }
+    
+    @Test
+    void testRefreshRaftGroupMetrics() {
+        String selfMember = "127.0.0.1:7848";
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            selfMember, 2L, selfMember);
+        MetricsMonitor.refreshRaftGroupMetrics("naming_instance_metadata",
+            "127.0.0.2:7848", 3L, selfMember);
+        
+        Gauge serviceLeaderStatus = NacosMeterRegistryCenter
+            .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+            .find("nacos_monitor")
+            .tags("module", "core", "name", "raftLeaderStatus", "group",
+                "naming_persistent_service")
+            .gauge();
+        Gauge metadataLeaderStatus = NacosMeterRegistryCenter
+            .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+            .find("nacos_monitor")
+            .tags("module", "core", "name", "raftLeaderStatus", "group",
+                "naming_instance_metadata")
+            .gauge();
+        Gauge serviceTerm = NacosMeterRegistryCenter
+            .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+            .find("nacos_monitor")
+            .tags("module", "core", "name", "raftTerm", "group",
+                "naming_persistent_service")
+            .gauge();
+        
+        assertEquals(1D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(0D, metadataLeaderStatus.value(), 0.01);
+        assertEquals(2D, serviceTerm.value(), 0.01);
+        
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            "127.0.0.2:7848", 4L, selfMember);
+        assertEquals(0D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(4D, serviceTerm.value(), 0.01);
+        
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            selfMember, 5L, selfMember);
+        assertEquals(1D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(5D, serviceTerm.value(), 0.01);
+        
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            null, null, selfMember);
+        assertEquals(1D, serviceLeaderStatus.value(), 0.01);
+        assertEquals(5D, serviceTerm.value(), 0.01);
     }
     
     @Test

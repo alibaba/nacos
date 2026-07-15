@@ -60,6 +60,8 @@ import static org.mockito.ArgumentMatchers.eq;
 @ExtendWith(MockitoExtension.class)
 class GrpcServerTest {
     
+    private static final int TEST_SERVER_PORT = 18848;
+    
     static MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = null;
     
     private BaseGrpcServer grpcSdkServer;
@@ -67,12 +69,14 @@ class GrpcServerTest {
     @BeforeAll
     static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
+        EnvUtil.setPort(TEST_SERVER_PORT);
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
     
     @AfterAll
     static void after() {
         applicationUtilsMockedStatic.close();
+        EnvUtil.setPort(-1);
     }
     
     @AfterEach

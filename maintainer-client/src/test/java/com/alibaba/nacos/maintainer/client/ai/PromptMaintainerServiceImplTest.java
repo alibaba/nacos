@@ -320,6 +320,18 @@ class PromptMaintainerServiceImplTest {
     }
     
     @Test
+    @DisplayName("redraft should return true on success")
+    void testRedraft() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual = promptService.redraft("public", "testPrompt", "v1");
+        assertTrue(actual);
+    }
+    
+    @Test
     @DisplayName("changeOnlineStatus online should call online path")
     void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();

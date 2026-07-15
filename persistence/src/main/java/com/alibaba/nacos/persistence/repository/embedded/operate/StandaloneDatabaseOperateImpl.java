@@ -27,6 +27,7 @@ import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlLimiter;
 import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlTypeLimiter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
@@ -35,7 +36,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

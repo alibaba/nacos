@@ -913,7 +913,7 @@ class ConfigurationManagement extends React.Component {
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v3/console/cs/config/clone?targetNamespaceId=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      url: `v3/console/cs/config/clone?targetNamespaceId=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=${self.state.nownamespace_id}`,
                       method: 'post',
                       data: JSON.stringify(clonePostData),
                       contentType: 'application/json',

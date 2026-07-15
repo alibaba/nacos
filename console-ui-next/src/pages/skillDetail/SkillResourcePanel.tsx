@@ -1,10 +1,16 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { useTranslation } from 'react-i18next';
-import { FileWarning, Image as ImageIcon } from 'lucide-react';
+import {
+  FileWarning,
+  Image as ImageIcon,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { SkillResource } from '@/types/skill';
 import { FileTreePanel } from '../agentSpecManagement/components/FileTreePanel';
+import type { FileTreeNode } from '../agentSpecManagement/components/FileTreePanel';
+import { ResourceFileHeader } from '../agentSpecManagement/components/ResourceFileHeader';
 import {
   buildSkillFileTree,
   getLanguageFromFileName,
@@ -39,6 +45,7 @@ export function SkillResourcePanel({
   const { t } = useTranslation();
   const [selectedKey, setSelectedKey] = useState<string>('');
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
+  const [renamingSelectedFile, setRenamingSelectedFile] = useState(false);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const nodes = useMemo(() => buildSkillFileTree(resources), [resources]);
@@ -97,6 +104,12 @@ export function SkillResourcePanel({
       resolved ? getLanguageFromFileName(resolved.resource.name) : 'plaintext',
     [resolved],
   );
+  const editorLanguage = editable && language === 'markdown' ? 'plaintext' : language;
+  const displaysTextContent = fileCategory === 'text';
+
+  useEffect(() => {
+    setRenamingSelectedFile(false);
+  }, [selectedKey]);
 
   // Editor content change
   const handleEditorChange = useCallback(
@@ -213,6 +226,42 @@ export function SkillResourcePanel({
     [onChange, resources],
   );
 
+  const handleRenameSelectedFile = useCallback(
+    (newName: string) => {
+      if (!resolved || !selectedKey) return;
+      handleRenameFile(selectedKey, newName);
+    },
+    [handleRenameFile, resolved, selectedKey],
+  );
+
+  const handleCopySelectedFile = useCallback(async () => {
+    if (!resolved) return;
+    try {
+      await navigator.clipboard.writeText(resolved.resource.content ?? '');
+      toast.success(t('skill.resourceCopySuccess'));
+    } catch {
+      toast.error(t('skill.resourceCopyFailed'));
+    }
+  }, [resolved, t]);
+
+  const handleDownloadSelectedFile = useCallback(() => {
+    if (!resolved) return;
+    const blob = createDownloadBlob(resolved.resource);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = resolved.resource.name.split('/').pop() || resolved.resource.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [resolved]);
+
+  const handleDeleteSelectedFile = useCallback(() => {
+    if (!selectedKey) return;
+    handleDeleteNode(selectedKey, 'file');
+  }, [handleDeleteNode, selectedKey]);
+
   // File tree: rename folder
   //
   // Folder keys look like "skill/subfolder/" – the part without the trailing
@@ -252,6 +301,11 @@ export function SkillResourcePanel({
   const selectedFileName = resolved
     ? resolved.resource.name.split('/').pop() || resolved.resource.name
     : '';
+  const selectedFilePath = resolved
+    ? resolved.resource.type
+      ? `${resolved.resource.type}/${resolved.resource.name}`
+      : resolved.resource.name
+    : '';
 
   return (
     <div
@@ -279,7 +333,7 @@ export function SkillResourcePanel({
 
         {/* Resize handle */}
         <div
-          className="w-1 cursor-col-resize bg-border/50 transition-colors hover:bg-primary/30 shrink-0"
+          className="relative -ml-px w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-primary/40 before:absolute before:-left-1 before:top-0 before:h-full before:w-3 before:content-['']"
           onMouseDown={handleMouseDown}
           role="separator"
           aria-orientation="vertical"
@@ -293,32 +347,63 @@ export function SkillResourcePanel({
                 ? t('skill.noResources')
                 : t('skill.selectResource')}
             </div>
-          ) : fileCategory === 'binary' ? (
-            <BinaryFileView fileName={resolved.resource.name} />
-          ) : fileCategory === 'image' ? (
-            <ImageFileView resource={resolved.resource} />
           ) : (
-            <Editor
-              language={language}
-              value={resolved.resource.content}
-              theme="vs"
-              options={{
-                readOnly: !editable,
-                minimap: { enabled: false },
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                automaticLayout: true,
-                fontSize: 13,
-                tabSize: 2,
-              }}
-              onChange={editable ? handleEditorChange : undefined}
-              loading={
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  {t('agentSpec.editorLoading')}
-                </div>
-              }
-            />
+            <>
+              <ResourceFileHeader
+                filePath={selectedFilePath}
+                fileName={selectedFileName}
+                editable={editable}
+                canRename
+                canCopy={displaysTextContent}
+                renaming={renamingSelectedFile}
+                labels={{
+                  rename: t('skill.resourceRenameFile'),
+                  copy: t('skill.resourceCopyFile'),
+                  download: t('skill.resourceDownloadFile'),
+                  delete: t('skill.resourceDeleteFile'),
+                }}
+                onStartRename={() => setRenamingSelectedFile(true)}
+                onCancelRename={() => setRenamingSelectedFile(false)}
+                onRename={handleRenameSelectedFile}
+                onCopy={handleCopySelectedFile}
+                onDownload={handleDownloadSelectedFile}
+                onDelete={handleDeleteSelectedFile}
+              />
+              <div className="min-h-0 flex flex-1 flex-col">
+                {displaysTextContent ? (
+                  <Editor
+                    height="100%"
+                    language={editorLanguage}
+                    value={resolved.resource.content}
+                    theme="vs"
+                    options={{
+                      readOnly: !editable,
+                      minimap: { enabled: false },
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      wordWrap: 'on',
+                      automaticLayout: true,
+                      fontSize: 13,
+                      tabSize: 2,
+                    }}
+                    onChange={editable ? handleEditorChange : undefined}
+                    loading={
+                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                        {t('agentSpec.editorLoading')}
+                      </div>
+                    }
+                  />
+                ) : fileCategory === 'binary' ? (
+                  <BinaryFileView fileName={resolved.resource.name} />
+                ) : fileCategory === 'svg' ? (
+                  <SvgFileView resource={resolved.resource} />
+                ) : fileCategory === 'image' ? (
+                  <ImageFileView resource={resolved.resource} />
+                ) : (
+                  <BinaryFileView fileName={resolved.resource.name} />
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -336,6 +421,39 @@ export function SkillResourcePanel({
       </div>
     </div>
   );
+}
+
+function createDownloadBlob(resource: SkillResource): Blob {
+  const content = resource.content ?? '';
+  const fileName = resource.name;
+  const isLikelyBase64 =
+    /^[A-Za-z0-9+/=\s]+$/.test(content.trim()) && content.trim().length > 20;
+  if (isLikelyBase64) {
+    try {
+      const bytes = Uint8Array.from(atob(content.trim()), (char) => char.charCodeAt(0));
+      return new Blob([bytes], { type: getMimeType(fileName) });
+    } catch {
+      // Fall back to plain text if the content only looked like base64.
+    }
+  }
+  return new Blob([content], { type: 'text/plain;charset=utf-8' });
+}
+
+function getMimeType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  const mimeMap: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    ico: 'image/x-icon',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+    pdf: 'application/pdf',
+    json: 'application/json',
+  };
+  return ext ? mimeMap[ext] || 'application/octet-stream' : 'application/octet-stream';
 }
 
 // ===== Sub-components =====
@@ -403,10 +521,38 @@ function ImageFileView({ resource }: { resource: SkillResource }) {
   );
 }
 
+function SvgFileView({ resource }: { resource: SkillResource }) {
+  const [failedSrc, setFailedSrc] = useState('');
+  const content = resource.content?.trim();
+
+  if (!content) {
+    return <BinaryFileView fileName={resource.name} />;
+  }
+
+  const src = content.startsWith('data:')
+    ? content
+    : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`;
+
+  if (failedSrc === src) {
+    return <BinaryFileView fileName={resource.name} />;
+  }
+
+  return (
+    <div className="flex-1 flex items-center justify-center overflow-auto bg-muted/10 p-6">
+      <img
+        src={src}
+        alt={resource.name}
+        className="max-h-full max-w-full rounded-lg border object-contain shadow-sm"
+        onError={() => setFailedSrc(src)}
+      />
+    </div>
+  );
+}
+
 // ===== Utilities =====
 
 function findFirstFile(
-  nodes: { type: string; key: string; children?: any[] }[],
+  nodes: FileTreeNode[],
 ): { key: string } | null {
   for (const n of nodes) {
     if (n.type === 'file') return n;

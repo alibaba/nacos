@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
@@ -67,6 +68,7 @@ public class PluginControllerV3 {
      * @param pluginType plugin type filter (optional)
      * @return plugin list
      */
+    @Since("3.2.0")
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -92,6 +94,7 @@ public class PluginControllerV3 {
      * @param pluginName plugin name
      * @return plugin detail
      */
+    @Since("3.2.0")
     @GetMapping("/detail")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE,
@@ -117,6 +120,7 @@ public class PluginControllerV3 {
      * @param localOnly  whether only apply to local node
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/status")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -140,6 +144,7 @@ public class PluginControllerV3 {
      * @param localOnly  whether only apply to local node
      * @return success result
      */
+    @Since("3.2.0")
     @PutMapping("/config")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
@@ -179,19 +184,8 @@ public class PluginControllerV3 {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setExclusive(isExclusiveType(pluginInfo.getPluginType()));
+        vo.setExclusive(pluginInfo.getPluginType().isExclusive());
         return vo;
-    }
-    
-    /**
-     * Check if the plugin type is exclusive (only one can be active at a time). Exclusive types: AUTH,
-     * DATASOURCE_DIALECT.
-     *
-     * @param type plugin type
-     * @return true if exclusive
-     */
-    private boolean isExclusiveType(PluginType type) {
-        return type == PluginType.AUTH || type == PluginType.DATASOURCE_DIALECT;
     }
     
     private PluginDetailVO convertToDetailVO(PluginInfo pluginInfo) {
@@ -202,7 +196,13 @@ public class PluginControllerV3 {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setConfig(pluginInfo.getConfig());
+        PluginConfigResolution resolution = unifiedPluginManager.resolvePluginConfig(pluginInfo);
+        if (resolution == null) {
+            vo.setConfig(pluginInfo.getConfig());
+        } else {
+            vo.setConfig(resolution.getConfig());
+            vo.setConfigValueMetas(resolution.getValueMetas());
+        }
         vo.setConfigDefinitions(pluginInfo.getConfigDefinitions());
         return vo;
     }

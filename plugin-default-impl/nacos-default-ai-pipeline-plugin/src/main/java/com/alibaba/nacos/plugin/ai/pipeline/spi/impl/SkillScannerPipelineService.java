@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -142,6 +143,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             List<String> command = buildScanCommand(tempDir);
             ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> env = pb.environment();
+            applyPythonStdoutEncoding(env);
             scanOptions.applyLlmEnvironment(env);
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -155,7 +157,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                 }
             }
             
-            int exitCode = process.waitFor();
+            int exitCode = waitForProcess(process);
             
             if (exitCode == 0) {
                 LOGGER.info("[SkillScannerPipeline] {} {} 扫描通过", context.getResourceType(),
@@ -216,6 +218,10 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             command.add("--enable-meta");
         }
         return command;
+    }
+    
+    int waitForProcess(Process process) throws InterruptedException {
+        return process.waitFor();
     }
     
     private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files)
@@ -323,6 +329,12 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         }
         if (!file.delete()) {
             LOGGER.debug("[SkillScannerPipeline] 无法删除临时文件: {}", file.getAbsolutePath());
+        }
+    }
+    
+    private void applyPythonStdoutEncoding(Map<String, String> env) {
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
+            env.put("PYTHONIOENCODING", "utf-8");
         }
     }
     

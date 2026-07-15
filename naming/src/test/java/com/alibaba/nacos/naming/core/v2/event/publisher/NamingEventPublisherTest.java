@@ -16,22 +16,29 @@
 
 package com.alibaba.nacos.naming.core.v2.event.publisher;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.naming.misc.Loggers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NamingEventPublisherTest {
@@ -86,6 +93,19 @@ class NamingEventPublisherTest {
     }
     
     @Test
+    void testAddAndRemoveSubscriberWithSubscribeType() {
+        when(subscriber.subscribeType()).thenReturn(TestEvent.TestEvent1.class);
+        TestEvent.TestEvent1 testEvent1 = new TestEvent.TestEvent1();
+        
+        namingEventPublisher.addSubscriber(subscriber);
+        namingEventPublisher.removeSubscriber(subscriber);
+        namingEventPublisher.publish(testEvent1);
+        ThreadUtils.sleep(500L);
+        
+        verify(subscriber, never()).onEvent(testEvent1);
+    }
+    
+    @Test
     void testPublishOverFlow() {
         TestEvent testEvent = new TestEvent();
         for (int i = 0; i < Byte.SIZE; i++) {
@@ -94,6 +114,85 @@ class NamingEventPublisherTest {
         namingEventPublisher.addSubscriber(subscriber, TestEvent.class);
         namingEventPublisher.publish(testEvent);
         verify(subscriber, atLeastOnce()).onEvent(testEvent);
+    }
+    
+    @Test
+    void testNotifySubscriberWithExecutor() {
+        TestEvent testEvent = new TestEvent();
+        when(subscriber.executor()).thenReturn(Runnable::run);
+        
+        namingEventPublisher.notifySubscriber(subscriber, testEvent);
+        
+        verify(subscriber).onEvent(testEvent);
+    }
+    
+    @Test
+    void testNotifySubscriberWhenDebugEnabled() {
+        Logger eventLogger = (Logger) Loggers.EVT_LOG;
+        Level originalLevel = eventLogger.getLevel();
+        try {
+            eventLogger.setLevel(Level.DEBUG);
+            TestEvent testEvent = new TestEvent();
+            
+            namingEventPublisher.notifySubscriber(subscriber, testEvent);
+            
+            verify(subscriber).onEvent(testEvent);
+        } finally {
+            eventLogger.setLevel(originalLevel);
+        }
+    }
+    
+    @Test
+    void testHandleEventWithoutSubscriberWhenDebugEnabled() {
+        Logger eventLogger = (Logger) Loggers.EVT_LOG;
+        Level originalLevel = eventLogger.getLevel();
+        try {
+            eventLogger.setLevel(Level.DEBUG);
+            namingEventPublisher.addSubscriber(subscriber, TestEvent.TestEvent1.class);
+            
+            namingEventPublisher.publish(new TestEvent.TestEvent2());
+            ThreadUtils.sleep(2000L);
+            
+            assertThat(namingEventPublisher.currentEventSize(), is(0L));
+        } finally {
+            eventLogger.setLevel(originalLevel);
+        }
+    }
+    
+    @Test
+    void testNotifySubscriberCatchesCallbackException() {
+        TestEvent testEvent = new TestEvent();
+        Mockito.doThrow(new RuntimeException("callback failed")).when(subscriber)
+            .onEvent(testEvent);
+        
+        assertDoesNotThrow(() -> namingEventPublisher.notifySubscriber(subscriber, testEvent));
+    }
+    
+    @Test
+    void testPublishBeforeInitThrowsException() {
+        NamingEventPublisher publisher = new NamingEventPublisher();
+        
+        assertThrows(IllegalStateException.class, () -> publisher.publish(new TestEvent()));
+    }
+    
+    @Test
+    void testRunCatchesUnexpectedException() {
+        NamingEventPublisher publisher = new NamingEventPublisher();
+        publisher.addSubscriber(subscriber, TestEvent.class);
+        
+        assertDoesNotThrow(publisher::run);
+    }
+    
+    @Test
+    void testRunHandlesInterruptedTake() throws Exception {
+        namingEventPublisher.addSubscriber(subscriber, TestEvent.class);
+        ThreadUtils.sleep(200L);
+        
+        namingEventPublisher.shutdown();
+        namingEventPublisher.interrupt();
+        ThreadUtils.sleep(200L);
+        
+        assertThat(namingEventPublisher.currentEventSize(), is(0L));
     }
     
     @Test

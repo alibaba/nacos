@@ -36,7 +36,6 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 
 class ConfigHttpClientManagerTest {
@@ -125,7 +124,6 @@ class ConfigHttpClientManagerTest {
         assertNotNull(response);
         assertEquals(NacosException.CLIENT_OVER_THRESHOLD, response.getStatusCode());
         assertEquals(Header.EMPTY, response.getHeaders());
-        assertNull(response.getStatusText());
         try (InputStream body = response.getBody()) {
             byte[] buf = new byte[256];
             int n = body.read(buf);

@@ -105,6 +105,14 @@ public interface AiResourcePersistService {
     boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion,
         AiResource newValue);
     
+    /**
+     * Update resource source with optimistic lock on meta_version.
+     *
+     * @return true if updated successfully (affectedRows == 1)
+     */
+    boolean updateSourceCas(String namespaceId, String name, String type, long expectedMetaVersion,
+        String source);
+    
     int delete(String namespaceId, String name, String type);
     
     /**

@@ -32,7 +32,6 @@ import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -386,42 +385,6 @@ class SkillUtilsTest {
         String group = SkillUtils.buildSkillVersionGroup("my-skill", "v1");
         assertTrue(group.startsWith("skill_"));
         assertTrue(group.contains("__"));
-    }
-    
-    // ========== decodeSkillGroupToNameAndVersion Tests ==========
-    
-    @Test
-    @DisplayName("test decodeSkillGroupToNameAndVersion with manifest group")
-    void testDecodeSkillGroupToNameAndVersionWithManifestGroup() {
-        String group = SkillUtils.buildSkillGroup("my-skill");
-        String[] result = SkillUtils.decodeSkillGroupToNameAndVersion(group);
-        assertEquals(2, result.length);
-        assertNotNull(result[0]);
-        assertNull(result[1]);
-    }
-    
-    @Test
-    @DisplayName("test decodeSkillGroupToNameAndVersion with versioned group")
-    void testDecodeSkillGroupToNameAndVersionWithVersionedGroup() {
-        String group = SkillUtils.buildSkillVersionGroup("my-skill", "v1");
-        String[] result = SkillUtils.decodeSkillGroupToNameAndVersion(group);
-        assertEquals(2, result.length);
-        assertNotNull(result[0]);
-        assertNotNull(result[1]);
-    }
-    
-    @Test
-    @DisplayName("test decodeSkillGroupToNameAndVersion with invalid group throws exception")
-    void testDecodeSkillGroupToNameAndVersionWithInvalidGroupThrowsException() {
-        assertThrows(IllegalArgumentException.class,
-            () -> SkillUtils.decodeSkillGroupToNameAndVersion("invalid"));
-    }
-    
-    @Test
-    @DisplayName("test decodeSkillGroupToNameAndVersion with blank group throws exception")
-    void testDecodeSkillGroupToNameAndVersionWithBlankGroupThrowsException() {
-        assertThrows(IllegalArgumentException.class,
-            () -> SkillUtils.decodeSkillGroupToNameAndVersion(""));
     }
     
     // ========== generateResourceId Tests ==========

@@ -28,13 +28,32 @@ namespaceId -> groupName -> dataId
 
 | Field | Meaning | Notes |
 | --- | --- | --- |
-| `namespaceId` | Namespace that owns the config. | Blank or omitted values are processed as the default namespace id, currently `public`. Storage and compatibility code may call this `tenant` or `tenantId`. |
+| `namespaceId` | Namespace that owns the config. | Blank or omitted request values are processed as the default namespace id, currently `public`. Storage code may still name this field `tenant` or `tenantId`, but the current model does not require duplicate default-namespace records for empty tenant and `public`. |
 | `groupName` | Business group inside a namespace. | New public specs and HTTP v3 forms use `groupName`; lower-level Config model fields and compatibility APIs may still call this value `group`. |
 | `dataId` | Config resource name. | `dataId` is the `resourceName` of Config. |
 
 The identity is stable. Changing `namespaceId`, `groupName`, or `dataId` is a new
 resource, clone, import, or delete-and-create operation, not an in-place metadata
 update.
+
+Storage IDs returned by persistence or management surfaces are implementation
+details. Even when a management API or SDK allows batch selection by storage ID,
+the operation must remain scoped by the normalized request `namespaceId`;
+storage IDs must not become global resource tokens that bypass namespace
+identity.
+
+Clone operations involve both source and target identities. When a clone request
+selects source configs by storage ID, those IDs must be resolved only inside the
+normalized source namespace. The target namespace controls only where cloned
+configs are written and must not authorize or imply a cross-namespace source
+lookup.
+
+Accepting storage IDs in Config management API or SDK requests is a
+compatibility behavior and is deprecated. New Config management APIs must not
+expose storage IDs as selectors. Existing `ids` or `configId` selectors are
+pending removal after the compatibility window and should be replaced by
+selection models based on `namespaceId`, `groupName`, and `dataId`, or explicit
+lists of that identity tuple.
 
 ## 2. Content And Version Fields
 

@@ -38,7 +38,7 @@ internal networks. It is not a full strong-auth solution for hostile public
 networks. Public exposure requires an external security boundary or a stronger
 auth plugin.
 
-## Required Configuration
+## Module Configuration
 
 | Configuration | Purpose |
 |---------------|---------|
@@ -46,20 +46,81 @@ auth plugin.
 | `nacos.core.auth.admin.enabled` | Enable Admin API auth. |
 | `nacos.core.auth.console.enabled` | Enable Console API auth and default login behavior. |
 | `nacos.core.auth.system.type` | Select the auth plugin, default `nacos`. |
-| `nacos.core.auth.plugin.nacos.token.secret.key` | Secret key used to sign default tokens. Must be configured by deployments. |
-| `nacos.core.auth.plugin.nacos.token.expire.seconds` | Token expiration time. |
-| `nacos.core.auth.plugin.nacos.token.cache.enable` | Enable token parse and validation cache. |
 | `nacos.core.auth.server.identity.key` | Server-to-server identity key. |
 | `nacos.core.auth.server.identity.value` | Server-to-server identity value. |
-| `nacos.core.auth.caching.enabled` | Enable user, role, and permission cache. |
-| `nacos.core.auth.nacos.anonymous.ai.enabled` | Allow anonymous AI access when an endpoint explicitly opts in. |
 
-Token secrets and server identity values must be deployment-specific. A default
-or shared value is unsafe.
+These settings control the auth module, API scopes, plugin selection, and
+server identity. They are not configuration items owned by `auth:nacos`.
+Server identity values must be deployment-specific.
 
-The `ldap` plugin variant additionally uses the `nacos.core.auth.ldap.*`
-configuration family. LDAP changes identity authentication only; authorization
-continues to use Nacos roles and permissions.
+## Managed Plugin Configuration
+
+The `nacos` implementation directly implements `PluginConfigSpec` and is
+registered as configurable plugin `auth:nacos`. Its canonical configuration
+prefix is `nacos.plugin.auth.nacos.`.
+
+| Item key | Canonical static key | Legacy static alias | Type | Effect | Default | Sensitive |
+|----------|----------------------|---------------------|------|--------|---------|-----------|
+| `token.secret.key` | `nacos.plugin.auth.nacos.token.secret.key` | `nacos.core.auth.plugin.nacos.token.secret.key` | String | `RESTART` | Empty | Yes |
+| `token.expire.seconds` | `nacos.plugin.auth.nacos.token.expire.seconds` | `nacos.core.auth.plugin.nacos.token.expire.seconds` | Number | `RUNTIME` | `18000` | No |
+| `token.cache.enable` | `nacos.plugin.auth.nacos.token.cache.enable` | `nacos.core.auth.plugin.nacos.token.cache.enable` | Boolean | `RUNTIME` | `false` | No |
+| `caching.enabled` | `nacos.plugin.auth.nacos.caching.enabled` | `nacos.core.auth.caching.enabled` | Boolean | `RUNTIME` | `true` | No |
+| `anonymous.ai.enabled` | `nacos.plugin.auth.nacos.anonymous.ai.enabled` | `nacos.core.auth.nacos.anonymous.ai.enabled` | Boolean | `RUNTIME` | `false` | No |
+
+`token.expire.seconds` must be greater than zero. When any Nacos API auth scope
+needs token support, `token.secret.key` must be a valid Base64 value that
+decodes to at least 32 bytes. A token secret must be deployment-specific; a
+default or shared value is unsafe. The secret is returned in masked form by
+plugin management APIs and cannot be changed through a runtime update.
+
+The canonical key wins when it and a legacy alias are both present. Legacy
+aliases remain readable for compatibility and produce migration diagnostics
+without logging configuration values. Runtime and local-only updates use the
+item keys in the table and follow the common full-source-map semantics from the
+[Nacos Plugin Spec](../plugin/plugin-spec.md).
+
+The plugin owns an immutable effective configuration snapshot. Applying a new
+snapshot updates token expiration, token-cache selection, authorization cache
+behavior, and anonymous access without making those consumers read Spring
+environment properties directly. The JWT parser is created from the accepted
+restart-only secret. Enabling token caching selects a cache wrapper around the
+same base manager. Disabling token caching switches back to the base manager
+and clears the token cache. Changing token expiration also clears the wrapper
+cache so the next token request uses the accepted runtime lifetime; tokens
+already returned to clients remain valid until their signed expiration.
+
+The `ldap` implementation also implements `PluginConfigSpec` and is registered
+as configurable plugin `auth:ldap`. Its canonical configuration prefix is
+`nacos.plugin.auth.ldap.`.
+
+| Item key | Canonical static key | Legacy static alias | Type | Effect | Default | Sensitive |
+|----------|----------------------|---------------------|------|--------|---------|-----------|
+| `url` | `nacos.plugin.auth.ldap.url` | `nacos.core.auth.ldap.url` | String | `RESTART` | `ldap://localhost:389` | No |
+| `base-dn` | `nacos.plugin.auth.ldap.base-dn` | `nacos.core.auth.ldap.basedc` | String | `RESTART` | `dc=example,dc=org` | No |
+| `timeout` | `nacos.plugin.auth.ldap.timeout` | `nacos.core.auth.ldap.timeout` | Number | `RESTART` | `3000` | No |
+| `user-dn` | `nacos.plugin.auth.ldap.user-dn` | `nacos.core.auth.ldap.userDn` | String | `RESTART` | `cn=admin,dc=example,dc=org` | No |
+| `password` | `nacos.plugin.auth.ldap.password` | `nacos.core.auth.ldap.password` | String | `RESTART` | `password` | Yes |
+| `filter-prefix` | `nacos.plugin.auth.ldap.filter-prefix` | `nacos.core.auth.ldap.filter.prefix` | String | `RESTART` | `uid` | No |
+| `case-sensitive` | `nacos.plugin.auth.ldap.case-sensitive` | `nacos.core.auth.ldap.case.sensitive` | Boolean | `RESTART` | `true` | No |
+| `ignore-partial-result-exception` | `nacos.plugin.auth.ldap.ignore-partial-result-exception` | `nacos.core.auth.ldap.ignore.partial.result.exception` | Boolean | `RESTART` | `false` | No |
+
+The timeout is expressed in milliseconds and must be greater than zero. The
+bind password is masked by plugin management APIs. All LDAP-owned fields are
+restart-only in the first managed version, so runtime and local-only updates
+that add, modify, or remove one of these fields are rejected.
+
+Canonical keys take precedence over the legacy aliases. The unused historical
+template key `nacos.core.auth.ldap.userdn` is not a supported alias because no
+production implementation consumed it and its intended user-DN-pattern
+semantics were ambiguous.
+
+The LDAP plugin owns an immutable effective configuration snapshot. Spring
+LDAP context and template construction reads that accepted snapshot lazily;
+LDAP consumers do not read a second set of `@Value` properties. LDAP changes
+identity authentication only. Token signing and lifetime, Nacos user and role
+storage, and authorization continue to use the infrastructure configured by
+`auth:nacos`; those shared settings are not duplicated in `auth:ldap`
+definitions.
 
 ## Identity
 
@@ -79,11 +140,24 @@ the user role model.
 Anonymous AI access is allowed only when all of these are true:
 
 - The endpoint marks the request as allowing anonymous access.
-- `nacos.core.auth.nacos.anonymous.ai.enabled` is enabled.
+- `anonymous.ai.enabled` is enabled in `auth:nacos` configuration.
 - The default plugin accepts the request as the built-in anonymous identity.
 
-When anonymous AI access is enabled, the implementation initializes the reserved
-anonymous user and role with read permission on `public:*:ai/*`.
+Enabling anonymous access immediately enables only identity acceptance. A
+background reconciler then ensures the reserved anonymous user and role exist.
+On first initialization it adds read permission on `public:*:ai/*` and writes
+the anonymous role binding last as the durable completion marker. Concurrent
+nodes use read-after-conflict verification so duplicate creation is treated as
+success only when the expected persisted state is observable.
+
+An existing anonymous role binding is treated as already initialized. The
+reconciler does not restore the broad default permission in that case, so
+administrator-customized anonymous permission scope is preserved. Disabling
+anonymous access stops identity acceptance but does not delete the reserved
+user, role, or permissions. Reconciliation state is only a local database-work
+optimization and is not an authorization condition: normal RBAC authority
+checks still deny the anonymous identity when no matching role or permission is
+present.
 
 ## Default Java Client Auth Integration
 
@@ -205,11 +279,16 @@ Legacy or compatibility endpoints may remain for existing clients, but new
 documentation and new development should target the v3 auth API and the plugin
 contracts defined here.
 
+Legacy static configuration aliases in the managed-plugin table remain
+supported. New distribution templates use canonical keys and identify the old
+keys in comments. Startup scripts migrate a valid legacy token secret to the
+canonical key when the canonical key is absent or empty; when both are set, the
+canonical value wins. Secret values must never be printed during migration.
+
 ## Pending Issues
 
-- The `ldap` plugin is currently coupled into the default auth implementation
-  package by extending `NacosAuthPluginService`. Conceptually LDAP is a separate
-  identity-provider-backed auth plugin, not part of the default Nacos
-  username/password and token implementation. It should be split into a
-  standalone auth plugin package and spec while preserving compatibility for
-  existing `nacos.core.auth.system.type=ldap` deployments.
+- The `ldap` plugin now owns its LDAP connection and lookup configuration
+  through `PluginConfigSpec`, but still consumes token, user, role, and
+  authorization infrastructure configured by `auth:nacos`. A later refactor
+  should move those shared capabilities behind an explicit auth-module service
+  so the identity-provider plugin does not depend on default-plugin ownership.

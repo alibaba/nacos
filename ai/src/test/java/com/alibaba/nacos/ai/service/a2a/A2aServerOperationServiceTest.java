@@ -47,6 +47,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -60,6 +61,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -251,6 +253,45 @@ public class A2aServerOperationServiceTest {
         verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME),
             eq(Constants.A2A.AGENT_GROUP),
             eq(TEST_NAMESPACE_ID), eq(null), eq(null), eq("nacos"), eq(null));
+    }
+    
+    @Test
+    void testDeleteAgentLatestVersionElectsRemainingVersion() throws NacosException {
+        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+        AgentVersionDetail currentVersion = versionInfo.getVersionDetails().get(0);
+        currentVersion.setLatest(false);
+        
+        AgentVersionDetail latestVersion = new AgentVersionDetail();
+        latestVersion.setVersion("2.0.0");
+        latestVersion.setLatest(true);
+        versionInfo.setVersion("2.0.0");
+        versionInfo.setLatestPublishedVersion("2.0.0");
+        versionInfo.setVersionDetails(new LinkedList<>(List.of(currentVersion, latestVersion)));
+        
+        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+        when(response.getStatus())
+            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME, "2.0.0");
+        
+        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME + "-2.0.0"),
+            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
+            eq("nacos"), eq(null));
+        ArgumentCaptor<ConfigForm> configCaptor = forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(configCaptor.capture(),
+            any(ConfigRequestInfo.class), eq(null));
+        
+        AgentCardVersionInfo updatedVersionInfo =
+            JacksonUtils.toObj(configCaptor.getValue().getContent(), AgentCardVersionInfo.class);
+        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getLatestPublishedVersion());
+        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getVersion());
+        assertEquals(1, updatedVersionInfo.getVersionDetails().size());
+        assertEquals(TEST_AGENT_VERSION,
+            updatedVersionInfo.getVersionDetails().get(0).getVersion());
+        assertEquals(true, updatedVersionInfo.getVersionDetails().get(0).isLatest());
     }
     
     @Test
@@ -579,6 +620,26 @@ public class A2aServerOperationServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getPageItems().size());
+    }
+    
+    @Test
+    void testListAgentsNullAgentNameUsesSameWildcardAsEmptyString() throws NacosException {
+        Page<ConfigInfo> configPage = new Page<>();
+        configPage.setPageItems(Collections.emptyList());
+        configPage.setTotalCount(0);
+        when(agentIdCodecHolder.encodeForSearch("")).thenReturn("");
+        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
+            anyString(),
+            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
+        
+        a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, null,
+            Constants.A2A.SEARCH_BLUR, 1, 10);
+        
+        ArgumentCaptor<String> dataIdCaptor = forClass(String.class);
+        verify(configDetailService, times(1)).findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR),
+            eq(1), eq(10), dataIdCaptor.capture(), eq(Constants.A2A.AGENT_GROUP),
+            eq(TEST_NAMESPACE_ID), eq(null));
+        assertEquals("**", dataIdCaptor.getValue());
     }
     
     @Test

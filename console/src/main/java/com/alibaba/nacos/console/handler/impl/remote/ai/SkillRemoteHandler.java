@@ -27,10 +27,13 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -40,9 +43,11 @@ import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * Remote implementation of Skill handler.
- * 
+ *
  * <p>Calls remote Nacos server through maintainer client for Skill operations.</p>
  *
  * @author nacos
@@ -111,11 +116,16 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(namespaceId,
-            zipBytes, overwrite);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().uploadSkillFromZip(
+            request.getNamespaceId(), request.getZipBytes(), request.isOverwrite(),
+            request.getTargetVersion(), request.getCommitMsg(), request.getUploadAction());
+    }
+    
+    @Override
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().batchPrecheckUploadSkill(requests);
     }
     
     @Override
@@ -157,14 +167,20 @@ public class SkillRemoteHandler implements SkillHandler {
     public void publish(SkillPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().skill()
             .publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-                form.getUpdateLatestLabel());
+                true);
     }
     
     @Override
     public void forcePublish(SkillPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().skill()
             .forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-                form.getUpdateLatestLabel());
+                true);
+    }
+    
+    @Override
+    public void redraft(SkillPublishForm form) throws NacosException {
+        clientHolder.getAiMaintainerService().skill()
+            .redraft(form.getNamespaceId(), form.getSkillName(), form.getVersion());
     }
     
     @Override

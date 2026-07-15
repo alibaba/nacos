@@ -59,7 +59,6 @@ import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FLAG;
 
 /**
  * EmbeddedConfigInfoGrayPersistServiceImpl.
@@ -157,12 +156,10 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 srcUser);
             Timestamp now = new Timestamp(System.currentTimeMillis());
             
-            if (!GRAY_MIGRATE_FLAG.get()) {
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp,
-                    srcUser, now, "I",
-                    Constants.GRAY, grayNameTmp,
-                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
-            }
+            historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp,
+                srcUser, now, "I",
+                Constants.GRAY, grayNameTmp,
+                ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
             
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
                 srcIp, now);
@@ -249,13 +246,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         final Object[] args = new Object[] {dataId, group, tenantTmp, grayNameTmp};
         
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        if (!GRAY_MIGRATE_FLAG.get()) {
-            historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
-                oldConfigAllInfo4Gray,
-                srcIp, srcUser, now, "D", Constants.GRAY, grayNameTmp,
-                ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                    oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
-        }
+        historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
+            oldConfigAllInfo4Gray,
+            srcIp, srcUser, now, "D", Constants.GRAY, grayNameTmp,
+            ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
         
         EmbeddedStorageContextUtils.onDeleteConfigGrayInfo(tenantTmp, group, dataId, grayNameTmp,
             srcIp);
@@ -305,13 +300,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
                     grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                     grayNameTmp};
-            if (!GRAY_MIGRATE_FLAG.get()) {
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(
-                    oldConfigAllInfo4Gray.getId(),
-                    oldConfigAllInfo4Gray, srcIp, srcUser, time, "U", Constants.GRAY, grayNameTmp,
-                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                        oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
-            }
+            historyConfigInfoPersistService.insertConfigHistoryAtomic(
+                oldConfigAllInfo4Gray.getId(),
+                oldConfigAllInfo4Gray, srcIp, srcUser, time, "U", Constants.GRAY, grayNameTmp,
+                ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                    oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
                 srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -380,17 +373,15 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             
             Boolean success = databaseOperate.blockUpdate();
             if (success) {
-                if (!GRAY_MIGRATE_FLAG.get()) {
-                    Timestamp now = new Timestamp(System.currentTimeMillis());
-                    historyConfigInfoPersistService.insertConfigHistoryAtomic(
-                        oldConfigAllInfo4Gray.getId(),
-                        oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
-                        grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(
-                            oldConfigAllInfo4Gray.getGrayName(),
-                            oldConfigAllInfo4Gray.getGrayRule(),
-                            oldConfigAllInfo4Gray.getSrcUser()));
-                }
+                Timestamp now = new Timestamp(System.currentTimeMillis());
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(
+                    oldConfigAllInfo4Gray.getId(),
+                    oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
+                    grayNameTmp,
+                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(
+                        oldConfigAllInfo4Gray.getGrayName(),
+                        oldConfigAllInfo4Gray.getGrayRule(),
+                        oldConfigAllInfo4Gray.getSrcUser()));
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, grayNameTmp);
             } else {

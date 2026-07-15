@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
@@ -37,6 +38,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
  *
  * @author tanyongquan
  */
+@Since("3.0.0")
 @Component("namingFuzzyWatchRequestHandler")
 public class NamingFuzzyWatchRequestHandler
     extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {

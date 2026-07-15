@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -85,6 +86,7 @@ public class ConsoleServiceController {
     /**
      * Create a new service. This API will create a persistence service.
      */
+    @Since("3.0.0")
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
@@ -103,6 +105,7 @@ public class ConsoleServiceController {
     /**
      * Remove service.
      */
+    @Since("3.0.0")
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
@@ -116,6 +119,7 @@ public class ConsoleServiceController {
     /**
      * Update service.
      */
+    @Since("3.0.0")
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
@@ -135,6 +139,7 @@ public class ConsoleServiceController {
      *
      * @return {@link Selector} types.
      */
+    @Since("3.0.0")
     @GetMapping("/selector/types")
     @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
         + "naming", action = ActionTypes.READ, apiType = ApiType.CONSOLE_API,
@@ -152,6 +157,7 @@ public class ConsoleServiceController {
      * @return subscribes result data.
      * @throws Exception any exception during get subscriber list.
      */
+    @Since("3.0.0")
     @GetMapping("/subscribers")
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     public Result<Page<SubscriberInfo>> subscribers(ServiceForm serviceForm, PageForm pageForm,
@@ -177,6 +183,7 @@ public class ConsoleServiceController {
      * @param pageForm        page form
      * @return list service detail, depend on withInstances parameters, return ServiceDetailInfo or ServiceView.
      */
+    @Since("3.0.0")
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping("/list")
     public Result<Object> getServiceList(ServiceListForm serviceListForm, PageForm pageForm)
@@ -201,6 +208,7 @@ public class ConsoleServiceController {
      * @return service detail information
      * @throws NacosException nacos exception
      */
+    @Since("3.0.0")
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping()
     public Result<ServiceDetailInfo> getServiceDetail(ServiceForm serviceForm)
@@ -218,6 +226,7 @@ public class ConsoleServiceController {
      * @return 'ok' if success
      * @throws Exception if failed
      */
+    @Since("3.0.0")
     @PutMapping("/cluster")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> updateCluster(UpdateClusterForm updateClusterForm) throws Exception {

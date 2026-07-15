@@ -56,14 +56,6 @@ public interface HttpClientResponse extends Closeable {
     int getStatusCode() throws IOException;
     
     /**
-     * Return the HTTP status text of the response.
-     *
-     * @return the HTTP status text
-     * @throws IOException IOException
-     */
-    String getStatusText() throws IOException;
-    
-    /**
      * close response InputStream.
      */
     @Override

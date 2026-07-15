@@ -27,9 +27,12 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
@@ -197,13 +200,55 @@ class SkillRemoteHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test".getBytes();
-        when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false)))
-            .thenReturn(
-                SKILL_NAME);
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
+            .zipBytes(zipBytes).overwrite(false).build();
+        when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false),
+            isNull(), isNull(), isNull())).thenReturn(SKILL_NAME);
         
-        String result = skillRemoteHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, false);
+        String result = skillRemoteHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
+        verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null,
+            null, null);
+    }
+    
+    @Test
+    void testUploadSkillFromZipWithTargetVersionAndCommitMsg() throws NacosException {
+        byte[] zipBytes = "test".getBytes();
+        SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
+            .zipBytes(zipBytes).overwrite(true).targetVersion("v2").commitMsg("upload commit")
+            .uploadAction(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT)
+            .build();
+        when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(true),
+            eq("v2"), eq("upload commit"),
+            eq(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT))).thenReturn(SKILL_NAME);
+        
+        String result = skillRemoteHandler.uploadSkillFromZip(request);
+        
+        assertEquals(SKILL_NAME, result);
+        verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, true, "v2",
+            "upload commit", SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT);
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkill() throws NacosException {
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(NAMESPACE_ID);
+        request.setSkillName(SKILL_NAME);
+        SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
+        precheckResult.setSkillName(SKILL_NAME);
+        java.util.List<SkillUploadPrecheckRequest> requests =
+            java.util.Collections.singletonList(request);
+        java.util.List<SkillUploadPrecheckResult> results =
+            java.util.Collections.singletonList(precheckResult);
+        when(skillMaintainerService.batchPrecheckUploadSkill(requests)).thenReturn(results);
+        
+        java.util.List<SkillUploadPrecheckResult> actual =
+            skillRemoteHandler.batchPrecheckUploadSkill(requests);
+        
+        assertEquals(1, actual.size());
+        assertEquals(SKILL_NAME, actual.get(0).getSkillName());
+        verify(skillMaintainerService).batchPrecheckUploadSkill(requests);
     }
     
     @Test
@@ -353,5 +398,19 @@ class SkillRemoteHandlerTest {
         skillRemoteHandler.forcePublish(form);
         
         verify(skillMaintainerService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", true);
+    }
+    
+    @Test
+    void testRedraft() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        when(skillMaintainerService.redraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1")))
+            .thenReturn(true);
+        
+        skillRemoteHandler.redraft(form);
+        
+        verify(skillMaintainerService).redraft(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 }

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 
 import java.util.List;
 
@@ -37,6 +37,13 @@ public class PublishPipelineInfo {
     private PipelineExecutionStatus status;
     
     private List<PipelineNodeResult> pipeline;
+    
+    /**
+     * Indicates this pipeline info is from a previous review cycle (e.g. after redraft).
+     * When {@code true}, the pipeline result should not be used for force-publish eligibility
+     * on draft versions. Null or false means the pipeline info is current.
+     */
+    private Boolean historical;
     
     public String getExecutionId() {
         return executionId;
@@ -60,5 +67,13 @@ public class PublishPipelineInfo {
     
     public void setPipeline(List<PipelineNodeResult> pipeline) {
         this.pipeline = pipeline;
+    }
+    
+    public Boolean getHistorical() {
+        return historical;
+    }
+    
+    public void setHistorical(Boolean historical) {
+        this.historical = historical;
     }
 }

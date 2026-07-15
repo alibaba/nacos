@@ -39,19 +39,4 @@ class AiConstantsStatusMappingTest {
         assertEquals("deleted", AiConstants.Mcp.MCP_STATUS_DELETED);
     }
     
-    @Test
-    void testStatusCanBeParsedFromEnum() {
-        // Verify that we can parse the constants back to enum
-        McpServerStatusEnum active =
-            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
-        assertEquals(McpServerStatusEnum.ACTIVE, active);
-        
-        McpServerStatusEnum deprecated =
-            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DEPRECATED);
-        assertEquals(McpServerStatusEnum.DEPRECATED, deprecated);
-        
-        McpServerStatusEnum deleted =
-            McpServerStatusEnum.parseStatus(AiConstants.Mcp.MCP_STATUS_DELETED);
-        assertEquals(McpServerStatusEnum.DELETED, deleted);
-    }
 }

@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -54,6 +55,7 @@ public class ConsoleServerStateController {
      *
      * @return state json.
      */
+    @Since("3.0.0")
     @GetMapping("/state")
     public ResponseEntity<Map<String, String>> serverState() throws NacosException {
         Map<String, String> serverState = serverStateProxy.getServerState();
@@ -66,6 +68,7 @@ public class ConsoleServerStateController {
      * @param language Language for the announcement (default: "zh-CN")
      * @return Announcement content as a string wrapped in a Result object
      */
+    @Since("3.0.0")
     @GetMapping("/announcement")
     public Result<String> getAnnouncement(
         @RequestParam(required = false, name = "language",
@@ -83,6 +86,7 @@ public class ConsoleServerStateController {
      *
      * @return Console UI guide information as a string wrapped in a Result object
      */
+    @Since("3.0.0")
     @GetMapping("/guide")
     public Result<String> getConsoleUiGuide() {
         String guideInformation = serverStateProxy.getConsoleUiGuide();

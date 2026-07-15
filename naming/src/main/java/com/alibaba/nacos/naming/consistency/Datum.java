@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency;
 
-import com.alibaba.nacos.naming.pojo.Record;
-
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author nacos
  */
-public class Datum<T extends Record> implements Serializable {
+public class Datum<T extends Serializable> implements Serializable {
     
     private static final long serialVersionUID = -2525482315889753720L;
     
@@ -44,7 +42,7 @@ public class Datum<T extends Record> implements Serializable {
      * @param <T>   Types of value
      * @return new datum
      */
-    public static <T extends Record> Datum createDatum(final String key, final T value) {
+    public static <T extends Serializable> Datum createDatum(final String key, final T value) {
         Datum datum = new Datum();
         datum.key = key;
         datum.value = value;

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.pipeline.repository;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 
 import java.util.List;
 
@@ -49,18 +49,6 @@ public interface PipelineExecutionRepository {
      * @return the execution record, or null if not found
      */
     PipelineExecution findById(String executionId);
-    
-    /**
-     * Find the most recent pipeline execution record by resource information.
-     *
-     * @param resourceType the resource type
-     * @param resourceName the resource name
-     * @param namespaceId  the namespace ID
-     * @param version      the resource version
-     * @return the most recent matching execution record, or null if not found
-     */
-    PipelineExecution findByResource(String resourceType, String resourceName, String namespaceId,
-        String version);
     
     /**
      * Find pipeline execution records by resource information with pagination support.

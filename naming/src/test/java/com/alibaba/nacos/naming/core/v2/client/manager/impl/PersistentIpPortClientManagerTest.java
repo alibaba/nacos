@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
+import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,8 +34,11 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,10 +74,38 @@ class PersistentIpPortClientManagerTest {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
+    void testClientConnectedByClientId() {
+        String factoryClientId = "127.0.0.1:8848#false";
+        ClientFactory<IpPortBasedClient> clientFactory = mock(ClientFactory.class);
+        IpPortBasedClient factoryClient = mock(IpPortBasedClient.class);
+        when(clientFactory.newClient(factoryClientId, clientAttributes)).thenReturn(factoryClient);
+        when(factoryClient.getClientId()).thenReturn(factoryClientId);
+        ReflectionTestUtils.setField(persistentIpPortClientManager, "clientFactory", clientFactory);
+        
+        assertTrue(
+            persistentIpPortClientManager.clientConnected(factoryClientId, clientAttributes));
+        
+        assertSame(factoryClient, persistentIpPortClientManager.getClient(factoryClientId));
+    }
+    
+    @Test
     void testContains() {
         assertTrue(persistentIpPortClientManager.contains(clientId));
         String unUsedClientId = "127.0.0.1:8888#true";
         assertFalse(persistentIpPortClientManager.contains(unUsedClientId));
+    }
+    
+    @Test
+    void testGetClient() {
+        assertSame(client, persistentIpPortClientManager.getClient(clientId));
+    }
+    
+    @Test
+    void testShowClients() {
+        assertTrue(persistentIpPortClientManager.showClients().containsKey(clientId));
+        assertThrows(UnsupportedOperationException.class,
+            () -> persistentIpPortClientManager.showClients().clear());
     }
     
     @Test
@@ -102,6 +135,30 @@ class PersistentIpPortClientManagerTest {
         Collection<String> allClientIds = persistentIpPortClientManager.allClientId();
         assertEquals(1, allClientIds.size());
         assertTrue(allClientIds.contains(snapshotClientId));
+    }
+    
+    @Test
+    void testAddSyncClient() {
+        when(snapshotClient.getClientId()).thenReturn(snapshotClientId);
+        
+        persistentIpPortClientManager.addSyncClient(snapshotClient);
+        
+        assertSame(snapshotClient, persistentIpPortClientManager.getClient(snapshotClientId));
+    }
+    
+    @Test
+    void testRemoveAndRelease() {
+        persistentIpPortClientManager.removeAndRelease(clientId);
+        
+        assertFalse(persistentIpPortClientManager.contains(clientId));
+        verify(client).release();
+    }
+    
+    @Test
+    void testRemoveAndReleaseWithoutClient() {
+        persistentIpPortClientManager.removeAndRelease("missing");
+        
+        assertTrue(persistentIpPortClientManager.contains(clientId));
     }
     
     @AfterEach

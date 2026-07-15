@@ -38,8 +38,9 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
-import javax.annotation.PostConstruct;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;

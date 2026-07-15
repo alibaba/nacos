@@ -72,9 +72,9 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private boolean jdbcTemplateInit = false;
     
-    private String healthStatus = "UP";
-    
     private String dataSourceType = "derby";
+    
+    private String healthStatus = "UP";
     
     @Override
     public synchronized void init() throws Exception {
@@ -191,21 +191,15 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     @Override
-    public String getCurrentDbUrl() {
-        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir
-            + ";create=true";
-    }
-    
-    @Override
-    public String getHealth() {
-        return healthStatus;
-    }
-    
-    @Override
     public String getDataSourceType() {
         return dataSourceType;
     }
     
+    /**
+     * Set local data source health status.
+     *
+     * @param healthStatus health status.
+     */
     public void setHealthStatus(String healthStatus) {
         this.healthStatus = healthStatus;
     }

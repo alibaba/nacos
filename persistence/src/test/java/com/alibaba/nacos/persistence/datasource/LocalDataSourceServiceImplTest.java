@@ -17,22 +17,26 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.persistence.DerbyTestUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
@@ -58,8 +62,17 @@ class LocalDataSourceServiceImplTest {
     @Mock
     private TransactionTemplate tjt;
     
+    @TempDir
+    private Path tempDir;
+    
+    private LocalDataSourceServiceImpl serviceToClose;
+    
     @BeforeEach
     void setUp() {
+        DerbyTestUtils.resetDynamicDataSource();
+        EnvUtil.setNacosHomePath(tempDir.toString());
+        EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
+        DatasourceConfiguration.setEmbeddedStorage(true);
         DatasourceConfiguration.setUseExternalDb(false);
         service = new LocalDataSourceServiceImpl();
         ReflectionTestUtils.setField(service, "jt", jt);
@@ -67,44 +80,10 @@ class LocalDataSourceServiceImplTest {
     }
     
     @AfterEach
-    void tearDown() throws Exception {
-        // Shutdown Derby to release locks
-        try {
-            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
-        } catch (Exception e) {
-            // Ignore shutdown exception as Derby always throws an exception on successful shutdown
-        }
-        
-        // Wait for Derby to fully shutdown and release locks
-        Thread.sleep(500);
-        
-        // Clean up derby data directory to ensure fresh start for next test
-        try {
-            String derbyPath = System.getProperty("user.dir") + "/data/derby-data";
-            java.io.File derbyDir = new java.io.File(derbyPath);
-            if (derbyDir.exists()) {
-                deleteDirectory(derbyDir);
-            }
-        } catch (Exception e) {
-            // Ignore cleanup exceptions
-        }
-        
-        DatasourceConfiguration.setUseExternalDb(false);
-        EnvUtil.setEnvironment(null);
-    }
-    
-    private void deleteDirectory(java.io.File directory) throws Exception {
-        if (directory.exists()) {
-            java.nio.file.Files.walk(directory.toPath())
-                .sorted((a, b) -> b.compareTo(a))
-                .forEach(path -> {
-                    try {
-                        java.nio.file.Files.delete(path);
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                });
-        }
+    void tearDown() {
+        DerbyTestUtils.closeLocalDataSource(serviceToClose);
+        serviceToClose = null;
+        DerbyTestUtils.resetDerbyState(tempDir);
     }
     
     @Test
@@ -113,6 +92,7 @@ class LocalDataSourceServiceImplTest {
             DatasourceConfiguration.setUseExternalDb(true);
             EnvUtil.setEnvironment(null);
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
+            serviceToClose = service1;
             assertDoesNotThrow(service1::init);
         } finally {
             DatasourceConfiguration.setUseExternalDb(false);
@@ -122,8 +102,9 @@ class LocalDataSourceServiceImplTest {
     @Test
     void testInit() throws Exception {
         try {
-            EnvUtil.setEnvironment(new MockEnvironment());
+            EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
+            serviceToClose = service1;
             assertDoesNotThrow(service1::init);
             assertNotNull(service1.getJdbcTemplate());
             assertNotNull(service1.getTransactionTemplate());
@@ -149,8 +130,9 @@ class LocalDataSourceServiceImplTest {
     @Test
     void testCleanAndReopen() throws Exception {
         try {
-            EnvUtil.setEnvironment(new MockEnvironment());
+            EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
+            serviceToClose = service1;
             assertDoesNotThrow(service1::init);
             assertDoesNotThrow(service1::cleanAndReopenDerby);
         } finally {
@@ -161,11 +143,15 @@ class LocalDataSourceServiceImplTest {
     @Test
     void testRestoreDerby() throws Exception {
         try {
-            EnvUtil.setEnvironment(new MockEnvironment());
+            EnvUtil.setEnvironment(DerbyTestUtils.createDerbyTestEnvironment());
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
+            serviceToClose = service1;
             assertDoesNotThrow(service1::init);
             Callable callback = mock(Callable.class);
-            assertDoesNotThrow(() -> service1.restoreDerby(service1.getCurrentDbUrl(), callback));
+            String sourceUrl = "jdbc:derby:"
+                + Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR)
+                + ";create=true";
+            assertDoesNotThrow(() -> service1.restoreDerby(sourceUrl, callback));
             verify(callback).call();
         } finally {
             EnvUtil.setEnvironment(null);
@@ -175,10 +161,14 @@ class LocalDataSourceServiceImplTest {
     @Test
     void testGetDataSource() {
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("test.jdbc.url");
-        when(jt.getDataSource()).thenReturn(dataSource);
-        assertEquals(dataSource.getJdbcUrl(),
-            ((HikariDataSource) service.getDatasource()).getJdbcUrl());
+        try {
+            dataSource.setJdbcUrl("test.jdbc.url");
+            when(jt.getDataSource()).thenReturn(dataSource);
+            assertEquals(dataSource.getJdbcUrl(),
+                ((HikariDataSource) service.getDatasource()).getJdbcUrl());
+        } finally {
+            dataSource.close();
+        }
     }
     
     @Test
@@ -186,12 +176,4 @@ class LocalDataSourceServiceImplTest {
         assertTrue(service.checkMasterWritable());
     }
     
-    @Test
-    void testSetAndGetHealth() {
-        service.setHealthStatus("DOWN");
-        assertEquals("DOWN", service.getHealth());
-        
-        service.setHealthStatus("UP");
-        assertEquals("UP", service.getHealth());
-    }
 }

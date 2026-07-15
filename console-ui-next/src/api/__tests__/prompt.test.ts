@@ -110,10 +110,10 @@ describe('Prompt API', () => {
   });
 
   it('publish calls POST /publish', async () => {
-    await promptApi.publish({ promptKey: 'test', version: '1.0.0', updateLatestLabel: true });
+    await promptApi.publish({ promptKey: 'test', version: '1.0.0' });
     expect(mockClient.post).toHaveBeenCalledWith(`${EXPECTED_BASE}/publish`, expect.any(URLSearchParams), expect.any(Object));
     const params = mockClient.post.mock.calls[0][1] as URLSearchParams;
-    expect(params.get('updateLatestLabel')).toBe('true');
+    expect(params.has('updateLatestLabel')).toBe(false);
   });
 
   it('forcePublish calls POST /force-publish', async () => {

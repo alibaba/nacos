@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -51,6 +52,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
  * @author stone-98
  * @date 2024/3/4
  */
+@Since("3.0.0")
 @Component
 public class ConfigFuzzyWatchRequestHandler
     extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {

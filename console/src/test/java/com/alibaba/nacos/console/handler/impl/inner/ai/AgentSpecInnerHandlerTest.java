@@ -308,4 +308,18 @@ class AgentSpecInnerHandlerTest {
         
         verify(agentSpecOperationService).updateScope(NS, NAME, "PUBLIC");
     }
+    
+    @Test
+    void testRedraft() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NS);
+        form.setAgentSpecName(NAME);
+        form.setVersion("v1");
+        doNothing().when(agentSpecOperationService).redraft(eq(NS), eq(NAME),
+            eq("v1"));
+        
+        handler.redraft(form);
+        
+        verify(agentSpecOperationService).redraft(NS, NAME, "v1");
+    }
 }

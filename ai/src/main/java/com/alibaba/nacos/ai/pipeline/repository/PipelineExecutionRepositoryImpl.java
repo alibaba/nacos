@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.ai.pipeline.repository;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -62,10 +62,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     
     private static final String SQL_FIND_BY_ID =
         "SELECT * FROM pipeline_execution WHERE execution_id=?";
-    
-    private static final String SQL_FIND_BY_RESOURCE = "SELECT * FROM pipeline_execution "
-        + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-        + "ORDER BY create_time DESC";
     
     private static final PipelineExecutionRowMapper ROW_MAPPER = new PipelineExecutionRowMapper();
     
@@ -118,30 +114,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
         return DynamicDataSource.getInstance().getDataSource().getDataSourceType();
     }
     
-    String buildSingleLatestSql() {
-        return appendFirstRowClause("SELECT * FROM pipeline_execution "
-            + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-            + "ORDER BY create_time DESC");
-    }
-    
-    String appendPageClause(String baseSql, int offset, int limit) {
-        String dataSourceType = getDataSourceType();
-        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
-            || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
-            return baseSql + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
-        }
-        return baseSql + " LIMIT " + limit + " OFFSET " + offset;
-    }
-    
-    private String appendFirstRowClause(String baseSql) {
-        String dataSourceType = getDataSourceType();
-        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
-            || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
-            return baseSql + " FETCH FIRST 1 ROW ONLY";
-        }
-        return baseSql + " LIMIT 1";
-    }
-    
     @Override
     public void save(PipelineExecution execution) {
         String pipelineJson = JacksonUtils.toJson(execution.getPipeline());
@@ -165,25 +137,6 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             return getJdbcTemplate().queryForObject(SQL_FIND_BY_ID, ROW_MAPPER, executionId);
         } catch (EmptyResultDataAccessException e) {
             return null;
-        } catch (DataAccessException e) {
-            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}",
-                e.getMessage());
-            return null;
-        }
-    }
-    
-    @Override
-    public PipelineExecution findByResource(String resourceType, String resourceName,
-        String namespaceId,
-        String version) {
-        try {
-            List<PipelineExecution> executions =
-                getJdbcTemplate().query(SQL_FIND_BY_RESOURCE, ROW_MAPPER,
-                    resourceType, resourceName, namespaceId, version);
-            if (executions.isEmpty()) {
-                return null;
-            }
-            return executions.get(0);
         } catch (DataAccessException e) {
             LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}",
                 e.getMessage());

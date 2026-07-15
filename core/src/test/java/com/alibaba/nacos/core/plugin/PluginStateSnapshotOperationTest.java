@@ -187,17 +187,15 @@ class PluginStateSnapshotOperationTest {
         when(reader.getFileMeta("plugin_state.zip")).thenReturn(fileMeta);
         
         doNothing().when(persistence).saveState(anyString(), any(Boolean.class));
-        doNothing().when(persistence).saveConfig(anyString(), anyMap());
         doNothing().when(pluginManager).applyStateChange(anyString(), any(Boolean.class));
-        doNothing().when(pluginManager).applyConfigChange(anyString(), anyMap());
+        doNothing().when(pluginManager).restoreConfigChange(anyString(), anyMap());
         
         boolean result = snapshotOperation.onSnapshotLoad(reader);
         
         assertTrue(result);
         verify(persistence, times(2)).saveState(anyString(), any(Boolean.class));
-        verify(persistence, times(1)).saveConfig(anyString(), anyMap());
         verify(pluginManager, times(2)).applyStateChange(anyString(), any(Boolean.class));
-        verify(pluginManager, times(1)).applyConfigChange(anyString(), anyMap());
+        verify(pluginManager, times(1)).restoreConfigChange(anyString(), anyMap());
     }
     
     @Test
@@ -225,9 +223,8 @@ class PluginStateSnapshotOperationTest {
         
         assertTrue(result);
         verify(persistence, never()).saveState(anyString(), any(Boolean.class));
-        verify(persistence, never()).saveConfig(anyString(), anyMap());
         verify(pluginManager, never()).applyStateChange(anyString(), any(Boolean.class));
-        verify(pluginManager, never()).applyConfigChange(anyString(), anyMap());
+        verify(pluginManager, never()).restoreConfigChange(anyString(), anyMap());
     }
     
     @Test

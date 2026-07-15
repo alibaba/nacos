@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,13 @@ package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
-import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtParser;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -45,44 +40,22 @@ import java.util.concurrent.TimeUnit;
  * @author wfnuser
  * @author nkorange
  */
-public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> implements TokenManager {
+public class JwtTokenManager implements TokenManager {
     
     private static final String AUTH_DISABLED_TOKEN = "AUTH_DISABLED";
     
-    /**
-     * Token validity time(seconds).
-     */
-    private volatile long tokenValidityInSeconds;
+    private final NacosAuthPluginConfigProvider configProvider;
     
-    private volatile NacosJwtParser jwtParser;
+    private final NacosJwtParser jwtParser;
     
-    private final AuthConfigs authConfigs;
-    
-    public JwtTokenManager(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-        NotifyCenter.registerSubscriber(this);
-        processProperties();
-    }
-    
-    private void processProperties() {
-        this.tokenValidityInSeconds =
-            EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
-        
-        String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
-            AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
-        try {
-            this.jwtParser = new NacosJwtParser(encodedSecretKey);
-        } catch (Exception e) {
-            this.jwtParser = null;
-            if (authConfigs.isAuthEnabled() || authConfigs.isConsoleAuthEnabled()) {
-                throw new IllegalArgumentException(
-                    "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                        + "Please see https://nacos.io/docs/latest/manual/admin/auth/",
-                    e);
-            }
+    public JwtTokenManager(NacosAuthPluginConfigProvider configProvider) {
+        this.configProvider = configProvider;
+        String encodedSecretKey = configProvider.getConfig().getTokenSecretKey();
+        if (StringUtils.isBlank(encodedSecretKey)) {
+            jwtParser = null;
+            return;
         }
-        
+        jwtParser = new NacosJwtParser(encodedSecretKey);
     }
     
     /**
@@ -103,15 +76,15 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      * @return token
      */
     public String createToken(String userName) {
-        // create a token when auth enabled or nacos.core.auth.plugin.nacos.token.secret.key is configured
-        if (!authConfigs.isAuthEnabled() && null == jwtParser) {
+        boolean authEnabled = NacosAuthConfigHolder.getInstance().isAnyAuthEnabled();
+        if (!authEnabled && jwtParser == null) {
             return AUTH_DISABLED_TOKEN;
-        } else if (authConfigs.isAuthEnabled()) {
-            // check nacos.core.auth.plugin.nacos.token.secret.key only if auth enabled
+        }
+        if (authEnabled) {
             checkJwtParser();
         }
         return jwtParser.jwtBuilder().setUserName(userName)
-            .setExpiredTime(this.tokenValidityInSeconds).compact();
+            .setExpiredTime(getTokenValidityInSeconds()).compact();
     }
     
     /**
@@ -122,63 +95,52 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      */
     @Deprecated
     public Authentication getAuthentication(String token) throws AccessException {
-        NacosUser nacosUser = jwtParser.parse(token);
-        
+        NacosUser nacosUser = parseToken(token);
         List<GrantedAuthority> authorities =
             AuthorityUtils.commaSeparatedStringToAuthorityList(StringUtils.EMPTY);
-        
         User principal = new User(nacosUser.getUserName(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
     
-    /**
-     * validate token.
-     *
-     * @param token token
-     */
+    @Override
     public void validateToken(String token) throws AccessException {
         parseToken(token);
     }
     
+    @Override
     public NacosUser parseToken(String token) throws AccessException {
         checkJwtParser();
         return jwtParser.parse(token);
     }
     
+    @Override
     public long getTokenValidityInSeconds() {
-        return tokenValidityInSeconds;
+        return configProvider.getConfig().getTokenExpireSeconds();
     }
     
     @Override
     public long getTokenTtlInSeconds(String token) throws AccessException {
-        if (!authConfigs.isAuthEnabled()) {
-            return tokenValidityInSeconds;
+        if (!NacosAuthConfigHolder.getInstance().isAnyAuthEnabled()) {
+            return getTokenValidityInSeconds();
         }
+        checkJwtParser();
         return jwtParser.getExpireTimeInSeconds(token)
             - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
     }
     
     public long getExpiredTimeInSeconds(String token) throws AccessException {
-        if (!authConfigs.isAuthEnabled()) {
-            return tokenValidityInSeconds;
+        if (!NacosAuthConfigHolder.getInstance().isAnyAuthEnabled()) {
+            return getTokenValidityInSeconds();
         }
+        checkJwtParser();
         return jwtParser.getExpireTimeInSeconds(token);
     }
     
-    @Override
-    public void onEvent(ServerConfigChangeEvent event) {
-        processProperties();
-    }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerConfigChangeEvent.class;
-    }
-    
     private void checkJwtParser() {
-        if (null == jwtParser) {
+        if (jwtParser == null) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/docs/latest/manual/admin/auth/");
+                "Please config `nacos.plugin.auth.nacos.token.secret.key`, detail see "
+                    + "https://nacos.io/docs/latest/manual/admin/auth/");
         }
     }
 }

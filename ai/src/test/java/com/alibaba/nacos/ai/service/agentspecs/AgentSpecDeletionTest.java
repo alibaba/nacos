@@ -359,6 +359,13 @@ class AgentSpecDeletionTest {
         }
         
         @Override
+        public boolean updateSourceCas(String namespaceId, String name, String type,
+            long expectedMetaVersion,
+            String source) {
+            return false;
+        }
+        
+        @Override
         public int delete(String namespaceId, String name, String type) {
             store.removeIf(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName())
                 && type.equals(
@@ -399,6 +406,12 @@ class AgentSpecDeletionTest {
                             v.getType())
                         && version.equals(v.getVersion()))
                 .findFirst().orElse(null);
+        }
+        
+        @Override
+        public int updateStorageMd5(String namespaceId, String name, String type, String version,
+            String contentMd5) {
+            return 0;
         }
         
         @Override

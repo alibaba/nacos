@@ -95,6 +95,10 @@ export const promptApi = {
   forcePublish: (data: PromptPublishData): ApiResult<boolean> =>
     client.post(`${BASE}/force-publish`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
 
+  /** Re-edit a reviewed version (transitions back to draft) */
+  redraft: (data: { promptKey: string; version: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.post(`${BASE}/redraft`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
   /** Online version */
   online: (data: PromptOnlineOfflineData): ApiResult<boolean> =>
     client.post(`${BASE}/online`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,

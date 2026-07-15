@@ -25,10 +25,10 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    
+
     <artifactId>nacos-server</artifactId>
     <name>nacos-server ${project.version}</name>
-    
+
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

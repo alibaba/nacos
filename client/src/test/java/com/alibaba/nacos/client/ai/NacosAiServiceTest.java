@@ -35,13 +35,13 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosAgentSpecCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AgentSpecListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
@@ -55,6 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -96,21 +97,36 @@ class NacosAiServiceTest {
     private NacosAgentSpecCacheHolder agentSpecCacheHolder;
     
     @Mock
+    private NacosSkillCacheHolder skillCacheHolder;
+    
+    @Mock
     private AiHttpClientProxy httpProxy;
     
     @Mock
     private AiClientProxy aiClientProxy;
     
     @Mock
-    private ConfigService skillConfigService;
-    
-    @Mock
     private AiChangeNotifier aiChangeNotifier;
     
     NacosAiService nacosAiService;
     
+    private MockedConstruction<AiGrpcClient> grpcClientConstruction;
+    
+    private MockedConstruction<AiHttpClientProxy> httpProxyConstruction;
+    
+    private MockedConstruction<NacosMcpServerCacheHolder> mcpServerCacheHolderConstruction;
+    
+    private MockedConstruction<NacosAgentCardCacheHolder> agentCardCacheHolderConstruction;
+    
+    private MockedConstruction<NacosPromptCacheHolder> promptCacheHolderConstruction;
+    
+    private MockedConstruction<NacosAgentSpecCacheHolder> agentSpecCacheHolderConstruction;
+    
+    private MockedConstruction<NacosSkillCacheHolder> skillCacheHolderConstruction;
+    
     @BeforeEach
     void setUp() throws NacosException {
+        mockChildConstructions();
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
         nacosAiService = new NacosAiService(properties);
@@ -118,8 +134,12 @@ class NacosAiServiceTest {
     
     @AfterEach
     void tearDown() throws NacosException {
-        if (null != nacosAiService) {
-            nacosAiService.shutdown();
+        try {
+            if (null != nacosAiService) {
+                nacosAiService.shutdown();
+            }
+        } finally {
+            closeMockedConstructions();
         }
     }
     
@@ -819,10 +839,10 @@ class NacosAiServiceTest {
         nacosAiService.shutdown();
         verify(grpcClient).shutdown();
         verify(httpProxy).shutdown();
-        verify(skillConfigService).shutDown();
         verify(mcpServerCacheHolder).shutdown();
         verify(promptCacheHolder).shutdown();
         verify(agentSpecCacheHolder).shutdown();
+        verify(skillCacheHolder).shutdown();
         // null out so AfterEach doesn't run shutdown again
         nacosAiService = null;
     }
@@ -883,10 +903,11 @@ class NacosAiServiceTest {
         NacosAgentSpecCacheHolder autoBuildAgentSpecCacheHolder =
             (NacosAgentSpecCacheHolder) field.get(nacosAiService);
         field.set(nacosAiService, agentSpecCacheHolder);
-        field = NacosAiService.class.getDeclaredField("skillConfigService");
+        field = NacosAiService.class.getDeclaredField("skillCacheHolder");
         field.setAccessible(true);
-        ConfigService autoBuildConfigService = (ConfigService) field.get(nacosAiService);
-        field.set(nacosAiService, skillConfigService);
+        NacosSkillCacheHolder autoBuildSkillCacheHolder =
+            (NacosSkillCacheHolder) field.get(nacosAiService);
+        field.set(nacosAiService, skillCacheHolder);
         field = NacosAiService.class.getDeclaredField("aiChangeNotifier");
         field.setAccessible(true);
         field.set(nacosAiService, aiChangeNotifier);
@@ -897,8 +918,37 @@ class NacosAiServiceTest {
             autoBuildAgentCacheHolder.shutdown();
             autoBuildPromptCacheHolder.shutdown();
             autoBuildAgentSpecCacheHolder.shutdown();
-            autoBuildConfigService.shutDown();
+            autoBuildSkillCacheHolder.shutdown();
         } catch (NacosException ignored) {
+        }
+    }
+    
+    private void mockChildConstructions() {
+        grpcClientConstruction = Mockito.mockConstruction(AiGrpcClient.class);
+        httpProxyConstruction = Mockito.mockConstruction(AiHttpClientProxy.class);
+        mcpServerCacheHolderConstruction =
+            Mockito.mockConstruction(NacosMcpServerCacheHolder.class);
+        agentCardCacheHolderConstruction =
+            Mockito.mockConstruction(NacosAgentCardCacheHolder.class);
+        promptCacheHolderConstruction = Mockito.mockConstruction(NacosPromptCacheHolder.class);
+        agentSpecCacheHolderConstruction =
+            Mockito.mockConstruction(NacosAgentSpecCacheHolder.class);
+        skillCacheHolderConstruction = Mockito.mockConstruction(NacosSkillCacheHolder.class);
+    }
+    
+    private void closeMockedConstructions() {
+        closeMockedConstruction(skillCacheHolderConstruction);
+        closeMockedConstruction(agentSpecCacheHolderConstruction);
+        closeMockedConstruction(promptCacheHolderConstruction);
+        closeMockedConstruction(agentCardCacheHolderConstruction);
+        closeMockedConstruction(mcpServerCacheHolderConstruction);
+        closeMockedConstruction(httpProxyConstruction);
+        closeMockedConstruction(grpcClientConstruction);
+    }
+    
+    private void closeMockedConstruction(MockedConstruction<?> construction) {
+        if (construction != null) {
+            construction.close();
         }
     }
     

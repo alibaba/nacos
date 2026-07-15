@@ -88,7 +88,9 @@ public interface ServiceOperator {
      * list All service namespace.
      *
      * @return all namespace
+     * @deprecated Kept temporarily for controller-adapter compatibility.
      */
+    @Deprecated
     Collection<String> listAllNamespace();
     
     /**
@@ -98,7 +100,9 @@ public interface ServiceOperator {
      * @param expr        search expr
      * @return service name collection of match expr
      * @throws NacosException nacos exception during query
+     * @deprecated Kept temporarily for controller-adapter compatibility.
      */
+    @Deprecated
     Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException;
     
     /**

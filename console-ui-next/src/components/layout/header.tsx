@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun,
   Moon,
@@ -8,10 +9,13 @@ import {
   KeyRound,
   Layers,
   ArrowLeftRight,
+  PanelLeft,
+  PanelLeftClose,
+  UserRound,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { useNamespaceStore } from '@/stores/namespace-store';
+import { getNamespaceSearchAfterSwitch, useNamespaceStore } from '@/stores/namespace-store';
 import { useServerStore } from '@/stores/server-store';
 import {
   DropdownMenu,
@@ -63,13 +67,16 @@ const NAV_LINKS: NavLink[] = [
 
 export function Header() {
   const { t } = useTranslation();
-  const { theme, setTheme, language, setLanguage } = useAppStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { theme, setTheme, language, setLanguage, sidebarCollapsed, toggleSidebar } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
-  const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
+  const { currentNamespace, namespaces, setNamespace, getNamespaceChangeGuard } = useNamespaceStore();
   const { authEnabled } = useServerStore();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const baseUrl = getBaseUrl(language);
+  const sidebarToggleLabel = sidebarCollapsed ? t('common.expand') : t('common.collapse');
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
   const toggleLanguage = () => {
@@ -80,13 +87,38 @@ export function Header() {
 
   const handleNamespaceChange = (value: string) => {
     const ns = namespaces.find(n => n.namespace === value);
-    setNamespace(value, ns?.namespaceShowName || value);
+    const nextShowName = ns?.namespaceShowName || value;
+    const guard = getNamespaceChangeGuard();
+    if (guard && !guard(value, nextShowName)) {
+      return;
+    }
+
+    setNamespace(value, nextShowName);
+
+    const nextSearch = getNamespaceSearchAfterSwitch(location.search, value, nextShowName);
+    if (nextSearch !== null && nextSearch !== location.search) {
+      navigate(`${location.pathname}${nextSearch}${location.hash}`, { replace: true });
+    }
   };
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4">
-      {/* Left - Namespace selector */}
+      {/* Left - Sidebar toggle and namespace selector */}
       <div className="flex items-center gap-2 shrink-0">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground"
+              onClick={toggleSidebar}
+              aria-label={sidebarToggleLabel}
+            >
+              {sidebarCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{sidebarToggleLabel}</TooltipContent>
+        </Tooltip>
         <Layers size={16} className="text-primary shrink-0" />
         <span className="text-xs font-medium text-foreground/70 shrink-0 hidden lg:inline">{t('common.selectNamespace')}</span>
         <Select value={currentNamespace} onValueChange={handleNamespaceChange}>
@@ -183,7 +215,10 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">{username}</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+              <UserRound size={14} className="shrink-0" />
+              <span className="truncate">{username}</span>
+            </div>
             <DropdownMenuSeparator />
             {!isOidcUser() && (
               <>

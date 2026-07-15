@@ -114,6 +114,16 @@ public interface PromptHandler {
         throws NacosException;
     
     /**
+     * Re-edit a reviewed version, transitioning it back to draft status.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version to re-edit
+     * @throws NacosException if operation failed
+     */
+    void redraft(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
      * Online or offline a version.
      */
     void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)

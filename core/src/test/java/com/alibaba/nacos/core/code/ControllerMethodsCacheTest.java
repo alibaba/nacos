@@ -136,6 +136,18 @@ class ControllerMethodsCacheTest {
     }
     
     @Test
+    void getMethodWithRequestSpecificContextPathResolvesConsolePath() throws Exception {
+        cache.initClassMethod(Collections.singleton(ConsolePathController.class));
+        MockHttpServletRequest request =
+            new MockHttpServletRequest("POST", "/src/v3/console/ai/skills/draft");
+        request.setContextPath("/src");
+        request.setRequestURI("/src/v3/console/ai/skills/draft");
+        Method method = cache.getMethod(request);
+        assertNotNull(method);
+        assertEquals("createDraft", method.getName());
+    }
+    
+    @Test
     void ambiguousMappingThrowsIllegalStateException() {
         cache.initClassMethod(Collections.singleton(AmbiguousController.class));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/nacos/ambig/same");
@@ -340,5 +352,14 @@ class ControllerMethodsCacheTest {
         @GetMapping("/info")
         public void info() {
         }
+    }
+    
+    @RequestMapping("/v3/console/ai/skills")
+    public static class ConsolePathController {
+        
+        @PostMapping("/draft")
+        public void createDraft() {
+        }
+        
     }
 }

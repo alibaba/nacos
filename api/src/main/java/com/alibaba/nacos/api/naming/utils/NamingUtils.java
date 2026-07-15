@@ -95,7 +95,7 @@ public class NamingUtils {
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return serviceNameWithGroup;
         }
-        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
+        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER, -1)[1];
     }
     
     public static String getGroupName(final String serviceNameWithGroup) {
@@ -175,6 +175,7 @@ public class NamingUtils {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                 "Instance can not be null.");
         }
+        instance.validate();
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
             || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,

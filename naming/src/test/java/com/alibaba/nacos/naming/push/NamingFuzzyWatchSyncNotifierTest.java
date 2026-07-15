@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
@@ -29,10 +30,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.alibaba.nacos.naming.push.NamingFuzzyWatchSyncNotifier.BATCH_SIZE;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -184,5 +188,19 @@ public class NamingFuzzyWatchSyncNotifierTest {
         verify(fuzzyWatchPushDelayTaskEngine, times(1)).addTask(anyString(),
             any(FuzzyWatchSyncNotifyTask.class));
         
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDivideServiceByBatchReturnsEmptySetForEmptyContext() throws Exception {
+        Method method = NamingFuzzyWatchSyncNotifier.class
+            .getDeclaredMethod("divideServiceByBatch", java.util.Collection.class);
+        method.setAccessible(true);
+        
+        Set<Set<NamingFuzzyWatchSyncRequest.Context>> actual =
+            (Set<Set<NamingFuzzyWatchSyncRequest.Context>>) method.invoke(
+                namingFuzzyWatchSyncNotifier, Collections.emptySet());
+        
+        assertTrue(actual.isEmpty());
     }
 }

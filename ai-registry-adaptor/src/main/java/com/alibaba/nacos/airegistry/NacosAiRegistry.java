@@ -18,7 +18,6 @@ package com.alibaba.nacos.airegistry;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.PropertySource;
 
 /**
@@ -26,7 +25,7 @@ import org.springframework.context.annotation.PropertySource;
  * This server implement the official mcp registry api.
  * @author xinluo
  */
-@SpringBootApplication(exclude = LdapAutoConfiguration.class)
+@SpringBootApplication
 @PropertySource("classpath:nacos-ai-registry.properties")
 public class NacosAiRegistry {
     

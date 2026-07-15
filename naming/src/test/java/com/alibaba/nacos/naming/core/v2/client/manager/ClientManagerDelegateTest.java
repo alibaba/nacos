@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -33,6 +35,7 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -136,5 +139,33 @@ class ClientManagerDelegateTest {
         assertTrue(actual.contains(connectionId));
         assertTrue(actual.contains(ephemeralIpPortId));
         assertTrue(actual.contains(persistentIpPortId));
+    }
+    
+    @Test
+    void testDelegateLifecycleForConnectionClient() {
+        ClientAttributes attributes = new ClientAttributes();
+        Client client = mock(Client.class);
+        when(client.getClientId()).thenReturn(connectionId);
+        when(connectionBasedClientManager.clientConnected(connectionId, attributes))
+            .thenReturn(true);
+        when(connectionBasedClientManager.clientConnected(client)).thenReturn(true);
+        when(connectionBasedClientManager.syncClientConnected(connectionId, attributes))
+            .thenReturn(true);
+        when(connectionBasedClientManager.clientDisconnected(connectionId)).thenReturn(true);
+        when(connectionBasedClientManager.isResponsibleClient(client)).thenReturn(true);
+        
+        assertTrue(delegate.clientConnected(connectionId, attributes));
+        assertTrue(delegate.clientConnected(client));
+        assertTrue(delegate.syncClientConnected(connectionId, attributes));
+        assertTrue(delegate.clientDisconnected(connectionId));
+        assertTrue(delegate.isResponsibleClient(client));
+        
+        verify(connectionBasedClientManager).clientConnected(connectionId, attributes);
+        verify(connectionBasedClientManager).clientConnected(client);
+        verify(connectionBasedClientManager).syncClientConnected(connectionId, attributes);
+        verify(connectionBasedClientManager).clientDisconnected(connectionId);
+        verify(connectionBasedClientManager).isResponsibleClient(client);
+        verify(ephemeralIpPortClientManager, never()).clientConnected(connectionId, attributes);
+        verify(persistentIpPortClientManager, never()).clientConnected(connectionId, attributes);
     }
 }

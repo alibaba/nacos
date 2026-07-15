@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -51,6 +52,7 @@ public class ServerStateController {
      *
      * @return state key-value map.
      */
+    @Since("3.0.0")
     @GetMapping()
     public Result<Map<String, String>> serverState() {
         return Result.success(stateService.getServerState());
@@ -62,6 +64,7 @@ public class ServerStateController {
      * @return HTTP code equal to 200 indicates that Nacos is in right states. HTTP code equal to 500 indicates that
      * Nacos is in broken states.
      */
+    @Since("3.0.0")
     @GetMapping("/liveness")
     public Result<String> liveness() {
         return Result.success("ok");
@@ -73,6 +76,7 @@ public class ServerStateController {
      * @return HTTP code equal to 200 indicates that Nacos is ready. HTTP code equal to 500 indicates that Nacos is not
      * ready.
      */
+    @Since("3.0.0")
     @GetMapping("/readiness")
     public Result<String> readiness() throws NacosException {
         ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();

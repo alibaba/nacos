@@ -25,13 +25,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         String registrationType)
         throws NacosException {
         Map<String, String> params = new HashMap<>(4);
-        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("agentCard", JsonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("registrationType", registrationType);
@@ -84,7 +84,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -103,8 +103,8 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
             .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<AgentCardDetailInfo> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<AgentCardDetailInfo>>() {
+        Result<AgentCardDetailInfo> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<AgentCardDetailInfo>>() {
             });
         return result.getData();
     }
@@ -129,7 +129,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     private boolean doUpdateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
         String registrationType) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
-        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("agentCard", JsonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
         params.put("agentName", agentCard.getName());
         params.put("setAsLatest", String.valueOf(setAsLatest));
@@ -141,7 +141,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
                 .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -158,7 +158,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
@@ -173,8 +173,8 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setHttpMethod(HttpMethod.GET).setParamValue(params)
             .setPath(Constants.AdminApiPath.AI_AGENT_LIST_VERSION_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<List<AgentVersionDetail>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<List<AgentVersionDetail>>>() {
+        Result<List<AgentVersionDetail>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<List<AgentVersionDetail>>>() {
             });
         return result.getData();
     }
@@ -206,8 +206,8 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setHttpMethod(HttpMethod.GET).setParamValue(params)
             .setPath(Constants.AdminApiPath.AI_AGENT_LIST_ADMIN_PATH).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<Page<AgentCardVersionInfo>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<AgentCardVersionInfo>>>() {
+        Result<Page<AgentCardVersionInfo>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<AgentCardVersionInfo>>>() {
             });
         return result.getData();
     }
@@ -226,7 +226,7 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     }
     
     private AgentCard buildLegacyCompatibleAgentCard(AgentCard source) {
-        AgentCard result = JacksonUtils.toObj(JacksonUtils.toJson(source), AgentCard.class);
+        AgentCard result = JsonUtils.toObj(JsonUtils.toJson(source), AgentCard.class);
         List<AgentInterface> supportedInterfaces = result.getSupportedInterfaces();
         if (null != supportedInterfaces && !supportedInterfaces.isEmpty()) {
             AgentInterface preferred = supportedInterfaces.get(0);

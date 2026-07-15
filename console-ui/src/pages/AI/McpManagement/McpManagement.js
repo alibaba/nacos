@@ -85,8 +85,6 @@ class McpManagement extends React.Component {
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppId;
     this.isAdvance = getParams('isAdvanceQuery') || false;
-    this.DEFAULT_REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0/servers';
-
     this.state = {
       configurations: {
         pageItems: [],
@@ -369,7 +367,7 @@ class McpManagement extends React.Component {
       // 外部直连
       else if (data && data.backendEndpoints && data.backendEndpoints.length > 0) {
         // 解析address
-        const protocol = data.backendEndpoints[0].protocol;
+        const protocol = data.backendEndpoints[0].protocol || 'http';
         const address = data.backendEndpoints[0].address;
         const port = data.backendEndpoints[0].port;
         const exportPath = data.backendEndpoints[0].path;

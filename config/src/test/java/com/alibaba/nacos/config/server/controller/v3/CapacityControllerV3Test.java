@@ -26,14 +26,12 @@ import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -54,22 +52,21 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @WebAppConfiguration
 class CapacityControllerV3Test {
     
-    @InjectMocks
     CapacityControllerV3 capacityControllerV3;
     
     private MockMvc mockMvc;
     
-    @Mock
+    @MockitoBean
     private CapacityService capacityService;
     
-    @Mock
+    @MockitoBean
     private ServletContext servletContext;
     
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(capacityControllerV3, "capacityService", capacityService);
+        capacityControllerV3 = new CapacityControllerV3(capacityService);
         mockMvc = MockMvcBuilders.standaloneSetup(capacityControllerV3).build();
     }
     

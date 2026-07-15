@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@Since("3.1.0")
 @Component
 public class QueryAgentCardRequestHandler
     extends RequestHandler<QueryAgentCardRequest, QueryAgentCardResponse> {

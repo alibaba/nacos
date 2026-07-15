@@ -27,15 +27,20 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Skill proxy.
@@ -73,19 +78,13 @@ public class SkillProxy {
         return skillHandler.listSkills(skillListForm, filterableForm, pageForm);
     }
     
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, false, null);
+    public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        return skillHandler.uploadSkillFromZip(request);
     }
     
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
-        throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
-    }
-    
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite,
-        String targetVersion)
-        throws NacosException {
-        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return skillHandler.batchPrecheckUploadSkill(requests);
     }
     
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
@@ -116,6 +115,10 @@ public class SkillProxy {
     
     public void forcePublish(SkillPublishForm form) throws NacosException {
         skillHandler.forcePublish(form);
+    }
+    
+    public void redraft(SkillPublishForm form) throws NacosException {
+        skillHandler.redraft(form);
     }
     
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {

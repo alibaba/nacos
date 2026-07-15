@@ -43,6 +43,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -235,6 +236,25 @@ class DistroClientTransportAgentTest {
     }
     
     @Test
+    void testSyncDataWithCallbackReadsCallbackMetadata() throws NacosException {
+        when(memberManager.hasMember(member.getAddress())).thenReturn(true);
+        when(memberManager.find(member.getAddress())).thenReturn(member);
+        member.setState(NodeState.UP);
+        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+        doAnswer(invocationOnMock -> {
+            RequestCallBack<Response> callback = invocationOnMock.getArgument(2);
+            assertNotNull(callback.getExecutor());
+            assertTrue(callback.getTimeout() > 0);
+            callback.onResponse(response);
+            return null;
+        }).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
+        
+        transportAgent.syncData(new DistroData(), member.getAddress(), distroCallback);
+        
+        verify(distroCallback).onSuccess();
+    }
+    
+    @Test
     void testSyncVerifyDataForMemberNonExist() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
@@ -385,6 +405,27 @@ class DistroClientTransportAgentTest {
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
         transportAgent.syncVerifyData(verifyData, member.getAddress(), distroCallback);
+        verify(distroCallback).onSuccess();
+    }
+    
+    @Test
+    void testSyncVerifyDataWithCallbackReadsCallbackMetadata() throws NacosException {
+        DistroData verifyData = new DistroData();
+        verifyData.setDistroKey(new DistroKey("clientId", "type"));
+        when(memberManager.hasMember(member.getAddress())).thenReturn(true);
+        when(memberManager.find(member.getAddress())).thenReturn(member);
+        member.setState(NodeState.UP);
+        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+        doAnswer(invocationOnMock -> {
+            RequestCallBack<Response> callback = invocationOnMock.getArgument(2);
+            assertNotNull(callback.getExecutor());
+            assertTrue(callback.getTimeout() > 0);
+            callback.onResponse(response);
+            return null;
+        }).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
+        
+        transportAgent.syncVerifyData(verifyData, member.getAddress(), distroCallback);
+        
         verify(distroCallback).onSuccess();
     }
     

@@ -108,6 +108,16 @@ class ControlManagerCenterTest {
     }
     
     @Test
+    void testGetInstanceFallbackWhenBuilderThrows() {
+        ControlConfigs.getInstance().setControlManagerType("throw");
+        
+        ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
+        
+        assertEquals("noLimit", controlManagerCenter.getConnectionControlManager().getName());
+        assertEquals("noLimit", controlManagerCenter.getTpsControlManager().getName());
+    }
+    
+    @Test
     void testReloadTpsControlRule() throws Exception {
         String localRuleStorageBaseDir =
             EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tps"

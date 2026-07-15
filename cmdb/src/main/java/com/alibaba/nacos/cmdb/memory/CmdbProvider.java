@@ -28,10 +28,10 @@ import com.alibaba.nacos.cmdb.utils.CmdbExecutor;
 import com.alibaba.nacos.cmdb.utils.Loggers;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -141,11 +141,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             return null;
         }
         return entity.getLabels().get(labelName);
-    }
-    
-    @Override
-    public List<Entity> queryEntitiesByLabel(String labelName, String labelValue) {
-        throw new UnsupportedOperationException("Not available now!");
     }
     
     /**

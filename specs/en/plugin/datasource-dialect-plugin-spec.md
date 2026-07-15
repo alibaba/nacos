@@ -22,10 +22,9 @@ The data source dialect plugin type isolates database-specific SQL behavior from
 Nacos persistence logic. It covers SQL dialect functions, pagination, generated
 primary keys, and mapper implementations for Nacos tables.
 
-This is an exclusive-selection plugin. The active dialect is selected by the SQL
-platform configuration, currently `spring.sql.init.platform` with legacy
-compatibility for `spring.datasource.platform`. Common lifecycle and state
-rules are defined by the [Nacos Plugin Spec](plugin-spec.md), and bundled
+This is an exclusive-selection plugin. The initial active dialect is selected
+by `spring.sql.init.platform`. Common lifecycle and state rules are defined by
+the [Nacos Plugin Spec](plugin-spec.md), and bundled
 database families are defined by the
 [Default Data Source Dialect Implementation Spec](default-datasource-dialect-plugin-spec.md).
 
@@ -73,6 +72,23 @@ Dialect implementations provide `DatabaseDialect`.
 | `getPageLastNum(page, pageSize)` | Return second pagination parameter. |
 | `getReturnPrimaryKeys()` | Return generated key columns. |
 | `getFunction(functionName)` | Map logical function names to dialect SQL functions. |
+| `isDuplicateKeyException(throwable)` | Classify whether a datasource throwable is a duplicate unique-key conflict. The default recognizes a Spring `DuplicateKeyException` in the cause chain; dialects may override for driver-specific detection. |
+
+`isDuplicateKeyException(throwable)` is the single entry point config repositories
+use to decide whether a failed insert was a duplicate unique-key conflict. The
+default implementation walks the throwable cause chain and returns `true` when it
+finds Spring's `DuplicateKeyException`, matched by class name so the datasource
+plugin modules stay free of a Spring dependency. This reproduces the previous
+database-agnostic classification as the safe baseline and deliberately does not
+treat a raw vendor SQLState such as `23505` as a duplicate on its own.
+
+Dialects such as PostgreSQL, MySQL, Derby, or Oracle may override this to also
+inspect the original driver exception (SQLState or vendor error code) when the
+standard Spring exception translation is not precise enough, typically combining
+their check with a call to the default via
+`DatabaseDialect.super.isDuplicateKeyException(throwable)`. Classification must
+remain conservative — non-duplicate integrity failures must not be reported as
+duplicates.
 
 Table mapper plugins implement `com.alibaba.nacos.plugin.datasource.mapper.Mapper`
 for table-specific SQL. Dialect and mapper implementations must be packaged and
@@ -81,10 +97,15 @@ loaded together for a database family.
 Mapper implementations must provide base CRUD SQL and table-specific SQL for
 repository operations. Current mapper families cover:
 
-- config data, gray/beta data, tags, and history;
+- current config data, gray data, tags, and history;
 - namespace and capacity records;
-- config migration queries;
 - AI resource metadata and version records.
+
+Starting with the Nacos 3.3 line, datasource dialect plugins are not expected to
+provide runtime Config migration queries for empty-tenant/default-namespace
+duplicates or legacy beta/tag gray tables. Such migration, if needed for a
+pre-3.0 deployment, is an upgrade prerequisite rather than a server runtime
+mapper responsibility.
 
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
@@ -95,6 +116,10 @@ operation error, not an empty result.
 The core plugin manager exposes this plugin type as `datasource-dialect`.
 Only the configured dialect should be enabled by default. Built-in critical
 dialects required by the server cannot be disabled while in use.
+
+The SQL platform property supplies bootstrap selection only. Persisted unified
+plugin state takes precedence after it is loaded. Future selection changes
+should use plugin management rather than modifying the bootstrap property.
 
 If a requested dialect is disabled, startup or persistence operations must fail
 explicitly. If the requested dialect is missing, the current manager searches for
@@ -113,11 +138,8 @@ The SQL platform is selected by:
 spring.sql.init.platform=${databaseType}
 ```
 
-For compatibility with older deployments:
-
-```properties
-spring.datasource.platform=${databaseType}
-```
+The removed `spring.datasource.platform` property is no longer read. Deployments
+still using it must migrate to `spring.sql.init.platform` before upgrade.
 
 Datasource connection properties remain owned by Nacos persistence configuration
 and the database driver. The dialect plugin must not reinterpret unrelated

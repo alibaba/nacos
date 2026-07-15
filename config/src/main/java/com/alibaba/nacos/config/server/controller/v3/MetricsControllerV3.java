@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
@@ -89,6 +90,7 @@ public class MetricsControllerV3 {
     /**
      * get client metric.
      */
+    @Since("3.0.0")
     @GetMapping("/cluster")
     @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
@@ -203,6 +205,7 @@ public class MetricsControllerV3 {
     /**
      * Get client config listener lists of subscriber in local machine.
      */
+    @Since("3.0.0")
     @GetMapping("/ip")
     @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
         signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)

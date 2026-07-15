@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -25,9 +26,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * <p>Extends {@link PipelineAdminClient} for {@link com.alibaba.nacos.api.model.v2.Result} responses.
  * Legacy {@link JsonNode}-only accessors are retained for existing callers.</p>
  *
- * <p>Returns {@link JsonNode} on deprecated methods because {@code PipelineExecution} resides in the ai module,
- * which is not a compile-time dependency of maintainer-client. Callers should deserialize the JsonNode
- * to the concrete type.</p>
+ * <p>Deprecated {@link JsonNode} methods are kept as compatibility accessors. Prefer typed
+ * pipeline execution methods from {@link PipelineAdminClient} for new code.</p>
  *
  * @author kiro
  * @since 3.2.0
@@ -42,6 +42,7 @@ public interface PipelineMaintainerService extends PipelineAdminClient {
      * @throws NacosException if the request fails or the server returns a non-success Result
      * @deprecated since 3.2.1 use {@link #getPipelineDetail(String)} to handle {@code Result} explicitly
      */
+    @Since("3.2.0")
     @Deprecated
     JsonNode getPipeline(String pipelineId) throws NacosException;
     
@@ -58,6 +59,7 @@ public interface PipelineMaintainerService extends PipelineAdminClient {
      * @throws NacosException if the request fails or the server returns a non-success Result
      * @deprecated since 3.2.1 use {@link #listPipelineExecutions(String, String, String, String, int, int)}
      */
+    @Since("3.2.0")
     @Deprecated
     JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
         String version, int pageNo, int pageSize) throws NacosException;

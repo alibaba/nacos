@@ -17,13 +17,12 @@
 package com.alibaba.nacos.core.web;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.unit.DataSize;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Nacos core web configuration.

@@ -37,13 +37,11 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.ConfigCloneService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
@@ -53,6 +51,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -62,7 +61,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -82,9 +80,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -104,20 +100,15 @@ class ConfigInnerHandlerTest {
     private ConfigListenerStateDelegate configListenerStateDelegate;
     
     @Mock
-    private ConfigMigrateService configMigrateService;
-    
-    @Mock
     private NamespacePersistService namespacePersistService;
-    
-    @Mock
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    ConfigInnerHandler configInnerHandler;
+    @Mock
+    private ConfigCloneService configCloneService;
     
-    private boolean cachedGrayCompatibleModel;
+    ConfigInnerHandler configInnerHandler;
     
     private ConfigurableEnvironment cachedEnv;
     
@@ -125,18 +116,16 @@ class ConfigInnerHandlerTest {
     void setUp() {
         cachedEnv = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new MockEnvironment());
-        cachedGrayCompatibleModel = PropertyUtil.isGrayCompatibleModel();
         configInnerHandler =
             new ConfigInnerHandler(configOperationService, configInfoPersistService,
-                configDetailService, namespacePersistService, configInfoBetaPersistService,
-                configInfoGrayPersistService, configListenerStateDelegate, configMigrateService);
+                configDetailService, namespacePersistService, configInfoGrayPersistService,
+                configListenerStateDelegate,
+                configCloneService);
     }
     
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnv);
-        PropertyUtil.setGrayCompatibleModel(cachedGrayCompatibleModel);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
     }
     
     @Test
@@ -206,10 +195,27 @@ class ConfigInnerHandlerTest {
     @Test
     void batchDeleteConfigs() {
         when(configInfoPersistService.findConfigInfo(1L)).thenReturn(mockConfigInfo());
-        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "clientIp", "srcUser"));
+        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "tenant", "clientIp",
+            "srcUser"));
         verify(configOperationService).deleteConfig(anyString(), anyString(), anyString(), any(),
             anyString(),
             anyString(), anyString());
+    }
+    
+    @Test
+    void batchDeleteConfigsSkipsMismatchedNamespace() {
+        ConfigInfo matchedConfigInfo = mockConfigInfo();
+        ConfigInfo mismatchedConfigInfo = mockConfigInfo();
+        mismatchedConfigInfo.setTenant("otherTenant");
+        when(configInfoPersistService.findConfigInfo(1L)).thenReturn(matchedConfigInfo);
+        when(configInfoPersistService.findConfigInfo(2L)).thenReturn(mismatchedConfigInfo);
+        
+        assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "tenant", "clientIp",
+            "srcUser"));
+        
+        Mockito.verify(configOperationService).deleteConfig("dataId", "group", "tenant", null,
+            "clientIp", "srcUser", Constants.HTTP);
+        Mockito.verifyNoMoreInteractions(configOperationService);
     }
     
     @Test
@@ -321,7 +327,7 @@ class ConfigInnerHandlerTest {
                 Collections.singletonList(1L));
         assertNotNull(actual);
         assertEquals(HttpStatus.OK, actual.getStatusCode());
-        assertTrue(actual.getHeaders().containsKey("Content-Disposition"));
+        assertTrue(actual.getHeaders().containsHeader("Content-Disposition"));
     }
     
     @Test
@@ -496,29 +502,19 @@ class ConfigInnerHandlerTest {
     
     @Test
     void cloneConfigWithNoSelectedConfig() throws NacosException {
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(), any(),
+            any())).thenReturn(Result.failure(ErrorCode.NO_SELECTED_CONFIG,
+                Collections.singletonMap("succCount", 0)));
+        
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "public",
-            Collections.emptyList(), SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
+            "public", Collections.emptyList(), SameConfigPolicy.OVERWRITE, "srcIp",
+            "requestIpApp");
         assertEquals(ErrorCode.NO_SELECTED_CONFIG.getCode(), actual.getCode());
-    }
-    
-    @Test
-    void cloneConfigWithNamespaceNotExist() throws NacosException {
-        SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
-        Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-            Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
-            "requestIpApp");
-        assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), actual.getCode());
-    }
-    
-    @Test
-    void cloneConfigWithDataEmpty() throws NacosException {
-        SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
-        configBean.setCfgId(1L);
-        when(namespacePersistService.tenantInfoCountByTenantId("tenant")).thenReturn(1);
-        Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-            Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
-            "requestIpApp");
-        assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
+        ArgumentCaptor<List<ConfigCloneService.ConfigCloneItem>> captor =
+            ArgumentCaptor.forClass(List.class);
+        verify(configCloneService).cloneConfig(eq("public"), eq("public"), captor.capture(),
+            eq("srcUser"), eq(SameConfigPolicy.OVERWRITE), eq("srcIp"), eq("requestIpApp"));
+        assertEquals(0, captor.getValue().size());
     }
     
     @Test
@@ -530,66 +526,57 @@ class ConfigInnerHandlerTest {
         configBean = new SameNamespaceCloneConfigBean();
         configBean.setCfgId(1L);
         configBeansList.add(configBean);
-        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(), isNull(),
-            isNull(),
-            anyList())).thenReturn(Collections.singletonList(mockConfigAllInfo()));
-        when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
-            .thenReturn(
-                Collections.singletonMap("dataId23456.json+group132", true));
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(), any(),
+            any())).thenReturn(
+                Result.success(Collections.singletonMap("dataId23456.json+group132", true)));
         Result<Map<String, Object>> actual =
-            configInnerHandler.cloneConfig("srcUser", "public", configBeansList,
+            configInnerHandler.cloneConfig("srcUser", "public", "public", configBeansList,
                 SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().size());
+        ArgumentCaptor<List<ConfigCloneService.ConfigCloneItem>> captor =
+            ArgumentCaptor.forClass(List.class);
+        verify(configCloneService).cloneConfig(eq("public"), eq("public"), captor.capture(),
+            eq("srcUser"), eq(SameConfigPolicy.OVERWRITE), eq("srcIp"), eq("requestIpApp"));
+        assertEquals(2, captor.getValue().size());
+        assertEquals(1L, captor.getValue().get(0).getConfigId());
     }
     
     @Test
-    void removeBetaConfigWithGrayCompatibleModelAndOldTableVersion() {
-        PropertyUtil.setGrayCompatibleModel(true);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", true);
+    void cloneConfigWithSourceAndTargetNamespace() throws NacosException {
+        SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
+        configBean.setCfgId(1L);
+        configBean.setDataId("targetDataId");
+        configBean.setGroup("targetGroup");
+        when(configCloneService.cloneConfig(any(), any(), anyList(), anyString(), any(), any(),
+            any())).thenReturn(
+                Result.success(Collections.singletonMap("targetDataId+targetGroup", true)));
+        
+        Result<Map<String, Object>> actual =
+            configInnerHandler.cloneConfig("srcUser", "sourceNamespace", "targetNamespace",
+                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
+                "requestIpApp");
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        ArgumentCaptor<List<ConfigCloneService.ConfigCloneItem>> captor =
+            ArgumentCaptor.forClass(List.class);
+        verify(configCloneService).cloneConfig(eq("sourceNamespace"), eq("targetNamespace"),
+            captor.capture(), eq("srcUser"), eq(SameConfigPolicy.OVERWRITE), eq("srcIp"),
+            eq("requestIpApp"));
+        ConfigCloneService.ConfigCloneItem cloneItem = captor.getValue().get(0);
+        assertEquals(1L, cloneItem.getConfigId());
+        assertEquals("targetDataId", cloneItem.getTargetDataId());
+        assertEquals("targetGroup", cloneItem.getTargetGroupName());
+    }
+    
+    @Test
+    void removeBetaConfig() {
         assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
             "requestIpApp",
             "srcUser"));
         verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
             BetaGrayRule.TYPE_BETA,
             "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService).removeConfigInfo4Beta("dataId", "group", "tenant");
-    }
-    
-    @Test
-    void removeBetaConfigWithGrayCompatibleModelAndLatestTableVersion() {
-        PropertyUtil.setGrayCompatibleModel(true);
-        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
-            "requestIpApp",
-            "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
-            "tenant");
-    }
-    
-    @Test
-    void removeBetaConfigWithoutGrayCompatibleModel() {
-        PropertyUtil.setGrayCompatibleModel(false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
-            "requestIpApp",
-            "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
-            BetaGrayRule.TYPE_BETA,
-            "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
-            "tenant");
     }
     
     @Test

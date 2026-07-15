@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import SchemaEditor from './SchemaEditor';
 import type { JsonSchema } from './SchemaEditor';
+import { mergeJsonTemplateFields, parseArgsPosition } from './tool-template-utils';
 import type { McpTool, McpToolAnnotations, McpToolMeta } from '@/types/mcp';
 
 interface ToolEditorDialogProps {
@@ -29,7 +30,14 @@ interface ToolEditorDialogProps {
   onSave: (tool: McpTool, meta: McpToolMeta) => void;
 }
 
-const EMPTY_SCHEMA: JsonSchema = { type: 'object', properties: {}, required: [] };
+const createEmptySchema = (): JsonSchema => ({ type: 'object', properties: {}, required: [] });
+
+const cloneSchema = (schema?: Record<string, unknown> | null): JsonSchema => {
+  if (!schema) {
+    return createEmptySchema();
+  }
+  return JSON.parse(JSON.stringify(schema)) as JsonSchema;
+};
 
 export default function ToolEditorDialog({
   open,
@@ -45,8 +53,8 @@ export default function ToolEditorDialog({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [enabled, setEnabled] = useState(true);
-  const [inputSchema, setInputSchema] = useState<JsonSchema>(EMPTY_SCHEMA);
-  const [outputSchema, setOutputSchema] = useState<JsonSchema>(EMPTY_SCHEMA);
+  const [inputSchema, setInputSchema] = useState<JsonSchema>(createEmptySchema);
+  const [outputSchema, setOutputSchema] = useState<JsonSchema>(createEmptySchema);
 
   // Annotations
   const [annotationsTitle, setAnnotationsTitle] = useState('');
@@ -57,7 +65,9 @@ export default function ToolEditorDialog({
 
   // Advanced - templates as JSON text
   const [requestTemplateText, setRequestTemplateText] = useState('');
+  const [argsPositionText, setArgsPositionText] = useState('');
   const [responseTemplateText, setResponseTemplateText] = useState('');
+  const [errorResponseTemplateText, setErrorResponseTemplateText] = useState('');
 
   // Meta
   const [transparentAuth, setTransparentAuth] = useState(false);
@@ -69,8 +79,8 @@ export default function ToolEditorDialog({
     if (tool) {
       setName(tool.name);
       setDescription(tool.description || '');
-      setInputSchema((tool.inputSchema as unknown as JsonSchema) || EMPTY_SCHEMA);
-      setOutputSchema((tool.outputSchema as unknown as JsonSchema) || EMPTY_SCHEMA);
+      setInputSchema(cloneSchema(tool.inputSchema));
+      setOutputSchema(cloneSchema(tool.outputSchema));
       setAnnotationsTitle(tool.annotations?.title || '');
       setReadOnlyHint(tool.annotations?.readOnlyHint || false);
       setDestructiveHint(tool.annotations?.destructiveHint || false);
@@ -79,8 +89,8 @@ export default function ToolEditorDialog({
     } else {
       setName('');
       setDescription('');
-      setInputSchema(EMPTY_SCHEMA);
-      setOutputSchema(EMPTY_SCHEMA);
+      setInputSchema(createEmptySchema());
+      setOutputSchema(createEmptySchema());
       setAnnotationsTitle('');
       setReadOnlyHint(false);
       setDestructiveHint(false);
@@ -94,14 +104,20 @@ export default function ToolEditorDialog({
       setClientSecuritySchemeId(meta.clientSecuritySchemeId || '');
       const tmpl = meta.templates?.['json-go-template'];
       setRequestTemplateText(tmpl?.requestTemplate ? JSON.stringify(tmpl.requestTemplate, null, 2) : '');
+      setArgsPositionText(tmpl?.argsPosition ? JSON.stringify(tmpl.argsPosition, null, 2) : '');
       setResponseTemplateText(tmpl?.responseTemplate ? JSON.stringify(tmpl.responseTemplate, null, 2) : '');
+      setErrorResponseTemplateText(
+        typeof tmpl?.errorResponseTemplate === 'string' ? tmpl.errorResponseTemplate : ''
+      );
     } else {
       setEnabled(true);
       setTransparentAuth(false);
       setSecuritySchemeId('');
       setClientSecuritySchemeId('');
       setRequestTemplateText('');
+      setArgsPositionText('');
       setResponseTemplateText('');
+      setErrorResponseTemplateText('');
     }
   }, [open, tool, meta]);
 
@@ -145,6 +161,13 @@ export default function ToolEditorDialog({
       toast.error(`${t('mcp.requestTemplate')}: ${t('mcp.invalidJson')}`);
       return;
     }
+    const argsPositionResult = parseArgsPosition(argsPositionText);
+    if (!argsPositionResult.ok) {
+      const errorKey =
+        argsPositionResult.reason === 'invalidJson' ? 'mcp.invalidJson' : 'mcp.invalidArgsPosition';
+      toast.error(`${t('mcp.argsPosition')}: ${t(errorKey)}`);
+      return;
+    }
     try {
       if (responseTemplateText.trim()) {
         responseTemplate = JSON.parse(responseTemplateText);
@@ -154,27 +177,24 @@ export default function ToolEditorDialog({
       return;
     }
 
-    const newMeta: McpToolMeta = { enabled };
-    if (requestTemplate || responseTemplate) {
-      newMeta.templates = {
-        'json-go-template': {
-          ...(requestTemplate ? { requestTemplate } : {}),
-          ...(responseTemplate ? { responseTemplate } : {}),
-        },
-      };
+    const newMeta: McpToolMeta = { ...(meta || {}), enabled };
+    const nextTemplates = mergeJsonTemplateFields(meta?.templates, {
+      requestTemplate,
+      argsPosition: argsPositionResult.value,
+      responseTemplate,
+      errorResponseTemplate: errorResponseTemplateText,
+    });
+    if (nextTemplates) {
+      newMeta.templates = nextTemplates;
+    } else {
+      delete newMeta.templates;
     }
     if (transparentAuth) newMeta.transparentAuth = true;
+    else delete newMeta.transparentAuth;
     if (securitySchemeId) newMeta.securitySchemeId = securitySchemeId;
+    else delete newMeta.securitySchemeId;
     if (clientSecuritySchemeId) newMeta.clientSecuritySchemeId = clientSecuritySchemeId;
-
-    // Preserve existing meta fields not managed by this editor
-    if (meta) {
-      const tmpl = meta.templates?.['json-go-template'];
-      if (tmpl?.argsPosition && newMeta.templates?.['json-go-template']) {
-        newMeta.templates['json-go-template']!.argsPosition = tmpl.argsPosition;
-      }
-      if (meta.invokeContext) newMeta.invokeContext = meta.invokeContext;
-    }
+    else delete newMeta.clientSecuritySchemeId;
 
     onSave(newTool, newMeta);
     onOpenChange(false);
@@ -314,10 +334,30 @@ export default function ToolEditorDialog({
               />
             </div>
             <div className="space-y-2">
+              <Label>{t('mcp.argsPosition')}</Label>
+              <Textarea
+                value={argsPositionText}
+                onChange={(e) => setArgsPositionText(e.target.value)}
+                placeholder="{}"
+                rows={6}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>{t('mcp.responseTemplate')}</Label>
               <Textarea
                 value={responseTemplateText}
                 onChange={(e) => setResponseTemplateText(e.target.value)}
+                placeholder="{}"
+                rows={6}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('mcp.errorResponseTemplate')}</Label>
+              <Textarea
+                value={errorResponseTemplateText}
+                onChange={(e) => setErrorResponseTemplateText(e.target.value)}
                 placeholder="{}"
                 rows={6}
                 className="font-mono text-xs"

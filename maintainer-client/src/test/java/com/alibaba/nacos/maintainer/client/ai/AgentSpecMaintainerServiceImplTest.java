@@ -273,6 +273,33 @@ class AgentSpecMaintainerServiceImplTest {
     }
     
     @Test
+    @DisplayName("redraft should return true")
+    void testRedraftReturnsTrue() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual = agentSpecService.redraft("public", "testAgentSpec", "v1");
+        assertTrue(actual);
+    }
+    
+    @Test
+    @DisplayName("updateLabels should return true")
+    void testUpdateLabelsReturnsTrue() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult
+            .setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(mockRestResult);
+        
+        boolean actual =
+            agentSpecService.updateLabels("public", "testAgentSpec", "{\"latest\":\"v1\"}");
+        assertTrue(actual);
+    }
+    
+    @Test
     @DisplayName("changeOnlineStatus online should return true")
     void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();

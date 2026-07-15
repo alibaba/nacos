@@ -23,11 +23,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.HashMap;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests for {@link DistroUtils}.
@@ -97,13 +99,6 @@ class DistroUtilsTest {
     }
     
     @Test
-    void testChecksum0() {
-        for (int i = 0; i < 3; i++) {
-            assertEquals("2a3f62f84a4b6f2a979434276d546ac1", DistroUtils.checksum(client0));
-        }
-    }
-    
-    @Test
     void testBuildUniqueString0() {
         assertEquals(
             "127.0.0.1:8848#false|testNamespace-1##testGroup-1@@testName-1##false_127.0.0.1:8848_1.0_true_true_DEFAULT_,",
@@ -126,7 +121,6 @@ class DistroUtilsTest {
             + "publishInstanceEnable:false,publishInstanceWeight:2,,",
             DistroUtils.buildUniqueString(client));
         assertEquals(2128732271L, DistroUtils.stringHash(client));
-        assertEquals("ac9bf94dc4bd6a35e5ff9734868eafea", DistroUtils.checksum(client));
     }
     
     @Test
@@ -141,17 +135,16 @@ class DistroUtilsTest {
             + "Custom.metadataId1:abc,publishInstanceEnable:true,publishInstanceWeight:2,,",
             DistroUtils.buildUniqueString(client));
         assertEquals(775352583L, DistroUtils.stringHash(client));
-        assertEquals("82d8e086a880f088320349b895b22948", DistroUtils.checksum(client));
     }
     
     @Test
-    void performanceTestOfChecksum() {
-        long start = System.nanoTime();
-        for (int i = 0; i < N; i++) {
-            DistroUtils.checksum(client1);
-        }
-        System.out.printf("Distro Verify Checksum Performance: %.2f ivk/ns\n",
-            ((double) System.nanoTime() - start) / N);
+    void testNonIpPortBasedClientReturnsDefaultValues() {
+        Client client = Mockito.mock(Client.class);
+        
+        assertEquals(DistroUtils.class, new DistroUtils().getClass());
+        assertEquals(0, DistroUtils.hash(client));
+        assertEquals(0, DistroUtils.stringHash(client));
+        assertNull(DistroUtils.buildUniqueString(client));
     }
     
     @Test

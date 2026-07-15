@@ -63,7 +63,7 @@ Server push updates the client `ServiceInfo` cache. The Java SDK:
 3. stores the service view in memory;
 4. computes instance diffs;
 5. notifies matching local listeners;
-6. writes the service view to disk cache.
+6. schedules an asynchronous refresh of the service view to disk cache.
 
 Clients may re-query the server on subscription setup, reconnect, cache miss, or
 polling fallback. Local disk cache is a recovery and failover aid, not a

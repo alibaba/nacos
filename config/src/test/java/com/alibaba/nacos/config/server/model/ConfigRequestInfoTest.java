@@ -34,7 +34,6 @@ class ConfigRequestInfoTest {
         assertNull(info.getRequestIpApp());
         assertNull(info.getBetaIps());
         assertNull(info.getCasMd5());
-        assertFalse(info.isNamespaceTransferred());
         assertTrue(info.getUpdateForExist());
     }
     
@@ -57,7 +56,6 @@ class ConfigRequestInfoTest {
         info.setRequestIpApp("app");
         info.setBetaIps("beta");
         info.setCasMd5("cas");
-        info.setNamespaceTransferred(true);
         info.setUpdateForExist(false);
         
         assertEquals("ip", info.getSrcIp());
@@ -65,7 +63,6 @@ class ConfigRequestInfoTest {
         assertEquals("app", info.getRequestIpApp());
         assertEquals("beta", info.getBetaIps());
         assertEquals("cas", info.getCasMd5());
-        assertTrue(info.isNamespaceTransferred());
         assertFalse(info.getUpdateForExist());
     }
     

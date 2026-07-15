@@ -48,4 +48,10 @@ class UtilsAndCommonsTest {
         char[] chars = new char[] {2325, 9, 30, 12, 2};
         assertEquals(0, UtilsAndCommons.shakeUp(new String(chars), 1));
     }
+    
+    @Test
+    void testParseMetadataWithInvalidPair() {
+        assertThrows(Exception.class, () -> UtilsAndCommons.parseMetadata("invalid"));
+    }
+    
 }

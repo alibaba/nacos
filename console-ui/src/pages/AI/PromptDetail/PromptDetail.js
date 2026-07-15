@@ -36,6 +36,9 @@ import { COPILOT_ENABLED } from '@/constants';
 import { fetchPipelineExecutionDetail, mapExecutionToPipelineInfo } from '@/utils/pipelineApi';
 import './PromptDetail.scss';
 
+const RESERVED_LABEL_LATEST = 'latest';
+const isReservedLatestLabel = label => String(label || '').toLowerCase() === RESERVED_LABEL_LATEST;
+
 @ConfigProvider.config
 class PromptDetail extends React.Component {
   static displayName = 'PromptManagement';
@@ -86,7 +89,6 @@ class PromptDetail extends React.Component {
       publishing: false,
       onlining: false,
       creatingDraft: false,
-      publishUpdateLatest: true,
       // Debug
       variableValues: {},
       userInput: '',
@@ -290,7 +292,10 @@ class PromptDetail extends React.Component {
     }
   };
 
-  getVersionStatusColor = status => {
+  getVersionStatusColor = (status, pipelineInfo) => {
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return '#f5222d';
+    }
     switch (status) {
       case 'draft':
         return '#1890ff';
@@ -307,8 +312,11 @@ class PromptDetail extends React.Component {
     }
   };
 
-  getVersionStatusText = status => {
+  getVersionStatusText = (status, pipelineInfo) => {
     const { locale = {} } = this.props;
+    if (status === 'reviewed' && pipelineInfo?.status === 'REJECTED') {
+      return locale.statusRejected || 'Rejected';
+    }
     switch (status) {
       case 'draft':
         return locale.statusDraft || 'Draft';
@@ -494,6 +502,10 @@ class PromptDetail extends React.Component {
       Message.error(locale.labelInvalid || 'Label only supports letters, numbers, .-_');
       return;
     }
+    if (isReservedLatestLabel(newLabel)) {
+      Message.error(locale.latestLabelReserved || 'latest is managed by server');
+      return;
+    }
     if (labelEditorAll.includes(newLabel)) {
       Message.error(locale.labelExists || 'Label already exists');
       return;
@@ -520,12 +532,14 @@ class PromptDetail extends React.Component {
     // Build new labels map: keep labels for other versions, update for this version
     const newLabelsMap = {};
     Object.keys(labels).forEach(label => {
-      if (labels[label] !== labelEditorVersion) {
+      if (!isReservedLatestLabel(label) && labels[label] !== labelEditorVersion) {
         newLabelsMap[label] = labels[label];
       }
     });
     labelEditorSelected.forEach(label => {
-      newLabelsMap[label] = labelEditorVersion;
+      if (!isReservedLatestLabel(label)) {
+        newLabelsMap[label] = labelEditorVersion;
+      }
     });
 
     this.setState({ labelEditorSaving: true });
@@ -697,25 +711,15 @@ class PromptDetail extends React.Component {
       return;
     }
 
-    this.setState({ publishUpdateLatest: true });
-
     Dialog.confirm({
       title: locale.publish || 'Publish',
       content: (
-        <div>
-          <p>
-            {(locale.publishConfirm || 'Are you sure you want to publish version {0}?').replace(
-              '{0}',
-              selectedVersion
-            )}
-          </p>
-          <Checkbox
-            defaultChecked
-            onChange={checked => this.setState({ publishUpdateLatest: checked })}
-          >
-            {locale.updateLatestLabel || 'Update latest label'}
-          </Checkbox>
-        </div>
+        <p>
+          {(locale.publishConfirm || 'Are you sure you want to publish version {0}?').replace(
+            '{0}',
+            selectedVersion
+          )}
+        </p>
       ),
       onOk: () => {
         const promptKey = getParams('promptKey') || '';
@@ -729,7 +733,6 @@ class PromptDetail extends React.Component {
           data: {
             promptKey,
             version: selectedVersion,
-            updateLatestLabel: this.state.publishUpdateLatest,
             namespaceId,
           },
           contentType: 'application/x-www-form-urlencoded',
@@ -757,24 +760,14 @@ class PromptDetail extends React.Component {
     const { locale = {} } = this.props;
     const { selectedVersion } = this.state;
 
-    this.setState({ publishUpdateLatest: true });
-
     Dialog.confirm({
       title: locale.forcePublish || 'Force Publish',
       content: (
-        <div>
-          <p>
-            {(
-              locale.forcePublishConfirm || 'Are you sure you want to force publish version {0}?'
-            ).replace('{0}', selectedVersion)}
-          </p>
-          <Checkbox
-            defaultChecked
-            onChange={checked => this.setState({ publishUpdateLatest: checked })}
-          >
-            {locale.updateLatestLabel || 'Update latest label'}
-          </Checkbox>
-        </div>
+        <p>
+          {(
+            locale.forcePublishConfirm || 'Are you sure you want to force publish version {0}?'
+          ).replace('{0}', selectedVersion)}
+        </p>
       ),
       onOk: () => {
         const promptKey = getParams('promptKey') || '';
@@ -788,7 +781,6 @@ class PromptDetail extends React.Component {
           data: {
             promptKey,
             version: selectedVersion,
-            updateLatestLabel: this.state.publishUpdateLatest,
             namespaceId,
           },
           contentType: 'application/x-www-form-urlencoded',
@@ -808,6 +800,41 @@ class PromptDetail extends React.Component {
             Message.error(locale.publishFailed || 'Failed to publish');
           },
         });
+      },
+    });
+  };
+
+  handleRedraft = () => {
+    const { locale = {} } = this.props;
+    const { selectedVersion } = this.state;
+    const promptKey = getParams('promptKey') || '';
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ publishing: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/admin/ai/prompt/redraft',
+      data: {
+        promptKey,
+        version: selectedVersion,
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ publishing: false });
+        if (data && data.code === 0) {
+          Message.success(locale.redraftSuccess || 'Re-edit successfully, version is now draft');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadGovernanceData();
+          });
+        } else {
+          Message.error(data?.message || locale.redraftFailed || 'Failed to re-edit');
+        }
+      },
+      error: () => {
+        this.setState({ publishing: false });
+        Message.error(locale.redraftFailed || 'Failed to re-edit');
       },
     });
   };
@@ -1235,29 +1262,40 @@ class PromptDetail extends React.Component {
                 onChange={this.handleVersionSelectChange}
                 style={{ minWidth: 200 }}
               >
-                {versions.map(v => (
-                  <Select.Option key={v.version} value={v.version}>
-                    {v.version}
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        fontSize: 12,
-                        color: this.getVersionStatusColor(v.status),
-                      }}
-                    >
-                      ({this.getVersionStatusText(v.status)})
-                    </span>
-                  </Select.Option>
-                ))}
+                {versions.map(v => {
+                  let vPipeline = null;
+                  if (v.publishPipelineInfo) {
+                    try {
+                      vPipeline = JSON.parse(v.publishPipelineInfo);
+                    } catch (e) {
+                      /* ignore */
+                    }
+                  }
+                  return (
+                    <Select.Option key={v.version} value={v.version}>
+                      {v.version}
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontSize: 12,
+                          color: this.getVersionStatusColor(v.status, vPipeline),
+                        }}
+                      >
+                        ({this.getVersionStatusText(v.status, vPipeline)})
+                      </span>
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
             {selectedVersion && (
               <Tag
                 size="small"
-                color={this.getVersionStatusColor(selectedVersionStatus)}
+                color={this.getVersionStatusColor(selectedVersionStatus, this.state.pipelineInfo)}
                 style={{ borderRadius: 4 }}
               >
-                {selectedVersion} - {this.getVersionStatusText(selectedVersionStatus)}
+                {selectedVersion} -{' '}
+                {this.getVersionStatusText(selectedVersionStatus, this.state.pipelineInfo)}
               </Tag>
             )}
             {onlineCnt > 0 && (
@@ -1316,6 +1354,26 @@ class PromptDetail extends React.Component {
                     {locale.forcePublish || 'Force Publish'}
                   </Button>
                 )}
+              </>
+            )}
+            {selectedVersionStatus === 'reviewed' && (
+              <>
+                <Button
+                  type="primary"
+                  onClick={this.handlePublish}
+                  loading={publishing}
+                  disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
+                >
+                  {locale.publish || 'Publish'}
+                </Button>
+                {pipelineInfo && pipelineInfo.status === 'REJECTED' && (
+                  <Button onClick={this.handleForcePublish} loading={publishing}>
+                    {locale.forcePublish || 'Force Publish'}
+                  </Button>
+                )}
+                <Button onClick={this.handleRedraft} loading={publishing}>
+                  {locale.actionRedraft || 'Re-edit'}
+                </Button>
               </>
             )}
             {selectedVersionStatus === 'online' && (
@@ -1775,15 +1833,25 @@ class PromptDetail extends React.Component {
             <Table.Column
               title={locale.status || 'Status'}
               dataIndex="status"
-              cell={value => (
-                <Tag
-                  size="small"
-                  color={this.getVersionStatusColor(value)}
-                  style={{ borderRadius: 4 }}
-                >
-                  {this.getVersionStatusText(value)}
-                </Tag>
-              )}
+              cell={(value, index, record) => {
+                let vPipeline = null;
+                if (record?.publishPipelineInfo) {
+                  try {
+                    vPipeline = JSON.parse(record.publishPipelineInfo);
+                  } catch (e) {
+                    /* ignore */
+                  }
+                }
+                return (
+                  <Tag
+                    size="small"
+                    color={this.getVersionStatusColor(value, vPipeline)}
+                    style={{ borderRadius: 4 }}
+                  >
+                    {this.getVersionStatusText(value, vPipeline)}
+                  </Tag>
+                );
+              }}
             />
             <Table.Column title={locale.author || 'Author'} dataIndex="srcUser" />
             <Table.Column
@@ -1846,24 +1914,36 @@ class PromptDetail extends React.Component {
           okProps={{ loading: labelEditorSaving }}
         >
           <div className="label-editor">
-            {labelEditorAll.map(label => (
-              <div key={label} className="label-item">
-                <Checkbox
-                  checked={labelEditorSelected.includes(label)}
-                  onChange={checked => {
-                    if (checked) {
-                      this.setState({ labelEditorSelected: [...labelEditorSelected, label] });
-                    } else {
-                      this.setState({
-                        labelEditorSelected: labelEditorSelected.filter(l => l !== label),
-                      });
-                    }
-                  }}
+            {labelEditorAll.map(label => {
+              const isReserved = isReservedLatestLabel(label);
+              return (
+                <div
+                  key={label}
+                  className="label-item"
+                  style={{ opacity: isReserved ? 0.7 : 1 }}
+                  title={isReserved ? locale.latestLabelReserved : undefined}
                 >
-                  {label}
-                </Checkbox>
-              </div>
-            ))}
+                  <Checkbox
+                    checked={labelEditorSelected.includes(label)}
+                    disabled={isReserved}
+                    onChange={checked => {
+                      if (isReserved) {
+                        return;
+                      }
+                      if (checked) {
+                        this.setState({ labelEditorSelected: [...labelEditorSelected, label] });
+                      } else {
+                        this.setState({
+                          labelEditorSelected: labelEditorSelected.filter(l => l !== label),
+                        });
+                      }
+                    }}
+                  >
+                    {label}
+                  </Checkbox>
+                </div>
+              );
+            })}
             <div className="new-label-row">
               <Input
                 size="small"

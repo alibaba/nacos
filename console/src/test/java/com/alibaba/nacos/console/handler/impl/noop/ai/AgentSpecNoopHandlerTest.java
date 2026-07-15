@@ -142,4 +142,11 @@ class AgentSpecNoopHandlerTest {
             () -> handler.updateScope(new AgentSpecScopeForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
+    
+    @Test
+    void testRedraftThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> handler.redraft(new AgentSpecPublishForm()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
 }

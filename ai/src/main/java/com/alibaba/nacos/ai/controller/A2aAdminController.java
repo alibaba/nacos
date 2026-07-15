@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
@@ -72,6 +73,7 @@ public class A2aAdminController {
      * @return result of the registration operation
      * @throws NacosException if the agent registration fails due to invalid input or internal error
      */
+    @Since("3.1.0")
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> registerAgent(AgentCardForm form) throws NacosException {
@@ -89,6 +91,7 @@ public class A2aAdminController {
      * @return result of the get operation
      * @throws NacosApiException if the agent get fails due to invalid input or internal error
      */
+    @Since("3.1.0")
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentCardDetailInfo> getAgentCard(AgentForm form) throws NacosApiException {
@@ -106,6 +109,7 @@ public class A2aAdminController {
      * @return result of the update operation
      * @throws NacosException if the agent update fails due to invalid input or internal error
      */
+    @Since("3.1.0")
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateAgentCard(AgentCardUpdateForm form) throws NacosException {
@@ -124,6 +128,7 @@ public class A2aAdminController {
      * @return result of the deletion operation
      * @throws NacosException if the agent deletion fails due to invalid input or internal error
      */
+    @Since("3.1.0")
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgent(AgentForm form) throws NacosException {
@@ -141,6 +146,7 @@ public class A2aAdminController {
      * @return result of the list operation
      * @throws NacosException if the agent list fails due to invalid input or internal error
      */
+    @Since("3.1.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm,
@@ -161,6 +167,7 @@ public class A2aAdminController {
      * @return all version for target agent.
      * @throws NacosException nacos exception
      */
+    @Since("3.1.0")
     @GetMapping("/version/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm)

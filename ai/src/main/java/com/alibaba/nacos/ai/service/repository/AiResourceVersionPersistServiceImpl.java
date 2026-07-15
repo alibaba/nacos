@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -206,6 +207,18 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
             + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
         return jt.update(sql, storage, desc, normalizeNamespaceId(namespaceId), name, type,
             version);
+    }
+    
+    @Override
+    public int updateStorageMd5(String namespaceId, String name, String type, String version,
+        String contentMd5) {
+        AiResourceVersion existed = find(namespaceId, name, type, version);
+        if (existed == null) {
+            return 0;
+        }
+        String mergedStorage = AiResourceVersionStorageJsonUtil
+            .mergeContentMd5(existed.getStorage(), contentMd5);
+        return updateStorage(namespaceId, name, type, version, mergedStorage);
     }
     
     @Override

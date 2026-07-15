@@ -33,6 +33,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +59,9 @@ class HealthCheckProcessorV2DelegateTest {
     
     @Mock
     private ClusterMetadata clusterMetadata;
+    
+    @Mock
+    private HealthCheckProcessorV2 noneHealthCheckProcessor;
     
     private HealthCheckProcessorV2Delegate healthCheckProcessorV2Delegate;
     
@@ -97,6 +101,18 @@ class HealthCheckProcessorV2DelegateTest {
         
         verify(clusterMetadata).getHealthyCheckType();
         verify(healthCheckTaskV2).getClient();
+    }
+    
+    @Test
+    void testProcessFallbackToNoneProcessor() {
+        when(noneHealthCheckProcessor.getType()).thenReturn(NoneHealthCheckProcessor.TYPE);
+        when(clusterMetadata.getHealthyCheckType()).thenReturn("UNKNOWN");
+        healthCheckProcessorV2Delegate.addProcessor(
+            Collections.singletonList(noneHealthCheckProcessor));
+        
+        healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(noneHealthCheckProcessor).process(healthCheckTaskV2, service, clusterMetadata);
     }
     
     @Test

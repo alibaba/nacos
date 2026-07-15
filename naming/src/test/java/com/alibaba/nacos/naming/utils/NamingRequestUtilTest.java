@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,5 +82,14 @@ class NamingRequestUtilTest {
         assertEquals("1.1.1.1", NamingRequestUtil.getSourceIpForGrpcRequest(meta));
         RequestContextHolder.getContext().getBasicContext().getAddressContext().setRemoteIp(null);
         assertEquals("3.3.3.3", NamingRequestUtil.getSourceIpForGrpcRequest(meta));
+    }
+    
+    @Test
+    void testCheckWeight() throws NacosException {
+        new NamingRequestUtil();
+        NamingRequestUtil.checkWeight(1.0D);
+        
+        assertThrows(NacosException.class, () -> NamingRequestUtil.checkWeight(10001.0D));
+        assertThrows(NacosException.class, () -> NamingRequestUtil.checkWeight(-1.0D));
     }
 }

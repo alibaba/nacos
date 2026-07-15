@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.pipeline.model;
 
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
+
 /**
  * Callback interface for pipeline execution completion notification.
  *

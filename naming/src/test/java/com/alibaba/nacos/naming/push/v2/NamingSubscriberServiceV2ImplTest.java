@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -135,5 +136,46 @@ class NamingSubscriberServiceV2ImplTest {
             new ServiceEvent.ServiceChangedEvent(service,
                 Constants.ServiceChangedType.ADD_SERVICE));
         verify(delayTaskEngine).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
+    void testOnSubscribedEvent() {
+        subscriberService.onEvent(
+            new ServiceEvent.ServiceSubscribedEvent(service, testClientId));
+        
+        verify(delayTaskEngine).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
+    void testGetPushPendingTaskCount() {
+        when(delayTaskEngine.size()).thenReturn(7);
+        
+        assertEquals(7, subscriberService.getPushPendingTaskCount());
+    }
+    
+    @Test
+    void testGetFuzzySubscribersFiltersGroupMismatch() {
+        Service groupMismatch = Service.newService("N", "OTHER", "S");
+        when(indexesManager.getSubscribedService())
+            .thenReturn(Collections.singletonList(groupMismatch));
+        
+        Collection<Subscriber> actual =
+            subscriberService.getFuzzySubscribers("N", service.getGroupedServiceName());
+        
+        assertEquals(0, actual.size());
+    }
+    
+    @Test
+    void testGetFuzzySubscribersUsesParallelStreamForLargeServiceSet() {
+        Collection<Service> services = new ArrayList<>();
+        for (int i = 0; i <= 100; i++) {
+            services.add(Service.newService("OTHER", "G", "S" + i));
+        }
+        when(indexesManager.getSubscribedService()).thenReturn(services);
+        
+        Collection<Subscriber> actual =
+            subscriberService.getFuzzySubscribers("N", service.getGroupedServiceName());
+        
+        assertEquals(0, actual.size());
     }
 }

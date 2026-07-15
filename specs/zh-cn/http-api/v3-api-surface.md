@@ -102,9 +102,14 @@ V3 HTTP 行为当前由以下代码位置定义：
 
 ## 5. Admin API 已实现行为
 
-Admin API 面向运维人员，默认使用 `ApiType.ADMIN_API`。现有文档说明 v3
-Admin API 不兼容 v1/v2 Admin API；如果必须使用 v1/v2 Admin API 兼容能力，
-需要设置 `nacos.core.auth.admin.enabled=true`。
+Admin API 面向运维人员，默认使用 `ApiType.ADMIN_API`。Nacos 3.x 标准
+Admin API 使用 `/v3/admin/*` 路径。v1/v2 Admin API 已从当前 Nacos 主
+发行包中移除，新接入应迁移到 v3 Admin API；如果迁移期仍需使用 v1/v2
+Admin API，应参考
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)
+方案和[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)。
+`nacos.core.auth.admin.enabled` 仅表示是否启用 Admin API 鉴权，不是旧
+Admin API 兼容开关。
 
 当前模块：
 
@@ -122,6 +127,12 @@ Admin API 不兼容 v1/v2 Admin API；如果必须使用 v1/v2 Admin API 兼容�
 - Config 查询在返回 Admin API 详情前会解密加密内容。
 - Config 发布在未提供 encrypted data key 且适用加密处理器时会加密内容。
 - AI Prompt 在同一个 Controller 中同时包含已废弃兼容端点和新的生命周期端点。
+- Plugin detail 在已有 `config` 字段中返回当前 effective plugin config，并可以
+  追加来源、overridden 等值元数据，不改变已有字段。
+- Plugin config 更新保持完整 override map 替换语义。运行时更新必须拒绝
+  restart-effective 字段的变化，包括通过省略 key 移除 override。敏感字段脱敏输入只
+  保留同一目标 source 的原始值；目标 source 不存在该值时忽略此项，不创建 override。
+  source 更新成功但插件 apply 失败时返回明确的服务端错误，且不自动回滚。
 
 ## 6. Console API 已实现行为
 

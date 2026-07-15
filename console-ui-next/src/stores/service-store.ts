@@ -121,7 +121,7 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
   },
 
   fetchServiceDetail: async (namespaceId: string, serviceName: string, groupName: string) => {
-    set({ detailLoading: true, error: null });
+    set({ detailLoading: true, error: null, currentService: null });
     try {
       const response = await serviceApi.getService({ namespaceId, serviceName, groupName });
       const result = response as unknown as { data: ServiceDetailInfo };

@@ -42,9 +42,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.sql.Timestamp;
@@ -82,7 +82,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(SpringExtension.class)
 class EmbeddedConfigInfoPersistServiceImplTest {
     
-    @Mock
+    @MockitoBean
     IdGeneratorManager idGeneratorManager;
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
@@ -91,18 +91,18 @@ class EmbeddedConfigInfoPersistServiceImplTest {
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
-    @Mock
+    @MockitoBean
     DynamicDataSource dynamicDataSource;
     
-    @Mock
+    @MockitoBean
     DatabaseOperate databaseOperate;
     
     private EmbeddedConfigInfoPersistServiceImpl embeddedConfigInfoPersistService;
     
-    @Mock
+    @MockitoBean
     private DataSourceService dataSourceService;
     
-    @Mock
+    @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
     @BeforeEach
@@ -1377,8 +1377,9 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         String tenant = "tenant13245";
         String appName = "appName1243";
         List<Long> ids = Arrays.asList(132L, 1343L, 245L);
+        mockConfigs.forEach(config -> config.setTenant(tenant));
         
-        when(databaseOperate.queryMany(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(databaseOperate.queryMany(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosIds =
@@ -1408,6 +1409,23 @@ class EmbeddedConfigInfoPersistServiceImplTest {
             null, null, null, null, null);
         
         assertEquals(Collections.emptyList(), result);
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportFiltersMismatchedTenantForIds() {
+        ConfigAllInfo matchedConfig = createMockConfigAllInfo(1);
+        matchedConfig.setTenant("tenant");
+        ConfigAllInfo mismatchedConfig = createMockConfigAllInfo(2);
+        mismatchedConfig.setTenant("otherTenant");
+        when(databaseOperate.queryMany(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(Arrays.asList(matchedConfig, mismatchedConfig));
+        
+        List<ConfigAllInfo> result = embeddedConfigInfoPersistService.findAllConfigInfo4Export(
+            null, null, "tenant", null, Arrays.asList(1L, 2L));
+        
+        assertEquals(1, result.size());
+        assertEquals("tenant", result.get(0).getTenant());
     }
     
     @Test

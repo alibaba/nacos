@@ -67,7 +67,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -405,7 +405,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             new ServiceListRequest(namespaceId, groupName, pageNo, pageSize);
         if (selector != null) {
             if (SelectorType.valueOf(selector.getType()) == SelectorType.label) {
-                request.setSelector(JacksonUtils.toJson(selector));
+                request.setSelector(JsonUtils.toJson(selector));
             }
         }
         ServiceListResponse response = requestToServer(request, ServiceListResponse.class);

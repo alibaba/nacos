@@ -18,11 +18,11 @@ package com.alibaba.nacos.ai.pipeline;
 
 import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
 import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
@@ -114,12 +114,6 @@ class PublishPipelineExecutorTest {
             }
             
             @Override
-            public PipelineExecution findByResource(String resourceType, String resourceName,
-                String namespaceId, String version) {
-                return null;
-            }
-            
-            @Override
             public List<PipelineExecution> findByResourceWithPage(String resourceType,
                 String resourceName,
                 String namespaceId, String version, int offset, int limit) {
@@ -156,12 +150,6 @@ class PublishPipelineExecutorTest {
         }
         
         @Override
-        public PipelineExecution findByResource(String resourceType, String resourceName,
-            String namespaceId, String version) {
-            return null;
-        }
-        
-        @Override
         public List<PipelineExecution> findByResourceWithPage(String resourceType,
             String resourceName,
             String namespaceId, String version, int offset, int limit) {
@@ -190,12 +178,6 @@ class PublishPipelineExecutorTest {
             
             @Override
             public PipelineExecution findById(String executionId) {
-                return null;
-            }
-            
-            @Override
-            public PipelineExecution findByResource(String resourceType, String resourceName,
-                String namespaceId, String version) {
                 return null;
             }
             

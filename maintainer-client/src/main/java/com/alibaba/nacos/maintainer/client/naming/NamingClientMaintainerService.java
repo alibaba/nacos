@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
@@ -37,6 +38,7 @@ public interface NamingClientMaintainerService {
      * @return the list of client IDs
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<String> getClientList() throws NacosException;
     
     /**
@@ -46,6 +48,7 @@ public interface NamingClientMaintainerService {
      * @return the client detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     ClientSummaryInfo getClientDetail(String clientId) throws NacosException;
     
     /**
@@ -55,6 +58,7 @@ public interface NamingClientMaintainerService {
      * @return the list of published services
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<ClientServiceInfo> getPublishedServiceList(String clientId) throws NacosException;
     
     /**
@@ -64,6 +68,7 @@ public interface NamingClientMaintainerService {
      * @return the list of subscribed services
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<ClientServiceInfo> getSubscribeServiceList(String clientId) throws NacosException;
     
     /**
@@ -77,6 +82,7 @@ public interface NamingClientMaintainerService {
      * @return the list of clients
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName,
         String serviceName,
         String ip, Integer port) throws NacosException;
@@ -92,6 +98,7 @@ public interface NamingClientMaintainerService {
      * @return the list of clients
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName,
         String serviceName,
         String ip, Integer port) throws NacosException;

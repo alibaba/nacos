@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -74,15 +75,11 @@ class ConfigOperationServiceTest {
     @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    @Mock
-    ConfigMigrateService configMigrateService;
-    
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         this.configOperationService =
-            new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService,
-                configMigrateService);
+            new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService);
     }
     
     @Test
@@ -274,6 +271,66 @@ class ConfigOperationServiceTest {
     }
     
     @Test
+    void testPublishConfigNormalizesNullNamespaceIdToDefault() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId(null);
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(),
+            any()))
+            .thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        
+        assertTrue(result);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
+    }
+    
+    @Test
+    void testPublishConfigNormalizesBlankNamespaceIdThroughNamespaceUtil() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId("   ");
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(),
+            any()))
+            .thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        
+        assertTrue(result);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
+    }
+    
+    @Test
+    void testPublishConfigNormalizesExplicitEmptyNamespaceIdToDefault() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setNamespaceId("");
+        configForm.setContent("test content");
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+        when(configInfoPersistService.insertOrUpdate(any(), any(), configInfoCaptor.capture(),
+            any()))
+            .thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        
+        assertTrue(result);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configInfoCaptor.getValue().getTenant());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, configForm.getNamespaceId());
+    }
+    
+    @Test
     void testUpdateForExistTrue() throws Exception {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId("testDataId");
@@ -357,13 +414,22 @@ class ConfigOperationServiceTest {
         // if tag is blank
         Boolean aResult =
             configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test", "http");
-        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(),
-            any());
+        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"),
+            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
         assertTrue(aResult);
         // if tag is not blank
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1",
             "test", "http");
         assertTrue(bResult);
+    }
+    
+    @Test
+    void testDeleteConfigNormalizesNullNamespaceIdToDefault() {
+        Boolean result = configOperationService.deleteConfig("test", "test", null, "", "1.1.1.1",
+            "test", "http");
+        verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"),
+            eq(Constants.DEFAULT_NAMESPACE_ID), any(), any());
+        assertTrue(result);
     }
     
     @Test
@@ -391,7 +457,7 @@ class ConfigOperationServiceTest {
             "test", "test", "", "beta", "1.1.1.1", "user", "http");
         assertTrue(result);
         verify(configInfoGrayPersistService).removeConfigInfoGray(
-            eq("test"), eq("test"), eq(""), eq("beta"), any(), any());
+            eq("test"), eq("test"), eq(Constants.DEFAULT_NAMESPACE_ID), eq("beta"), any(), any());
     }
     
     @Test

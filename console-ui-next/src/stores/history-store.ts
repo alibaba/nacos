@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { configApi } from '@/api/config';
-import type { ConfigHistory, ConfigHistoryListResponse } from '@/types/config';
+import type { ConfigHistory, ConfigHistoryDetail, ConfigHistoryListResponse } from '@/types/config';
 import type { AxiosError } from 'axios';
 
 interface HistoryState {
@@ -9,7 +9,7 @@ interface HistoryState {
   total: number;
   pageNo: number;
   pageSize: number;
-  currentHistory: ConfigHistory | null;
+  currentHistory: ConfigHistoryDetail | null;
   detailLoading: boolean;
   error: string | null;
 }
@@ -88,7 +88,7 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
         namespaceId,
       });
 
-      const result = response as unknown as { data: ConfigHistory };
+      const result = response as unknown as { data: ConfigHistoryDetail };
 
       set({
         currentHistory: result.data,

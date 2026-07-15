@@ -118,7 +118,6 @@ export interface PromptSubmitData {
 export interface PromptPublishData {
   promptKey: string;
   version: string;
-  updateLatestLabel?: boolean;
   namespaceId?: string;
 }
 

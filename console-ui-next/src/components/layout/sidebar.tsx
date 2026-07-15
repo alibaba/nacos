@@ -14,8 +14,6 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  PanelLeftClose,
-  PanelLeft,
   Puzzle,
   History,
   Radio,
@@ -58,19 +56,22 @@ export function Sidebar() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { sidebarCollapsed, toggleSidebar } = useAppStore();
+  const { sidebarCollapsed } = useAppStore();
   const { globalAdmin } = useAuthStore();
   const { version, startupMode, functionMode, copilotEnabled, aiEnabled } = useServerStore();
   const { currentNamespace, namespaceShowName } = useNamespaceStore();
-  const [platformOpen, setPlatformOpen] = useState(false);
-
-  // Auto-expand platform section if current path is within it
-  useEffect(() => {
-    const platformPaths = ['/namespace', '/clusterManagement', '/pluginManagement', '/userManagement', '/rolesManagement', '/permissionsManagement'];
-    if (platformPaths.some((p) => location.pathname === p)) {
-      setPlatformOpen(true);
-    }
-  }, [location.pathname]);
+  const platformPaths = [
+    '/namespace',
+    '/clusterManagement',
+    '/pluginManagement',
+    '/userManagement',
+    '/rolesManagement',
+    '/permissionsManagement',
+    '/settingCenter',
+  ];
+  const platformActive = platformPaths.some((p) => location.pathname === p);
+  const [platformOpen, setPlatformOpen] = useState(platformActive);
+  const platformExpanded = platformOpen || platformActive;
 
   const coreItems: NavItem[] = [];
 
@@ -148,6 +149,15 @@ export function Sidebar() {
         { key: 'roleManagement', label: t('menu.roleManagement'), path: '/rolesManagement' },
         { key: 'privilegeManagement', label: t('menu.privilegeManagement'), path: '/permissionsManagement' },
       ],
+    });
+  }
+
+  if (copilotEnabled) {
+    platformItems.push({
+      key: 'settings',
+      label: t('menu.settingCenter'),
+      icon: <Settings size={18} />,
+      path: '/settingCenter',
     });
   }
 
@@ -276,9 +286,9 @@ export function Sidebar() {
               )
             )
           ) : (
-            <Collapsible open={platformOpen} onOpenChange={setPlatformOpen}>
+            <Collapsible open={platformExpanded} onOpenChange={setPlatformOpen}>
               <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                {platformOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {platformExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 {t('menu.platformManagement')}
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1">
@@ -310,33 +320,13 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* Bottom Section */}
-      <div className="border-t border-sidebar-border p-2 space-y-1">
+      <div className="border-t border-sidebar-border px-2 py-3">
         {!sidebarCollapsed && (
-          <div className="px-3 py-1.5 text-xs text-muted-foreground text-center">
+          <div className="min-h-5 px-2 text-center text-xs leading-5 text-muted-foreground">
             {version && `v${version}`}
             {startupMode && ` · ${startupMode}`}
           </div>
         )}
-        {copilotEnabled && (
-          <NavLink
-            item={{
-              key: 'settings',
-              label: t('menu.settingCenter'),
-              icon: <Settings size={18} />,
-              path: '/settingCenter',
-            }}
-            collapsed={sidebarCollapsed}
-            active={isActive('/settingCenter')}
-            onClick={() => navTo('/settingCenter')}
-          />
-        )}
-        <button
-          onClick={toggleSidebar}
-          className="flex w-full items-center justify-center gap-2 rounded-md px-2 py-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-        >
-          {sidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
-          {!sidebarCollapsed && <span className="text-xs">{t('common.collapse') || 'Collapse'}</span>}
-        </button>
       </div>
     </aside>
   );
@@ -409,10 +399,7 @@ function NavGroup({
   const [open, setOpen] = useState(isGroupActive || !!item.defaultOpen);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (isGroupActive) setOpen(true);
-  }, [isGroupActive]);
+  const expanded = open || isGroupActive;
 
   useEffect(() => {
     return () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
@@ -499,7 +486,7 @@ function NavGroup({
   }
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={expanded} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-200">
         <span className="shrink-0">{item.icon}</span>
         <span className="truncate flex-1 text-left">{item.label}</span>
@@ -508,7 +495,7 @@ function NavGroup({
             {item.badge}
           </Badge>
         )}
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </CollapsibleTrigger>
       <CollapsibleContent className="ml-4 space-y-0.5 border-l border-sidebar-border pl-3 mt-0.5">
         {item.children?.map((child) => (

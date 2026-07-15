@@ -69,6 +69,25 @@ latest. Subscriptions should notify clients when the resolved AgentSpec changes.
 Runtime clients should not receive upload, publish, force publish, delete, or
 broad management listing operations.
 
+### 5.1 Client Listener Protocol
+
+The client uses HTTP polling with a conditional query (MD5-based ETag) to detect
+content changes without downloading the full payload every cycle.
+
+- **Polling interval**: configurable via `nacosAiAgentSpecCacheUpdateInterval`;
+  default 10 000 ms.
+- **Request**: `GET /v3/client/ai/agentspec?namespaceId=&name=&md5=<cached-md5>`.
+- **304 Not Modified**: server compares the request MD5 against the stored
+  `contentMd5` (computed at publish time). If they match the server returns
+  HTTP 304 with an `ETag` header; the client keeps its local cache unchanged.
+- **200 OK**: the response carries `Result<AgentSpec>` JSON with response headers
+  `X-Nacos-AgentSpec-Md5` and `X-Nacos-AgentSpec-Resolved-Version`. The client
+  updates its local cache and md5Cache, then publishes an
+  `AgentSpecChangedEvent`.
+- **Legacy backfill**: for versions published before the contentMd5 field
+  existed, the server lazily computes and stores the MD5 on the first
+  conditional query.
+
 ## 6. Evolution Note
 
 AgentSpec is expected to evolve with agent framework packaging. Future versions

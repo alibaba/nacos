@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -46,6 +47,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String createService(String serviceName) throws NacosException {
         return createService(Constants.DEFAULT_GROUP, serviceName);
     }
@@ -60,6 +62,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String createService(String groupName, String serviceName) throws NacosException {
         return createService(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName);
     }
@@ -75,6 +78,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String createService(String namespaceId, String groupName, String serviceName)
         throws NacosException {
         return createService(namespaceId, groupName, serviceName, false);
@@ -92,6 +96,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String createService(String namespaceId, String groupName, String serviceName,
         boolean ephemeral)
         throws NacosException {
@@ -111,6 +116,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String createService(String namespaceId, String groupName, String serviceName,
         boolean ephemeral,
         float protectThreshold) throws NacosException {
@@ -130,6 +136,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String createService(Service service) throws NacosException;
     
     /**
@@ -142,6 +149,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateService(String serviceName, Map<String, String> newMetadata,
         float newProtectThreshold,
         Selector newSelector) throws NacosException {
@@ -160,6 +168,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateService(String groupName, String serviceName,
         Map<String, String> newMetadata,
         float newProtectThreshold, Selector newSelector) throws NacosException {
@@ -179,6 +188,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateService(String namespaceId, String groupName, String serviceName,
         Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector)
         throws NacosException {
@@ -199,6 +209,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String updateService(String namespaceId, String groupName, String serviceName,
         boolean ephemeral,
         Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector)
@@ -229,6 +240,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String updateService(Service service) throws NacosException;
     
     /**
@@ -240,6 +252,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String removeService(String serviceName) throws NacosException {
         return removeService(ParamUtil.getDefaultGroupName(), serviceName);
     }
@@ -254,6 +267,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String removeService(String groupName, String serviceName) throws NacosException {
         return removeService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName);
     }
@@ -267,6 +281,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default String removeService(String namespaceId, String groupName, String serviceName)
         throws NacosException {
         Service service = new Service();
@@ -283,6 +298,7 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     String removeService(Service service) throws NacosException;
     
     /**
@@ -292,6 +308,7 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default ServiceDetailInfo getServiceDetail(String serviceName) throws NacosException {
         return getServiceDetail(Constants.DEFAULT_GROUP, serviceName);
     }
@@ -304,6 +321,7 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default ServiceDetailInfo getServiceDetail(String groupName, String serviceName)
         throws NacosException {
         return getServiceDetail(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName);
@@ -318,6 +336,7 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default ServiceDetailInfo getServiceDetail(String namespaceId, String groupName,
         String serviceName)
         throws NacosException {
@@ -335,6 +354,7 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     ServiceDetailInfo getServiceDetail(Service service) throws NacosException;
     
     /**
@@ -346,6 +366,7 @@ public interface ServiceMaintainerService {
      * @return page of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<ServiceView> listServices(String namespaceId) throws NacosException {
         return listServices(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
     }
@@ -361,6 +382,7 @@ public interface ServiceMaintainerService {
      * @return page of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<ServiceView> listServices(String namespaceId, String groupNameParam,
         String serviceNameParam)
         throws NacosException {
@@ -381,6 +403,7 @@ public interface ServiceMaintainerService {
      * @return page of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     Page<ServiceView> listServices(String namespaceId, String groupNameParam,
         String serviceNameParam,
         boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException;
@@ -399,6 +422,7 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId)
         throws NacosException {
         return listServicesWithDetail(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
@@ -420,6 +444,7 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId,
         String groupNameParam,
         String serviceNameParam) throws NacosException {
@@ -443,6 +468,7 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
         String serviceNameParam,
         int pageNo, int pageSize) throws NacosException;
@@ -460,6 +486,7 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<SubscriberInfo> getSubscribers(String serviceName) throws NacosException {
         return getSubscribers(Constants.DEFAULT_GROUP, serviceName);
     }
@@ -478,6 +505,7 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<SubscriberInfo> getSubscribers(String groupName, String serviceName)
         throws NacosException {
         return getSubscribers(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName);
@@ -498,6 +526,7 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
         String serviceName)
         throws NacosException {
@@ -521,6 +550,7 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
         String serviceName, int pageNo,
         int pageSize) throws NacosException {
@@ -541,6 +571,7 @@ public interface ServiceMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
         String serviceName, int pageNo,
         int pageSize, boolean aggregation) throws NacosException {
@@ -564,6 +595,7 @@ public interface ServiceMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     Page<SubscriberInfo> getSubscribers(Service service, int pageNo, int pageSize,
         boolean aggregation)
         throws NacosException;
@@ -574,6 +606,7 @@ public interface ServiceMaintainerService {
      * @return the list of selector types
      * @throws NacosException if an error occurs
      */
+    @Since("3.0.0")
     List<String> listSelectorTypes() throws NacosException;
     
 }

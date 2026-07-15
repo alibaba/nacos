@@ -228,6 +228,10 @@ public class Constants {
     
     public static final String CLUSTER_NAME_PATTERN_STRING = "^[0-9a-zA-Z-]+$";
     
+    public static final String TAG_V2 = "tagv2";
+    
+    public static final String TAG_V2_PREFIX = "tagv2_";
+    
     /**
      * millisecond.
      */

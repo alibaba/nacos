@@ -57,7 +57,8 @@ If no publish pipeline is enabled or no pipeline node matches the resource
 type, `submit` may publish directly according to the type implementation.
 
 `force-publish` bypasses pipeline validation and must remain an administrative
-operation.
+operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
+`online` and `offline` versions must be rejected.
 
 ## 3. Draft Rules
 
@@ -74,14 +75,30 @@ operation.
 
 - Submit resolves an explicit version or the current `editingVersion`.
 - Submit must fail when no draft target exists.
+- Submit only accepts a target version in `draft` status; calling submit on a
+  version in any other status (`reviewing` / `reviewed` / `online` / `offline`)
+  must return `INVALID_PARAM` and must not mutate version status or metadata
+  pointers, to prevent corrupting formal versions.
 - A reviewing version must be recorded in metadata as `reviewingVersion`.
 - Pipeline execution state may be written to `publishPipelineInfo` and
   `pipeline_execution`.
-- Rejected pipeline results move the version back to `draft` and restore the
-  editing pointer.
-- Approved pipeline results move the version to `reviewed`.
+- Approved and rejected pipeline results move the version to `reviewed`; users
+  must explicitly redraft the version when further editing is required after a
+  rejected result.
 - Publish moves the version to `online`, clears working pointers, increments
-  `onlineCnt` when needed, and optionally updates the `latest` label.
+  `onlineCnt` when needed, and the server manages the `latest` label.
+- Publish and force-publish requests may keep the historical
+  `updateLatestLabel` parameter for compatibility. This parameter is deprecated;
+  new clients must not send it. When it is absent or `true`, the published
+  version becomes the server-managed latest version.
+  Label update APIs must ignore any client-provided `latest` label key and
+  merge the current server-managed `latest` value back into the effective label
+  map.
+- Force publish applies the same successful state transition as publish while
+  skipping pipeline approval checks.
+- After any online/offline status change, the server must recalculate `latest`
+  from the current online versions and point it to the greatest online version.
+  If no online version remains, the server must remove `latest`.
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This
@@ -90,6 +107,10 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
 ## 5. Labels
 
 - `latest` is the reserved default label for the latest published version.
+- `latest` is managed by the server. Manual label update requests may contain
+  `latest` for compatibility, but the server must ignore the client-provided
+  `latest` value and merge the current server-managed `latest` value into the
+  effective labels.
 - Labels map to version strings and must not point to `draft` or `reviewing`
   versions.
 - Changing labels does not by itself mutate version content or version status.
@@ -115,6 +136,10 @@ delete, label update, description update, scope update, and download.
 Trace plugin behavior is defined by the
 [Trace Plugin Spec](../plugin/trace-plugin-spec.md). Counters are diagnostic
 and must not define authorization or lifecycle state.
+
+AI resource trace emission uses `AiResourceTraceEvent`. The default AI resource
+trace plugin preserves the JSON line audit log in `ai-resource-trace.log` while
+allowing external trace subscribers to consume the same events.
 
 ## 8. Evolution Note
 

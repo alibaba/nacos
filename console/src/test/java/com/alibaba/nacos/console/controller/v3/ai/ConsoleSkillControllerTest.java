@@ -17,14 +17,22 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.SkillProxy;
+import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,9 +41,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -45,9 +55,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -145,6 +153,24 @@ class ConsoleSkillControllerTest {
     }
     
     @Test
+    void testRedraftSuccess() throws Exception {
+        doNothing().when(skillProxy).redraft(any(SkillPublishForm.class));
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+            Constants.Skills.CONSOLE_PATH + "/redraft").param("namespaceId", "test-ns")
+            .param("skillName", "test-skill").param("version", "v1");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String content = response.getContentAsString();
+        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
+        });
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(skillProxy).redraft(any(SkillPublishForm.class));
+    }
+    
+    @Test
     void testListSkillsSuccess() throws Exception {
         Page<SkillSummary> page = new Page<>();
         page.setTotalCount(1);
@@ -167,6 +193,17 @@ class ConsoleSkillControllerTest {
     }
     
     @Test
+    void testListSkillsUsesListParamExtractor() throws Exception {
+        ExtractorManager.Extractor extractor = ConsoleSkillController.class
+            .getMethod("listSkills", SkillListForm.class,
+                AiResourceFilterableForm.class, PageForm.class)
+            .getAnnotation(ExtractorManager.Extractor.class);
+        
+        assertNotNull(extractor);
+        assertEquals(SkillListHttpParamExtractor.class, extractor.httpExtractor());
+    }
+    
+    @Test
     void testListSkillsWithOwnerFilter() throws Exception {
         Page<SkillSummary> page = new Page<>();
         page.setTotalCount(0);
@@ -185,8 +222,12 @@ class ConsoleSkillControllerTest {
     
     @Test
     void testUploadSkill() throws Exception {
-        when(skillProxy.uploadSkillFromZip(anyString(), any(byte[].class),
-            anyBoolean(), isNull())).thenReturn(SKILL_NAME);
+        when(skillProxy.uploadSkillFromZip(argThat(request -> request != null
+            && NS.equals(request.getNamespaceId()) && !request.isOverwrite()
+            && request.getTargetVersion() == null
+            && "upload commit".equals(request.getCommitMsg())
+            && request.getUploadAction() == null
+            && request.getZipBytes() != null))).thenReturn(SKILL_NAME);
         
         MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
             "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,
@@ -194,7 +235,8 @@ class ConsoleSkillControllerTest {
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.multipart(BASE_PATH + "/upload").file(file)
-                .param("namespaceId", NS).param("overwrite", "false"))
+                .param("namespaceId", NS).param("overwrite", "false")
+                .param("commitMsg", "upload commit"))
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());
@@ -202,6 +244,59 @@ class ConsoleSkillControllerTest {
             response.getContentAsString(), new TypeReference<>() {
             });
         assertEquals(SKILL_NAME, result.getData());
+    }
+    
+    @Test
+    void testUploadSkillWithUploadAction() throws Exception {
+        when(skillProxy.uploadSkillFromZip(argThat(request -> request != null
+            && SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT
+                .equals(request.getUploadAction()))))
+            .thenReturn(SKILL_NAME);
+        
+        MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
+            "application/zip", new byte[] {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.multipart(BASE_PATH + "/upload").file(file)
+                .param("namespaceId", NS)
+                .param("uploadAction", SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkill() throws Exception {
+        SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
+        precheckResult.setSkillName(SKILL_NAME);
+        precheckResult.setParsedVersion("1.0.0");
+        precheckResult.setStatus(SkillUploadPrecheckResult.STATUS_VALID);
+        when(skillProxy.batchPrecheckUploadSkill(argThat(reqs -> reqs != null
+            && reqs.size() == 1
+            && NS.equals(reqs.get(0).getNamespaceId())
+            && SKILL_NAME.equals(reqs.get(0).getSkillName()))))
+            .thenReturn(java.util.Collections.singletonList(precheckResult));
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(NS);
+        request.setSkillName(SKILL_NAME);
+        request.setDescription("desc");
+        request.setParsedVersion("1.0.0");
+        request.setVersionSource("SKILL.md frontmatter");
+        request.setTargetVersion("1.0.0");
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(BASE_PATH + "/upload/batch/precheck")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JacksonUtils.toJson(java.util.Collections.singletonList(request))))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        Result<java.util.List<SkillUploadPrecheckResult>> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertEquals(1, result.getData().size());
+        assertEquals(SKILL_NAME, result.getData().get(0).getSkillName());
     }
     
     @Test

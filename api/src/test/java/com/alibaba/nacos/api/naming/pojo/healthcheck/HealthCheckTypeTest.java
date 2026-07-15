@@ -16,37 +16,13 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
-import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class HealthCheckTypeTest {
-    
-    @Test
-    void testOfHealthCheckerClassForBuildInType() {
-        assertEquals(Tcp.class, HealthCheckType.ofHealthCheckerClass("TCP"));
-        assertEquals(Http.class, HealthCheckType.ofHealthCheckerClass("HTTP"));
-        assertEquals(Mysql.class, HealthCheckType.ofHealthCheckerClass("MYSQL"));
-        assertEquals(AbstractHealthChecker.None.class,
-            HealthCheckType.ofHealthCheckerClass("NONE"));
-    }
-    
-    @Test
-    void testOfHealthCheckerClassForExtendType() {
-        HealthCheckType.registerHealthChecker(TestChecker.TYPE, TestChecker.class);
-        assertEquals(TestChecker.class, HealthCheckType.ofHealthCheckerClass(TestChecker.TYPE));
-    }
-    
-    @Test
-    void testOfHealthCheckerClassForNonExistType() {
-        assertNull(HealthCheckType.ofHealthCheckerClass("non-exist"));
-    }
     
     @Test
     void testGetLoadedHealthCheckerClasses() {

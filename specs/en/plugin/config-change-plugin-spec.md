@@ -128,10 +128,10 @@ The legacy enablement key documented for plugin packages is:
 nacos.core.config.plugin.{pluginName}.enabled=true
 ```
 
-Direct lookup through `ConfigChangePluginManager.findPluginServiceImpl` respects
-the unified plugin state for `config-change:{pluginName}`. Pointcut execution
-also uses the legacy `enabled` property and should converge on the unified state
-model when the execution path is updated.
+Pointcut candidate lookup filters services by the unified plugin state for
+`config-change:{pluginName}`. The legacy `enabled` property remains a
+plugin-specific execution switch, so either the unified state or this property
+may prevent a service from executing.
 
 Plugin custom properties are read using the lowercase service type:
 

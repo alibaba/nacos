@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.model.SubscriberStatus;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,27 +62,6 @@ public class ClientTrackService {
             count += record.getGroupKey2md5Map().size();
         }
         return count;
-    }
-    
-    /**
-     * Groupkey ->  SubscriberStatus.
-     */
-    public static Map<String, SubscriberStatus> listSubStatus(String ip) {
-        Map<String, SubscriberStatus> status = new HashMap<>(100);
-        
-        // record here is non-null
-        ClientRecord record = getClientRecord(ip);
-        for (Map.Entry<String, String> entry : record.getGroupKey2md5Map().entrySet()) {
-            String groupKey = entry.getKey();
-            String clientMd5 = entry.getValue();
-            long lastPollingTs = record.getGroupKey2pollingTsMap().get(groupKey);
-            boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-            
-            status.put(groupKey,
-                new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
-        }
-        
-        return status;
     }
     
     /**

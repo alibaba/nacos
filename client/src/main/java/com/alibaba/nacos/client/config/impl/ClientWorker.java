@@ -69,7 +69,7 @@ import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -616,7 +616,7 @@ public class ClientWorker implements Closeable {
             getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
         Map<String, Object> metrics = new HashMap<>(1);
-        metrics.put(uuid, JacksonUtils.toJson(metric));
+        metrics.put(uuid, JsonUtils.toJson(metric));
         return metrics;
     }
     
@@ -715,7 +715,8 @@ public class ClientWorker implements Closeable {
                         try {
                             entry.getValue().shutdown();
                         } catch (NacosException nacosException) {
-                            nacosException.printStackTrace();
+                            LOGGER.warn("Failed to shutdown rpc client {}", entry.getKey(),
+                                nacosException);
                         }
                         LOGGER.info("Remove rpc client {}", entry.getKey());
                         iterator.remove();
@@ -1047,11 +1048,17 @@ public class ClientWorker implements Closeable {
                     }));
         }
         
-        private void refreshContentAndCheck(RpcClient rpcClient, String groupKey, boolean notify) {
-            if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-                CacheData cache = cacheMap.get().get(groupKey);
-                refreshContentAndCheck(rpcClient, cache, notify);
+        private void refreshContentAndCheck(RpcClient rpcClient, String groupKey) {
+            Map<String, CacheData> cacheMapSnapshot = cacheMap.get();
+            if (cacheMapSnapshot == null) {
+                return;
             }
+            CacheData cache = cacheMapSnapshot.get(groupKey);
+            if (cache == null) {
+                return;
+            }
+            boolean notify = !cache.isInitializing();
+            refreshContentAndCheck(rpcClient, cache, notify);
         }
         
         private void refreshContentAndCheck(RpcClient rpcClient, CacheData cacheData,
@@ -1173,10 +1180,7 @@ public class ClientWorker implements Closeable {
                                             changeConfig.getDataId(),
                                             changeConfig.getGroup(), changeConfig.getTenant());
                                         changeKeys.add(changeKey);
-                                        boolean isInitializing =
-                                            cacheMap.get().get(changeKey).isInitializing();
-                                        refreshContentAndCheck(rpcClient, changeKey,
-                                            !isInitializing);
+                                        refreshContentAndCheck(rpcClient, changeKey);
                                     }
                                     
                                 }
@@ -1187,10 +1191,7 @@ public class ClientWorker implements Closeable {
                                             cacheData.group,
                                             cacheData.getTenant());
                                         if (!changeKeys.contains(changeKey)) {
-                                            boolean isInitializing =
-                                                cacheMap.get().get(changeKey).isInitializing();
-                                            refreshContentAndCheck(rpcClient, changeKey,
-                                                !isInitializing);
+                                            refreshContentAndCheck(rpcClient, changeKey);
                                         }
                                     }
                                 }

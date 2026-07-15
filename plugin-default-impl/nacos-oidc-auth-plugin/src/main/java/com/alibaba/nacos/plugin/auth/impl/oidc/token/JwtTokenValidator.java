@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -52,9 +52,7 @@ public class JwtTokenValidator {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenValidator.class);
     
-    private static volatile JwtTokenValidator instance;
-    
-    private final OidcAuthConfig config;
+    private final OidcAuthPluginConfig config;
     
     private final JwksProvider jwksProvider;
     
@@ -74,25 +72,9 @@ public class JwtTokenValidator {
         JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512,
         JWSAlgorithm.PS256, JWSAlgorithm.PS384, JWSAlgorithm.PS512));
     
-    private JwtTokenValidator() {
-        this.config = OidcAuthConfig.getInstance();
-        this.jwksProvider = JwksProvider.getInstance();
-    }
-    
-    /**
-     * Get singleton instance.
-     *
-     * @return JwtTokenValidator instance
-     */
-    public static JwtTokenValidator getInstance() {
-        if (instance == null) {
-            synchronized (JwtTokenValidator.class) {
-                if (instance == null) {
-                    instance = new JwtTokenValidator();
-                }
-            }
-        }
-        return instance;
+    public JwtTokenValidator(OidcAuthPluginConfig config, JwksProvider jwksProvider) {
+        this.config = config;
+        this.jwksProvider = jwksProvider;
     }
     
     /**
@@ -248,7 +230,7 @@ public class JwtTokenValidator {
                         throw new AccessException("Token audience validation failed");
                     } else {
                         LOGGER.warn("{} - Strict validation disabled, accepting token. "
-                            + "Set 'nacos.core.auth.plugin.oidc.strict-audience-validation=true' for better security.",
+                            + "Set 'nacos.plugin.auth.oidc.strict-audience-validation=true' for better security.",
                             message);
                     }
                 }

@@ -104,9 +104,16 @@ Implemented Open API surface:
 
 ## 5. Admin API Implemented Behavior
 
-Admin APIs are operator-oriented and default to `ApiType.ADMIN_API`. Existing docs
-state that v3 Admin API is not compatible with v1/v2 Admin API, and that v1/v2
-Admin API compatibility requires `nacos.core.auth.admin.enabled=true`.
+Admin APIs are operator-oriented and default to `ApiType.ADMIN_API`. The standard
+Nacos 3.x Admin API uses the `/v3/admin/*` path. v1/v2 Admin APIs have been
+removed from the current Nacos main distribution, and new integrations should
+migrate to the v3 Admin API. If v1/v2 Admin APIs are still required during
+migration, use the
+[nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)
+approach and follow the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
+`nacos.core.auth.admin.enabled` only controls whether Admin API authentication is
+enabled; it is not a legacy Admin API compatibility switch.
 
 Current modules:
 
@@ -127,6 +134,15 @@ Implemented behavior to document more explicitly:
   configured encryption handler applies.
 - AI Prompt contains deprecated compatibility endpoints and newer lifecycle
   endpoints in the same controller.
+- Plugin detail returns the current effective plugin config in its existing
+  `config` field and may add value metadata such as source and overridden state
+  without changing existing fields.
+- Plugin config update keeps full override map replacement semantics. Runtime
+  updates reject restart-effective changes, including removal by omission, and
+  preserve a masked sensitive input only from the same target source. If that
+  source has no value, the masked item is ignored instead of creating an
+  override. An accepted source update that fails during plugin apply returns an
+  explicit server error and is not automatically rolled back.
 
 ## 6. Console API Implemented Behavior
 

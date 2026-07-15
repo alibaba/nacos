@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -158,8 +158,8 @@ public class NacosPromptCacheHolder implements Closeable {
     }
     
     private boolean isPromptChanged(Prompt oldPrompt, Prompt newPrompt) {
-        String oldJson = oldPrompt == null ? StringUtils.EMPTY : JacksonUtils.toJson(oldPrompt);
-        String newJson = newPrompt == null ? StringUtils.EMPTY : JacksonUtils.toJson(newPrompt);
+        String oldJson = oldPrompt == null ? StringUtils.EMPTY : JsonUtils.toJson(oldPrompt);
+        String newJson = newPrompt == null ? StringUtils.EMPTY : JsonUtils.toJson(newPrompt);
         return !StringUtils.equals(oldJson, newJson);
     }
     

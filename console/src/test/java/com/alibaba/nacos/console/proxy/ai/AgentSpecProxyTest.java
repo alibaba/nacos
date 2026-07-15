@@ -44,6 +44,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -247,6 +248,20 @@ class AgentSpecProxyTest {
         agentSpecProxy.updateBizTags(form);
         
         verify(agentSpecHandler).updateBizTags(form);
+    }
+    
+    @Test
+    public void testRedraft() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NS);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        
+        doNothing().when(agentSpecHandler).redraft(form);
+        
+        agentSpecProxy.redraft(form);
+        
+        verify(agentSpecHandler, times(1)).redraft(form);
     }
     
     @Test

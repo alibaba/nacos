@@ -5,7 +5,7 @@ import { ArrowLeft, Copy, Check, FileText, Hash, AppWindow, User, Globe, Zap, Cl
 
 import { useHistoryStore } from '@/stores/history-store';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
-import type { ConfigType } from '@/types/config';
+import type { ConfigHistoryDetail } from '@/types/config';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -126,6 +126,8 @@ export default function HistoryDetailPage() {
     </span>
   );
 
+  const historyDetail = currentHistory as ConfigHistoryDetail | null;
+
   if (detailLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -150,7 +152,7 @@ export default function HistoryDetailPage() {
     );
   }
 
-  if (!currentHistory) {
+  if (!historyDetail) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] gap-4">
         <p className="text-muted-foreground">{t('common.noData')}</p>
@@ -188,7 +190,7 @@ export default function HistoryDetailPage() {
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.dataId')}</span>
                   </div>
                   <div className="text-base font-semibold tracking-tight break-all leading-snug">
-                    <CopyableText text={currentHistory.dataId} field="dataId" />
+                    <CopyableText text={historyDetail.dataId} field="dataId" />
                   </div>
                 </div>
                 {/* Group */}
@@ -198,13 +200,13 @@ export default function HistoryDetailPage() {
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.group')}</span>
                   </div>
                   <div className="text-base font-semibold tracking-tight break-all">
-                    <CopyableText text={currentHistory.groupName} field="group" />
+                    <CopyableText text={historyDetail.groupName} field="group" />
                   </div>
                 </div>
               </div>
               {/* Op Type badge — visually prominent pill */}
-              <span className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getOpTypeBadgeClass(currentHistory.opType)}`}>
-                {getOpTypeLabel(currentHistory.opType)}
+              <span className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getOpTypeBadgeClass(historyDetail.opType)}`}>
+                {getOpTypeLabel(historyDetail.opType)}
               </span>
             </div>
           </div>
@@ -225,7 +227,7 @@ export default function HistoryDetailPage() {
               <AppWindow className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.appName')}</div>
-                <div className="text-sm">{currentHistory.appName || '-'}</div>
+                <div className="text-sm">{historyDetail.appName || '-'}</div>
               </div>
             </div>
 
@@ -234,7 +236,7 @@ export default function HistoryDetailPage() {
               <Shield className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <div className="text-xs font-medium text-muted-foreground mb-1">{t('history.publishType')}</div>
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getPublishTypeBadgeClass(currentHistory.publishType)}`}>
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getPublishTypeBadgeClass(historyDetail.publishType)}`}>
                   {getPublishTypeDisplay()}
                 </span>
               </div>
@@ -248,7 +250,7 @@ export default function HistoryDetailPage() {
               <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('history.operator')}</div>
-                <div className="text-sm">{currentHistory.srcUser || '-'}</div>
+                <div className="text-sm">{historyDetail.srcUser || '-'}</div>
               </div>
             </div>
 
@@ -257,7 +259,7 @@ export default function HistoryDetailPage() {
               <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('history.sourceIp')}</div>
-                <div className="text-sm font-mono text-[13px] tracking-tight">{currentHistory.srcIp || '-'}</div>
+                <div className="text-sm font-mono text-[13px] tracking-tight">{historyDetail.srcIp || '-'}</div>
               </div>
             </div>
 
@@ -267,18 +269,18 @@ export default function HistoryDetailPage() {
               <div className="min-w-0 overflow-hidden">
                 <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.md5')}</div>
                 <div className="text-sm">
-                  <CopyableText text={currentHistory.md5} field="md5" mono />
+                  <CopyableText text={historyDetail.md5} field="md5" mono />
                 </div>
               </div>
             </div>
 
             {/* Modified Time */}
-            {currentHistory.modifyTime && (
+            {historyDetail.modifyTime && (
               <div className="flex items-start gap-3">
                 <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.modifyTime')}</div>
-                  <div className="text-sm tabular-nums">{formatTime(currentHistory.modifyTime)}</div>
+                  <div className="text-sm tabular-nums">{formatTime(historyDetail.modifyTime)}</div>
                 </div>
               </div>
             )}
@@ -307,8 +309,8 @@ export default function HistoryDetailPage() {
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <MonacoEditor
-            value={currentHistory.content || ''}
-            language={(currentHistory.type as ConfigType) || 'text'}
+            value={historyDetail.content || ''}
+            language={historyDetail.type || 'text'}
             readOnly
             height="350px"
           />

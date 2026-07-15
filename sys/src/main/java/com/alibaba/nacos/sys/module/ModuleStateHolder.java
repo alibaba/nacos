@@ -115,22 +115,4 @@ public class ModuleStateHolder {
         return moduleState.get().getState(stateName, defaultValue);
     }
     
-    /**
-     * Search State Value by state name one by one.
-     *
-     * @param stateName    state name
-     * @param defaultValue default value when can't find module or state
-     * @return state value
-     */
-    @SuppressWarnings("all")
-    public <T> T searchStateValue(String stateName, T defaultValue) {
-        T result = null;
-        for (ModuleState each : getAllModuleStates()) {
-            if (each.getStates().containsKey(stateName)) {
-                result = (T) each.getStates().get(stateName);
-                break;
-            }
-        }
-        return null == result ? defaultValue : result;
-    }
 }

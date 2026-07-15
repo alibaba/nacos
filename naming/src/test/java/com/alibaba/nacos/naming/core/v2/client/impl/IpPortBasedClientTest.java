@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -26,13 +28,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class IpPortBasedClientTest {
@@ -77,6 +86,11 @@ class IpPortBasedClientTest {
     }
     
     @Test
+    void testIsExpireReturnsFalseBeforeTimeout() {
+        assertFalse(ipPortBasedClient.isExpire(System.currentTimeMillis()));
+    }
+    
+    @Test
     void testGetAllInstancePublishInfo() {
         ipPortBasedClient.addServiceInstance(service, instancePublishInfo);
         Collection<InstancePublishInfo> allInstancePublishInfo =
@@ -95,6 +109,37 @@ class IpPortBasedClientTest {
     void testConstructor0() {
         IpPortBasedClient client = new IpPortBasedClient(clientId, true);
         assertEquals(0, client.getRevision());
+    }
+    
+    @Test
+    void testPersistentReleaseCancelsHealthCheckTask() {
+        IpPortBasedClient client = new IpPortBasedClient("127.0.0.1:80#false", false);
+        HealthCheckTaskV2 healthCheckTaskV2 = mock(HealthCheckTaskV2.class);
+        ReflectionTestUtils.setField(client, "healthCheckTaskV2", healthCheckTaskV2);
+        
+        client.release();
+        
+        verify(healthCheckTaskV2).setCancelled(true);
+    }
+    
+    @Test
+    void testPersistentInitSchedulesHealthCheckTask() {
+        IpPortBasedClient client = new IpPortBasedClient("127.0.0.1:80#false", false);
+        
+        try (MockedStatic<HealthCheckReactor> mockedHealthCheckReactor =
+            mockStatic(HealthCheckReactor.class)) {
+            client.init();
+            
+            mockedHealthCheckReactor.verify(
+                () -> HealthCheckReactor.scheduleCheck(any(HealthCheckTaskV2.class)));
+        }
+    }
+    
+    @Test
+    void testPutServiceInstance() {
+        ipPortBasedClient.putServiceInstance(service, instancePublishInfo);
+        
+        assertEquals(1, ipPortBasedClient.getAllInstancePublishInfo().size());
     }
     
     @AfterEach

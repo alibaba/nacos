@@ -64,6 +64,21 @@ AgentSpec 发生变化时通知客户端。
 
 运行时客户端不应获得 upload、publish、force publish、delete 或宽范围管理列表能力。
 
+### 5.1 客户端监听协议
+
+客户端使用 HTTP 轮询 + 条件查询（基于 MD5 的 ETag）检测内容变更，避免每次轮询都下载
+完整内容。
+
+- **轮询间隔**：通过 `nacosAiAgentSpecCacheUpdateInterval` 配置，默认 10 000 ms。
+- **请求**：`GET /v3/client/ai/agentspec?namespaceId=&name=&md5=<cached-md5>`。
+- **304 Not Modified**：服务端将请求中的 MD5 与存储的 `contentMd5`（发布时预算）比对。
+  若一致则返回 HTTP 304 + `ETag` header，客户端保持本地缓存不变。
+- **200 OK**：响应携带 `Result<AgentSpec>` JSON 及响应头
+  `X-Nacos-AgentSpec-Md5`、`X-Nacos-AgentSpec-Resolved-Version`。客户端更新本地缓存
+  和 md5Cache，并发布 `AgentSpecChangedEvent`。
+- **存量回填**：对于 contentMd5 字段不存在的旧版本，服务端在首次条件查询时懒计算并存储
+  MD5。
+
 ## 6. 演进说明
 
 AgentSpec 预计会随 agent framework 包格式演进。未来版本可能增加 schema 校验、签名、

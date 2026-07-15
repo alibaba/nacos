@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.api.config.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
 
@@ -41,7 +40,7 @@ public class ConfigBasicInfo implements Serializable {
      *     such as 862926428394491904, ui will replace it as 862926428394491900, so that can't found the configuration in later operation.
      * </p>
      */
-    @JsonSerialize(using = ToStringSerializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
     
     private String namespaceId;

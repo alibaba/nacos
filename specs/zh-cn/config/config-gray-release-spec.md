@@ -86,8 +86,12 @@ Admin beta 查询在 beta 版本存在时返回 beta 版本。Admin 正式查询
 
 ## 6. 兼容与清理
 
-当前领域模型是 `config_info_gray` 加 `GrayRule`。兼容链路可以将旧的 beta 或 tag 状态迁移到该
-模型中，但新的规范和新 API 应以灰度规则模型作为稳定契约。
+当前领域模型是 `config_info_gray` 加 `GrayRule`。beta 和 tag 灰度版本同样通过
+`config_info_gray` 中对应的 `grayName` 和序列化规则元数据表示。
+
+从 Nacos 3.3 版本线开始，运行时不再支持从 legacy `config_info_beta`、`config_info_tag`
+旧表向 `config_info_gray` 的兼容迁移。从 3.0 之前版本升级且使用过 beta 灰度发布的部署，
+必须在升级前完成相关数据迁移。
 
 ## 7. 待补充规范
 

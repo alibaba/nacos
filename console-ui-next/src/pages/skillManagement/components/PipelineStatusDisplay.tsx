@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, CheckCircle2, XCircle, Clock, RefreshCw, Eye, Minus, ShieldCheck, ShieldX } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, RefreshCw, Eye, Minus, ShieldCheck, ShieldX, Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 interface PipelineCheckpointInfo {
   title: string;
@@ -73,6 +74,29 @@ const STATUS_CONFIG = {
 
 function formatDuration(ms: number) {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall through to textarea fallback for insecure or restricted contexts.
+    }
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-999999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 /** Render node message content based on messageType. */
@@ -142,6 +166,7 @@ function PipelineDetailDialog({
   // Auto-select first failed node, or first node
   const firstFailedIdx = nodes.findIndex((n) => !n.passed);
   const [selectedIdx, setSelectedIdx] = useState(firstFailedIdx >= 0 ? firstFailedIdx : 0);
+  const [copiedNodeId, setCopiedNodeId] = useState<string | null>(null);
 
   // Reset selection when dialog opens or pipeline data changes
   useEffect(() => {
@@ -154,6 +179,20 @@ function PipelineDetailDialog({
   const config = STATUS_CONFIG[pipelineInfo.status];
   const StatusIcon = config.icon;
   const selectedNode = nodes[selectedIdx];
+
+  const handleCopyMessage = async (node: PipelineNodeInfo) => {
+    if (!node.message) return;
+    try {
+      await copyTextToClipboard(node.message);
+      setCopiedNodeId(node.nodeId);
+      toast.success(t(`${translationPrefix}.pipelineCopySuccess`));
+      window.setTimeout(() => {
+        setCopiedNodeId((current) => current === node.nodeId ? null : current);
+      }, 2000);
+    } catch {
+      toast.error(t(`${translationPrefix}.pipelineCopyFailed`));
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -263,12 +302,31 @@ function PipelineDetailDialog({
                   {formatDuration(selectedNode.durationMs)}
                 </Badge>
               )}
-              {selectedNode.executedAt && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
-                  <Clock className="h-3 w-3" />
-                  {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
-                </span>
-              )}
+              <div className="ml-auto flex items-center gap-2">
+                {selectedNode.executedAt && (
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {dayjs(selectedNode.executedAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </span>
+                )}
+                {selectedNode.message && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleCopyMessage(selectedNode)}
+                  >
+                    {copiedNodeId === selectedNode.nodeId ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copiedNodeId === selectedNode.nodeId
+                      ? t(`${translationPrefix}.pipelineCopied`)
+                      : t(`${translationPrefix}.pipelineCopy`)}
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Message area */}
@@ -350,8 +408,8 @@ export function PipelineStatusDisplay({
   // Compact badge mode (for Timeline inline)
   if (compact) {
     return (
-      <Badge className={cn('text-[10px] px-1.5 py-0 h-4 font-medium border-0 gap-1', config.badgeClass)}>
-        <StatusIcon className={cn('h-2.5 w-2.5', config.iconClass)} />
+      <Badge className={cn('text-xs px-2.5 h-7 font-medium border-0 gap-1.5 rounded-md inline-flex items-center', config.badgeClass)}>
+        <StatusIcon className={cn('h-3.5 w-3.5', config.iconClass)} />
         {t(`${translationPrefix}.${config.labelSuffix}`)}
       </Badge>
     );

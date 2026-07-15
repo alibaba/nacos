@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -150,6 +151,32 @@ class EphemeralClientOperationServiceImplTest {
         ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances,
             connectionBasedClientId);
         assertTrue(connectionBasedClient.getAllPublishedService().contains(service));
+    }
+    
+    @Test
+    void testBatchRegisterPersistentInstance() {
+        Service persistentService = Service.newService("public", "G", "persistent", false);
+        assertThrows(NacosRuntimeException.class,
+            () -> ephemeralClientOperationServiceImpl.batchRegisterInstance(persistentService,
+                new ArrayList<>(), ipPortBasedClientId));
+    }
+    
+    @Test
+    void testDeregisterNonExistService() {
+        Service nonExistService = Service.newService("public", "G", "nonExist");
+        ephemeralClientOperationServiceImpl.deregisterInstance(nonExistService, instance,
+            ipPortBasedClientId);
+        assertFalse(ipPortBasedClient.getAllPublishedService().contains(nonExistService));
+    }
+    
+    @Test
+    void testDeregisterWithoutPublishedInstance() {
+        Service singleton =
+            ServiceManager.getInstance().getSingleton(Service.newService("public", "G",
+                "emptyPublished"));
+        ephemeralClientOperationServiceImpl.deregisterInstance(singleton, instance,
+            ipPortBasedClientId);
+        assertFalse(ipPortBasedClient.getAllPublishedService().contains(singleton));
     }
     
     @Test

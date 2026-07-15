@@ -35,7 +35,21 @@ public enum LockOperationEnum implements Serializable {
     /**
      * Expire.
      */
-    EXPIRE;
+    EXPIRE,
+    /**
+     * Renew (watchdog heartbeat).
+     */
+    RENEW,
+    /**
+     * Cancel a pending wait queue entry.
+     */
+    CANCEL_WAIT,
+    /**
+     * Cleanup all lock state (held lock + wait queue) for a disconnected connection.
+     *
+     * <p>Internal operation used by {@code releaseLocksByConnection()}. Not exposed to clients.
+     */
+    CLEANUP_CONNECTION;
     
     private static final long serialVersionUID = -241044344531890549L;
 }

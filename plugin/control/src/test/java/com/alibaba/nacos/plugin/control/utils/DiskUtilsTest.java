@@ -36,12 +36,10 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskUtilsTest {
-    
-    private static final String TMP_PATH =
-        EnvUtils.getNacosHome() + File.separator + "data" + File.separator + "tmp" + File.separator;
     
     private static File testFile;
     
@@ -59,6 +57,7 @@ class DiskUtilsTest {
     @Test
     void testReadFile() {
         assertNotNull(DiskUtils.readFile(testFile));
+        assertNull(DiskUtils.readFile(new File("missing-file")));
     }
     
     @Test
@@ -66,6 +65,8 @@ class DiskUtilsTest {
         assertTrue(
             DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
         assertEquals("unit test", DiskUtils.readFile(testFile));
+        assertFalse(DiskUtils.writeFile(testFile.getParentFile(), "unit test".getBytes(
+            StandardCharsets.UTF_8), false));
     }
     
     @Test

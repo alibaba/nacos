@@ -19,6 +19,9 @@
 本文档定义 Java SDK 如何实现共享的 [SDK 规范](./sdk-spec.md)，覆盖 Java
 Client SDK 和 Java Maintainer SDK。
 
+Java SDK 的 JSON 序列化兼容模型由
+[Java SDK JSON 适配规范](./sdk-java-json-adapter-spec.md)定义。
+
 ## 1. 范围
 
 Java SDK 当前包含两类公开能力：
@@ -31,6 +34,10 @@ Java SDK 当前包含两类公开能力：
 Java Client SDK 是现有运行时应用行为的基准。它的连接、server list、能力协商、
 本地缓存和 redo 行为由[客户端运行时规范](../client/README.md)定义。Java Maintainer SDK
 是管理、UI、网关和运维场景的推荐 Java 接入方式。
+
+当公开 SDK interface、factory、模型、监听行为、生命周期行为或异常映射发生
+变化时，必须按照[Java SDK 集成测试规范](../testing/java-sdk-integration-test-spec.md)
+使用场景化 IT 验证 Java SDK 行为。
 
 ## 2. Java Client SDK Factory 和生命周期
 
@@ -208,7 +215,7 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 
 `ConfigMaintainerService` 包含：
 
-- 配置获取、发布、删除和批量删除；
+- 配置获取、发布、删除和按 namespace 限定的批量删除；
 - 按 namespace、dataId、group、type、tag、app 等条件进行配置列表和搜索；
 - clone、import/export 等管理模型；
 - 通过 `BetaConfigMaintainerService` 提供 beta 和灰度发布能力；
@@ -217,6 +224,12 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 - 配置描述、标签等元数据更新。
 
 管理类写入和大范围查询应加入这里，而不是继续扩展 `ConfigService`。
+按存储 ID 批量删除必须显式传入或默认出 namespace；未传 namespace 的便捷方法只表示默认
+namespace，不表示跨 namespace 全局删除。
+按存储 ID 克隆必须显式传入或默认出源 namespace 和目标 namespace。旧的单 namespace 克隆方法只表示
+同 namespace 克隆，不表示按 ID 跨 namespace 读取源配置。
+Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 `ids`，属于兼容方法并待移除。
+新的 maintainer 契约应按 `namespaceId`、`groupName`、`dataId`，或这些身份元组的显式列表选择配置。
 
 ### 7.3 NamingMaintainerService
 
@@ -249,7 +262,12 @@ Maintainer service 在适用场景下继承 `CoreMaintainerService`。它们属�
 ## 8. Java 兼容规则
 
 - `api`、`client` 和 `plugin` 模块保持 Java 8 兼容，除非模块策略发生变化。
+- Java SDK 的 JSON 序列化与反序列化必须通过
+  [Java SDK JSON 适配规范](./sdk-java-json-adapter-spec.md)定义的中立 JSON
+  adapter 模型。新的公开 SDK API 不得暴露具体 Jackson core/databind 类型。
 - 服务端和 maintainer 模块遵循仓库 Java 版本策略。
+- Client SDK 和 Maintainer SDK 的 service interface（`XxxService`）新增 API 方法
+  时，必须添加 `@Since`，声明该方法起始支持的 Nacos 版本号。
 - 已废弃的 Client SDK 方法应尽量保持二进制兼容，但新的设计应引导调用方使用
   Maintainer SDK。
 - 公开模型变更应尽量保持源码和二进制兼容，尤其是 HTTP 和 gRPC API 共享的对象。

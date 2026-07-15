@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
@@ -67,16 +68,12 @@ public class ConfigOperationService {
     
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    private ConfigMigrateService configMigrateService;
-    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
     public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
-        ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ConfigMigrateService configMigrateService) {
+        ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
-        this.configMigrateService = configMigrateService;
     }
     
     /**
@@ -86,6 +83,8 @@ public class ConfigOperationService {
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo,
         String encryptedDataKey) throws NacosException {
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -104,10 +103,7 @@ public class ConfigOperationService {
             configForm.setGrayName(BetaGrayRule.TYPE_BETA);
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
             configForm.setGrayVersion(BetaGrayRule.VERSION);
-            configMigrateService.persistBeta(configForm, configInfo, configRequestInfo);
             configForm.setGrayPriority(Integer.MAX_VALUE);
-            configMigrateService.publishConfigGrayMigrate(BetaGrayRule.TYPE_BETA, configForm,
-                configRequestInfo);
             publishConfigGray(BetaGrayRule.TYPE_BETA, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
@@ -117,17 +113,11 @@ public class ConfigOperationService {
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
             configForm.setGrayPriority(Integer.MAX_VALUE - 1);
-            configMigrateService.persistTagv1(configForm, configInfo, configRequestInfo);
-            configMigrateService.publishConfigGrayMigrate(TagGrayRule.TYPE_TAG, configForm,
-                configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
         
         ConfigOperateResult configOperateResult;
-        
-        configMigrateService.publishConfigMigrate(configForm, configRequestInfo,
-            configForm.getEncryptedDataKey());
         
         //formal publish
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
@@ -196,9 +186,11 @@ public class ConfigOperationService {
      * @throws NacosException NacosException.
      * @date 2024/2/5
      */
-    private Boolean publishConfigGray(String grayType, ConfigForm configForm,
+    public Boolean publishConfigGray(String grayType, ConfigForm configForm,
         ConfigRequestInfo configRequestInfo)
         throws NacosException {
+        configForm
+            .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
@@ -303,19 +295,14 @@ public class ConfigOperationService {
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String grayName,
         String clientIp,
         String srcUser, String srcType) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         if (StringUtils.isBlank(grayName)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp,
                 srcUser);
-            configMigrateService.removeConfigInfoMigrate(dataId, group, namespaceId, clientIp,
-                srcUser);
         } else {
             persistEvent = ConfigTraceService.PERSISTENCE_EVENT + "-" + grayName;
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, grayName,
-                clientIp, srcUser);
-            configMigrateService.deleteConfigGrayV1(dataId, group, namespaceId, grayName, clientIp,
-                srcUser);
-            configMigrateService.removeConfigInfoGrayMigrate(dataId, group, namespaceId, grayName,
                 clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();

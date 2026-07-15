@@ -142,15 +142,6 @@ class MemberUtilTest {
     }
     
     @Test
-    void testMultiParse() {
-        Collection<String> address = new HashSet<>();
-        address.add("1.1.1.1:3306");
-        address.add("1.1.1.1");
-        Collection<Member> actual = MemberUtil.multiParse(address);
-        assertEquals(2, actual.size());
-    }
-    
-    @Test
     void testSyncToFile() throws IOException {
         File file = new File(EnvUtil.getClusterConfFilePath());
         file.getParentFile().mkdirs();

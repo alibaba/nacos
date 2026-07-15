@@ -17,24 +17,34 @@
 package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PushExecutorDelegateTest {
     
     private final String rpcClientId = UUID.randomUUID().toString();
+    
+    private final Set<SpiPushExecutor> addedPushExecutors = new HashSet<>();
     
     @Mock
     private PushExecutorRpcImpl pushExecutorRpc;
@@ -44,6 +54,15 @@ class PushExecutorDelegateTest {
     
     @Mock
     private NamingPushCallback pushCallBack;
+    
+    @Mock
+    private AbstractFuzzyWatchNotifyRequest watchNotifyRequest;
+    
+    @Mock
+    private PushCallBack fuzzyWatchPushCallBack;
+    
+    @Mock
+    private SpiPushExecutor spiPushExecutor;
     
     private PushDataWrapper pushdata;
     
@@ -58,6 +77,11 @@ class PushExecutorDelegateTest {
         delegate = new PushExecutorDelegate(pushExecutorRpc);
     }
     
+    @AfterEach
+    void tearDown() throws Exception {
+        getPushExecutors().removeAll(addedPushExecutors);
+    }
+    
     @Test
     void testDoPushForRpc() {
         delegate.doPush(rpcClientId, subscriber, pushdata);
@@ -68,5 +92,41 @@ class PushExecutorDelegateTest {
     void doPushWithCallbackForRpc() {
         delegate.doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
         verify(pushExecutorRpc).doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
+    }
+    
+    @Test
+    void testDoFuzzyWatchNotifyPushWithCallBackForRpc() {
+        delegate.doFuzzyWatchNotifyPushWithCallBack(rpcClientId, watchNotifyRequest,
+            fuzzyWatchPushCallBack);
+        
+        verify(pushExecutorRpc).doFuzzyWatchNotifyPushWithCallBack(rpcClientId, watchNotifyRequest,
+            fuzzyWatchPushCallBack);
+    }
+    
+    @Test
+    void testDoPushForSpiExecutor() throws Exception {
+        when(spiPushExecutor.isInterest(rpcClientId, subscriber)).thenReturn(true);
+        registerSpiPushExecutor(spiPushExecutor);
+        
+        delegate.doPush(rpcClientId, subscriber, pushdata);
+        delegate.doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
+        
+        verify(spiPushExecutor).doPush(rpcClientId, subscriber, pushdata);
+        verify(spiPushExecutor).doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
+        verify(pushExecutorRpc, never()).doPush(rpcClientId, subscriber, pushdata);
+        verify(pushExecutorRpc, never()).doPushWithCallback(rpcClientId, subscriber, pushdata,
+            pushCallBack);
+    }
+    
+    private void registerSpiPushExecutor(SpiPushExecutor spiPushExecutor) throws Exception {
+        getPushExecutors().add(spiPushExecutor);
+        addedPushExecutors.add(spiPushExecutor);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Set<SpiPushExecutor> getPushExecutors() throws Exception {
+        Field pushExecutors = SpiImplPushExecutorHolder.class.getDeclaredField("pushExecutors");
+        pushExecutors.setAccessible(true);
+        return (Set<SpiPushExecutor>) pushExecutors.get(SpiImplPushExecutorHolder.getInstance());
     }
 }

@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -113,7 +113,7 @@ public class FailoverReactor implements Closeable {
                         if (diff.hasDifferent()) {
                             NAMING_LOGGER.info(
                                 "[NA] failoverdata isChangedServiceInfo. newService:{}",
-                                JacksonUtils.toJson(newService));
+                                JsonUtils.toJson(newService));
                             NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope,
                                 newService.getName(),
                                 newService.getGroupName(), newService.getClusters(),

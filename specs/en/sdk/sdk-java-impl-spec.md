@@ -20,6 +20,9 @@ This document defines how the Java SDK implements the shared
 [SDK Spec](./sdk-spec.md). It covers both the Java Client SDK and the Java
 Maintainer SDK.
 
+JSON serialization compatibility for the Java SDK is defined by the
+[Java SDK JSON Adapter Spec](./sdk-java-json-adapter-spec.md).
+
 ## 1. Scope
 
 The Java SDK has two public families:
@@ -34,6 +37,12 @@ Its connection, server list, ability negotiation, local cache, and redo behavior
 is defined by the [Client Runtime Specs](../client/README.md). The Java
 Maintainer SDK is the preferred Java entry point for management, UI, gateway,
 and operation scenarios.
+
+Java SDK behavior must be verified with scenario-oriented integration tests
+according to the
+[Java SDK Integration Test Spec](../testing/java-sdk-integration-test-spec.md)
+whenever public SDK interfaces, factories, models, listener behavior,
+lifecycle behavior, or exception mapping change.
 
 ## 2. Java Client SDK Factories and Lifecycle
 
@@ -230,7 +239,7 @@ Client SDK.
 
 `ConfigMaintainerService` includes:
 
-- get, publish, delete, and batch delete config;
+- get, publish, delete, and namespace-scoped batch delete config;
 - list and search configs with namespace, dataId, group, type, tag, and app
   filters where supported;
 - clone and import/export style management models;
@@ -243,6 +252,16 @@ Client SDK.
 
 Management writes and broad queries should be added here instead of expanding
 `ConfigService`.
+Batch delete by storage ID must explicitly carry or default a namespace. A
+convenience method without namespace means default-namespace delete, not a
+cross-namespace global delete.
+Clone by storage ID must explicitly carry or default both source and target
+namespaces. The legacy single-namespace clone method means same-namespace clone,
+not an ID-only cross-namespace source lookup.
+Maintainer SDK methods that expose storage-ID selectors, such as `ids` for
+batch delete, are compatibility methods and are pending removal. New maintainer
+contracts should select configs by `namespaceId`, `groupName`, and `dataId`, or
+by explicit lists of that identity tuple.
 
 ### 7.3 NamingMaintainerService
 
@@ -278,7 +297,14 @@ resource management belongs to `AiMaintainerService`.
 
 - `api`, `client`, and `plugin` modules remain Java 8 compatible unless the
   module policy changes.
+- Java SDK JSON serialization and deserialization must go through the neutral
+  JSON adapter model defined by the
+  [Java SDK JSON Adapter Spec](./sdk-java-json-adapter-spec.md). New public
+  SDK APIs must not expose concrete Jackson core/databind types.
 - Server-side and maintainer modules follow the repository Java version policy.
+- Newly added API methods on Client SDK and Maintainer SDK service interfaces
+  (`XxxService`) must declare `@Since` with the first Nacos version that
+  supports the method.
 - Deprecated Client SDK methods should keep binary compatibility when possible,
   but new designs should point callers to the Maintainer SDK.
 - Public model changes should preserve source and binary compatibility where

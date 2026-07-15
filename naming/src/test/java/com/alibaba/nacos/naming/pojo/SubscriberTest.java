@@ -22,9 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubscriberTest {
+    
+    @Test
+    void testDefaultConstructor() {
+        Subscriber subscriber = new Subscriber();
+        
+        assertNotNull(subscriber);
+    }
     
     @Test
     void subscriberBeanTest() {
@@ -58,5 +67,32 @@ class SubscriberTest {
         assertEquals("agent", subscriberList.get(0).getAgent());
         assertEquals("public", subscriberList.get(0).getNamespaceId());
         assertEquals("test", subscriberList.get(0).getServiceName());
+    }
+    
+    @Test
+    void testEqualsHashCodeAndToString() {
+        Subscriber subscriber =
+            new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 8080,
+                "cluster");
+        Subscriber same =
+            new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 8848,
+                "anotherCluster");
+        Subscriber other =
+            new Subscriber("127.0.0.2:8080", "agent", "app", "127.0.0.2", "public", "test", 8080);
+        
+        assertEquals(subscriber, subscriber);
+        assertEquals(subscriber, same);
+        assertEquals(subscriber.hashCode(), same.hashCode());
+        assertNotEquals(subscriber, other);
+        assertNotEquals(subscriber, null);
+        assertNotEquals(subscriber, "subscriber");
+        assertTrue(subscriber.toString().contains("127.0.0.1:8080"));
+        assertEquals(8080, subscriber.getPort());
+        assertEquals("cluster", subscriber.getCluster());
+        
+        subscriber.setPort(8848);
+        subscriber.setCluster("newCluster");
+        assertEquals(8848, subscriber.getPort());
+        assertEquals("newCluster", subscriber.getCluster());
     }
 }

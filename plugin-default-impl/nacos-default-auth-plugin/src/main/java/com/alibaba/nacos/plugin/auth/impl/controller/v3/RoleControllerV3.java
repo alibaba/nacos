@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -60,6 +61,7 @@ public class RoleControllerV3 {
      * @param username username
      * @return Code 200 and message 'add role ok!'
      */
+    @Since("3.0.0")
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
         action = ActionTypes.WRITE)
@@ -75,6 +77,7 @@ public class RoleControllerV3 {
      * @param username username
      * @return ok if succeed
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
         action = ActionTypes.WRITE)
@@ -98,6 +101,7 @@ public class RoleControllerV3 {
      * @param search   the type of search: "accurate" for exact match, "blur" for fuzzy match
      * @return role list
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
         action = ActionTypes.READ)
@@ -120,6 +124,7 @@ public class RoleControllerV3 {
      * @param role role id
      * @return role list
      */
+    @Since("3.0.0")
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
         action = ActionTypes.READ)

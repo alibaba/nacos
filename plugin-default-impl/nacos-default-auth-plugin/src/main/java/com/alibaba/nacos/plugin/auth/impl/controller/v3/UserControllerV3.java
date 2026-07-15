@@ -17,20 +17,21 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -40,7 +41,6 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -54,7 +54,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for handling HTTP requests related to user operations.
@@ -69,8 +71,6 @@ public class UserControllerV3 {
     
     private final NacosRoleService roleService;
     
-    private final AuthConfigs authConfigs;
-    
     private final IAuthenticationManager iAuthenticationManager;
     
     private final TokenManagerDelegate jwtTokenManager;
@@ -82,16 +82,13 @@ public class UserControllerV3 {
      *
      * @param userDetailsService     the service for user details operations
      * @param roleService            the service for role operations
-     * @param authConfigs            the authentication configuration
      * @param iAuthenticationManager the authentication manager interface
      * @param jwtTokenManager        the JWT token manager
      */
     public UserControllerV3(NacosUserService userDetailsService, NacosRoleService roleService,
-        AuthConfigs authConfigs,
         IAuthenticationManager iAuthenticationManager, TokenManagerDelegate jwtTokenManager) {
         this.userDetailsService = userDetailsService;
         this.roleService = roleService;
-        this.authConfigs = authConfigs;
         this.iAuthenticationManager = iAuthenticationManager;
         this.jwtTokenManager = jwtTokenManager;
     }
@@ -107,6 +104,7 @@ public class UserControllerV3 {
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
+    @Since("3.0.0")
     @PostMapping
     public Result<String> createUser(@RequestParam String username, @RequestParam String password) {
         User user = userDetailsService.getUser(username);
@@ -120,6 +118,7 @@ public class UserControllerV3 {
     /**
      * Create a admin user only not exist admin user can use.
      */
+    @Since("3.0.0")
     @PostMapping("/admin")
     public Result<User> createAdminUser(@RequestParam(required = false) String password) {
         
@@ -127,7 +126,8 @@ public class UserControllerV3 {
             password = PasswordGeneratorUtil.generateRandomPassword();
         }
         
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+        if (AuthSystemTypes.NACOS.name()
+            .equalsIgnoreCase(getServerAuthConfig().getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
                 return Result.failure(HttpStatus.CONFLICT.value(), "have admin user cannot use it.",
                     null);
@@ -152,6 +152,7 @@ public class UserControllerV3 {
      * @return ok if deleted succeed, keep silent if user not exist
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
@@ -179,6 +180,7 @@ public class UserControllerV3 {
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE,
         tags = {
@@ -251,6 +253,7 @@ public class UserControllerV3 {
      * @return A collection of users, empty set if no user is found
      * @since 1.2.0
      */
+    @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.READ)
@@ -272,6 +275,7 @@ public class UserControllerV3 {
      * @param username username
      * @return Matched username
      */
+    @Since("3.0.0")
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
         action = ActionTypes.WRITE)
@@ -290,18 +294,20 @@ public class UserControllerV3 {
      * @return new token of the user
      * @throws AccessException if user info is incorrect
      */
+    @Since("3.0.0")
     @PostMapping("/login")
     public Object login(HttpServletResponse response, HttpServletRequest request)
         throws AccessException, IOException {
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
-            || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+        String authSystemType = getServerAuthConfig().getNacosAuthSystemType();
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authSystemType)
+            || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authSystemType)) {
             
             NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER,
                 AuthConstants.TOKEN_PREFIX + user.getToken());
             
-            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+            Map<String, Object> result = new HashMap<>();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
             result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
@@ -314,8 +320,14 @@ public class UserControllerV3 {
     }
     
     private boolean isFromServerIdentity(HttpServletRequest request) {
-        String serverIdentityKey = authConfigs.getServerIdentityKey();
+        NacosAuthConfig authConfig = getServerAuthConfig();
+        String serverIdentityKey = authConfig.getServerIdentityKey();
         String serverIdentityValue = request.getHeader(serverIdentityKey);
-        return authConfigs.getServerIdentityValue().equals(serverIdentityValue);
+        return authConfig.getServerIdentityValue().equals(serverIdentityValue);
+    }
+    
+    private NacosAuthConfig getServerAuthConfig() {
+        return NacosAuthConfigHolder.getInstance()
+            .getNacosAuthConfigByScope(ApiType.OPEN_API.name());
     }
 }

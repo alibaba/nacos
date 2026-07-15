@@ -63,6 +63,9 @@ AI 存储插件抽象 AI 资源的二进制或文本内容存储。元数据仍�
 provider 路由。除非自身 provider 契约定义了编码方式，存储插件不得从不透明 key 中解析
 Nacos 资源身份。
 
+选择已注册 provider 前，router 会检查 `ai-storage:{provider}` 的统一插件状态。Provider
+被禁用时路由必须显式失败，且不得调用其内容读写操作。
+
 默认 provider 为 `nacos_config`，它通过 Nacos 配置存储保存 AI 资源内容。
 
 ## 要求
@@ -78,8 +81,3 @@ Nacos 资源身份。
 - 读取是强一致还是最终一致；
 - 备份与迁移行为；
 - storage key 是否可以出现在 API 响应或日志中。
-
-## 当前集成说明
-
-核心插件管理器可以列出已加载的 AI 存储插件。当前代码说明，统一插件管理中的启停状态尚未
-接入 `AiResourceStorageRouter`。在该集成完成前，路由由已注册的存储 provider 控制。

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.address.controller;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
 import com.alibaba.nacos.address.component.AddressServerManager;
 import com.alibaba.nacos.address.constant.AddressServerConstants;
@@ -83,6 +84,7 @@ public class AddressServerClusterController {
      * @param ips     will post ip list.
      * @return result of create new cluster
      */
+    @Since("1.1.0")
     @RequestMapping(value = "", method = RequestMethod.POST)
     public ResponseEntity<String> postCluster(@RequestParam(required = false) String product,
         @RequestParam(required = false) String cluster, @RequestParam(name = "ips") String ips) {
@@ -164,6 +166,7 @@ public class AddressServerClusterController {
      * @param ips     will delete ips.
      * @return delete result (the cluster information is return if success, exception information is return if  fail)
      */
+    @Since("1.1.0")
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteCluster(@RequestParam(required = false) String product,
         @RequestParam(required = false) String cluster, @RequestParam String ips) {

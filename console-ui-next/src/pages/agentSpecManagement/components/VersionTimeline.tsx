@@ -42,6 +42,8 @@ const STATUS_STYLES: Record<string, string> = {
     'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
   pendingPublish:
     'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
+  rejected:
+    'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
   online:
     'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
   offline:
@@ -52,6 +54,7 @@ const DOT_STYLES: Record<string, string> = {
   draft: 'bg-amber-400',
   reviewing: 'bg-blue-400',
   pendingPublish: 'bg-teal-400',
+  rejected: 'bg-red-400',
   online: 'bg-emerald-400',
   offline: 'bg-gray-400',
 };
@@ -123,8 +126,9 @@ export function VersionTimeline({
           const isActive = v.version === currentVersion;
           const actions = getValidActions(v.status);
           const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
-          const isPendingPublish = v.status === 'reviewed' || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');
-          const displayStatus = isPendingPublish ? 'pendingPublish' : v.status;
+          const isPendingPublish = (v.status === 'reviewed' && pipelineInfo?.status !== 'REJECTED') || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');
+          const isRejected = v.status === 'reviewed' && pipelineInfo?.status === 'REJECTED';
+          const displayStatus = isRejected ? 'rejected' : isPendingPublish ? 'pendingPublish' : v.status;
 
           return (
             <div key={v.version} className="relative flex gap-3 pb-4">

@@ -20,14 +20,10 @@ import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -54,12 +50,6 @@ public class ConfigRowMapperInjector {
     
     public static final RowMapper<ConfigKey> CONFIG_KEY_ROW_MAPPER = new ConfigKeyRowMapper();
     
-    public static final ConfigInfoBetaWrapperRowMapper CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER =
-        new ConfigInfoBetaWrapperRowMapper();
-    
-    public static final ConfigInfoTagWrapperRowMapper CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER =
-        new ConfigInfoTagWrapperRowMapper();
-    
     public static final ConfigInfoGrayWrapperRowMapper CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER =
         new ConfigInfoGrayWrapperRowMapper();
     
@@ -70,12 +60,6 @@ public class ConfigRowMapperInjector {
     
     public static final ConfigAllInfoRowMapper CONFIG_ALL_INFO_ROW_MAPPER =
         new ConfigAllInfoRowMapper();
-    
-    public static final ConfigInfo4BetaRowMapper CONFIG_INFO4BETA_ROW_MAPPER =
-        new ConfigInfo4BetaRowMapper();
-    
-    public static final ConfigInfo4TagRowMapper CONFIG_INFO4TAG_ROW_MAPPER =
-        new ConfigInfo4TagRowMapper();
     
     public static final ConfigInfoBaseRowMapper CONFIG_INFO_BASE_ROW_MAPPER =
         new ConfigInfoBaseRowMapper();
@@ -115,20 +99,6 @@ public class ConfigRowMapperInjector {
             ConfigRowMapperInjector.CONFIG_KEY_ROW_MAPPER.getClass().getCanonicalName(),
             ConfigRowMapperInjector.CONFIG_KEY_ROW_MAPPER);
         
-        // CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER
-        
-        RowMapperManager.registerRowMapper(
-            ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER.getClass()
-                .getCanonicalName(),
-            ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
-        
-        // CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER
-        
-        RowMapperManager.registerRowMapper(
-            ConfigRowMapperInjector.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER.getClass()
-                .getCanonicalName(),
-            ConfigRowMapperInjector.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
-        
         // CONFIG_INFO_ROW_MAPPER
         
         RowMapperManager.registerRowMapper(
@@ -146,18 +116,6 @@ public class ConfigRowMapperInjector {
         RowMapperManager.registerRowMapper(
             ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER.getClass().getCanonicalName(),
             ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER);
-        
-        // CONFIG_INFO4BETA_ROW_MAPPER
-        
-        RowMapperManager.registerRowMapper(
-            ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER.getClass().getCanonicalName(),
-            ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER);
-        
-        // CONFIG_INFO4TAG_ROW_MAPPER
-        
-        RowMapperManager.registerRowMapper(
-            ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER.getClass().getCanonicalName(),
-            ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER);
         
         // CONFIG_INFO_BASE_ROW_MAPPER
         
@@ -254,76 +212,6 @@ public class ConfigRowMapperInjector {
                 // ignore
             }
             
-            return info;
-        }
-    }
-    
-    public static final class ConfigInfoBetaWrapperRowMapper
-        implements RowMapper<ConfigInfoBetaWrapper> {
-        
-        @Override
-        public ConfigInfoBetaWrapper mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigInfoBetaWrapper info = new ConfigInfoBetaWrapper();
-            
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setAppName(rs.getString("app_name"));
-            info.setBetaIps(rs.getString("beta_ips"));
-            
-            try {
-                info.setContent(rs.getString("content"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setId(rs.getLong("id"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setMd5(rs.getString("md5"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
-            } catch (SQLException ignore) {
-            }
-            return info;
-        }
-    }
-    
-    public static final class ConfigInfoTagWrapperRowMapper
-        implements RowMapper<ConfigInfoTagWrapper> {
-        
-        @Override
-        public ConfigInfoTagWrapper mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigInfoTagWrapper info = new ConfigInfoTagWrapper();
-            
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setTag(rs.getString("tag_id"));
-            info.setAppName(rs.getString("app_name"));
-            
-            try {
-                info.setContent(rs.getString("content"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setId(rs.getLong("id"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setMd5(rs.getString("md5"));
-            } catch (SQLException ignore) {
-            }
             return info;
         }
     }
@@ -503,62 +391,6 @@ public class ConfigRowMapperInjector {
                 info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
                 
-            }
-            return info;
-        }
-    }
-    
-    public static final class ConfigInfo4BetaRowMapper implements RowMapper<ConfigInfo4Beta> {
-        
-        @Override
-        public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigInfo4Beta info = new ConfigInfo4Beta();
-            
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setAppName(rs.getString("app_name"));
-            info.setBetaIps(rs.getString("beta_ips"));
-            
-            try {
-                info.setContent(rs.getString("content"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setId(rs.getLong("id"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setMd5(rs.getString("md5"));
-            } catch (SQLException ignore) {
-            }
-            return info;
-        }
-    }
-    
-    public static final class ConfigInfo4TagRowMapper implements RowMapper<ConfigInfo4Tag> {
-        
-        @Override
-        public ConfigInfo4Tag mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigInfo4Tag info = new ConfigInfo4Tag();
-            
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setTag(rs.getString("tag_id"));
-            info.setAppName(rs.getString("app_name"));
-            
-            try {
-                info.setContent(rs.getString("content"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setId(rs.getLong("id"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setMd5(rs.getString("md5"));
-            } catch (SQLException ignore) {
             }
             return info;
         }

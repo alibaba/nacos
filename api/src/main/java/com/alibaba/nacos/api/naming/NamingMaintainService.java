@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.naming;
 
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
@@ -41,6 +42,7 @@ public interface NamingMaintainService {
      * @param instance    instance
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void updateInstance(String serviceName, Instance instance) throws NacosException;
     
     /**
@@ -51,6 +53,7 @@ public interface NamingMaintainService {
      * @param instance    instance
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void updateInstance(String serviceName, String groupName, Instance instance)
         throws NacosException;
     
@@ -61,6 +64,7 @@ public interface NamingMaintainService {
      * @return service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     Service queryService(String serviceName) throws NacosException;
     
     /**
@@ -71,6 +75,7 @@ public interface NamingMaintainService {
      * @return service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     Service queryService(String serviceName, String groupName) throws NacosException;
     
     /**
@@ -79,6 +84,7 @@ public interface NamingMaintainService {
      * @param serviceName name of service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void createService(String serviceName) throws NacosException;
     
     /**
@@ -88,6 +94,7 @@ public interface NamingMaintainService {
      * @param groupName   group of service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void createService(String serviceName, String groupName) throws NacosException;
     
     /**
@@ -98,6 +105,7 @@ public interface NamingMaintainService {
      * @param protectThreshold protectThreshold of service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void createService(String serviceName, String groupName, float protectThreshold)
         throws NacosException;
     
@@ -110,6 +118,7 @@ public interface NamingMaintainService {
      * @param expression       expression of selector
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void createService(String serviceName, String groupName, float protectThreshold,
         String expression)
         throws NacosException;
@@ -121,6 +130,7 @@ public interface NamingMaintainService {
      * @param selector selector
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void createService(Service service, AbstractSelector selector) throws NacosException;
     
     /**
@@ -130,6 +140,7 @@ public interface NamingMaintainService {
      * @return if delete service success return true
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     boolean deleteService(String serviceName) throws NacosException;
     
     /**
@@ -140,6 +151,7 @@ public interface NamingMaintainService {
      * @return if delete service success return true
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     boolean deleteService(String serviceName, String groupName) throws NacosException;
     
     /**
@@ -150,6 +162,7 @@ public interface NamingMaintainService {
      * @param protectThreshold protectThreshold of service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void updateService(String serviceName, String groupName, float protectThreshold)
         throws NacosException;
     
@@ -162,6 +175,7 @@ public interface NamingMaintainService {
      * @param metadata         metadata of service
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void updateService(String serviceName, String groupName, float protectThreshold,
         Map<String, String> metadata)
         throws NacosException;
@@ -173,6 +187,7 @@ public interface NamingMaintainService {
      * @param selector {@link AbstractSelector} pojo of selector
      * @throws NacosException nacos exception
      */
+    @Since("1.0.1")
     void updateService(Service service, AbstractSelector selector) throws NacosException;
     
     /**
@@ -180,5 +195,6 @@ public interface NamingMaintainService {
      *
      * @throws NacosException exception.
      */
+    @Since("1.4.0")
     void shutDown() throws NacosException;
 }

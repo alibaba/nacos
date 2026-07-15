@@ -32,15 +32,18 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
+import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -95,7 +98,9 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertTrue(requestCaptor.getValue().getPath().contains("serviceName=" + serviceName));
     }
     
     @Test
@@ -157,6 +162,40 @@ public class NacosNamingMaintainerServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(serviceName, result.getServiceName());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetServiceDetailWithNoneSelector() throws Exception {
+        String serviceName = "testService";
+        String response = "{\"code\":0,\"message\":\"success\",\"data\":{\"serviceName\":\""
+            + serviceName + "\",\"selector\":{\"type\":\"NoneSelector\"}}}";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(response);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(serviceName);
+        
+        assertNotNull(result);
+        assertTrue(result.getSelector() instanceof NoneSelector);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetServiceDetailWithLabelSelector() throws Exception {
+        String serviceName = "testService";
+        String response = "{\"code\":0,\"message\":\"success\",\"data\":{\"serviceName\":\""
+            + serviceName
+            + "\",\"selector\":{\"type\":\"LabelSelector\",\"expression\":\"env=prod\"}}}";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(response);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(serviceName);
+        
+        assertNotNull(result);
+        assertTrue(result.getSelector() instanceof ExpressionSelector);
+        assertEquals("env=prod", ((ExpressionSelector) result.getSelector()).getExpression());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
@@ -251,7 +290,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         List<String> expectedList = Arrays.asList("type1", "type2");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -260,6 +300,7 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedList, result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
@@ -648,7 +689,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         Map<String, AbstractHealthChecker> expectedCheckers = new HashMap<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedCheckers));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedCheckers)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -695,7 +737,8 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         List<String> expectedList = Arrays.asList("client1", "client2");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(
+            new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
@@ -704,6 +747,7 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedList, result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

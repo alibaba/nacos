@@ -148,7 +148,7 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
     }
     
     private String findExecutableInPath(String command) {
-        String pathEnv = System.getenv("PATH");
+        String pathEnv = getPathEnv();
         if (StringUtils.isBlank(pathEnv)) {
             return null;
         }
@@ -186,5 +186,9 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
             }
         }
         return candidate;
+    }
+    
+    String getPathEnv() {
+        return System.getenv("PATH");
     }
 }

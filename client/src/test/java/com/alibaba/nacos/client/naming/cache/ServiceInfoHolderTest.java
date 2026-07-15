@@ -34,6 +34,7 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -65,7 +66,9 @@ class ServiceInfoHolderTest {
     
     @AfterEach
     void tearDown() throws Exception {
-        
+        if (holder != null) {
+            holder.shutdown();
+        }
     }
     
     @Test
@@ -195,6 +198,24 @@ class ServiceInfoHolderTest {
         }
     }
     
+    @Test
+    void testProcessServiceInfoPublishDiskCacheRefreshEvent()
+        throws NacosException, NoSuchFieldException, IllegalAccessException {
+        holder.shutdown();
+        holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
+        ServiceInfo info = new ServiceInfo("a@@b@@c");
+        info.setHosts(Collections.singletonList(createInstance("1.1.1.1", 1)));
+        try (MockedStatic<DiskCache> mockedDiskCache = Mockito.mockStatic(DiskCache.class)) {
+            mockedDiskCache.when(() -> DiskCache.writeWithResult(Mockito.any(ServiceInfo.class),
+                Mockito.anyString())).thenReturn(false);
+            
+            holder.processServiceInfo(info);
+            
+            ServiceInfoDiskCacheRefresher refresher = getServiceInfoDiskCacheRefresher(holder);
+            assertEquals(1, refresher.pendingEventSize());
+        }
+    }
+    
     private ServiceInfoHolder createServiceInfoHolder(Boolean enableClientMetrics) {
         Properties properties = new Properties();
         if (enableClientMetrics != null) {
@@ -316,6 +337,17 @@ class ServiceInfoHolderTest {
     }
     
     @Test
+    void testShutdownShutdownDiskCacheRefresher()
+        throws NacosException, NoSuchFieldException, IllegalAccessException {
+        ServiceInfoDiskCacheRefresher refresher = getServiceInfoDiskCacheRefresher(holder);
+        assertFalse(refresher.isShutdown());
+        
+        holder.shutdown();
+        
+        assertTrue(refresher.isShutdown());
+    }
+    
+    @Test
     void testConstructWithCacheLoad() throws NacosException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "true");
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "non-exist");
@@ -352,5 +384,12 @@ class ServiceInfoHolderTest {
         FailoverReactor mock = mock(FailoverReactor.class);
         field.set(holder, mock);
         return mock;
+    }
+    
+    private ServiceInfoDiskCacheRefresher getServiceInfoDiskCacheRefresher(ServiceInfoHolder holder)
+        throws NoSuchFieldException, IllegalAccessException {
+        Field field = ServiceInfoHolder.class.getDeclaredField("serviceInfoDiskCacheRefresher");
+        field.setAccessible(true);
+        return (ServiceInfoDiskCacheRefresher) field.get(holder);
     }
 }

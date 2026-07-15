@@ -45,5 +45,6 @@ plugin specs:
 
 - [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md)
 - [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md)
+- [AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md)
 - [Visibility Plugin Spec](../auth/visibility-plugin-spec.md)
 - [Trace Plugin Spec](../plugin/trace-plugin-spec.md)

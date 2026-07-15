@@ -15,7 +15,9 @@
 
 package com.alibaba.nacos.core.plugin.sync;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +31,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,15 +81,39 @@ class StandalonePluginStateSynchronizerTest {
         synchronizer.syncConfigChange("trace:otel", config);
         
         verify(applier).applyConfigChange("trace:otel", config);
-        verify(persistence).saveConfig(eq("trace:otel"), eq(config));
+        verify(persistence, never()).saveConfig(eq("trace:otel"), eq(config));
     }
     
     @Test
     void syncConfigChangePersistenceThrows() {
-        doThrow(new PluginPersistenceException("save config failed")).when(persistence)
-            .saveConfig(any(), anyMap());
+        doThrow(new PluginPersistenceException("save config failed")).when(applier)
+            .applyConfigChange(any(), anyMap());
         
         assertThrows(NacosApiException.class,
             () -> synchronizer.syncConfigChange("trace:otel", Collections.singletonMap("k", "v")));
+    }
+    
+    @Test
+    void syncConfigChangeInvalidParameter() {
+        doThrow(new IllegalArgumentException("invalid config")).when(applier)
+            .applyConfigChange(any(), anyMap());
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.emptyMap()));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void syncConfigChangeReportsAcceptedConfigApplyFailure() {
+        doThrow(new PluginConfigApplyException("config updated but apply failed",
+            new IllegalStateException("apply failed"))).when(applier)
+            .applyConfigChange(any(), anyMap());
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> synchronizer.syncConfigChange("trace:otel", Collections.emptyMap()));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertEquals("config updated but apply failed", exception.getErrMsg());
     }
 }

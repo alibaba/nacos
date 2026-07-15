@@ -46,6 +46,7 @@ Nacos design
   -> Integration / Adapter model
   -> Extension model
   -> Security model
+  -> Testing model
 ```
 
 规范层次：
@@ -73,6 +74,7 @@ Nacos 顶层设计
   -> 集成 / 适配器模型
   -> 扩展模型
   -> 安全模型
+  -> 测试模型
 ```
 
 Available languages:

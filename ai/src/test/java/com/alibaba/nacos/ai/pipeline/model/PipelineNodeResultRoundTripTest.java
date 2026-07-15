@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.ai.pipeline.model;
 
+import com.alibaba.nacos.api.ai.model.pipeline.Checkpoint;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.Test;
 

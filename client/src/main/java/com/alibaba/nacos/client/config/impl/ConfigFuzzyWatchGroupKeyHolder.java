@@ -72,7 +72,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
  */
 public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements Closeable {
     
-    private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
+    private static final Logger LOGGER = LogUtils.logger(ConfigFuzzyWatchGroupKeyHolder.class);
     
     private final ClientWorker.ConfigRpcTransportClient agent;
     

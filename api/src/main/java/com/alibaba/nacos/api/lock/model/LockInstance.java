@@ -40,6 +40,19 @@ public class LockInstance implements Serializable {
     
     private String lockType;
     
+    private String owner;
+    
+    private Long waitTime = -1L;
+    
+    /**
+     * Whether this request is a retry from the wait queue.
+     *
+     * <p>When true, the server enforces FIFO ordering — the lock is only
+     * granted if this client is at the head of the wait queue. Set by the
+     * client after the first failed acquisition attempt.
+     */
+    private boolean waiterRetry;
+    
     public LockInstance(String key, Long expiredTime, String lockType) {
         this.key = key;
         this.expiredTime = expiredTime;
@@ -108,5 +121,42 @@ public class LockInstance implements Serializable {
     
     public void setLockType(String lockType) {
         this.lockType = lockType;
+    }
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    public Long getWaitTime() {
+        return waitTime;
+    }
+    
+    public void setWaitTime(Long waitTime) {
+        this.waitTime = waitTime;
+    }
+    
+    public boolean isWaiterRetry() {
+        return waiterRetry;
+    }
+    
+    public void setWaiterRetry(boolean waiterRetry) {
+        this.waiterRetry = waiterRetry;
+    }
+    
+    @Override
+    public String toString() {
+        return "LockInstance{"
+            + "key='" + key + '\''
+            + ", expiredTime=" + expiredTime
+            + ", params=" + params
+            + ", lockType='" + lockType + '\''
+            + ", owner='" + owner + '\''
+            + ", waitTime=" + waitTime
+            + ", waiterRetry=" + waiterRetry
+            + '}';
     }
 }

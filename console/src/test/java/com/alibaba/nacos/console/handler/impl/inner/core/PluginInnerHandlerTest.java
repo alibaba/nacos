@@ -20,12 +20,15 @@ import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -138,8 +141,14 @@ class PluginInnerHandlerTest {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
         pluginInfo.setConfig(config);
+        PluginConfigValueMeta meta = new PluginConfigValueMeta();
+        meta.setKey("key1");
+        meta.setSource(PluginConfigSourceType.RUNTIME_PERSISTED);
         
         when(pluginManager.getPlugin("auth:test")).thenReturn(Optional.of(pluginInfo));
+        when(pluginManager.resolvePluginConfig(pluginInfo))
+            .thenReturn(new PluginConfigResolution(config,
+                Collections.singletonMap("key1", meta)));
         
         PluginDetailVO result = pluginInnerHandler.getPluginDetail("auth", "test");
         
@@ -150,6 +159,20 @@ class PluginInnerHandlerTest {
         assertTrue(result.getConfigurable());
         assertNotNull(result.getConfig());
         assertEquals("value1", result.getConfig().get("key1"));
+        assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,
+            result.getConfigValueMetas().get("key1").getSource());
+    }
+    
+    @Test
+    void testGetPluginDetailFallsBackToPluginConfig() throws NacosException {
+        PluginInfo pluginInfo = createMockPluginInfo("auth:test", PluginType.AUTH, "test", true);
+        pluginInfo.setConfig(Collections.singletonMap("legacy", "value"));
+        when(pluginManager.getPlugin("auth:test")).thenReturn(Optional.of(pluginInfo));
+        when(pluginManager.resolvePluginConfig(pluginInfo)).thenReturn(null);
+        
+        PluginDetailVO result = pluginInnerHandler.getPluginDetail("auth", "test");
+        
+        assertEquals("value", result.getConfig().get("legacy"));
     }
     
     @Test
@@ -233,7 +256,7 @@ class PluginInnerHandlerTest {
         assertNotNull(authVo);
         assertNotNull(traceVo);
         assertTrue(authVo.getExclusive());
-        assertTrue(traceVo.getExclusive());
+        assertFalse(traceVo.getExclusive());
     }
     
     @Test

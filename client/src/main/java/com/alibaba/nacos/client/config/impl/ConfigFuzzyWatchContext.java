@@ -527,9 +527,8 @@ public class ConfigFuzzyWatchContext {
             
             @Override
             public Set<String> get() throws InterruptedException, ExecutionException {
-                
-                if (!ConfigFuzzyWatchContext.this.initializationCompleted.get()) {
-                    synchronized (ConfigFuzzyWatchContext.this) {
+                synchronized (ConfigFuzzyWatchContext.this) {
+                    while (!ConfigFuzzyWatchContext.this.initializationCompleted.get()) {
                         ConfigFuzzyWatchContext.this.wait();
                     }
                 }

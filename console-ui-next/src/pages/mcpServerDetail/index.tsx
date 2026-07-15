@@ -125,7 +125,7 @@ export default function McpServerDetailPage() {
     return () => {
       clearError();
     };
-  }, [mcpName, namespaceId]);
+  }, [clearError, loadDetail]);
 
   const handleVersionChange = (version: string) => {
     setSelectedVersion(version);
@@ -137,7 +137,12 @@ export default function McpServerDetailPage() {
     if (!currentMcp) return;
     try {
       const toggled = { ...currentMcp, enabled: !currentMcp.enabled };
-      const { toolSpec, backendEndpoints, frontendEndpoints, allVersions, ...basicInfo } = toggled;
+      const { toolSpec, backendEndpoints } = toggled;
+      const basicInfo = { ...toggled } as Partial<typeof toggled>;
+      delete basicInfo.toolSpec;
+      delete basicInfo.backendEndpoints;
+      delete basicInfo.frontendEndpoints;
+      delete basicInfo.allVersions;
       await mcpApi.updateMcpServer({
         mcpName: currentMcp.name,
         namespaceId,
@@ -159,7 +164,12 @@ export default function McpServerDetailPage() {
 
   const handleCopyConfig = async () => {
     if (!currentMcp) return;
-    const { toolSpec, backendEndpoints, frontendEndpoints, allVersions, ...basicInfo } = currentMcp;
+    const { toolSpec, backendEndpoints, frontendEndpoints } = currentMcp;
+    const basicInfo = { ...currentMcp } as Partial<typeof currentMcp>;
+    delete basicInfo.toolSpec;
+    delete basicInfo.backendEndpoints;
+    delete basicInfo.frontendEndpoints;
+    delete basicInfo.allVersions;
     const config = {
       serverSpecification: basicInfo,
       toolSpecification: toolSpec || undefined,
@@ -398,7 +408,12 @@ export default function McpServerDetailPage() {
                         className="inline-flex items-center gap-1 text-primary hover:underline cursor-pointer"
                         onClick={() => {
                           const ref = mcp.remoteServerConfig!.serviceRef!;
-                          navigate(`/serviceDetail?serviceName=${encodeURIComponent(ref.serviceName)}&groupName=${encodeURIComponent(ref.groupName)}`);
+                          const params = new URLSearchParams({
+                            serviceName: ref.serviceName,
+                            groupName: ref.groupName,
+                            namespace: namespaceId,
+                          });
+                          navigate(`/serviceDetail?${params.toString()}`);
                         }}
                       >
                         <span>{mcp.remoteServerConfig.serviceRef.groupName}@@{mcp.remoteServerConfig.serviceRef.serviceName}</span>
@@ -860,12 +875,13 @@ function EndpointItem({
   endpoint: { protocol: string; address: string; port: string; path?: string; headers?: { name: string; value?: string }[] };
   t: (key: string) => string;
 }) {
-  const url = `${endpoint.protocol}://${endpoint.address}${endpoint.port ? ':' + endpoint.port : ''}${endpoint.path || ''}`;
+  const protocol = endpoint.protocol || 'http';
+  const url = `${protocol}://${endpoint.address}${endpoint.port ? ':' + endpoint.port : ''}${endpoint.path || ''}`;
   return (
     <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-          {endpoint.protocol}
+          {protocol}
         </span>
         <span className="text-xs font-mono text-muted-foreground truncate">{url}</span>
       </div>

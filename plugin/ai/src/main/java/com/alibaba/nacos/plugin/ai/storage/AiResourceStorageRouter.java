@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.ai.storage;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
@@ -67,6 +69,11 @@ public class AiResourceStorageRouter {
     public AiResourceStorage route(StorageKey storageKey) {
         if (storageKey == null || StringUtils.isBlank(storageKey.getProvider())) {
             throw new IllegalArgumentException("StorageKey.provider is blank");
+        }
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.AI_STORAGE.getType(),
+            storageKey.getProvider())) {
+            throw new IllegalStateException(
+                "AiResourceStorage plugin is disabled: " + storageKey.getProvider());
         }
         AiResourceStorage storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
         if (storage == null) {

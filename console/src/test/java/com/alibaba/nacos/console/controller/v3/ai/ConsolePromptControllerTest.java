@@ -286,7 +286,7 @@ class ConsolePromptControllerTest {
     @Test
     void testPublishWithoutUpdateLatest() throws Exception {
         doNothing().when(promptProxy).publish(eq(NS), eq(PROMPT_KEY),
-            eq(VERSION), eq(false));
+            eq(VERSION), eq(true));
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(BASE_PATH + "/publish")
@@ -296,7 +296,7 @@ class ConsolePromptControllerTest {
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());
-        verify(promptProxy).publish(NS, PROMPT_KEY, VERSION, false);
+        verify(promptProxy).publish(NS, PROMPT_KEY, VERSION, true);
     }
     
     @Test
@@ -387,5 +387,19 @@ class ConsolePromptControllerTest {
         
         assertEquals(200, response.getStatus());
         verify(promptProxy).updateBizTags(NS, PROMPT_KEY, "tag1,tag2");
+    }
+    
+    @Test
+    void testRedraftSuccess() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post(Constants.Prompt.CONSOLE_PATH + "/redraft")
+                .param("namespaceId", NS)
+                .param("promptKey", PROMPT_KEY)
+                .param("version", VERSION))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getContentAsString().contains("ok"));
+        verify(promptProxy).redraft(eq(NS), eq(PROMPT_KEY), eq(VERSION));
     }
 }

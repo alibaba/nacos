@@ -194,6 +194,7 @@ class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         //when
         client.registerInstance(serviceName, instance);
         //then
@@ -206,6 +207,7 @@ class NacosNamingServiceTest {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         //when
         client.registerInstance(serviceName, groupName, instance);
         //then
@@ -220,6 +222,7 @@ class NacosNamingServiceTest {
             String serviceName = "service1";
             String groupName = "group1";
             Instance instance = new Instance();
+            instance.setIp("1.1.1.1");
             instance.setClusterName("cluster1,cluster2");
             //when
             client.registerInstance(serviceName, groupName, instance);
@@ -377,6 +380,7 @@ class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         //when
         client.deregisterInstance(serviceName, instance);
         //then
@@ -389,6 +393,7 @@ class NacosNamingServiceTest {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         //when
         client.deregisterInstance(serviceName, groupName, instance);
         //then

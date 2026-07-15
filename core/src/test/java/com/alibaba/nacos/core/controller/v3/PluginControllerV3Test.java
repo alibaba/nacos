@@ -21,7 +21,10 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
+import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import org.junit.jupiter.api.Test;
@@ -112,8 +115,15 @@ class PluginControllerV3Test {
     @Test
     void testGetPluginDetail() throws NacosApiException {
         PluginInfo info = createPluginInfo("auth:nacos", PluginType.AUTH, "nacos");
-        info.setConfig(Collections.singletonMap("key", "value"));
+        Map<String, String> config = Collections.singletonMap("key", "value");
+        PluginConfigValueMeta meta = new PluginConfigValueMeta();
+        meta.setKey("key");
+        meta.setSource(PluginConfigSourceType.RUNTIME_PERSISTED);
+        meta.setOverridden(false);
+        info.setConfig(config);
         when(unifiedPluginManager.getPlugin("auth:nacos")).thenReturn(Optional.of(info));
+        when(unifiedPluginManager.resolvePluginConfig(info))
+            .thenReturn(new PluginConfigResolution(config, Collections.singletonMap("key", meta)));
         
         Result<PluginDetailVO> result = pluginControllerV3.getPluginDetail("auth", "nacos");
         
@@ -123,6 +133,20 @@ class PluginControllerV3Test {
         assertEquals("auth", result.getData().getPluginType());
         assertEquals("nacos", result.getData().getPluginName());
         assertNotNull(result.getData().getConfig());
+        assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,
+            result.getData().getConfigValueMetas().get("key").getSource());
+    }
+    
+    @Test
+    void testGetPluginDetailFallsBackToPluginConfig() throws NacosApiException {
+        PluginInfo info = createPluginInfo("auth:nacos", PluginType.AUTH, "nacos");
+        info.setConfig(Collections.singletonMap("legacy", "value"));
+        when(unifiedPluginManager.getPlugin("auth:nacos")).thenReturn(Optional.of(info));
+        when(unifiedPluginManager.resolvePluginConfig(info)).thenReturn(null);
+        
+        Result<PluginDetailVO> result = pluginControllerV3.getPluginDetail("auth", "nacos");
+        
+        assertEquals("value", result.getData().getConfig().get("legacy"));
     }
     
     @Test
