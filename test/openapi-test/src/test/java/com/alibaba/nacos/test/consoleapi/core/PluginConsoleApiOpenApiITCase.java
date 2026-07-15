@@ -117,6 +117,42 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
     }
 
     @Test
+    public void testLdapAuthPluginConfigMetadata() throws Exception {
+        JsonNode detail = getJsonOk(CONSOLE_PLUGIN_PATH,
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "ldap"))
+                .get("data");
+        assertTrue(detail.get("configurable").asBoolean(), detail.toString());
+
+        JsonNode definitions = detail.get("configDefinitions");
+        assertEquals(8, definitions.size(), definitions.toString());
+        assertDefinition(definitions, "url", "nacos.core.auth.ldap.url", "STRING", "RESTART",
+                false);
+        assertDefinition(definitions, "base-dn", "nacos.core.auth.ldap.basedc", "STRING",
+                "RESTART", false);
+        assertDefinition(definitions, "timeout", "nacos.core.auth.ldap.timeout", "NUMBER",
+                "RESTART", false);
+        assertDefinition(definitions, "user-dn", "nacos.core.auth.ldap.userDn", "STRING",
+                "RESTART", false);
+        assertDefinition(definitions, "password", "nacos.core.auth.ldap.password", "STRING",
+                "RESTART", true);
+        assertDefinition(definitions, "filter-prefix", "nacos.core.auth.ldap.filter.prefix",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "case-sensitive", "nacos.core.auth.ldap.case.sensitive",
+                "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "ignore-partial-result-exception",
+                "nacos.core.auth.ldap.ignore.partial.result.exception", "BOOLEAN", "RESTART", false);
+
+        JsonNode config = detail.get("config");
+        assertEquals("ldap://localhost:389", config.get("url").asText(), config.toString());
+        assertEquals("3000", config.get("timeout").asText(), config.toString());
+        assertTrue(config.get("password").asText().contains("******"), config.toString());
+
+        JsonNode metas = detail.get("configValueMetas");
+        assertEquals("DEFAULT", metas.get("url").get("source").asText(), metas.toString());
+        assertEquals("DEFAULT", metas.get("password").get("source").asText(), metas.toString());
+    }
+
+    @Test
     public void testPluginValidationAndNotFoundReturnControlledErrors() throws Exception {
         assertError(getRaw(CONSOLE_PLUGIN_PATH,
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),

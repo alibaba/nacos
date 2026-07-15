@@ -73,8 +73,32 @@ restart-only 密钥构建。开启 token 缓存时，在同一个基础 manager 
 切回基础 manager，并清空 token 缓存。token 过期时间变化时也会清空包装缓存，使下一次
 取 token 使用新的运行时有效期；已经返回给客户端的 token 仍按签名中的原过期时间有效。
 
-`ldap` 插件变体额外使用 `nacos.core.auth.ldap.*` 配置族。LDAP 只改变身份认证方式，授权仍然
-使用 Nacos 角色和权限。
+`ldap` 实现同样实现 `PluginConfigSpec`，并以可配置插件 `auth:ldap` 注册。其 canonical
+配置前缀为 `nacos.plugin.auth.ldap.`。
+
+| item key | canonical 静态 key | 历史静态 alias | 类型 | 生效模式 | 默认值 | 敏感 |
+|----------|--------------------|----------------|------|----------|--------|------|
+| `url` | `nacos.plugin.auth.ldap.url` | `nacos.core.auth.ldap.url` | String | `RESTART` | `ldap://localhost:389` | 否 |
+| `base-dn` | `nacos.plugin.auth.ldap.base-dn` | `nacos.core.auth.ldap.basedc` | String | `RESTART` | `dc=example,dc=org` | 否 |
+| `timeout` | `nacos.plugin.auth.ldap.timeout` | `nacos.core.auth.ldap.timeout` | Number | `RESTART` | `3000` | 否 |
+| `user-dn` | `nacos.plugin.auth.ldap.user-dn` | `nacos.core.auth.ldap.userDn` | String | `RESTART` | `cn=admin,dc=example,dc=org` | 否 |
+| `password` | `nacos.plugin.auth.ldap.password` | `nacos.core.auth.ldap.password` | String | `RESTART` | `password` | 是 |
+| `filter-prefix` | `nacos.plugin.auth.ldap.filter-prefix` | `nacos.core.auth.ldap.filter.prefix` | String | `RESTART` | `uid` | 否 |
+| `case-sensitive` | `nacos.plugin.auth.ldap.case-sensitive` | `nacos.core.auth.ldap.case.sensitive` | Boolean | `RESTART` | `true` | 否 |
+| `ignore-partial-result-exception` | `nacos.plugin.auth.ldap.ignore-partial-result-exception` | `nacos.core.auth.ldap.ignore.partial.result.exception` | Boolean | `RESTART` | `false` | 否 |
+
+`timeout` 单位为毫秒且必须大于零。插件管理 API 必须对绑定密码脱敏。第一阶段 LDAP 自有
+字段全部为 `RESTART`，因此运行时或 local-only 更新只要新增、修改或移除这些字段都必须
+拒绝。
+
+canonical key 与历史 alias 同时存在时 canonical key 优先。历史模板中的
+`nacos.core.auth.ldap.userdn` 没有生产读取点，且原本想表达的 user DN pattern 语义不明确，
+因此不作为兼容 alias。
+
+LDAP 插件持有不可变的 effective 配置快照。Spring LDAP context 和 template 从已接受快照
+延迟构建，LDAP 消费者不再通过第二套 `@Value` 属性读取配置。LDAP 只改变身份认证方式；
+token 签名和有效期、Nacos 用户与角色存储及授权仍使用 `auth:nacos` 配置的基础设施，相关
+共享字段不复制到 `auth:ldap` definitions。
 
 ## 身份
 
@@ -217,7 +241,6 @@ canonical key；二者同时存在时 canonical 值优先。迁移过程不得�
 
 ## 待处理问题
 
-- `ldap` 插件当前仍通过共享认证行为和 token 基础设施与默认鉴权实现耦合。从概念上看，
-  LDAP 是由外部身份提供方支撑的独立鉴权插件，不属于默认 Nacos 用户名/密码实现。
-  LDAP 全面接入阶段需要明确其 `PluginConfigSpec` 所有权和共享 token 配置边界，同时保持
-  已有 `nacos.core.auth.system.type=ldap` 部署兼容。
+- `ldap` 插件已经通过 `PluginConfigSpec` 接管 LDAP 连接和查找配置，但仍消费由
+  `auth:nacos` 配置的 token、用户、角色和授权基础设施。后续应把这些共享能力迁移到显式的
+  auth 模块服务，使身份提供方插件不再依赖默认插件的配置所有权。

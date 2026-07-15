@@ -20,6 +20,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfigProvider;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapTemplateProvider;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
@@ -43,15 +46,35 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
     
     private final boolean caseSensitive;
     
-    private final LdapTemplate ldapTemplate;
+    private final LdapTemplateProvider ldapTemplateProvider;
+    
+    private final LdapAuthPluginConfigProvider configProvider;
     
     public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserService userDetailsService,
         TokenManagerDelegate jwtTokenManager, NacosRoleService roleService, String filterPrefix,
         boolean caseSensitive) {
+        this(() -> ldapTemplate, userDetailsService, jwtTokenManager, roleService, filterPrefix,
+            caseSensitive);
+    }
+    
+    public LdapAuthenticationManager(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService, String filterPrefix, boolean caseSensitive) {
         super(userDetailsService, jwtTokenManager, roleService);
-        this.ldapTemplate = ldapTemplate;
+        this.ldapTemplateProvider = ldapTemplateProvider;
         this.filterPrefix = filterPrefix;
         this.caseSensitive = caseSensitive;
+        this.configProvider = null;
+    }
+    
+    public LdapAuthenticationManager(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService, LdapAuthPluginConfigProvider configProvider) {
+        super(userDetailsService, jwtTokenManager, roleService);
+        this.ldapTemplateProvider = ldapTemplateProvider;
+        this.filterPrefix = null;
+        this.caseSensitive = true;
+        this.configProvider = configProvider;
     }
     
     @Override
@@ -60,7 +83,7 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             throw new AccessException("user not found!");
         }
         
-        if (!caseSensitive) {
+        if (!isCaseSensitive()) {
             username = username.toLowerCase();
         }
         
@@ -101,7 +124,21 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
     }
     
     private boolean ldapLogin(String username, String password) {
-        return ldapTemplate.authenticate("", new EqualsFilter(filterPrefix, username).toString(),
-            password);
+        return ldapTemplateProvider.getLdapTemplate().authenticate("",
+            new EqualsFilter(getFilterPrefix(), username).toString(), password);
+    }
+    
+    private String getFilterPrefix() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? filterPrefix : config.getFilterPrefix();
+    }
+    
+    private boolean isCaseSensitive() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? caseSensitive : config.isCaseSensitive();
+    }
+    
+    private LdapAuthPluginConfig getConfig() {
+        return configProvider == null ? null : configProvider.getConfig();
     }
 }

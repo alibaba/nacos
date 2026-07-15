@@ -41,7 +41,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -220,6 +222,30 @@ class LdapAuthenticationProviderTest {
             ldapAuthenticationProviderForCloseCaseSensitive.authenticate(authentication);
         NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
         assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + normalUserName);
+    }
+    
+    @Test
+    void testAuthenticateUsesAcceptedPluginConfig() {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put(LdapAuthPluginConfig.FILTER_PREFIX, "mail");
+        values.put(LdapAuthPluginConfig.CASE_SENSITIVE, "false");
+        LdapAuthPluginConfig config = LdapAuthPluginConfig.from(values);
+        LdapAuthenticationProvider provider = new LdapAuthenticationProvider(
+            () -> ldapTemplate, userDetailsService, nacosRoleService, () -> config);
+        User user = new User();
+        user.setUsername(LDAP_PREFIX + normalUserName);
+        user.setPassword(defaultPassWord);
+        when(ldapTemplate.authenticate("", "(mail=" + normalUserName + ")", defaultPassWord))
+            .thenReturn(true);
+        when(userDetailsService.loadUserByUsername(LDAP_PREFIX + normalUserName))
+            .thenReturn(new NacosUserDetails(user));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            StringUtils.upperCase(normalUserName), defaultPassWord);
+        
+        Authentication result = provider.authenticate(authentication);
+        
+        NacosUserDetails userDetails = (NacosUserDetails) result.getPrincipal();
+        assertEquals(LDAP_PREFIX + normalUserName, userDetails.getUsername());
     }
     
     @Test

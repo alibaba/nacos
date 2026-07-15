@@ -63,7 +63,7 @@ an external LLM provider.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
-built-in `auth:nacos` configuration contract. The latter verifies its five
+built-in `auth:nacos` and `auth:ldap` configuration contracts. It verifies
 definitions, legacy aliases, effect modes, effective values, source metadata,
 and API-side secret masking. Runtime mutation remains partial to avoid carrying
 persisted plugin state into later SDK suites in the shared standalone process;
