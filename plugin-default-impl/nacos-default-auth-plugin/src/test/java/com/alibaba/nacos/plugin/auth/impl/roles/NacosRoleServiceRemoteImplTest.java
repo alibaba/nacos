@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -39,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -57,9 +57,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -69,9 +67,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class NacosRoleServiceRemoteImplTest {
-    
-    @Mock
-    private AuthConfigs authConfigs;
     
     @Mock
     private NacosRestTemplate restTemplate;
@@ -89,7 +84,7 @@ class NacosRoleServiceRemoteImplTest {
         // containsKey + get were issued through two separate getCached* calls,
         // which let the scheduled reload swap the map reference between them and
         // produce inconsistent observations. After the fix the map is read once.
-        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl(authConfigs);
+        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl();
         PermissionInfo permissionInfo = new PermissionInfo();
         permissionInfo.setRole("admin");
         permissionInfo.setResource("ns:*:*");
@@ -109,7 +104,7 @@ class NacosRoleServiceRemoteImplTest {
     
     @Test
     void testGetRolesReadsCachedMapOnceOnHit() throws Exception {
-        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl(authConfigs);
+        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl();
         RoleInfo roleInfo = new RoleInfo();
         roleInfo.setRole("admin");
         roleInfo.setUsername("alice");
@@ -129,7 +124,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleAndPermissionOperations() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
         Page<PermissionInfo> permissionPage = new Page<>();
         PermissionInfo permissionInfo = new PermissionInfo();
@@ -175,7 +169,6 @@ class NacosRoleServiceRemoteImplTest {
     void testAddAdminRoleUpdatesLocalCache() throws Exception {
         prepareRemoteServer();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
-        when(authConfigs.isHasGlobalAdminRole()).thenReturn(false);
         Page<RoleInfo> rolePage = new Page<>();
         rolePage.setPageItems(Collections.emptyList());
         when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
@@ -184,24 +177,21 @@ class NacosRoleServiceRemoteImplTest {
         service.addAdminRole("nacos");
         
         assertTrue(getCachedRoleSet(service).contains(AuthConstants.GLOBAL_ADMIN_ROLE));
-        verify(authConfigs).setHasGlobalAdminRole(true);
+        assertTrue(service.hasGlobalAdminRole());
     }
     
     @Test
     void testAddAdminRoleSkipsWhenAdminAlreadyExists() throws Exception {
         prepareRemoteServer();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
-        when(authConfigs.isHasGlobalAdminRole()).thenReturn(true);
+        ReflectionTestUtils.setField(service, "hasGlobalAdminRole", true);
         
         service.addAdminRole("nacos");
-        
-        verify(authConfigs).isHasGlobalAdminRole();
     }
     
     @Test
     void testCacheMissReloadsRolesAndPermissions() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl roleService = newServiceWithRestTemplate();
         RoleInfo roleInfo = new RoleInfo();
         roleInfo.setRole("admin");
@@ -241,7 +231,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleOperationWrapsNacosException() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>postForm(anyString(), any(Header.class), nullable(Query.class),
             anyMap(),
@@ -256,7 +245,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleOperationWrapsUnexpectedException() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenThrow(new IllegalStateException("boom"));
@@ -270,7 +258,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleReadOperationsWrapExceptions() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenThrow(new NacosException(500, "denied"));
@@ -298,7 +285,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleWriteOperationsWrapRemainingExceptions() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>postForm(anyString(), any(Header.class), nullable(Query.class),
             anyMap(),
@@ -339,7 +325,6 @@ class NacosRoleServiceRemoteImplTest {
     @Test
     void testRemoteRoleOperationsWrapAdditionalExceptionBranches() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosRoleServiceRemoteImpl findNamesService = newServiceWithRestTemplate();
         when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenThrow(new IllegalStateException("boom"));
@@ -389,16 +374,11 @@ class NacosRoleServiceRemoteImplTest {
     }
     
     private NacosRoleServiceRemoteImpl newServiceWithRestTemplate() throws Exception {
-        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl(authConfigs);
+        NacosRoleServiceRemoteImpl service = new NacosRoleServiceRemoteImpl();
         Field field = NacosRoleServiceRemoteImpl.class.getDeclaredField("nacosRestTemplate");
         field.setAccessible(true);
         field.set(service, restTemplate);
         return service;
-    }
-    
-    private void prepareServerIdentity() {
-        lenient().when(authConfigs.getServerIdentityKey()).thenReturn("identity");
-        lenient().when(authConfigs.getServerIdentityValue()).thenReturn("value");
     }
     
     @SuppressWarnings("unchecked")

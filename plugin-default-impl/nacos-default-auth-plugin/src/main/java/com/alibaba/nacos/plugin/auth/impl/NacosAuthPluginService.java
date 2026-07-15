@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,143 +16,76 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
-import com.alibaba.nacos.api.common.ApiType;
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.api.AuthResult;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Permission;
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-
-import static com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID;
+import java.util.Map;
 
 /**
  * Nacos default auth plugin service implementation.
  *
  * @author xiweng.yy
  */
-public class NacosAuthPluginService implements AuthPluginService {
+public class NacosAuthPluginService extends AbstractNacosAuthPluginService
+    implements PluginConfigSpec, NacosAuthPluginConfigProvider {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthPluginService.class);
+    private static final List<ConfigItemDefinition> CONFIG_DEFINITIONS =
+        buildConfigDefinitions();
     
-    private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
-        
-        {
-            add(AuthConstants.AUTHORIZATION_HEADER);
-            add(Constants.ACCESS_TOKEN);
-            add(AuthConstants.PARAM_USERNAME);
-            add(AuthConstants.PARAM_PASSWORD);
-        }
-    };
+    private final TokenManagerDelegate tokenManagerDelegate;
     
-    protected IAuthenticationManager authenticationManager;
+    private volatile NacosAuthPluginConfig config = NacosAuthPluginConfig.defaults();
     
-    private volatile AuthConfigs authConfigs;
+    private volatile AnonymousAccessInitializer anonymousAccessInitializer;
     
-    @Override
-    public Collection<String> identityNames() {
-        return IDENTITY_NAMES;
+    public NacosAuthPluginService() {
+        tokenManagerDelegate = new TokenManagerDelegate(this);
     }
     
-    @Override
-    public boolean enableAuth(ActionTypes action, String type) {
-        // enable all of action and type
-        return true;
-    }
-    
-    @Override
-    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) {
-        try {
-            NacosUser nacosUser = validateUser(identityContext);
-            return AuthResult.successResult(nacosUser);
-        } catch (AccessException e) {
-            if (isAnonymousAllowed(resource)) {
-                LOGGER.debug("Anonymous access granted for resource: {}", resource);
-                NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
-                identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
-                identityContext.setParameter(IDENTITY_ID, AuthConstants.ANONYMOUS_USER);
-                return AuthResult.successResult(anonymousUser);
-            }
-            return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
-        }
-    }
-    
-    private boolean isAnonymousAllowed(Resource resource) {
-        if (resource == null || resource.getProperties() == null) {
-            return false;
-        }
-        Properties props = resource.getProperties();
-        if (!props.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)) {
-            return false;
-        }
-        try {
-            checkAuthConfigs();
-            return authConfigs.isAiAnonymousEnabled();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    
-    private void checkAuthConfigs() {
-        if (null == authConfigs) {
-            authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        }
-    }
-    
-    private NacosUser validateUser(IdentityContext identityContext) throws AccessException {
-        checkNacosAuthManager();
-        String token = resolveToken(identityContext);
-        NacosUser nacosUser;
-        if (StringUtils.isNotBlank(token)) {
-            nacosUser = authenticationManager.authenticate(token);
-        } else {
-            String userName = (String) identityContext.getParameter(AuthConstants.PARAM_USERNAME);
-            String password = (String) identityContext.getParameter(AuthConstants.PARAM_PASSWORD);
-            nacosUser = authenticationManager.authenticate(userName, password);
-        }
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
-        identityContext.setParameter(IDENTITY_ID, nacosUser.getUserName());
-        return nacosUser;
-    }
-    
-    private String resolveToken(IdentityContext identityContext) {
-        String bearerToken =
-            identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(bearerToken)
-            && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
-            return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
-        }
-        
-        return identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
-    }
-    
-    @Override
-    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) {
-        try {
-            NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
-            authenticationManager.authorize(permission, user);
-            return AuthResult.successResult(user);
-        } catch (AccessException e) {
-            return AuthResult.failureResult(HttpStatus.FORBIDDEN.value(), e.getErrMsg());
-        }
+    private static List<ConfigItemDefinition> buildConfigDefinitions() {
+        ConfigItemDefinition secret = new ConfigItemDefinition.Builder(
+            NacosAuthPluginConfig.TOKEN_SECRET_KEY, "Token secret key", ConfigItemType.STRING)
+            .description("Base64-encoded key used to sign Nacos authentication tokens")
+            .defaultValue(AuthConstants.DEFAULT_TOKEN_SECRET_KEY)
+            .aliases(Collections.singletonList(AuthConstants.TOKEN_SECRET_KEY)).sensitive(true)
+            .effectMode(ConfigItemEffectMode.RESTART).build();
+        ConfigItemDefinition expiration = new ConfigItemDefinition.Builder(
+            NacosAuthPluginConfig.TOKEN_EXPIRE_SECONDS, "Token expiration", ConfigItemType.NUMBER)
+            .description("Token validity period in seconds")
+            .defaultValue(AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString())
+            .aliases(Collections.singletonList(AuthConstants.TOKEN_EXPIRE_SECONDS))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        ConfigItemDefinition tokenCache = new ConfigItemDefinition.Builder(
+            NacosAuthPluginConfig.TOKEN_CACHE_ENABLE, "Token cache", ConfigItemType.BOOLEAN)
+            .description("Cache issued and parsed authentication tokens")
+            .defaultValue(Boolean.FALSE.toString())
+            .aliases(Collections.singletonList(AuthConstants.TOKEN_CACHE_ENABLE))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        ConfigItemDefinition authCache = new ConfigItemDefinition.Builder(
+            NacosAuthPluginConfig.CACHING_ENABLED, "Authorization cache", ConfigItemType.BOOLEAN)
+            .description("Cache users, roles and permissions")
+            .defaultValue(Boolean.TRUE.toString())
+            .aliases(Collections.singletonList(AuthConstants.NACOS_CORE_AUTH_CACHING_ENABLED))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        ConfigItemDefinition anonymous = new ConfigItemDefinition.Builder(
+            NacosAuthPluginConfig.ANONYMOUS_AI_ENABLED, "Anonymous AI access",
+            ConfigItemType.BOOLEAN)
+            .description("Allow anonymous access to explicitly opted-in AI endpoints")
+            .defaultValue(Boolean.FALSE.toString()).aliases(Collections.singletonList(
+                AuthConstants.NACOS_CORE_AUTH_NACOS_ANONYMOUS_AI_ENABLED))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        return Collections.unmodifiableList(
+            Arrays.asList(secret, expiration, tokenCache, authCache, anonymous));
     }
     
     @Override
@@ -161,31 +94,67 @@ public class NacosAuthPluginService implements AuthPluginService {
     }
     
     @Override
-    public boolean isLoginEnabled() {
-        return NacosAuthConfigHolder.getInstance()
-            .getNacosAuthConfigByScope(ApiType.CONSOLE_API.name())
-            .isAuthEnabled();
+    public List<ConfigItemDefinition> getConfigDefinitions() {
+        return CONFIG_DEFINITIONS;
+    }
+    
+    @Override
+    public synchronized void applyConfig(Map<String, String> effectiveConfig) {
+        NacosAuthPluginConfig previous = config;
+        NacosAuthPluginConfig next = NacosAuthPluginConfig.from(effectiveConfig,
+            NacosAuthConfigHolder.getInstance().isAnyAuthEnabled());
+        config = next;
+        try {
+            tokenManagerDelegate.applyTokenConfig();
+        } catch (RuntimeException e) {
+            config = previous;
+            throw e;
+        }
+        if (next.isAnonymousAiEnabled()) {
+            requestAnonymousAccessReconcile();
+        }
+    }
+    
+    private void requestAnonymousAccessReconcile() {
+        AnonymousAccessInitializer initializer = anonymousAccessInitializer;
+        if (initializer != null) {
+            initializer.requestReconcile();
+        }
+    }
+    
+    @Override
+    public Map<String, String> getCurrentConfig() {
+        return config.toMap();
+    }
+    
+    @Override
+    public NacosAuthPluginConfig getConfig() {
+        return config;
+    }
+    
+    @Override
+    protected boolean isAnonymousAccessEnabled() {
+        return config.isAnonymousAiEnabled();
     }
     
     /**
-     * Only auth enabled and not global admin role existed.
+     * Get the stable token manager facade injected into Spring-managed auth services.
      *
-     * @return {@code true} when auth enabled and not global admin role existed, otherwise {@code false}
+     * @return token manager delegate
      */
-    @Override
-    public boolean isAdminRequest() {
-        boolean authEnabled = false;
-        for (NacosAuthConfig each : NacosAuthConfigHolder.getInstance().getAllNacosAuthConfig()) {
-            authEnabled |= each.isAuthEnabled();
-        }
-        boolean hasGlobalAdminRole =
-            ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
-        return authEnabled && !hasGlobalAdminRole;
+    public TokenManagerDelegate getTokenManagerDelegate() {
+        return tokenManagerDelegate;
     }
     
-    protected void checkNacosAuthManager() {
-        if (null == authenticationManager) {
-            authenticationManager = ApplicationUtils.getBean(IAuthenticationManager.class);
+    /**
+     * Attach the persistence-backed anonymous identity reconciler.
+     *
+     * @param initializer anonymous access initializer
+     */
+    public void setAnonymousAccessInitializer(AnonymousAccessInitializer initializer) {
+        this.anonymousAccessInitializer = initializer;
+        if (config.isAnonymousAiEnabled()) {
+            initializer.requestReconcile();
         }
     }
 }

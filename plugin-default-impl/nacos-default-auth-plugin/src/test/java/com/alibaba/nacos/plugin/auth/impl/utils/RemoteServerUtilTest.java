@@ -16,23 +16,30 @@
 
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,6 +53,21 @@ import static org.mockito.Mockito.when;
 
 class RemoteServerUtilTest {
     
+    private Map<String, NacosAuthConfig> cachedConfigMap;
+    
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void setUp() {
+        cachedConfigMap = (Map<String, NacosAuthConfig>) ReflectionTestUtils.getField(
+            NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
+    }
+    
+    @AfterEach
+    void tearDown() {
+        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+            cachedConfigMap);
+    }
+    
     @Test
     void testServerAddressRoundRobinAndContextPath() throws Exception {
         setStaticField("serverAddresses", Arrays.asList("127.0.0.1:8848", "127.0.0.2:8848"));
@@ -58,6 +80,20 @@ class RemoteServerUtilTest {
         assertEquals(2, RemoteServerUtil.getServerAddresses().size());
         assertEquals("127.0.0.1:8848", RemoteServerUtil.getOneNacosServerAddress());
         assertEquals("127.0.0.2:8848", RemoteServerUtil.getOneNacosServerAddress());
+        assertEquals("/console", RemoteServerUtil.getRemoteServerContextPath());
+    }
+    
+    @Test
+    void testConstructorAndInitContextPathWithoutEnvironment() throws Exception {
+        assertEquals(RemoteServerUtil.class, new RemoteServerUtil().getClass());
+        setStaticField("remoteServerContextPath", "/console");
+        
+        try (MockedStatic<EnvUtil> envUtil = mockStatic(EnvUtil.class)) {
+            envUtil.when(EnvUtil::getEnvironment).thenReturn(null);
+            
+            invokeStaticMethod("initRemoteServerContextPath");
+        }
+        
         assertEquals("/console", RemoteServerUtil.getRemoteServerContextPath());
     }
     
@@ -76,23 +112,29 @@ class RemoteServerUtilTest {
     
     @Test
     void testBuildServerRemoteHeader() {
-        AuthConfigs authConfigs = mock(AuthConfigs.class);
-        when(authConfigs.getServerIdentityKey()).thenReturn("identity");
-        when(authConfigs.getServerIdentityValue()).thenReturn("value");
+        NacosAuthConfig config = mock(NacosAuthConfig.class);
+        when(config.getServerIdentityKey()).thenReturn("identity");
+        when(config.getServerIdentityValue()).thenReturn("value");
+        setAuthConfig(config);
         
-        Header header = RemoteServerUtil.buildServerRemoteHeader(authConfigs);
+        Header header = RemoteServerUtil.buildServerRemoteHeader();
         
         assertEquals("value", header.getValue("identity"));
     }
     
     @Test
     void testBuildServerRemoteHeaderSkipsBlankKey() {
-        AuthConfigs authConfigs = mock(AuthConfigs.class);
-        when(authConfigs.getServerIdentityKey()).thenReturn("");
+        NacosAuthConfig config = mock(NacosAuthConfig.class);
+        when(config.getServerIdentityKey()).thenReturn("");
+        setAuthConfig(config);
         
-        Header header = RemoteServerUtil.buildServerRemoteHeader(authConfigs);
+        Header header = RemoteServerUtil.buildServerRemoteHeader();
         
         assertTrue(header.getHeader().containsKey("Content-Type"));
+        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+            Collections.emptyMap());
+        assertTrue(RemoteServerUtil.buildServerRemoteHeader().getHeader()
+            .containsKey("Content-Type"));
     }
     
     @Test
@@ -135,6 +177,11 @@ class RemoteServerUtilTest {
         Field field = RemoteServerUtil.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(null, value);
+    }
+    
+    private void setAuthConfig(NacosAuthConfig config) {
+        ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
+            Collections.singletonMap(ApiType.OPEN_API.name(), config));
     }
     
     private static void invokeStaticMethod(String methodName) throws Exception {

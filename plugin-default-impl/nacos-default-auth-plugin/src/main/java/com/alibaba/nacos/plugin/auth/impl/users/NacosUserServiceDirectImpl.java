@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
@@ -37,19 +37,19 @@ public class NacosUserServiceDirectImpl extends AbstractCachedUserService
     
     private final UserPersistService userPersistService;
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthPluginConfigProvider configProvider;
     
-    public NacosUserServiceDirectImpl(AuthConfigs authConfigs,
+    public NacosUserServiceDirectImpl(NacosAuthPluginConfigProvider configProvider,
         UserPersistService userPersistService) {
         super();
         this.userPersistService = userPersistService;
-        this.authConfigs = authConfigs;
+        this.configProvider = configProvider;
     }
     
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = getCachedUserMap().get(username);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!configProvider.getConfig().isCachingEnabled()) {
             user = getUser(username);
         }
         if (user == null) {

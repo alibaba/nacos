@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.utils.RemoteServerUtil;
@@ -51,11 +50,8 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
     
     private final NacosRestTemplate nacosRestTemplate;
     
-    private final AuthConfigs authConfigs;
-    
-    public NacosUserServiceRemoteImpl(AuthConfigs authConfigs) {
+    public NacosUserServiceRemoteImpl() {
         super();
-        this.authConfigs = authConfigs;
         this.nacosRestTemplate = new DefaultHttpClientFactory(LOGGER).createNacosRestTemplate();
     }
     
@@ -75,7 +71,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> result = nacosRestTemplate.putForm(
                 buildRemoteUserUrlPath(AuthConstants.USER_PATH),
-                RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, body, String.class);
+                RemoteServerUtil.buildServerRemoteHeader(), query, body, String.class);
             RemoteServerUtil.singleCheckResult(result);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
@@ -115,7 +111,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(
                 buildRemoteUserUrlPath(AuthConstants.USER_PATH + "/search"),
-                RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, String.class);
+                RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(httpResult);
             Result<List<String>> result =
                 JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
@@ -142,7 +138,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> result = nacosRestTemplate.postForm(
                 buildRemoteUserUrlPath(AuthConstants.USER_PATH),
-                RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, body, String.class);
+                RemoteServerUtil.buildServerRemoteHeader(), query, body, String.class);
             RemoteServerUtil.singleCheckResult(result);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
@@ -157,7 +153,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> result = nacosRestTemplate.postForm(
                 buildRemoteUserUrlPath(AuthConstants.USER_PATH + "/admin"),
-                RemoteServerUtil.buildServerRemoteHeader(authConfigs), Query.newInstance(), body,
+                RemoteServerUtil.buildServerRemoteHeader(), Query.newInstance(), body,
                 String.class);
             RemoteServerUtil.singleCheckResult(result);
         } catch (NacosException e) {
@@ -175,7 +171,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> result =
                 nacosRestTemplate.delete(buildRemoteUserUrlPath(AuthConstants.USER_PATH),
-                    RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, String.class);
+                    RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
@@ -194,7 +190,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(
                 buildRemoteUserUrlPath(AuthConstants.USER_PATH + "/list"),
-                RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, String.class);
+                RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(httpResult);
             Result<Page<User>> result =
                 JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {

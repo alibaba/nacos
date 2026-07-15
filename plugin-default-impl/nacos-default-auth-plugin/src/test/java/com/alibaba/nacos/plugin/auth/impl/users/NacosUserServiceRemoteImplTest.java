@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.utils.RemoteServerUtil;
@@ -51,7 +50,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
@@ -63,9 +61,6 @@ import static org.mockito.Mockito.when;
 class NacosUserServiceRemoteImplTest {
     
     @Mock
-    private AuthConfigs authConfigs;
-    
-    @Mock
     private NacosRestTemplate restTemplate;
     
     @Test
@@ -75,7 +70,7 @@ class NacosUserServiceRemoteImplTest {
         // two, the scheduled reload could swap the map reference, so containsKey
         // could observe true while get on the new snapshot returned null. The fix
         // reads the map once and inspects the value, guaranteeing a consistent view.
-        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl(authConfigs);
+        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl();
         User alice = new User();
         alice.setUsername("alice");
         alice.setPassword("pwd");
@@ -93,7 +88,7 @@ class NacosUserServiceRemoteImplTest {
     
     @Test
     void testLoadUserByUsernameReadsCachedUser() throws Exception {
-        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl(authConfigs);
+        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl();
         User alice = new User();
         alice.setUsername("alice");
         alice.setPassword("pwd");
@@ -109,7 +104,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testCacheMissReloadsUserAndLoadMissingUserThrows() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl service = newServiceWithRestTemplate();
         Page<User> page = new Page<>();
         User user = new User();
@@ -135,7 +129,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testRemoteUserOperations() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl service = newServiceWithRestTemplate();
         Page<User> page = new Page<>();
         User user = new User();
@@ -169,7 +162,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testRemoteUserOperationWrapsNacosException() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>putForm(anyString(), any(Header.class), any(Query.class),
             anyMap(),
@@ -184,7 +176,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testRemoteUserOperationWrapsUnexpectedException() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenThrow(new IllegalStateException("boom"));
@@ -198,7 +189,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testRemoteUserReadOperationsWrapExceptions() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl service = newServiceWithRestTemplate();
         when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
             eq(String.class))).thenThrow(new NacosException(403, "denied"));
@@ -234,7 +224,6 @@ class NacosUserServiceRemoteImplTest {
     @Test
     void testRemoteUserWriteOperationsWrapRemainingExceptions() throws Exception {
         prepareRemoteServer();
-        prepareServerIdentity();
         NacosUserServiceRemoteImpl updateService = newServiceWithRestTemplate();
         when(restTemplate.<String>putForm(anyString(), any(Header.class), any(Query.class),
             anyMap(),
@@ -291,16 +280,11 @@ class NacosUserServiceRemoteImplTest {
     }
     
     private NacosUserServiceRemoteImpl newServiceWithRestTemplate() throws Exception {
-        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl(authConfigs);
+        NacosUserServiceRemoteImpl service = new NacosUserServiceRemoteImpl();
         Field field = NacosUserServiceRemoteImpl.class.getDeclaredField("nacosRestTemplate");
         field.setAccessible(true);
         field.set(service, restTemplate);
         return service;
-    }
-    
-    private void prepareServerIdentity() {
-        lenient().when(authConfigs.getServerIdentityKey()).thenReturn("identity");
-        lenient().when(authConfigs.getServerIdentityValue()).thenReturn("value");
     }
     
     private static HttpRestResult<String> okText() {

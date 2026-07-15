@@ -17,9 +17,9 @@
 package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 
 import java.util.ArrayList;
@@ -47,12 +47,18 @@ public class CachedJwtTokenManager implements TokenManager {
     
     private final JwtTokenManager jwtTokenManager;
     
-    public CachedJwtTokenManager(JwtTokenManager jwtTokenManager) {
+    private final NacosAuthPluginConfigProvider configProvider;
+    
+    public CachedJwtTokenManager(JwtTokenManager jwtTokenManager,
+        NacosAuthPluginConfigProvider configProvider) {
         this.jwtTokenManager = jwtTokenManager;
+        this.configProvider = configProvider;
     }
     
-    @Scheduled(initialDelay = 30000, fixedDelay = 60000)
-    private void cleanExpiredToken() {
+    /**
+     * Remove expired token entries from both caches.
+     */
+    public void cleanExpiredToken() {
         List<String> tokens = new ArrayList<>();
         tokenMap.forEach((k, v) -> {
             if (v.getExpiredTimeMills() < System.currentTimeMillis()) {
@@ -67,6 +73,14 @@ public class CachedJwtTokenManager implements TokenManager {
             }
         });
         users.forEach(e -> userMap.remove(e));
+    }
+    
+    /**
+     * Clear all cached tokens after relevant runtime token settings change.
+     */
+    public void clear() {
+        tokenMap.clear();
+        userMap.clear();
     }
     
     @Override
@@ -175,7 +189,7 @@ public class CachedJwtTokenManager implements TokenManager {
     
     @Override
     public long getTokenValidityInSeconds() {
-        return jwtTokenManager.getTokenValidityInSeconds();
+        return configProvider.getConfig().getTokenExpireSeconds();
     }
     
     private boolean needRefresh(long expiredTimeMills) {

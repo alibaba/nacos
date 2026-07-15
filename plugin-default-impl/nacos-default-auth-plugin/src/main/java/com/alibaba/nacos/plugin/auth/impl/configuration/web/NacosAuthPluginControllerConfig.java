@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
@@ -36,10 +35,9 @@ public class NacosAuthPluginControllerConfig {
     @Bean
     public UserControllerV3 userControllerV3(NacosUserService userDetailsService,
         NacosRoleService roleService,
-        AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
+        IAuthenticationManager iAuthenticationManager,
         TokenManagerDelegate jwtTokenManager) {
-        return new UserControllerV3(userDetailsService, roleService, authConfigs,
-            iAuthenticationManager,
+        return new UserControllerV3(userDetailsService, roleService, iAuthenticationManager,
             jwtTokenManager);
     }
     

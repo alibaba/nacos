@@ -17,6 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,12 @@ class CachedJwtTokenManagerTest {
     private JwtTokenManager jwtTokenManager;
     
     @Mock
+    private NacosAuthPluginConfigProvider configProvider;
+    
+    @Mock
+    private NacosAuthPluginConfig config;
+    
+    @Mock
     private Authentication authentication;
     
     @Mock
@@ -64,8 +72,9 @@ class CachedJwtTokenManagerTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        cachedJwtTokenManager = new CachedJwtTokenManager(jwtTokenManager);
-        when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
+        cachedJwtTokenManager = new CachedJwtTokenManager(jwtTokenManager, configProvider);
+        when(configProvider.getConfig()).thenReturn(config);
+        when(config.getTokenExpireSeconds()).thenReturn(100L);
         when(jwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(100L);
         when(jwtTokenManager.getExpiredTimeInSeconds(anyString()))
             .thenReturn(System.currentTimeMillis());
@@ -113,7 +122,6 @@ class CachedJwtTokenManagerTest {
     @Test
     void testCreateTokenReturnsCachedWhenNotExpired() throws Exception {
         cachedJwtTokenManager.createToken("nacos");
-        when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(10000L);
         String secondToken = cachedJwtTokenManager.createToken("nacos");
         assertEquals("token", secondToken);
     }
@@ -135,6 +143,12 @@ class CachedJwtTokenManagerTest {
     void testParseTokenFallsBackWhenNotCached() throws AccessException {
         NacosUser result = cachedJwtTokenManager.parseToken("uncached-token");
         assertNotNull(result);
+    }
+    
+    @Test
+    void testParseTokenReturnsCachedEntry() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        assertEquals(user, cachedJwtTokenManager.parseToken("token"));
     }
     
     @Test
@@ -244,6 +258,19 @@ class CachedJwtTokenManagerTest {
         assertTrue(tokenMap.containsKey("active"));
         assertFalse(userMap.containsKey("expiredUser"));
         assertTrue(userMap.containsKey("activeUser"));
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    void testClear() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        cachedJwtTokenManager.clear();
+        Field tokenMapField = CachedJwtTokenManager.class.getDeclaredField("tokenMap");
+        tokenMapField.setAccessible(true);
+        Field userMapField = CachedJwtTokenManager.class.getDeclaredField("userMap");
+        userMapField.setAccessible(true);
+        assertTrue(((Map<String, ?>) tokenMapField.get(cachedJwtTokenManager)).isEmpty());
+        assertTrue(((Map<String, ?>) userMapField.get(cachedJwtTokenManager)).isEmpty());
     }
     
     @SuppressWarnings("unchecked")

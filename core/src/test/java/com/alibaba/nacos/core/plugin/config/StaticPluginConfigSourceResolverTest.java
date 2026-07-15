@@ -83,6 +83,32 @@ class StaticPluginConfigSourceResolverTest {
     }
     
     @Test
+    void testGetConfigUsesAliasWhenStandardValueIsEmpty() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("token");
+        definition.setAliases(Collections.singletonList("nacos.legacy.token"));
+        environment.setProperty("nacos.plugin.trace.demo.token", "");
+        environment.setProperty("nacos.legacy.token", "legacy-value");
+        
+        Map<String, String> config =
+            resolver.getConfig(createPluginInfo(Collections.singletonList(definition)));
+        
+        assertEquals(Collections.singletonMap("token", "legacy-value"), config);
+    }
+    
+    @Test
+    void testGetConfigKeepsEmptyStandardValueWithoutAlias() {
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("token");
+        environment.setProperty("nacos.plugin.trace.demo.token", "");
+        
+        Map<String, String> config =
+            resolver.getConfig(createPluginInfo(Collections.singletonList(definition)));
+        
+        assertEquals(Collections.singletonMap("token", ""), config);
+    }
+    
+    @Test
     void testRefreshAcceptsRuntimeFieldAndKeepsRestartField() {
         ConfigItemDefinition blankDefinition = definition(" ", ConfigItemEffectMode.RUNTIME);
         ConfigItemDefinition runtimeDefinition =
