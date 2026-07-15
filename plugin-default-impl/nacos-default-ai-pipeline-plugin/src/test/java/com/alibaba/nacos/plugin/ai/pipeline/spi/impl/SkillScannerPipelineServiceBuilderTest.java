@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -31,7 +30,6 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -105,7 +103,7 @@ class SkillScannerPipelineServiceBuilderTest {
         Path scanner = createExecutable("skill-scanner-llm");
         Properties properties = new Properties();
         properties.setProperty("command", scanner.toString());
-        properties.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
+        properties.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
         
         PublishPipelineService service = builder.build(properties);
         
@@ -131,26 +129,34 @@ class SkillScannerPipelineServiceBuilderTest {
     }
     
     @Test
-    void resolveBlankCandidateAndBlankPathTest() throws Exception {
-        Method resolveCandidate =
-            SkillScannerPipelineServiceBuilder.class.getDeclaredMethod("resolveCandidate",
-                String.class);
-        resolveCandidate.setAccessible(true);
-        assertNull(resolveCandidate.invoke(builder, " "));
+    void buildWithLegacyPathAliasTest() throws Exception {
+        Path scanner = createExecutable("skill-scanner-legacy-path");
+        Properties properties = new Properties();
+        properties.setProperty(SkillScannerPluginConfig.COMMAND_ALIAS_PATH, scanner.toString());
         
-        SkillScannerPipelineServiceBuilder blankPathBuilder =
-            new SkillScannerPipelineServiceBuilder() {
-                
-                @Override
-                String getPathEnv() {
-                    return "";
-                }
-            };
-        Method findExecutableInPath =
-            SkillScannerPipelineServiceBuilder.class.getDeclaredMethod("findExecutableInPath",
-                String.class);
-        findExecutableInPath.setAccessible(true);
-        assertNull(findExecutableInPath.invoke(blankPathBuilder, "skill-scanner"));
+        SkillScannerPipelineService service =
+            (SkillScannerPipelineService) builder.build(properties);
+        
+        assertServiceAvailable(service);
+        assertEquals(scanner.toString(),
+            service.getCurrentConfig().get(SkillScannerPluginConfig.COMMAND));
+    }
+    
+    @Test
+    void buildPrefersCanonicalCommandOverAliasTest() throws Exception {
+        Path canonical = createExecutable("skill-scanner-canonical");
+        Path alias = createExecutable("skill-scanner-alias");
+        Properties properties = new Properties();
+        properties.setProperty(SkillScannerPluginConfig.COMMAND, canonical.toString());
+        properties.setProperty(SkillScannerPluginConfig.COMMAND_ALIAS_EXECUTABLE,
+            alias.toString());
+        
+        SkillScannerPipelineService service =
+            (SkillScannerPipelineService) builder.build(properties);
+        
+        assertServiceAvailable(service);
+        assertEquals(canonical.toString(),
+            service.getCurrentConfig().get(SkillScannerPluginConfig.COMMAND));
     }
     
     private Path createExecutable(String name) throws Exception {
