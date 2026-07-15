@@ -14,15 +14,12 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoBetaMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoMapperByOracle
-com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoTagMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoGrayMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigTagsRelationMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.HistoryConfigInfoMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.TenantInfoMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.TenantCapacityMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.GroupCapacityMapperByOracle
-com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigMigrateMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.AiResourceMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.AiResourceVersionMapperByOracle

@@ -35,13 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class StringUtilsTest {
     
     @Test
-    void testNewStringForUtf8() {
-        String abc = "abc";
-        byte[] abcByte = abc.getBytes();
-        assertEquals(abc, StringUtils.newStringForUtf8(abcByte));
-    }
-    
-    @Test
     void isBlank() {
         assertTrue(StringUtils.isBlank(null));
         assertTrue(StringUtils.isBlank(""));
@@ -519,5 +512,17 @@ class StringUtilsTest {
         // Test for a string with numbers
         String str5 = "abc123";
         assertEquals("Abc123", StringUtils.capitalize(str5));
+    }
+    
+    @Test
+    void testJoinWithTrailingNulls() {
+        // Trailing null elements should NOT produce a trailing separator
+        assertEquals("a", StringUtils.join(Arrays.asList("a", null), ","));
+        assertEquals("a", StringUtils.join(Arrays.asList("a", null, null), ","));
+        // Leading nulls should not produce leading separator
+        assertEquals("b", StringUtils.join(Arrays.asList(null, "b"), ","));
+        // Mixed nulls should not produce trailing separator
+        assertEquals("a,b", StringUtils.join(Arrays.asList("a", null, "b", null), ","));
+        assertEquals("a,b", StringUtils.join(Arrays.asList("a", "b", null), ","));
     }
 }

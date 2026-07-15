@@ -232,9 +232,8 @@ public class ConsolePromptController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> publish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         promptProxy.publish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(),
-            updateLatest);
+            true);
         return Result.success("ok");
     }
     
@@ -248,9 +247,8 @@ public class ConsolePromptController {
         apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         promptProxy.forcePublish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(),
-            updateLatest);
+            true);
         return Result.success("ok");
     }
     

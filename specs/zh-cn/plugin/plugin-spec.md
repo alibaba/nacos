@@ -134,11 +134,142 @@ Nacos 插件包含两个相关的 SPI 层次：
 | `auth` | 由 `nacos.core.auth.system.type` 指定，默认 `nacos`。 |
 | `datasource-dialect` | 由 SQL platform 配置指定，默认 `derby`。 |
 
+只有 `auth` 和 `datasource-dialect` 在插件管理模型中标记为互斥类型。没有持久化插件状态时，
+历史选择配置用于生成初始状态；启动加载完成后，持久化状态优先。通过插件管理 API 选择插件
+是标准管理路径，读取到历史选择配置时服务端应记录迁移提示日志。
+
 当服务端依赖某些插件维持基本运行能力时，这些插件不能被禁用。当前关键插件集合包括内置
 数据源方言，以及服务端需要的默认 AI 存储插件。
 
 实现 `PluginConfigSpec` 的插件应暴露配置定义、当前配置和配置应用行为。除非请求明确
 声明为仅本机生效，否则集群级状态或配置变更必须通过插件状态操作链路进行同步。
+
+### 配置定义
+
+插件配置项由 `ConfigItemDefinition` 描述。`key` 表示插件实现内部的 canonical item
+key，不携带 `nacos.plugin.{pluginType}.{pluginName}.` 前缀。静态配置推荐使用以下
+normalized full key：
+
+```text
+nacos.plugin.{pluginType}.{pluginName}.{itemKey}
+```
+
+配置定义可以声明以下元数据：
+
+| 字段 | 含义 |
+|------|------|
+| `aliases` | 历史静态配置 key，用于兼容读取和迁移提示。 |
+| `sensitive` | 是否为敏感值。查询 API 返回前必须脱敏。 |
+| `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
+
+`aliases` 用于静态配置兼容读取，也可以作为迁移兼容的 API 输入。使用 alias 时应记录
+迁移提示日志。完成归一化后，alias
+不应写入运行时持久化文件或 local-only 内存表。如果输入同时包含同一配置项的多个
+alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
+
+### 配置来源与值元数据
+
+插件配置的 effective value 由统一解析流程计算。配置来源优先级为：
+
+```text
+LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
+```
+
+| 来源 | 含义 |
+|------|------|
+| `DEFAULT` | 来自 `ConfigItemDefinition.defaultValue`。 |
+| `STATIC` | 来自 `application.properties`、环境变量、JVM 参数或 Spring 参数等静态配置。 |
+| `RUNTIME_PERSISTED` | 来自集群级运行时 override，当前可由 `plugin-configs.json` 记录终态内容。 |
+| `LOCAL_ONLY` | 当前节点的本机 override，只用于诊断或应急处理，不同步到集群。 |
+
+插件详情返回模型可以追加以 canonical item key 为索引的 `configValueMetas` map。每个
+`PluginConfigValueMeta` 用于描述对应配置项的当前值来源和是否存在多来源覆盖。
+`overridden` 忽略 `DEFAULT`，只有同一 key 同时存在多个非默认来源时才应为 `true`。
+
+运行时持久化配置和 local-only 配置只保存 `pluginId + itemKey` 对应的值，不保存
+normalized full key、alias key、source 或版本信息。
+
+每个内部 source resolver 都必须通过 `getConfig(PluginInfo)` 返回使用 canonical
+item key 的完整 map。读取能力与写入能力相互独立：`DEFAULT` 从 definition 读取默认值，
+`STATIC` 根据标准 key 和 alias 从环境读取，两个运行时 source 读取各自内部 map。
+`isUpdatable` 只在替换 source map 时检查。每次更新完整替换该 source 的 map；传入空
+map 表示清空该插件在该 source 下的全部 override，不额外提供 remove 或 restore 操作。
+
+core source registry 统一持有已启用 resolver 及其固定顺序。四个内置来源必须按上述
+顺序注册；内部存储实现可以替换同一 source 层的 resolver，但不能在 `LOCAL_ONLY` 之上
+插入新优先级，也不能把 `DEFAULT` 合并进 `STATIC`。source 实现的选择属于启动期行为，
+插件配置更新 API 不负责动态切换 source 实现。
+
+### 运行时状态约束
+
+对于每次运行时操作都会重新选择实现的插件类型，领域执行链路必须在调用扩展前检查统一插件
+状态。当前满足该契约的运行时路由型插件包括 `auth`、`datasource-dialect`、
+`encryption`、`trace`、`visibility`、`config-change`、`ai-pipeline` 和
+`ai-storage`。被禁用的插件仍保持加载并可由管理 API 查询，但不得参与领域执行。
+
+插件类型是否互斥属于类型能力，必须由共享的 `PluginType` 定义提供。Core 和 Console
+的 API 适配层不得分别维护硬编码的互斥类型列表。
+
+启动期或构建期插件不能通过较晚的运行时检查满足该契约。`control` 会在统一持久化状态加载前
+构建并缓存 manager，`environment` 会在 core 插件管理器就绪前转换 Spring 属性。管理 API
+能够把这两类插件的状态更新报告为已生效之前，必须先定义其状态能力和重启/bootstrap 语义。
+`ai-resource-import` 当前没有通过 `PluginProvider` 暴露，不属于统一状态管理范围。
+
+### 配置更新兼容性
+
+插件详情 API 应保持 additive 兼容：已有 `config` 和 `configDefinitions` 字段继续
+保留，其中 `config` 可以表示当前 effective config，新增的 `configValueMetas` map 按
+canonical item key 提供 source 和 overridden 等元信息。
+
+`PUT /v3/admin/core/plugin/config` 和对应 Console API 保持现有完整 override map
+更新语义。`localOnly=true` 表示只更新当前节点 local-only override；否则更新集群级
+runtime persisted override。key 归一化和 `effectMode` 校验由服务端内部完成，不作为
+新的 API 参数暴露。`effectMode=RESTART` 的字段不应通过运行时更新立即生效。
+服务端应比较目标 source 更新前后的完整 map，因此新增、修改或移除 `RESTART` 配置项
+都必须拒绝。提交的完整 map 中省略某个 key，只有在该配置项支持运行时生效时才表示
+移除对应 override。
+canonical item key、normalized full key 和兼容 alias key 应在校验及存储前统一归一化为
+item key。请求包含未定义 key，或者 alias 歧义命中多个配置项时，应返回参数校验错误。
+
+对于声明为 `sensitive=true` 的配置项，提交值只要包含统一的 `******` marker，就按
+脱敏展示值处理。如果当前目标 source 已经包含该 key，服务端应保留该 source 中的原始
+值；如果目标 source 不包含该 key，则忽略这项输入，继续保持该 source 不存在此 key。
+该判断同时覆盖 `******`、`a******z` 和 `ab******yz`，且不得把 `STATIC` 等其他
+source 的 effective value 复制成 runtime override。服务端应记录 WARN 日志，但只记录
+`pluginId`、item key 和目标 source，不得打印配置值。
+
+### 初始化与运行时应用
+
+启动和运行时更新复用同一套 source resolver 与 effective config 计算逻辑：
+
+1. 启动时先将 `plugin-configs.json` 中的全部内容装载到 runtime persisted source，
+   再开始应用插件配置。
+2. 随后对每个已加载的可配置插件执行 resolve 和 apply，即使该插件没有持久化
+   override 也要处理。启动属于初始化阶段，可以同时应用 `RUNTIME` 和 `RESTART`
+   字段。
+3. 运行时请求完整替换一个 `RUNTIME_PERSISTED` 或 `LOCAL_ONLY` source map，随后
+   重新解析全部来源；每次接受的请求都调用插件实现，包括使用相同完整 map 发起的
+   手动重试。
+
+`STATIC` resolver 应维护每个插件的已接受快照，而不是让每次 detail 查询独立读取实时
+环境值。启动时捕获全部已定义静态字段，并允许应用两种 effect mode。启动完成后，
+`ServerConfigChangeEvent` 刷新该快照；对于 effective runtime config 发生变化的每个
+可配置插件，复用同一套 resolve、validate、apply 流程。
+
+静态刷新时只接受声明为 `effectMode=RUNTIME` 的字段。新增、修改或移除 `RESTART`
+字段时，运行中快照继续保留启动值，直到服务端重启，并输出只包含 plugin ID 和 item
+keys、不包含配置值的 WARN。detail 查询继续返回已接受的 effective 快照，不能把尚未
+应用的 restart-required 环境值报告为已生效。静态字段变化如果被更高优先级 source
+覆盖，可以更新来源视图；effective config 未变化时不需要再次调用插件。
+
+同一插件的更新应串行执行。runtime persisted 更新先持久化归一化后的完整 source
+map，再替换 resolver source、解析并校验 effective config，最后应用到插件。持久化
+失败时不得修改 resolver source 或插件，也不执行回滚。source 更新成功但 apply 失败
+时，已接受的 source map 保持持久化和可解析状态，服务端不自动发起回滚或补偿更新；
+API 应明确返回“配置已更新但 apply 失败”的服务端错误，日志记录 plugin ID 和 source
+且不记录配置值。再次提交相同完整 map 可以手动重试 apply。`LOCAL_ONLY` 更新执行相同
+的 replace、resolve、apply 流程，但不持久化、不同步；apply 失败后新的本机 source map
+同样保留。
 
 ## 管理 API
 
@@ -147,7 +278,7 @@ Nacos 插件包含两个相关的 SPI 层次：
 | 方法 | 路径 | 目的 |
 |------|------|------|
 | `GET` | `/v3/admin/core/plugin/list` | 查询已加载插件，可按类型过滤。 |
-| `GET` | `/v3/admin/core/plugin/detail` | 查询单个插件详情。 |
+| `GET` | `/v3/admin/core/plugin/detail` | 查询单个插件详情，返回 effective config 和可选值元数据。 |
 | `PUT` | `/v3/admin/core/plugin/status` | 启用或禁用插件。 |
 | `PUT` | `/v3/admin/core/plugin/config` | 更新插件配置。 |
 

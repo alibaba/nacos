@@ -21,18 +21,12 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -44,18 +38,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
+@ExtendWith(MockitoExtension.class)
 class ListenerControllerV3Test {
     
-    @InjectMocks
     ListenerControllerV3 listenerControllerV3;
     
     private MockMvc mockmvc;
-    
-    @Mock
-    private ServletContext servletContext;
     
     @Mock
     private ConfigListenerStateDelegate configListenerStateDelegate;
@@ -63,9 +51,7 @@ class ListenerControllerV3Test {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate",
-            configListenerStateDelegate);
+        listenerControllerV3 = new ListenerControllerV3(configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(listenerControllerV3).build();
     }
     

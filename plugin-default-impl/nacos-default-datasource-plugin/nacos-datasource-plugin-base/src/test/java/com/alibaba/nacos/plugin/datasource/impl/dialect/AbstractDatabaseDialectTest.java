@@ -19,8 +19,11 @@ package com.alibaba.nacos.plugin.datasource.impl.dialect;
 import com.alibaba.nacos.plugin.datasource.constants.PrimaryKeyConstant;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class AbstractDatabaseDialectTest {
     
@@ -38,6 +41,19 @@ class AbstractDatabaseDialectTest {
             dialect.getReturnPrimaryKeys());
         assertEquals("test", dialect.getType());
         assertEquals("NOW()", dialect.getFunction("NOW()"));
+    }
+    
+    @Test
+    void testDefaultIsDuplicateKeyExceptionRejectsNonSpringExceptions() {
+        assertFalse(dialect.isDuplicateKeyException(new RuntimeException("boom")));
+        // The default only recognizes a Spring DuplicateKeyException in the cause chain. It must
+        // not classify a raw SQLState 23505 as duplicate on its own; vendor dialects opt in to
+        // SQLState-based classification by overriding this method. Spring is intentionally not on
+        // this module's classpath, so the Spring-positive path is verified in the config module.
+        assertFalse(dialect.isDuplicateKeyException(
+            new SQLException("duplicate key value violates unique constraint", "23505")));
+        assertFalse(dialect.isDuplicateKeyException(
+            new RuntimeException("outer", new SQLException("dup", "23505"))));
     }
     
     private static class TestDatabaseDialect extends AbstractDatabaseDialect {

@@ -1146,16 +1146,6 @@ class RpcClientTest {
         assertNotNull(rpcClient.getCurrentServer());
     }
     
-    @Test
-    void testCurrentRpcServer() throws IllegalAccessException {
-        when(serverListFactory.getCurrentServer()).thenReturn("127.0.0.1:8848");
-        serverListFactoryField.set(rpcClient, serverListFactory);
-        RpcClient.ServerInfo serverInfo = rpcClient.currentRpcServer();
-        assertEquals("127.0.0.1", serverInfo.getServerIp());
-        assertEquals(8848, serverInfo.getServerPort());
-        assertEquals("127.0.0.1:8848", serverInfo.getAddress());
-    }
-    
     private RpcClient buildTestStartClient(Function<RpcClient.ServerInfo, Connection> function) {
         return new RpcClient(rpcClientConfig, serverListFactory) {
             

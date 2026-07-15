@@ -17,9 +17,9 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements Record, Cloneable {
+public class SwitchDomain implements Serializable, Cloneable {
     
     private static final long serialVersionUID = 7619505097145337232L;
     
@@ -399,11 +399,6 @@ public class SwitchDomain implements Record, Cloneable {
     @Override
     protected SwitchDomain clone() throws CloneNotSupportedException {
         return (SwitchDomain) super.clone();
-    }
-    
-    @Override
-    public String getChecksum() {
-        return null;
     }
     
     public interface HealthParams {

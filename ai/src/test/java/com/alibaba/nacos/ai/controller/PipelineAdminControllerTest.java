@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.ai.service.pipeline.PipelineQueryService;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;

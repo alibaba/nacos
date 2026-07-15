@@ -21,9 +21,8 @@ import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 /**
  * abstract rpc server .

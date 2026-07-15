@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai.cache;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +60,7 @@ class NacosMcpServerCacheHolderTest {
     
     @BeforeEach
     void setUp() {
+        deregisterMcpServerPublisher();
         Properties properties = new Properties();
         properties.put(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL, "100");
         cacheHolder = new NacosMcpServerCacheHolder(aiGrpcClient,
@@ -67,10 +70,10 @@ class NacosMcpServerCacheHolderTest {
     @AfterEach
     void tearDown() throws NacosException {
         cacheHolder.shutdown();
-        NotifyCenter.deregisterPublisher(McpServerChangedEvent.class);
+        deregisterMcpServerPublisher();
     }
     
-    @Test()
+    @Test
     void processMcpServerDetailInfo() throws InterruptedException {
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -94,7 +97,7 @@ class NacosMcpServerCacheHolderTest {
         fail("Subscriber for McpServerChangedEvent don't be invoked.");
     }
     
-    @Test()
+    @Test
     void processMcpServerDetailInfoLatest() throws InterruptedException {
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -126,7 +129,7 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
-        cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
+        processInitialMcpServerDetailInfo(mcpServerDetailInfo);
         mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
@@ -156,12 +159,56 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
-        cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
+        processInitialMcpServerDetailInfo(mcpServerDetailInfo);
         
         MockEventSubscriber subscriber = new MockEventSubscriber();
         NotifyCenter.registerSubscriber(subscriber);
         cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
         assertEquals(mcpServerDetailInfo, cacheHolder.getMcpServer("test", "1.0.0"));
+        int retry = 0;
+        while (retry < 3) {
+            TimeUnit.MILLISECONDS.sleep(500);
+            if (subscriber.invokedMark.get()) {
+                fail("Subscriber for McpServerChangedEvent should not be invoked, but invoked.");
+            }
+            retry++;
+        }
+    }
+    
+    @Test()
+    void processMcpServerDetailInfoNoDiffWithDifferentMapOrder() throws InterruptedException {
+        Map<String, Object> originalConfig = new LinkedHashMap<>();
+        originalConfig.put("z", "last");
+        originalConfig.put("a", "first");
+        processInitialMcpServerDetailInfo(buildMcpServerDetailInfo(originalConfig));
+        
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        Map<String, Object> reorderedConfig = new LinkedHashMap<>();
+        reorderedConfig.put("a", "first");
+        reorderedConfig.put("z", "last");
+        McpServerDetailInfo reorderedDetailInfo = buildMcpServerDetailInfo(reorderedConfig);
+        cacheHolder.processMcpServerDetailInfo(reorderedDetailInfo);
+        assertEquals(reorderedDetailInfo, cacheHolder.getMcpServer("test", "1.0.0"));
+        int retry = 0;
+        while (retry < 3) {
+            TimeUnit.MILLISECONDS.sleep(500);
+            if (subscriber.invokedMark.get()) {
+                fail("Subscriber for McpServerChangedEvent should not be invoked, but invoked.");
+            }
+            retry++;
+        }
+    }
+    
+    @Test()
+    void processMcpServerDetailInfoWithSerializationException() throws InterruptedException {
+        Map<String, Object> cyclicConfig = new LinkedHashMap<>();
+        cyclicConfig.put("self", cyclicConfig);
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        
+        cacheHolder.processMcpServerDetailInfo(buildMcpServerDetailInfo(cyclicConfig));
+        
         int retry = 0;
         while (retry < 3) {
             TimeUnit.MILLISECONDS.sleep(500);
@@ -252,6 +299,42 @@ class NacosMcpServerCacheHolderTest {
         cacheHolder.removeMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         verify(aiGrpcClient, never()).queryMcpServer("test", null);
+    }
+    
+    private McpServerDetailInfo buildMcpServerDetailInfo(Map<String, Object> localServerConfig) {
+        McpServerDetailInfo result = new McpServerDetailInfo();
+        result.setName("test");
+        result.setVersionDetail(new ServerVersionDetail());
+        result.getVersionDetail().setVersion("1.0.0");
+        result.getVersionDetail().setIs_latest(true);
+        result.setLocalServerConfig(localServerConfig);
+        return result;
+    }
+    
+    private void processInitialMcpServerDetailInfo(McpServerDetailInfo detailInfo)
+        throws InterruptedException {
+        MockEventSubscriber subscriber = new MockEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        try {
+            cacheHolder.processMcpServerDetailInfo(detailInfo);
+            int retry = 0;
+            while (retry < 3) {
+                TimeUnit.MILLISECONDS.sleep(500);
+                if (subscriber.invokedMark.get()) {
+                    return;
+                }
+                retry++;
+            }
+            fail("Subscriber for initial McpServerChangedEvent don't be invoked.");
+        } finally {
+            NotifyCenter.deregisterSubscriber(subscriber);
+        }
+    }
+    
+    private static void deregisterMcpServerPublisher() {
+        if (NotifyCenter.getPublisher(McpServerChangedEvent.class) != null) {
+            NotifyCenter.deregisterPublisher(McpServerChangedEvent.class);
+        }
     }
     
     private static class MockEventSubscriber extends Subscriber<McpServerChangedEvent> {

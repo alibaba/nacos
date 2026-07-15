@@ -39,12 +39,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mock;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -85,7 +85,7 @@ class SkillAdminControllerTest {
     
     private ConfigurableEnvironment cachedEnvironment;
     
-    @Mock
+    @MockitoBean
     private SkillOperationService skillOperationService;
     
     @BeforeEach
@@ -358,7 +358,8 @@ class SkillAdminControllerTest {
             eq(true));
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/publish")
-                .param("skillName", "test-skill").param("version", "v1");
+                .param("skillName", "test-skill").param("version", "v1")
+                .param("updateLatestLabel", "false");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(skillOperationService).publish("public", "test-skill", "v1", true);
@@ -368,7 +369,7 @@ class SkillAdminControllerTest {
     void testUpdateLabelsSuccess() throws Exception {
         doNothing().when(skillOperationService).updateLabels(eq("public"), eq("test-skill"),
             any(Map.class));
-        String labelsJson = "{\"latest\":\"v2\"}";
+        String labelsJson = "{\"stable\":\"v2\"}";
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.put(SKILL_ADMIN_PATH + "/labels")
                 .param("skillName", "test-skill").param("labels", labelsJson);
@@ -420,7 +421,8 @@ class SkillAdminControllerTest {
             eq("v1"), eq(true));
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/force-publish")
-                .param("skillName", "test-skill").param("version", "v1");
+                .param("skillName", "test-skill").param("version", "v1")
+                .param("updateLatestLabel", "false");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(skillOperationService).forcePublish("public", "test-skill", "v1", true);

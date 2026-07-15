@@ -175,8 +175,7 @@ public class A2aServerOperationService {
                     .removeIf(versionDetail -> versionDetail.getVersion().equals(version));
                 
                 if (isLatestVersion) {
-                    agentCardVersionInfo.setLatestPublishedVersion(null);
-                    agentCardVersionInfo.setVersion(null);
+                    electLatestAgentVersion(agentCardVersionInfo);
                 }
                 
                 ConfigForm updateForm =
@@ -201,6 +200,21 @@ public class A2aServerOperationService {
             StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+    
+    private void electLatestAgentVersion(AgentCardVersionInfo agentCardVersionInfo) {
+        List<AgentVersionDetail> versionDetails = agentCardVersionInfo.getVersionDetails();
+        if (versionDetails == null || versionDetails.isEmpty()) {
+            agentCardVersionInfo.setLatestPublishedVersion(null);
+            agentCardVersionInfo.setVersion(null);
+            return;
+        }
+        AgentVersionDetail latestVersion = versionDetails.get(versionDetails.size() - 1);
+        agentCardVersionInfo.setLatestPublishedVersion(latestVersion.getVersion());
+        agentCardVersionInfo.setVersion(latestVersion.getVersion());
+        versionDetails.forEach(
+            versionDetail -> versionDetail.setLatest(StringUtils.equals(versionDetail.getVersion(),
+                latestVersion.getVersion())));
     }
     
     /**
@@ -289,14 +303,16 @@ public class A2aServerOperationService {
         String search, int pageNo,
         int pageSize) throws NacosException {
         
+        String normalizedAgentName = agentName == null ? StringUtils.EMPTY : agentName;
         String dataId;
-        if (StringUtils.isEmpty(agentName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
+        if (StringUtils.isEmpty(normalizedAgentName)
+            || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
             search = Constants.A2A.SEARCH_BLUR;
-            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(agentName)
+            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(normalizedAgentName)
                 + Constants.ALL_PATTERN;
         } else {
             search = Constants.A2A.SEARCH_ACCURATE;
-            dataId = agentIdCodecHolder.encode(agentName);
+            dataId = agentIdCodecHolder.encode(normalizedAgentName);
         }
         
         Page<ConfigInfo> configInfoPage =
@@ -389,7 +405,8 @@ public class A2aServerOperationService {
         if (AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE.equalsIgnoreCase(registrationType)) {
             injectEndpoint(result, namespaceId);
         }
-        if (agentCardVersionInfo.getLatestPublishedVersion().equals(result.getVersion())) {
+        if (StringUtils.equals(agentCardVersionInfo.getLatestPublishedVersion(),
+            result.getVersion())) {
             result.setLatestVersion(true);
         }
         return result;

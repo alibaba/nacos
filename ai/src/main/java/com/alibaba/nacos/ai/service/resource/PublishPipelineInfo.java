@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 
 import java.util.List;
 

@@ -125,26 +125,6 @@ public final class ServiceUtil {
     }
     
     /**
-     * Select healthy instance of service info.
-     *
-     * @param serviceInfo original service info
-     * @return new service info
-     */
-    public static ServiceInfo selectHealthyInstances(ServiceInfo serviceInfo) {
-        return selectInstances(serviceInfo, true, false);
-    }
-    
-    /**
-     * Select healthy instance of service info.
-     *
-     * @param serviceInfo original service info
-     * @return new service info
-     */
-    public static ServiceInfo selectEnabledInstances(ServiceInfo serviceInfo) {
-        return selectInstances(serviceInfo, false, true);
-    }
-    
-    /**
      * Select instance of service info.
      *
      * @param serviceInfo original service info

@@ -39,9 +39,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Properties;
@@ -64,20 +64,20 @@ class ConfigChangeAspectTest {
     
     ConfigChangeConfigs configChangeConfigs;
     
-    @Mock
+    @MockitoBean
     ConfigChangePluginService configChangePluginService;
     
     MockedStatic<PropertiesUtil> propertiesStatic;
     
     MockedStatic<RequestUtil> requestUtilMockedStatic;
     
-    @Mock
+    @MockitoBean
     private ProceedingJoinPoint pjp;
     
-    @Mock
+    @MockitoBean
     private ConfigForm configForm;
     
-    @Mock
+    @MockitoBean
     private ConfigRequestInfo configRequestInfo;
     
     @BeforeEach
@@ -233,6 +233,7 @@ class ConfigChangeAspectTest {
         
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
         
+        verify(configChangePluginService, Mockito.timeout(1000).times(1)).execute(any(), any());
         assertEquals(false, result);
     }
     

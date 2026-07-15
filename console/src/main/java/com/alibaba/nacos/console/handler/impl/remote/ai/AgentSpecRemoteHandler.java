@@ -136,13 +136,13 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().agentSpec().publish(form.getNamespaceId(),
-            form.getAgentSpecName(), form.getVersion(), form.getUpdateLatestLabel());
+            form.getAgentSpecName(), form.getVersion(), true);
     }
     
     @Override
     public void forcePublish(AgentSpecPublishForm form) throws NacosException {
         clientHolder.getAiMaintainerService().agentSpec().forcePublish(form.getNamespaceId(),
-            form.getAgentSpecName(), form.getVersion(), form.getUpdateLatestLabel());
+            form.getAgentSpecName(), form.getVersion(), true);
     }
     
     @Override

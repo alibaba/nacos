@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -72,6 +73,11 @@ class GrpcUtilsTest {
         request.putHeader("h2", "v2");
         request.putHeader("h3", "v3");
         return request;
+    }
+    
+    @Test
+    void testConstructor() {
+        assertNotNull(new GrpcUtils());
     }
     
     @Test

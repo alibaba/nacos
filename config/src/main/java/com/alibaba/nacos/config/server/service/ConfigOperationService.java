@@ -68,16 +68,12 @@ public class ConfigOperationService {
     
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    private ConfigMigrateService configMigrateService;
-    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
     public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
-        ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ConfigMigrateService configMigrateService) {
+        ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
-        this.configMigrateService = configMigrateService;
     }
     
     /**
@@ -107,10 +103,7 @@ public class ConfigOperationService {
             configForm.setGrayName(BetaGrayRule.TYPE_BETA);
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
             configForm.setGrayVersion(BetaGrayRule.VERSION);
-            configMigrateService.persistBeta(configForm, configInfo, configRequestInfo);
             configForm.setGrayPriority(Integer.MAX_VALUE);
-            configMigrateService.publishConfigGrayMigrate(BetaGrayRule.TYPE_BETA, configForm,
-                configRequestInfo);
             publishConfigGray(BetaGrayRule.TYPE_BETA, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
@@ -120,17 +113,11 @@ public class ConfigOperationService {
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
             configForm.setGrayPriority(Integer.MAX_VALUE - 1);
-            configMigrateService.persistTagv1(configForm, configInfo, configRequestInfo);
-            configMigrateService.publishConfigGrayMigrate(TagGrayRule.TYPE_TAG, configForm,
-                configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
         
         ConfigOperateResult configOperateResult;
-        
-        configMigrateService.publishConfigMigrate(configForm, configRequestInfo,
-            configForm.getEncryptedDataKey());
         
         //formal publish
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
@@ -313,15 +300,9 @@ public class ConfigOperationService {
         if (StringUtils.isBlank(grayName)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp,
                 srcUser);
-            configMigrateService.removeConfigInfoMigrate(dataId, group, namespaceId, clientIp,
-                srcUser);
         } else {
             persistEvent = ConfigTraceService.PERSISTENCE_EVENT + "-" + grayName;
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, grayName,
-                clientIp, srcUser);
-            configMigrateService.deleteConfigGrayV1(dataId, group, namespaceId, grayName, clientIp,
-                srcUser);
-            configMigrateService.removeConfigInfoGrayMigrate(dataId, group, namespaceId, grayName,
                 clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();

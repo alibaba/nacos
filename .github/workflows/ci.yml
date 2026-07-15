@@ -12,9 +12,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
     timeout-minutes: 60
     steps:
       - name: "Cache Maven Repos"

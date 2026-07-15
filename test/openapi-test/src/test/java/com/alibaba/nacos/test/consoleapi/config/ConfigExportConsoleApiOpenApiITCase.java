@@ -31,6 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: export by config id returns a downloadable zip containing the config content entry and
  *     metadata yaml entry.</li>
  *     <li>Boundary/validation: exported config ids are serialized as query parameters, omitted namespace uses public,
- *     and invalid namespace values are rejected when ids are present.</li>
+ *     ids outside the requested namespace are skipped, and invalid namespace values are rejected when ids are
+ *     present.</li>
  *     <li>Exception/error handling: namespace validation returns HTTP 400 with a v3 {@code Result} body instead of
  *     HTTP 500. Export without {@code ids} is not asserted because the current endpoint dereferences a null id list
  *     before validation.</li>
@@ -80,6 +82,28 @@ public class ConfigExportConsoleApiOpenApiITCase extends ConfigConsoleApiBaseITC
         assertError(getRaw(CONSOLE_CONFIG_EXPORT_PATH, Query.newInstance().addParam("ids", "1")
                 .addParam("namespaceId", "invalid namespace")), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
+    }
+
+    @Test
+    public void testExportByIdSkipsConfigsOutsideNamespace() throws Exception {
+        String namespaceId = randomNamespaceId("export-isolation");
+        createNamespace(namespaceId);
+        addCleanup(() -> deleteNamespaceQuietly(namespaceId));
+        String dataId = randomDataId("export-isolation");
+        String groupName = randomGroupName("export-isolation");
+        String content = "console-export-isolation-content";
+        publishConfig(dataId, groupName, namespaceId, content, ConfigType.TEXT.getType(), "console export desc", "");
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, namespaceId));
+        JsonNode config = queryConfig(dataId, groupName, namespaceId).get("data");
+
+        ByteResponse response = getRawBytes(CONSOLE_CONFIG_EXPORT_PATH, Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("ids", config.get("id").asText()));
+
+        assertEquals(200, response.code(), response.contentDisposition());
+        Map<String, String> entries = unzip(response.body());
+        String configEntry = groupName + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + dataId;
+        assertFalse(entries.containsKey(configEntry), entries.toString());
+        assertFalse(entries.values().stream().anyMatch(content::equals), entries.toString());
     }
 
     private Map<String, String> unzip(byte[] body) throws Exception {

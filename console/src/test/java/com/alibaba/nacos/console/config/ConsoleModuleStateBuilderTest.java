@@ -21,6 +21,8 @@ import com.alibaba.nacos.sys.module.ModuleState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -51,6 +53,7 @@ class ConsoleModuleStateBuilderTest {
     void build() {
         ModuleState state = builder.build();
         assertTrue((Boolean) state.getStates().get("console_ui_enabled"));
+        assertEquals("next", state.getStates().get("console_ui_default"));
         assertTrue((Boolean) state.getStates().get("ai_enabled"));
         assertEquals(ConsoleModuleStateBuilder.CONSOLE_MODULE, state.getModuleName());
         MockEnvironment environment = new MockEnvironment();
@@ -64,8 +67,12 @@ class ConsoleModuleStateBuilderTest {
     
     @Test
     void buildWithException() {
-        EnvUtil.setEnvironment(null);
-        ModuleState state = builder.build();
-        assertTrue(state.getStates().isEmpty());
+        try (MockedStatic<EnvUtil> mockedEnvUtil = Mockito.mockStatic(EnvUtil.class)) {
+            mockedEnvUtil.when(() -> EnvUtil.getProperty("nacos.console.ui.enabled",
+                Boolean.class, true)).thenThrow(new IllegalStateException("Mock exception"));
+            ModuleState state = builder.build();
+            assertEquals(ConsoleModuleStateBuilder.CONSOLE_MODULE, state.getModuleName());
+            assertTrue(state.getStates().isEmpty());
+        }
     }
 }

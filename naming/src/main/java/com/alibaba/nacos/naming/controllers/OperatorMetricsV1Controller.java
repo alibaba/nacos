@@ -18,15 +18,16 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Minimal v1 compatibility for GET /v1/ns/operator/metrics (onlyStatus=true only). Loaded only when api-legacy-adapter
@@ -51,8 +52,8 @@ public class OperatorMetricsV1Controller {
     @GetMapping("/metrics")
     @Compatibility(apiType = ApiType.OPEN_API,
         alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
-    public ObjectNode metrics() {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+    public Map<String, String> metrics() {
+        Map<String, String> result = new HashMap<>();
         result.put("status", ServerStatus.UP.name());
         return result;
     }

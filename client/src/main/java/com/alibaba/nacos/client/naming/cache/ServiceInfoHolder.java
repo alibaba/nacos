@@ -29,7 +29,7 @@ import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
@@ -53,6 +53,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private final InstancesDiffer instancesDiffer;
     
+    private final ServiceInfoDiskCacheRefresher serviceInfoDiskCacheRefresher;
+    
     private String cacheDir;
     
     private String notifierEventScope;
@@ -69,6 +71,7 @@ public class ServiceInfoHolder implements Closeable {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
         this.failoverReactor = new FailoverReactor(this, notifierEventScope);
+        this.serviceInfoDiskCacheRefresher = new ServiceInfoDiskCacheRefresher();
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
         this.enableClientMetrics = Boolean.parseBoolean(
@@ -112,7 +115,7 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(String json) {
-        ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
+        ServiceInfo serviceInfo = JsonUtils.toObj(json, ServiceInfo.class);
         serviceInfo.setJsonFromServer(json);
         return processServiceInfo(serviceInfo);
     }
@@ -127,7 +130,7 @@ public class ServiceInfoHolder implements Closeable {
         String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
-                JacksonUtils.toJson(serviceInfo.getHosts()));
+                JsonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
         ServiceInfo oldService = serviceInfoMap.get(serviceKey);
@@ -142,7 +145,7 @@ public class ServiceInfoHolder implements Closeable {
         serviceInfoMap.put(serviceKey, serviceInfo);
         InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
-            serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
+            serviceInfo.setJsonFromServer(JsonUtils.toJson(serviceInfo));
         }
         
         if (enableClientMetrics) {
@@ -156,7 +159,7 @@ public class ServiceInfoHolder implements Closeable {
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(),
                 serviceKey,
-                JacksonUtils.toJson(serviceInfo.getHosts()));
+                JsonUtils.toJson(serviceInfo.getHosts()));
             
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
@@ -164,9 +167,20 @@ public class ServiceInfoHolder implements Closeable {
                         serviceInfo.getGroupName(),
                         serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
-            DiskCache.write(serviceInfo, cacheDir);
+            publishDiskCacheRefreshEvent(serviceKey, serviceInfo);
         }
         return serviceInfo;
+    }
+    
+    /**
+     * Publish a disk cache refresh event for async persistence.
+     *
+     * @param serviceKey service key without clusters
+     * @param serviceInfo latest service info snapshot
+     */
+    private void publishDiskCacheRefreshEvent(String serviceKey, ServiceInfo serviceInfo) {
+        serviceInfoDiskCacheRefresher.publishEvent(
+            new ServiceInfoDiskCacheRefreshEvent(serviceKey, serviceInfo, cacheDir));
     }
     
     private boolean isEmptyOrErrorPush(ServiceInfo serviceInfo) {
@@ -195,6 +209,7 @@ public class ServiceInfoHolder implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         failoverReactor.shutdown();
+        serviceInfoDiskCacheRefresher.shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

@@ -37,12 +37,14 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -320,8 +322,8 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public ObjectNode getResponsibleServer4Client(String ip, String port) {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+    public Map<String, Object> getResponsibleServer4Client(String ip, String port) {
+        Map<String, Object> result = new HashMap<>();
         String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
         

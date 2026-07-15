@@ -63,6 +63,26 @@ shared runtime/storage state, require publish-pipeline plugin data, require an
 external LLM provider, or depend on auth-enabled bootstrap state that the
 default standalone IT profile does not enable.
 
+Plugin management API IT covers detail metadata, request validation, not-found
+responses, rejection of config updates for non-configurable plugins, and the
+built-in `auth:nacos` configuration contract. The latter verifies its five
+definitions, legacy aliases, effect modes, effective values, source metadata,
+and API-side secret masking. Runtime mutation remains partial to avoid carrying
+persisted plugin state into later SDK suites in the shared standalone process;
+full-map replacement, source fallback, effect mode checks, same-source sensitive
+value preservation, and retained-source apply failure/retry are covered in core
+unit tests.
+
+Config scenario rows cover the current 3.3 Config model. Blank or omitted
+namespace inputs are expected to use `public`, and beta/tag gray behavior is
+verified through the current gray model. Batch delete and export-by-id scenarios
+verify that storage IDs remain scoped by the requested namespace, and clone
+scenarios verify that storage IDs are resolved only within the requested source
+namespace before writing to the target namespace. Removed pre-3.0 compatibility
+migration paths, including empty-tenant storage migration and legacy
+`config_info_beta` / `config_info_tag` old-table migration, are not counted as
+missing OpenAPI IT coverage.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |

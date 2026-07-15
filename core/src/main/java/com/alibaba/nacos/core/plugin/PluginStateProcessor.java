@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.slf4j.Logger;
@@ -113,6 +114,11 @@ public class PluginStateProcessor extends RequestProcessor4CP {
                 e);
             String errorMessage = String.format("[%s] %s", context,
                 e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+            if (e instanceof IllegalArgumentException) {
+                errorMessage = PluginStateOperation.INVALID_PARAM_ERROR_PREFIX + errorMessage;
+            } else if (e instanceof PluginConfigApplyException) {
+                errorMessage = PluginStateOperation.CONFIG_APPLY_ERROR_PREFIX + errorMessage;
+            }
             return Response.newBuilder()
                 .setSuccess(false)
                 .setErrMsg(errorMessage)
@@ -155,9 +161,6 @@ public class PluginStateProcessor extends RequestProcessor4CP {
         
         // Apply to in-memory config
         pluginManager.applyConfigChange(pluginId, config);
-        
-        // Persist to local storage
-        persistence.saveConfig(pluginId, config);
         
         LOGGER.info("[PluginStateProcessor] Applied config update: {}", pluginId);
     }

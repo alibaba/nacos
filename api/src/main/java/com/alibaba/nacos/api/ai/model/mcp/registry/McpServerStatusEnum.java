@@ -51,18 +51,4 @@ public enum McpServerStatusEnum {
         return name;
     }
     
-    /**
-     * parse string status to enum.
-     * return null if status is not valid.
-     * @param status status.
-     * @return McpServerStatusEnum.
-     */
-    public static McpServerStatusEnum parseStatus(String status) {
-        for (McpServerStatusEnum value : values()) {
-            if (value.getName().equals(status)) {
-                return value;
-            }
-        }
-        return null;
-    }
 }

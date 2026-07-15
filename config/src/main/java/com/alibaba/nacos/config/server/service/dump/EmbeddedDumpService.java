@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -35,10 +34,10 @@ import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbedded
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -77,9 +76,9 @@ public class EmbeddedDumpService extends DumpService {
         HistoryConfigInfoPersistService historyConfigInfoPersistService,
         ConfigInfoGrayPersistService configInfoGrayPersistService,
         ServerMemberManager memberManager,
-        ProtocolManager protocolManager, ConfigMigrateService configMigrateService) {
+        ProtocolManager protocolManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-            configInfoGrayPersistService, memberManager, configMigrateService);
+            configInfoGrayPersistService, memberManager);
         this.protocolManager = protocolManager;
     }
     

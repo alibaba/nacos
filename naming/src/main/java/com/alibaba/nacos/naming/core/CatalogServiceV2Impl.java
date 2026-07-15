@@ -60,8 +60,6 @@ public class CatalogServiceV2Impl implements CatalogService {
     
     private final NamingMetadataManager metadataManager;
     
-    private static final int DEFAULT_PORT = 80;
-    
     public CatalogServiceV2Impl(ServiceStorage serviceStorage,
         NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;

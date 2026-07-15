@@ -176,14 +176,14 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl
         context.putWhereParameter(FieldConstant.GROUP_ID, group);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
         
-        String sqlCountRows =
-            historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
+        MapperResult sqlCountRows = new MapperResult(
+            historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id")),
+            Arrays.asList(dataId, group, tenantTmp));
         MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(),
-            sqlFetchRows.getParamList().toArray(), pageNo,
-            pageSize, HISTORY_LIST_ROW_MAPPER);
+        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, pageNo, pageSize,
+            HISTORY_LIST_ROW_MAPPER);
     }
     
     @Override

@@ -33,10 +33,10 @@ import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckReques
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

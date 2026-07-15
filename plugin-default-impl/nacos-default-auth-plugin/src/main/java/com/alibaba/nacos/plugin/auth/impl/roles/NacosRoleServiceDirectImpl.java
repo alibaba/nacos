@@ -17,9 +17,9 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
@@ -40,7 +40,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     
     private static final int DEFAULT_PAGE_NO = 1;
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthPluginConfigProvider configProvider;
     
     private final RolePersistService rolePersistService;
     
@@ -48,11 +48,10 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     
     private final PermissionPersistService permissionPersistService;
     
-    public NacosRoleServiceDirectImpl(AuthConfigs authConfigs,
+    public NacosRoleServiceDirectImpl(NacosAuthPluginConfigProvider configProvider,
         RolePersistService rolePersistService,
         NacosUserService userDetailsService, PermissionPersistService permissionPersistService) {
-        super(authConfigs);
-        this.authConfigs = authConfigs;
+        this.configProvider = configProvider;
         this.rolePersistService = rolePersistService;
         this.userDetailsService = userDetailsService;
         this.permissionPersistService = permissionPersistService;
@@ -61,7 +60,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     @Override
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = getCachedRoleInfoMap().get(username);
-        if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
+        if (!configProvider.getConfig().isCachingEnabled() || roleInfoList == null) {
             Page<RoleInfo> roleInfoPage =
                 getRoles(username, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
@@ -98,7 +97,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     @Override
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = getCachedPermissionInfoMap().get(role);
-        if (!authConfigs.isCachingEnabled() || permissionInfoList == null) {
+        if (!configProvider.getConfig().isCachingEnabled() || permissionInfoList == null) {
             Page<PermissionInfo> permissionInfoPage =
                 getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
@@ -158,7 +157,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         
         rolePersistService.addRole(AuthConstants.GLOBAL_ADMIN_ROLE, username);
         getCachedRoleSet().add(AuthConstants.GLOBAL_ADMIN_ROLE);
-        authConfigs.setHasGlobalAdminRole(true);
+        markGlobalAdminRolePresent();
     }
     
     @Override

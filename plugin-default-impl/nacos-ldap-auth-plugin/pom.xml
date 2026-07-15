@@ -46,8 +46,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.ldap</groupId>
-            <artifactId>spring-ldap-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-ldap</artifactId>
         </dependency>
 
         <dependency>

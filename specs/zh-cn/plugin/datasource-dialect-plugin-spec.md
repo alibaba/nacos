@@ -21,9 +21,8 @@
 数据源方言插件用于把数据库相关 SQL 行为从 Nacos 持久化逻辑中隔离出来。它覆盖 SQL 方言
 函数、分页、生成主键，以及 Nacos 表对应的 mapper 实现。
 
-这是互斥选择插件。当前活跃方言由 SQL platform 配置选择，目前为
-`spring.sql.init.platform`，并兼容旧配置 `spring.datasource.platform`。通用生命周期和
-状态规则由 [Nacos 插件化规范](plugin-spec.md) 定义，内置数据库族由
+这是互斥选择插件。初始活跃方言由 `spring.sql.init.platform` 选择。通用生命周期和状态
+规则由 [Nacos 插件化规范](plugin-spec.md) 定义，内置数据库族由
 [默认数据源方言插件实现规范](default-datasource-dialect-plugin-spec.md) 定义。
 
 该插件的存在原因是：Nacos 持久化需要保持同一套逻辑 schema 和 repository 契约，同时允许
@@ -65,6 +64,17 @@ dialect 和另一个数据库的 mapper 是无效行为。
 | `getPageLastNum(page, pageSize)` | 返回第二个分页参数。 |
 | `getReturnPrimaryKeys()` | 返回生成主键列。 |
 | `getFunction(functionName)` | 将逻辑函数名映射到方言 SQL 函数。 |
+| `isDuplicateKeyException(throwable)` | 判定数据源抛出的异常是否为唯一键重复冲突。默认识别异常因果链中的 Spring `DuplicateKeyException`，方言可重写以实现驱动级别的判定。 |
+
+`isDuplicateKeyException(throwable)` 是 config 仓储判断插入失败是否为唯一键重复冲突的
+统一入口。默认实现会遍历异常因果链，当发现 Spring 的 `DuplicateKeyException` 时返回
+`true`，并通过类名匹配以保证数据源插件模块不引入 Spring 依赖。这复现了此前与数据库无关
+的分类作为安全基线，并刻意不将裸的厂商 SQLState（如 `23505`）本身当作重复。
+
+PostgreSQL、MySQL、Derby、Oracle 等方言可以重写该方法，在标准 Spring 异常转换不够精确
+时进一步检查原始驱动异常（SQLState 或厂商错误码），通常会通过
+`DatabaseDialect.super.isDuplicateKeyException(throwable)` 调用默认实现并与自身判定组合。
+分类必须保持保守——非重复的完整性约束失败不得被误报为重复。
 
 表级 mapper 插件实现 `com.alibaba.nacos.plugin.datasource.mapper.Mapper`，用于提供具体表的
 SQL。一个数据库族的方言和 mapper 实现必须一起打包和加载。
@@ -72,10 +82,13 @@ SQL。一个数据库族的方言和 mapper 实现必须一起打包和加载。
 Mapper 实现必须提供 repository 操作需要的基础 CRUD SQL 和表级专用 SQL。当前 mapper 族
 覆盖：
 
-- 配置数据、灰度/beta 数据、标签和历史；
+- 当前配置数据、灰度数据、标签和历史；
 - 命名空间和容量记录；
-- 配置迁移查询；
 - AI 资源元数据和版本记录。
+
+从 Nacos 3.3 版本线开始，数据源方言插件不再预期提供空 tenant/default namespace 重复记录或
+legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部署仍需要这些迁移，应作为升级
+前置动作完成，而不是服务端运行时 mapper 的职责。
 
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
 缺少数据源或表 mapper 是启动或操作错误，而不是空结果。
@@ -84,6 +97,9 @@ Mapper 实现必须提供 repository 操作需要的基础 CRUD SQL 和表级专
 
 核心插件管理器以 `datasource-dialect` 类型暴露该插件。只有配置选中的方言默认启用。服务端
 运行所依赖的内置关键方言在使用期间不能被禁用。
+
+SQL platform 配置只提供启动初始选择。统一插件持久化状态加载后优先级更高；后续选择变更
+应通过插件管理完成，而不是修改该启动配置。
 
 如果请求的方言被禁用，启动或持久化操作必须显式失败。如果请求的方言缺失，当前 manager
 会查找其他已启用方言并记录 fallback。该 fallback 属于兼容行为；新部署应明确配置受支持的
@@ -101,11 +117,8 @@ SQL platform 通过以下配置选择：
 spring.sql.init.platform=${databaseType}
 ```
 
-为了兼容旧部署，也支持：
-
-```properties
-spring.datasource.platform=${databaseType}
-```
+已移除的 `spring.datasource.platform` 不再读取。仍使用该配置的部署必须在升级前迁移到
+`spring.sql.init.platform`。
 
 数据源连接属性仍由 Nacos 持久化配置和数据库驱动管理。方言插件不得重新解释无关的数据库
 连接配置。

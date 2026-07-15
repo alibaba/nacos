@@ -52,9 +52,7 @@ class DefaultConstructorCoverageTest {
     
     @Test
     void testDumpAllTaskMergeMethods() throws Exception {
-        invokeMerge(BASE + "service.dump.task.DumpAllBetaTask");
         invokeMerge(BASE + "service.dump.task.DumpAllGrayTask");
-        invokeMerge(BASE + "service.dump.task.DumpAllTagTask");
         
         Object dumpAllTask = Class.forName(BASE + "service.dump.task.DumpAllTask")
             .getDeclaredConstructor(boolean.class).newInstance(true);
@@ -74,9 +72,7 @@ class DefaultConstructorCoverageTest {
             BASE + "constant.Constants",
             BASE + "model.ConfigAdvanceInfo",
             BASE + "model.ConfigAllInfo",
-            BASE + "model.ConfigInfoBetaWrapper",
             BASE + "model.ConfigInfoGrayWrapper",
-            BASE + "model.ConfigInfoTagWrapper",
             BASE + "model.ConfigInfoWrapper",
             BASE + "model.gray.GrayRuleManager",
             BASE + "monitor.MetricsMonitor",
@@ -87,29 +83,23 @@ class DefaultConstructorCoverageTest {
             BASE + "service.SwitchService",
             BASE + "service.dump.disk.ConfigDiskServiceFactory",
             BASE + "service.dump.HistoryConfigCleanerManager",
-            BASE + "service.dump.task.DumpAllBetaTask",
             BASE + "service.dump.task.DumpAllGrayTask",
-            BASE + "service.dump.task.DumpAllTagTask",
             BASE + "service.query.handler.ConfigContentTypeHandler",
             BASE + "service.sql.EmbeddedStorageContextUtils",
             BASE + "service.sql.ExternalStorageUtils",
             BASE + "utils.AppNameUtils",
             BASE + "utils.ConfigExecutor",
             BASE + "utils.ConfigTagUtil",
-            BASE + "utils.ContentUtils",
             BASE + "utils.GroupKey",
             BASE + "utils.GroupKey2",
             BASE + "utils.LogUtil",
             BASE + "utils.MD5Util",
             BASE + "utils.ParamUtils",
             BASE + "utils.Protocol",
-            BASE + "utils.RegexParser",
             BASE + "utils.RequestUtil",
             BASE + "utils.ResponseUtil",
             BASE + "utils.SystemConfig",
-            BASE + "utils.TimeUtils",
-            BASE + "utils.TraceLogUtil",
-            BASE + "utils.UrlAnalysisUtils"
+            BASE + "utils.TimeUtils"
         };
     }
 }

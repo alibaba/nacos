@@ -28,7 +28,6 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -36,6 +35,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,7 +50,6 @@ class FilePipelineConfigProviderTest {
     
     private static List<List<NodeTestData>> sampleValidNodeConfigs() {
         List<List<NodeTestData>> lists = new ArrayList<>();
-        lists.add(Collections.emptyList());
         Properties p1 = new Properties();
         p1.setProperty("k1", "v1");
         lists.add(Collections.singletonList(new NodeTestData("scanner", "t", p1)));
@@ -61,6 +60,40 @@ class FilePipelineConfigProviderTest {
             new NodeTestData("alpha", "x", p2),
             new NodeTestData("beta", "y", new Properties())));
         return lists;
+    }
+    
+    @Test
+    void shouldDisablePipelineWhenTypeUnset() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+        
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+            
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+            
+            assertFalse(config.isEnabled());
+            assertTrue(config.getNodes().isEmpty());
+        }
+    }
+    
+    @Test
+    void explicitDisableShouldTurnOffPipeline() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "false");
+        
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+            
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+            
+            assertFalse(config.isEnabled());
+            assertTrue(config.getNodes().isEmpty());
+        }
     }
     
     private static List<ErrorScenario> sampleErrorScenarios() {
@@ -101,8 +134,6 @@ class FilePipelineConfigProviderTest {
                     
                     FilePipelineConfigProvider provider = createFreshInstance();
                     PipelineConfig config = provider.getConfig();
-                    List<NodeTestData> expectedNodes = new ArrayList<>(nodeConfigs);
-                    expectedNodes.sort(Comparator.comparing(node -> node.pipelineId));
                     
                     assertNotNull(config, "Parsed config should not be null");
                     assertEquals(enabled && !nodeConfigs.isEmpty(), config.isEnabled(),
@@ -112,7 +143,7 @@ class FilePipelineConfigProviderTest {
                         "Number of parsed nodes should match input");
                     
                     for (int i = 0; i < config.getNodes().size(); i++) {
-                        NodeTestData expected = expectedNodes.get(i);
+                        NodeTestData expected = nodeConfigs.get(i);
                         PipelineNodeConfig actual = config.getNodes().get(i);
                         assertEquals(expected.pipelineId, actual.getPipelineId(),
                             "Node pipelineId at index " + i + " should match");
@@ -163,11 +194,10 @@ class FilePipelineConfigProviderTest {
     }
     
     @Test
-    void subPropertyEnabledShouldNotBeTreatedAsNodeSwitch() {
+    void subPropertyCommandShouldBePreserved() {
         Properties envProperties = new Properties();
         envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
         envProperties.setProperty("nacos.plugin.ai-pipeline.type", "skill-scanner");
-        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.enabled", "true");
         envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.command",
             "/tmp/skill-scanner");
         try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
@@ -183,10 +213,32 @@ class FilePipelineConfigProviderTest {
             PipelineNodeConfig node = config.getNodes().get(0);
             assertEquals("skill-scanner", node.getPipelineId(),
                 "Node id should match configured type");
-            assertEquals("true", node.getProperties().getProperty("enabled"),
-                "Type sub-property enabled should be preserved as node property");
             assertEquals("/tmp/skill-scanner", node.getProperties().getProperty("command"),
                 "Type sub-property command should be preserved");
+        }
+    }
+    
+    @Test
+    void nodeOrderShouldBeParsedFromSubProperty() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.type",
+            "skill-spector,skill-scanner,broken");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-spector.order", "20");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.order", "-10");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.broken.order", "invalid");
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+            
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+            
+            assertEquals(20, findNode(config, "skill-spector").getOrder());
+            assertEquals(-10, findNode(config, "skill-scanner").getOrder());
+            assertNull(findNode(config, "broken").getOrder());
+            assertEquals("20", findNode(config, "skill-spector").getProperties()
+                .getProperty("order"));
         }
     }
     
@@ -200,6 +252,13 @@ class FilePipelineConfigProviderTest {
             throw new RuntimeException(
                 "Failed to create FilePipelineConfigProvider instance via reflection", e);
         }
+    }
+    
+    private PipelineNodeConfig findNode(PipelineConfig config, String pipelineId) {
+        return config.getNodes().stream()
+            .filter(node -> pipelineId.equals(node.getPipelineId()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing node: " + pipelineId));
     }
     
     static class ErrorScenario {

@@ -32,9 +32,13 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
+
+import java.util.List;
 
 /**
  * Skill handler.
@@ -99,6 +103,16 @@ public interface SkillHandler {
      * @throws NacosException if upload failed
      */
     String uploadSkillFromZip(SkillUploadRequest request) throws NacosException;
+    
+    /**
+     * Batch precheck multiple skill uploads.
+     *
+     * @param requests list of precheck requests
+     * @return list of precheck results
+     * @throws NacosException if precheck failed
+     */
+    List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException;
     
     /**
      * Batch upload multiple skills from a single zip file containing multiple skill subdirectories.

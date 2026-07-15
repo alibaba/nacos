@@ -49,6 +49,8 @@ import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
+import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -60,6 +62,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -82,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -235,7 +239,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                return addConfigInfoWithUpdateOnDuplicateKey(srcIp, srcUser, configInfo,
+                    configAdvanceInfo);
             } else {
                 return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
@@ -257,7 +262,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                return addConfigInfoWithConflictOnDuplicateKey(srcIp, srcUser, configInfo,
+                    configAdvanceInfo);
             } else {
                 return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
@@ -267,6 +273,81 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 exception.getMessage(),
                 exception);
             throw exception;
+        }
+    }
+    
+    private ConfigOperateResult addConfigInfoWithUpdateOnDuplicateKey(String srcIp, String srcUser,
+        ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
+        try {
+            return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+        } catch (DataAccessException exception) {
+            if (isDuplicateKeyException(exception)) {
+                LogUtil.DEFAULT_LOG.warn(
+                    "[insert-or-update] config already exists when adding config, try to update. "
+                        + "dataId: {}, group: {}, tenant: {}, msg: {}",
+                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                    exception.getMessage());
+                return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+            }
+            throw exception;
+        }
+    }
+    
+    private ConfigOperateResult addConfigInfoWithConflictOnDuplicateKey(String srcIp,
+        String srcUser,
+        ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
+        try {
+            return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+        } catch (DataAccessException exception) {
+            if (isDuplicateKeyException(exception)) {
+                LogUtil.DEFAULT_LOG.warn(
+                    "[insert-or-update-cas] config already exists when adding config. "
+                        + "dataId: {}, group: {}, tenant: {}, msg: {}",
+                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                    exception.getMessage());
+                return new ConfigOperateResult(false);
+            }
+            throw exception;
+        }
+    }
+    
+    private boolean isDuplicateKeyException(Throwable exception) {
+        DatabaseDialect dialect = resolveDatabaseDialect();
+        if (dialect != null) {
+            return dialect.isDuplicateKeyException(exception);
+        }
+        // Fallback when no dialect can be resolved (for example before datasource plugins are
+        // loaded): keep the database-agnostic Spring DuplicateKeyException classification, which is
+        // exactly what the active dialect applies as its default behavior.
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof DuplicateKeyException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+    
+    /**
+     * Resolve the active datasource dialect for duplicate-key classification.
+     *
+     * <p>All duplicate-key judgement is delegated to {@link DatabaseDialect#isDuplicateKeyException},
+     * whose default already recognizes Spring {@link DuplicateKeyException} and which vendor dialects
+     * may extend with driver-specific detection. Returns {@code null} when no dialect can be resolved
+     * (for example before datasource plugins are loaded), so the caller falls back to the
+     * database-agnostic Spring classification.
+     *
+     * @return the active dialect, or {@code null} when it cannot be resolved
+     */
+    DatabaseDialect resolveDatabaseDialect() {
+        try {
+            return DatabaseDialectManager.getInstance()
+                .getDialect(dataSourceService.getDataSourceType());
+        } catch (IllegalStateException stateException) {
+            LogUtil.DEFAULT_LOG.warn("[duplicate-key] cannot resolve datasource dialect, fallback "
+                + "to spring-standard classification, msg: {}", stateException.getMessage());
+            return null;
         }
     }
     
@@ -1143,6 +1224,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
+    @Deprecated
     public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group,
         final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1247,6 +1329,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1267,6 +1352,12 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             if (CollectionUtils.isEmpty(configAllInfos)) {
                 return configAllInfos;
+            }
+            if (!CollectionUtils.isEmpty(ids) && tenant != null) {
+                configAllInfos = configAllInfos.stream()
+                    .filter(configAllInfo -> StringUtils.equals(tenantTmp,
+                        configAllInfo.getTenant()))
+                    .collect(Collectors.toList());
             }
             for (ConfigAllInfo configAllInfo : configAllInfos) {
                 List<String> configTagList =

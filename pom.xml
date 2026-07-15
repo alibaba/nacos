@@ -127,8 +127,9 @@
         <extra-enforcer-rules.version>1.9.0</extra-enforcer-rules.version>
         
         <!-- dependency version -->
-        <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>3.5.14</spring-boot-dependencies.version>
+        <nacos.logback.adapter.version>1.1.5</nacos.logback.adapter.version>
+        <spring-boot-dependencies.version>4.0.6</spring-boot-dependencies.version>
+
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
@@ -154,12 +155,12 @@
         <gson.version>2.11.0</gson.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
-        <junit5.version>5.10.2</junit5.version>
+        <junit6.version>6.0.3</junit6.version>
         <mcp.version>0.18.2</mcp.version>
         <ojdbc.version>19.7.0.0</ojdbc.version>
 
         <!-- Maven Central Portal -->
-        <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
+        <central.publishing.maven.version>0.11.0</central.publishing.maven.version>
 
         <!-- Override micrometer version for Spring Boot 3.5.x compatibility,
              see https://github.com/alibaba/nacos/issues/15033 -->
@@ -348,6 +349,7 @@
                         <exclude>doc/*</exclude>
                         <exclude>derby.log</exclude>
                         <exclude>logs/*</exclude>
+                        <exclude>**/target/**</exclude>
                         <exclude>src/main/resources/static/**</exclude>
                         <exclude>**/istio/model/**</exclude>
                         <exclude>**/consistency/entity/**</exclude>
@@ -581,68 +583,11 @@
             </build>
         </profile>
         <profile>
-            <!--  Run integration tests for configuration modules separately  -->
-            <id>cit-test</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven-surefire-plugin.version}</version>
-                        <configuration>
-                            <testFailureIgnore>false</testFailureIgnore>
-                            <includes>
-                                <include>**/*CITCase.java</include>
-                            </includes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <!--  Run integration tests for all modules separately  -->
-            <id>nit-test</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven-surefire-plugin.version}</version>
-                        <configuration>
-                            <testFailureIgnore>false</testFailureIgnore>
-                            <includes>
-                                <include>**/naming/*ITCase.java</include>
-                            </includes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>sonar-apache</id>
             <properties>
                 <!-- URL of the ASF SonarQube server -->
                 <sonar.host.url>https://builds.apache.org/analysis</sonar.host.url>
             </properties>
-        </profile>
-        <profile>
-            <id>remove-test-data</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <followSymLinks>false</followSymLinks>
-                            <filesets>
-                                <fileset>
-                                    <directory>${user.home}/nacos/data</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
     <reporting>
@@ -721,7 +666,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>${junit5.version}</version>
+                <version>${junit6.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1148,23 +1093,10 @@
             
             <dependency>
                 <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-core</artifactId>
+                <artifactId>micrometer-bom</artifactId>
                 <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-influx</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-elastic</artifactId>
-                <version>${micrometer.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             
             <dependency>

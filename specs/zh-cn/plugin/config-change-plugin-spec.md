@@ -118,9 +118,9 @@ nacos.core.config.plugin.{pluginName}.*
 nacos.core.config.plugin.{pluginName}.enabled=true
 ```
 
-通过 `ConfigChangePluginManager.findPluginServiceImpl` 直接查找插件时，会遵守
-`config-change:{pluginName}` 的统一插件状态。Pointcut 执行路径同时使用传统
-`enabled` 属性，后续执行链路更新时应收敛到统一状态模型。
+Pointcut 候选插件查询会按 `config-change:{pluginName}` 的统一插件状态过滤服务。传统
+`enabled` 属性继续作为插件自身的执行开关，因此统一状态或该属性任一关闭时，插件都不得
+参与执行。
 
 插件自定义属性使用小写 service type 读取：
 

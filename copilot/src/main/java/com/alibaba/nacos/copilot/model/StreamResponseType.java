@@ -58,20 +58,4 @@ public enum StreamResponseType {
     public String getDescription() {
         return description;
     }
-    
-    /**
-     * Get StreamResponseType from code string.
-     *
-     * @param code code string
-     * @return StreamResponseType, default to CONTENT if unknown
-     */
-    public static StreamResponseType fromCode(String code) {
-        for (StreamResponseType type : values()) {
-            if (type.code.equals(code)) {
-                return type;
-            }
-        }
-        // Default to CONTENT if unknown
-        return CONTENT;
-    }
 }

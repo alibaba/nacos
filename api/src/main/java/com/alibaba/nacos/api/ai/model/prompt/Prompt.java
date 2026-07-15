@@ -17,9 +17,7 @@
 package com.alibaba.nacos.api.ai.model.prompt;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Prompt entity for AI Prompt management.
@@ -105,57 +103,6 @@ public class Prompt implements Serializable {
     
     public void setVariables(List<PromptVariable> variables) {
         this.variables = variables;
-    }
-    
-    /**
-     * Render the prompt template by replacing variables with provided values.
-     *
-     * <p>Variables in the template are specified using {{variableName}} syntax.
-     * This method first applies default values from variable definitions,
-     * then overrides with user-provided values.</p>
-     *
-     * <p>Example:
-     * <pre>
-     * Prompt prompt = new Prompt("greeting", "1.0.0", "Hello {{name}}, welcome to {{place}}!");
-     * Map&lt;String, String&gt; userVars = new HashMap&lt;&gt;();
-     * userVars.put("name", "Alice");
-     * userVars.put("place", "Nacos");
-     * String result = prompt.render(userVars);
-     * // Result: "Hello Alice, welcome to Nacos!"
-     * </pre>
-     * </p>
-     *
-     * @param userVariables map of variable names to their values (key: variable name, value: replacement value)
-     * @return rendered prompt content with variables replaced, or the original template if no values available
-     */
-    public String render(Map<String, String> userVariables) {
-        if (template == null) {
-            return null;
-        }
-        
-        Map<String, String> merged = new HashMap<>();
-        if (variables != null) {
-            for (PromptVariable v : variables) {
-                if (v.getDefaultValue() != null) {
-                    merged.put(v.getName(), v.getDefaultValue());
-                }
-            }
-        }
-        if (userVariables != null) {
-            merged.putAll(userVariables);
-        }
-        
-        if (merged.isEmpty()) {
-            return template;
-        }
-        
-        String result = template;
-        for (Map.Entry<String, String> entry : merged.entrySet()) {
-            String placeholder = "{{" + entry.getKey() + "}}";
-            String value = entry.getValue() != null ? entry.getValue() : "";
-            result = result.replace(placeholder, value);
-        }
-        return result;
     }
     
     @Override

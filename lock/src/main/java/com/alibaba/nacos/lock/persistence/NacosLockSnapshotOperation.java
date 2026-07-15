@@ -25,7 +25,10 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.lock.LockManager;
+import com.alibaba.nacos.lock.NacosLockManager;
+import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
 import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.TimerContext;
@@ -38,6 +41,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -96,7 +101,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         });
     }
     
-    private boolean writeSnapshot(Writer writer) throws IOException {
+    boolean writeSnapshot(Writer writer) throws IOException {
         final String writePath = writer.getPath();
         final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
         final Checksum checksum = new CRC64();
@@ -108,8 +113,8 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         return writer.addFile(SNAPSHOT_ARCHIVE, meta);
     }
     
-    private InputStream dumpSnapshot() {
-        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
+    InputStream dumpSnapshot() {
+        Map<LockKey, AtomicLockService> lockMap = new HashMap<>(lockManager.showLocks());
         return new ByteArrayInputStream(serializer.serialize(lockMap));
     }
     
@@ -131,7 +136,7 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         }
     }
     
-    private boolean readSnapshot(Reader reader) throws Exception {
+    boolean readSnapshot(Reader reader) throws Exception {
         final String readerPath = reader.getPath();
         Loggers.RAFT.info("snapshot start to load from : {}", readerPath);
         final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
@@ -148,12 +153,52 @@ public class NacosLockSnapshotOperation implements SnapshotOperation {
         return true;
     }
     
-    private void loadSnapshot(byte[] snapshotBytes) {
+    void loadSnapshot(byte[] snapshotBytes) {
+        Map<LockKey, AtomicLockService> snapshotData = serializer.deserialize(snapshotBytes);
         ConcurrentHashMap<LockKey, AtomicLockService> newData =
-            serializer.deserialize(snapshotBytes);
-        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = lockManager.showLocks();
+            new ConcurrentHashMap<>(snapshotData);
+        
+        // Initialize transient fields for all deserialized locks
+        // Hessian deserialization does not call readObject(), so transient fields remain null
+        for (AtomicLockService lockService : newData.values()) {
+            if (lockService instanceof AbstractAtomicLock) {
+                ((AbstractAtomicLock) lockService).initTransientFields();
+            }
+        }
+        
+        ConcurrentHashMap<LockKey, AtomicLockService> lockMap = getRawLockMap();
         //loadSnapshot
         lockMap.putAll(newData);
+        migrateMutexAtomicLocks(lockMap);
+    }
+    
+    private ConcurrentHashMap<LockKey, AtomicLockService> getRawLockMap() {
+        if (lockManager instanceof NacosLockManager nacosLockManager) {
+            return nacosLockManager.getRawLockMap();
+        }
+        throw new IllegalStateException(
+            "LockManager must be NacosLockManager for snapshot operations");
+    }
+    
+    /**
+     * Migrate old-format MutexAtomicLock entries to the new owner-based model.
+     *
+     * <p>Called after Hessian deserialization to handle backward compatibility.
+     * Old MutexAtomicLock used AtomicInteger state (EMPTY=0/FULL=1); new version
+     * uses owner/reentrantCount from AbstractAtomicLock.
+     *
+     * @param lockMap the lock map containing deserialized locks
+     */
+    private void migrateMutexAtomicLocks(ConcurrentHashMap<LockKey, AtomicLockService> lockMap) {
+        for (AtomicLockService lockService : lockMap.values()) {
+            if (lockService instanceof MutexAtomicLock) {
+                try {
+                    ((MutexAtomicLock) lockService).migrateFromLegacy();
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to migrate MutexAtomicLock during snapshot load", e);
+                }
+            }
+        }
     }
     
     protected String getSnapshotSaveTag() {

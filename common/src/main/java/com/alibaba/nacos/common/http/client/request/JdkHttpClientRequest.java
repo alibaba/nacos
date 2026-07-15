@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -108,9 +108,9 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                     handleFileUpload(conn, (File) body);
                 }
                 String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-                String bodyStr = body instanceof String ? (String) body : JacksonUtils.toJson(body);
+                String bodyStr = body instanceof String ? (String) body : JsonUtils.toJson(body);
                 if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
-                    Map<String, String> map = JacksonUtils.toObj(bodyStr, HashMap.class);
+                    Map<String, String> map = JsonUtils.toObj(bodyStr, HashMap.class);
                     bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
                 }
                 if (bodyStr != null) {

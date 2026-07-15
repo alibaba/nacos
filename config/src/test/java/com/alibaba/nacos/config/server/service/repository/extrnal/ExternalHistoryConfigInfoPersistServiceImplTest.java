@@ -29,13 +29,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -63,15 +63,15 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
-    @Mock
+    @MockitoBean
     DynamicDataSource dynamicDataSource;
     
     private ExternalHistoryConfigInfoPersistServiceImpl externalHistoryConfigInfoPersistService;
     
-    @Mock
+    @MockitoBean
     private DataSourceService dataSourceService;
     
-    @Mock
+    @MockitoBean
     private JdbcTemplate jdbcTemplate;
     
     private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
@@ -227,12 +227,13 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
         mockList.add(createMockConfigHistoryInfo(0));
         mockList.add(createMockConfigHistoryInfo(1));
         mockList.add(createMockConfigHistoryInfo(2));
-        Mockito.when(
-            jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(HISTORY_LIST_ROW_MAPPER)))
-            .thenReturn(mockList);
         int pageSize = 100;
         int pageNo = 2;
+        Mockito.when(
+            jdbcTemplate.query(anyString(),
+                eq(new Object[] {dataId, group, tenant, (pageNo - 1) * pageSize, pageSize}),
+                eq(HISTORY_LIST_ROW_MAPPER)))
+            .thenReturn(mockList);
         //execute & verify
         Page<ConfigHistoryInfo> historyReturn =
             externalHistoryConfigInfoPersistService.findConfigHistory(dataId, group,

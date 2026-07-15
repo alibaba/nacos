@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,16 +56,6 @@ public class StringUtils {
     
     public static final Pattern UUID_PATTERN = Pattern.compile(
         "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
-    
-    /**
-     * <p>Create a string with encoding format as utf8.</p>
-     *
-     * @param bytes the bytes that make up the string
-     * @return created string
-     */
-    public static String newStringForUtf8(byte[] bytes) {
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
     
     /**
      * <p>Checks if a string is  empty (""), null and  whitespace only.</p>
@@ -214,12 +203,14 @@ public class StringUtils {
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
         
+        boolean first = true;
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
-                stringBuilder.append(objects[i]);
-                if (i != collection.size() - 1 && separator != null) {
+                if (!first && separator != null) {
                     stringBuilder.append(separator);
                 }
+                stringBuilder.append(objects[i]);
+                first = false;
             }
         }
         

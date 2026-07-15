@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.ai.pipeline.repository;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -130,11 +130,6 @@ class PipelineExecutionRepositoryTest {
             assertNotNull(foundById, "findById should return a non-null record");
             assertExecutionEquals(original, foundById);
             
-            PipelineExecution foundByResource = repository.findByResource(
-                original.getResourceType(), original.getResourceName(),
-                original.getNamespaceId(), original.getVersion());
-            assertNotNull(foundByResource, "findByResource should return a non-null record");
-            assertExecutionEquals(original, foundByResource);
         }
     }
     

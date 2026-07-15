@@ -71,36 +71,4 @@ class StreamResponseTypeTest {
         assertNotNull(StreamResponseType.DONE.getDescription());
     }
     
-    @Test
-    void testFromCodeWithValidCode() {
-        // When
-        StreamResponseType thinking = StreamResponseType.fromCode("thinking");
-        StreamResponseType toolCall = StreamResponseType.fromCode("tool_call");
-        StreamResponseType content = StreamResponseType.fromCode("content");
-        StreamResponseType done = StreamResponseType.fromCode("done");
-        
-        // Then
-        assertEquals(StreamResponseType.THINKING, thinking);
-        assertEquals(StreamResponseType.TOOL_CALL, toolCall);
-        assertEquals(StreamResponseType.CONTENT, content);
-        assertEquals(StreamResponseType.DONE, done);
-    }
-    
-    @Test
-    void testFromCodeWithInvalidCode() {
-        // When
-        StreamResponseType result = StreamResponseType.fromCode("invalid");
-        
-        // Then
-        assertEquals(StreamResponseType.CONTENT, result);
-    }
-    
-    @Test
-    void testFromCodeWithNull() {
-        // When
-        StreamResponseType result = StreamResponseType.fromCode(null);
-        
-        // Then
-        assertEquals(StreamResponseType.CONTENT, result);
-    }
 }

@@ -43,7 +43,9 @@ public interface IConfigResponse {
      * Get config context.
      *
      * @return configContext
+     * @deprecated Unused by current config filter flow; kept temporarily for compatibility.
      */
+    @Deprecated
     IConfigContext getConfigContext();
     
 }

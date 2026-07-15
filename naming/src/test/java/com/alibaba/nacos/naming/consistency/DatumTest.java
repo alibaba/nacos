@@ -16,21 +16,19 @@
 
 package com.alibaba.nacos.naming.consistency;
 
-import com.alibaba.nacos.naming.pojo.Record;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 
 class DatumTest {
     
     @Test
     @SuppressWarnings("unchecked")
     void testCreateDatum() {
-        Record value = mock(Record.class);
+        String value = "datum-value";
         
-        Datum<Record> datum = Datum.createDatum("datum-key", value);
+        Datum<String> datum = Datum.createDatum("datum-key", value);
         
         assertEquals("datum-key", datum.key);
         assertSame(value, datum.value);

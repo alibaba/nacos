@@ -17,8 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
 import com.alibaba.nacos.plugin.auth.impl.AnonymousAccessInitializer;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
@@ -28,36 +28,38 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserServiceDirectImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Import;
 
 /**
  * Nacos auth plugin remote bean config, working on nacos deployment type is `console`.
  *
  * @author xiweng.yy
  */
-@Import({AuthConfigs.class})
 @Conditional(ConditionOnInnerDatasource.class)
 public class NacosAuthPluginInnerServiceConfig {
     
     @Bean
-    public NacosRoleService nacosRoleService(AuthConfigs authConfigs,
+    public NacosRoleService nacosRoleService(NacosAuthPluginConfigProvider configProvider,
         RolePersistService rolePersistService,
         NacosUserService userDetailsService, PermissionPersistService permissionPersistService) {
-        return new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
+        return new NacosRoleServiceDirectImpl(configProvider, rolePersistService,
+            userDetailsService,
             permissionPersistService);
     }
     
     @Bean
-    public NacosUserService nacosUserService(AuthConfigs authConfigs,
+    public NacosUserService nacosUserService(NacosAuthPluginConfigProvider configProvider,
         UserPersistService userPersistService) {
-        return new NacosUserServiceDirectImpl(authConfigs, userPersistService);
+        return new NacosUserServiceDirectImpl(configProvider, userPersistService);
     }
     
     @Bean
-    public AnonymousAccessInitializer anonymousAccessInitializer(AuthConfigs authConfigs,
+    public AnonymousAccessInitializer anonymousAccessInitializer(
+        NacosAuthPluginConfigProvider configProvider,
         UserPersistService userPersistService, RolePersistService rolePersistService,
         PermissionPersistService permissionPersistService) {
-        return new AnonymousAccessInitializer(authConfigs, userPersistService, rolePersistService,
-            permissionPersistService);
+        AnonymousAccessInitializer result = new AnonymousAccessInitializer(configProvider,
+            userPersistService, rolePersistService, permissionPersistService);
+        NacosAuthPluginCoreConfig.getNacosAuthPluginService().setAnonymousAccessInitializer(result);
+        return result;
     }
 }

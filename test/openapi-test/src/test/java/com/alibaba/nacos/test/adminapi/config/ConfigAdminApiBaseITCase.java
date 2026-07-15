@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
@@ -61,6 +62,9 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String ADMIN_CONFIG_CLONE_PATH = ADMIN_CONFIG_PATH + "/clone";
 
+    protected static final String ADMIN_CORE_NAMESPACE_PATH =
+            nacosPath(Commons.NACOS_ADMIN_CORE_CONTEXT_V3 + "/namespace");
+
     protected static final String ADMIN_HISTORY_PATH = nacosPath(Constants.HISTORY_ADMIN_V3_PATH);
 
     protected static final String ADMIN_HISTORY_LIST_PATH = ADMIN_HISTORY_PATH + "/list";
@@ -87,6 +91,21 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected String randomGroupName(String scenario) {
         return TEST_GROUP + "_" + scenario + "_" + UUID.randomUUID();
+    }
+
+    protected String randomNamespaceId(String scenario) {
+        return "oit_cfg_" + scenario + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    protected JsonNode createNamespace(String namespaceId) throws Exception {
+        JsonNode root = postFormOk(ADMIN_CORE_NAMESPACE_PATH,
+                namespaceQuery(namespaceId, "config namespace", "created by config it"));
+        assertTrue(root.get("data").asBoolean(), root.toString());
+        return root;
+    }
+
+    protected void deleteNamespaceQuietly(String namespaceId) throws Exception {
+        deleteQuietly(ADMIN_CORE_NAMESPACE_PATH, Query.newInstance().addParam("namespaceId", namespaceId));
     }
 
     protected JsonNode publishConfig(String dataId, String groupName, String namespaceId, String content)
@@ -168,6 +187,14 @@ public abstract class ConfigAdminApiBaseITCase extends OpenApiBaseITCase {
         query.addParam("search", "blur");
         query.addParam("pageNo", String.valueOf(pageNo));
         query.addParam("pageSize", String.valueOf(pageSize));
+        return query;
+    }
+
+    protected Query namespaceQuery(String namespaceId, String namespaceName, String namespaceDesc) {
+        Query query = Query.newInstance();
+        addIfNotBlank(query, "namespaceId", namespaceId);
+        addIfNotBlank(query, "namespaceName", namespaceName);
+        addIfNotBlank(query, "namespaceDesc", namespaceDesc);
         return query;
     }
 

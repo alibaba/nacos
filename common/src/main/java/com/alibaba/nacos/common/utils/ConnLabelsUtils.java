@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -40,30 +39,6 @@ public class ConnLabelsUtils {
     public static final String LABEL_SPLIT_OPERATOR = ",";
     
     public static final int TAG_V2_LABEL_KEY_VALUE_SPLIT_LENGTH = 2;
-    
-    /**
-     * parse property value to map.
-     *
-     * @param properties   Properties
-     * @param propertyName which key to get
-     * @return (String)key-(String)value map
-     * @date 2024/1/29
-     * @description will get a key-value map from properties, JVM OPTIONS, ENV by order of <tt>properties > JVM OPTIONS
-     * > ENV</tt> which will use the next level value when the current level value isn't setup.
-     * <p>eg: if the value of "nacos.app.conn.labels"(properties' key) is "k1=v1,k2=v2"(properties' value), the result
-     * will be
-     * a Map with value{k1=v1,k2=v2}.</p>
-     */
-    public static Map<String, String> parsePropertyValue2Map(Properties properties,
-        String propertyName) {
-        String rawLabels = properties.getProperty(propertyName,
-            System.getProperty(propertyName, System.getenv(propertyName)));
-        if (StringUtils.isBlank(rawLabels)) {
-            LOGGER.info("no value found for property key: {}", propertyName);
-            return new HashMap<>(2);
-        }
-        return parseRawLabels(rawLabels);
-    }
     
     /**
      * parse raw json labels into a key-value map.

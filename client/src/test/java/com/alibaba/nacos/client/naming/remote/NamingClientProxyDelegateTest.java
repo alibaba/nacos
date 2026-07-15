@@ -29,15 +29,19 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
+import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -75,8 +79,19 @@ class NamingClientProxyDelegateTest {
     
     NacosClientProperties nacosClientProperties;
     
+    private MockedConstruction<ServiceInfoUpdateService> serviceInfoUpdateServiceConstruction;
+    
+    private MockedConstruction<NamingServerListManager> serverListManagerConstruction;
+    
+    private MockedConstruction<SecurityProxy> securityProxyConstruction;
+    
+    private MockedConstruction<NamingHttpClientProxy> httpClientProxyConstruction;
+    
+    private MockedConstruction<NamingGrpcClientProxy> grpcClientProxyConstruction;
+    
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        mockChildConstructions();
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
@@ -92,7 +107,34 @@ class NamingClientProxyDelegateTest {
     
     @AfterEach
     void tearDown() throws NacosException {
-        delegate.shutdown();
+        try {
+            delegate.shutdown();
+        } finally {
+            closeMockedConstructions();
+        }
+    }
+    
+    private void mockChildConstructions() {
+        serviceInfoUpdateServiceConstruction =
+            Mockito.mockConstruction(ServiceInfoUpdateService.class);
+        serverListManagerConstruction = Mockito.mockConstruction(NamingServerListManager.class);
+        securityProxyConstruction = Mockito.mockConstruction(SecurityProxy.class);
+        httpClientProxyConstruction = Mockito.mockConstruction(NamingHttpClientProxy.class);
+        grpcClientProxyConstruction = Mockito.mockConstruction(NamingGrpcClientProxy.class);
+    }
+    
+    private void closeMockedConstructions() {
+        closeMockedConstruction(grpcClientProxyConstruction);
+        closeMockedConstruction(httpClientProxyConstruction);
+        closeMockedConstruction(securityProxyConstruction);
+        closeMockedConstruction(serverListManagerConstruction);
+        closeMockedConstruction(serviceInfoUpdateServiceConstruction);
+    }
+    
+    private void closeMockedConstruction(MockedConstruction<?> construction) {
+        if (construction != null) {
+            construction.close();
+        }
     }
     
     @Test

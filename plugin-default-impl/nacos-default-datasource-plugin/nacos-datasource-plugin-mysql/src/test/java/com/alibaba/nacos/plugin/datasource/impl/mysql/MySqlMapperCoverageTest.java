@@ -145,7 +145,7 @@ class MySqlMapperCoverageTest {
     }
     
     @Test
-    void testHistoryAndGrayAndMigrateMappers() {
+    void testHistoryAndGrayMappers() {
         HistoryConfigInfoMapperByMySql historyMapper = new HistoryConfigInfoMapperByMySql();
         assertEquals(DataSourceConstant.MYSQL, historyMapper.getDataSource());
         assertEquals("NOW(3)", historyMapper.getFunction("NOW()"));
@@ -155,8 +155,8 @@ class MySqlMapperCoverageTest {
             "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,"
                 + "publish_type,gray_name,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC "
-                + "LIMIT 3,7",
-            dataId, groupId, tenantId);
+                + "LIMIT ?,?",
+            dataId, groupId, tenantId, 3, 7);
         
         ConfigInfoGrayMapperByMySql grayMapper = new ConfigInfoGrayMapperByMySql();
         assertEquals(DataSourceConstant.MYSQL, grayMapper.getDataSource());
@@ -164,12 +164,9 @@ class MySqlMapperCoverageTest {
         assertEquals(TableConstant.CONFIG_INFO_GRAY, grayMapper.getTableName());
         assertResult(grayMapper.findAllConfigInfoGrayForDumpAllFetchRows(context),
             "SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,"
-                + "md5,gmt_modified FROM config_info_gray ORDER BY id LIMIT 3,7");
+                + "md5,gmt_modified FROM config_info_gray ORDER BY id LIMIT ?,?",
+            3, 7);
         
-        ConfigMigrateMapperByMysql migrateMapper = new ConfigMigrateMapperByMysql();
-        assertEquals(DataSourceConstant.MYSQL, migrateMapper.getDataSource());
-        assertEquals("NOW(3)", migrateMapper.getFunction("NOW()"));
-        assertEquals(TableConstant.MIGRATE_CONFIG, migrateMapper.getTableName());
     }
     
     @Test

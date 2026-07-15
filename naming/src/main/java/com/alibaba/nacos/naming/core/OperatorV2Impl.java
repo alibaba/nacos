@@ -26,9 +26,9 @@ import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Collection;
 
 /**

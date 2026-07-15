@@ -44,6 +44,7 @@ extension mechanisms, and cross-cutting security rules.
 - [gRPC API Spec](grpc-api/api-spec.md)
 - [SDK Spec](sdk/sdk-spec.md)
 - [Java SDK Implementation Spec](sdk/sdk-java-impl-spec.md)
+- [Java SDK JSON Adapter Spec](sdk/sdk-java-json-adapter-spec.md)
 - [Client Runtime Specs](client/README.md)
 
 ## Domain Model

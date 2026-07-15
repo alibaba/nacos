@@ -45,12 +45,12 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapperByMysql
         String sql =
             "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,publish_type,gray_name,gmt_create,gmt_modified "
                 + "FROM his_config_info "
-                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT "
-                + context.getStartRow() + "," + context.getPageSize();
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT ?,?";
         return new MapperResult(sql,
             CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID),
-                context.getWhereParameter(FieldConstant.TENANT_ID)));
+                context.getWhereParameter(FieldConstant.TENANT_ID), context.getStartRow(),
+                context.getPageSize()));
     }
     
     @Override

@@ -23,12 +23,12 @@ import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,8 +58,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<Page<PromptMetaSummary>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<PromptMetaSummary>>>() {
+        Result<Page<PromptMetaSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<PromptMetaSummary>>>() {
             });
         return result.getData();
     }
@@ -77,7 +77,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }
@@ -98,8 +98,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_VERSIONS_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<Page<PromptVersionSummary>> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<Page<PromptVersionSummary>>>() {
+        Result<Page<PromptVersionSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<PromptVersionSummary>>>() {
             });
         return result.getData();
     }
@@ -119,8 +119,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_GOVERNANCE_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<PromptMetaInfo> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<PromptMetaInfo>>() {
+        Result<PromptMetaInfo> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<PromptMetaInfo>>() {
             });
         return result.getData();
     }
@@ -139,8 +139,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_VERSION_DETAIL_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<PromptVersionInfo> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<PromptVersionInfo>>() {
+        Result<PromptVersionInfo> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<PromptVersionInfo>>() {
             });
         return result.getData();
     }
@@ -168,7 +168,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -221,7 +221,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<String> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<String>>() {
             });
         return result.getData();
     }
@@ -281,7 +281,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }
@@ -368,8 +368,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_METADATA_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<PromptMetaInfo> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<PromptMetaInfo>>() {
+        Result<PromptMetaInfo> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<PromptMetaInfo>>() {
             });
         return result.getData();
     }
@@ -391,8 +391,8 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setPath(Constants.AdminApiPath.AI_PROMPT_DETAIL_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<PromptVersionInfo> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<PromptVersionInfo>>() {
+        Result<PromptVersionInfo> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<PromptVersionInfo>>() {
             });
         return result.getData();
     }
@@ -414,7 +414,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }
@@ -435,7 +435,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }
@@ -460,7 +460,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }
@@ -483,7 +483,7 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Boolean> result =
-            JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
     }

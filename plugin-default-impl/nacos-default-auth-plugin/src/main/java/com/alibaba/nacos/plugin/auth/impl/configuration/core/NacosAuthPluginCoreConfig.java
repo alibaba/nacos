@@ -16,31 +16,30 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
-import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnNacosAuth;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthPluginService;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnNacosAuth;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
-import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Spring security config.
@@ -74,7 +73,7 @@ public class NacosAuthPluginCoreConfig {
         return new GlobalAuthenticationConfigurerAdapter() {
             
             @Override
-            public void init(AuthenticationManagerBuilder auth) throws Exception {
+            public void init(AuthenticationManagerBuilder auth) {
                 if (AuthSystemTypes.NACOS.name()
                     .equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
                         .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
@@ -99,21 +98,22 @@ public class NacosAuthPluginCoreConfig {
     }
     
     @Bean
-    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
-        havingValue = "false", matchIfMissing = true)
-    public TokenManager tokenManager(AuthConfigs authConfigs) {
-        return new JwtTokenManager(authConfigs);
+    public static NacosAuthPluginConfigProvider nacosAuthPluginConfigProvider() {
+        NacosAuthPluginService pluginService = getNacosAuthPluginService();
+        return pluginService::getConfig;
     }
     
     @Bean
-    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED,
-        havingValue = "true")
-    public TokenManager cachedTokenManager(AuthConfigs authConfigs) {
-        return new CachedJwtTokenManager(new JwtTokenManager(authConfigs));
+    public static TokenManagerDelegate tokenManagerDelegate() {
+        return getNacosAuthPluginService().getTokenManagerDelegate();
     }
     
-    @Bean
-    public TokenManagerDelegate tokenManagerDelegate(TokenManager tokenManager) {
-        return new TokenManagerDelegate(tokenManager);
+    static NacosAuthPluginService getNacosAuthPluginService() {
+        AuthPluginService plugin = AuthPluginManager.getInstance().getAllPlugins()
+            .get(AuthConstants.AUTH_PLUGIN_TYPE);
+        if (!(plugin instanceof NacosAuthPluginService)) {
+            throw new IllegalStateException("Built-in Nacos auth plugin is not available");
+        }
+        return (NacosAuthPluginService) plugin;
     }
 }

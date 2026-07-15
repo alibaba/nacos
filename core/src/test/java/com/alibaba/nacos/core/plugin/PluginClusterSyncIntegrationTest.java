@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.plugin;
 
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -182,7 +183,7 @@ class PluginClusterSyncIntegrationTest {
             new com.alibaba.nacos.core.plugin.model.PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
-        info.setPluginType(com.alibaba.nacos.api.plugin.PluginType.fromType(type));
+        info.setPluginType(pluginTypeOf(type));
         info.setClassName("TestPlugin");
         info.setCritical(false);
         info.setEnabled(true);
@@ -202,7 +203,7 @@ class PluginClusterSyncIntegrationTest {
             new com.alibaba.nacos.core.plugin.model.PluginInfo();
         info.setPluginId(pluginId);
         info.setPluginName(name);
-        info.setPluginType(com.alibaba.nacos.api.plugin.PluginType.fromType(type));
+        info.setPluginType(pluginTypeOf(type));
         info.setClassName("TestConfigurablePlugin");
         info.setCritical(false);
         info.setEnabled(true);
@@ -212,6 +213,15 @@ class PluginClusterSyncIntegrationTest {
         
         Map<String, Boolean> states = getPluginStates();
         states.put(pluginId, true);
+    }
+    
+    private PluginType pluginTypeOf(String type) {
+        for (PluginType pluginType : PluginType.values()) {
+            if (pluginType.getType().equals(type)) {
+                return pluginType;
+            }
+        }
+        return null;
     }
     
     @SuppressWarnings("unchecked")

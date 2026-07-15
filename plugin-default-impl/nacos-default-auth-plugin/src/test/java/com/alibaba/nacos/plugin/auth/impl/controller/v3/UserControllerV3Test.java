@@ -28,7 +28,6 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -38,7 +37,6 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,10 +58,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.ACCESS_TOKEN;
+import static com.alibaba.nacos.api.common.Constants.GLOBAL_ADMIN;
+import static com.alibaba.nacos.api.common.Constants.TOKEN_TTL;
+import static com.alibaba.nacos.api.common.Constants.USERNAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -96,9 +99,6 @@ class UserControllerV3Test {
     
     @Mock
     private NacosRoleService roleService;
-    
-    @Mock
-    private AuthConfigs authConfigs;
     
     @Mock
     private IAuthenticationManager iAuthenticationManager;
@@ -140,9 +140,13 @@ class UserControllerV3Test {
     }
     
     private static void setAuthEnabled() {
+        setAuthSystemType(AuthSystemTypes.NACOS.name());
+    }
+    
+    private static void setAuthSystemType(String systemType) {
         Map<String, NacosAuthConfig> configMap = new HashMap<>();
         configMap.put(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE,
-            new TestNacosAuthConfig(true));
+            new TestNacosAuthConfig(true, systemType));
         ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap",
             configMap);
     }
@@ -151,8 +155,11 @@ class UserControllerV3Test {
         
         private final boolean authEnabled;
         
-        private TestNacosAuthConfig(boolean authEnabled) {
+        private final String systemType;
+        
+        private TestNacosAuthConfig(boolean authEnabled, String systemType) {
             this.authEnabled = authEnabled;
+            this.systemType = systemType;
         }
         
         @Override
@@ -167,7 +174,7 @@ class UserControllerV3Test {
         
         @Override
         public String getNacosAuthSystemType() {
-            return AuthSystemTypes.NACOS.name();
+            return systemType;
         }
         
         @Override
@@ -259,8 +266,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
@@ -282,9 +287,6 @@ class UserControllerV3Test {
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(userDetailsService.getUser("anyUser")).thenReturn(new User());
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
-        
         Result<String> result =
             userControllerV3.updateUser("anyUser", "newPass", response, request);
         
@@ -297,8 +299,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("nacos", "nacos");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(userDetailsService.getUser("missing")).thenReturn(null);
         
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -315,8 +315,6 @@ class UserControllerV3Test {
         
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         // 不设置用户上下文，模拟无权限情况
         
         Result<String> result =
@@ -337,8 +335,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("nacos", "invalid");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
         
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
@@ -359,9 +355,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("nacos", "invalid");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
-        
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
         
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
@@ -377,8 +370,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("nacos", "invalid");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(iAuthenticationManager.authenticate(request)).thenReturn(null);
         
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
@@ -395,8 +386,6 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("nacos", "invalid");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
-        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(iAuthenticationManager.authenticate(request)).thenThrow(new AccessException("denied"));
         
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
@@ -436,20 +425,22 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         when(iAuthenticationManager.authenticate(request)).thenReturn(user);
         when(iAuthenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(jwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
         MockHttpServletResponse response = new MockHttpServletResponse();
         Object actual = userControllerV3.login(response, request);
         
-        assertTrue(actual instanceof ObjectNode);
+        assertInstanceOf(Map.class, actual);
         
-        String actualString = actual.toString();
+        Map<?, ?> map = (Map<?, ?>) actual;
+        assertTrue(map.containsKey(ACCESS_TOKEN));
+        assertTrue(map.containsKey(TOKEN_TTL));
+        assertTrue(map.containsKey(GLOBAL_ADMIN));
+        assertEquals(user.getToken(), map.get(ACCESS_TOKEN));
+        assertEquals(18000L, map.get(TOKEN_TTL));
+        assertEquals(true, map.get(GLOBAL_ADMIN));
+        assertEquals(user.getUserName(), map.get(USERNAME));
         
-        assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
-        assertTrue(actualString.contains("\"tokenTtl\":18000"));
-        assertTrue(actualString.contains("\"globalAdmin\":true"));
-        
-        assertEquals(AuthConstants.TOKEN_PREFIX + "1234567890",
+        assertEquals(AuthConstants.TOKEN_PREFIX + user.getToken(),
             response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
     }
     
@@ -460,24 +451,24 @@ class UserControllerV3Test {
         ldapUser.setToken("ldap-token");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.LDAP.name());
+        setAuthSystemType(AuthSystemTypes.LDAP.name());
         when(iAuthenticationManager.authenticate(request)).thenReturn(ldapUser);
         when(iAuthenticationManager.hasGlobalAdminRole(ldapUser)).thenReturn(false);
         when(jwtTokenManager.getTokenTtlInSeconds("ldap-token")).thenReturn(60L);
         
         Object actual = userControllerV3.login(response, request);
         
-        assertTrue(actual instanceof ObjectNode);
+        assertTrue(actual instanceof Map<?, ?>);
         String actualString = actual.toString();
-        assertTrue(actualString.contains("\"accessToken\":\"ldap-token\""));
-        assertTrue(actualString.contains("\"globalAdmin\":false"));
+        assertTrue(actualString.contains("accessToken=ldap-token"));
+        assertTrue(actualString.contains("globalAdmin=false"));
         assertEquals(AuthConstants.TOKEN_PREFIX + "ldap-token",
             response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
     }
     
     @Test
     void testLoginRejectsUnsupportedAuthSystem() throws AccessException, IOException {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("oidc");
+        setAuthSystemType("oidc");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         Object actual = userControllerV3.login(response, new MockHttpServletRequest());
@@ -490,7 +481,6 @@ class UserControllerV3Test {
     
     @Test
     void testCreateAdminUserSuccess() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(false);
         
         Result<User> result = userControllerV3.createAdminUser("testAdminPass");
@@ -512,7 +502,6 @@ class UserControllerV3Test {
     
     @Test
     void testCreateAdminUserGeneratesPasswordWhenBlank() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(false);
         
         Result<User> result = userControllerV3.createAdminUser("");
@@ -524,7 +513,6 @@ class UserControllerV3Test {
     
     @Test
     void testCreateAdminUserConflict() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(true);
         
         Result<User> result = userControllerV3.createAdminUser("adminPass");
@@ -534,7 +522,7 @@ class UserControllerV3Test {
     
     @Test
     void testCreateAdminUserRejectsUnsupportedAuthSystem() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("oidc");
+        setAuthSystemType("oidc");
         
         Result<User> result = userControllerV3.createAdminUser("adminPass");
         

@@ -55,20 +55,8 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     private static final Logger logger = LoggerFactory.getLogger(SnowFlowerIdGenerator.class);
     
-    // the bits of sequence
-    private static final long SEQUENCE_BITS = 12L;
-    
-    // the bits of workerId
-    private static final long WORKER_ID_BITS = 10L;
-    
     // the mask of sequence (111111111111B = 4095)
     private static final long SEQUENCE_MASK = 4095L;
-    
-    // the left shift bits of workerId equals 12 bits
-    private static final long WORKER_ID_LEFT_SHIFT_BITS = 12L;
-    
-    // the left shift bits of timestamp equals 22 bits (WORKER_ID_LEFT_SHIFT_BITS + workerId)
-    private static final long TIMESTAMP_LEFT_SHIFT_BITS = 22L;
     
     // the max of worker ID is 1024
     private static final long WORKER_ID_MAX_VALUE = 1024L;

@@ -34,7 +34,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ClientServiceForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Client controller.
@@ -153,7 +153,7 @@ public class ClientControllerV3 {
     @GetMapping("/distro")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
         apiType = ApiType.ADMIN_API)
-    public Result<ObjectNode> getResponsibleServer4Client(@RequestParam String ip,
+    public Result<Map<String, Object>> getResponsibleServer4Client(@RequestParam String ip,
         @RequestParam String port) {
         return Result.success(clientServiceV2Impl.getResponsibleServer4Client(ip, port));
     }

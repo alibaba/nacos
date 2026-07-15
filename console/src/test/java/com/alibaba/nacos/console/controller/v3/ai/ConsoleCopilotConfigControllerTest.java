@@ -17,18 +17,23 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
-import com.alibaba.nacos.copilot.config.CopilotConfigStorage;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -48,18 +53,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class ConsoleCopilotConfigControllerTest {
     
-    @Mock
-    private CopilotConfigStorage configStorage;
+    private static final String DATA_ID = "copilot-config.json";
+    
+    private static final String GROUP = "nacos-copilot";
+    
+    private static final String NAMESPACE = "public";
     
     @Mock
     private CopilotAgentManager agentManager;
+    
+    @Mock
+    private ConfigProxy configProxy;
     
     private MockMvc mockMvc;
     
     @BeforeEach
     void setUp() {
+        ConsoleCopilotConfigController controller =
+            new ConsoleCopilotConfigController(agentManager, configProxy);
+        ReflectionTestUtils.setField(controller, "configNamespace", NAMESPACE);
         mockMvc = MockMvcBuilders.standaloneSetup(
-            new ConsoleCopilotConfigController(configStorage, agentManager)).build();
+            controller).build();
     }
     
     @Test
@@ -69,7 +83,8 @@ class ConsoleCopilotConfigControllerTest {
         config.setModel("qwen-plus");
         config.setStudioUrl("http://studio.example.com");
         config.setStudioProject("TestProject");
-        when(configStorage.getConfig()).thenReturn(config);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(config));
         
         MockHttpServletResponse response = mockMvc.perform(
             get("/v3/console/copilot/config"))
@@ -87,7 +102,7 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testGetConfigReturnsDefaultWhenNull() throws Exception {
-        when(configStorage.getConfig()).thenReturn(null);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         
         MockHttpServletResponse response = mockMvc.perform(
             get("/v3/console/copilot/config"))
@@ -102,8 +117,8 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testSaveConfigSuccess() throws Exception {
-        when(configStorage.getConfig()).thenReturn(null);
-        when(configStorage.saveConfig(any(CopilotProperties.class))).thenReturn(true);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
         String body = "{\"apiKey\":\"new-key\",\"model\":\"qwen-max\","
             + "\"studioUrl\":\"http://new.url\",\"studioProject\":\"Proj\"}";
@@ -118,6 +133,19 @@ class ConsoleCopilotConfigControllerTest {
             });
         assertTrue(result.getData());
         verify(agentManager).refreshConfig();
+        
+        ArgumentCaptor<ConfigForm> configFormCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        ArgumentCaptor<ConfigRequestInfo> requestInfoCaptor =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configProxy).publishConfig(configFormCaptor.capture(), requestInfoCaptor.capture());
+        assertEquals(DATA_ID, configFormCaptor.getValue().getDataId());
+        assertEquals(GROUP, configFormCaptor.getValue().getGroup());
+        assertEquals(NAMESPACE, configFormCaptor.getValue().getNamespaceId());
+        assertEquals("nacos-copilot", configFormCaptor.getValue().getAppName());
+        assertEquals("system", configFormCaptor.getValue().getSrcUser());
+        assertEquals("Copilot configuration", configFormCaptor.getValue().getDesc());
+        assertEquals("json", configFormCaptor.getValue().getType());
+        assertEquals("http", requestInfoCaptor.getValue().getSrcType());
     }
     
     @Test
@@ -125,8 +153,9 @@ class ConsoleCopilotConfigControllerTest {
         CopilotProperties existing = new CopilotProperties();
         existing.setApiKey("old-key");
         existing.setModel("old-model");
-        when(configStorage.getConfig()).thenReturn(existing);
-        when(configStorage.saveConfig(any(CopilotProperties.class))).thenReturn(true);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(existing));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
         String body = "{\"apiKey\":\"new-key\"}";
         
@@ -134,14 +163,14 @@ class ConsoleCopilotConfigControllerTest {
             .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk());
         
-        verify(configStorage).saveConfig(any(CopilotProperties.class));
+        verify(configProxy).publishConfig(any(), any());
         verify(agentManager).refreshConfig();
     }
     
     @Test
     void testSaveConfigReturnsFalseDoesNotRefresh() throws Exception {
-        when(configStorage.getConfig()).thenReturn(null);
-        when(configStorage.saveConfig(any(CopilotProperties.class))).thenReturn(false);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(false);
         
         String body = "{\"apiKey\":\"key\"}";
         
@@ -158,21 +187,52 @@ class ConsoleCopilotConfigControllerTest {
     }
     
     @Test
-    void testSaveConfigWithNullFieldsPreservesExisting() throws Exception {
+    void testSaveConfigWithExplicitNullFieldsPreservesExisting() throws Exception {
         CopilotProperties existing = new CopilotProperties();
         existing.setApiKey("keep-this");
         existing.setModel("keep-model");
         existing.setStudioUrl("keep-url");
         existing.setStudioProject("keep-proj");
-        when(configStorage.getConfig()).thenReturn(existing);
-        when(configStorage.saveConfig(any(CopilotProperties.class))).thenReturn(true);
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(existing));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
-        String body = "{}";
+        String body = "{\"apiKey\":null,\"model\":null,\"studioUrl\":null,"
+            + "\"studioProject\":null}";
         
         mockMvc.perform(post("/v3/console/copilot/config")
             .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk());
         
-        verify(configStorage).saveConfig(existing);
+        ArgumentCaptor<ConfigForm> captor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configProxy).publishConfig(captor.capture(), any());
+        CopilotProperties actual = JacksonUtils.toObj(captor.getValue().getContent(),
+            CopilotProperties.class);
+        assertEquals("keep-this", actual.getApiKey());
+        assertEquals("keep-model", actual.getModel());
+        assertEquals("keep-url", actual.getStudioUrl());
+        assertEquals("keep-proj", actual.getStudioProject());
+    }
+    
+    @Test
+    void testGetConfigReturnsDefaultWhenReadFails() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenThrow(new RuntimeException("read failed"));
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            get("/v3/console/copilot/config"))
+            .andExpect(status().isOk()).andReturn().getResponse();
+        
+        Result<CopilotProperties> result = JacksonUtils.toObj(
+            response.getContentAsString(), new TypeReference<>() {
+            });
+        assertNotNull(result.getData());
+        assertNull(result.getData().getApiKey());
+    }
+    
+    private ConfigDetailInfo configDetail(CopilotProperties config) {
+        ConfigDetailInfo result = new ConfigDetailInfo();
+        result.setContent(JacksonUtils.toJson(config));
+        return result;
     }
 }

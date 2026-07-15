@@ -245,7 +245,20 @@ public interface ConfigMaintainerService
      * @throws NacosException If deletion fails.
      */
     @Since("3.0.0")
-    boolean deleteConfigs(List<Long> ids) throws NacosException;
+    default boolean deleteConfigs(List<Long> ids) throws NacosException {
+        return deleteConfigs(ids, Constants.DEFAULT_NAMESPACE_ID);
+    }
+    
+    /**
+     * Delete multiple configurations by their IDs within the specified namespace.
+     *
+     * @param ids         List of configuration IDs to delete.
+     * @param namespaceId Namespace ID (optional, defaults to "public").
+     * @return Whether the configurations were deleted successfully.
+     * @throws NacosException If deletion fails.
+     */
+    @Since("3.0.0")
+    boolean deleteConfigs(List<Long> ids, String namespaceId) throws NacosException;
     
     /**
      * List first 100 configurations in namespaceId .
@@ -476,9 +489,11 @@ public interface ConfigMaintainerService
         throws NacosException;
     
     /**
-     * Clone configurations within the same namespace.
+     * Clone configurations to the target namespace, resolving source IDs in the
+     * same namespace.
      *
-     * @param namespaceId     Namespace ID (optional, defaults to "public").
+     * @param namespaceId     Target namespace ID (optional, defaults to "public").
+     *                        Source IDs are resolved in the same namespace.
      * @param cloneInfos      List of configurations to clone (required).
      * @param srcUser         Source user (optional).
      * @param policy          Conflict resolution policy (required).
@@ -489,6 +504,32 @@ public interface ConfigMaintainerService
     Map<String, Object> cloneConfig(String namespaceId, List<ConfigCloneInfo> cloneInfos,
         String srcUser,
         SameConfigPolicy policy) throws NacosException;
+    
+    /**
+     * Clone configurations from a source namespace to a target namespace.
+     *
+     * @param sourceNamespaceId Source namespace ID (optional, defaults to "public").
+     * @param targetNamespaceId Target namespace ID (optional, defaults to "public").
+     * @param cloneInfos        List of configurations to clone (required).
+     * @param srcUser           Source user (optional).
+     * @param policy            Conflict resolution policy (required).
+     * @return A map containing the clone result (e.g., success count, unrecognized data).
+     * @throws NacosException If the clone operation fails.
+     */
+    @Since("3.2.3")
+    default Map<String, Object> cloneConfig(String sourceNamespaceId, String targetNamespaceId,
+        List<ConfigCloneInfo> cloneInfos, String srcUser, SameConfigPolicy policy)
+        throws NacosException {
+        String sourceNamespace = StringUtils.isBlank(sourceNamespaceId)
+            ? Constants.DEFAULT_NAMESPACE_ID : sourceNamespaceId;
+        String targetNamespace = StringUtils.isBlank(targetNamespaceId)
+            ? Constants.DEFAULT_NAMESPACE_ID : targetNamespaceId;
+        if (!StringUtils.equals(sourceNamespace, targetNamespace)) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                "Cross-namespace clone is not supported by this implementation.");
+        }
+        return cloneConfig(targetNamespace, cloneInfos, srcUser, policy);
+    }
     
     /**
      * Query configurations list by namespace.

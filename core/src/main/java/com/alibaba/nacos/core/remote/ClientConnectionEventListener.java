@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
 
 /**
  * ClientConnectionEventListener.

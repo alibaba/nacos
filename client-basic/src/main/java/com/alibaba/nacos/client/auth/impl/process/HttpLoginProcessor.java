@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -74,7 +75,7 @@ public class HttpLoginProcessor implements LoginProcessor {
                 server = server + InternetAddressUtil.IP_PORT_SPLITER
                     + ClientBasicParamUtil.getDefaultServerPort();
             }
-            server = HTTP_PREFIX + server;
+            server = getProtocolPrefix() + server;
         }
         
         String url = server + contextPath + LOGIN_V3_URL;
@@ -123,6 +124,10 @@ public class HttpLoginProcessor implements LoginProcessor {
                 e.getMessage());
             return null;
         }
+    }
+    
+    private static String getProtocolPrefix() {
+        return Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE) ? HTTPS_PREFIX : HTTP_PREFIX;
     }
     
 }

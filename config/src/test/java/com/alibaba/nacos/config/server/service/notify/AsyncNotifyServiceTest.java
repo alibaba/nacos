@@ -33,9 +33,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -61,7 +61,7 @@ import static org.mockito.Mockito.times;
 @ExtendWith(SpringExtension.class)
 class AsyncNotifyServiceTest {
     
-    @Mock
+    @MockitoBean
     ServerMemberManager serverMemberManager;
     
     MockedStatic<EnvUtil> envUtilMocked;
@@ -70,7 +70,7 @@ class AsyncNotifyServiceTest {
     
     MockedStatic<InetUtils> inetUtilsMocked;
     
-    @Mock
+    @MockitoBean
     private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
     
     @BeforeEach
@@ -107,8 +107,6 @@ class AsyncNotifyServiceTest {
                 any(TimeUnit.class)))
             .thenAnswer(invocation -> null);
         
-        notifySingleRpcTask.setTag("test");
-        notifySingleRpcTask.setBeta(false);
         AsyncRpcNotifyCallBack asyncRpcNotifyCallBack =
             new AsyncRpcNotifyCallBack(asyncNotifyService,
                 notifySingleRpcTask);

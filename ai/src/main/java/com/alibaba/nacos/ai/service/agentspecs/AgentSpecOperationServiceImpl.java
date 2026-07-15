@@ -853,8 +853,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             buildStorageJson(namespaceId, name, newVersion));
         
         // Step 3: Update meta's editingVersion pointer
-        info.setEditingVersion(newVersion);
-        resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+        resourceManager.markEditingVersionCas(namespaceId, meta, info, newVersion,
+            "create draft");
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, newVersion,
             AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
@@ -982,8 +982,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void publish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
-        resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
-            updateLatestLabel);
+        resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
     }
     
@@ -993,8 +992,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void forcePublish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
-        resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
-            updateLatestLabel);
+        resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
     }
     

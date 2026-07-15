@@ -35,7 +35,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,35 +211,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public TransactionTemplate getTransactionTemplate() {
         return this.tjt;
-    }
-    
-    @Override
-    public String getCurrentDbUrl() {
-        DataSource ds = this.jt.getDataSource();
-        if (ds == null) {
-            return StringUtils.EMPTY;
-        }
-        HikariDataSource bds = (HikariDataSource) ds;
-        return bds.getJdbcUrl();
-    }
-    
-    @Override
-    public String getHealth() {
-        for (int i = 0; i < isHealthList.size(); i++) {
-            if (!isHealthList.get(i)) {
-                if (i == masterIndex) {
-                    // The master is unhealthy.
-                    return "DOWN:"
-                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
-                } else {
-                    // The slave  is unhealthy.
-                    return "WARN:"
-                        + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
-                }
-            }
-        }
-        
-        return "UP";
     }
     
     @Override

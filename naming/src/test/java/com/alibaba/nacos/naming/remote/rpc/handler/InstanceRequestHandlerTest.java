@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link InstanceRequestHandler} unit tests.
@@ -54,6 +55,7 @@ class InstanceRequestHandlerTest {
         instanceRequest.setServiceName("service1");
         instanceRequest.setGroupName("group1");
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         instanceRequest.setInstance(instance);
         RequestMeta requestMeta = new RequestMeta();
         instanceRequestHandler.handle(instanceRequest, requestMeta);
@@ -71,5 +73,22 @@ class InstanceRequestHandlerTest {
         } catch (Exception e) {
             assertEquals(NacosException.INVALID_PARAM, ((NacosException) e).getErrCode());
         }
+    }
+    
+    @Test
+    void testHandleRegisterWithBlankIp() throws NacosException {
+        InstanceRequest instanceRequest = new InstanceRequest();
+        instanceRequest.setType(NamingRemoteConstants.REGISTER_INSTANCE);
+        instanceRequest.setServiceName("service1");
+        instanceRequest.setGroupName("group1");
+        Instance instance = new Instance();
+        instance.setIp("  ");
+        instanceRequest.setInstance(instance);
+        RequestMeta requestMeta = new RequestMeta();
+        NacosException exception = assertThrows(NacosException.class,
+            () -> instanceRequestHandler.handle(instanceRequest, requestMeta));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        Mockito.verify(clientOperationService, Mockito.never())
+            .registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
     }
 }

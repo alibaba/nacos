@@ -17,7 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfigProvider;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +51,10 @@ import static org.mockito.Mockito.when;
 class NacosUserServiceDirectImplTest {
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthPluginConfigProvider configProvider;
+    
+    @Mock
+    private NacosAuthPluginConfig config;
     
     @Mock
     private UserPersistService userPersistService;
@@ -59,7 +63,7 @@ class NacosUserServiceDirectImplTest {
     
     @BeforeEach
     void setUp() {
-        nacosUserService = new NacosUserServiceDirectImpl(authConfigs, userPersistService);
+        nacosUserService = new NacosUserServiceDirectImpl(configProvider, userPersistService);
     }
     
     @Test
@@ -109,7 +113,8 @@ class NacosUserServiceDirectImplTest {
         User user = new User();
         user.setUsername("nacos");
         user.setPassword("pwd");
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(configProvider.getConfig()).thenReturn(config);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(userPersistService.findUserByUsername("nacos")).thenReturn(user);
         
         UserDetails userDetails = nacosUserService.loadUserByUsername("nacos");
@@ -120,7 +125,8 @@ class NacosUserServiceDirectImplTest {
     
     @Test
     void testLoadUserByUsernameThrowsWhenUserMissing() {
-        when(authConfigs.isCachingEnabled()).thenReturn(false);
+        when(configProvider.getConfig()).thenReturn(config);
+        when(config.isCachingEnabled()).thenReturn(false);
         when(userPersistService.findUserByUsername("missing")).thenReturn(null);
         
         assertThrows(UsernameNotFoundException.class,

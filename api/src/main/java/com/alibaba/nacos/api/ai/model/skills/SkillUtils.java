@@ -581,25 +581,6 @@ public class SkillUtils {
     }
     
     /**
-     * Decode a Skill Nacos Config {@code group} (as stored) into logical skill name and optional version.
-     *
-     * @param group physical group, e.g. {@code skill_myagent} or {@code skill_name__v1}
-     * @return array of length 2: {@code [skillName, version]}; {@code version} is {@code null} for manifest group
-     */
-    public static String[] decodeSkillGroupToNameAndVersion(String group) {
-        if (StringUtils.isBlank(group) || !group.startsWith(SKILL_GROUP_PREFIX)) {
-            throw new IllegalArgumentException("Not a Skill config group: " + group);
-        }
-        String rest = group.substring(SKILL_GROUP_PREFIX.length());
-        int idx = rest.lastIndexOf(DOUBLE_UNDERSCORE);
-        if (idx < 0) {
-            return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest), null};
-        }
-        return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest.substring(0, idx)),
-            NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
-    }
-    
-    /**
      * Sanitize a resource name for use in Nacos Config group names.
      *
      * @param name the raw resource name (e.g. skill name or agentspec name)

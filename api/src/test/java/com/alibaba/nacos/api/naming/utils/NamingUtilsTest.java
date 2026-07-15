@@ -73,6 +73,12 @@ class NamingUtilsTest {
     }
     
     @Test
+    void testGetServiceNameTrailingSpliter() {
+        // When input is "group@@", the serviceName after "@@" is empty; should return "" not crash
+        assertEquals(StringUtils.EMPTY, NamingUtils.getServiceName("group@@"));
+    }
+    
+    @Test
     void testGetGroupName() {
         String validServiceName = "group@@serviceName";
         assertEquals("group", NamingUtils.getGroupName(validServiceName));
@@ -192,6 +198,7 @@ class NamingUtilsTest {
     void testCheckInstanceIsLegal() throws NacosException {
         // check invalid clusterName
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         instance.setClusterName("cluster1,cluster2");
         try {
             NamingUtils.checkInstanceIsLegal(instance);
@@ -234,6 +241,7 @@ class NamingUtilsTest {
     void testBatchCheckInstanceIsLegal() throws NacosException {
         // check invalid clusterName
         Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
         instance.setClusterName("cluster1,cluster2");
         List<Instance> instanceList = new ArrayList<>();
         instanceList.add(instance);
@@ -280,6 +288,15 @@ class NamingUtilsTest {
         instanceList.add(instance);
         NamingUtils.batchCheckInstanceIsLegal(instanceList);
         assertTrue(true);
+    }
+    
+    @Test
+    void testCheckInstanceIsLegalWithBlankIp() {
+        Instance instance = new Instance();
+        instance.setIp("  ");
+        NacosException exception = assertThrows(NacosException.class,
+            () -> NamingUtils.checkInstanceIsLegal(instance));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
     
     @Test

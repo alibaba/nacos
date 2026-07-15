@@ -17,8 +17,13 @@
 package com.alibaba.nacos.test.maintainer;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.maintainer.client.NacosMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
+import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import org.junit.jupiter.api.AfterEach;
 
 import java.util.ArrayDeque;
@@ -26,6 +31,8 @@ import java.util.Deque;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Shared standalone-server maintainer SDK integration test infrastructure.
@@ -38,6 +45,9 @@ public abstract class MaintainerSdkBaseITCase {
     
     protected static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
     
+    protected static final String NACOS_CONTEXT_PATH = System.getProperty("nacos.contextPath",
+            "/nacos");
+
     protected static final String SERVER_ADDR = NACOS_HOST + ":" + NACOS_PORT;
     
     private final Deque<CleanupAction> cleanupActions = new ArrayDeque<>();
@@ -59,10 +69,22 @@ public abstract class MaintainerSdkBaseITCase {
         shutdownActions.addFirst(service::shutdown);
         return service;
     }
+
+    protected NamingMaintainerService createNamingMaintainerService() throws NacosException {
+        NamingMaintainerService service =
+                NamingMaintainerFactory.createNamingMaintainerService(maintainerProperties());
+        shutdownActions.addFirst(service::shutdown);
+        return service;
+    }
+    
+    protected AiMaintainerService createAiMaintainerService() throws NacosException {
+        return AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
+    }
     
     protected Properties maintainerProperties() {
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", SERVER_ADDR);
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, SERVER_ADDR);
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, NACOS_CONTEXT_PATH);
         return properties;
     }
     
@@ -80,6 +102,25 @@ public abstract class MaintainerSdkBaseITCase {
     
     protected String randomGroup(String scenario) {
         return ("MAINTAINER_SDK_IT_" + scenario + "_" + randomSuffix()).toUpperCase(Locale.ROOT);
+    }
+    
+    protected void waitUntil(String reason, CheckedCondition condition) throws Exception {
+        long deadline = System.currentTimeMillis() + 10000;
+        Throwable lastFailure = null;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (condition.evaluate()) {
+                    return;
+                }
+            } catch (Throwable throwable) {
+                lastFailure = throwable;
+            }
+            Thread.sleep(500);
+        }
+        if (null == lastFailure) {
+            fail(reason);
+        }
+        fail(reason + ", last failure: " + lastFailure.getMessage(), lastFailure);
     }
     
     private String randomSuffix() {
@@ -107,13 +148,21 @@ public abstract class MaintainerSdkBaseITCase {
             return false;
         }
         NacosException nacosException = (NacosException) exception;
+        String message = String.valueOf(nacosException.getMessage()).toLowerCase(Locale.ROOT);
         return NacosException.NOT_FOUND == nacosException.getErrCode()
-                || NacosException.RESOURCE_NOT_FOUND == nacosException.getErrCode();
+                || NacosException.RESOURCE_NOT_FOUND == nacosException.getErrCode()
+                || message.contains("not found") || message.contains("not exist");
     }
     
     @FunctionalInterface
     protected interface CleanupAction {
         
         void run() throws Exception;
+    }
+    
+    @FunctionalInterface
+    protected interface CheckedCondition {
+        
+        boolean evaluate() throws Exception;
     }
 }

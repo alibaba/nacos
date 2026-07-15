@@ -104,7 +104,7 @@ public interface PromptOperationService {
      * @param namespaceId       namespace ID
      * @param promptKey         prompt key
      * @param version           version to publish
-     * @param updateLatestLabel whether to update the "latest" label to this version
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      * @throws NacosException if version is not in reviewing/online status or pipeline not approved
      */
     void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
@@ -116,7 +116,7 @@ public interface PromptOperationService {
      * @param namespaceId       namespace ID
      * @param promptKey         prompt key
      * @param version           version to force-publish
-     * @param updateLatestLabel whether to update the "latest" label
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      * @throws NacosException if version not found
      */
     void forcePublish(String namespaceId, String promptKey, String version,

@@ -213,10 +213,6 @@ public class UtilsAndCommons {
         return metadataMap;
     }
     
-    public static String assembleFullServiceName(String namespaceId, String serviceName) {
-        return namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + serviceName;
-    }
-    
     /**
      * Provide a number between 0(inclusive) and {@code upperLimit}(exclusive) for the given {@code string}, the number
      * will be nearly uniform distribution.

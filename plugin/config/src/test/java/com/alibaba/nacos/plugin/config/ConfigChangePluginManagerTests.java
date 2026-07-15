@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.config;
 
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeRequest;
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -215,35 +215,33 @@ class ConfigChangePluginManagerTests {
     }
     
     @Test
-    void testFindPluginServiceByServiceType() {
-        Optional<ConfigChangePluginService> configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance()
-                .findPluginServiceImpl("test1");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test2");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test3");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test4");
-        assertTrue(configChangePluginServiceOptional.isPresent());
-        configChangePluginServiceOptional =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test5");
-        assertFalse(configChangePluginServiceOptional.isPresent());
+    void testGetAllPluginsByServiceType() {
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test1"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test2"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test3"));
+        assertTrue(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test4"));
+        assertFalse(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("test5"));
     }
     
     @Test
-    void testFindPluginServiceWhenDisabledAndGetAllPlugins() {
-        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
-        
-        Optional<ConfigChangePluginService> service =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("test1");
-        
-        assertFalse(service.isPresent());
+    void testGetAllPluginsUnmodifiable() {
         assertThrows(UnsupportedOperationException.class,
             () -> ConfigChangePluginManager.getInstance().getAllPlugins().clear());
+    }
+    
+    @Test
+    void testFindPluginServicesFiltersDisabledPlugin() {
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !PluginType.CONFIG_CHANGE.getType().equals(pluginType)
+                || !"test2".equals(pluginName));
+        
+        List<ConfigChangePluginService> services =
+            ConfigChangePluginManager.findPluginServicesByPointcut(
+                ConfigChangePointCutTypes.PUBLISH_BY_RPC);
+        
+        assertEquals(2, services.size());
+        assertFalse(
+            services.stream().anyMatch(service -> "test2".equals(service.getServiceType())));
     }
     
     @Test
@@ -269,10 +267,9 @@ class ConfigChangePluginManagerTests {
         
         method.invoke(null);
         
-        Optional<ConfigChangePluginService> service =
-            ConfigChangePluginManager.getInstance().findPluginServiceImpl("spi-config");
-        assertTrue(service.isPresent());
-        assertFalse(ConfigChangePluginManager.getInstance().findPluginServiceImpl("").isPresent());
+        assertTrue(
+            ConfigChangePluginManager.getInstance().getAllPlugins().containsKey("spi-config"));
+        assertFalse(ConfigChangePluginManager.getInstance().getAllPlugins().containsKey(""));
         assertTrue(ConfigChangePluginManager.findPluginServicesByPointcut(
             ConfigChangePointCutTypes.PUBLISH_BY_HTTP).stream()
             .anyMatch(each -> "spi-config".equals(each.getServiceType())));

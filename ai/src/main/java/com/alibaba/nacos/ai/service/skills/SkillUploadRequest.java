@@ -33,6 +33,16 @@ public class SkillUploadRequest {
     
     private String commitMsg;
     
+    private String uploadAction;
+    
+    private String skillName;
+    
+    private String description;
+    
+    private String parsedVersion;
+    
+    private String versionSource;
+    
     public static Builder builder() {
         return new Builder();
     }
@@ -55,6 +65,26 @@ public class SkillUploadRequest {
     
     public String getCommitMsg() {
         return commitMsg;
+    }
+    
+    public String getUploadAction() {
+        return uploadAction;
+    }
+    
+    public String getSkillName() {
+        return skillName;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public String getParsedVersion() {
+        return parsedVersion;
+    }
+    
+    public String getVersionSource() {
+        return versionSource;
     }
     
     /**
@@ -86,6 +116,31 @@ public class SkillUploadRequest {
         
         public Builder commitMsg(String commitMsg) {
             request.commitMsg = commitMsg;
+            return this;
+        }
+        
+        public Builder uploadAction(String uploadAction) {
+            request.uploadAction = uploadAction;
+            return this;
+        }
+        
+        public Builder skillName(String skillName) {
+            request.skillName = skillName;
+            return this;
+        }
+        
+        public Builder description(String description) {
+            request.description = description;
+            return this;
+        }
+        
+        public Builder parsedVersion(String parsedVersion) {
+            request.parsedVersion = parsedVersion;
+            return this;
+        }
+        
+        public Builder versionSource(String versionSource) {
+            request.versionSource = versionSource;
             return this;
         }
         

@@ -142,7 +142,7 @@ public class PromptRemoteHandler implements PromptHandler {
         boolean updateLatestLabel)
         throws NacosException {
         clientHolder.getAiMaintainerService().prompt().publish(namespaceId, promptKey, version,
-            updateLatestLabel);
+            true);
     }
     
     @Override
@@ -150,7 +150,7 @@ public class PromptRemoteHandler implements PromptHandler {
         boolean updateLatestLabel)
         throws NacosException {
         clientHolder.getAiMaintainerService().prompt().forcePublish(namespaceId, promptKey, version,
-            updateLatestLabel);
+            true);
     }
     
     @Override

@@ -56,19 +56,4 @@ public enum PublishPipelineMessageType {
     public String getCode() {
         return code;
     }
-    
-    /**
-     * Resolve from API wire value, or null if unknown.
-     */
-    public static PublishPipelineMessageType fromCode(String code) {
-        if (code == null || code.isEmpty()) {
-            return null;
-        }
-        for (PublishPipelineMessageType t : values()) {
-            if (t.code.equalsIgnoreCase(code)) {
-                return t;
-            }
-        }
-        return null;
-    }
 }

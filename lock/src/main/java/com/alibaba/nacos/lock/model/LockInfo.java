@@ -35,6 +35,14 @@ public class LockInfo implements Serializable {
     
     private Map<String, ? extends Serializable> params;
     
+    private String owner;
+    
+    private String connectionId;
+    
+    private Long waitTime;
+    
+    private boolean waiterRetry;
+    
     public LockInfo() {
     }
     
@@ -60,5 +68,37 @@ public class LockInfo implements Serializable {
     
     public void setParams(Map<String, ? extends Serializable> params) {
         this.params = params;
+    }
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    public String getConnectionId() {
+        return connectionId;
+    }
+    
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
+    }
+    
+    public Long getWaitTime() {
+        return waitTime;
+    }
+    
+    public void setWaitTime(Long waitTime) {
+        this.waitTime = waitTime;
+    }
+    
+    public boolean isWaiterRetry() {
+        return waiterRetry;
+    }
+    
+    public void setWaiterRetry(boolean waiterRetry) {
+        this.waiterRetry = waiterRetry;
     }
 }

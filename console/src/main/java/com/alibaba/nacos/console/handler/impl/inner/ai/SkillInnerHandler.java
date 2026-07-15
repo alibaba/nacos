@@ -35,6 +35,8 @@ import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -43,6 +45,7 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -100,6 +103,12 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
+    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
+        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+        return skillOperationService.batchPrecheckUploadSkill(requests);
+    }
+    
+    @Override
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
@@ -132,16 +141,14 @@ public class SkillInnerHandler implements SkillHandler {
     
     @Override
     public void publish(SkillPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(),
-            updateLatest);
+            true);
     }
     
     @Override
     public void forcePublish(SkillPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(),
-            form.getVersion(), updateLatest);
+            form.getVersion(), true);
     }
     
     @Override

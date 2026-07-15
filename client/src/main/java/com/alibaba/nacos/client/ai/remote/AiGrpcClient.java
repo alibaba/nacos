@@ -71,7 +71,7 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -651,7 +651,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     private AgentCard buildLegacyCompatibleAgentCard(AgentCard source) {
-        AgentCard result = JacksonUtils.toObj(JacksonUtils.toJson(source), AgentCard.class);
+        AgentCard result = JsonUtils.toObj(JsonUtils.toJson(source), AgentCard.class);
         List<AgentInterface> supportedInterfaces = result.getSupportedInterfaces();
         if (null != supportedInterfaces && !supportedInterfaces.isEmpty()) {
             AgentInterface preferred = supportedInterfaces.get(0);

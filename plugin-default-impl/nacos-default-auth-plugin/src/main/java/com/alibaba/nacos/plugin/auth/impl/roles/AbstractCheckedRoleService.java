@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -43,11 +42,7 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 public abstract class AbstractCheckedRoleService extends AbstractCachedRoleService
     implements NacosRoleService {
     
-    private final AuthConfigs authConfigs;
-    
-    protected AbstractCheckedRoleService(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-    }
+    private volatile boolean hasGlobalAdminRole;
     
     @Override
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
@@ -126,14 +121,21 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
     
     @Override
     public boolean hasGlobalAdminRole() {
-        if (authConfigs.isHasGlobalAdminRole()) {
+        if (hasGlobalAdminRole) {
             return true;
         }
         List<RoleInfo> roles = getAllRoles();
         boolean hasGlobalAdminRole = CollectionUtils.isNotEmpty(roles) && roles.stream()
             .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
-        authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
+        this.hasGlobalAdminRole = hasGlobalAdminRole;
         return hasGlobalAdminRole;
+    }
+    
+    /**
+     * Mark the local global-admin lookup cache after an administrator role is created.
+     */
+    protected void markGlobalAdminRolePresent() {
+        hasGlobalAdminRole = true;
     }
     
     /**

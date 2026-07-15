@@ -259,10 +259,9 @@ public class AgentSpecAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
-            updateLatest);
+            true);
         return Result.success("ok");
     }
     
@@ -277,10 +276,9 @@ public class AgentSpecAdminController {
         apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
-            updateLatest);
+            true);
         return Result.success("ok");
     }
     

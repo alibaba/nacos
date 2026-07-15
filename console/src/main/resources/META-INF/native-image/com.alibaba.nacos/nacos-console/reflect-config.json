@@ -284,27 +284,6 @@
   "name":"co.elastic.clients.transport.ElasticsearchTransport"
 },
 {
-  "name":"com.alibaba.nacos.Nacos",
-  "allDeclaredFields":true,
-  "allDeclaredClasses":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"main","parameterTypes":["java.lang.String[]"] }, {"name":"setBeanFactory","parameterTypes":["org.springframework.beans.factory.BeanFactory"] }]
-},
-{
-  "name":"com.alibaba.nacos.Nacos$$SpringCGLIB$$0",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "fields":[{"name":"CGLIB$FACTORY_DATA"}],
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"CGLIB$SET_STATIC_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }, {"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
-},
-{
-  "name":"com.alibaba.nacos.Nacos$NacosRuntimeHints",
-  "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
   "name":"com.alibaba.nacos.api.ability.ServerAbilities",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -1292,7 +1271,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService"] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService"] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.ConfigReadinessCheckService",
@@ -1371,14 +1350,14 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.merge.MergeDatumService","com.alibaba.nacos.core.cluster.ServerMemberManager","com.alibaba.nacos.core.distributed.ProtocolManager"] }, {"name":"init","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService","com.alibaba.nacos.core.cluster.ServerMemberManager","com.alibaba.nacos.core.distributed.ProtocolManager"] }, {"name":"init","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.dump.ExternalDumpService",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService","com.alibaba.nacos.config.server.service.merge.MergeDatumService","com.alibaba.nacos.core.cluster.ServerMemberManager"] }, {"name":"init","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService","com.alibaba.nacos.core.namespace.repository.NamespacePersistService","com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService","com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService","com.alibaba.nacos.core.cluster.ServerMemberManager"] }, {"name":"init","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor"
@@ -1717,7 +1696,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"corsFilter","parameterTypes":[] }, {"name":"init","parameterTypes":[] }, {"name":"jacksonObjectMapperCustomization","parameterTypes":[] }, {"name":"xssFilter","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"corsFilter","parameterTypes":[] }, {"name":"init","parameterTypes":[] }, {"name":"jacksonJsonMapperCustomization","parameterTypes":[] }, {"name":"xssFilter","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.console.config.ConsoleModuleStateBuilder"
@@ -5947,7 +5926,7 @@
   "name":"io.micrometer.prometheus.PrometheusDistributionSummary"
 },
 {
-  "name":"io.micrometer.prometheus.PrometheusMeterRegistry",
+  "name":"io.micrometer.prometheusmetrics.PrometheusMeterRegistry",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -7125,15 +7104,15 @@
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.PostConstruct",
+  "name":"jakarta.annotation.PostConstruct",
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.PreDestroy",
+  "name":"jakarta.annotation.PreDestroy",
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"javax.annotation.Resource",
+  "name":"jakarta.annotation.Resource",
   "queryAllDeclaredMethods":true
 },
 {
@@ -12400,7 +12379,7 @@
   "name":"org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration"
 },
 {
-  "name":"org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration"
+  "name":"org.springframework.boot.ldap.autoconfigure.LdapAutoConfiguration"
 },
 {
   "name":"org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener",

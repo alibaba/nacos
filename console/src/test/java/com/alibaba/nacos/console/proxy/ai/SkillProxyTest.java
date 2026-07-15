@@ -31,6 +31,8 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
@@ -156,6 +158,27 @@ class SkillProxyTest {
         
         assertEquals(SKILL_NAME, result);
         verify(skillHandler).uploadSkillFromZip(request);
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkill() throws NacosException {
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(NS);
+        request.setSkillName(SKILL_NAME);
+        SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
+        precheckResult.setSkillName(SKILL_NAME);
+        java.util.List<SkillUploadPrecheckRequest> requests =
+            java.util.Collections.singletonList(request);
+        java.util.List<SkillUploadPrecheckResult> results =
+            java.util.Collections.singletonList(precheckResult);
+        when(skillHandler.batchPrecheckUploadSkill(requests)).thenReturn(results);
+        
+        java.util.List<SkillUploadPrecheckResult> actual =
+            skillProxy.batchPrecheckUploadSkill(requests);
+        
+        assertEquals(1, actual.size());
+        assertEquals(SKILL_NAME, actual.get(0).getSkillName());
+        verify(skillHandler).batchPrecheckUploadSkill(requests);
     }
     
     @Test

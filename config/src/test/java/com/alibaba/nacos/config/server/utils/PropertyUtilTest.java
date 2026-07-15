@@ -105,7 +105,6 @@ class PropertyUtilTest {
         PropertyUtil.setInitialExpansionPercent(100);
         PropertyUtil.setDefaultMaxSize(100 * 1024);
         PropertyUtil.setDefaultMaxAggrCount(10000);
-        PropertyUtil.setGrayCompatibleModel(true);
         PropertyUtil.setDefaultMaxAggrSize(1024);
         PropertyUtil.setCorrectUsageDelay(10 * 60);
         Field configRententionDaysField =
@@ -249,7 +248,6 @@ class PropertyUtilTest {
         PropertyUtil.setInitialExpansionPercent(9);
         PropertyUtil.setDefaultMaxSize(10);
         PropertyUtil.setDefaultMaxAggrCount(11);
-        PropertyUtil.setGrayCompatibleModel(false);
         PropertyUtil.setDefaultMaxAggrSize(12);
         PropertyUtil.setCorrectUsageDelay(13);
         
@@ -267,7 +265,6 @@ class PropertyUtilTest {
         assertEquals(9, PropertyUtil.getInitialExpansionPercent());
         assertEquals(10, PropertyUtil.getDefaultMaxSize());
         assertEquals(11, PropertyUtil.getDefaultMaxAggrCount());
-        assertFalse(PropertyUtil.isGrayCompatibleModel());
         assertEquals(12, PropertyUtil.getDefaultMaxAggrSize());
         assertEquals(13, PropertyUtil.getCorrectUsageDelay());
     }
@@ -291,7 +288,6 @@ class PropertyUtilTest {
         mockPropertyWithDefault("initialExpansionPercent", "17");
         mockPropertyWithDefault("dumpChangeOn", "false");
         mockPropertyWithDefault("dumpChangeWorkerInterval", "18000");
-        mockPropertyWithDefault("nacos.config.gray.compatible.model", "false");
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("nacos.config.retention.days")))
             .thenReturn("19");
         
@@ -315,7 +311,6 @@ class PropertyUtilTest {
         assertEquals(19, PropertyUtil.getConfigRententionDays());
         assertFalse(PropertyUtil.isDumpChangeOn());
         assertEquals(18000L, PropertyUtil.getDumpChangeWorkerInterval());
-        assertFalse(PropertyUtil.isGrayCompatibleModel());
     }
     
     @Test

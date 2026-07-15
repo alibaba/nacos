@@ -53,9 +53,9 @@ import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

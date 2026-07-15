@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -25,7 +27,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.api.model.v2.Result;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -189,6 +190,37 @@ class AiHttpClientProxyTest {
         // Pass null promptKey to exercise StringUtils.EMPTY branch (line 130)
         Prompt actual = httpClientProxy.queryPrompt(null, null, null, null);
         assertNotNull(actual);
+    }
+    
+    @Test
+    void queryAgentSpecSuccess() throws Exception {
+        AgentSpec expectedAgentSpec = new AgentSpec();
+        expectedAgentSpec.setName("agent-a");
+        expectedAgentSpec.setNamespaceId("public");
+        expectedAgentSpec.setDescription("test agent");
+        Result<AgentSpec> result = Result.success(expectedAgentSpec);
+        
+        HttpRestResult<String> httpResult = new HttpRestResult<>();
+        httpResult.setCode(200);
+        httpResult.setData(JacksonUtils.toJson(result));
+        httpResult.setHeader(Header.newInstance().addParam("X-Nacos-AgentSpec-Md5", "md5-value")
+            .addParam("X-Nacos-AgentSpec-Resolved-Version", "1.0.0"));
+        
+        when(serverListManager.getServerList()).thenReturn(Arrays.asList("127.0.0.1:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        doReturn(httpResult).when(nacosRestTemplate).get(anyString(), any(Header.class),
+            any(Query.class), eq(String.class));
+        
+        AgentSpecQueryResponse actual =
+            httpClientProxy.queryAgentSpec("agent-a", "1.0.0", null, null);
+        
+        assertNotNull(actual);
+        assertEquals("agent-a", actual.getAgentSpec().getName());
+        assertEquals("public", actual.getAgentSpec().getNamespaceId());
+        assertEquals("test agent", actual.getAgentSpec().getDescription());
+        assertEquals("md5-value", actual.getMd5());
+        assertEquals("1.0.0", actual.getResolvedVersion());
     }
     
     @Test

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.ai.pipeline.model;
 
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

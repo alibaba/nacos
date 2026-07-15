@@ -466,7 +466,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
         com.alibaba.nacos.naming.pojo.ClusterInfo.class,
         com.alibaba.nacos.naming.pojo.InstanceOperationInfo.class,
         com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
-        com.alibaba.nacos.naming.pojo.Record.class,
         com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
         com.alibaba.nacos.naming.pojo.ServiceNameView.class,
         // sys and plugin
@@ -510,7 +509,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
         com.alibaba.nacos.naming.pojo.Subscribers.class,
         com.alibaba.nacos.naming.pojo.ClusterInfo.class,
         com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
-        com.alibaba.nacos.naming.pojo.Record.class,
         com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
         com.alibaba.nacos.consistency.entity.WriteRequest.class,
         com.alibaba.nacos.consistency.entity.ReadRequest.class,

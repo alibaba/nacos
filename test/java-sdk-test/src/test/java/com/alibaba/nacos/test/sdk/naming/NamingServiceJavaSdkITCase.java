@@ -65,9 +65,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     instances are filtered from healthy selection, explicit unhealthy selection returns only
  *     unhealthy instances, empty batch register leaves no instance, list pagination boundaries
  *     return stable result shapes, blank service name is rejected by the grouped-name utility, and
- *     null instance, invalid port/cluster, invalid heartbeat metadata, persistent batch instance,
- *     empty batch deregister, plus mismatched group-prefix inputs throw controlled SDK
- *     exceptions where the SDK defines them; null batch lists fail before a remote call.</li>
+ *     null instance, blank instance IP, invalid port/cluster, invalid heartbeat metadata,
+ *     persistent batch instance, empty batch deregister, plus mismatched group-prefix inputs
+ *     throw controlled SDK exceptions where the SDK defines them; null batch lists fail before
+ *     a remote call.</li>
  *     <li>Listener/error handling: subscribe receives an instance change event, subscribe=true
  *     queries refresh cached service info through later push, subscribe state is visible, cluster
  *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
@@ -575,6 +576,8 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
     public void testInvalidNamingParametersThrowNacosException() throws Exception {
         NamingService namingService = createNamingService();
         String serviceName = randomServiceName("invalid");
+        Instance blankIp = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        blankIp.setIp("  ");
         Instance invalidPort = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         invalidPort.setPort(65536);
         Instance invalidCluster = buildInstance(randomPort(), "bad_cluster");
@@ -593,6 +596,11 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         NacosException nullInstance = assertThrows(NacosException.class,
                 () -> namingService.registerInstance(serviceName, Constants.DEFAULT_GROUP, null));
         assertEquals(NacosException.INVALID_PARAM, nullInstance.getErrCode(), nullInstance.toString());
+
+        NacosException missingIp = assertThrows(NacosException.class,
+                () -> namingService.registerInstance(serviceName, Constants.DEFAULT_GROUP,
+                        blankIp));
+        assertEquals(NacosException.INVALID_PARAM, missingIp.getErrCode(), missingIp.toString());
 
         NacosException badPort = assertThrows(NacosException.class,
                 () -> namingService.registerInstance(serviceName, Constants.DEFAULT_GROUP,

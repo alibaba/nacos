@@ -154,18 +154,6 @@ public final class ResourceContentEncoder {
         return new EncodedContent(Base64.getEncoder().encodeToString(data), metadata);
     }
     
-    /**
-     * Build a metadata map flagging Base64 encoding. Used by storage-side reconstruction
-     * paths that already hold a content string and only need to attach the encoding hint.
-     *
-     * @return mutable metadata map containing only the Base64 encoding flag
-     */
-    public static Map<String, Object> base64Metadata() {
-        Map<String, Object> metadata = new HashMap<>(2);
-        metadata.put(METADATA_ENCODING, METADATA_ENCODING_BASE64);
-        return metadata;
-    }
-    
     private static String stripDirectory(String name) {
         int slash = name.lastIndexOf('/');
         if (slash >= 0) {

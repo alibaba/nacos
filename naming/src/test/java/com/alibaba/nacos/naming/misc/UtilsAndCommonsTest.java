@@ -22,7 +22,6 @@ import org.springframework.mock.env.MockEnvironment;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UtilsAndCommonsTest {
@@ -55,10 +54,4 @@ class UtilsAndCommonsTest {
         assertThrows(Exception.class, () -> UtilsAndCommons.parseMetadata("invalid"));
     }
     
-    @Test
-    void testAssembleFullServiceName() {
-        assertNotNull(new UtilsAndCommons());
-        assertEquals("namespace##service",
-            UtilsAndCommons.assembleFullServiceName("namespace", "service"));
-    }
 }

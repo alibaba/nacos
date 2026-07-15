@@ -50,12 +50,15 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.StandardEnvironment;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -158,9 +161,33 @@ class PromptDataMigrationTaskTest {
     
     @AfterEach
     void tearDown() {
+        shutdownMigrationExecutor();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
         System.clearProperty("nacos.ai.prompt.migration.enabled");
         System.clearProperty("nacos.ai.prompt.migration.provider");
+        AiResourceStorageRouter.reset();
+    }
+    
+    private void shutdownMigrationExecutor() {
+        if (task == null) {
+            return;
+        }
+        try {
+            Field executorField =
+                PromptDataMigrationTask.class.getDeclaredField("migrationExecutor");
+            executorField.setAccessible(true);
+            ExecutorService executor = (ExecutorService) executorField.get(task);
+            executor.shutdown();
+            if (!executor.awaitTermination(ASYNC_TIMEOUT, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
+                executor.awaitTermination(ASYNC_TIMEOUT, TimeUnit.MILLISECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for migration executor", e);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to access migration executor", e);
+        }
     }
     
     // ========== onApplicationEvent guard conditions ==========

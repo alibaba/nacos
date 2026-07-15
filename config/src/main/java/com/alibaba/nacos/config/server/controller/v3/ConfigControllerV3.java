@@ -49,17 +49,15 @@ import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
+import com.alibaba.nacos.config.server.service.ConfigCloneService;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -133,35 +131,25 @@ public class ConfigControllerV3 {
     
     private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private final NamespacePersistService namespacePersistService;
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
-    private final ConfigMigrateService configMigrateService;
-    
-    /**
-     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
-     */
-    private boolean oldTableVersion;
+    private final ConfigCloneService configCloneService;
     
     public ConfigControllerV3(ConfigOperationService configOperationService,
         ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
         ConfigInfoGrayPersistService configInfoGrayPersistService,
-        ConfigInfoBetaPersistService configInfoBetaPersistService,
         NamespacePersistService namespacePersistService,
         ConfigListenerStateDelegate configListenerStateDelegate,
-        ConfigMigrateService configMigrateService) {
+        ConfigCloneService configCloneService) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
-        this.configMigrateService = configMigrateService;
-        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
+        this.configCloneService = configCloneService;
     }
     
     /**
@@ -204,8 +192,6 @@ public class ConfigControllerV3 {
         throws NacosException {
         // check required field
         configForm.validateWithContent();
-        final boolean namespaceTransferred =
-            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
@@ -237,7 +223,6 @@ public class ConfigControllerV3 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(
             configOperationService.publishConfig(configForm, configRequestInfo,
@@ -266,8 +251,6 @@ public class ConfigControllerV3 {
         String group = configForm.getGroup();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags,
-            description);
-        configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags,
             description);
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(),
@@ -309,14 +292,22 @@ public class ConfigControllerV3 {
     @DeleteMapping("/batch")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfigs(HttpServletRequest request,
-        @RequestParam(value = "ids") List<Long> ids) {
+        @RequestParam(value = "ids") List<Long> ids,
+        @RequestParam(value = "namespaceId", required = false) String namespaceId) {
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
+        String requestNamespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         try {
             for (Long id : ids) {
                 ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
                 if (configInfo == null) {
                     LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                    continue;
+                }
+                if (!StringUtils.equals(requestNamespaceId, configInfo.getTenant())) {
+                    LOGGER.warn(
+                        "[deleteConfigs] skip configInfo with namespace mismatch, id: {}, request namespace: {}, actual namespace: {}",
+                        id, requestNamespaceId, configInfo.getTenant());
                     continue;
                 }
                 configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
@@ -416,9 +407,6 @@ public class ConfigControllerV3 {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, groupName, namespaceId,
                 BetaGrayRule.TYPE_BETA,
                 remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
-            configMigrateService.removeConfigInfoGrayMigrate(dataId, groupName, namespaceId,
-                BetaGrayRule.TYPE_BETA,
-                remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "remove beta data error",
@@ -429,9 +417,6 @@ public class ConfigControllerV3 {
             System.currentTimeMillis(),
             remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA,
             ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, groupName, namespaceId);
-        }
         ConfigChangePublisher.notifyConfigChange(
             new ConfigDataChangeEvent(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA,
                 System.currentTimeMillis()));
@@ -478,8 +463,6 @@ public class ConfigControllerV3 {
         @RequestParam(value = "grayMatchRuleExp", required = false) String grayMatchRuleExp)
         throws NacosException {
         configForm.validateWithContent();
-        final boolean namespaceTransferred =
-            NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         if (StringUtils.isNotBlank(grayMatchRuleExp)) {
@@ -510,7 +493,6 @@ public class ConfigControllerV3 {
         configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(
             configOperationService.publishConfigGray(grayType, configForm, configRequestInfo));
@@ -755,7 +737,9 @@ public class ConfigControllerV3 {
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
         @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
-        ids.removeAll(Collections.singleton(null));
+        if (ids != null) {
+            ids.removeAll(Collections.singleton(null));
+        }
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         List<ConfigAllInfo> dataList =
             configInfoPersistService.findAllConfigInfo4Export(configForm.getDataId(),
@@ -798,85 +782,34 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @PostMapping("/clone")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(value = "src_user", required = false) String srcUser,
         @RequestParam(value = "namespaceId") String namespaceId,
+        @RequestParam(value = "sourceNamespaceId", required = false) String sourceNamespaceId,
         @RequestBody List<ConfigCloneInfo> cloneInfos,
         @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy)
         throws NacosException {
-        Map<String, Object> failedData = new HashMap<>(4);
-        if (CollectionUtils.isEmpty(cloneInfos)) {
-            failedData.put("succCount", 0);
-            return Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData);
-        }
-        cloneInfos.removeAll(Collections.singleton(null));
-        
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
-            && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
-            failedData.put("succCount", 0);
-            return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
-        }
-        
-        List<Long> idList = new ArrayList<>(cloneInfos.size());
-        Map<Long, ConfigCloneInfo> configBeansMap = cloneInfos.stream()
-            .collect(Collectors.toMap(ConfigCloneInfo::getConfigId, cfg -> {
-                idList.add(cfg.getConfigId());
-                return cfg;
-            }, (k1, k2) -> k1));
-        
-        List<ConfigAllInfo> queryedDataList =
-            configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
-                idList);
-        
-        if (queryedDataList == null || queryedDataList.isEmpty()) {
-            failedData.put("succCount", 0);
-            return Result.failure(ErrorCode.DATA_EMPTY, failedData);
-        }
-        
-        List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
-        
-        for (ConfigAllInfo ci : queryedDataList) {
-            ConfigCloneInfo paramBean = configBeansMap.get(ci.getId());
-            ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespaceId);
-            ci4save.setType(ci.getType());
-            ci4save.setGroup(
-                (paramBean != null && StringUtils.isNotBlank(paramBean.getTargetGroupName()))
-                    ? paramBean.getTargetGroupName() : ci.getGroup());
-            ci4save.setDataId(
-                (paramBean != null && StringUtils.isNotBlank(paramBean.getTargetDataId()))
-                    ? paramBean.getTargetDataId() : ci.getDataId());
-            ci4save.setContent(ci.getContent());
-            if (StringUtils.isNotBlank(ci.getAppName())) {
-                ci4save.setAppName(ci.getAppName());
-            }
-            ci4save.setDesc(ci.getDesc());
-            ci4save.setEncryptedDataKey(
-                ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
-            configInfoList4Clone.add(ci4save);
-        }
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
         final String srcIp = getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult =
-            configInfoPersistService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
-                srcIp, null, policy);
-        for (ConfigInfo configInfo : configInfoList4Clone) {
-            ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(),
-                    time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                configInfo.getContent());
+        return configCloneService.cloneConfig(sourceNamespaceId, namespaceId,
+            toCloneItems(cloneInfos), srcUser, policy, srcIp, requestIpApp);
+    }
+    
+    private List<ConfigCloneService.ConfigCloneItem> toCloneItems(
+        List<ConfigCloneInfo> cloneInfos) {
+        if (cloneInfos == null) {
+            return null;
         }
-        
-        return Result.success(saveResult);
+        List<ConfigCloneService.ConfigCloneItem> result = new ArrayList<>(cloneInfos.size());
+        for (ConfigCloneInfo cloneInfo : cloneInfos) {
+            result.add(cloneInfo == null ? null
+                : new ConfigCloneService.ConfigCloneItem(cloneInfo.getConfigId(),
+                    cloneInfo.getTargetDataId(), cloneInfo.getTargetGroupName()));
+        }
+        return result;
     }
 }

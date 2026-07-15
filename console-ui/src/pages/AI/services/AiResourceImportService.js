@@ -19,37 +19,37 @@ import { request } from '@/globalLib';
 const IMPORT_PATH = 'v3/console/ai/import';
 
 const AiResourceImportService = {
-    listSources(params) {
-        return request({
-            url: `${IMPORT_PATH}/sources`,
-            type: 'get',
-            data: params,
-        });
-    },
+  listSources(params) {
+    return request({
+      url: `${IMPORT_PATH}/sources`,
+      type: 'get',
+      data: params,
+    });
+  },
 
-    search(data) {
-        return request({
-            url: `${IMPORT_PATH}/search`,
-            type: 'post',
-            data,
-        });
-    },
+  search(data) {
+    return request({
+      url: `${IMPORT_PATH}/search`,
+      type: 'post',
+      data,
+    });
+  },
 
-    validate(data) {
-        return request({
-            url: `${IMPORT_PATH}/validate`,
-            type: 'post',
-            data,
-        });
-    },
+  validate(data) {
+    return request({
+      url: `${IMPORT_PATH}/validate`,
+      type: 'post',
+      data,
+    });
+  },
 
-    execute(data) {
-        return request({
-            url: `${IMPORT_PATH}/execute`,
-            type: 'post',
-            data,
-        });
-    },
+  execute(data) {
+    return request({
+      url: `${IMPORT_PATH}/execute`,
+      type: 'post',
+      data,
+    });
+  },
 };
 
 export default AiResourceImportService;

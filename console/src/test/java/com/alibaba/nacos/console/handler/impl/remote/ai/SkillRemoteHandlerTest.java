@@ -31,6 +31,8 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
@@ -201,13 +203,13 @@ class SkillRemoteHandlerTest {
         SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
             .zipBytes(zipBytes).overwrite(false).build();
         when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false),
-            isNull(), isNull())).thenReturn(SKILL_NAME);
+            isNull(), isNull(), isNull())).thenReturn(SKILL_NAME);
         
         String result = skillRemoteHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
         verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, null,
-            null);
+            null, null);
     }
     
     @Test
@@ -215,15 +217,38 @@ class SkillRemoteHandlerTest {
         byte[] zipBytes = "test".getBytes();
         SkillUploadRequest request = SkillUploadRequest.builder().namespaceId(NAMESPACE_ID)
             .zipBytes(zipBytes).overwrite(true).targetVersion("v2").commitMsg("upload commit")
+            .uploadAction(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT)
             .build();
         when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(true),
-            eq("v2"), eq("upload commit"))).thenReturn(SKILL_NAME);
+            eq("v2"), eq("upload commit"),
+            eq(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT))).thenReturn(SKILL_NAME);
         
         String result = skillRemoteHandler.uploadSkillFromZip(request);
         
         assertEquals(SKILL_NAME, result);
         verify(skillMaintainerService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, true, "v2",
-            "upload commit");
+            "upload commit", SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT);
+    }
+    
+    @Test
+    void testBatchPrecheckUploadSkill() throws NacosException {
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(NAMESPACE_ID);
+        request.setSkillName(SKILL_NAME);
+        SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
+        precheckResult.setSkillName(SKILL_NAME);
+        java.util.List<SkillUploadPrecheckRequest> requests =
+            java.util.Collections.singletonList(request);
+        java.util.List<SkillUploadPrecheckResult> results =
+            java.util.Collections.singletonList(precheckResult);
+        when(skillMaintainerService.batchPrecheckUploadSkill(requests)).thenReturn(results);
+        
+        java.util.List<SkillUploadPrecheckResult> actual =
+            skillRemoteHandler.batchPrecheckUploadSkill(requests);
+        
+        assertEquals(1, actual.size());
+        assertEquals(SKILL_NAME, actual.get(0).getSkillName());
+        verify(skillMaintainerService).batchPrecheckUploadSkill(requests);
     }
     
     @Test

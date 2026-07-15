@@ -31,8 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class GroupCapacityMapperByDerbyTest {
     
-    private final Object[] emptyObjs = new Object[] {};
-    
     int startRow = 0;
     
     int pageSize = 5;

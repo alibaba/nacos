@@ -33,10 +33,6 @@ public class MetricsHttpAgent implements HttpAgent {
     
     private static final String GET = "GET";
     
-    private static final String POST = "POST";
-    
-    private static final String DELETE = "DELETE";
-    
     private static final String DEFAULT_CODE = "NA";
     
     private final HttpAgent httpAgent;

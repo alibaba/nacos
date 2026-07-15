@@ -77,7 +77,9 @@ Pipeline 输出必须和[可见性](../auth/visibility-plugin-spec.md)过滤，�
 Pipeline 节点对于同一资源版本和输入元数据应返回确定性结果。调用外部系统的节点必须在实现
 文档中定义超时与重试行为。
 
-## 当前集成说明
+## 统一状态集成
 
-核心插件管理器可以列出已加载的 AI pipeline 插件。当前代码说明，统一插件管理中的启停状态
-尚未接入 pipeline 执行链路。在该集成完成前，pipeline 执行由 pipeline 配置控制。
+核心插件管理器按 `pipelineId` 列出已加载的 AI pipeline 插件。
+`PublishPipelineManager` 在资源类型匹配和排序前，按
+`ai-pipeline:{pipelineId}` 的统一状态过滤配置中的候选节点。被禁用的节点仍保持注册，但不
+参与发布流程。

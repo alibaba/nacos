@@ -881,30 +881,46 @@ class NewMcpServer extends React.Component {
   // }
 
   getServiceList = async namespaceId => {
-    const data = {
-      ignoreEmptyService: false,
-      withInstances: false,
-      pageNo: 1,
-      pageSize: 100,
-      namespaceId: namespaceId,
-    };
-    const result = await request({
-      url: 'v3/console/ns/service/list',
-      method: 'get',
-      data,
-    });
+    const pageSize = 100;
+    let pageNo = 1;
+    let totalCount = Infinity;
+    const serviceList = [];
 
-    if (result.code === 0) {
-      this.setState({
-        serviceList: result.data.pageItems.map(item => ({
-          label: `${item.groupName} / ${item.name}`,
-          value: item.groupName + '@@' + item.name,
-          ...item,
-        })),
+    while (serviceList.length < totalCount) {
+      const result = await request({
+        url: 'v3/console/ns/service/list',
+        method: 'get',
+        data: {
+          ignoreEmptyService: false,
+          withInstances: false,
+          pageNo,
+          pageSize,
+          namespaceId,
+        },
       });
-    } else {
-      Message.error(result.message);
+
+      if (result.code !== 0) {
+        Message.error(result.message);
+        return;
+      }
+
+      const pageItems = result.data?.pageItems || [];
+      totalCount = result.data?.totalCount ?? serviceList.length + pageItems.length;
+      serviceList.push(...pageItems);
+
+      if (pageItems.length === 0) {
+        break;
+      }
+      pageNo += 1;
     }
+
+    this.setState({
+      serviceList: serviceList.map(item => ({
+        label: `${item.groupName} / ${item.name}`,
+        value: item.groupName + '@@' + item.name,
+        ...item,
+      })),
+    });
   };
 
   // 解析 MCP Server Endpoint 并更新相关字段
@@ -981,18 +997,13 @@ class NewMcpServer extends React.Component {
 
     const preservedExtensions = {};
     Object.keys(sourceExtensions || {}).forEach(key => {
-      if (
-        key !== 'server.defaultDownstreamSecurity' &&
-        key !== 'server.defaultUpstreamSecurity'
-      ) {
+      if (key !== 'server.defaultDownstreamSecurity' && key !== 'server.defaultUpstreamSecurity') {
         preservedExtensions[key] = sourceExtensions[key];
       }
     });
 
     const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
-    const downstreamPassthrough = this.field.getValue(
-      'defaultDownstreamSecurityPassthrough'
-    );
+    const downstreamPassthrough = this.field.getValue('defaultDownstreamSecurityPassthrough');
     if (downstreamId) {
       preservedExtensions['server.defaultDownstreamSecurity'] = {
         id: downstreamId,
@@ -1039,7 +1050,6 @@ class NewMcpServer extends React.Component {
     }
 
     return extensions;
-
   };
 
   // 切换高级配置展开/折叠状态
@@ -2047,7 +2057,8 @@ class NewMcpServer extends React.Component {
                                 },
                               })}
                               placeholder={
-                                locale.upstreamCredentialPlaceholder || 'Optional credential override'
+                                locale.upstreamCredentialPlaceholder ||
+                                'Optional credential override'
                               }
                               autoHeight={{ minRows: 2, maxRows: 4 }}
                               disabled={!this.field.getValue('defaultUpstreamSecurityId')}

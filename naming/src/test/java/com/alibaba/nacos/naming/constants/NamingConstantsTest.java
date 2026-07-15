@@ -27,7 +27,6 @@ class NamingConstantsTest {
         assertEquals(Constants.class, new Constants().getClass());
         assertEquals(ClientConstants.class, new ClientConstants().getClass());
         assertEquals(PushConstants.class, new PushConstants().getClass());
-        assertEquals(RequestConstant.class, new RequestConstant().getClass());
         assertEquals(FieldsConstants.class, new FieldsConstants().getClass());
     }
 }

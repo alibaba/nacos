@@ -18,6 +18,9 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
+import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +73,15 @@ class ParamUtilTest {
         int expect = 3000;
         ParamUtil.setReadTimeout(expect);
         assertEquals(expect, ParamUtil.getReadTimeout());
+    }
+    
+    @Test
+    void testDefaultValues() {
+        assertEquals(3, ParamUtil.getMaxRetryTimes());
+        assertEquals("public", ParamUtil.getDefaultNamespaceId());
+        assertEquals("DEFAULT_GROUP", ParamUtil.getDefaultGroupName());
+        assertEquals(5000, ParamUtil.getRefreshIntervalMills());
+        assertNotNull(new ParamUtil());
     }
     
     @Test
@@ -137,5 +150,17 @@ class ParamUtilTest {
         });
         assertTrue(exception.getMessage().contains(invalidValue),
             "Exception message should contain the invalid input value");
+    }
+    
+    @Test
+    void testInitSerializationRegistersSelectorSubtypes() {
+        ParamUtil.initSerialization();
+        
+        AbstractSelector selector =
+            JsonUtils.toObj("{\"type\":\"LabelSelector\",\"expression\":\"k=v\"}",
+                AbstractSelector.class);
+        
+        assertEquals(ExpressionSelector.class, selector.getClass());
+        assertEquals("k=v", ((ExpressionSelector) selector).getExpression());
     }
 }

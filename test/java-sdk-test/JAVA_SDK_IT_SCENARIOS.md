@@ -57,7 +57,7 @@ left as `Partial` or `Pending` without a documented reason.
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | Factory, server status, shutdown | Create via `NamingFactory`, wait for `UP`, and close cleanly after each test. | Covered | `JavaSdkBaseITCase` creates and shuts down the client. |
-| `registerInstance` overloads | Default group, explicit group, cluster, `Instance` metadata, string overloads, duplicate registration, invalid IP/port/cluster/service, and persistent/ephemeral behavior where exposed. | Covered | Explicit group, default group, string overload, cluster string overload, metadata, duplicate registration, blank service, null instance, invalid port/cluster, invalid heartbeat metadata, persistent batch member, single persistent instance lifecycle, and mismatched group prefix are covered. Blank/invalid IP validation is intentionally skipped and tracked by [#15305](https://github.com/alibaba/nacos/issues/15305) until the Java SDK/gRPC contract is fixed. |
+| `registerInstance` overloads | Default group, explicit group, cluster, `Instance` metadata, string overloads, duplicate registration, invalid IP/port/cluster/service, and persistent/ephemeral behavior where exposed. | Covered | Explicit group, default group, string overload, cluster string overload, metadata, duplicate registration, blank service, null instance, blank instance IP, invalid port/cluster, invalid heartbeat metadata, persistent batch member, single persistent instance lifecycle, and mismatched group prefix are covered. Hostname-style instance addresses remain accepted, so malformed-address format validation is not treated as a Java SDK IT requirement. |
 | `batchRegisterInstance` / `batchDeregisterInstance` | Batch success, partial or invalid member validation, empty list, and cleanup after batch deregister. | Covered | Batch success, empty batch register no-op behavior, partial batch deregister, cleanup, invalid persistent batch member, empty batch deregister validation, and current null-list pre-remote failure behavior are covered. |
 | `deregisterInstance` overloads | Existing instance removal, missing instance/idempotent behavior, default group, cluster overload, and invalid identity. | Covered | Existing removal through `Instance` overload, default string overload removal, cluster string overload removal, missing-instance no-op behavior, and repeated removal idempotency are covered. |
 | `getAllInstances` overloads | Existing, missing service empty result, default group, explicit group, cluster filters, subscribe flag, and empty cluster list behavior. | Covered | Existing query, missing service, default group, explicit group, cluster filter, subscribe=false, subscribe=true cached refresh through server push, and empty cluster list behavior are covered. |
@@ -99,12 +99,9 @@ left as `Partial` or `Pending` without a documented reason.
 
 ## Recommended Next Test Batches
 
-1. Follow up [#15305](https://github.com/alibaba/nacos/issues/15305), then add
-   Naming blank/invalid IP Java SDK IT once the Java SDK/gRPC validation
-   contract is fixed.
-2. Confirm the intended contracts for Naming fuzzy-watch delete events and A2A
+1. Confirm the intended contracts for Naming fuzzy-watch delete events and A2A
    missing-agent endpoint registration, then add stable IT or file follow-up
    issues as needed.
-3. Add functional Prompt/Skill/AgentSpec Java SDK IT after the public SDK
+2. Add functional Prompt/Skill/AgentSpec Java SDK IT after the public SDK
    exposes stable create/upload setup APIs, or after the standalone framework
    provides an approved setup helper for AI resource metadata.

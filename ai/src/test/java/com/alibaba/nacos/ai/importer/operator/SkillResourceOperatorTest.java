@@ -108,6 +108,17 @@ class SkillResourceOperatorTest {
     }
     
     @Test
+    void testValidateReviewingVersionWithOverwriteIsConflict() throws Exception {
+        when(resourceManager.findMeta("public", "demo-skill", "skill"))
+            .thenReturn(metaWithReviewingVersion());
+        
+        AiResourceImportValidationItem result = operator.validate("public", artifact(), true);
+        
+        assertEquals(AiResourceImportValidationStatus.CONFLICT, result.getStatus());
+        assertEquals("reviewing_version", result.getConflictType());
+    }
+    
+    @Test
     void testImportUsesSkillUploadService() throws Exception {
         when(skillOperationService.uploadSkillFromZip(any(SkillUploadRequest.class)))
             .thenReturn("demo-skill");
@@ -128,6 +139,19 @@ class SkillResourceOperatorTest {
             .thenReturn(metaWithEditingVersion());
         
         AiResourceImportResultItem result = operator.importResource("public", artifact(), false);
+        
+        assertEquals(AiResourceImportResultStatus.SKIPPED, result.getStatus());
+        assertEquals("demo-skill", result.getResourceName());
+        assertEquals(1, result.getWarnings().size());
+        verify(skillOperationService, never()).uploadSkillFromZip(any(SkillUploadRequest.class));
+    }
+    
+    @Test
+    void testImportSkipsReviewingVersionEvenWithOverwrite() throws Exception {
+        when(resourceManager.findMeta("public", "demo-skill", "skill"))
+            .thenReturn(metaWithReviewingVersion());
+        
+        AiResourceImportResultItem result = operator.importResource("public", artifact(), true);
         
         assertEquals(AiResourceImportResultStatus.SKIPPED, result.getStatus());
         assertEquals("demo-skill", result.getResourceName());
@@ -171,6 +195,14 @@ class SkillResourceOperatorTest {
         AiResource meta = new AiResource();
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setEditingVersion("1.0.0");
+        meta.setVersionInfo(JacksonUtils.toJson(info));
+        return meta;
+    }
+    
+    private AiResource metaWithReviewingVersion() {
+        AiResource meta = new AiResource();
+        ResourceVersionInfo info = new ResourceVersionInfo();
+        info.setReviewingVersion("1.0.0");
         meta.setVersionInfo(JacksonUtils.toJson(info));
         return meta;
     }

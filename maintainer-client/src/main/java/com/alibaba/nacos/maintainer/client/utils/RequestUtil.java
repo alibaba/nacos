@@ -19,7 +19,7 @@ package com.alibaba.nacos.maintainer.client.utils;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,10 +43,10 @@ public class RequestUtil {
         params.put("namespaceId", service.getNamespaceId());
         params.put("groupName", service.getGroupName());
         params.put("serviceName", service.getName());
-        params.put("metadata", JacksonUtils.toJson(service.getMetadata()));
+        params.put("metadata", JsonUtils.toJson(service.getMetadata()));
         params.put("ephemeral", String.valueOf(service.isEphemeral()));
         params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
-        params.put("selector", JacksonUtils.toJson(service.getSelector()));
+        params.put("selector", JsonUtils.toJson(service.getSelector()));
         return params;
     }
     
@@ -68,7 +68,7 @@ public class RequestUtil {
         params.put("weight", String.valueOf(instance.getWeight()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
         params.put("enabled", String.valueOf(instance.isEnabled()));
-        params.put("metadata", JacksonUtils.toJson(instance.getMetadata()));
+        params.put("metadata", JsonUtils.toJson(instance.getMetadata()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         return params;
     }
@@ -87,9 +87,9 @@ public class RequestUtil {
         params.put("namespaceId", service.getNamespaceId());
         params.put("groupName", service.getGroupName());
         params.put("serviceName", service.getName());
-        params.put("instances", JacksonUtils.toJson(instances));
+        params.put("instances", JsonUtils.toJson(instances));
         params.put("consistencyType", instances.get(0).isEphemeral() ? "ephemeral" : "persist");
-        params.put("metadata", JacksonUtils.toJson(newMetadata));
+        params.put("metadata", JsonUtils.toJson(newMetadata));
         return params;
     }
     
@@ -108,8 +108,8 @@ public class RequestUtil {
         params.put("clusterName", cluster.getClusterName());
         params.put("checkPort", String.valueOf(cluster.getHealthyCheckPort()));
         params.put("useInstancePort4Check", String.valueOf(cluster.isUseInstancePortForCheck()));
-        params.put("healthChecker", JacksonUtils.toJson(cluster.getHealthChecker()));
-        params.put("metadata", JacksonUtils.toJson(cluster.getMetadata()));
+        params.put("healthChecker", JsonUtils.toJson(cluster.getHealthChecker()));
+        params.put("metadata", JsonUtils.toJson(cluster.getMetadata()));
         return params;
     }
 }

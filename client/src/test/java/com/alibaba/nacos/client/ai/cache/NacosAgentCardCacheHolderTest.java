@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,6 +61,7 @@ class NacosAgentCardCacheHolderTest {
     
     @BeforeEach
     void setUp() {
+        deregisterAgentCardPublisher();
         NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         cacheHolder = new NacosAgentCardCacheHolder(aiGrpcClient, properties);
         subscriber = new TestAgentCardSubscriber();
@@ -72,6 +72,7 @@ class NacosAgentCardCacheHolderTest {
     void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(subscriber);
         cacheHolder.shutdown();
+        deregisterAgentCardPublisher();
     }
     
     @Test
@@ -85,25 +86,23 @@ class NacosAgentCardCacheHolderTest {
     
     @Test
     void testProcessSameAgentCardShouldNotPublishEvent() throws InterruptedException {
-        CountingAgentCardSubscriber countingSubscriber = new CountingAgentCardSubscriber();
-        NotifyCenter.registerSubscriber(countingSubscriber);
+        AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
+        first.setSupportedInterfaces(
+            Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
+        cacheHolder.processAgentCardDetailInfo(first);
+        assertTrue(subscriber.latch.await(3, TimeUnit.SECONDS));
+        
+        TestAgentCardSubscriber secondSubscriber = new TestAgentCardSubscriber();
+        NotifyCenter.registerSubscriber(secondSubscriber);
         try {
-            AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
-            first.setSupportedInterfaces(
-                Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
-            cacheHolder.processAgentCardDetailInfo(first);
-            assertTrue(countingSubscriber.firstLatch.await(3, TimeUnit.SECONDS));
-            assertEquals(1, countingSubscriber.eventCount.get());
-            
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
             second.setSupportedInterfaces(
                 Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
-            Thread.sleep(500);
-            assertEquals(1, countingSubscriber.eventCount.get(),
+            assertFalse(secondSubscriber.latch.await(500, TimeUnit.MILLISECONDS),
                 "Should NOT publish event for identical agent card");
         } finally {
-            NotifyCenter.deregisterSubscriber(countingSubscriber);
+            NotifyCenter.deregisterSubscriber(secondSubscriber);
         }
     }
     
@@ -331,6 +330,12 @@ class NacosAgentCardCacheHolderTest {
         return (Runnable) ctor.newInstance(cacheHolder, agentName, version);
     }
     
+    private static void deregisterAgentCardPublisher() {
+        if (NotifyCenter.getPublisher(AgentCardChangedEvent.class) != null) {
+            NotifyCenter.deregisterPublisher(AgentCardChangedEvent.class);
+        }
+    }
+    
     private AgentCardDetailInfo buildDetailInfo(String name, String version, boolean isLatest) {
         AgentCardDetailInfo detail = new AgentCardDetailInfo();
         detail.setName(name);
@@ -358,24 +363,6 @@ class NacosAgentCardCacheHolderTest {
         public void onEvent(AgentCardChangedEvent event) {
             lastEvent.set(event);
             latch.countDown();
-        }
-        
-        @Override
-        public Class<? extends Event> subscribeType() {
-            return AgentCardChangedEvent.class;
-        }
-    }
-    
-    private static class CountingAgentCardSubscriber extends Subscriber<AgentCardChangedEvent> {
-        
-        final AtomicInteger eventCount = new AtomicInteger(0);
-        
-        final CountDownLatch firstLatch = new CountDownLatch(1);
-        
-        @Override
-        public void onEvent(AgentCardChangedEvent event) {
-            eventCount.incrementAndGet();
-            firstLatch.countDown();
         }
         
         @Override

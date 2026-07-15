@@ -329,7 +329,7 @@ public interface AgentSpecMaintainerService {
      * @param namespaceId        namespace ID
      * @param agentSpecName      agentspec name
      * @param version            version
-     * @param updateLatestLabel  update latest label, default true if null
+     * @param updateLatestLabel  retained for compatibility and ignored by server
      * @return true if publish success
      * @throws NacosException if fail to publish
      */
@@ -344,7 +344,7 @@ public interface AgentSpecMaintainerService {
      * @param namespaceId       namespace ID
      * @param agentSpecName     agentspec name
      * @param version           version
-     * @param updateLatestLabel update latest label, default true if null
+     * @param updateLatestLabel retained for compatibility and ignored by server
      * @return true if force-publish success
      * @throws NacosException if fail to force-publish
      */

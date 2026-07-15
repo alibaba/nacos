@@ -24,9 +24,9 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;

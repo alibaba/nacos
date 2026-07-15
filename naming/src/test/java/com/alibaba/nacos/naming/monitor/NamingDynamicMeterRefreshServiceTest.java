@@ -16,75 +16,82 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.mock.env.MockEnvironment;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import java.lang.ref.Reference;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NamingDynamicMeterRefreshServiceTest {
     
     private final NamingDynamicMeterRefreshService refreshService =
         new NamingDynamicMeterRefreshService();
     
-    private ConfigurableEnvironment cachedEnvironment;
+    private CompositeMeterRegistry meterRegistry;
     
     private SimpleMeterRegistry simpleMeterRegistry;
     
     @BeforeEach
     void setUp() {
-        cachedEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new MockEnvironment());
+        meterRegistry = NacosMeterRegistryCenter.getMeterRegistry(
+            NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY);
+        meterRegistry.clear();
         simpleMeterRegistry = new SimpleMeterRegistry();
-        NacosMeterRegistryCenter.getMeterRegistry(
-            NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY).add(simpleMeterRegistry);
-        MetricsMonitor.getServiceChangeCount().reset();
-        NacosMeterRegistryCenter.clear(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY);
+        meterRegistry.add(simpleMeterRegistry);
     }
     
     @AfterEach
     void tearDown() {
-        MetricsMonitor.getServiceChangeCount().reset();
-        NacosMeterRegistryCenter.clear(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY);
-        EnvUtil.setEnvironment(cachedEnvironment);
+        meterRegistry.clear();
+        meterRegistry.remove(simpleMeterRegistry);
     }
     
     @Test
     void testRefreshTopnServiceChangeCountRegistersGauge() {
         Service service = Service.newService("namespace", "group", "service");
-        MetricsMonitor.getServiceChangeCount().set(service, 7);
+        String serviceKey = "namespace" + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR
+            + service.getGroupedServiceName();
+        // Micrometer gauges weakly reference their backing number.
+        AtomicInteger serviceChangeCount = new AtomicInteger(7);
+        ServiceTopNCounter counter = Mockito.mock(ServiceTopNCounter.class);
+        Mockito.when(counter.getCounterOfTopN(10))
+            .thenReturn(Collections.singletonList(Pair.with(serviceKey, serviceChangeCount)));
+        try (MockedStatic<MetricsMonitor> metricsMonitor =
+            Mockito.mockStatic(MetricsMonitor.class)) {
+            metricsMonitor.when(MetricsMonitor::getServiceChangeCount).thenReturn(counter);
+            refreshService.refreshTopnServiceChangeCount();
+        }
         
-        refreshService.refreshTopnServiceChangeCount();
-        
-        CompositeMeterRegistry registry = NacosMeterRegistryCenter.getMeterRegistry(
-            NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY);
-        Gauge gauge = registry.find("service_change_count")
-            .tag("service",
-                "namespace" + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR
-                    + service.getGroupedServiceName())
+        Gauge gauge = simpleMeterRegistry.find("service_change_count")
+            .tag("service", serviceKey)
             .gauge();
         assertNotNull(gauge);
         assertEquals(7D, gauge.value());
+        Reference.reachabilityFence(serviceChangeCount);
     }
     
     @Test
     void testResetTopnServiceChangeCountClearsCounter() {
-        MetricsMonitor.getServiceChangeCount()
-            .set(Service.newService("namespace", "group", "service"), 3);
-        
-        refreshService.resetTopnServiceChangeCount();
-        
-        assertTrue(MetricsMonitor.getServiceChangeCount().getCounterOfTopN(10).isEmpty());
+        ServiceTopNCounter counter = Mockito.mock(ServiceTopNCounter.class);
+        try (MockedStatic<MetricsMonitor> metricsMonitor =
+            Mockito.mockStatic(MetricsMonitor.class)) {
+            metricsMonitor.when(MetricsMonitor::getServiceChangeCount).thenReturn(counter);
+            refreshService.resetTopnServiceChangeCount();
+        }
+        Mockito.verify(counter).reset();
     }
 }

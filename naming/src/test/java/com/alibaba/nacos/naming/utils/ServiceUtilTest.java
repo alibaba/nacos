@@ -26,10 +26,9 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,11 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceUtilTest {
-    
-    @AfterEach
-    void tearDown() {
-        ApplicationUtils.injectContext(null);
-    }
     
     @Test
     void testConstructor() {
@@ -113,8 +107,6 @@ class ServiceUtilTest {
         Instance healthyDisabled = instance("1.1.1.3", "clusterB", true, false);
         ServiceInfo serviceInfo = serviceInfo(healthyEnabled, unhealthyEnabled, healthyDisabled);
         
-        assertEquals(2, ServiceUtil.selectHealthyInstances(serviceInfo).getHosts().size());
-        assertEquals(2, ServiceUtil.selectEnabledInstances(serviceInfo).getHosts().size());
         assertEquals(2, ServiceUtil.selectInstances(serviceInfo, "clusterA").getHosts().size());
         assertEquals(Collections.singletonList(healthyEnabled),
             ServiceUtil.selectInstances(serviceInfo, "clusterA", true).getHosts());
@@ -161,19 +153,20 @@ class ServiceUtilTest {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(0.6F);
         SelectorManager selectorManager = Mockito.mock(SelectorManager.class);
-        ConfigurableApplicationContext context = Mockito.mock(ConfigurableApplicationContext.class);
-        ApplicationUtils.injectContext(context);
-        Mockito.when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
         Mockito.when(selectorManager.select(Mockito.any(), Mockito.eq("2.2.2.2"),
             Mockito.anyList())).thenAnswer(invocation -> invocation.getArgument(2));
-        
-        ServiceInfo result =
-            ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata,
-                "clusterA", false, false, "2.2.2.2");
-        
-        assertTrue(result.isReachProtectionThreshold());
-        assertEquals(2, result.getHosts().size());
-        assertTrue(result.getHosts().stream().allMatch(Instance::isHealthy));
+        try (MockedStatic<ApplicationUtils> applicationUtils =
+            Mockito.mockStatic(ApplicationUtils.class)) {
+            applicationUtils.when(() -> ApplicationUtils.getBean(SelectorManager.class))
+                .thenReturn(selectorManager);
+            ServiceInfo result =
+                ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata,
+                    "clusterA", false, false, "2.2.2.2");
+            
+            assertTrue(result.isReachProtectionThreshold());
+            assertEquals(2, result.getHosts().size());
+            assertTrue(result.getHosts().stream().allMatch(Instance::isHealthy));
+        }
     }
     
     @Test
@@ -185,18 +178,19 @@ class ServiceUtilTest {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(-1F);
         SelectorManager selectorManager = Mockito.mock(SelectorManager.class);
-        ConfigurableApplicationContext context = Mockito.mock(ConfigurableApplicationContext.class);
-        ApplicationUtils.injectContext(context);
-        Mockito.when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
         Mockito.when(selectorManager.select(Mockito.any(), Mockito.eq("2.2.2.2"),
             Mockito.anyList())).thenReturn(Arrays.asList(healthy, unhealthy));
-        
-        ServiceInfo result =
-            ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata,
-                "clusterA", false, false, "2.2.2.2");
-        
-        assertFalse(result.isReachProtectionThreshold());
-        assertEquals(Arrays.asList(healthy, unhealthy), result.getHosts());
+        try (MockedStatic<ApplicationUtils> applicationUtils =
+            Mockito.mockStatic(ApplicationUtils.class)) {
+            applicationUtils.when(() -> ApplicationUtils.getBean(SelectorManager.class))
+                .thenReturn(selectorManager);
+            ServiceInfo result =
+                ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata,
+                    "clusterA", false, false, "2.2.2.2");
+            
+            assertFalse(result.isReachProtectionThreshold());
+            assertEquals(Arrays.asList(healthy, unhealthy), result.getHosts());
+        }
     }
     
     private ServiceInfo serviceInfo(Instance... instances) {

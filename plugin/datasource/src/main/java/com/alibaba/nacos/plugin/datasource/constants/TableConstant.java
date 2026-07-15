@@ -26,10 +26,6 @@ public class TableConstant {
     
     public static final String CONFIG_INFO = "config_info";
     
-    public static final String CONFIG_INFO_BETA = "config_info_beta";
-    
-    public static final String CONFIG_INFO_TAG = "config_info_tag";
-    
     public static final String CONFIG_INFO_GRAY = "config_info_gray";
     
     public static final String CONFIG_TAGS_RELATION = "config_tags_relation";
@@ -41,8 +37,6 @@ public class TableConstant {
     public static final String TENANT_CAPACITY = "tenant_capacity";
     
     public static final String TENANT_INFO = "tenant_info";
-    
-    public static final String MIGRATE_CONFIG = "migrate_config";
     
     public static final String AI_RESOURCE = "ai_resource";
     

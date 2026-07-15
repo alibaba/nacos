@@ -286,7 +286,7 @@ class ConsolePromptControllerTest {
     @Test
     void testPublishWithoutUpdateLatest() throws Exception {
         doNothing().when(promptProxy).publish(eq(NS), eq(PROMPT_KEY),
-            eq(VERSION), eq(false));
+            eq(VERSION), eq(true));
         
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.post(BASE_PATH + "/publish")
@@ -296,7 +296,7 @@ class ConsolePromptControllerTest {
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());
-        verify(promptProxy).publish(NS, PROMPT_KEY, VERSION, false);
+        verify(promptProxy).publish(NS, PROMPT_KEY, VERSION, true);
     }
     
     @Test

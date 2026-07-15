@@ -38,9 +38,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     governance, version detail, version list, list, Markdown download, labels, description, bizTags,
  *     online/offline, and delete expose the expected prompt state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur and bizTags filters while
- *     clamping page arguments; promptKey, template or basedOnVersion, version, labels, and description are required
- *     where controller forms require them. Runtime-only legacy endpoints are intentionally not covered because they
- *     are not exposed by the console controller.</li>
+ *     clamping page arguments; promptKey, template or basedOnVersion, version, labels, latest label preservation,
+ *     and description are required where controller forms require them.
+ *     Runtime-only legacy endpoints are intentionally not covered because they are not exposed by the console
+ *     controller.</li>
  *     <li>Exception/error handling: absent prompts and versions return controlled RESOURCE_NOT_FOUND bodies, direct
  *     publish from draft and redraft from online return validation errors instead of HTTP 500, and invalid search
  *     returns HTTP 400.</li>
@@ -70,7 +71,7 @@ public class PromptConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertError(postRaw(CONSOLE_PROMPT_PATH + "/publish", queryFrom(promptPublishForm(promptKey, "1.0.0"))),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewing version can be published");
         JsonNode published = postFormOk(CONSOLE_PROMPT_PATH + "/force-publish",
-                promptPublishForm(promptKey, "1.0.0"));
+                withUpdateLatestLabel(promptPublishForm(promptKey, "1.0.0")));
         assertEquals("ok", published.get("data").asText(), published.toString());
 
         JsonNode governance = getJsonOk(CONSOLE_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey)).get("data");
@@ -116,6 +117,15 @@ public class PromptConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 updatedGovernance.toString());
         assertEquals("1.0.0", updatedGovernance.get("labels").get("latest").asText(),
                 updatedGovernance.toString());
+        assertEquals("ok", putFormOk(CONSOLE_PROMPT_PATH + "/labels",
+                promptLabelsForm(promptKey, "{\"stable\":\"1.0.0\",\"latest\":\"9.9.9\"}"))
+                .get("data").asText());
+        updatedGovernance = getJsonOk(CONSOLE_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertEquals("1.0.0", updatedGovernance.get("labels").get("stable").asText(),
+                updatedGovernance.toString());
+        assertEquals("1.0.0", updatedGovernance.get("labels").get("latest").asText(),
+                updatedGovernance.toString());
         assertEquals("updated description", updatedGovernance.get("description").asText(),
                 updatedGovernance.toString());
         assertEquals("updated,openapi", updatedGovernance.get("bizTagsStr").asText(),
@@ -125,10 +135,18 @@ public class PromptConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 promptPublishForm(promptKey, "1.0.0")).get("data").asText());
         assertPromptVersion(getJsonOk(CONSOLE_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0"))
                 .get("data"), promptKey, "1.0.0", "offline", updatedTemplate);
+        JsonNode offlineGovernance = getJsonOk(CONSOLE_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertTrue(offlineGovernance.get("labels").get("latest") == null,
+                offlineGovernance.toString());
         assertEquals("ok", postFormOk(CONSOLE_PROMPT_PATH + "/online",
                 promptPublishForm(promptKey, "1.0.0")).get("data").asText());
         assertPromptVersion(getJsonOk(CONSOLE_PROMPT_VERSION_PATH, promptVersionQuery(promptKey, "1.0.0"))
                 .get("data"), promptKey, "1.0.0", "online", updatedTemplate);
+        JsonNode reonlineGovernance = getJsonOk(CONSOLE_PROMPT_GOVERNANCE_PATH, promptQuery(promptKey))
+                .get("data");
+        assertEquals("1.0.0", reonlineGovernance.get("labels").get("latest").asText(),
+                reonlineGovernance.toString());
 
         assertError(postRaw(CONSOLE_PROMPT_PATH + "/redraft", queryFrom(promptPublishForm(promptKey, "1.0.0"))),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "Only reviewed version can be re-edited");

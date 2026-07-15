@@ -609,6 +609,9 @@ public class McpServerOperationService {
                 .map(ServerVersionDetail::getVersion)
                 .collect(Collectors.toList());
         }
+        List<String> deletedVersions = new ArrayList<>(versionsNeedDelete);
+        boolean deleteAllVersions = mcpServerVersionInfo.getVersionDetails().stream()
+            .map(ServerVersionDetail::getVersion).allMatch(deletedVersions::contains);
         
         for (String versionNeedDelete : versionsNeedDelete) {
             toolOperationService.deleteMcpTool(namespaceId, mcpServerId, versionNeedDelete);
@@ -620,10 +623,21 @@ public class McpServerOperationService {
             configOperationService.deleteConfig(serverSpecDataId, Constants.MCP_SERVER_GROUP,
                 namespaceId, null, null,
                 "nacos", null);
-            String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(mcpServerId);
+        }
+        
+        String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(mcpServerId);
+        if (deleteAllVersions) {
             configOperationService.deleteConfig(serverVersionDataId,
                 Constants.MCP_SERVER_VERSIONS_GROUP, namespaceId,
                 null, null, "nacos", null);
+        } else {
+            mcpServerVersionInfo.getVersionDetails()
+                .removeIf(versionDetail -> deletedVersions.contains(versionDetail.getVersion()));
+            electLatestMcpServerVersion(mcpServerVersionInfo);
+            ConfigFormV3 mcpServerVersionForm =
+                buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
+            configOperationService.publishConfig(mcpServerVersionForm, new ConfigRequestInfo(),
+                null);
         }
         
         // Delete the relevant cache after a successful database operation
@@ -632,6 +646,37 @@ public class McpServerOperationService {
             StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+    
+    private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {
+        List<ServerVersionDetail> versionDetails = mcpServerVersionInfo.getVersionDetails();
+        if (CollectionUtils.isEmpty(versionDetails)) {
+            mcpServerVersionInfo.setLatestPublishedVersion(null);
+            mcpServerVersionInfo.setVersion(null);
+            mcpServerVersionInfo.setVersionDetail(null);
+            return;
+        }
+        String latestVersion = mcpServerVersionInfo.getLatestPublishedVersion();
+        boolean latestVersionExists = false;
+        for (ServerVersionDetail versionDetail : versionDetails) {
+            if (StringUtils.equals(versionDetail.getVersion(), latestVersion)) {
+                latestVersionExists = true;
+                break;
+            }
+        }
+        if (!latestVersionExists) {
+            latestVersion = versionDetails.get(versionDetails.size() - 1).getVersion();
+            mcpServerVersionInfo.setLatestPublishedVersion(latestVersion);
+        }
+        for (ServerVersionDetail versionDetail : versionDetails) {
+            boolean isLatest = StringUtils.equals(versionDetail.getVersion(), latestVersion);
+            versionDetail.setIs_latest(isLatest);
+            if (isLatest) {
+                mcpServerVersionInfo.setVersion(latestVersion);
+                mcpServerVersionInfo.setVersionDetail(versionDetail);
+            }
+        }
+        mcpServerVersionInfo.setVersions(versionDetails);
     }
     
     private void injectMcpDescriptionsAndEndpoint(String namespaceId, String mcpServerId,

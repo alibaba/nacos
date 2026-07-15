@@ -67,8 +67,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.CONTENT_MD5;
 @Service
 public class ConfigServletInner {
     
-    private static final int TRY_GET_LOCK_TIMES = 9;
-    
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigServletInner.class);

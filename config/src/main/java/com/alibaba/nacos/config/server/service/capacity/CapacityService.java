@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
-import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

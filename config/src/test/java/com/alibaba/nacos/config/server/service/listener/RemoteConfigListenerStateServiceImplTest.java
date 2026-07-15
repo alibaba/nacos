@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.notify.HttpClientManager;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.plugin.auth.constant.Constants.Auth;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,11 +64,8 @@ class RemoteConfigListenerStateServiceImplTest {
     
     private MockedStatic<HttpClientManager> httpClientManagerMockedStatic;
     
-    private MockedStatic<EnvUtil> envUtilMockedStatic;
-    
     private MockedStatic<NacosAuthConfigHolder> authConfigHolderMockedStatic;
     
-    @Mock
     private NacosAuthConfigHolder nacosAuthConfigHolder;
     
     @Mock
@@ -73,15 +73,22 @@ class RemoteConfigListenerStateServiceImplTest {
     
     private RemoteConfigListenerStateServiceImpl service;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     @BeforeEach
     void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Auth.NACOS_CORE_AUTH_ENABLED, "false");
+        environment.setProperty(Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
+        EnvUtil.setContextPath("/nacos");
+        nacosAuthConfigHolder = Mockito.mock(NacosAuthConfigHolder.class);
         httpClientManagerMockedStatic =
             Mockito.mockStatic(HttpClientManager.class);
         httpClientManagerMockedStatic
             .when(HttpClientManager::getNacosRestTemplate)
             .thenReturn(nacosRestTemplate);
-        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(EnvUtil::getContextPath).thenReturn("/nacos");
         authConfigHolderMockedStatic =
             Mockito.mockStatic(NacosAuthConfigHolder.class);
         authConfigHolderMockedStatic
@@ -94,9 +101,14 @@ class RemoteConfigListenerStateServiceImplTest {
     
     @AfterEach
     void tearDown() {
-        httpClientManagerMockedStatic.close();
-        envUtilMockedStatic.close();
-        authConfigHolderMockedStatic.close();
+        if (httpClientManagerMockedStatic != null) {
+            httpClientManagerMockedStatic.close();
+        }
+        if (authConfigHolderMockedStatic != null) {
+            authConfigHolderMockedStatic.close();
+        }
+        EnvUtil.setContextPath(null);
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

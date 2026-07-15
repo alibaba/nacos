@@ -34,7 +34,7 @@ public class PromptLabelsUpdateForm extends PromptForm {
     private static final long serialVersionUID = 1L;
     
     /**
-     * JSON string: {"latest":"0.0.1","stable":"0.0.1"}.
+     * JSON string: {"stable":"0.0.1"}. The reserved label "latest" is managed by server.
      */
     private String labels;
     

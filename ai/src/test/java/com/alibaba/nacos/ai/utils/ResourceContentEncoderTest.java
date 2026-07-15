@@ -153,14 +153,6 @@ class ResourceContentEncoderTest {
     }
     
     @Test
-    void base64MetadataShouldContainOnlyEncodingFlag() {
-        Map<String, Object> meta = ResourceContentEncoder.base64Metadata();
-        assertEquals(1, meta.size());
-        assertEquals(ResourceContentEncoder.METADATA_ENCODING_BASE64,
-            meta.get(ResourceContentEncoder.METADATA_ENCODING));
-    }
-    
-    @Test
     void publicMetadataConstantsShouldUseExpectedValues() {
         assertEquals("encoding", ResourceContentEncoder.METADATA_ENCODING);
         assertEquals("base64", ResourceContentEncoder.METADATA_ENCODING_BASE64);

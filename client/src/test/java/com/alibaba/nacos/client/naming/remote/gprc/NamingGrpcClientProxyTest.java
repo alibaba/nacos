@@ -58,13 +58,13 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -127,9 +127,13 @@ class NamingGrpcClientProxyTest {
     @Mock
     private RpcClient rpcClient;
     
+    private MockedStatic<RpcClientFactory> rpcClientFactoryMockedStatic;
+    
     private Properties prop;
     
     private NamingGrpcClientProxy client;
+    
+    private GrpcClientConfig capturedGrpcClientConfig;
     
     private Response response;
     
@@ -143,6 +147,18 @@ class NamingGrpcClientProxyTest {
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "1");
         System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "100");
+        rpcClientFactoryMockedStatic =
+            Mockito.mockStatic(RpcClientFactory.class, Mockito.CALLS_REAL_METHODS);
+        rpcClientFactoryMockedStatic
+            .when(() -> RpcClientFactory.createClient(Mockito.anyString(),
+                Mockito.eq(ConnectionType.GRPC), Mockito.any(GrpcClientConfig.class)))
+            .thenAnswer(invocation -> {
+                String clientName = invocation.getArgument(0);
+                capturedGrpcClientConfig = invocation.getArgument(2);
+                capturedGrpcClientConfig.setName(clientName);
+                cacheRpcClient(clientName, rpcClient);
+                return rpcClient;
+            });
         List<String> serverList =
             Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
         when(factory.getServerList()).thenReturn(serverList);
@@ -160,10 +176,6 @@ class NamingGrpcClientProxyTest {
         uuid = (String) uuidField.get(client);
         
         assertNotNull(RpcClientFactory.getClient(uuid));
-        Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClientField.setAccessible(true);
-        ((RpcClient) rpcClientField.get(client)).shutdown();
-        rpcClientField.set(client, this.rpcClient);
         
         response = new InstanceResponse();
         when(this.rpcClient.request(any())).thenReturn(response);
@@ -183,7 +195,21 @@ class NamingGrpcClientProxyTest {
     void tearDown() throws NacosException {
         System.clearProperty(GrpcConstants.GRPC_RETRY_TIMES);
         System.clearProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT);
-        client.shutdown();
+        if (client != null) {
+            client.shutdown();
+        }
+        if (rpcClientFactoryMockedStatic != null) {
+            rpcClientFactoryMockedStatic.close();
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void cacheRpcClient(String clientName, RpcClient rpcClient)
+        throws NoSuchFieldException, IllegalAccessException {
+        Field field = RpcClientFactory.class.getDeclaredField("CLIENT_MAP");
+        field.setAccessible(true);
+        Map<String, RpcClient> map = (Map<String, RpcClient>) field.get(RpcClientFactory.class);
+        map.put(clientName, rpcClient);
     }
     
     @Test
@@ -698,48 +724,41 @@ class NamingGrpcClientProxyTest {
         listenerField.setAccessible(true);
         NamingGrpcRedoService listener = (NamingGrpcRedoService) listenerField.get(client);
         rpc.registerConnectionListener(listener);
-        rpc.start();
-        int retry = 10;
-        while (!rpc.isRunning()) {
-            TimeUnit.MILLISECONDS.sleep(200);
-            if (--retry < 0) {
-                fail("rpc is not running");
+        try {
+            rpc.start();
+            int retry = 10;
+            while (!rpc.isRunning()) {
+                TimeUnit.MILLISECONDS.sleep(200);
+                if (--retry < 0) {
+                    fail("rpc is not running");
+                }
             }
-        }
-        
-        assertEquals(ORIGIN_SERVER, rpc.getCurrentServer().getServerIp());
-        
-        String newServer = "www.aliyun.com";
-        when(factory.genNextServer()).thenReturn(newServer);
-        when(factory.getServerList())
-            .thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
-        NotifyCenter.publishEvent(new ServerListChangeEvent());
-        
-        retry = 10;
-        while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
-            TimeUnit.MILLISECONDS.sleep(200);
-            if (--retry < 0) {
-                fail("failed to auth switch server");
+            
+            assertEquals(ORIGIN_SERVER, rpc.getCurrentServer().getServerIp());
+            
+            String newServer = "www.aliyun.com";
+            when(factory.genNextServer()).thenReturn(newServer);
+            when(factory.getServerList())
+                .thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
+            NotifyCenter.publishEvent(new ServerListChangeEvent());
+            
+            retry = 10;
+            while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
+                TimeUnit.MILLISECONDS.sleep(200);
+                if (--retry < 0) {
+                    fail("failed to auth switch server");
+                }
             }
+            
+            assertEquals(newServer, rpc.getCurrentServer().getServerIp());
+        } finally {
+            rpc.shutdown();
         }
-        
-        assertEquals(newServer, rpc.getCurrentServer().getServerIp());
     }
     
     @Test
-    void testConfigAppNameLabels() throws Exception {
-        final NacosClientProperties nacosClientProperties =
-            NacosClientProperties.PROTOTYPE.derive(prop);
-        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties,
-            holder,
-            namingFuzzyWatchServiceListHolder);
-        Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClientField.setAccessible(true);
-        RpcClient rpcClient = (RpcClient) rpcClientField.get(client);
-        Field clientConfig = GrpcClient.class.getDeclaredField("clientConfig");
-        clientConfig.setAccessible(true);
-        GrpcClientConfig config = (GrpcClientConfig) clientConfig.get(rpcClient);
-        String appName = config.labels().get(Constants.APPNAME);
+    void testConfigAppNameLabels() {
+        String appName = capturedGrpcClientConfig.labels().get(Constants.APPNAME);
         assertNotNull(appName);
     }
     

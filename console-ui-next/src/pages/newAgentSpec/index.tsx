@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { FileTreePanel } from '../agentSpecManagement/components/FileTreePanel';
 import type { FileTreeNode } from '../agentSpecManagement/components/FileTreePanel';
+import { ResourceFileHeader } from '../agentSpecManagement/components/ResourceFileHeader';
 import { buildFileTree } from '../agentSpecManagement/components/file-tree-utils';
 import { getLanguageFromFileName } from '../agentSpecManagement/components/resource-viewer-utils';
 import { agentSpecApi } from '@/api/agentspec';
@@ -81,6 +82,30 @@ function getContextFromTreeKey(key: string | null): { resourceType: ResourceType
   };
 }
 
+function resolveSelectedEditorFile(
+  files: Map<string, EditorFile>,
+  selectedKey: string,
+): { key: string; file: EditorFile } | null {
+  if (selectedKey === MANIFEST_KEY) {
+    const file = files.get(MANIFEST_KEY);
+    return file ? { key: MANIFEST_KEY, file } : null;
+  }
+
+  const direct = files.get(selectedKey);
+  if (direct) {
+    return { key: selectedKey, file: direct };
+  }
+
+  for (const [key, file] of files) {
+    if (key === MANIFEST_KEY) continue;
+    if (`${file.type}/${key}` === selectedKey) {
+      return { key, file };
+    }
+  }
+
+  return null;
+}
+
 // ===== Component =====
 
 export default function NewAgentSpecPage() {
@@ -105,6 +130,7 @@ export default function NewAgentSpecPage() {
   const [saving, setSaving] = useState(false);
   const [modified, setModified] = useState(false);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
+  const [renamingSelectedFile, setRenamingSelectedFile] = useState(false);
   const [loaded, setLoaded] = useState(mode === 'new');
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [draftAgentSpecName, setDraftAgentSpecName] = useState(editName);
@@ -224,34 +250,21 @@ export default function NewAgentSpecPage() {
     return buildFileTree(resources, manifestContent, [...virtualFolders]);
   }, [files, virtualFolders]);
 
+  const selectedFile = useMemo(
+    () => resolveSelectedEditorFile(files, selectedKey),
+    [files, selectedKey],
+  );
+
   // ===== Current file content & language =====
   const { fileContent, language } = useMemo(() => {
-    if (selectedKey === MANIFEST_KEY) {
+    if (selectedFile) {
       return {
-        fileContent: files.get(MANIFEST_KEY)?.content || '{}',
-        language: getLanguageFromFileName(MANIFEST_KEY),
+        fileContent: selectedFile.file.content,
+        language: getLanguageFromFileName(selectedFile.key),
       };
-    }
-    // Try direct key match first
-    const direct = files.get(selectedKey);
-    if (direct) {
-      return {
-        fileContent: direct.content,
-        language: getLanguageFromFileName(selectedKey),
-      };
-    }
-    // selectedKey format from tree: "type/name" — find by matching
-    for (const [key, file] of files) {
-      if (key === MANIFEST_KEY) continue;
-      if (`${file.type}/${key}` === selectedKey) {
-        return {
-          fileContent: file.content,
-          language: getLanguageFromFileName(key),
-        };
-      }
     }
     return { fileContent: '', language: 'plaintext' };
-  }, [selectedKey, files]);
+  }, [selectedFile]);
 
   // ===== Editor change handler =====
   const handleEditorChange = useCallback(
@@ -485,6 +498,53 @@ export default function NewAgentSpecPage() {
     },
     [selectedKey, files, t],
   );
+
+  const handleRenameSelectedFile = useCallback(
+    (newName: string) => {
+      if (!selectedFile || selectedFile.key === MANIFEST_KEY) return;
+      const parentPath = selectedFile.key.includes('/')
+        ? `${selectedFile.key.split('/').slice(0, -1).join('/')}/`
+        : '';
+      const nextPath = `${parentPath}${newName}`;
+      if (files.has(nextPath)) {
+        toast.error(t('agentSpec.fileExists'));
+        return;
+      }
+      handleRenameFile(`${selectedFile.file.type}/${selectedFile.key}`, newName);
+      setSelectedKey(`${selectedFile.file.type}/${nextPath}`);
+    },
+    [files, handleRenameFile, selectedFile, t],
+  );
+
+  const handleCopySelectedFile = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(fileContent);
+      toast.success(t('agentSpec.resourceCopySuccess'));
+    } catch {
+      toast.error(t('agentSpec.resourceCopyFailed'));
+    }
+  }, [fileContent, t]);
+
+  const handleDownloadSelectedFile = useCallback(() => {
+    const downloadName = selectedFile
+      ? selectedFile.key.split('/').pop() || selectedFile.key
+      : selectedKey;
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = downloadName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [fileContent, selectedFile, selectedKey]);
+
+  const handleDeleteSelectedFile = useCallback(() => {
+    if (!selectedFile || selectedFile.key === MANIFEST_KEY) return;
+    handleDeleteNode(`${selectedFile.file.type}/${selectedFile.key}`, 'file');
+    setSelectedKey(MANIFEST_KEY);
+  }, [handleDeleteNode, selectedFile]);
 
   // Rename a sub-folder.
   // Folder key format: "type/oldPath/" – rename the last segment.
@@ -748,11 +808,15 @@ export default function NewAgentSpecPage() {
   }
 
   // ===== Resolve display name for selected file =====
-  const selectedFileName = selectedKey === MANIFEST_KEY
-    ? MANIFEST_KEY
-    : selectedKey.includes('/')
-      ? selectedKey.split('/').pop() || selectedKey
-      : selectedKey;
+  const selectedFilePath = selectedFile
+    ? selectedFile.key === MANIFEST_KEY
+      ? MANIFEST_KEY
+      : `${selectedFile.file.type}/${selectedFile.key}`
+    : selectedKey;
+  const selectedFileName = selectedFile
+    ? selectedFile.key.split('/').pop() || selectedFile.key
+    : selectedKey;
+  const canManageSelectedFile = Boolean(selectedFile && selectedFile.key !== MANIFEST_KEY);
 
   const isEditMode = mode === 'edit';
   const isVersionMode = mode === 'version';
@@ -833,7 +897,7 @@ export default function NewAgentSpecPage() {
 
         <CardContent className="flex-1 min-h-0 p-0">
           <div className="flex h-full min-h-0">
-            <div style={{ width: panelWidth }} className="shrink-0 border-r">
+            <div style={{ width: panelWidth }} className="shrink-0">
               <FileTreePanel
                 nodes={treeNodes}
                 selectedKey={selectedKey}
@@ -848,7 +912,7 @@ export default function NewAgentSpecPage() {
             </div>
 
             <div
-              className="w-1 cursor-col-resize bg-border hover:bg-primary/30 transition-colors shrink-0"
+              className="relative -ml-px w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-primary/40 before:absolute before:-left-1 before:top-0 before:h-full before:w-3 before:content-['']"
               onMouseDown={handleMouseDown}
               role="separator"
               aria-orientation="vertical"
@@ -856,27 +920,50 @@ export default function NewAgentSpecPage() {
               tabIndex={0}
             />
 
-            <div className="flex-1 min-w-0">
-              <Editor
-                language={language}
-                value={fileContent}
-                theme="vs"
-                options={{
-                  minimap: { enabled: false },
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                  automaticLayout: true,
-                  fontSize: 13,
-                  tabSize: 2,
+            <div className="flex min-w-0 flex-1 flex-col">
+              <ResourceFileHeader
+                filePath={selectedFilePath}
+                fileName={selectedFileName}
+                editable
+                canRename={canManageSelectedFile}
+                canCopy
+                renaming={renamingSelectedFile}
+                labels={{
+                  rename: t('agentSpec.resourceRenameFile'),
+                  copy: t('agentSpec.resourceCopyFile'),
+                  download: t('agentSpec.resourceDownloadFile'),
+                  delete: t('agentSpec.resourceDeleteFile'),
                 }}
-                onChange={handleEditorChange}
-                loading={
-                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                    {t('agentSpec.editorLoading')}
-                  </div>
-                }
+                onStartRename={() => setRenamingSelectedFile(true)}
+                onCancelRename={() => setRenamingSelectedFile(false)}
+                onRename={handleRenameSelectedFile}
+                onCopy={handleCopySelectedFile}
+                onDownload={handleDownloadSelectedFile}
+                onDelete={handleDeleteSelectedFile}
               />
+              <div className="min-h-0 flex-1">
+                <Editor
+                  height="100%"
+                  language={language}
+                  value={fileContent}
+                  theme="vs"
+                  options={{
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    automaticLayout: true,
+                    fontSize: 13,
+                    tabSize: 2,
+                  }}
+                  onChange={handleEditorChange}
+                  loading={
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                      {t('agentSpec.editorLoading')}
+                    </div>
+                  }
+                />
+              </div>
             </div>
           </div>
         </CardContent>

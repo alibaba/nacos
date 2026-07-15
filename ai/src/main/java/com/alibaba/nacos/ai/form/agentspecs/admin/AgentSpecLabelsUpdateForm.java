@@ -34,7 +34,7 @@ public class AgentSpecLabelsUpdateForm extends AgentSpecForm {
     private static final long serialVersionUID = 1L;
     
     /**
-     * JSON string: {"latest":"v3","stable":"v2"}.
+     * JSON string: {"stable":"v2"}. The reserved label "latest" is managed by server.
      */
     private String labels;
     

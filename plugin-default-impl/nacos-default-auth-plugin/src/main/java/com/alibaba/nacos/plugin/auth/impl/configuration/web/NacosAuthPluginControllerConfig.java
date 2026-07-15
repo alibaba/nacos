@@ -39,10 +39,9 @@ public class NacosAuthPluginControllerConfig {
     @Bean
     public UserControllerV3 userControllerV3(NacosUserService userDetailsService,
         NacosRoleService roleService,
-        AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
+        IAuthenticationManager iAuthenticationManager,
         TokenManagerDelegate jwtTokenManager) {
-        return new UserControllerV3(userDetailsService, roleService, authConfigs,
-            iAuthenticationManager,
+        return new UserControllerV3(userDetailsService, roleService, iAuthenticationManager,
             jwtTokenManager);
     }
     

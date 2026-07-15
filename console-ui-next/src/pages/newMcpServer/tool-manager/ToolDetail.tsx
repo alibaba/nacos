@@ -34,7 +34,12 @@ export default function ToolDetail({ tool, meta, onEdit, onDelete }: ToolDetailP
       annotations.openWorldHint !== undefined);
 
   const tmpl = meta?.templates?.['json-go-template'];
-  const hasTemplates = tmpl && (tmpl.requestTemplate || tmpl.responseTemplate);
+  const hasTemplates =
+    tmpl &&
+    (tmpl.requestTemplate ||
+      tmpl.argsPosition ||
+      tmpl.responseTemplate ||
+      tmpl.errorResponseTemplate);
 
   return (
     <div className="space-y-5 p-4 overflow-hidden">
@@ -142,11 +147,29 @@ export default function ToolDetail({ tool, meta, onEdit, onDelete }: ToolDetailP
                 </pre>
               </div>
             )}
+            {tmpl!.argsPosition && Object.keys(tmpl!.argsPosition).length > 0 && (
+              <div className="mb-2">
+                <span className="text-xs text-muted-foreground">{t('mcp.argsPosition')}</span>
+                <pre className="text-xs bg-muted/50 rounded p-2 mt-1 overflow-x-auto max-h-40 max-w-full break-all whitespace-pre-wrap">
+                  {JSON.stringify(tmpl!.argsPosition, null, 2)}
+                </pre>
+              </div>
+            )}
             {tmpl!.responseTemplate && Object.keys(tmpl!.responseTemplate).length > 0 && (
-              <div>
+              <div className="mb-2">
                 <span className="text-xs text-muted-foreground">{t('mcp.responseTemplate')}</span>
                 <pre className="text-xs bg-muted/50 rounded p-2 mt-1 overflow-x-auto max-h-40 max-w-full break-all whitespace-pre-wrap">
                   {JSON.stringify(tmpl!.responseTemplate, null, 2)}
+                </pre>
+              </div>
+            )}
+            {tmpl!.errorResponseTemplate && (
+              <div>
+                <span className="text-xs text-muted-foreground">
+                  {t('mcp.errorResponseTemplate')}
+                </span>
+                <pre className="text-xs bg-muted/50 rounded p-2 mt-1 overflow-x-auto max-h-40 max-w-full break-all whitespace-pre-wrap">
+                  {tmpl!.errorResponseTemplate}
                 </pre>
               </div>
             )}

@@ -32,8 +32,8 @@ import java.util.Map;
  * {@code nacos_config} ({@link com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorageBuilder}),
  * registered when its builder succeeds. Additional providers may appear as SPI.</p>
  *
- * <p>Listing and enable/disable in {@code PluginManager} are not yet wired into {@link AiResourceStorageRouter};
- * disabling here does not affect read/write routing until that integration exists.</p>
+ * <p>{@code PluginManager} state is enforced by {@link AiResourceStorageRouter} before routing a
+ * read or write to the selected provider.</p>
  *
  * @author nacos
  */

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.pipeline;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;

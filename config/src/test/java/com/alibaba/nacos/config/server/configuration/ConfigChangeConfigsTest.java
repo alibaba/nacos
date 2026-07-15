@@ -160,4 +160,38 @@ class ConfigChangeConfigsTest {
         }
     }
     
+    @Test
+    void testRefreshPluginPropertiesIgnoresMalformedPropertyWithoutDot() {
+        // Create a fresh ConfigChangeConfigs with no valid properties loaded first.
+        MockEnvironment emptyEnv = new MockEnvironment();
+        EnvUtil.setEnvironment(emptyEnv);
+        
+        // Mock PropertiesUtil to return Properties containing both a valid key
+        // ("mockPlugin.enabled") and a malformed one without any dot ("nodotvalue").
+        // When the loop hits "nodotvalue", indexOf('.') returns -1, and
+        // substring(0, -1) throws StringIndexOutOfBoundsException. The exception
+        // is caught, but the assignment `configPluginProperties = newProperties` at line 67
+        // is inside the try block BEFORE the catch, so all valid entries are lost.
+        Properties badProperties = new Properties();
+        badProperties.setProperty("mockPlugin.enabled", "true");
+        badProperties.setProperty("nodotvalue", "bad");
+        
+        try (MockedStatic<PropertiesUtil> mocked = Mockito.mockStatic(PropertiesUtil.class)) {
+            mocked.when(() -> PropertiesUtil.getPropertiesWithPrefix(Mockito.any(),
+                Mockito.eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
+                .thenReturn(badProperties);
+            
+            // Create a brand new instance so its constructor's refreshPluginProperties()
+            // runs with the mocked badProperties — no prior valid data to fall back on.
+            ConfigChangeConfigs freshConfigs = new ConfigChangeConfigs();
+            
+            // Valid property "mockPlugin.enabled" must survive despite the malformed "nodotvalue"
+            // causing StringIndexOutOfBoundsException. If the bug exists, the exception prevents
+            // the assignment of configPluginProperties, so valid properties are wiped out.
+            assertTrue(Boolean.parseBoolean(
+                freshConfigs.getPluginProperties("mockPlugin").getProperty("enabled")),
+                "Valid property 'mockPlugin.enabled' should still be loaded even when "
+                    + "a malformed property without dot ('nodotvalue') causes StringIndexOutOfBoundsException");
+        }
+    }
 }

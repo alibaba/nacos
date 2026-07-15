@@ -27,7 +27,7 @@ import org.mockito.MockedStatic;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.ObjectPostProcessor;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -96,7 +96,13 @@ class LdapPluginConfigurationTest {
             config.ldapAuthenticatoinManager(ldapTemplate, userService, tokenManager, roleService);
         GlobalAuthenticationConfigurerAdapter adapter = config.authenticationConfigurer(provider);
         AuthenticationManagerBuilder builder =
-            new AuthenticationManagerBuilder(new NoOpObjectPostProcessor());
+            new AuthenticationManagerBuilder(new ObjectPostProcessor<Object>() {
+                
+                @Override
+                public <O> O postProcess(O object) {
+                    return null;
+                }
+            });
         
         adapter.init(builder);
         

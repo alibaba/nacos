@@ -36,24 +36,28 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
+import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -97,18 +101,18 @@ class ExternalConfigInfoPersistServiceImplTest {
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
-    @Mock
+    @MockitoBean
     DynamicDataSource dynamicDataSource;
     
     private ExternalConfigInfoPersistServiceImpl externalConfigInfoPersistService;
     
-    @Mock
+    @MockitoBean
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    @Mock
+    @MockitoBean
     private DataSourceService dataSourceService;
     
-    @Mock
+    @MockitoBean
     private JdbcTemplate jdbcTemplate;
     
     private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
@@ -336,6 +340,137 @@ class ExternalConfigInfoPersistServiceImplTest {
             assertEquals("mock fail", e.getMessage());
         }
         
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateAfterInsertException(
+            new DuplicateKeyException("duplicate key"));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(100L, result.getId());
+        verifyConfigInfoUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenWrappedDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateAfterInsertException(
+            new DataIntegrityViolationException("wrapped", new DuplicateKeyException("duplicate")));
+        
+        assertTrue(result.isSuccess());
+        assertEquals(100L, result.getId());
+        verifyConfigInfoUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateRethrowsWrappedUniqueSqlException() {
+        SQLException duplicateKeyException =
+            new SQLException("duplicate key value violates unique constraint", "23505");
+        BadSqlGrammarException exception =
+            new BadSqlGrammarException("insert", "sql", duplicateKeyException);
+        BadSqlGrammarException thrown = assertThrows(BadSqlGrammarException.class,
+            () -> insertOrUpdateAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateRethrowsPlainDataIntegrityViolationException() {
+        DataIntegrityViolationException exception =
+            new DataIntegrityViolationException("unique constraint violated");
+        DataIntegrityViolationException thrown = assertThrows(DataIntegrityViolationException.class,
+            () -> insertOrUpdateAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateCasAfterInsertException(
+            new DuplicateKeyException("duplicate key"));
+        
+        assertFalse(result.isSuccess());
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenWrappedDuplicateKeyException() {
+        ConfigOperateResult result = insertOrUpdateCasAfterInsertException(
+            new DataIntegrityViolationException("wrapped", new DuplicateKeyException("duplicate")));
+        
+        assertFalse(result.isSuccess());
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateCasRethrowsPlainDataIntegrityViolationException() {
+        DataIntegrityViolationException exception =
+            new DataIntegrityViolationException("unique constraint violated");
+        DataIntegrityViolationException thrown = assertThrows(DataIntegrityViolationException.class,
+            () -> insertOrUpdateCasAfterInsertException(exception));
+        
+        assertEquals(exception, thrown);
+        verifyConfigInfoNotUpdated();
+    }
+    
+    @Test
+    void testInsertOrUpdateUpdatesWhenDialectClassifiesDuplicateKey() {
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class);
+        Mockito.when(dialect.isDuplicateKeyException(any(Throwable.class))).thenReturn(true);
+        DatabaseDialectManager manager = Mockito.mock(DatabaseDialectManager.class);
+        Mockito.when(manager.getDialect(anyString())).thenReturn(dialect);
+        try (MockedStatic<DatabaseDialectManager> managerStatic =
+            Mockito.mockStatic(DatabaseDialectManager.class)) {
+            managerStatic.when(DatabaseDialectManager::getInstance).thenReturn(manager);
+            // Spring translates this vendor unique conflict to BadSqlGrammarException, not
+            // DuplicateKeyException, so only the dialect classification can recognize it.
+            SQLException vendorDuplicate =
+                new SQLException("duplicate key value violates unique constraint", "23505");
+            BadSqlGrammarException exception =
+                new BadSqlGrammarException("insert", "sql", vendorDuplicate);
+            ConfigOperateResult result = insertOrUpdateAfterInsertException(exception);
+            
+            assertTrue(result.isSuccess());
+            assertEquals(100L, result.getId());
+            verifyConfigInfoUpdated();
+        }
+    }
+    
+    @Test
+    void testInsertOrUpdateCasReturnsFalseWhenDialectClassifiesDuplicateKey() {
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class);
+        Mockito.when(dialect.isDuplicateKeyException(any(Throwable.class))).thenReturn(true);
+        DatabaseDialectManager manager = Mockito.mock(DatabaseDialectManager.class);
+        Mockito.when(manager.getDialect(anyString())).thenReturn(dialect);
+        try (MockedStatic<DatabaseDialectManager> managerStatic =
+            Mockito.mockStatic(DatabaseDialectManager.class)) {
+            managerStatic.when(DatabaseDialectManager::getInstance).thenReturn(manager);
+            SQLException vendorDuplicate =
+                new SQLException("duplicate key value violates unique constraint", "23505");
+            BadSqlGrammarException exception =
+                new BadSqlGrammarException("insert", "sql", vendorDuplicate);
+            ConfigOperateResult result = insertOrUpdateCasAfterInsertException(exception);
+            
+            assertFalse(result.isSuccess());
+            verifyConfigInfoNotUpdated();
+        }
+    }
+    
+    @Test
+    void testDialectDefaultRecognizesSpringDuplicateKeyException() {
+        // The DatabaseDialect default classifies a Spring DuplicateKeyException (matched by class
+        // name in the plugin module) anywhere in the cause chain, while a raw vendor SQLState that
+        // Spring could not translate is left for vendor dialects to opt into.
+        DatabaseDialect dialect = Mockito.mock(DatabaseDialect.class, Mockito.CALLS_REAL_METHODS);
+        assertTrue(dialect.isDuplicateKeyException(new DuplicateKeyException("duplicate")));
+        assertTrue(dialect.isDuplicateKeyException(
+            new DataIntegrityViolationException("wrapped",
+                new DuplicateKeyException("duplicate"))));
+        assertFalse(dialect.isDuplicateKeyException(new DataIntegrityViolationException("plain")));
+        assertFalse(dialect.isDuplicateKeyException(new BadSqlGrammarException("insert", "sql",
+            new SQLException("duplicate key value violates unique constraint", "23505"))));
     }
     
     @Test
@@ -944,6 +1079,64 @@ class ExternalConfigInfoPersistServiceImplTest {
         
         assertNotNull(result);
         assertFalse(result.isSuccess());
+    }
+    
+    private ConfigOperateResult insertOrUpdateAfterInsertException(RuntimeException exception) {
+        ConfigInfo configInfo = mockInsertConfigException(exception);
+        mockFallbackUpdateConfigInfo();
+        return externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo,
+            new HashMap<>());
+    }
+    
+    private ConfigOperateResult insertOrUpdateCasAfterInsertException(RuntimeException exception) {
+        ConfigInfo configInfo = mockInsertConfigException(exception);
+        return externalConfigInfoPersistService.insertOrUpdateCas("srcIp", "srcUser", configInfo,
+            new HashMap<>());
+    }
+    
+    private ConfigInfo mockInsertConfigException(RuntimeException exception) {
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, "content");
+        configInfo.setEncryptedDataKey("encryptedKey");
+        ConfigInfoStateWrapper updatedState = new ConfigInfoStateWrapper();
+        updatedState.setId(100L);
+        updatedState.setLastModified(123L);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+            .thenReturn(null, updatedState);
+        
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(99L);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder)
+            .thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
+            eq(generatedKeyHolder))).thenThrow(exception);
+        return configInfo;
+    }
+    
+    private void mockFallbackUpdateConfigInfo() {
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        ConfigAllInfo oldConfig = new ConfigAllInfo();
+        oldConfig.setId(100L);
+        oldConfig.setDataId(dataId);
+        oldConfig.setGroup(group);
+        oldConfig.setTenant(tenant);
+        oldConfig.setAppName("oldApp");
+        Mockito.when(jdbcTemplate.queryForObject(anyString(),
+            eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(oldConfig);
+        Mockito.when(jdbcTemplate.update(anyString(), Mockito.<Object[]>any())).thenReturn(1);
+    }
+    
+    private void verifyConfigInfoUpdated() {
+        Mockito.verify(jdbcTemplate, times(1)).update(anyString(), Mockito.<Object[]>any());
+    }
+    
+    private void verifyConfigInfoNotUpdated() {
+        Mockito.verify(jdbcTemplate, times(0)).update(anyString(), Mockito.<Object[]>any());
     }
     
     private ConfigAllInfo createMockConfigAllInfo(long mockId) {
@@ -1580,8 +1773,9 @@ class ExternalConfigInfoPersistServiceImplTest {
         String tenant = "tenant13245";
         String appName = "appName1243";
         List<Long> ids = Arrays.asList(132L, 1343L, 245L);
+        mockConfigs.forEach(config -> config.setTenant(tenant));
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosIds =
@@ -1590,7 +1784,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect check
         assertEquals(mockConfigs, configAllInfosIds);
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, appName}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosWithDataId =
@@ -1600,7 +1794,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals(mockConfigs, configAllInfosWithDataId);
         
         //mock CannotGetJdbcConnectionException
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
             eq(CONFIG_ALL_INFO_ROW_MAPPER)))
             .thenThrow(new CannotGetJdbcConnectionException("mock exp11"));
         //expect throw exception.
@@ -2034,6 +2228,23 @@ class ExternalConfigInfoPersistServiceImplTest {
             "dataId", "group", "", null, null);
         
         assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportFiltersMismatchedTenantForIds() {
+        ConfigAllInfo matchedConfig = createMockConfigAllInfo(1);
+        matchedConfig.setTenant("tenant");
+        ConfigAllInfo mismatchedConfig = createMockConfigAllInfo(2);
+        mismatchedConfig.setTenant("otherTenant");
+        Mockito.when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+            .thenReturn(Arrays.asList(matchedConfig, mismatchedConfig));
+        
+        List<ConfigAllInfo> result = externalConfigInfoPersistService.findAllConfigInfo4Export(
+            null, null, "tenant", null, Arrays.asList(1L, 2L));
+        
+        assertEquals(1, result.size());
+        assertEquals("tenant", result.get(0).getTenant());
     }
     
     @Test

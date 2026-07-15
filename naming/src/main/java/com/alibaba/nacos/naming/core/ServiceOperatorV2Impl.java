@@ -266,11 +266,13 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
+    @Deprecated
     public Collection<String> listAllNamespace() {
         return ServiceManager.getInstance().getAllNamespaces();
     }
     
     @Override
+    @Deprecated
     public Collection<String> searchServiceName(String namespaceId, String expr)
         throws NacosException {
         String regex = Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN;

@@ -7,7 +7,7 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useHistoryStore } from '@/stores/history-store';
 import { configApi } from '@/api/config';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
-import type { ConfigType } from '@/types/config';
+import type { ConfigHistoryDetail, ConfigType } from '@/types/config';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -154,7 +154,9 @@ export default function ConfigRollbackPage() {
     );
   }
 
-  if (!currentHistory) {
+  const historyDetail = currentHistory as ConfigHistoryDetail | null;
+
+  if (!historyDetail) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] gap-4">
         <p className="text-muted-foreground">{t('common.noData')}</p>
@@ -191,10 +193,10 @@ export default function ConfigRollbackPage() {
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-3 gap-6">
-            {renderMetadataItem(t('config.dataId'), currentHistory.dataId)}
-            {renderMetadataItem(t('config.group'), currentHistory.groupName)}
-            {renderMetadataItem(t('history.opType'), getOpTypeLabel(currentHistory.opType))}
-            {renderMetadataItem(t('config.md5'), currentHistory.md5)}
+            {renderMetadataItem(t('config.dataId'), historyDetail.dataId)}
+            {renderMetadataItem(t('config.group'), historyDetail.groupName)}
+            {renderMetadataItem(t('history.opType'), getOpTypeLabel(historyDetail.opType))}
+            {renderMetadataItem(t('config.md5'), historyDetail.md5)}
           </div>
         </CardContent>
       </Card>
@@ -206,8 +208,8 @@ export default function ConfigRollbackPage() {
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <MonacoEditor
-            value={currentHistory.content || ''}
-            language={(currentHistory.type as ConfigType) || 'text'}
+            value={historyDetail.content || ''}
+            language={historyDetail.type || 'text'}
             readOnly
             height="350px"
           />
@@ -232,8 +234,8 @@ export default function ConfigRollbackPage() {
             <DialogDescription>{t('history.rollbackConfirm')}</DialogDescription>
           </DialogHeader>
           <div className="text-sm space-y-1">
-            <p>Data ID: <span className="font-medium">{currentHistory.dataId}</span></p>
-            <p>Group: <span className="font-medium">{currentHistory.groupName}</span></p>
+            <p>Data ID: <span className="font-medium">{historyDetail.dataId}</span></p>
+            <p>Group: <span className="font-medium">{historyDetail.groupName}</span></p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={rollbackLoading}>

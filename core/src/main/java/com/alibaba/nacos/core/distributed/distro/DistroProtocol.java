@@ -23,7 +23,6 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
-import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
@@ -140,27 +139,6 @@ public class DistroProtocol {
         if (Loggers.DISTRO.isDebugEnabled()) {
             Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
         }
-    }
-    
-    /**
-     * Query data from specified server.
-     *
-     * @param distroKey data key
-     * @return data
-     */
-    public DistroData queryFromRemote(DistroKey distroKey) {
-        if (null == distroKey.getTargetServer()) {
-            Loggers.DISTRO.warn("[DISTRO] Can't query data from empty server");
-            return null;
-        }
-        String resourceType = distroKey.getResourceType();
-        DistroTransportAgent transportAgent =
-            distroComponentHolder.findTransportAgent(resourceType);
-        if (null == transportAgent) {
-            Loggers.DISTRO.warn("[DISTRO] Can't find transport agent for key {}", resourceType);
-            return null;
-        }
-        return transportAgent.getData(distroKey, distroKey.getTargetServer());
     }
     
     /**

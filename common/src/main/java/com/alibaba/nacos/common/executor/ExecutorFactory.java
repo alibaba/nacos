@@ -20,11 +20,8 @@ import com.alibaba.nacos.common.JustForTest;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Unified thread pool creation factory, and actively create thread pool resources by ThreadPoolManager for unified life
@@ -64,14 +61,6 @@ public final class ExecutorFactory {
     public static ScheduledExecutorService newScheduledExecutorService(final int nThreads,
         final ThreadFactory threadFactory) {
         return Executors.newScheduledThreadPool(nThreads, threadFactory);
-    }
-    
-    public static ThreadPoolExecutor newCustomerThreadExecutor(final int coreThreads,
-        final int maxThreads,
-        final long keepAliveTimeMs, final ThreadFactory threadFactory) {
-        return new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(), threadFactory);
     }
     
     public static final class Managed {
@@ -167,26 +156,6 @@ public final class ExecutorFactory {
                 Executors.newScheduledThreadPool(nThreads, threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
             return executorService;
-        }
-        
-        /**
-         * Create a new custom executor service and register to manager.
-         *
-         * @param group           group name
-         * @param coreThreads     core thread number
-         * @param maxThreads      max thread number
-         * @param keepAliveTimeMs keep alive time milliseconds
-         * @param threadFactory   thread factory
-         * @return new custom executor service
-         */
-        public static ThreadPoolExecutor newCustomerThreadExecutor(final String group,
-            final int coreThreads,
-            final int maxThreads, final long keepAliveTimeMs, final ThreadFactory threadFactory) {
-            ThreadPoolExecutor executor =
-                new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs,
-                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
-            THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
-            return executor;
         }
         
         @JustForTest

@@ -20,13 +20,13 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.studio.StudioManager;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**

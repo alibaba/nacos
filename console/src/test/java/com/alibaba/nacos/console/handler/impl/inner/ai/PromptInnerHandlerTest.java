@@ -201,11 +201,11 @@ class PromptInnerHandlerTest {
     @Test
     void testForcePublish() throws NacosException {
         doNothing().when(promptOperationService).forcePublish(NS, PROMPT_KEY,
-            VERSION, false);
+            VERSION, true);
         
         handler.forcePublish(NS, PROMPT_KEY, VERSION, false);
         
-        verify(promptOperationService).forcePublish(NS, PROMPT_KEY, VERSION, false);
+        verify(promptOperationService).forcePublish(NS, PROMPT_KEY, VERSION, true);
     }
     
     @Test

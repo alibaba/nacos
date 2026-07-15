@@ -83,9 +83,9 @@ Pipeline nodes should return deterministic results for the same resource
 version and input metadata. Nodes that call external systems must define timeout
 and retry behavior in their implementation documentation.
 
-## Current Integration Note
+## Unified State Integration
 
-The core plugin manager can list loaded AI pipeline plugins. Current code notes
-that enable or disable through unified plugin management is not yet wired into
-pipeline execution. Pipeline execution is controlled by the pipeline config
-until that integration is completed.
+The core plugin manager lists loaded AI pipeline plugins by `pipelineId`.
+`PublishPipelineManager` filters configured candidates through unified state
+for `ai-pipeline:{pipelineId}` before resource-type matching and ordering. A
+disabled node remains registered but does not participate in publication.

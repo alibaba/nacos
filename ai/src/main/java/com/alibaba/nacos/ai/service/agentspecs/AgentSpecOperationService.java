@@ -275,7 +275,7 @@ public interface AgentSpecOperationService {
      * @param namespaceId namespace ID
      * @param name agentspec name
      * @param version version to publish
-     * @param updateLatestLabel whether to update the latest label to this version
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      * @throws NacosException if publish failed
      */
     void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
@@ -289,7 +289,7 @@ public interface AgentSpecOperationService {
      * @param namespaceId       namespace ID
      * @param name              agentspec name
      * @param version           version to force-publish
-     * @param updateLatestLabel whether to update the "latest" label
+     * @param updateLatestLabel retained for compatibility and ignored; latest is server-managed
      */
     void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException;

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agentspecs;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
@@ -552,11 +553,18 @@ class AgentSpecOperationServiceImplTest {
             eq("agentspec"), eq(1L), any()))
             .thenReturn(true);
         
-        service.forcePublish(namespaceId, agentSpecName, version, true);
+        service.forcePublish(namespaceId, agentSpecName, version, false);
         
         verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(agentSpecName),
             anyString(),
             eq(version), eq("online"));
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName),
+            eq("agentspec"), eq(1L),
+            argThat(resource -> {
+                Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
+                Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+                return version.equals(labels.get(AiResourceConstants.LABEL_LATEST));
+            }));
     }
     
     @Test
@@ -713,6 +721,43 @@ class AgentSpecOperationServiceImplTest {
             anyString(), anyString());
         verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
             anyString(), anyLong(), any());
+    }
+    
+    @Test
+    void testVersionOfflineShouldRemoveLatestWhenNoOnlineVersionRemains()
+        throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(),
+            eq(version))).thenReturn(v);
+        Page<AiResourceVersion> emptyOnlinePage = new Page<>();
+        emptyOnlinePage.setPageItems(List.of());
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), anyString(),
+            eq("online"), eq(1), eq(500))).thenReturn(emptyOnlinePage);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName),
+            eq("agentspec"), eq(1L), any())).thenReturn(true);
+        
+        service.changeOnlineStatus(namespaceId, agentSpecName, "version", version, false);
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName),
+            eq("agentspec"), eq(1L), captor.capture());
+        Map<?, ?> info = JacksonUtils.toObj(captor.getValue().getVersionInfo(), Map.class);
+        Map<?, ?> labels = (Map<?, ?>) info.get("labels");
+        assertTrue(!labels.containsKey("latest"));
     }
     
     @Test
@@ -1140,7 +1185,7 @@ class AgentSpecOperationServiceImplTest {
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L), any()))
             .thenReturn(true);
-        Map<String, String> labels = Map.of("latest", "v2");
+        Map<String, String> labels = Map.of("stable", "v2");
         service.updateLabels(namespaceId, name, labels);
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L), any());

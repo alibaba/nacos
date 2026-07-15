@@ -17,8 +17,9 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.naming.cluster.ServerStatus;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -26,8 +27,8 @@ class OperatorMetricsV1ControllerTest {
     
     @Test
     void testMetricsReturnsUpStatus() {
-        ObjectNode result = new OperatorMetricsV1Controller().metrics();
+        Map<String, String> result = new OperatorMetricsV1Controller().metrics();
         
-        assertEquals(ServerStatus.UP.name(), result.get("status").asText());
+        assertEquals(ServerStatus.UP.name(), result.get("status"));
     }
 }

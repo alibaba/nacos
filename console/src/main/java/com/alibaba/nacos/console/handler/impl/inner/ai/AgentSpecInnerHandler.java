@@ -118,18 +118,16 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
-            updateLatest);
+            true);
     }
     
     @Override
     public void forcePublish(AgentSpecPublishForm form) throws NacosException {
-        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
         agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
             form.getVersion(),
-            updateLatest);
+            true);
     }
     
     @Override
