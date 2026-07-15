@@ -60,7 +60,7 @@ class GrpcSdkClientTest {
     @Test
     void testRpcPortOffsetFromClientConfig() {
         Properties properties = new Properties();
-        properties.setProperty(GrpcConstants.GRPC_PORT_OFFSET, "1002");
+        properties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "1002");
         GrpcClientConfig config =
             DefaultGrpcClientConfig.newBuilder().buildSdkFromProperties(properties).build();
         grpcSdkClient = new GrpcSdkClient(config);

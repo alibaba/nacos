@@ -86,7 +86,7 @@ class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, "3000");
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         properties.setProperty(GrpcConstants.GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT, "false");
-        properties.setProperty(GrpcConstants.GRPC_PORT_OFFSET, "1002");
+        properties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "1002");
         
         DefaultGrpcClientConfig config =
             (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()

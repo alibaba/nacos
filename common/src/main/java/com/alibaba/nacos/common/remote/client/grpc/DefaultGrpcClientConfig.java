@@ -346,10 +346,6 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.rpcPortOffset = Integer.parseInt(
                     properties.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY));
             }
-            if (properties.containsKey(GrpcConstants.GRPC_PORT_OFFSET)) {
-                this.rpcPortOffset =
-                    Integer.parseInt(properties.getProperty(GrpcConstants.GRPC_PORT_OFFSET));
-            }
             this.tlsConfig = tlsConfig;
             return this;
         }
