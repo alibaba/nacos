@@ -48,16 +48,20 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
     private static final String AUTH_AI_VISIBILITY_PATH = nacosPath("/v3/auth/ai/visibility");
 
     private static final String AUTH_AI_VISIBILITY_LIST_PATH = AUTH_AI_VISIBILITY_PATH + "/list";
+    private static final String AUTH_USER_PATH = nacosPath("/v3/auth/user");
 
     @Test
     public void testGrantListAndRevokeVisibilityGrant() throws Exception {
         String skillName = randomAiName("visibility-auth");
         postFormOk(ADMIN_SKILL_PATH + "/draft",
-                skillDraftForm(skillName, "1.0.0", "visibility body", "visibility guide"));
+               skillDraftForm(skillName, "1.0.0", "visibility body", "visibility guide"));
         addCleanup(() -> deleteSkillQuietly(skillName));
 
+        String grantee = randomAiName("visibility-grantee");
+        createUserQuietly(grantee, "nacos123");
+
         JsonNode grant = postFormOk(AUTH_AI_VISIBILITY_PATH,
-                visibilityGrantQuery(skillName, "readerA", "w"));
+                visibilityGrantQuery(skillName, grantee, "w"));
         assertEquals("grant ai visibility permission ok!", grant.get("data").asText(), grant.toString());
 
         JsonNode list = getJsonOk(AUTH_AI_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
@@ -66,10 +70,10 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
         assertEquals(DEFAULT_NAMESPACE, item.get("namespaceId").asText(), item.toString());
         assertEquals("skill", item.get("resourceType").asText(), item.toString());
         assertEquals(skillName, item.get("resourceName").asText(), item.toString());
-        assertEquals("readerA", item.get("username").asText(), item.toString());
+        assertEquals(grantee, item.get("username").asText(), item.toString());
         assertEquals("rw", item.get("action").asText(), item.toString());
 
-        JsonNode revoke = deleteJsonOk(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, "readerA", "w"));
+        JsonNode revoke = deleteJsonOk(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "w"));
         assertEquals("revoke ai visibility permission ok!", revoke.get("data").asText(), revoke.toString());
 
         JsonNode afterRevoke =
@@ -79,17 +83,19 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
-    public void testGrantValidationAndNotFoundErrors() throws Exception {
+   public void testGrantValidationAndNotFoundErrors() throws Exception {
         assertError(postRaw(AUTH_AI_VISIBILITY_PATH,
-                visibilityGrantQuery(randomAiName("missing-visibility"), "readerA", "r")),
+               visibilityGrantQuery(randomAiName("missing-visibility"), "nobody", "r")),
                 404, ErrorCode.RESOURCE_NOT_FOUND, "AI resource not found");
 
         String skillName = randomAiName("visibility-invalid-action");
         postFormOk(ADMIN_SKILL_PATH + "/draft",
-                skillDraftForm(skillName, "1.0.0", "invalid action body", "invalid action guide"));
+               skillDraftForm(skillName, "1.0.0", "invalid action body", "invalid action guide"));
         addCleanup(() -> deleteSkillQuietly(skillName));
+        String grantee = randomAiName("visibility-invalid-action-grantee");
+        createUserQuietly(grantee, "nacos123");
 
-        assertError(postRaw(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, "readerA", "x")),
+        assertError(postRaw(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "x")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "unsupported action");
     }
 
@@ -100,5 +106,11 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
 
     private Query visibilityGrantQuery(String resourceName, String username, String action) {
         return visibilityResourceQuery(resourceName).addParam("username", username).addParam("action", action);
+    }
+
+    private void createUserQuietly(String username, String password) throws Exception {
+        postFormOk(AUTH_USER_PATH,
+                Query.newInstance().addParam("username", username).addParam("password", password));
+        addCleanup(() -> deleteQuietly(AUTH_USER_PATH, Query.newInstance().addParam("username", username)));
     }
 }

@@ -48,7 +48,8 @@ class NacosAuthPluginControllerConfigTest {
             authenticationManager, tokenManagerDelegate) instanceof UserControllerV3);
         assertTrue(config.roleControllerV3(roleService) instanceof RoleControllerV3);
         assertTrue(config.permissionControllerV3(roleService) instanceof PermissionControllerV3);
-        AiVisibilityGrantService grantService = config.aiVisibilityGrantService(roleService);
+        AiVisibilityGrantService grantService =
+            config.aiVisibilityGrantService(roleService, userService);
         assertTrue(grantService != null);
         assertTrue(config
             .aiVisibilityGrantControllerV3(grantService) instanceof AiVisibilityGrantControllerV3);

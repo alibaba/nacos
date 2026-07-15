@@ -68,7 +68,7 @@ final class AiVisibilityGrantRoleHelper {
         }
         return "r".equals(storedAction) || "rw".equals(storedAction);
     }
-
+    
     // base64(namespace).base64(resourceType).base64(resourceName)
     static String buildRolePrefix(String namespaceId, String resourceType, String resourceName) {
         // Encode each segment so internal role names stay reversible without leaking delimiter rules

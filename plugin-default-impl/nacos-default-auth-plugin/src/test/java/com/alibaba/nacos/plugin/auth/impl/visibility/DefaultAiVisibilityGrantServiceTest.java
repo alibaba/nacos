@@ -23,7 +23,9 @@ import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
@@ -43,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,7 +61,10 @@ class DefaultAiVisibilityGrantServiceTest {
     @SuppressWarnings("unchecked")
     void grantShouldAddRoleAndPermissionForOwner() throws Exception {
         NacosRoleService roleService = mock(NacosRoleService.class);
-        DefaultAiVisibilityGrantService service = new DefaultAiVisibilityGrantService(roleService);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -89,7 +95,9 @@ class DefaultAiVisibilityGrantServiceTest {
     @SuppressWarnings("unchecked")
     void grantShouldDenyForNonOwnerNonAdmin() {
         NacosRoleService roleService = mock(NacosRoleService.class);
-        DefaultAiVisibilityGrantService service = new DefaultAiVisibilityGrantService(roleService);
+        NacosUserService userService = mock(NacosUserService.class);
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("carol", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -106,7 +114,9 @@ class DefaultAiVisibilityGrantServiceTest {
     @Test
     void findAuthorizedResourceNamesShouldIncludeReadAndWriteGrantsForReadQueries() {
         NacosRoleService roleService = mock(NacosRoleService.class);
-        DefaultAiVisibilityGrantService service = new DefaultAiVisibilityGrantService(roleService);
+        NacosUserService userService = mock(NacosUserService.class);
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
         RoleInfo readRole = new RoleInfo();
         readRole.setRole(AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "skill-a",
             VisibilityConstants.ACTION_READ));
@@ -130,7 +140,9 @@ class DefaultAiVisibilityGrantServiceTest {
     @SuppressWarnings("unchecked")
     void listShouldReturnParsedGrantInfo() throws Exception {
         NacosRoleService roleService = mock(NacosRoleService.class);
-        DefaultAiVisibilityGrantService service = new DefaultAiVisibilityGrantService(roleService);
+        NacosUserService userService = mock(NacosUserService.class);
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -159,7 +171,10 @@ class DefaultAiVisibilityGrantServiceTest {
     @SuppressWarnings("unchecked")
     void grantShouldRejectUnsupportedAction() {
         NacosRoleService roleService = mock(NacosRoleService.class);
-        DefaultAiVisibilityGrantService service = new DefaultAiVisibilityGrantService(roleService);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -168,6 +183,35 @@ class DefaultAiVisibilityGrantServiceTest {
                 () -> service.grant("public", "skill", "demo-skill", "bob", "x"));
             verify(roleService, never()).addRole(org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString());
+        } finally {
+            restoreAuthConfig(cached);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void revokeShouldNotRequireExistingGrantee() throws Exception {
+        NacosRoleService roleService = mock(NacosRoleService.class);
+        NacosUserService userService = mock(NacosUserService.class);
+        DefaultAiVisibilityGrantService service =
+            new DefaultAiVisibilityGrantService(roleService, userService);
+        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName =
+                AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w");
+            when(roleService.getRoles("", roleName, 1, 1))
+                .thenReturn(new com.alibaba.nacos.api.model.Page<>());
+            
+            service.revoke("public", "skill", "demo-skill", "bob", "w");
+            
+            verify(userService, never()).getUser("bob");
+            verify(roleService).deleteRole(roleName, "bob");
+            verify(roleService, times(1)).deletePermission(roleName,
+                AiVisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                    "demo-skill"),
+                "rw");
         } finally {
             restoreAuthConfig(cached);
         }

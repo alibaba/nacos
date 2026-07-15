@@ -25,6 +25,8 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
+import com.alibaba.nacos.plugin.auth.impl.persistence.User;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityResourceLocator;
@@ -50,8 +52,12 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
     
     private final NacosRoleService roleService;
     
-    public DefaultAiVisibilityGrantService(NacosRoleService roleService) {
+    private final NacosUserService userService;
+    
+    public DefaultAiVisibilityGrantService(NacosRoleService roleService,
+        NacosUserService userService) {
         this.roleService = roleService;
+        this.userService = userService;
     }
     
     @Override
@@ -61,6 +67,7 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
             requireManagedResource(namespaceId, resourceType, resourceName);
         checkManageGrantAuthority(resource);
         validateUsername(username);
+        validateGranteeExists(username);
         String storedAction = normalizeGrantAction(action);
         String roleName = AiVisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
             resourceName, storedAction);
@@ -148,7 +155,7 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
             .thenComparing(AiVisibilityGrantInfo::getAction));
         return result;
     }
-
+    
     // Query the names of all AI resources that a specified user has visibility permissions for,
     // under a specified namespace, resource type, and action.
     @Override
@@ -236,6 +243,15 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
         if (StringUtils.isBlank(username)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "username is blank");
+        }
+    }
+    
+    private void validateGranteeExists(String username) throws NacosException {
+        User grantee = userService.getUser(username);
+        if (grantee == null) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "user '" + username + "' not found");
         }
     }
     

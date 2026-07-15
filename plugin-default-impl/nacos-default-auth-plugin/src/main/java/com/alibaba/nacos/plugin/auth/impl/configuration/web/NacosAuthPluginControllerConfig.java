@@ -57,8 +57,9 @@ public class NacosAuthPluginControllerConfig {
     }
     
     @Bean
-    public AiVisibilityGrantService aiVisibilityGrantService(NacosRoleService roleService) {
-        return new DefaultAiVisibilityGrantService(roleService);
+    public AiVisibilityGrantService aiVisibilityGrantService(NacosRoleService roleService,
+        NacosUserService userService) {
+        return new DefaultAiVisibilityGrantService(roleService, userService);
     }
     
     @Bean
