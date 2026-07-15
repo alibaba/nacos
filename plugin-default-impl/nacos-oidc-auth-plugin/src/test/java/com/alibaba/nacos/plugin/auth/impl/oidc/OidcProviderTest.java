@@ -23,15 +23,9 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.OidcAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.mock.env.MockEnvironment;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,11 +37,7 @@ import static org.mockito.Mockito.when;
 
 class OidcProviderTest {
     
-    private ConfigurableEnvironment originalEnvironment;
-    
     private OidcAuthenticationManager authManager;
-    
-    private OidcAuthConfig config;
     
     private IdentityContext identityContext;
     
@@ -55,23 +45,11 @@ class OidcProviderTest {
     
     @BeforeEach
     void setUp() {
-        originalEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new MockEnvironment());
-        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
         authManager = mock(OidcAuthenticationManager.class);
-        config = mock(OidcAuthConfig.class);
         identityContext = new IdentityContext();
         user = new OidcUser();
         user.setUsername("nacos");
         user.setToken("token");
-    }
-    
-    @AfterEach
-    void tearDown() {
-        EnvUtil.setEnvironment(originalEnvironment);
-        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
     }
     
     @Test
@@ -110,17 +88,6 @@ class OidcProviderTest {
         assertFalse(result.isSuccess());
         assertEquals(401, result.getErrorCode());
         assertEquals("Authentication failed", result.getErrorMessage());
-    }
-    
-    @Test
-    void testIdentityProviderInitializesBeforeTokenFailure() {
-        OidcIdentityProvider provider = new OidcIdentityProvider();
-        
-        AuthResult<?> result = provider.validateIdentity(new IdentityContext(),
-            Resource.EMPTY_RESOURCE);
-        
-        assertFalse(result.isSuccess());
-        assertEquals(401, result.getErrorCode());
     }
     
     @Test
@@ -186,28 +153,12 @@ class OidcProviderTest {
         assertEquals("Authorization failed", result.getErrorMessage());
     }
     
-    @Test
-    void testAuthorityProviderInitializesBeforeMissingUserFailure() {
-        OidcAuthorityProvider provider = new OidcAuthorityProvider();
-        
-        AuthResult<?> result = provider.validateAuthority(new IdentityContext(), permission());
-        
-        assertFalse(result.isSuccess());
-        assertEquals(403, result.getErrorCode());
-    }
-    
     private OidcIdentityProvider newIdentityProvider() {
-        OidcIdentityProvider provider = new OidcIdentityProvider();
-        ReflectionTestUtils.setField(provider, "config", config);
-        ReflectionTestUtils.setField(provider, "authManager", authManager);
-        return provider;
+        return new OidcIdentityProvider(authManager);
     }
     
     private OidcAuthorityProvider newAuthorityProvider() {
-        OidcAuthorityProvider provider = new OidcAuthorityProvider();
-        ReflectionTestUtils.setField(provider, "config", config);
-        ReflectionTestUtils.setField(provider, "authManager", authManager);
-        return provider;
+        return new OidcAuthorityProvider(authManager);
     }
     
     private Permission permission() {

@@ -153,6 +153,66 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
     }
 
     @Test
+    public void testOidcAuthPluginConfigMetadata() throws Exception {
+        JsonNode detail = getJsonOk(CONSOLE_PLUGIN_PATH,
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "oidc"))
+                .get("data");
+        assertTrue(detail.get("configurable").asBoolean(), detail.toString());
+
+        JsonNode definitions = detail.get("configDefinitions");
+        assertEquals(14, definitions.size(), definitions.toString());
+        assertDefinition(definitions, "issuer-uri", "nacos.core.auth.plugin.oidc.issuer-uri",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "client-id", "nacos.core.auth.plugin.oidc.client-id",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "client-secret", "nacos.core.auth.plugin.oidc.client-secret",
+                "STRING", "RESTART", true);
+        assertDefinition(definitions, "scope", "nacos.core.auth.plugin.oidc.scope",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "token-validation-method",
+                "nacos.core.auth.plugin.oidc.token-validation-method", "STRING", "RESTART", false);
+        assertDefinition(definitions, "jwks-cache-ttl-seconds",
+                "nacos.core.auth.plugin.oidc.jwks-cache-ttl-seconds", "NUMBER", "RESTART", false);
+        assertDefinition(definitions, "username-claim", "nacos.core.auth.plugin.oidc.username-claim",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "roles-claim", "nacos.core.auth.plugin.oidc.roles-claim",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "admin-role", "nacos.core.auth.plugin.oidc.admin-role",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "auto-create-user",
+                "nacos.core.auth.plugin.oidc.auto-create-user", "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "authorization-endpoint",
+                "nacos.core.auth.plugin.oidc.authorization-endpoint", "STRING", "RESTART", false);
+        assertDefinition(definitions, "authorization-timeout-ms",
+                "nacos.core.auth.plugin.oidc.authorization-timeout-ms", "NUMBER", "RESTART", false);
+        assertDefinition(definitions, "strict-nonce-validation",
+                "nacos.core.auth.plugin.oidc.strict-nonce-validation", "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "strict-audience-validation",
+                "nacos.core.auth.plugin.oidc.strict-audience-validation", "BOOLEAN", "RESTART", false);
+
+        JsonNode config = detail.get("config");
+        assertEquals(14, config.size(), config.toString());
+        assertEquals("", config.get("issuer-uri").asText(), config.toString());
+        assertEquals("", config.get("client-secret").asText(), config.toString());
+        assertEquals("openid profile email", config.get("scope").asText(), config.toString());
+        assertEquals("jwt", config.get("token-validation-method").asText(), config.toString());
+        assertEquals("3600", config.get("jwks-cache-ttl-seconds").asText(), config.toString());
+        assertEquals("5000", config.get("authorization-timeout-ms").asText(), config.toString());
+        assertEquals("true", config.get("strict-audience-validation").asText(), config.toString());
+
+        JsonNode metas = detail.get("configValueMetas");
+        assertEquals(14, metas.size(), metas.toString());
+        for (JsonNode meta : metas) {
+            assertEquals("DEFAULT", meta.get("source").asText(), meta.toString());
+        }
+
+        assertError(putRaw(CONSOLE_PLUGIN_PATH + "/config",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "oidc")
+                        .addParam("config%5Bclient-id%5D", "updated")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "requires restart");
+    }
+
+    @Test
     public void testPluginValidationAndNotFoundReturnControlledErrors() throws Exception {
         assertError(getRaw(CONSOLE_PLUGIN_PATH,
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),

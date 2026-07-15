@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadataProvider;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -37,7 +36,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provider for fetching and caching JWKS (JSON Web Key Set) from OIDC provider.
+ * Provider for fetching and caching JWKS from an OIDC Provider.
  *
  * @author WangzJi
  */
@@ -47,47 +46,31 @@ public class JwksProvider {
     
     private static final String CACHE_KEY = "jwks";
     
-    private static volatile JwksProvider instance;
-    
-    private final OidcAuthConfig config;
+    private final OidcProviderMetadataProvider metadataProvider;
     
     private final HttpClient httpClient;
     
     private final Cache<String, JWKSet> jwksCache;
     
-    private volatile String jwksUri;
+    public JwksProvider(OidcAuthPluginConfig config,
+        OidcProviderMetadataProvider metadataProvider) {
+        this(config, metadataProvider,
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
+    }
     
-    private JwksProvider() {
-        this.config = OidcAuthConfig.getInstance();
-        this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    JwksProvider(OidcAuthPluginConfig config, OidcProviderMetadataProvider metadataProvider,
+        HttpClient httpClient) {
+        this.metadataProvider = metadataProvider;
+        this.httpClient = httpClient;
         this.jwksCache = Caffeine.newBuilder()
             .expireAfterWrite(config.getJwksCacheTtlSeconds(), TimeUnit.SECONDS)
-            .maximumSize(1)
-            .build();
+            .maximumSize(1).build();
     }
     
     /**
-     * Get singleton instance.
+     * Get JWKS from cache or fetch it from the Provider.
      *
-     * @return JwksProvider instance
-     */
-    public static JwksProvider getInstance() {
-        if (instance == null) {
-            synchronized (JwksProvider.class) {
-                if (instance == null) {
-                    instance = new JwksProvider();
-                }
-            }
-        }
-        return instance;
-    }
-    
-    /**
-     * Get JWKS from cache or fetch from provider.
-     *
-     * @return JWKSet
+     * @return JWK set
      * @throws IOException if fetching fails
      */
     public JWKSet getJwkSet() throws IOException {
@@ -95,23 +78,20 @@ public class JwksProvider {
         if (cached != null) {
             return cached;
         }
-        
         synchronized (this) {
             cached = jwksCache.getIfPresent(CACHE_KEY);
-            if (cached != null) {
-                return cached;
+            if (cached == null) {
+                cached = fetchJwkSet();
+                jwksCache.put(CACHE_KEY, cached);
             }
-            
-            JWKSet jwkSet = fetchJwkSet();
-            jwksCache.put(CACHE_KEY, jwkSet);
-            return jwkSet;
+            return cached;
         }
     }
     
     /**
-     * Force refresh JWKS cache.
+     * Force a JWKS refresh for key rotation recovery.
      *
-     * @return refreshed JWKSet
+     * @return refreshed JWK set
      * @throws IOException if fetching fails
      */
     public JWKSet refreshJwkSet() throws IOException {
@@ -119,38 +99,23 @@ public class JwksProvider {
         return getJwkSet();
     }
     
-    /**
-     * Fetch JWKS from the provider's JWKS endpoint.
-     *
-     * @return JWKSet
-     * @throws IOException if fetching fails
-     */
     private JWKSet fetchJwkSet() throws IOException {
-        String uri = getJwksUri();
-        if (StringUtils.isBlank(uri)) {
+        String jwksUri = metadataProvider.getMetadata().getJwksUri();
+        if (StringUtils.isBlank(jwksUri)) {
             throw new IOException("JWKS URI is not configured or discovered");
         }
-        
-        LOGGER.info("Fetching JWKS from: {}", uri);
-        
+        LOGGER.info("Fetching JWKS from: {}", jwksUri);
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(jwksUri))
+            .header("Accept", "application/json").GET().build();
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .header("Accept", "application/json")
-                .GET()
-                .build();
-            
             HttpResponse<String> response =
                 httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            
             if (response.statusCode() != OidcProtocolConstants.HTTP_STATUS_OK) {
                 throw new IOException("Failed to fetch JWKS, status: " + response.statusCode());
             }
-            
-            JWKSet jwkSet = JWKSet.parse(response.body());
-            LOGGER.info("Successfully fetched JWKS with {} keys", jwkSet.getKeys().size());
-            return jwkSet;
-            
+            JWKSet result = JWKSet.parse(response.body());
+            LOGGER.info("Successfully fetched JWKS with {} keys", result.getKeys().size());
+            return result;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("JWKS fetch interrupted", e);
@@ -160,102 +125,9 @@ public class JwksProvider {
     }
     
     /**
-     * Get JWKS URI, discovering from OIDC configuration if needed.
-     *
-     * @return JWKS URI
-     * @throws IOException if discovery fails
-     */
-    private String getJwksUri() throws IOException {
-        // Check if already discovered or configured
-        if (StringUtils.isNotBlank(jwksUri)) {
-            return jwksUri;
-        }
-        
-        // Check if directly configured
-        String configuredJwksUri = config.getJwksUri();
-        if (StringUtils.isNotBlank(configuredJwksUri)) {
-            this.jwksUri = configuredJwksUri;
-            return jwksUri;
-        }
-        
-        // Discover from OIDC well-known configuration
-        String issuerUri = config.getIssuerUri();
-        if (StringUtils.isBlank(issuerUri)) {
-            throw new IOException("Issuer URI is not configured");
-        }
-        
-        discoverOidcConfiguration(issuerUri);
-        return jwksUri;
-    }
-    
-    /**
-     * Discover OIDC configuration from well-known endpoint.
-     *
-     * @param issuerUri OIDC issuer URI
-     * @throws IOException if discovery fails
-     */
-    private void discoverOidcConfiguration(String issuerUri) throws IOException {
-        String discoveryUrl = issuerUri.endsWith("/")
-            ? issuerUri + ".well-known/openid-configuration"
-            : issuerUri + OidcProtocolConstants.WELL_KNOWN_PATH;
-        
-        LOGGER.info("Discovering OIDC configuration from: {}", discoveryUrl);
-        
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(discoveryUrl))
-                .header("Accept", "application/json")
-                .GET()
-                .build();
-            
-            HttpResponse<String> response =
-                httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            if (response.statusCode() != OidcProtocolConstants.HTTP_STATUS_OK) {
-                throw new IOException(
-                    "Failed to discover OIDC configuration, status: " + response.statusCode());
-            }
-            
-            JsonNode root = JacksonUtils.toObj(response.body());
-            if (root != null) {
-                if (root.has(OidcProtocolConstants.DISCOVERY_JWKS_URI)) {
-                    this.jwksUri = root.get(OidcProtocolConstants.DISCOVERY_JWKS_URI).asText();
-                    config.setJwksUri(jwksUri);
-                }
-                if (root.has(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT)) {
-                    config.setAuthorizationEndpoint(
-                        root.get(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT).asText());
-                }
-                if (root.has(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT)) {
-                    config.setTokenEndpoint(
-                        root.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT).asText());
-                }
-                if (root.has(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT)) {
-                    config.setUserinfoEndpoint(
-                        root.get(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT).asText());
-                }
-                if (root.has(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT)) {
-                    config.setEndSessionEndpoint(
-                        root.get(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT).asText());
-                }
-            }
-            
-            LOGGER.info("OIDC configuration discovered: jwksUri={}", jwksUri);
-            
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("OIDC discovery interrupted", e);
-        } catch (Exception e) {
-            LOGGER.error("Failed to parse OIDC configuration", e);
-            throw new IOException("Failed to parse OIDC configuration", e);
-        }
-    }
-    
-    /**
-     * Clear the JWKS cache.
+     * Clear the cached JWK set.
      */
     public void clearCache() {
         jwksCache.invalidateAll();
-        jwksUri = null;
     }
 }

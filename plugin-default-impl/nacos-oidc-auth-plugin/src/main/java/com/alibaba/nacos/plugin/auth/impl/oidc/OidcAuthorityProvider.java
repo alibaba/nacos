@@ -20,7 +20,6 @@ import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.OidcAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +34,15 @@ public class OidcAuthorityProvider implements AuthorityProvider {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthorityProvider.class);
     
-    private volatile OidcAuthenticationManager authManager;
-    private volatile OidcAuthConfig config;
+    private final OidcAuthenticationManager authManager;
+    
+    public OidcAuthorityProvider(OidcAuthenticationManager authManager) {
+        this.authManager = authManager;
+    }
     
     @Override
     public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) {
         try {
-            initializeIfNeeded();
-            
             // Get user from context
             OidcUser user = authManager.getUserFromContext(identityContext);
             if (user == null) {
@@ -74,15 +74,4 @@ public class OidcAuthorityProvider implements AuthorityProvider {
         }
     }
     
-    private void initializeIfNeeded() {
-        if (config == null) {
-            synchronized (this) {
-                if (config == null) {
-                    config = OidcAuthConfig.getInstance();
-                    authManager = OidcAuthenticationManager.getInstance();
-                    LOGGER.info("OidcAuthorityProvider initialized");
-                }
-            }
-        }
-    }
 }

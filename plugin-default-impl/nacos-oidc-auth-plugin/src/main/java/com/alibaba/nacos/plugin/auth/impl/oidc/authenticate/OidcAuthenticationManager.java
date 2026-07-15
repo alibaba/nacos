@@ -24,7 +24,6 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authorization.AuthorizationClient;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authorization.AuthorizationRequest;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authorization.AuthorizationResponse;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
@@ -44,34 +43,17 @@ public class OidcAuthenticationManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthenticationManager.class);
     
-    private static volatile OidcAuthenticationManager instance;
-    
-    private final OidcAuthConfig config;
-    
     private final JwtTokenValidator tokenValidator;
     
     private final OidcUserMapper userMapper;
     
-    private OidcAuthenticationManager() {
-        this.config = OidcAuthConfig.getInstance();
-        this.tokenValidator = JwtTokenValidator.getInstance();
-        this.userMapper = OidcUserMapper.getInstance();
-    }
+    private final AuthorizationClient authorizationClient;
     
-    /**
-     * Get singleton instance.
-     *
-     * @return OidcAuthenticationManager instance
-     */
-    public static OidcAuthenticationManager getInstance() {
-        if (instance == null) {
-            synchronized (OidcAuthenticationManager.class) {
-                if (instance == null) {
-                    instance = new OidcAuthenticationManager();
-                }
-            }
-        }
-        return instance;
+    public OidcAuthenticationManager(JwtTokenValidator tokenValidator,
+        OidcUserMapper userMapper, AuthorizationClient authorizationClient) {
+        this.tokenValidator = tokenValidator;
+        this.userMapper = userMapper;
+        this.authorizationClient = authorizationClient;
     }
     
     /**
@@ -160,8 +142,7 @@ public class OidcAuthenticationManager {
             .build();
         
         // Call IdP authorization endpoint - Nacos does NOT make the decision
-        AuthorizationClient authzClient = AuthorizationClient.getInstance();
-        AuthorizationResponse response = authzClient.authorize(request);
+        AuthorizationResponse response = authorizationClient.authorize(request);
         
         if (response.isAllowed()) {
             LOGGER.debug("IdP authorized user {} for {}:{}", user.getUsername(),

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.identity;
 
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.token.JwtTokenValidator;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.slf4j.Logger;
@@ -33,31 +32,10 @@ public class OidcUserMapper {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcUserMapper.class);
     
-    private static volatile OidcUserMapper instance;
-    
-    private final OidcAuthConfig config;
-    
     private final JwtTokenValidator tokenValidator;
     
-    private OidcUserMapper() {
-        this.config = OidcAuthConfig.getInstance();
-        this.tokenValidator = JwtTokenValidator.getInstance();
-    }
-    
-    /**
-     * Get singleton instance.
-     *
-     * @return OidcUserMapper instance
-     */
-    public static OidcUserMapper getInstance() {
-        if (instance == null) {
-            synchronized (OidcUserMapper.class) {
-                if (instance == null) {
-                    instance = new OidcUserMapper();
-                }
-            }
-        }
-        return instance;
+    public OidcUserMapper(JwtTokenValidator tokenValidator) {
+        this.tokenValidator = tokenValidator;
     }
     
     /**

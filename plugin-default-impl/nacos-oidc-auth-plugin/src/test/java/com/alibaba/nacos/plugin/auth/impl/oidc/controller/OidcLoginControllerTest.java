@@ -18,16 +18,13 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.controller;
 
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.OidcAuthPluginService;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -37,31 +34,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class OidcLoginControllerTest {
     
-    private AuthorizationCodeHandler authHandler;
-    
-    private OidcAuthConfig config;
+    private OidcAuthPluginService pluginService;
     
     private OidcLoginController controller;
     
     @BeforeEach
     void setUp() {
-        authHandler = mock(AuthorizationCodeHandler.class);
-        config = mock(OidcAuthConfig.class);
-        controller = new OidcLoginController();
-        ReflectionTestUtils.setField(controller, "authHandler", authHandler);
-        ReflectionTestUtils.setField(controller, "config", config);
+        pluginService = mock(OidcAuthPluginService.class);
+        controller = new OidcLoginController(pluginService);
     }
     
     @Test
     void testLoginRedirectsToAuthorizationUrl() throws Exception {
         MockHttpServletRequest request = httpRequest("http", 8848, "/nacos");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authHandler.buildAuthorizationUrl(
+        when(pluginService.buildAuthorizationUrl(
             "http://nacos.example:8848/nacos/v1/auth/oidc/callback"))
             .thenReturn("http://idp/authorize");
         
@@ -74,7 +65,8 @@ class OidcLoginControllerTest {
     void testLoginSendsErrorWhenAuthorizationUrlFails() throws Exception {
         MockHttpServletRequest request = httpRequest("http", 80, "");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authHandler.buildAuthorizationUrl("http://nacos.example/v1/auth/oidc/callback"))
+        when(pluginService.buildAuthorizationUrl(
+            "http://nacos.example/v1/auth/oidc/callback"))
             .thenThrow(new AccessException("bad config"));
         
         controller.login(request, response);
@@ -123,7 +115,7 @@ class OidcLoginControllerTest {
         OidcUser user = new OidcUser();
         user.setUsername("alice bob");
         user.setToken("token-value");
-        when(authHandler.exchangeCodeForUser("code", "state",
+        when(pluginService.exchangeCodeForUser("code", "state",
             "https://nacos.example/nacos/v1/auth/oidc/callback")).thenReturn(user);
         
         Result<Map<String, Object>> result =
@@ -142,7 +134,7 @@ class OidcLoginControllerTest {
         
         MockHttpServletRequest rootRequest = httpRequest("https", 8443, "");
         MockHttpServletResponse rootResponse = new MockHttpServletResponse();
-        when(authHandler.exchangeCodeForUser("root-code", "state",
+        when(pluginService.exchangeCodeForUser("root-code", "state",
             "https://nacos.example:8443/v1/auth/oidc/callback")).thenReturn(user);
         
         assertNull(controller.callback("root-code", "state", null, null, rootRequest,
@@ -157,10 +149,10 @@ class OidcLoginControllerTest {
         MockHttpServletRequest request = httpRequest("http", 8080, "");
         MockHttpServletResponse accessExceptionResponse = new MockHttpServletResponse();
         MockHttpServletResponse unexpectedResponse = new MockHttpServletResponse();
-        when(authHandler.exchangeCodeForUser("bad", "state",
+        when(pluginService.exchangeCodeForUser("bad", "state",
             "http://nacos.example:8080/v1/auth/oidc/callback"))
             .thenThrow(new AccessException("invalid state"));
-        when(authHandler.exchangeCodeForUser("boom", "state",
+        when(pluginService.exchangeCodeForUser("boom", "state",
             "http://nacos.example:8080/v1/auth/oidc/callback"))
             .thenThrow(new IllegalStateException("broken"));
         
@@ -179,7 +171,7 @@ class OidcLoginControllerTest {
     void testLogoutRedirectsWhenProviderLogoutUrlExists() throws Exception {
         MockHttpServletRequest request = httpRequest("http", 80, "");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authHandler.buildLogoutUrl("id-token", "http://nacos.example"))
+        when(pluginService.buildLogoutUrl("id-token", "http://nacos.example"))
             .thenReturn("http://idp/logout");
         
         Result<String> result = controller.logout("id-token", true, request, response);
@@ -202,7 +194,7 @@ class OidcLoginControllerTest {
     void testLogoutReturnsFailureWhenHandlerThrows() throws Exception {
         MockHttpServletRequest request = httpRequest("http", 80, "");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(authHandler.buildLogoutUrl("id-token", "http://nacos.example"))
+        when(pluginService.buildLogoutUrl("id-token", "http://nacos.example"))
             .thenThrow(new IllegalStateException("broken"));
         
         Result<String> result = controller.logout("id-token", true, request, response);
@@ -213,7 +205,7 @@ class OidcLoginControllerTest {
     
     @Test
     void testGetConfigReturnsOidcFrontendConfig() {
-        when(config.isValid()).thenReturn(true);
+        when(pluginService.isConfigurationValid()).thenReturn(true);
         
         Result<Map<String, Object>> result = controller.getConfig();
         
@@ -225,31 +217,12 @@ class OidcLoginControllerTest {
     
     @Test
     void testGetConfigReturnsFailureWhenConfigThrows() {
-        when(config.isValid()).thenThrow(new IllegalStateException("broken"));
+        when(pluginService.isConfigurationValid()).thenThrow(new IllegalStateException("broken"));
         
         Result<Map<String, Object>> result = controller.getConfig();
         
         assertEquals(500, result.getCode());
         assertEquals("Failed to get configuration", result.getMessage());
-    }
-    
-    @Test
-    void testInitializeIfNeededLoadsSingletons() {
-        OidcLoginController lazyController = new OidcLoginController();
-        OidcAuthConfig singletonConfig = mock(OidcAuthConfig.class);
-        AuthorizationCodeHandler singletonHandler = mock(AuthorizationCodeHandler.class);
-        when(singletonConfig.isValid()).thenReturn(true);
-        
-        try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-            MockedStatic<AuthorizationCodeHandler> handlerStatic =
-                mockStatic(AuthorizationCodeHandler.class)) {
-            configStatic.when(OidcAuthConfig::getInstance).thenReturn(singletonConfig);
-            handlerStatic.when(AuthorizationCodeHandler::getInstance).thenReturn(singletonHandler);
-            
-            Result<Map<String, Object>> result = lazyController.getConfig();
-            
-            assertTrue((Boolean) result.getData().get("enabled"));
-        }
     }
     
     private MockHttpServletRequest httpRequest(String scheme, int port, String contextPath) {

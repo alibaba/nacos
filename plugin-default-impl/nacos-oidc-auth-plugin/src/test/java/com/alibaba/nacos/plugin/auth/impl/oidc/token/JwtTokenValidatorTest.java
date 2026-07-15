@@ -17,16 +17,20 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -44,15 +48,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class JwtTokenValidatorTest {
-    
-    @AfterEach
-    void tearDown() {
-        ReflectionTestUtils.setField(JwtTokenValidator.class, "instance", null);
-    }
     
     @Test
     void testValidateRejectsBlankToken() {
@@ -63,7 +61,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testValidateReturnsClaimsWhenClaimsAreValid() throws Exception {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         when(config.getIssuerUri()).thenReturn("http://issuer");
         JwtTokenValidator validator = newValidator(config);
         ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
@@ -90,7 +88,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testValidateAudienceAndIssuerBranches() throws Exception {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         when(config.getIssuerUri()).thenReturn("http://issuer/");
         when(config.isStrictAudienceValidation()).thenReturn(false);
         JwtTokenValidator validator = newValidator(config);
@@ -107,7 +105,7 @@ class JwtTokenValidatorTest {
         assertEquals("nacos", validator.validate("azp").getStringClaim("azp"));
         assertThrows(AccessException.class, () -> validator.validate("issuer"));
         
-        OidcAuthConfig noSlashConfig = mockConfig();
+        OidcAuthPluginConfig noSlashConfig = mockConfig();
         when(noSlashConfig.getIssuerUri()).thenReturn("http://issuer");
         JwtTokenValidator noSlashValidator = newValidator(noSlashConfig);
         ConfigurableJWTProcessor<SecurityContext> noSlashProcessor = mockProcessor();
@@ -120,7 +118,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testValidateRejectsStrictAudienceMismatch() throws Exception {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         when(config.isStrictAudienceValidation()).thenReturn(true);
         JwtTokenValidator validator = newValidator(config);
         ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
@@ -166,21 +164,30 @@ class JwtTokenValidatorTest {
     
     @Test
     void testValidateRetriesWithRefreshedJwksAfterBadJoseFailure() throws Exception {
-        JwtTokenValidator validator = newValidator(mockConfig());
+        OidcAuthPluginConfig config = mockConfig();
+        when(config.getIssuerUri()).thenReturn("http://issuer");
+        JwtTokenValidator validator = newValidator(config);
         ConfigurableJWTProcessor<SecurityContext> processor = mockProcessor();
         JwksProvider provider = mock(JwksProvider.class);
         ReflectionTestUtils.setField(validator, "jwtProcessor", processor);
         ReflectionTestUtils.setField(validator, "jwksProvider", provider);
-        when(processor.process("rotated", null)).thenThrow(new BadJOSEException("bad key"));
-        when(provider.refreshJwkSet()).thenReturn(new JWKSet());
+        RSAKey key = new RSAKeyGenerator(2048).keyID("rotated-key").generate();
+        SignedJWT signedJwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256)
+            .keyID(key.getKeyID()).build(), validClaims().build());
+        signedJwt.sign(new RSASSASigner(key));
+        String token = signedJwt.serialize();
+        when(processor.process(token, null)).thenThrow(new BadJOSEException("bad key"));
+        when(provider.refreshJwkSet()).thenReturn(new JWKSet(key.toPublicJWK()));
         
-        assertThrows(AccessException.class, () -> validator.validate("rotated"));
+        JWTClaimsSet claims = validator.validate(token);
+        
+        assertEquals("subject", claims.getSubject());
         assertNotNull(ReflectionTestUtils.getField(validator, "jwtProcessor"));
     }
     
     @Test
     void testLazyProcessorInitializationBuildsProcessor() throws Exception {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         when(config.getIssuerUri()).thenReturn("http://issuer");
         JwtTokenValidator validator = newValidator(config);
         JwksProvider provider = mock(JwksProvider.class);
@@ -209,7 +216,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testExtractUsernameUsesConfiguredAndFallbackClaims() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         JwtTokenValidator validator = newValidator(config);
         
         assertEquals("configured", validator.extractUsername(new JWTClaimsSet.Builder()
@@ -224,7 +231,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testExtractRolesUsesConfiguredClaim() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         JwtTokenValidator validator = newValidator(config);
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
             .claim("roles", Arrays.asList("reader", "writer"))
@@ -247,7 +254,7 @@ class JwtTokenValidatorTest {
     
     @Test
     void testExtractRolesUsesResourceAccessRoles() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         JwtTokenValidator validator = newValidator(config);
         Map<String, Object> clientAccess = new HashMap<>();
         clientAccess.put("roles", Collections.singletonList("client-admin"));
@@ -298,18 +305,12 @@ class JwtTokenValidatorTest {
             .audience("nacos");
     }
     
-    private JwtTokenValidator newValidator(OidcAuthConfig config) {
-        ReflectionTestUtils.setField(JwtTokenValidator.class, "instance", null);
-        try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-            MockedStatic<JwksProvider> jwksStatic = mockStatic(JwksProvider.class)) {
-            configStatic.when(OidcAuthConfig::getInstance).thenReturn(config);
-            jwksStatic.when(JwksProvider::getInstance).thenReturn(mock(JwksProvider.class));
-            return JwtTokenValidator.getInstance();
-        }
+    private JwtTokenValidator newValidator(OidcAuthPluginConfig config) {
+        return new JwtTokenValidator(config, mock(JwksProvider.class));
     }
     
-    private OidcAuthConfig mockConfig() {
-        OidcAuthConfig config = mock(OidcAuthConfig.class);
+    private OidcAuthPluginConfig mockConfig() {
+        OidcAuthPluginConfig config = mock(OidcAuthPluginConfig.class);
         when(config.getUsernameClaim()).thenReturn("username");
         when(config.getRolesClaim()).thenReturn("roles");
         when(config.getClientId()).thenReturn("nacos");
