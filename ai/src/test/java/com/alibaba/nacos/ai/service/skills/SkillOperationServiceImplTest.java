@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
@@ -939,7 +940,24 @@ class SkillOperationServiceImplTest {
         }
         return baos.toByteArray();
     }
-    
+
+    private byte[] createMultiSkillZipBytes() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                + "name: test-skill\n"
+                + "description: Test skill description\n"
+                + "version: 3.0.6\n"
+                + "---\n\n"
+                + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
     private byte[] createZipBytesWithWrapperDirectoryResources() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -1156,7 +1174,65 @@ class SkillOperationServiceImplTest {
         verify(aiResourcePersistService).insert(captor.capture());
         assertEquals("creatorUser", captor.getValue().getOwner());
     }
-    
+
+    @Test
+    void testUploadSkillDeniedByWriteFilterReportsOwner() throws IOException {
+        String namespaceId = "test-ns";
+        AiResource meta = new AiResource();
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> uploadSkill(namespaceId, createValidZipBytes()));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("ownerUser"));
+    }
+
+    @Test
+    void testBatchUploadDeniedByWriteFilterReportsOwner() throws IOException, NacosException {
+        String namespaceId = "test-ns";
+        AiResource meta = new AiResource();
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId,
+            createMultiSkillZipBytes(), false);
+
+        assertEquals(1, result.getFailed().size());
+        assertEquals("test-skill", result.getFailed().get(0).getName());
+        assertTrue(result.getFailed().get(0).getReason().contains("ownerUser"));
+    }
+
     @Test
     void testListSkillsNoFilterServiceAvailable() throws NacosException {
         String namespaceId = "test-ns";

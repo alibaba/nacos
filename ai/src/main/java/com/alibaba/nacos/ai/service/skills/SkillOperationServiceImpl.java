@@ -233,7 +233,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         result.setExists(true);
         try {
-            VisibilityHelper.checkWritableResource(meta);
+            checkWritableUploadResource(meta);
             result.setWritable(true);
         } catch (NacosException e) {
             if (e.getErrCode() != NacosException.NO_RIGHT) {
@@ -337,7 +337,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta != null) {
-            VisibilityHelper.checkWritableResource(meta);
+            checkWritableUploadResource(meta);
         }
         String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersion);
         if (StringUtils.isBlank(uploadAction)) {
@@ -361,7 +361,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throw new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
     }
-    
+
+    private void checkWritableUploadResource(AiResource meta) throws NacosException {
+        try {
+            VisibilityHelper.checkWritableResource(meta);
+        } catch (NacosException e) {
+            if (e.getErrCode() != NacosException.NO_RIGHT || StringUtils.isBlank(meta.getOwner())) {
+                throw e;
+            }
+            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                e.getErrMsg() + ", owner: " + meta.getOwner());
+        }
+    }
+
     /**
      * Bootstrap a built-in skill from a ZIP archive (delegates to the overload with null source).
      */
@@ -429,7 +441,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return name;
         }
         
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         AiResourceManager.ensureNoWorkingVersion(info, "upload");
         
@@ -460,7 +472,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return name;
         }
         
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         ensureNoReviewingVersion(info, "overwrite upload");
         String editing = info.getEditingVersion();
@@ -493,7 +505,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "No editing draft to delete: " + name);
         }
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         ensureNoReviewingVersion(info, "replace upload draft");
         if (StringUtils.isBlank(info.getEditingVersion())) {
