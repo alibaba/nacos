@@ -86,6 +86,22 @@ public class PluginManager
     private static final String DATASOURCE_PLATFORM_DEFAULT = "derby";
     
     /**
+     * Legacy configuration property for visibility plugin selection.
+     */
+    private static final String VISIBILITY_TYPE_PROPERTY = "nacos.plugin.visibility.type";
+    
+    /**
+     * Default visibility plugin type.
+     */
+    private static final String VISIBILITY_TYPE_DEFAULT = "nacos";
+    
+    /**
+     * Family-wide runtime gate for visibility plugins.
+     */
+    private static final String VISIBILITY_ENABLED_PROPERTY =
+        "nacos.plugin.visibility.enabled";
+    
+    /**
      * Plugin registry: pluginId -> PluginInfo.
      */
     private final Map<String, PluginInfo> pluginRegistry = new ConcurrentHashMap<>();
@@ -436,6 +452,8 @@ public class PluginManager
                 return pluginName.equalsIgnoreCase(platform);
             case CONFIG_CHANGE:
                 return getConfigChangePluginDefaultEnabled(pluginName);
+            case VISIBILITY:
+                return getVisibilityPluginDefaultEnabled(pluginName);
             default:
                 // Non-exclusive plugins are enabled by default
                 return true;
@@ -453,6 +471,17 @@ public class PluginManager
                 enabled, property);
         }
         return enabled;
+    }
+    
+    private boolean getVisibilityPluginDefaultEnabled(String pluginName) {
+        String visibilityType = EnvUtil.getProperty(VISIBILITY_TYPE_PROPERTY,
+            VISIBILITY_TYPE_DEFAULT).trim();
+        boolean selected = pluginName.equalsIgnoreCase(visibilityType);
+        if (selected) {
+            logSelectionMigration(PluginType.VISIBILITY, VISIBILITY_TYPE_PROPERTY, visibilityType);
+        }
+        boolean enabled = EnvUtil.getProperty(VISIBILITY_ENABLED_PROPERTY, Boolean.class, true);
+        return selected && enabled;
     }
     
     /**

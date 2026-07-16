@@ -315,6 +315,19 @@ class PluginManagerTest {
     }
     
     @Test
+    void persistedStateOverridesInitialVisibilityStateTest() {
+        environment.setProperty("nacos.plugin.visibility.enabled", "false");
+        boolean initialEnabled = calculateDefaultEnabled(PluginType.VISIBILITY, "nacos");
+        registerPluginInstance("visibility", "nacos", new Object(), false, initialEnabled);
+        when(persistence.loadAllStates()).thenReturn(
+            Collections.singletonMap("visibility:nacos", true));
+        
+        manager.onApplicationEvent(applicationReadyEvent);
+        
+        assertTrue(manager.isPluginEnabled("visibility", "nacos"));
+    }
+    
+    @Test
     void calculateDefaultEnabledUsesCurrentSelectionPropertiesTest() {
         environment.setProperty("nacos.core.auth.system.type", "custom");
         environment.setProperty("spring.sql.init.platform", "mysql");
@@ -343,6 +356,19 @@ class PluginManagerTest {
         
         environment.setProperty("nacos.core.config.plugin.webhook.enabled", "false");
         assertFalse(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
+    }
+    
+    @Test
+    void calculateDefaultEnabledUsesVisibilityPropertiesTest() {
+        assertTrue(calculateDefaultEnabled(PluginType.VISIBILITY, "nacos"));
+        assertFalse(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
+        
+        environment.setProperty("nacos.plugin.visibility.type", "custom");
+        assertFalse(calculateDefaultEnabled(PluginType.VISIBILITY, "nacos"));
+        assertTrue(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
+        
+        environment.setProperty("nacos.plugin.visibility.enabled", "false");
+        assertFalse(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
     }
     
     @Test
