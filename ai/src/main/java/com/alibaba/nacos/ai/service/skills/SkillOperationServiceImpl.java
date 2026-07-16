@@ -97,14 +97,14 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
  */
 @org.springframework.stereotype.Service
 public class SkillOperationServiceImpl implements SkillOperationService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
-
+    
     /**
      * Default storage provider for skills when system config is not specified.
      */
     private static final String STORAGE_PROVIDER_NACOS_CONFIG = "nacos_config";
-
+    
     /**
      * System config key for skill storage provider.
      *
@@ -113,37 +113,39 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY =
         "nacos.ai.skill.storage.provider";
-
+    
     private static final String AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY =
         "nacos.ai.skill.auto-publish-after-review.enabled";
-
+    
     private static final String RESOURCE_TYPE_SKILL = "skill";
-
+    
     private static final String DEFAULT_AUTHOR = "-";
-
+    
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
-
+    
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
-
+    
     private static final String EXT_FRONT_MATTER_KEY = "frontMatter";
-
+    
+    private static final String EXT_FRONT_MATTER_VERSION_KEY = "frontMatterVersion";
+    
     private static final String SCOPE_SKILL = "skill";
-
+    
     private static final Pattern SHORT_SEMVER_VERSION_PATTERN =
         Pattern.compile("\\d+(\\.\\d+){0,2}");
-
+    
     private final AiResourceStorageRouter storageRouter;
-
+    
     private final AiResourcePersistService aiResourcePersistService;
-
+    
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
-
+    
     private final PublishPipelineExecutor publishPipelineExecutor;
-
+    
     private final SkillIndexManifestService manifestService;
-
+    
     private final AiResourceManager resourceManager;
-
+    
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
         AiResourceVersionPersistService aiResourceVersionPersistService,
         PublishPipelineExecutor publishPipelineExecutor,
@@ -156,7 +158,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.manifestService = manifestService;
         this.resourceManager = resourceManager;
     }
-
+    
     /**
      * Upload a skill from a ZIP archive.
      *
@@ -178,7 +180,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersion,
             request.isOverwrite(), request.getUploadAction(), request.getCommitMsg());
     }
-
+    
     @Override
     public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
         List<SkillUploadPrecheckRequest> requests) throws NacosException {
@@ -200,7 +202,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return results;
     }
-
+    
     /**
      * Precheck a single skill upload. Internal helper used by batchPrecheckUploadSkill.
      */
@@ -214,12 +216,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         validateSkillNameByParamChecker(name);
         UploadVersionCandidate uploadVersion = resolvePrecheckVersionCandidate(
             request.getParsedVersion(), request.getVersionSource(), request.getTargetVersion());
-
+        
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
         result.setNamespaceId(request.getNamespaceId());
         result.setSkillName(name);
         result.setDescription(StringUtils.trim(request.getDescription()));
-
+        
         AiResource meta = resourceManager.findMeta(request.getNamespaceId(), name,
             RESOURCE_TYPE_SKILL);
         if (meta == null) {
@@ -232,7 +234,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 targetVersion, "Create a new skill draft");
             return result;
         }
-
+        
         result.setExists(true);
         try {
             VisibilityHelper.checkWritableResource(meta);
@@ -247,7 +249,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             result.addError(e.getErrMsg());
             return result;
         }
-
+        
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         String reviewing = info.getReviewingVersion();
@@ -267,7 +269,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             result.addConflictType(SkillUploadPrecheckResult.CONFLICT_VERSION_EXISTS);
             result.addWarning("Version already exists: " + uploadVersion.getVersion());
         }
-
+        
         if (StringUtils.isNotBlank(reviewing)) {
             result.setStatus(SkillUploadPrecheckResult.STATUS_CONFLICT);
             result.addConflictType(SkillUploadPrecheckResult.CONFLICT_REVIEWING_VERSION);
@@ -275,7 +277,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 + ", cannot upload until review finishes");
             return result;
         }
-
+        
         if (StringUtils.isNotBlank(editing)) {
             result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
             result.addConflictType(SkillUploadPrecheckResult.CONFLICT_DRAFT_EXISTS);
@@ -284,7 +286,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 "Overwrite the current editing draft");
             return result;
         }
-
+        
         result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
         result.addConflictType(SkillUploadPrecheckResult.CONFLICT_EXISTING_SKILL);
         result.addWarning("Skill already exists: " + name);
@@ -292,7 +294,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             "Create a new draft for the existing skill");
         return result;
     }
-
+    
     /**
      * Batch upload multiple skills from a single zip archive using best-effort strategy.
      */
@@ -303,12 +305,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillZipParser.MultiSkillParseResult parseResult =
             SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
         BatchUploadResult result = new BatchUploadResult();
-
+        
         // Record parse failures from invalid skill folders
         for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
             result.addFailed(failure.getFolder(), failure.getReason());
         }
-
+        
         for (Skill skill : parseResult.getSkills()) {
             String skillName = skill.getName();
             try {
@@ -327,7 +329,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return result;
     }
-
+    
     /**
      * Core logic for uploading a single skill: validate, check meta, create/overwrite draft, log.
      */
@@ -336,7 +338,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         boolean overwrite, String uploadAction, String commitMsg) throws NacosException {
         String name = skill.getName();
         validateSkillNameByParamChecker(name);
-
+        
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta != null) {
             VisibilityHelper.checkWritableResource(meta);
@@ -363,7 +365,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throw new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
     }
-
+    
     /**
      * Bootstrap a built-in skill from a ZIP archive (delegates to the overload with null source).
      */
@@ -371,7 +373,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         bootstrapSkillFromZip(namespaceId, zipBytes, null);
     }
-
+    
     /**
      * Bootstrap a built-in skill from a ZIP archive. Skips if the skill already exists.
      *
@@ -393,22 +395,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
             LOGGER.info("Skip built-in skill bootstrap because skill already exists: {}",
                 skillName);
+            refreshDisplayMetadataCache(namespaceId, skillName);
             return;
         }
-
+        
         // Step 3: Write to storage (unlike upload, bootstrap skips draft workflow and writes directly)
         String version = resolveFinalUploadVersion(namespaceId, skillName,
             resolveUploadVersion(skill.getSkillMd(), null, null));
         // Normalize frontmatter before writing (bootstrap = first create)
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, true);
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
-
+        
         // Step 4: Insert meta + version rows with status directly set to online (published)
         String storageJson = buildStorageJson(namespaceId, skillName, version, files,
             SkillContentDigestUtils.computeContentMd5(skill));
         resourceManager.insertBootstrapMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson);
-
+            skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson,
+            buildSkillMetaExt(null, version, skill));
+        
         // Step 5: Initialize index manifest for client discovery
         SkillIndexManifest manifest = new SkillIndexManifest();
         Map<String, String> manifestLabels = new HashMap<>(4);
@@ -419,7 +423,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.setVersions(versions);
         manifestService.write(namespaceId, skillName, manifest);
     }
-
+    
     private String createUploadedSkillDraft(String namespaceId, Skill skill, String uploadVersion,
         AiResource meta, String commitMsg) throws NacosException {
         String name = skill.getName();
@@ -430,11 +434,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return name;
         }
-
+        
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         AiResourceManager.ensureNoWorkingVersion(info, "upload");
-
+        
         String newVersion = resolveFinalUploadVersion(namespaceId, name, uploadVersion);
         createDraftWithSkill(namespaceId, skill, newVersion, meta, false, commitMsg);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion,
@@ -442,7 +446,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return name;
     }
-
+    
     /**
      * Handle overwrite upload. If an editing draft exists, keep its version for lower or equal
      * upload versions, or replace it with the uploaded version when that version can legally become
@@ -461,7 +465,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             createDraftWithSkill(namespaceId, skill, uploadVersion, null, true, commitMsg);
             return name;
         }
-
+        
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         ensureNoReviewingVersion(info, "overwrite upload");
@@ -476,18 +480,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             deleteDraftAndCreateUploadedSkill(namespaceId, skill, targetVersion, meta, commitMsg);
             return name;
         }
-
+        
         if (requireEditingDraft) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "No editing draft to overwrite: " + name);
         }
-
+        
         // No editing draft: assign new version number and create new draft
         String newVersion = resolveFinalUploadVersion(namespaceId, name, uploadVersion);
         createDraftWithSkill(namespaceId, skill, newVersion, meta, false, commitMsg);
         return name;
     }
-
+    
     private String deleteDraftAndCreateUploadedSkill(String namespaceId, Skill skill,
         String targetVersion, AiResource meta, String commitMsg) throws NacosException {
         String name = skill.getName();
@@ -512,7 +516,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         createDraftWithSkill(namespaceId, skill, targetVersion, latestMeta, false, commitMsg);
         return name;
     }
-
+    
     private static void ensureNoReviewingVersion(ResourceVersionInfo info, String action)
         throws NacosApiException {
         if (info != null && StringUtils.isNotBlank(info.getReviewingVersion())) {
@@ -521,7 +525,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     + ", cannot " + action);
         }
     }
-
+    
     /**
      * Resolve the upload version for strict call sites.
      * Priority: SKILL.md YAML front-matter (version / metadata.version) -> meta.json in ZIP -> user-specified targetVersion -> default "0.0.1".
@@ -531,7 +535,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throws NacosApiException {
         return resolveStrictUploadVersionCandidate(skillMd, zipBytes, targetVersion).getVersion();
     }
-
+    
     private UploadVersionCandidate resolveStrictUploadVersionCandidate(String skillMd,
         byte[] zipBytes,
         String targetVersion) throws NacosApiException {
@@ -554,7 +558,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return new UploadVersionCandidate(DEFAULT_INITIAL_UPLOAD_VERSION, "default");
     }
-
+    
     private UploadVersionCandidate resolveUploadVersionCandidate(String skillMd, byte[] zipBytes,
         String targetVersion) {
         String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
@@ -572,7 +576,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return UploadVersionCandidate.empty();
     }
-
+    
     private UploadVersionCandidate resolvePrecheckVersionCandidate(String parsedVersion,
         String versionSource, String targetVersion) {
         if (StringUtils.isNotBlank(parsedVersion)) {
@@ -586,7 +590,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return UploadVersionCandidate.empty();
     }
-
+    
     private static String validateUploadVersionFormat(String version, String source)
         throws NacosApiException {
         if (!VersionUtils.isSupportedVersionFormat(version)) {
@@ -597,7 +601,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return version;
     }
-
+    
     private static UploadVersionCandidate buildLenientUploadVersionCandidate(String version,
         String source) {
         String candidate = StringUtils.trim(version);
@@ -610,7 +614,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return UploadVersionCandidate.invalid(candidate, source);
     }
-
+    
     private static String normalizeShortSemverVersion(String version) {
         if (StringUtils.isBlank(version) || !SHORT_SEMVER_VERSION_PATTERN.matcher(version)
             .matches()) {
@@ -625,7 +629,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return version;
     }
-
+    
     /**
      * Extract version string from SKILL.md YAML front-matter ("version" or "metadata.version" key).
      */
@@ -643,7 +647,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return StringUtils.isBlank(version) ? null : version.trim();
     }
-
+    
     /**
      * Ensure the candidate version doesn't collide with existing versions.
      * If collision occurs, bump to next patch version based on the max existing semver.
@@ -654,7 +658,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.listExistingVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         return resolveFinalUploadVersion(existingVersions, candidateVersion);
     }
-
+    
     private String resolveFinalUploadVersion(List<String> existingVersions,
         String candidateVersion) {
         if (existingVersions.isEmpty()) {
@@ -673,7 +677,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return candidateVersion;
     }
-
+    
     private String resolveUploadTargetVersion(String namespaceId, String skillName, AiResource meta,
         UploadVersionCandidate uploadVersion) throws NacosException {
         if (meta == null) {
@@ -689,12 +693,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return resolveNextDraftVersion(namespaceId, skillName);
     }
-
+    
     private String resolveNewUploadVersion(UploadVersionCandidate uploadVersion) {
         return uploadVersion.hasValidVersion() ? uploadVersion.getVersion()
             : DEFAULT_INITIAL_UPLOAD_VERSION;
     }
-
+    
     private String resolvePrecheckTargetVersion(UploadVersionCandidate uploadVersion,
         List<String> existingVersions, String editingVersion) {
         if (StringUtils.isNotBlank(editingVersion)) {
@@ -707,7 +711,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             ? resolveFinalUploadVersion(existingVersions, uploadVersion.getVersion())
             : resolveNextDraftVersion(existingVersions);
     }
-
+    
     private void fillPrecheckVersion(SkillUploadPrecheckResult result,
         UploadVersionCandidate uploadVersion, String targetVersion) {
         result.setParsedVersion(uploadVersion.resolveDisplayVersion(targetVersion));
@@ -719,7 +723,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 + targetVersion + " instead");
         }
     }
-
+    
     private String resolveUploadVersionAfterDeletingDraft(List<String> existingVersions,
         String candidateVersion, String editingVersion) {
         List<String> versionsAfterDeletingDraft = new ArrayList<>(existingVersions.size());
@@ -730,14 +734,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return resolveFinalUploadVersion(versionsAfterDeletingDraft, candidateVersion);
     }
-
+    
     private String resolveOverwriteDraftVersion(String namespaceId, String skillName,
         String candidateVersion, String editingVersion) throws NacosException {
         List<String> existingVersions =
             resourceManager.listExistingVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         return resolveOverwriteDraftVersion(existingVersions, candidateVersion, editingVersion);
     }
-
+    
     private String resolveOverwriteDraftVersion(List<String> existingVersions,
         String candidateVersion, String editingVersion) {
         if (!VersionUtils.isGreaterVersion(candidateVersion, editingVersion)) {
@@ -746,7 +750,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return resolveUploadVersionAfterDeletingDraft(existingVersions, candidateVersion,
             editingVersion);
     }
-
+    
     /**
      * Resolve the next draft version number. Tries semver patch bump first, falls back to legacy vN format.
      */
@@ -756,7 +760,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.listExistingVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         return resolveNextDraftVersion(existingVersions);
     }
-
+    
     private String resolveNextDraftVersion(List<String> existingVersions) {
         String maxSemver = VersionUtils.maxSemver(existingVersions);
         if (StringUtils.isNotBlank(maxSemver)) {
@@ -768,7 +772,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return DEFAULT_INITIAL_UPLOAD_VERSION;
     }
-
+    
     /**
      * Resolve a user-specified target version for draft creation.
      * Validates format, checks for conflicts with existing versions, and ensures it's greater than the base version.
@@ -804,7 +808,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return candidate;
     }
-
+    
     /**
      * Overwrite an existing editing draft's storage content and update meta description.
      */
@@ -825,10 +829,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson);
         }
-        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, skill.getDescription(),
-            buildSkillMetaExt(meta.getExt(), skill));
+        refreshDisplayMetadataCache(namespaceId, skill.getName(), editing, skill);
     }
-
+    
     /**
      * Get skill detail metadata including all version summaries, labels, and online count.
      */
@@ -842,7 +845,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         resourceManager.ensureReadableOrNotFound(meta, "Skill not found: " + skillName);
         ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(meta);
-
+        
         // Step 2: Load all version rows and assemble version summary list
         Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, skillName,
             RESOURCE_TYPE_SKILL, null, 1, 200);
@@ -865,7 +868,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 versionSummaries.add(summary);
             }
         }
-
+        
         // Step 3: Merge meta info and version list into SkillMeta detail response
         SkillMeta detail = new SkillMeta();
         detail.setNamespaceId(namespaceId);
@@ -886,7 +889,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setDownloadCount(meta.getDownloadCount());
         return detail;
     }
-
+    
     /**
      * Get the full content of a specific skill version by reading its files from storage.
      */
@@ -911,7 +914,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return loadSkillFromStorage(namespaceId, skillName, version, versionRow.getStorage());
     }
-
+    
     /**
      * Download a specific skill version (same as getVersionDetail but also publishes a download event for metrics).
      */
@@ -923,7 +926,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             new SkillDownloadEvent(namespaceId, skillName, RESOURCE_TYPE_SKILL, version));
         return skill;
     }
-
+    
     /**
      * Delete a skill entirely. Order: index manifest -> meta + all version rows -> storage files.
      * Deleting index manifest first cuts off client discovery immediately.
@@ -935,31 +938,31 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return;
         }
         VisibilityHelper.checkWritableResource(meta);
-
+        
         // Delete in strict reverse order of creation (storage -> version -> meta -> index):
         // 1) index config first: cut off client discovery immediately
         manifestService.delete(namespaceId, skillName);
-
+        
         // 2) meta, version rows, and storage files
         resourceManager.deleteResourceWithVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(),
                 v.getStorage()));
     }
-
+    
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         int pageNo,
         int pageSize) throws NacosException {
         return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
     }
-
+    
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         int pageNo, int pageSize) throws NacosException {
         return listSkills(namespaceId, skillName, search, orderBy, null, null, pageNo, pageSize);
     }
-
+    
     /**
      * List skills with optional name filter, ordering, owner/scope/bizTag filter, and pagination.
      * Supports both accurate and fuzzy name matching.
@@ -978,7 +981,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN);
             }
         }
-
+        
         // Step 2: Assemble query conditions (with visibility filtering) and execute paginated query
         QueryCondition queryCondition =
             resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
@@ -1032,10 +1035,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
             items.add(item);
         }
-
+        
         return AiResourceManager.buildPageResult(items, metaPage, pageNo);
     }
-
+    
     /**
      * Create a new draft version for an existing or brand-new skill.
      *
@@ -1051,7 +1054,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         Skill initialContent, String commitMsg)
         throws NacosException {
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
-
+        
         // ---- Case A: Brand-new skill (meta does not exist) ----
         if (meta == null) {
             // Brand-new skill does not support basedOnVersion (no existing version to fork from)
@@ -1076,19 +1079,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return version;
         }
-
+        
         // ---- Case B: Existing skill (fork from existing version or provide new content) ----
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         // Ensure no version is currently being edited or reviewed
         AiResourceManager.ensureNoWorkingVersion(info, "create draft");
-
+        
         // Resolve base version: priority basedOnVersion param > latest label > max semver > max vN
         String base = resourceManager.resolveBaseVersion(namespaceId, name, RESOURCE_TYPE_SKILL,
             meta, basedOnVersion);
         String newVersion =
             resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, basedOnVersion, base);
-
+        
         if (StringUtils.isBlank(base)) {
             // No existing version to fork from -> initial content is required
             if (initialContent == null) {
@@ -1110,7 +1113,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             Skill baseSkill = loadSkillFromStorage(namespaceId, name, base,
                 baseVersionRow != null ? baseVersionRow.getStorage() : null);
             List<String> files = writeSkillToStorage(namespaceId, baseSkill, newVersion);
-
+            
             // Step 2: Insert draft version row
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
             String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : "";
@@ -1119,7 +1122,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
                 buildStorageJson(namespaceId, name, newVersion, files,
                     SkillContentDigestUtils.computeContentMd5(baseSkill)));
-
+            
             // Step 3: Update meta's editingVersion pointer
             resourceManager.markEditingVersionCas(namespaceId, meta, info, newVersion,
                 "create draft");
@@ -1129,7 +1132,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return newVersion;
     }
-
+    
     /**
      * Update the content of an existing editing draft. Validates required fields,
      * writes updated files to storage, and bumps the meta description.
@@ -1158,10 +1161,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 "No editing draft exists for skill: " + name);
         }
         resourceManager.requireDraftVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
-
+        
         // Normalize frontmatter before writing to storage (editing = existing skill, not first create)
         SkillRequestUtil.normalizeSkillFrontmatter(draftSkill, name, editing, false);
-
+        
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
         String storageJson = buildStorageJson(namespaceId, name, editing, files,
@@ -1174,13 +1177,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 storageJson);
         }
-        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, draftSkill.getDescription(),
-            buildSkillMetaExt(meta.getExt(), draftSkill));
+        refreshDisplayMetadataCache(namespaceId, name, editing, draftSkill);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing,
             AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
-
+    
     /**
      * Delete the current editing draft. Clears the editingVersion pointer in meta first,
      * then removes the version row and its storage files.
@@ -1190,8 +1192,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, name, v.getVersion(),
                 v.getStorage()));
+        refreshDisplayMetadataCache(namespaceId, name);
     }
-
+    
     /**
      * Submit a draft for review and publish.
      *
@@ -1205,24 +1208,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
-
+        
         // Step 2: Determine the target version to submit (prefer explicit version, otherwise infer from editing/reviewing)
         String target =
             resourceManager.resolveSubmitTarget(info, version, RESOURCE_TYPE_SKILL, name);
-
+        
         AiResourceVersion v =
             resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, target);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill version not found: " + name + "@" + target);
         }
-
+        
         final String finalTarget = target;
-
+        
         // Step 3: Move version status from draft to reviewing
         resourceManager.moveToReviewing(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, meta,
             info);
-
+        
         // Step 4: Build pipeline context (containing SKILL.md and all resource files)
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
         SkillPipelineContext ctx = new SkillPipelineContext();
@@ -1230,14 +1233,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ctx.setResourceName(name);
         ctx.setVersion(finalTarget);
         ctx.setFiles(buildPipelineFiles(skill));
-
+        
         // Step 5: Check if a publish pipeline is available
         if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
             // No pipeline available -> skip review and publish directly
             publish(namespaceId, name, finalTarget, true);
             return finalTarget;
         }
-
+        
         // Step 6: Run pipeline asynchronously; fall back to direct publish if startup fails
         if (!resourceManager.runPipelineExecution(namespaceId, name, RESOURCE_TYPE_SKILL,
             finalTarget,
@@ -1245,10 +1248,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             r -> onSkillPipelineComplete(namespaceId, name, finalTarget, r))) {
             publish(namespaceId, name, finalTarget, true);
         }
-
+        
         return finalTarget;
     }
-
+    
     private void onSkillPipelineComplete(String namespaceId, String name, String version,
         PipelineExecutionResult result) {
         resourceManager.onPipelineComplete(namespaceId, name, RESOURCE_TYPE_SKILL, version, result);
@@ -1264,17 +1267,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             LOGGER.error("Failed to auto publish approved skill {}@{}", name, version, ex);
         }
     }
-
+    
     private void publishApprovedBySystem(String namespaceId, String name, String version)
         throws NacosException {
         AiResourceVersion v =
             resourceManager.doSystemPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
     }
-
+    
     /**
      * Publish a version: update version status to online and write the version into the index manifest.
      */
@@ -1284,14 +1288,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Step 1: Update version status to online, clear reviewing pointer in meta
         AiResourceVersion v =
             resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
-
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
+        
         // Step 2: Write version's file list to index manifest (for client discovery)
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
     }
-
+    
     /**
      * Force-publish a draft, reviewing, or reviewed version. Same manifest update as {@link #publish}.
      */
@@ -1300,18 +1305,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         boolean updateLatestLabel) throws NacosException {
         AiResourceVersion v =
             resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
-
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
+        
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
     }
-
+    
     @Override
     public void redraft(String namespaceId, String name, String version) throws NacosException {
         resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_SKILL, version);
+        refreshDisplayMetadataCache(namespaceId, name);
     }
-
+    
     /**
      * Update custom version labels for a skill. Syncs both meta versionInfo and index manifest.
      */
@@ -1320,14 +1327,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throws NacosException {
         Map<String, String> effectiveLabels =
             resourceManager.validateAndUpdateLabels(namespaceId, name, RESOURCE_TYPE_SKILL, labels);
-
+        
         SkillIndexManifest manifest = manifestService.query(namespaceId, name);
         if (manifest != null) {
             manifest.setLabels(new LinkedHashMap<>(effectiveLabels));
             manifestService.write(namespaceId, name, manifest);
         }
     }
-
+    
     /**
      * Update business tags on the skill meta.
      */
@@ -1341,7 +1348,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
-
+    
     /**
      * Toggle online/offline status at either skill scope (enable/disable the entire skill)
      * or version scope (toggle a specific version's online status).
@@ -1357,7 +1364,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
-
+        
         // Determine operation scope: skill scope (enable/disable entire skill) vs version scope (toggle single version)
         boolean skillScope = SCOPE_SKILL.equalsIgnoreCase(scope) || StringUtils.isBlank(version);
         if (skillScope) {
@@ -1372,14 +1379,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
             return;
         }
-
+        
         // Single version toggle: switch version status and sync index manifest
         AiResourceVersion v =
             resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info, version, online);
         if (v == null) {
             return;
         }
-
+        
         if (online) {
             // Going online: add this version's file list to manifest
             List<String> files = parseStorageFiles(v.getStorage());
@@ -1399,7 +1406,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
     }
-
+    
     /**
      * Update the visibility scope of a skill.
      */
@@ -1407,7 +1414,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
     }
-
+    
     /**
      * Query a skill for client consumption. Resolves the target version via explicit version, label, or manifest,
      * loads the skill content from the index manifest's file list, and publishes a download event.
@@ -1429,30 +1436,30 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill not found: " + name);
         }
-
+        
         // Step 3: Resolve actual version from version/label params (labels like "latest" are looked up in manifest)
         String resolved = SkillIndexManifestService.resolveVersion(manifest, version, label);
         if (StringUtils.isBlank(resolved)) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill version not found: " + name);
         }
-
+        
         // Step 4: Get file list from manifest and read storage content
         List<String> files = manifest.getVersions().get(resolved);
         if (files == null || files.isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill version not found: " + name + "@" + resolved);
         }
-
+        
         Skill skill = loadSkillFromFiles(namespaceId, name, resolved, files);
         // Step 5: Publish download event for download count tracking
         NotifyCenter.publishEvent(
             new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
         return skill;
     }
-
+    
     // ========== Private methods ==========
-
+    
     /**
      * Core draft creation logic shared by upload, overwrite, and createDraft flows.
      * Steps: 1) write all resource files to storage, 2) insert a draft version row,
@@ -1463,19 +1470,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         boolean isNewSkill) throws NacosException {
         createDraftWithSkill(namespaceId, skill, version, existedMeta, isNewSkill, null);
     }
-
+    
     private void createDraftWithSkill(String namespaceId, Skill skill, String version,
         AiResource existedMeta,
         boolean isNewSkill, String commitMsg) throws NacosException {
         String skillName = skill.getName();
         String currentUser = VisibilityHelper.resolveCurrentIdentity();
-
+        
         // Normalize frontmatter before writing to storage
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, existedMeta == null);
-
+        
         // 1) write all resources (including SKILL.md) to storage
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
-
+        
         // 2) insert draft version row
         String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : "";
         resourceManager.insertVersionRow(namespaceId, skillName, RESOURCE_TYPE_SKILL,
@@ -1483,13 +1490,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
             buildStorageJson(namespaceId, skillName, version, files,
                 SkillContentDigestUtils.computeContentMd5(skill)));
-
+        
         // 3) create or update meta for editingVersion
+        boolean draftIsDisplayVersion = isNewSkill || !hasLatestLabel(existedMeta);
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, version, existedMeta, isNewSkill,
-            buildSkillMetaExt(existedMeta == null ? null : existedMeta.getExt(), skill));
+            draftIsDisplayVersion ? skill.getDescription() : null, null, version, existedMeta,
+            isNewSkill,
+            draftIsDisplayVersion
+                ? buildSkillMetaExt(existedMeta == null ? null : existedMeta.getExt(), version,
+                    skill)
+                : existedMeta == null ? null : existedMeta.getExt());
+        if (!isNewSkill && !draftIsDisplayVersion) {
+            refreshDisplayMetadataCache(namespaceId, skillName, version, skill);
+        }
     }
-
+    
     /**
      * Resolve the storage provider from system config. Defaults to "nacos_config".
      */
@@ -1498,7 +1513,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             EnvUtil.getProperty(SKILL_STORAGE_PROVIDER_CONFIG_KEY, STORAGE_PROVIDER_NACOS_CONFIG);
         return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
     }
-
+    
     /**
      * Build storage metadata JSON for version row (provider + scope + file list + optional contentMd5).
      *
@@ -1517,7 +1532,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return JacksonUtils.toJson(json);
     }
-
+    
     /**
      * Parse the file path list from storage JSON.
      */
@@ -1536,7 +1551,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return null;
     }
-
+    
     /**
      * Refresh skill index manifest from current DB state (used when skill is re-enabled).
      * Rebuilds manifest with all online versions and labels from meta.
@@ -1549,13 +1564,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 return;
             }
             ResourceVersionInfo vInfo = AiResourceManager.parseVersionInfo(meta.getVersionInfo());
-
+            
             // Step 1: Copy labels from meta (e.g., latest tag)
             SkillIndexManifest manifest = new SkillIndexManifest();
             manifest.setLabels(vInfo != null && vInfo.getLabels() != null
                 ? new HashMap<>(vInfo.getLabels()) : new HashMap<>(4));
             manifest.setVersions(new HashMap<>(4));
-
+            
             // Step 2: Iterate all version rows, collect online versions and their file lists
             Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, name,
                 RESOURCE_TYPE_SKILL, null, 1, 200);
@@ -1571,7 +1586,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     }
                 }
             }
-
+            
             // Step 3: Only write manifest when online versions exist
             if (!manifest.getVersions().isEmpty()) {
                 manifestService.write(namespaceId, name, manifest);
@@ -1580,7 +1595,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             LOGGER.warn("Failed to refresh skill index manifest for {}: {}", name, e.getMessage());
         }
     }
-
+    
     /**
      * Validate skill name using the configured parameter checker (e.g., character set, length).
      */
@@ -1598,7 +1613,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 response.getMessage());
         }
     }
-
+    
     /**
      * Write all skill files to storage as raw file contents (no JSON envelope).
      *
@@ -1609,11 +1624,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String provider = resolveSkillStorageProvider();
         String skillName = skill.getName();
         List<String> files = new ArrayList<>();
-
+        
         // Save concurrently to reduce latency when skill has multiple resource files.
         Executor executor = ExecutorUtils.getSkillStorageIoExecutor();
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
-
+        
         // 1) Store SKILL.md as raw markdown content
         String mdPath = SKILL_MD_RESOURCE_NAME;
         byte[] mdBytes =
@@ -1629,7 +1644,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new CompletionException(e);
             }
         }, executor));
-
+        
         // 2) Store each resource file as raw content
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
@@ -1653,7 +1668,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 }, executor));
             }
         }
-
+        
         try {
             CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
         } catch (CompletionException ex) {
@@ -1663,10 +1678,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
             throw ex;
         }
-
+        
         return files;
     }
-
+    
     /**
      * Build pipeline file representations from a Skill for use by the publish pipeline executor.
      * Includes SKILL.md and all resource files.
@@ -1690,7 +1705,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return files;
     }
-
+    
     private static String buildResourcePath(String skillName, SkillResource r) {
         String type = r.getType();
         if (StringUtils.isBlank(type)) {
@@ -1698,7 +1713,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return skillName + "/" + type + "/" + r.getName();
     }
-
+    
     /**
      * Load skill from storage by reading all resource files listed in storageJson.
      * SKILL.md content provides name/description and markdown body; others populate the resource map.
@@ -1713,7 +1728,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return loadSkillFromFiles(namespaceId, skillName, version, files);
     }
-
+    
     /**
      * Load skill from storage by reading all files from the given file list.
      * SKILL.md content provides name/description and markdown body; others populate the resource map.
@@ -1725,7 +1740,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
         Map<String, SkillResource> resourceMap = new HashMap<>(files.size());
-
+        
         // Read storage files one by one, handle differently based on filename:
         for (String filePath : files) {
             StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
@@ -1748,11 +1763,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 resourceMap.put(resourceId, resource);
             }
         }
-
+        
         skill.setResource(resourceMap);
         return skill;
     }
-
+    
     /**
      * Build a storage-relative file path for a resource: "{type}/{name}" or just "{name}" if type is blank.
      */
@@ -1763,7 +1778,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return type + "/" + resource.getName();
     }
-
+    
     /**
      * Reconstruct a SkillResource from a stored file path and its raw content.
      * Splits the path into type/name and detects binary encoding.
@@ -1783,11 +1798,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return resource;
     }
-
+    
     private static boolean isBinaryResource(String fileName) {
         return SkillZipParser.isBinaryResource(fileName);
     }
-
+    
     /**
      * Extract name and description from SKILL.md YAML front-matter and populate the Skill object.
      */
@@ -1803,19 +1818,94 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             skill.setDescription(frontMatter.get("description"));
         }
     }
-
-    private static String buildSkillMetaExt(String currentExt, Skill skill) {
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName)
+        throws NacosException {
+        refreshDisplayMetadataCache(namespaceId, skillName, null, (Skill) null);
+    }
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName,
+        String knownVersion, Skill knownSkill) throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            return;
+        }
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        String displayVersion = resolveDisplayVersion(info);
+        if (StringUtils.isBlank(displayVersion)) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, meta.getDesc(),
+                buildSkillMetaExt(meta.getExt(), null, null));
+            return;
+        }
+        if (displayVersion.equals(knownVersion) && knownSkill != null) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta,
+                knownSkill.getDescription(), buildSkillMetaExt(meta.getExt(), displayVersion,
+                    knownSkill));
+            return;
+        }
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, skillName,
+            RESOURCE_TYPE_SKILL, displayVersion);
+        refreshDisplayMetadataCache(namespaceId, skillName, displayVersion, versionRow);
+    }
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName, String version,
+        AiResourceVersion versionRow) throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            return;
+        }
+        if (versionRow == null) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, meta.getDesc(),
+                buildSkillMetaExt(meta.getExt(), null, null));
+            return;
+        }
+        Skill displaySkill = loadSkillFromStorage(namespaceId, skillName, version,
+            versionRow.getStorage());
+        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta,
+            displaySkill.getDescription(), buildSkillMetaExt(meta.getExt(), version,
+                displaySkill));
+    }
+    
+    private static String resolveDisplayVersion(ResourceVersionInfo info) {
+        if (info == null) {
+            return null;
+        }
+        Map<String, String> labels = info.getLabels();
+        if (labels != null && StringUtils.isNotBlank(
+            labels.get(AiResourceConstants.LABEL_LATEST))) {
+            return labels.get(AiResourceConstants.LABEL_LATEST);
+        }
+        if (StringUtils.isNotBlank(info.getEditingVersion())) {
+            return info.getEditingVersion();
+        }
+        return info.getReviewingVersion();
+    }
+    
+    private static boolean hasLatestLabel(AiResource meta) {
+        if (meta == null) {
+            return false;
+        }
+        ResourceVersionInfo info = AiResourceManager.parseVersionInfo(meta.getVersionInfo());
+        if (info == null || info.getLabels() == null) {
+            return false;
+        }
+        return StringUtils.isNotBlank(info.getLabels().get(AiResourceConstants.LABEL_LATEST));
+    }
+    
+    private static String buildSkillMetaExt(String currentExt, String version, Skill skill) {
         Map<String, Object> ext = parseExt(currentExt);
         Map<String, String> frontMatter = skill == null ? null
             : SkillZipParser.parseYamlFrontMatterFromMarkdown(skill.getSkillMd());
         if (frontMatter == null || frontMatter.isEmpty()) {
             ext.remove(EXT_FRONT_MATTER_KEY);
+            ext.remove(EXT_FRONT_MATTER_VERSION_KEY);
         } else {
             ext.put(EXT_FRONT_MATTER_KEY, new LinkedHashMap<>(frontMatter));
+            ext.put(EXT_FRONT_MATTER_VERSION_KEY, version);
         }
         return ext.isEmpty() ? null : JacksonUtils.toJson(ext);
     }
-
+    
     private static Map<String, String> parseFrontMatterFromExt(String extJson) {
         Map<String, Object> ext = parseExt(extJson);
         Object frontMatter = ext.get(EXT_FRONT_MATTER_KEY);
@@ -1830,7 +1920,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         });
         return result.isEmpty() ? null : result;
     }
-
+    
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parseExt(String extJson) {
         if (StringUtils.isBlank(extJson)) {
@@ -1843,7 +1933,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return new LinkedHashMap<>();
         }
     }
-
+    
     /**
      * Delete all storage files for a given skill version using the file list from storageJson.
      */
@@ -1862,24 +1952,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             storageRouter.route(key).delete(key);
         }
     }
-
+    
     private static class UploadVersionCandidate {
-
+        
         private final String version;
-
+        
         private final String source;
-
+        
         private final String rawVersion;
-
+        
         private final boolean invalidVersion;
-
+        
         UploadVersionCandidate(String version, String source) {
             this.version = version;
             this.source = source;
             this.rawVersion = version;
             this.invalidVersion = false;
         }
-
+        
         private UploadVersionCandidate(String version, String source, String rawVersion,
             boolean invalidVersion) {
             this.version = version;
@@ -1887,40 +1977,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             this.rawVersion = rawVersion;
             this.invalidVersion = invalidVersion;
         }
-
+        
         static UploadVersionCandidate invalid(String rawVersion, String source) {
             return new UploadVersionCandidate(null, source, rawVersion, true);
         }
-
+        
         static UploadVersionCandidate normalized(String version, String source,
             String rawVersion) {
             return new UploadVersionCandidate(version, source, rawVersion, false);
         }
-
+        
         static UploadVersionCandidate empty() {
             return new UploadVersionCandidate(null, "default", null, false);
         }
-
+        
         String getVersion() {
             return version;
         }
-
+        
         String getSource() {
             return source;
         }
-
+        
         String getRawVersion() {
             return rawVersion;
         }
-
+        
         boolean hasValidVersion() {
             return StringUtils.isNotBlank(version);
         }
-
+        
         boolean hasInvalidVersion() {
             return invalidVersion;
         }
-
+        
         String resolveDisplayVersion(String targetVersion) {
             if (StringUtils.isNotBlank(rawVersion)) {
                 return rawVersion;
@@ -1931,5 +2021,5 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return targetVersion;
         }
     }
-
+    
 }

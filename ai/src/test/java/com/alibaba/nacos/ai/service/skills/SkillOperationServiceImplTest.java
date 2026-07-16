@@ -265,8 +265,9 @@ class SkillOperationServiceImplTest {
         meta.setDesc("Test description");
         meta.setBizTags("[\"ops\"]");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
-        meta.setExt("{\"frontMatter\":{\"name\":\"test-skill\",\"description\":\"Test description\","
-            + "\"alias\":\"Test Skill\"}}");
+        meta.setExt(
+            "{\"frontMatter\":{\"name\":\"test-skill\",\"description\":\"Test description\","
+                + "\"alias\":\"Test Skill\"}}");
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
@@ -284,6 +285,39 @@ class SkillOperationServiceImplTest {
         assertEquals("[\"ops\"]", result.getPageItems().get(0).getBizTags());
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
         assertEquals("Test Skill", result.getPageItems().get(0).getFrontMatter().get("alias"));
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
+            anyString(), anyString());
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testListSkillsWithLargePageShouldUseCachedFrontMatterOnly() throws NacosException {
+        final String namespaceId = "test-namespace";
+        Page<com.alibaba.nacos.ai.model.AiResource> metaPage = new Page<>();
+        com.alibaba.nacos.ai.model.AiResource first = new com.alibaba.nacos.ai.model.AiResource();
+        first.setName("first-skill");
+        first.setDesc("First description");
+        first.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        first.setExt("{\"frontMatter\":{\"name\":\"first-skill\",\"description\":"
+            + "\"First description\"},\"frontMatterVersion\":\"v1\"}");
+        com.alibaba.nacos.ai.model.AiResource second = new com.alibaba.nacos.ai.model.AiResource();
+        second.setName("second-skill");
+        second.setDesc("Second description");
+        second.setVersionInfo("{\"labels\":{\"latest\":\"v2\"},\"onlineCnt\":1}");
+        second.setExt("{\"frontMatter\":{\"name\":\"second-skill\",\"description\":"
+            + "\"Second description\"},\"frontMatterVersion\":\"v2\"}");
+        metaPage.setPageItems(List.of(first, second));
+        metaPage.setTotalCount(2);
+        metaPage.setPageNumber(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(100))).thenReturn(metaPage);
+        
+        Page<SkillSummary> result =
+            skillOperationService.listSkills(namespaceId, null, null, 1, 100);
+        
+        assertEquals(2, result.getPageItems().size());
+        assertEquals("first-skill", result.getPageItems().get(0).getFrontMatter().get("name"));
+        assertEquals("second-skill", result.getPageItems().get(1).getFrontMatter().get("name"));
         verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
             anyString(), anyString());
         verify(storage, never()).get(any(StorageKey.class));
@@ -842,6 +876,9 @@ class SkillOperationServiceImplTest {
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
             && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())
             && "online".equals(inserted.getStatus())));
+        verify(aiResourcePersistService).insert(argThat(inserted -> inserted != null
+            && inserted.getExt().contains("\"frontMatterVersion\":\"3.0.6\"")
+            && inserted.getExt().contains("\"name\":\"test-skill\"")));
     }
     
     /**
@@ -854,6 +891,16 @@ class SkillOperationServiceImplTest {
         skill.setSkillMd(
             "---\nname: test-skill\ndescription: Test description\n---\n\nTest instruction");
         return skill;
+    }
+    
+    private String skillMd(String skillName, String description) {
+        return "---\nname: " + skillName + "\ndescription: " + description
+            + "\n---\n\nTest instruction";
+    }
+    
+    private String storageJson(String namespaceId, String skillName, String version) {
+        return "{\"provider\":\"nacos_config\",\"scope\":\"" + namespaceId + ":" + skillName + ":"
+            + version + "\",\"files\":[\"SKILL.md\"]}";
     }
     
     /**
@@ -1892,6 +1939,54 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testUpdateDraftShouldKeepLatestFrontMatterWhenLatestExists() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{\"latest\":\"v1\"},"
+            + "\"onlineCnt\":1}");
+        meta.setExt("{\"frontMatter\":{\"name\":\"my-skill\",\"description\":\"latest desc\"},"
+            + "\"frontMatterVersion\":\"v1\"}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion editing =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        editing.setVersion("v2");
+        editing.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v2"))).thenReturn(editing);
+        com.alibaba.nacos.ai.model.AiResourceVersion latest =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        latest.setVersion("v1");
+        latest.setStatus("online");
+        latest.setStorage(storageJson(namespaceId, skillName, "v1"));
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1"))).thenReturn(latest);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+            skillMd(skillName, "latest desc").getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        
+        Skill draft = new Skill();
+        draft.setName(skillName);
+        draft.setDescription("draft desc");
+        draft.setSkillMd(skillMd(skillName, "draft desc"));
+        skillOperationService.updateDraft(namespaceId, draft, null);
+        
+        ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), metaCaptor.capture());
+        assertEquals("latest desc", metaCaptor.getValue().getDesc());
+        assertTrue(metaCaptor.getValue().getExt().contains("\"frontMatterVersion\":\"v1\""));
+        assertTrue(metaCaptor.getValue().getExt().contains("\"description\":\"latest desc\""));
+    }
+    
+    @Test
     void testUpdateDraftNullSkillThrows() {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> skillOperationService.updateDraft("ns", null, null));
@@ -1960,6 +2055,52 @@ class SkillOperationServiceImplTest {
         skillOperationService.deleteDraft(namespaceId, skillName);
         verify(aiResourceVersionPersistService).delete(eq(namespaceId), eq(skillName), anyString(),
             eq("v1"));
+    }
+    
+    @Test
+    void testDeleteDraftShouldRestoreLatestFrontMatterCache() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{\"latest\":\"v1\"},"
+            + "\"onlineCnt\":1}");
+        meta.setExt("{\"frontMatter\":{\"name\":\"my-skill\",\"description\":\"draft desc\"},"
+            + "\"frontMatterVersion\":\"v2\"}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion editing =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        editing.setVersion("v2");
+        editing.setStatus("draft");
+        editing.setStorage(storageJson(namespaceId, skillName, "v2"));
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v2"))).thenReturn(editing);
+        com.alibaba.nacos.ai.model.AiResourceVersion latest =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        latest.setVersion("v1");
+        latest.setStatus("online");
+        latest.setStorage(storageJson(namespaceId, skillName, "v1"));
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1"))).thenReturn(latest);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+            skillMd(skillName, "latest desc").getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        
+        skillOperationService.deleteDraft(namespaceId, skillName);
+        
+        ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService, times(2)).updateMetaCas(eq(namespaceId), eq(skillName),
+            eq("skill"), eq(1L), metaCaptor.capture());
+        AiResource refreshedMeta = metaCaptor.getAllValues().get(1);
+        assertEquals("latest desc", refreshedMeta.getDesc());
+        assertTrue(refreshedMeta.getExt().contains("\"frontMatterVersion\":\"v1\""));
+        assertTrue(refreshedMeta.getExt().contains("\"description\":\"latest desc\""));
     }
     
     @Test

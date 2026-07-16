@@ -87,6 +87,17 @@ AI 存储保存。默认存储为 `nacos_config`，但它只是实现后端。
 Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 Skill 元数据派生的
 索引，不应成为生命周期状态的事实来源。
 
+Admin 与 Console 的 Skill 列表响应可以包含 `frontMatter` 字段，其内容来自当前展示
+版本的 `SKILL.md` YAML frontmatter。展示版本优先使用已上线的 `latest`；没有上线版本时，
+可以使用当前 editing 或 reviewing 版本。该展示 frontmatter 及其对应版本缓存于
+`ai_resource.ext`，因此列表接口必须只依赖单次分页 `ai_resource` 查询，不得对每个列表项
+额外查询 version 表或存储内容。
+
+会改变展示版本的生命周期迁移必须同步维护该缓存，包括 bootstrap、publish、删除 draft
+和 redraft。创建或更新 draft 时，如果已经存在 `latest` 上线版本，不得在列表中暴露未发布
+draft 的 frontmatter。对于升级前没有缓存的历史行，在生命周期迁移或 bootstrap 修复前可以
+返回 `frontMatter = null`；列表接口不得通过逐项懒加载查询来回填。
+
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 
 ## 5. 生命周期
