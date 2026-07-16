@@ -83,6 +83,47 @@ Pipeline nodes should return deterministic results for the same resource
 version and input metadata. Nodes that call external systems must define timeout
 and retry behavior in their implementation documentation.
 
+## Configuration
+
+Pipeline framework configuration and node implementation configuration have
+different owners:
+
+| Configuration | Owner | Unified config definition |
+|---------------|-------|---------------------------|
+| `nacos.plugin.ai-pipeline.enabled` | Pipeline framework switch | Not part of node definitions. |
+| `nacos.plugin.ai-pipeline.type` | Pipeline node selection | Not part of node definitions. |
+| `nacos.plugin.ai-pipeline.{pipelineId}.order` | Pipeline chain ordering | Not part of node definitions. |
+| `nacos.plugin.ai-pipeline.{pipelineId}.{itemKey}` | The corresponding node implementation | Declared by the implementation through `PluginConfigSpec`. |
+
+### Skill Scanner
+
+The built-in `ai-pipeline:skill-scanner` node declares the following
+implementation configuration. Each alias in the table is a historical relative
+key under the same `nacos.plugin.ai-pipeline.skill-scanner.` prefix.
+
+| Item key | Alias | Type | Default | Sensitive | Effect mode | Meaning |
+|----------|-------|------|---------|-----------|-------------|---------|
+| `command` | `executable`, `path` | STRING | `skill-scanner` | No | RESTART | CLI command or executable path. Command names are resolved from the server process `PATH` and the user-local bin directory. |
+| `use-llm` | `useLlm` | BOOLEAN | `false` | No | RESTART | Enables LLM semantic analysis during scanning. |
+| `llm-api-key` | `llmApiKey` | STRING | empty | Yes | RESTART | Passed to the scanner process as `SKILL_SCANNER_LLM_API_KEY`. |
+| `llm-model` | `llmModel` | STRING | empty | No | RESTART | Passed to the scanner process as `SKILL_SCANNER_LLM_MODEL`. |
+| `llm-provider` | `llmProvider` | STRING | empty | No | RESTART | Passed to the CLI as its LLM provider. The current implementation does not restrict this value to an enum. |
+| `enable-meta` | `enableMeta` | BOOLEAN | `false` | No | RESTART | Enables skill-scanner meta checks. |
+
+The canonical full key is
+`nacos.plugin.ai-pipeline.skill-scanner.{itemKey}`. The implementation must
+continue accepting the listed aliases, while queries and runtime persistence
+return or store only canonical item keys. `llm-api-key` must be masked before a
+plugin detail API response and must not be written to logs.
+
+The current Skill Scanner service resolves its command and constructs immutable
+scan options at startup, so every field above is `RESTART`. Startup
+initialization may apply these fields; runtime APIs must reject adding,
+changing, or removing them. If neither the configured command nor the default
+command can be resolved to an executable, the node remains loaded and
+queryable, but an attempted scan must reject publication with an installation
+hint.
+
 ## Unified State Integration
 
 The core plugin manager lists loaded AI pipeline plugins by `pipelineId`.

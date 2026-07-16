@@ -19,14 +19,9 @@ package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
- * Skill-scanner CLI options derived from pipeline node {@link Properties}.
- *
- * <p>Configure via {@code nacos.plugin.ai-pipeline.type=skill-scanner}
- * and matching {@code nacos.plugin.ai-pipeline.skill-scanner.&lt;key&gt;} entries
- * (see {@link com.alibaba.nacos.ai.pipeline.config.FilePipelineConfigProvider}).</p>
+ * Immutable skill-scanner CLI options derived from {@link SkillScannerPluginConfig}.
  *
  * <p>Environment variables for the LLM match
  * <a href="https://github.com/cisco-ai-defense/skill-scanner">skill-scanner</a> documentation.</p>
@@ -34,16 +29,6 @@ import java.util.Properties;
  * @author qiacheng.cxy
  */
 final class SkillScannerScanOptions {
-    
-    static final String PROP_USE_LLM = "useLlm";
-    
-    static final String PROP_LLM_API_KEY = "llmApiKey";
-    
-    static final String PROP_LLM_MODEL = "llmModel";
-    
-    static final String PROP_LLM_PROVIDER = "llmProvider";
-    
-    static final String PROP_ENABLE_META = "enableMeta";
     
     private static final String ENV_LLM_API_KEY = "SKILL_SCANNER_LLM_API_KEY";
     
@@ -59,7 +44,7 @@ final class SkillScannerScanOptions {
     
     private final boolean enableMeta;
     
-    private SkillScannerScanOptions(boolean useLlm, String llmApiKey, String llmModel,
+    SkillScannerScanOptions(boolean useLlm, String llmApiKey, String llmModel,
         String llmProvider, boolean enableMeta) {
         this.useLlm = useLlm;
         this.llmApiKey = llmApiKey;
@@ -70,27 +55,6 @@ final class SkillScannerScanOptions {
     
     static SkillScannerScanOptions none() {
         return new SkillScannerScanOptions(false, null, null, null, false);
-    }
-    
-    static SkillScannerScanOptions fromProperties(Properties properties) {
-        if (properties == null || properties.isEmpty()) {
-            return none();
-        }
-        boolean useLlm = Boolean.parseBoolean(properties.getProperty(PROP_USE_LLM, "false"));
-        String llmApiKey = trimToNull(properties.getProperty(PROP_LLM_API_KEY));
-        String llmModel = trimToNull(properties.getProperty(PROP_LLM_MODEL));
-        String llmProvider = trimToNull(properties.getProperty(PROP_LLM_PROVIDER));
-        boolean enableMeta =
-            Boolean.parseBoolean(properties.getProperty(PROP_ENABLE_META, "false"));
-        return new SkillScannerScanOptions(useLlm, llmApiKey, llmModel, llmProvider, enableMeta);
-    }
-    
-    private static String trimToNull(String s) {
-        if (s == null) {
-            return null;
-        }
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
     }
     
     boolean isUseLlm() {
