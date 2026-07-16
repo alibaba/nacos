@@ -22,7 +22,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigService;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -60,6 +63,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -328,6 +332,49 @@ class PluginManagerTest {
         
         assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "derby"));
         assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
+    }
+    
+    @Test
+    void calculateDefaultEnabledMigratesConfigChangePropertyTest() {
+        assertFalse(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
+        
+        environment.setProperty("nacos.core.config.plugin.webhook.enabled", "true");
+        assertTrue(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
+        
+        environment.setProperty("nacos.core.config.plugin.webhook.enabled", "false");
+        assertFalse(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
+    }
+    
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void discoverAllPluginsContinuesWhenProviderFailsTest() {
+        PluginProvider provider = mock(PluginProvider.class);
+        when(provider.getPluginType()).thenThrow(new IllegalStateException("discovery failed"));
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Collections.singletonList(provider));
+            
+            ReflectionTestUtils.invokeMethod(manager, "discoverAllPlugins");
+        }
+        
+        assertTrue(manager.listAllPlugins().isEmpty());
+    }
+    
+    @Test
+    void registerPluginReadsConfigSpecMetadataTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("endpoint");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        plugin.applyConfig(Collections.singletonMap("endpoint", "https://example.com"));
+        
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "configurable", plugin);
+        
+        PluginInfo info = manager.getPlugin("trace:configurable").get();
+        assertTrue(info.isConfigurable());
+        assertEquals(plugin.getConfigDefinitions(), info.getConfigDefinitions());
+        assertEquals(plugin.getCurrentConfig(), info.getConfig());
     }
     
     @Test

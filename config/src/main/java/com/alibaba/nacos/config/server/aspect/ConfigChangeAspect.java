@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -63,8 +64,6 @@ public class ConfigChangeAspect {
     private static final Integer DEFAULT_BEFORE_LIST_CAPACITY = 2;
     
     private static final Integer DEFAULT_AFTER_LIST_CAPACITY = 1;
-    
-    private static final String ENABLED = "enabled";
     
     /**
      * Publish config.
@@ -196,9 +195,6 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg(ConfigChangeConstants.ORIGINAL_ARGS, args);
         
         for (ConfigChangePluginService ccs : configChangePluginServiceList) {
-            if (!isEnabled(ccs)) {
-                continue;
-            }
             if (ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE.equals(ccs.executeType())) {
                 beforeExecutePluginServices.add(ccs);
             } else {
@@ -208,8 +204,7 @@ public class ConfigChangeAspect {
         
         // before plugin service execute
         for (ConfigChangePluginService ccs : beforeExecutePluginServices) {
-            final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
-            final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
+            final Properties properties = resolvePluginProperties(ccs);
             configChangeRequest.setArg(ConfigChangeConstants.PLUGIN_PROPERTIES, properties);
             ccs.execute(configChangeRequest, configChangeResponse);
             if (null != configChangeResponse.getArgs()) {
@@ -238,9 +233,7 @@ public class ConfigChangeAspect {
         ConfigExecutor.executeAsyncConfigChangePluginTask(() -> {
             for (ConfigChangePluginService ccs : afterExecutePluginServices) {
                 try {
-                    final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
-                    final Properties properties =
-                        configChangeConfigs.getPluginProperties(serviceType);
+                    final Properties properties = resolvePluginProperties(ccs);
                     configChangeRequest.setArg(ConfigChangeConstants.PLUGIN_PROPERTIES, properties);
                     ccs.execute(configChangeRequest, configChangeResponse);
                 } catch (Throwable throwable) {
@@ -259,12 +252,7 @@ public class ConfigChangeAspect {
         if (pluginServicePriorityList == null) {
             return new ArrayList<>();
         }
-        for (ConfigChangePluginService each : pluginServicePriorityList) {
-            if (isEnabled(each)) {
-                return pluginServicePriorityList;
-            }
-        }
-        return new ArrayList<>();
+        return pluginServicePriorityList;
     }
     
     private ConfigChangePointCutTypes resolvePublishPointCutType(String srcType) {
@@ -325,9 +313,14 @@ public class ConfigChangeAspect {
             srcType, requestProtocol, requestTarget);
     }
     
-    private boolean isEnabled(ConfigChangePluginService configChangePluginService) {
-        Properties serviceConfigProperties = configChangeConfigs
-            .getPluginProperties(configChangePluginService.getServiceType());
-        return Boolean.parseBoolean(serviceConfigProperties.getProperty(ENABLED));
+    private Properties resolvePluginProperties(
+        ConfigChangePluginService configChangePluginService) {
+        if (configChangePluginService instanceof PluginConfigSpec) {
+            Properties result = new Properties();
+            result.putAll(((PluginConfigSpec) configChangePluginService).getCurrentConfig());
+            return result;
+        }
+        String serviceType = configChangePluginService.getServiceType().toLowerCase(Locale.ROOT);
+        return configChangeConfigs.getPluginProperties(serviceType);
     }
 }

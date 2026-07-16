@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.config.server.configuration;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -25,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Properties;
@@ -32,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -81,6 +87,29 @@ class ConfigChangeConfigsTest {
         assertNotNull(properties);
         assertTrue(properties.isEmpty());
         assertNull(properties.getProperty("enabled"));
+    }
+    
+    @Test
+    void testLegacyUsageWarningLoggedOncePerPlugin() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ConfigChangeConfigs.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            configChangeConfigs.getPluginProperties("mockPlugin");
+            configChangeConfigs.getPluginProperties("mockPlugin");
+            
+            long warningCount = appender.list.stream()
+                .filter(event -> Level.WARN == event.getLevel())
+                .filter(event -> event.getFormattedMessage()
+                    .contains("Applying deprecated legacy configuration"))
+                .filter(event -> event.getFormattedMessage().contains("mockPlugin"))
+                .count();
+            assertEquals(1L, warningCount);
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
     
     @Test
