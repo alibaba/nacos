@@ -141,9 +141,61 @@ spring.sql.init.platform=${databaseType}
 The removed `spring.datasource.platform` property is no longer read. Deployments
 still using it must migrate to `spring.sql.init.platform` before upgrade.
 
-Datasource connection properties remain owned by Nacos persistence configuration
-and the database driver. The dialect plugin must not reinterpret unrelated
-database connection settings.
+### Datasource Module Configuration
+
+Datasource connection properties are owned by the Nacos persistence module and
+the database driver. They are standardized under the following module prefix:
+
+```text
+nacos.plugin.datasource.db.{item}
+```
+
+This namespace does not make a database dialect configurable. The built-in
+`datasource-dialect:{databaseType}` instances still expose
+`configurable=false`, because connection credentials and pool settings belong
+to one server datasource rather than to each loaded dialect. These settings are
+static, take effect on restart, and are not accepted by the plugin detail/PUT
+configuration API. A future management surface must first define one unique
+datasource configuration owner instead of copying the same credentials into
+every dialect.
+
+The stable datasource module settings are:
+
+| Canonical key or pattern | Legacy alias | Meaning |
+|--------------------------|--------------|---------|
+| `nacos.plugin.datasource.db.num` | `db.num` | Number of external datasource endpoints. It is required and positive for external storage. |
+| `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | JDBC URL for every index from `0` to `num - 1`. |
+| `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | Shared or per-index username. A missing index falls back to the shared value or index `0`. |
+| `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | Shared or per-index password, with the same fallback rule as `user`. This value is sensitive. |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` or kebab-case equivalent | Hikari connection timeout in milliseconds; default `3000`. |
+| `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` or kebab-case equivalent | Hikari validation timeout in milliseconds; default `10000`. |
+| `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` or kebab-case equivalent | Hikari idle timeout in milliseconds; default `600000`. |
+| `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` or kebab-case equivalent | Hikari maximum pool size; default `20`. |
+| `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` or kebab-case equivalent | Hikari minimum idle connections; default `2`. |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` or kebab-case equivalent | JDBC driver class. Blank uses the MySQL driver compatibility default. |
+| `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` or kebab-case equivalent | Connection test query. Blank uses `SELECT 1`. |
+| `nacos.plugin.datasource.db.query-timeout` | JVM property `QUERYTIMEOUT` | JDBC query timeout in seconds; default `3`. |
+
+For each logical item, the canonical key takes precedence over its legacy alias
+even when the two keys come from different Spring property sources. Indexed
+items are resolved independently, so a canonical `url.0` may coexist with a
+legacy `url.1` during migration. Legacy use emits a migration warning without
+logging configuration values. Dotted and bracketed index notation remain
+accepted, and a single unindexed `url` remains compatible with index `0`.
+
+The `nacos.plugin.datasource.db.pool.config.{hikari-property}` prefix continues
+to bind to the Hikari datasource after the legacy pool prefix is bound. This
+preserves existing Hikari pass-through properties while allowing canonical
+values to override matching legacy values. The supported implementation surface
+is the Hikari JavaBean configuration accepted by the bundled version; only the
+stable subset listed above is a long-term Nacos configuration contract.
+
+`nacos.plugin.datasource.log.enabled` remains a separate datasource logging
+switch. The embedded/external persistence mode is also outside dialect-private
+configuration. A custom environment plugin that transforms encrypted datasource
+credentials must declare the canonical password keys in its own `propertyKey()`
+set; existing implementations that declare only `db.password.*` continue to
+process legacy input only.
 
 ## Compatibility Rules
 

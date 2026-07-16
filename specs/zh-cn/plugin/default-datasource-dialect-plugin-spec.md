@@ -73,3 +73,6 @@ Nacos 从 `spring.sql.init.platform` 选择初始数据库类型，不再支持
 - 当某个数据库族需要 schema 变化时补充迁移说明。
 
 服务端正在使用的内置数据库方言插件属于关键插件，不能通过插件状态禁用，否则会破坏持久化。
+
+内置方言实现不持有数据源连接或连接池配置，也不实现 `PluginConfigSpec`，因此以
+`configurable=false` 暴露。Datasource 模块配置由上层数据源方言插件规范定义。

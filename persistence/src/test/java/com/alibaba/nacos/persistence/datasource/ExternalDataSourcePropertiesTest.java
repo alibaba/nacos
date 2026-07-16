@@ -57,6 +57,47 @@ public class ExternalDataSourcePropertiesTest {
     }
     
     @Test
+    void externalDatasourceSupportsCanonicalConfig() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.plugin.datasource.db.num", "1");
+        environment.setProperty("nacos.plugin.datasource.db.user", USERNAME);
+        environment.setProperty("nacos.plugin.datasource.db.password", PASSWORD);
+        environment.setProperty("nacos.plugin.datasource.db.url.0", JDBC_URL);
+        List<HikariDataSource> dataSources =
+            new ExternalDataSourceProperties().build(environment, dataSource -> {
+                assertEquals(JDBC_URL, dataSource.getJdbcUrl());
+                assertEquals(USERNAME, dataSource.getUsername());
+                assertEquals(PASSWORD, dataSource.getPassword());
+            });
+        assertEquals(1, dataSources.size());
+    }
+    
+    @Test
+    void externalDatasourceCanonicalConfigOverridesLegacyPerItem() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("db.num", "2");
+        environment.setProperty("db.url.0", "legacy-url-0");
+        environment.setProperty("db.url.1", "legacy-url-1");
+        environment.setProperty("db.user.0", "legacy-user-0");
+        environment.setProperty("db.user.1", "legacy-user-1");
+        environment.setProperty("db.password", "legacy-password");
+        environment.setProperty("nacos.plugin.datasource.db.url.0", "canonical-url-0");
+        environment.setProperty("nacos.plugin.datasource.db.user", "canonical-user");
+        environment.setProperty("nacos.plugin.datasource.db.password.1",
+            "canonical-password-1");
+        List<HikariDataSource> dataSources =
+            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            });
+        assertEquals(2, dataSources.size());
+        assertEquals("canonical-url-0", dataSources.get(0).getJdbcUrl());
+        assertEquals("legacy-url-1", dataSources.get(1).getJdbcUrl());
+        assertEquals("canonical-user", dataSources.get(0).getUsername());
+        assertEquals("canonical-user", dataSources.get(1).getUsername());
+        assertEquals("legacy-password", dataSources.get(0).getPassword());
+        assertEquals("canonical-password-1", dataSources.get(1).getPassword());
+    }
+    
+    @Test
     void externalDatasourceToAssertMultiJdbcUrl() {
         
         HikariDataSource expectedDataSource = new HikariDataSource();
