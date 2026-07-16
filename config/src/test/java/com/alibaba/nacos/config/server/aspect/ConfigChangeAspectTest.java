@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -44,12 +45,12 @@ import org.mockito.Mockito;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -58,6 +59,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
+@SuppressWarnings("deprecation")
 class ConfigChangeAspectTest {
     
     ConfigChangeAspect configChangeAspect;
@@ -89,7 +91,8 @@ class ConfigChangeAspectTest {
         propertiesStatic = Mockito.mockStatic(PropertiesUtil.class);
         requestUtilMockedStatic = Mockito.mockStatic(RequestUtil.class);
         Properties properties = new Properties();
-        properties.put("mockedConfigChangeService.enabled", "true");
+        properties.put("mockedconfigchangeservice.enabled", "true");
+        properties.put("mockedconfigchangeservice.endpoint", "legacy-endpoint");
         propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
             eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
         requestUtilMockedStatic
@@ -103,6 +106,7 @@ class ConfigChangeAspectTest {
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         
         ConfigChangePluginManager.join(configChangePluginService);
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> true);
         
         configChangeConfigs = new ConfigChangeConfigs();
         configChangeAspect = new ConfigChangeAspect(configChangeConfigs);
@@ -116,6 +120,7 @@ class ConfigChangeAspectTest {
         propertiesStatic.close();
         requestUtilMockedStatic.close();
         ConfigChangePluginManager.reset();
+        PluginStateCheckerHolder.setInstance(null);
     }
     
     @Test
@@ -135,9 +140,14 @@ class ConfigChangeAspectTest {
         Object o = configChangeAspect.publishOrUpdateConfigAround(pjp);
         Thread.sleep(20L);
         
-        // expect service executed.
-        verify(configChangePluginService, Mockito.times(1))
-            .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
+        // expect service executed with legacy properties.
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService)
+            .execute(requestCaptor.capture(), any(ConfigChangeResponse.class));
+        Properties appliedProperties = (Properties) requestCaptor.getValue()
+            .getArg(ConfigChangeConstants.PLUGIN_PROPERTIES);
+        assertEquals("legacy-endpoint", appliedProperties.getProperty("endpoint"));
         //expect join point processed success.
         assertEquals("Success", o);
     }
@@ -169,9 +179,9 @@ class ConfigChangeAspectTest {
     }
     
     @Test
-    void testDisEnablePluginService() throws Throwable {
+    void testLegacyEnabledPropertyIsNotRuntimeGate() throws Throwable {
         Properties properties = new Properties();
-        properties.put("mockedConfigChangeService.enabled", "false");
+        properties.put("mockedconfigchangeservice.enabled", "false");
         String dataId = "dataId1";
         String group = "group1";
         String namespaceId = "namespaceId1";
@@ -185,22 +195,23 @@ class ConfigChangeAspectTest {
         propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
             eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        assertFalse(Boolean.parseBoolean(
-            configChangeConfigs.getPluginProperties("mockedConfigChangeService")
-                .getProperty("enabled")));
         
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         Mockito.when(configChangePluginService.getServiceType())
             .thenReturn("mockedConfigChangeService");
-        ConfigPublishResponse configPublishResponse = ConfigPublishResponse.buildSuccessResponse();
-        Mockito.when(pjp.proceed()).thenReturn(configPublishResponse);
+        Mockito.when(pjp.proceed(any())).thenReturn("Success");
         //execute
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
         //expect
-        verify(configChangePluginService, Mockito.times(0))
-            .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        assertEquals(configPublishResponse, o);
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configChangePluginService)
+            .execute(requestCaptor.capture(), any(ConfigChangeResponse.class));
+        Properties appliedProperties = (Properties) requestCaptor.getValue()
+            .getArg(ConfigChangeConstants.PLUGIN_PROPERTIES);
+        assertEquals("false", appliedProperties.getProperty("enabled"));
+        assertEquals("Success", o);
     }
     
     @Test
@@ -448,11 +459,7 @@ class ConfigChangeAspectTest {
     
     @Test
     void testNoPluginsEnabled() throws Throwable {
-        Properties properties = new Properties();
-        properties.put("mockedConfigChangeService.enabled", "false");
-        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(), any()))
-            .thenReturn(properties);
-        configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
         
         when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configRequestInfo.getSrcType()).thenReturn("http");
@@ -461,6 +468,20 @@ class ConfigChangeAspectTest {
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
         
         verify(configChangePluginService, never()).execute(any(), any());
+        assertEquals("Success", result);
+    }
+    
+    @Test
+    void testRemoveWithoutEnabledPluginsProceedsDirectly() throws Throwable {
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
+        when(pjp.getArgs()).thenReturn(
+            new Object[] {"dataId", "group", "namespaceId", null, "127.0.0.1", "nacos", "http"});
+        when(pjp.proceed()).thenReturn("Success");
+        
+        Object result = configChangeAspect.removeConfigByIdAround(pjp);
+        
+        verify(configChangePluginService, never()).execute(any(), any());
+        verify(pjp).proceed();
         assertEquals("Success", result);
     }
     
@@ -476,12 +497,8 @@ class ConfigChangeAspectTest {
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         ConfigChangePluginManager.join(disabledService);
         
-        Properties properties = new Properties();
-        properties.put("mockedConfigChangeService.enabled", "true");
-        properties.put("disabledConfigChangeService.enabled", "false");
-        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(), any()))
-            .thenReturn(properties);
-        configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !"disabledConfigChangeService".equals(pluginName));
         
         Mockito.when(configChangePluginService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
@@ -494,6 +511,40 @@ class ConfigChangeAspectTest {
         
         verify(disabledService, never()).execute(any(), any());
         verify(configChangePluginService).execute(any(), any());
+        assertEquals("Success", result);
+    }
+    
+    @Test
+    void testPluginConfigSpecUsesCurrentEffectiveConfig() throws Throwable {
+        ConfigChangePluginManager.reset();
+        ConfigChangePluginService configurableService = Mockito.mock(
+            ConfigChangePluginService.class,
+            Mockito.withSettings().extraInterfaces(PluginConfigSpec.class));
+        Mockito.when(configurableService.getServiceType()).thenReturn("configurable");
+        Mockito.when(configurableService.pointcutMethodNames())
+            .thenReturn(ConfigChangePointCutTypes.values());
+        Mockito.when(configurableService.executeType())
+            .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        Mockito.when(((PluginConfigSpec) configurableService).getCurrentConfig())
+            .thenReturn(Collections.singletonMap("endpoint", "runtime-endpoint"));
+        ConfigChangePluginManager.join(configurableService);
+        
+        ConfigChangeConfigs legacyConfigs = Mockito.mock(ConfigChangeConfigs.class);
+        ConfigChangeAspect aspect = new ConfigChangeAspect(legacyConfigs);
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
+        when(configForm.getDataId()).thenReturn("dataId");
+        when(configRequestInfo.getSrcType()).thenReturn("http");
+        when(pjp.proceed(any())).thenReturn("Success");
+        
+        Object result = aspect.publishOrUpdateConfigAround(pjp);
+        
+        ArgumentCaptor<ConfigChangeRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigChangeRequest.class);
+        verify(configurableService).execute(requestCaptor.capture(), any());
+        Properties appliedProperties = (Properties) requestCaptor.getValue()
+            .getArg(ConfigChangeConstants.PLUGIN_PROPERTIES);
+        assertEquals("runtime-endpoint", appliedProperties.getProperty("endpoint"));
+        verify(legacyConfigs, never()).getPluginProperties(any());
         assertEquals("Success", result);
     }
     

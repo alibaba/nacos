@@ -30,12 +30,17 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * config change plugin configs.
  *
  * @author liyunfei
+ * @deprecated use {@link com.alibaba.nacos.api.plugin.PluginConfigSpec} to declare and apply
+ *             config change plugin configuration
  **/
+@Deprecated
 @Configuration
 public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     
@@ -44,6 +49,8 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static final String PREFIX = ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX;
     
     private volatile Map<String, Properties> configPluginProperties = new HashMap<>();
+    
+    private final Set<String> legacyUsageWarnedPlugins = ConcurrentHashMap.newKeySet();
     
     public ConfigChangeConfigs() {
         NotifyCenter.registerSubscriber(this);
@@ -74,6 +81,12 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     public Properties getPluginProperties(String configPluginType) {
+        if (legacyUsageWarnedPlugins.add(configPluginType)) {
+            LOGGER.warn("[ConfigChangeConfigs] Applying deprecated legacy configuration with "
+                + "prefix '{}' to config change plugin '{}'. Implement PluginConfigSpec "
+                + "to use unified plugin configuration management.", PREFIX,
+                configPluginType);
+        }
         Properties properties = configPluginProperties.get(configPluginType);
         if (properties == null) {
             LOGGER.warn(
