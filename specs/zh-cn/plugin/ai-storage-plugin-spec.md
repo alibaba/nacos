@@ -68,6 +68,32 @@ Nacos 资源身份。
 
 默认 provider 为 `nacos_config`，它通过 Nacos 配置存储保存 AI 资源内容。
 
+## 插件状态与配置
+
+AI 存储 provider 接入统一插件 state。禁用非 critical provider 后，实例仍保持加载并可被
+插件管理查询，但 router 会拒绝该 provider 的新操作。内置 `ai-storage:nacos_config` 是默认
+后端，也是服务端 AI 能力依赖的 critical 插件；服务端仍依赖它时，不能通过插件管理将其禁用。
+
+以下属性为不同 AI 资源领域选择 provider：
+
+```properties
+nacos.ai.prompt.storage.provider=nacos_config
+nacos.ai.skill.storage.provider=nacos_config
+nacos.ai.agentspec.storage.provider=nacos_config
+```
+
+它们属于领域路由策略，不是 `ai-storage:nacos_config` 所拥有的私有配置 definitions。
+
+内置 provider 没有私有配置，不实现 `PluginConfigSpec`，并以 `configurable=false` 暴露。
+拥有私有配置的 `AiResourceStorage` 构建结果可以实现 `PluginConfigSpec`，并声明以下标准 key：
+
+```properties
+nacos.plugin.ai-storage.{provider}.{itemKey}
+```
+
+Storage builder 负责在核心插件发现前构造 service。统一配置元数据和 apply 行为属于构建后的
+service 实例，不属于 builder 或领域路由 key。
+
 ## 要求
 
 存储插件必须精确保留字节内容，不得改变资源元数据、版本状态、
