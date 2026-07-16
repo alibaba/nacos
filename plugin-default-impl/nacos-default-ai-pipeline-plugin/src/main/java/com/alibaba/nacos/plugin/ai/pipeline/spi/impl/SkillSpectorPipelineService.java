@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
@@ -35,19 +40,26 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Publish pipeline service that integrates SkillSpector for AI resource security scanning.
  *
  * @author nacos
  */
-public class SkillSpectorPipelineService implements PublishPipelineService {
+public class SkillSpectorPipelineService implements PublishPipelineService, PluginConfigSpec {
     
     static final String PIPELINE_ID = "skill-spector";
     
-    static final String DEFAULT_SKILL_SPECTOR_CMD = "skill-spector";
+    static final String DEFAULT_SKILL_SPECTOR_CMD = SkillSpectorPluginConfig.DEFAULT_COMMAND;
+    
+    private static final List<ConfigItemDefinition> CONFIG_DEFINITIONS = buildConfigDefinitions();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillSpectorPipelineService.class);
     
@@ -66,13 +78,74 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             + "默认路径为 ~/ai-infra/ai-pipeline/bin/skill-spector；"
             + "如需自定义路径，请配置 nacos.plugin.ai-pipeline.skill-spector.command。";
     
-    private final String scannerCommand;
+    private final Function<String, String> commandResolver;
     
-    private final SkillSpectorScanOptions scanOptions;
+    private volatile RuntimeContext runtime;
     
     SkillSpectorPipelineService(String scannerCommand, SkillSpectorScanOptions scanOptions) {
-        this.scannerCommand = scannerCommand;
-        this.scanOptions = scanOptions != null ? scanOptions : SkillSpectorScanOptions.none();
+        this.commandResolver = SkillSpectorCommandResolver::resolve;
+        this.runtime = RuntimeContext.direct(scannerCommand,
+            scanOptions != null ? scanOptions : SkillSpectorScanOptions.none());
+    }
+    
+    SkillSpectorPipelineService(SkillSpectorPluginConfig config) {
+        this(config, SkillSpectorCommandResolver::resolve);
+    }
+    
+    SkillSpectorPipelineService(SkillSpectorPluginConfig config,
+        Function<String, String> commandResolver) {
+        this.commandResolver = commandResolver;
+        this.runtime = buildRuntime(config);
+    }
+    
+    private static List<ConfigItemDefinition> buildConfigDefinitions() {
+        ConfigItemDefinition command = restartDefinition(SkillSpectorPluginConfig.COMMAND,
+            "SkillSpector command", ConfigItemType.STRING, DEFAULT_SKILL_SPECTOR_CMD,
+            "CLI command or executable path resolved during server startup",
+            SkillSpectorPluginConfig.COMMAND_ALIAS_EXECUTABLE,
+            SkillSpectorPluginConfig.COMMAND_ALIAS_PATH);
+        ConfigItemDefinition useLlm = restartDefinition(SkillSpectorPluginConfig.USE_LLM,
+            "Use LLM analysis", ConfigItemType.BOOLEAN, Boolean.FALSE.toString(),
+            "Enable SkillSpector LLM analysis", SkillSpectorPluginConfig.USE_LLM_ALIAS);
+        ConfigItemDefinition provider = restartDefinition(SkillSpectorPluginConfig.PROVIDER,
+            "LLM provider", ConfigItemType.STRING, "",
+            "LLM provider passed to the SkillSpector subprocess");
+        ConfigItemDefinition model = restartDefinition(SkillSpectorPluginConfig.MODEL,
+            "LLM model", ConfigItemType.STRING, "",
+            "LLM model passed to the SkillSpector subprocess");
+        ConfigItemDefinition apiKey = restartDefinition(SkillSpectorPluginConfig.API_KEY,
+            "LLM API key", ConfigItemType.STRING, "",
+            "API key passed to the configured SkillSpector LLM provider",
+            SkillSpectorPluginConfig.API_KEY_ALIAS);
+        apiKey.setSensitive(true);
+        ConfigItemDefinition baseUrl = restartDefinition(SkillSpectorPluginConfig.BASE_URL,
+            "LLM base URL", ConfigItemType.STRING, "",
+            "OpenAI-compatible endpoint passed to the SkillSpector subprocess",
+            SkillSpectorPluginConfig.BASE_URL_ALIAS);
+        ConfigItemDefinition logLevel = restartDefinition(SkillSpectorPluginConfig.LOG_LEVEL,
+            "Runtime log level", ConfigItemType.STRING,
+            SkillSpectorPluginConfig.DEFAULT_LOG_LEVEL,
+            "SkillSpector subprocess log level", SkillSpectorPluginConfig.LOG_LEVEL_ALIAS);
+        ConfigItemDefinition riskScoreThreshold = restartDefinition(
+            SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD, "Risk score threshold",
+            ConfigItemType.NUMBER,
+            Integer.toString(SkillSpectorPluginConfig.DEFAULT_RISK_SCORE_THRESHOLD),
+            "Reject reports above this threshold; integer values are clamped to 0..100",
+            SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD_ALIAS);
+        ConfigItemDefinition maxFindings = restartDefinition(
+            SkillSpectorPluginConfig.MAX_FINDINGS, "Maximum findings", ConfigItemType.NUMBER,
+            Integer.toString(SkillSpectorPluginConfig.DEFAULT_MAX_FINDINGS),
+            "Maximum findings in the review message; integer values are capped at 100",
+            SkillSpectorPluginConfig.MAX_FINDINGS_ALIAS);
+        return Collections.unmodifiableList(Arrays.asList(command, useLlm, provider, model,
+            apiKey, baseUrl, logLevel, riskScoreThreshold, maxFindings));
+    }
+    
+    private static ConfigItemDefinition restartDefinition(String key, String name,
+        ConfigItemType type, String defaultValue, String description, String... aliases) {
+        return new ConfigItemDefinition.Builder(key, name, type).description(description)
+            .defaultValue(defaultValue).aliases(Arrays.asList(aliases))
+            .effectMode(ConfigItemEffectMode.RESTART).build();
     }
     
     @Override
@@ -81,7 +154,26 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     }
     
     @Override
+    public List<ConfigItemDefinition> getConfigDefinitions() {
+        return CONFIG_DEFINITIONS;
+    }
+    
+    @Override
+    public synchronized void applyConfig(Map<String, String> config) {
+        SkillSpectorPluginConfig newConfig = SkillSpectorPluginConfig.fromMap(config);
+        runtime = buildRuntime(newConfig);
+    }
+    
+    @Override
+    public Map<String, String> getCurrentConfig() {
+        return new LinkedHashMap<>(runtime.config);
+    }
+    
+    @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
+        RuntimeContext current = runtime;
+        String scannerCommand = current.scannerCommand;
+        SkillSpectorScanOptions scanOptions = current.scanOptions;
         if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT,
                 PublishPipelineMessageType.MARKDOWN,
@@ -106,7 +198,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             writeResourceFiles(tempDir, normalizeFilesForScanner(context, files));
             Path reportPath = tempDir.resolve("skillspector-report.json");
             
-            Process process = startProcess(buildScanCommand(tempDir, reportPath));
+            Process process = startProcess(
+                buildScanCommand(tempDir, reportPath, scannerCommand, scanOptions), scanOptions);
             String scanOutput = readOutput(process);
             int exitCode = waitForProcess(process);
             logScanOutput(context, resourceContext, exitCode, scanOutput);
@@ -124,11 +217,11 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
                 LOGGER.warn("[SkillSpectorPipeline] {} {} risk_score={} 超过阈值 {}",
                     context.getResourceType(), resourceContext.getResourceName(),
                     report.getRiskScore(), scanOptions.getRiskScoreThreshold());
-                return PublishPipelineResult.reject(buildRejectMessage(report),
+                return PublishPipelineResult.reject(buildRejectMessage(report, scanOptions),
                     PublishPipelineMessageType.MARKDOWN,
                     List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, false)));
             }
-            return PublishPipelineResult.pass(buildPassMessage(report),
+            return PublishPipelineResult.pass(buildPassMessage(report, scanOptions),
                 PublishPipelineMessageType.MARKDOWN,
                 List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, true)));
         } catch (InterruptedException e) {
@@ -146,7 +239,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         }
     }
     
-    List<String> buildScanCommand(Path tempDir, Path reportPath) {
+    List<String> buildScanCommand(Path tempDir, Path reportPath, String scannerCommand,
+        SkillSpectorScanOptions scanOptions) {
         List<String> command = new ArrayList<>();
         command.add(scannerCommand);
         command.add("scan");
@@ -161,7 +255,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         return command;
     }
     
-    Process startProcess(List<String> command) throws IOException {
+    Process startProcess(List<String> command, SkillSpectorScanOptions scanOptions)
+        throws IOException {
         ProcessBuilder pb = new ProcessBuilder(command);
         Map<String, String> env = pb.environment();
         scanOptions.applyLlmEnvironment(env);
@@ -175,6 +270,25 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     
     SkillSpectorScanReport parseReport(Path reportPath) throws IOException {
         return SkillSpectorScanReport.parse(Files.readString(reportPath, StandardCharsets.UTF_8));
+    }
+    
+    private RuntimeContext buildRuntime(SkillSpectorPluginConfig config) {
+        Map<String, String> configValues = config.toMap();
+        String resolvedCommand = commandResolver.apply(config.getCommand());
+        SkillSpectorScanOptions options = config.getScanOptions();
+        RuntimeContext previous = runtime;
+        if (previous == null || !previous.config.equals(configValues)
+            || !Objects.equals(previous.scannerCommand, resolvedCommand)) {
+            if (StringUtils.isBlank(resolvedCommand)) {
+                LOGGER.warn(
+                    "[SkillSpectorPipeline] SkillSpector runtime 未安装，插件将拒绝发布。{}",
+                    INSTALLATION_HINT);
+            } else {
+                LOGGER.info("[SkillSpectorPipeline] SkillSpector runtime 已就绪，runtime={}",
+                    resolvedCommand);
+            }
+        }
+        return new RuntimeContext(configValues, resolvedCommand, options);
     }
     
     private String readOutput(Process process) throws IOException {
@@ -210,33 +324,32 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             List.of(new Checkpoint(CHECKPOINT_RUNTIME, false)));
     }
     
-    private String buildPassMessage(SkillSpectorScanReport report) {
+    private String buildPassMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         return "SkillSpector 扫描通过，risk_score=" + report.getRiskScore()
             + "，阈值=" + scanOptions.getRiskScoreThreshold()
             + "，风险等级=" + report.getRiskSeverity()
             + "，问题数=" + report.getIssueCount()
-            + buildFindingsMessage(report);
+            + buildFindingsMessage(report, scanOptions);
     }
     
-    private String buildRejectMessage(SkillSpectorScanReport report) {
+    private String buildRejectMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         return "SkillSpector 检测到安全风险，发布被拒绝。\n\n"
             + "- risk_score: " + report.getRiskScore() + "\n"
             + "- threshold: " + scanOptions.getRiskScoreThreshold() + "\n"
             + "- severity: " + report.getRiskSeverity() + "\n"
             + "- recommendation: " + report.getRiskRecommendation() + "\n"
             + "- issues: " + report.getIssueCount()
-            + buildFindingsMessage(report);
+            + buildFindingsMessage(report, scanOptions);
     }
     
-    private String buildFindingsMessage(SkillSpectorScanReport report) {
+    private String buildFindingsMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         if (report.getIssueCount() == 0) {
             return "";
         }
         List<SkillSpectorScanReport.Finding> findings = report.getFindings();
-        if (findings.isEmpty()) {
-            return "\n\n## 扫描结果\n\nSkillSpector 返回了 " + report.getIssueCount()
-                + " 个问题，但报告中没有包含可展示的明细。";
-        }
         StringBuilder builder = new StringBuilder("\n\n## 扫描结果\n\n");
         int limit = Math.min(findings.size(), scanOptions.getMaxFindings());
         for (int i = 0; i < limit; i++) {
@@ -405,5 +518,26 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             PublishPipelineResourceType.AGENTSPEC,
             PublishPipelineResourceType.PROMPT
         };
+    }
+    
+    private static final class RuntimeContext {
+        
+        private final Map<String, String> config;
+        
+        private final String scannerCommand;
+        
+        private final SkillSpectorScanOptions scanOptions;
+        
+        private RuntimeContext(Map<String, String> config, String scannerCommand,
+            SkillSpectorScanOptions scanOptions) {
+            this.config = Collections.unmodifiableMap(new LinkedHashMap<>(config));
+            this.scannerCommand = scannerCommand;
+            this.scanOptions = scanOptions;
+        }
+        
+        private static RuntimeContext direct(String scannerCommand,
+            SkillSpectorScanOptions scanOptions) {
+            return new RuntimeContext(Collections.emptyMap(), scannerCommand, scanOptions);
+        }
     }
 }

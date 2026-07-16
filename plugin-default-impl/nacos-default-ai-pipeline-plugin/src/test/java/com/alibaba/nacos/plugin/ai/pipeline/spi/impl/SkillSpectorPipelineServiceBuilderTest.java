@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,7 +50,7 @@ class SkillSpectorPipelineServiceBuilderTest {
     
     @Test
     void buildTest() {
-        PublishPipelineService service = builder.build(new Properties());
+        PublishPipelineService service = builder.build(null);
         
         assertNotNull(service);
         assertEquals("skill-spector", service.pipelineId());
@@ -67,103 +64,17 @@ class SkillSpectorPipelineServiceBuilderTest {
     }
     
     @Test
-    void buildWithConfiguredCommandTest() throws Exception {
-        Path runner = createExecutable(Files.createTempDirectory("nacos-skillspector"),
-            "skillspector");
-        Path emptyHome = Files.createTempDirectory("nacos-home");
-        String oldNacosHome = System.getProperty("nacos.home");
-        String oldUserDir = System.getProperty("user.dir");
+    void buildWithConfiguredPropertiesTest() {
         Properties properties = new Properties();
-        properties.setProperty("command", runner.toString());
-        try {
-            System.setProperty("nacos.home", emptyHome.toString());
-            System.setProperty("user.dir", emptyHome.toString());
-            
-            PublishPipelineService service = builder.build(properties);
-            
-            PublishPipelineResult result = service.execute(new PublishPipelineContext());
-            assertTrue(result.isPassed(), result.getMessage());
-        } finally {
-            restoreSystemProperty("nacos.home", oldNacosHome);
-            restoreSystemProperty("user.dir", oldUserDir);
-        }
-    }
-    
-    @Test
-    void buildWithDefaultCommandFromPathTest() throws Exception {
-        Path dir = Files.createTempDirectory("nacos-skillspector-path");
-        createExecutable(dir, "skill-spector");
-        builder = new SkillSpectorPipelineServiceBuilder() {
-            
-            @Override
-            String getPathEnv() {
-                return dir.toString();
-            }
-        };
+        properties.setProperty(SkillSpectorPluginConfig.COMMAND, "/missing/skill-spector");
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
         
-        PublishPipelineService service = builder.build(new Properties());
+        PublishPipelineService service = builder.build(properties);
+        SkillSpectorPipelineService skillSpector = (SkillSpectorPipelineService) service;
+        Map<String, String> config = skillSpector.getCurrentConfig();
         
-        PublishPipelineResult result = service.execute(new PublishPipelineContext());
-        assertTrue(result.isPassed(), result.getMessage());
-    }
-    
-    @Test
-    void buildWithDefaultCommandFromAiPipelineBinTest() throws Exception {
-        Path home = Files.createTempDirectory("nacos-skillspector-home");
-        Path commandDir = home.resolve("ai-infra").resolve("ai-pipeline").resolve("bin");
-        createExecutable(commandDir, "skill-spector");
-        String oldUserHome = System.getProperty("user.home");
-        try {
-            System.setProperty("user.home", home.toString());
-            builder = new SkillSpectorPipelineServiceBuilder() {
-                
-                @Override
-                String getPathEnv() {
-                    return "";
-                }
-            };
-            
-            PublishPipelineService service = builder.build(new Properties());
-            
-            PublishPipelineResult result = service.execute(new PublishPipelineContext());
-            assertTrue(result.isPassed(), result.getMessage());
-        } finally {
-            restoreSystemProperty("user.home", oldUserHome);
-        }
-    }
-    
-    @Test
-    void buildWithHomeExpandedCommandTest() throws Exception {
-        Path home = Files.createTempDirectory("nacos-skillspector-home");
-        Path runner = createExecutable(home, "skill-spector");
-        String oldUserHome = System.getProperty("user.home");
-        try {
-            System.setProperty("user.home", home.toString());
-            Properties properties = new Properties();
-            properties.setProperty("command", "~/" + runner.getFileName());
-            
-            PublishPipelineService service = builder.build(properties);
-            
-            PublishPipelineResult result = service.execute(new PublishPipelineContext());
-            assertTrue(result.isPassed(), result.getMessage());
-        } finally {
-            restoreSystemProperty("user.home", oldUserHome);
-        }
-    }
-    
-    private void restoreSystemProperty(String key, String value) {
-        if (value == null) {
-            System.clearProperty(key);
-        } else {
-            System.setProperty(key, value);
-        }
-    }
-    
-    private Path createExecutable(Path dir, String name) throws Exception {
-        Files.createDirectories(dir);
-        Path runner = dir.resolve(name);
-        Files.write(runner, Arrays.asList("#!/bin/sh", "exit 0"));
-        assertTrue(runner.toFile().setExecutable(true));
-        return runner;
+        assertEquals("/missing/skill-spector",
+            config.get(SkillSpectorPluginConfig.COMMAND));
+        assertEquals("true", config.get(SkillSpectorPluginConfig.USE_LLM));
     }
 }

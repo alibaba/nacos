@@ -124,6 +124,41 @@ command can be resolved to an executable, the node remains loaded and
 queryable, but an attempted scan must reject publication with an installation
 hint.
 
+### SkillSpector
+
+The built-in `ai-pipeline:skill-spector` node declares the following
+implementation configuration. Each alias in the table is a historical relative
+key under the same `nacos.plugin.ai-pipeline.skill-spector.` prefix.
+
+| Item key | Alias | Type | Default | Sensitive | Effect mode | Meaning |
+|----------|-------|------|---------|-----------|-------------|---------|
+| `command` | `executable`, `path` | STRING | `skill-spector` | No | RESTART | CLI command or executable path. Command names are resolved from the server process `PATH`, `~/ai-infra/ai-pipeline/bin`, and `~/.local/bin`. |
+| `use-llm` | `useLlm` | BOOLEAN | `false` | No | RESTART | Enables SkillSpector LLM analysis. Static scanning remains enabled when this is false. |
+| `provider` | None | STRING | empty | No | RESTART | LLM provider passed to the SkillSpector subprocess. |
+| `model` | None | STRING | empty | No | RESTART | LLM model passed to the SkillSpector subprocess. |
+| `api-key` | `apiKey` | STRING | empty | Yes | RESTART | Credential passed to the environment variable corresponding to the effective provider. |
+| `base-url` | `baseUrl` | STRING | empty | No | RESTART | OpenAI-compatible endpoint passed as `OPENAI_BASE_URL`. |
+| `log-level` | `logLevel` | STRING | `WARNING` | No | RESTART | SkillSpector subprocess log level. The current implementation does not restrict this value to an enum. |
+| `risk-score-threshold` | `riskScoreThreshold` | NUMBER | `50` | No | RESTART | Reports whose risk score is greater than the effective threshold are rejected. Integer values are clamped to `0..100`; an absent or non-integer value uses the default. |
+| `max-findings` | `maxFindings` | NUMBER | `20` | No | RESTART | Maximum findings included in the review message. Integer values above `100` are capped at `100`; an absent, non-integer, zero, or negative value uses the default. |
+
+The canonical full key is
+`nacos.plugin.ai-pipeline.skill-spector.{itemKey}`. Canonical keys take
+precedence when both a canonical key and an alias are configured. Queries and
+runtime persistence return or store only canonical item keys. `api-key` must be
+masked before a plugin detail API response and must not be written to logs.
+Explicit non-numeric values for NUMBER items are rejected by the common plugin
+configuration type check before the configuration is applied.
+
+The current SkillSpector service resolves its command and constructs immutable
+scan options at startup, so every field above is `RESTART`. Startup
+initialization may apply these fields; runtime APIs must reject adding,
+changing, or removing them. Existing subprocess environment variables take
+precedence over values copied from plugin configuration. If neither the
+configured command nor the default command can be resolved to an executable,
+the node remains loaded and queryable, but an attempted scan must reject
+publication with an installation hint.
+
 ## Unified State Integration
 
 The core plugin manager lists loaded AI pipeline plugins by `pipelineId`.
