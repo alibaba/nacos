@@ -123,5 +123,7 @@ public interface GrpcClientConfig extends RpcClientConfig {
      *
      * @return configured rpc port offset.
      */
-    Integer rpcPortOffset();
+    default Integer rpcPortOffset() {
+        return null;
+    }
 }
