@@ -78,6 +78,7 @@ import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -318,6 +319,31 @@ class SkillOperationServiceImplTest {
         assertEquals(2, result.getPageItems().size());
         assertEquals("first-skill", result.getPageItems().get(0).getFrontMatter().get("name"));
         assertEquals("second-skill", result.getPageItems().get(1).getFrontMatter().get("name"));
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
+            anyString(), anyString());
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testListLegacySkillWithoutCachedFrontMatterShouldNotLazyLoad() throws NacosException {
+        final String namespaceId = "test-namespace";
+        Page<com.alibaba.nacos.ai.model.AiResource> metaPage = new Page<>();
+        com.alibaba.nacos.ai.model.AiResource legacy = new com.alibaba.nacos.ai.model.AiResource();
+        legacy.setName("legacy-skill");
+        legacy.setDesc("Legacy description");
+        legacy.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        legacy.setExt("{\"custom\":\"legacy\"}");
+        metaPage.setPageItems(List.of(legacy));
+        metaPage.setTotalCount(1);
+        metaPage.setPageNumber(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        
+        Page<SkillSummary> result =
+            skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        
+        assertEquals(1, result.getPageItems().size());
+        assertNull(result.getPageItems().get(0).getFrontMatter());
         verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
             anyString(), anyString());
         verify(storage, never()).get(any(StorageKey.class));
