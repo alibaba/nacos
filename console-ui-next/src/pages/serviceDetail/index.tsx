@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, Server, Hash, Shield, Tog
 import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { buildServiceListPathFromDetail } from '@/lib/list-navigation';
 import type { Instance, InstanceListResponse, ClusterInfo, ServiceDetailInfo } from '@/types/service';
 import { patchInstance, removeInstance, type InstancesByCluster } from './instance-state';
 
@@ -41,15 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-const getServiceManagementPath = (namespaceId: string) => {
-  const params = new URLSearchParams();
-  if (namespaceId) {
-    params.set('namespace', namespaceId);
-  }
-  const query = params.toString();
-  return query ? `/serviceManagement?${query}` : '/serviceManagement';
-};
 
 export default function ServiceDetailPage() {
   const { t } = useTranslation();
@@ -469,7 +461,7 @@ export default function ServiceDetailPage() {
   if (!currentService) {
     return (
       <div className="flex flex-col gap-4">
-        <Button variant="ghost" onClick={() => navigate(getServiceManagementPath(activeNamespace))} className="gap-2 w-fit">
+        <Button variant="ghost" onClick={() => navigate(buildServiceListPathFromDetail(searchParams, activeNamespace))} className="gap-2 w-fit">
           <ArrowLeft className="h-4 w-4" />
           {t('common.back')}
         </Button>
@@ -486,7 +478,7 @@ export default function ServiceDetailPage() {
     <div className="flex flex-col gap-4">
       {/* Back + Title */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(getServiceManagementPath(activeNamespace))}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(buildServiceListPathFromDetail(searchParams, activeNamespace))}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-semibold text-foreground">{serviceName}</h1>
