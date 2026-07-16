@@ -294,7 +294,7 @@ class DefaultGrpcClientConfigTest {
         config = (DefaultGrpcClientConfig) builder.build();
         assertEquals(allowCoreThreadTimeOut, config.allowCoreThreadTimeOut());
     }
-
+    
     @Test
     void testSetRpcPortOffset() {
         int rpcPortOffset = 1002;

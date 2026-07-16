@@ -56,7 +56,7 @@ class GrpcSdkClientTest {
         grpcSdkClient = new GrpcSdkClient("test", 8, 8, Collections.emptyMap());
         assertEquals(10000, grpcSdkClient.rpcPortOffset());
     }
-
+    
     @Test
     void testRpcPortOffsetFromClientConfig() {
         Properties properties = new Properties();

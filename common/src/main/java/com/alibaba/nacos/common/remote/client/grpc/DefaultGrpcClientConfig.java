@@ -65,7 +65,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     private final long capabilityNegotiationTimeout;
     
     private final boolean allowCoreThreadTimeOut;
-
+    
     private final Integer rpcPortOffset;
     
     private final Map<String, String> labels;
@@ -188,7 +188,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     public boolean allowCoreThreadTimeOut() {
         return this.allowCoreThreadTimeOut;
     }
-
+    
     @Override
     public Integer rpcPortOffset() {
         return this.rpcPortOffset;
@@ -246,7 +246,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private long capabilityNegotiationTimeout = 5000L;
         
         private boolean allowCoreThreadTimeOut = false;
-
+        
         private Integer rpcPortOffset;
         
         private final Map<String, String> labels = new HashMap<>();
@@ -468,7 +468,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.allowCoreThreadTimeOut = allowCoreThreadTimeOut;
             return this;
         }
-
+        
         /**
          * set rpcPortOffset.
          *
