@@ -76,7 +76,7 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
             NacosUser nacosUser = validateUser(identityContext);
             return AuthResult.successResult(nacosUser);
         } catch (AccessException e) {
-            if (isAnonymousAllowed(resource)) {
+            if (isAnonymousAllowed(resource) && !hasExplicitCredential(identityContext)) {
                 LOGGER.debug("Anonymous access granted for resource: {}", resource);
                 NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
                 identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
@@ -95,7 +95,18 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
         return properties.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)
             && isAnonymousAccessEnabled();
     }
-    
+
+    private boolean hasExplicitCredential(IdentityContext identityContext) {
+        return StringUtils.isNotBlank(
+            identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY))
+            || StringUtils.isNotBlank(
+                identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY))
+            || StringUtils.isNotBlank(
+                identityContext.getParameter(AuthConstants.PARAM_USERNAME, StringUtils.EMPTY))
+            || StringUtils.isNotBlank(
+                identityContext.getParameter(AuthConstants.PARAM_PASSWORD, StringUtils.EMPTY));
+    }
+
     /**
      * Whether this concrete plugin currently accepts the reserved anonymous identity.
      *
