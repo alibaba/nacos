@@ -42,11 +42,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Default implementation of {@link AiVisibilityGrantService}.
+ * Default implementation of {@link VisibilityGrantService}.
  *
  * @author Zhengcy05
  */
-public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService {
+public class DefaultVisibilityGrantService implements VisibilityGrantService {
     
     private static final int DEFAULT_PAGE_NO = 1;
     
@@ -54,7 +54,7 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
     
     private final NacosUserService userService;
     
-    public DefaultAiVisibilityGrantService(NacosRoleService roleService,
+    public DefaultVisibilityGrantService(NacosRoleService roleService,
         NacosUserService userService) {
         this.roleService = roleService;
         this.userService = userService;
@@ -69,9 +69,9 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
         validateUsername(username);
         validateGranteeExists(username);
         String storedAction = normalizeGrantAction(action);
-        String roleName = AiVisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
+        String roleName = VisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
             resourceName, storedAction);
-        String resourceId = AiVisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
+        String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
             resourceType, resourceName);
         // Scenario 1: The user has already bound this authorized role; simply ensure that the role has permission
         if (userHasRole(username, roleName)) {
@@ -110,40 +110,40 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
         checkManageGrantAuthority(resource);
         validateUsername(username);
         String storedAction = normalizeGrantAction(action);
-        String roleName = AiVisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
+        String roleName = VisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
             resourceName, storedAction);
         roleService.deleteRole(roleName, username);
         if (!roleHasBindings(roleName)) {
             // Drop the shared permission row only after the last grantee is removed.
             roleService.deletePermission(roleName,
-                AiVisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
+                VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
                     resourceName),
                 storedAction);
         }
     }
     
     @Override
-    public List<AiVisibilityGrantInfo> list(String namespaceId, String resourceType,
+    public List<VisibilityGrantInfo> list(String namespaceId, String resourceType,
         String resourceName) throws NacosException {
         VisibilityResource resource =
             requireManagedResource(namespaceId, resourceType, resourceName);
         checkManageGrantAuthority(resource);
-        String rolePrefix = AiVisibilityGrantRoleHelper.buildRolePrefix(namespaceId, resourceType,
+        String rolePrefix = VisibilityGrantRoleHelper.buildRolePrefix(namespaceId, resourceType,
             resourceName);
         Page<RoleInfo> rolePage =
             roleService.findRoles(StringUtils.EMPTY, rolePrefix, DEFAULT_PAGE_NO,
                 Integer.MAX_VALUE);
-        List<AiVisibilityGrantInfo> result = new ArrayList<>();
+        List<VisibilityGrantInfo> result = new ArrayList<>();
         if (rolePage == null || CollectionUtils.isEmpty(rolePage.getPageItems())) {
             return result;
         }
         for (RoleInfo roleInfo : rolePage.getPageItems()) {
-            AiVisibilityGrantRoleHelper.ParsedGrantRole parsed =
-                AiVisibilityGrantRoleHelper.tryParse(roleInfo.getRole());
+            VisibilityGrantRoleHelper.ParsedGrantRole parsed =
+                VisibilityGrantRoleHelper.tryParse(roleInfo.getRole());
             if (parsed == null || !roleInfo.getRole().startsWith(rolePrefix)) {
                 continue;
             }
-            AiVisibilityGrantInfo item = new AiVisibilityGrantInfo();
+            VisibilityGrantInfo item = new VisibilityGrantInfo();
             item.setNamespaceId(parsed.getNamespaceId());
             item.setResourceType(parsed.getResourceType());
             item.setResourceName(parsed.getResourceName());
@@ -151,12 +151,12 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
             item.setAction(parsed.getStoredAction());
             result.add(item);
         }
-        result.sort(Comparator.comparing(AiVisibilityGrantInfo::getUsername)
-            .thenComparing(AiVisibilityGrantInfo::getAction));
+        result.sort(Comparator.comparing(VisibilityGrantInfo::getUsername)
+            .thenComparing(VisibilityGrantInfo::getAction));
         return result;
     }
     
-    // Query the names of all AI resources that a specified user has visibility permissions for,
+    // Query the names of all resources that a specified user has visibility permissions for,
     // under a specified namespace, resource type, and action.
     @Override
     public List<String> findAuthorizedResourceNames(String username, String namespaceId,
@@ -169,13 +169,13 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
         if (CollectionUtils.isEmpty(roles)) {
             return Collections.emptyList();
         }
-        String resolvedNamespaceId = AiVisibilityGrantRoleHelper.normalizeNamespaceId(namespaceId);
+        String resolvedNamespaceId = VisibilityGrantRoleHelper.normalizeNamespaceId(namespaceId);
         String normalizedResourceType =
-            AiVisibilityGrantRoleHelper.normalizeResourceType(resourceType);
+            VisibilityGrantRoleHelper.normalizeResourceType(resourceType);
         Set<String> names = new LinkedHashSet<>();
         for (RoleInfo role : roles) {
-            AiVisibilityGrantRoleHelper.ParsedGrantRole parsed =
-                AiVisibilityGrantRoleHelper.tryParse(role.getRole());
+            VisibilityGrantRoleHelper.ParsedGrantRole parsed =
+                VisibilityGrantRoleHelper.tryParse(role.getRole());
             if (parsed == null) {
                 continue;
             }
@@ -183,7 +183,7 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
                 || !normalizedResourceType.equals(parsed.getResourceType())) {
                 continue;
             }
-            if (AiVisibilityGrantRoleHelper.matchesRequestedAction(parsed.getStoredAction(),
+            if (VisibilityGrantRoleHelper.matchesRequestedAction(parsed.getStoredAction(),
                 action)) {
                 names.add(parsed.getResourceName());
             }
@@ -199,14 +199,14 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
         VisibilityResourceLocator locator = locatorRef.get();
         if (locator == null) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "AI visibility grant management is unsupported in current runtime");
+                "visibility grant management is unsupported in current runtime");
         }
         Optional<VisibilityResource> resource =
-            locator.findResource(AiVisibilityGrantRoleHelper.normalizeNamespaceId(namespaceId),
-                AiVisibilityGrantRoleHelper.normalizeResourceType(resourceType), resourceName);
+            locator.findResource(VisibilityGrantRoleHelper.normalizeNamespaceId(namespaceId),
+                VisibilityGrantRoleHelper.normalizeResourceType(resourceType), resourceName);
         return resource.orElseThrow(() -> new NacosApiException(NacosException.NOT_FOUND,
             ErrorCode.RESOURCE_NOT_FOUND,
-            "AI resource not found: " + resourceName));
+            "resource not found: " + resourceName));
     }
     
     private void checkManageGrantAuthority(VisibilityResource resource) throws NacosException {
@@ -258,7 +258,7 @@ public class DefaultAiVisibilityGrantService implements AiVisibilityGrantService
     private String normalizeGrantAction(String action) throws NacosException {
         try {
             // Persist write grants as "rw" so write authorization can imply read visibility.
-            return AiVisibilityGrantRoleHelper.normalizeStoredAction(action);
+            return VisibilityGrantRoleHelper.normalizeStoredAction(action);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());

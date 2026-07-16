@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.impl.controller.v3.AiVisibilityGrantControllerV3;
+import com.alibaba.nacos.plugin.auth.impl.controller.v3.VisibilityGrantControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
@@ -25,8 +24,8 @@ import com.alibaba.nacos.plugin.auth.impl.controller.v3.UserControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
-import com.alibaba.nacos.plugin.auth.impl.visibility.DefaultAiVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.DefaultVisibilityGrantService;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -56,14 +55,14 @@ public class NacosAuthPluginControllerConfig {
     }
     
     @Bean
-    public AiVisibilityGrantService aiVisibilityGrantService(NacosRoleService roleService,
+    public VisibilityGrantService visibilityGrantService(NacosRoleService roleService,
         NacosUserService userService) {
-        return new DefaultAiVisibilityGrantService(roleService, userService);
+        return new DefaultVisibilityGrantService(roleService, userService);
     }
     
     @Bean
-    public AiVisibilityGrantControllerV3 aiVisibilityGrantControllerV3(
-        AiVisibilityGrantService aiVisibilityGrantService) {
-        return new AiVisibilityGrantControllerV3(aiVisibilityGrantService);
+    public VisibilityGrantControllerV3 visibilityGrantControllerV3(
+        VisibilityGrantService visibilityGrantService) {
+        return new VisibilityGrantControllerV3(visibilityGrantService);
     }
 }

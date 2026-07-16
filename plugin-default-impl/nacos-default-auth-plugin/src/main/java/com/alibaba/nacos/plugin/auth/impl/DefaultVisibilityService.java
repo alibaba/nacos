@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
@@ -49,13 +49,13 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Default AI visibility service implementation for nacos auth plugin.
+ * Default visibility service implementation for Nacos auth plugin.
  *
  * @author xiweng.yy
  */
-public class DefaultAiVisibilityService implements VisibilityService {
+public class DefaultVisibilityService implements VisibilityService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAiVisibilityService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultVisibilityService.class);
     
     private static final String NAME = AuthConstants.AUTH_PLUGIN_TYPE;
     
@@ -140,7 +140,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
             return false;
         } catch (Exception e) {
             LOGGER.debug(
-                "[DefaultAiVisibilityService] Permission check failed for resource '{}': {}",
+                "[DefaultVisibilityService] Permission check failed for resource '{}': {}",
                 resourceId,
                 e.getMessage());
             return false;
@@ -187,13 +187,13 @@ public class DefaultAiVisibilityService implements VisibilityService {
             // Unit tests and lightweight runtimes may call the advisor before Spring context is ready.
             return authorized;
         }
-        AtomicReference<AiVisibilityGrantService> serviceRef = new AtomicReference<>();
-        ApplicationUtils.getBeanIfExist(AiVisibilityGrantService.class, serviceRef::set);
-        AiVisibilityGrantService grantService = serviceRef.get();
+        AtomicReference<VisibilityGrantService> serviceRef = new AtomicReference<>();
+        ApplicationUtils.getBeanIfExist(VisibilityGrantService.class, serviceRef::set);
+        VisibilityGrantService grantService = serviceRef.get();
         if (grantService == null) {
             return authorized;
         }
-        // Explicit grants are OR-ed with the base visibility predicate by the repository layer.
+        // The domain adapter combines these names with the base predicate before count and paging.
         List<String> resources = grantService.findAuthorizedResourceNames(identity,
             context.getNamespaceId(), context.getResourceType(), action);
         authorized.setResources(new ArrayList<>(resources));

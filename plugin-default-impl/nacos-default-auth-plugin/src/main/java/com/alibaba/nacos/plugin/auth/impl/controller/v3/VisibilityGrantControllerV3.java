@@ -23,8 +23,8 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantInfo;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantInfo;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,51 +35,81 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Plugin-owned AI visibility grant API.
+ * Plugin-owned visibility grant API.
  *
  * @author Zhengcy05
  */
 @RestController
-@RequestMapping(AuthConstants.AI_VISIBILITY_PATH)
-public class AiVisibilityGrantControllerV3 {
+@RequestMapping(AuthConstants.VISIBILITY_PATH)
+public class VisibilityGrantControllerV3 {
     
-    private final AiVisibilityGrantService aiVisibilityGrantService;
+    private final VisibilityGrantService visibilityGrantService;
     
-    public AiVisibilityGrantControllerV3(AiVisibilityGrantService aiVisibilityGrantService) {
-        this.aiVisibilityGrantService = aiVisibilityGrantService;
+    public VisibilityGrantControllerV3(VisibilityGrantService visibilityGrantService) {
+        this.visibilityGrantService = visibilityGrantService;
     }
     
+    /**
+     * Grant one visibility action to a user for a resource.
+     *
+     * @param namespaceId namespace ID, blank for the default namespace
+     * @param resourceType resource type
+     * @param resourceName resource name
+     * @param username grantee username
+     * @param action grant action
+     * @return success result
+     * @throws NacosException if validation or grant management fails
+     */
     @Since("3.3.0")
     @PostMapping
-    @Secured(resource = AuthConstants.AI_VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
+    @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
         tags = Constants.Tag.ONLY_IDENTITY)
     public Result<String> grant(@RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName,
         @RequestParam String username, @RequestParam String action) throws NacosException {
-        aiVisibilityGrantService.grant(namespaceId, resourceType, resourceName, username, action);
-        return Result.success("grant ai visibility permission ok!");
+        visibilityGrantService.grant(namespaceId, resourceType, resourceName, username, action);
+        return Result.success("grant visibility permission ok!");
     }
     
+    /**
+     * Revoke one visibility action from a user for a resource.
+     *
+     * @param namespaceId namespace ID, blank for the default namespace
+     * @param resourceType resource type
+     * @param resourceName resource name
+     * @param username grantee username
+     * @param action grant action
+     * @return success result
+     * @throws NacosException if validation or grant management fails
+     */
     @Since("3.3.0")
     @DeleteMapping
-    @Secured(resource = AuthConstants.AI_VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
+    @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
         tags = Constants.Tag.ONLY_IDENTITY)
     public Result<String> revoke(@RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName,
         @RequestParam String username, @RequestParam String action) throws NacosException {
-        aiVisibilityGrantService.revoke(namespaceId, resourceType, resourceName, username, action);
-        return Result.success("revoke ai visibility permission ok!");
+        visibilityGrantService.revoke(namespaceId, resourceType, resourceName, username, action);
+        return Result.success("revoke visibility permission ok!");
     }
     
+    /**
+     * List grants attached to one resource.
+     *
+     * @param namespaceId namespace ID, blank for the default namespace
+     * @param resourceType resource type
+     * @param resourceName resource name
+     * @return current grants
+     * @throws NacosException if validation or grant management fails
+     */
     @Since("3.3.0")
     @GetMapping("/list")
-    @Secured(resource = AuthConstants.AI_VISIBILITY_RESOURCE, action = ActionTypes.READ,
+    @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.READ,
         tags = Constants.Tag.ONLY_IDENTITY)
-    public Result<List<AiVisibilityGrantInfo>> list(
+    public Result<List<VisibilityGrantInfo>> list(
         @RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName)
         throws NacosException {
-        return Result
-            .success(aiVisibilityGrantService.list(namespaceId, resourceType, resourceName));
+        return Result.success(visibilityGrantService.list(namespaceId, resourceType, resourceName));
     }
 }

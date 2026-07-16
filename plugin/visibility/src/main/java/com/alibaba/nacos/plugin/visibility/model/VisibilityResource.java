@@ -44,7 +44,7 @@ public abstract class VisibilityResource {
     public abstract String getResourceName();
     
     /**
-     * Get the subtype of this resource, e.g. "skill", "mcp", "prompt", "a2a".
+     * Get the domain-specific category of this resource.
      *
      * @return resource type
      */

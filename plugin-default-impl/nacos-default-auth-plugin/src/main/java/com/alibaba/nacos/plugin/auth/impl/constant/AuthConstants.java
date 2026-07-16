@@ -138,11 +138,11 @@ public class AuthConstants {
     
     public static final String PERMISSION_PATH = "/v3/auth/permission";
     
-    public static final String AI_VISIBILITY_PATH = "/v3/auth/ai/visibility";
+    public static final String VISIBILITY_PATH = "/v3/auth/visibility";
     
-    public static final String AI_VISIBILITY_RESOURCE = "auth/ai/visibility";
+    public static final String VISIBILITY_RESOURCE = "auth/visibility";
     
-    public static final String AI_VISIBILITY_GRANT_ROLE_PREFIX = "__nacos_ai_visibility__.";
+    public static final String VISIBILITY_GRANT_ROLE_PREFIX = "__nacos_visibility__.";
     
     /**
      * System-reserved anonymous user name. Used for unauthenticated access to PUBLIC AI resources.

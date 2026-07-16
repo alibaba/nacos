@@ -49,7 +49,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DefaultAiVisibilityGrantServiceTest {
+class DefaultVisibilityGrantServiceTest {
     
     @AfterEach
     void tearDown() {
@@ -63,27 +63,27 @@ class DefaultAiVisibilityGrantServiceTest {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
         when(userService.getUser("bob")).thenReturn(new User());
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
         try {
             when(roleService.getRoles("bob")).thenReturn(List.of());
             when(roleService.isDuplicatePermission(
-                AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
-                AiVisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                VisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
+                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
                     "demo-skill"),
                 "rw")).thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
             
             service.grant("public", "skill", "demo-skill", "bob", "w");
             
             verify(roleService).addRole(
-                AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
+                VisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
                 "bob");
             verify(roleService).addPermission(
-                AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
-                AiVisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                VisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w"),
+                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
                     "demo-skill"),
                 "rw");
         } finally {
@@ -96,8 +96,8 @@ class DefaultAiVisibilityGrantServiceTest {
     void grantShouldDenyForNonOwnerNonAdmin() {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("carol", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -115,13 +115,13 @@ class DefaultAiVisibilityGrantServiceTest {
     void findAuthorizedResourceNamesShouldIncludeReadAndWriteGrantsForReadQueries() {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         RoleInfo readRole = new RoleInfo();
-        readRole.setRole(AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "skill-a",
+        readRole.setRole(VisibilityGrantRoleHelper.buildRoleName("public", "skill", "skill-a",
             VisibilityConstants.ACTION_READ));
         RoleInfo writeRole = new RoleInfo();
-        writeRole.setRole(AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "skill-b",
+        writeRole.setRole(VisibilityGrantRoleHelper.buildRoleName("public", "skill", "skill-b",
             VisibilityConstants.ACTION_WRITE));
         when(roleService.getRoles("bob")).thenReturn(List.of(readRole, writeRole));
         
@@ -141,23 +141,23 @@ class DefaultAiVisibilityGrantServiceTest {
     void listShouldReturnParsedGrantInfo() throws Exception {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
         try {
             RoleInfo roleInfo = new RoleInfo();
-            roleInfo.setRole(AiVisibilityGrantRoleHelper.buildRoleName("public", "skill",
+            roleInfo.setRole(VisibilityGrantRoleHelper.buildRoleName("public", "skill",
                 "demo-skill", "rw"));
             roleInfo.setUsername("bob");
             com.alibaba.nacos.api.model.Page<RoleInfo> page =
                 new com.alibaba.nacos.api.model.Page<>();
             page.setPageItems(List.of(roleInfo));
-            when(roleService.findRoles("", AiVisibilityGrantRoleHelper.buildRolePrefix("public",
+            when(roleService.findRoles("", VisibilityGrantRoleHelper.buildRolePrefix("public",
                 "skill", "demo-skill"), 1, Integer.MAX_VALUE)).thenReturn(page);
             
-            List<AiVisibilityGrantInfo> grants = service.list("public", "skill", "demo-skill");
+            List<VisibilityGrantInfo> grants = service.list("public", "skill", "demo-skill");
             
             assertEquals(1, grants.size());
             assertEquals("bob", grants.get(0).getUsername());
@@ -173,8 +173,8 @@ class DefaultAiVisibilityGrantServiceTest {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
         when(userService.getUser("bob")).thenReturn(new User());
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
@@ -193,14 +193,14 @@ class DefaultAiVisibilityGrantServiceTest {
     void revokeShouldNotRequireExistingGrantee() throws Exception {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
-        DefaultAiVisibilityGrantService service =
-            new DefaultAiVisibilityGrantService(roleService, userService);
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
         setCurrentUser("alice", false);
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
         try {
             String roleName =
-                AiVisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w");
+                VisibilityGrantRoleHelper.buildRoleName("public", "skill", "demo-skill", "w");
             when(roleService.getRoles("", roleName, 1, 1))
                 .thenReturn(new com.alibaba.nacos.api.model.Page<>());
             
@@ -209,7 +209,7 @@ class DefaultAiVisibilityGrantServiceTest {
             verify(userService, never()).getUser("bob");
             verify(roleService).deleteRole(roleName, "bob");
             verify(roleService, times(1)).deletePermission(roleName,
-                AiVisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
                     "demo-skill"),
                 "rw");
         } finally {

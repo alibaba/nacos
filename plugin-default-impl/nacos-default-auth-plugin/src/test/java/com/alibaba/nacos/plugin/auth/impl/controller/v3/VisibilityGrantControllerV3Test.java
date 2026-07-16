@@ -17,8 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantInfo;
-import com.alibaba.nacos.plugin.auth.impl.visibility.AiVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantInfo;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -28,39 +28,39 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class AiVisibilityGrantControllerV3Test {
+class VisibilityGrantControllerV3Test {
     
     @Test
     void grantShouldDelegateToService() throws Exception {
-        AiVisibilityGrantService service = mock(AiVisibilityGrantService.class);
-        AiVisibilityGrantControllerV3 controller = new AiVisibilityGrantControllerV3(service);
+        VisibilityGrantService service = mock(VisibilityGrantService.class);
+        VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
         
         Result<String> result = controller.grant("public", "skill", "demo-skill", "bob", "r");
         
         verify(service).grant("public", "skill", "demo-skill", "bob", "r");
-        assertEquals("grant ai visibility permission ok!", result.getData());
+        assertEquals("grant visibility permission ok!", result.getData());
     }
     
     @Test
     void revokeShouldDelegateToService() throws Exception {
-        AiVisibilityGrantService service = mock(AiVisibilityGrantService.class);
-        AiVisibilityGrantControllerV3 controller = new AiVisibilityGrantControllerV3(service);
+        VisibilityGrantService service = mock(VisibilityGrantService.class);
+        VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
         
         Result<String> result = controller.revoke("public", "skill", "demo-skill", "bob", "w");
         
         verify(service).revoke("public", "skill", "demo-skill", "bob", "w");
-        assertEquals("revoke ai visibility permission ok!", result.getData());
+        assertEquals("revoke visibility permission ok!", result.getData());
     }
     
     @Test
     void listShouldReturnServiceResult() throws Exception {
-        AiVisibilityGrantService service = mock(AiVisibilityGrantService.class);
-        AiVisibilityGrantControllerV3 controller = new AiVisibilityGrantControllerV3(service);
-        AiVisibilityGrantInfo info = new AiVisibilityGrantInfo();
+        VisibilityGrantService service = mock(VisibilityGrantService.class);
+        VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
+        VisibilityGrantInfo info = new VisibilityGrantInfo();
         info.setUsername("bob");
         when(service.list("public", "skill", "demo-skill")).thenReturn(List.of(info));
         
-        Result<List<AiVisibilityGrantInfo>> result =
+        Result<List<VisibilityGrantInfo>> result =
             controller.list("public", "skill", "demo-skill");
         
         assertEquals(1, result.getData().size());

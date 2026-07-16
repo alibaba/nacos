@@ -171,7 +171,7 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 | `/v3/auth/user/admin` | 当不存在全局管理员时进行管理员初始化。 |
 | `/v3/auth/role` | 角色管理。 |
 | `/v3/auth/permission` | 权限管理。 |
-| `/v3/auth/ai/visibility` | 显式 AI 可见性授权管理。 |
+| `/v3/auth/visibility` | 显式资源可见性授权管理。 |
 
 管理端点必须使用控制台域的 `@Secured` 资源保护，例如 `console/users`、
 `console/roles`、`console/permissions` 和 `console/user/password`。
@@ -180,9 +180,9 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 已经存在，必须拒绝该端点。这些 API 属于 [V3 API 范围](../http-api/v3-api-surface.md)，
 并必须遵守 [HTTP 鉴权规范](../http-api/authorization-spec.md)。
 
-AI 可见性授权 API 属于插件自有接口，而不是通用 AI controller 家族的一部分。它使用
+可见性授权 API 属于插件自有接口，而不是任何领域 controller 家族的一部分。它使用
 identity-only 请求鉴权，并在授权服务层执行资源管理权限判断。启用鉴权时，只有资源 owner
-或全局管理员可以对该 AI 资源执行 grant、revoke 或 list 显式可见性授权。
+或全局管理员可以对该资源执行 grant、revoke 或 list 显式可见性授权。
 
 ## 默认可见性实现
 
@@ -205,10 +205,10 @@ identity-only 请求鉴权，并在授权服务层执行资源管理权限判断
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
-AI 显式可见性授权通过以下接口管理：
+当前支持资源的显式可见性授权通过以下接口管理：
 
 ```text
-/v3/auth/ai/visibility
+/v3/auth/visibility
 ```
 
 授权行为：
@@ -217,10 +217,10 @@ AI 显式可见性授权通过以下接口管理：
 - 写或读写授权请求统一存储为 `rw`，并且 `rw` 在列表/搜索查询建议中隐式包含读权限。
 - 授权数据复用默认 RBAC 持久化，在鉴权后端以插件自有的内部角色和权限形式存储。
 - 资源存在性和 owner 元数据通过领域提供的可见性资源定位桥接解析，而不是让鉴权插件直接
-  编译依赖 AI 持久化类型。
+  编译依赖领域持久化类型。
 
 范围查询必须组合基础可见性谓词和显式授权资源。当前默认实现已经暴露显式授权资源结构；
-默认 AI 可见性实现会从授权服务填充显式授权资源，使列表/搜索路径能够返回授权给当前调用方
+默认可见性实现会从授权服务填充显式授权资源，使列表/搜索路径能够返回授权给当前调用方
 的私有资源。
 
 对于 AI 列表和搜索路径，可见性必须在 count 和分页查询前转换为仓储层查询条件。这可以让

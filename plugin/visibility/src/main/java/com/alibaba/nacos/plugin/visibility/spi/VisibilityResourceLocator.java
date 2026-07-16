@@ -23,9 +23,9 @@ import java.util.Optional;
 /**
  * Bridge for locating visibility-aware resources by identifier.
  *
- * <p>Domain modules such as AI can provide an implementation so plugin-owned
- * visibility management APIs can verify owner and existence without taking a
- * direct compile-time dependency on domain persistence types.</p>
+ * <p>Domain modules can provide an implementation so plugin-owned visibility
+ * management APIs can verify owner and existence without taking a direct
+ * compile-time dependency on domain persistence types.</p>
  *
  * @author Zhengcy05
  */

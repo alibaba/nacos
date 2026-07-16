@@ -26,11 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Integration tests for auth AI visibility grant API {@code /nacos/v3/auth/ai/visibility}.
+ * Integration tests for auth visibility grant API {@code /nacos/v3/auth/visibility}.
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: grant, list, and revoke explicit AI visibility access for an existing skill
+     *     <li>Expected capability: grant, list, and revoke explicit visibility access for an existing skill
  *     resource through the auth plugin owned API.</li>
  *     <li>Boundary/validation: write grant requests normalize to stored action {@code rw}; unsupported actions
  *     return a wrapped HTTP 400 validation error.</li>
@@ -43,11 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Zhengcy05
  */
-public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
+public class VisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
 
-    private static final String AUTH_AI_VISIBILITY_PATH = nacosPath("/v3/auth/ai/visibility");
+    private static final String AUTH_VISIBILITY_PATH = nacosPath("/v3/auth/visibility");
 
-    private static final String AUTH_AI_VISIBILITY_LIST_PATH = AUTH_AI_VISIBILITY_PATH + "/list";
+    private static final String AUTH_VISIBILITY_LIST_PATH = AUTH_VISIBILITY_PATH + "/list";
     private static final String AUTH_USER_PATH = nacosPath("/v3/auth/user");
 
     @Test
@@ -60,11 +60,11 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
         String grantee = randomAiName("visibility-grantee");
         createUserQuietly(grantee, "nacos123");
 
-        JsonNode grant = postFormOk(AUTH_AI_VISIBILITY_PATH,
+        JsonNode grant = postFormOk(AUTH_VISIBILITY_PATH,
                 visibilityGrantQuery(skillName, grantee, "w"));
-        assertEquals("grant ai visibility permission ok!", grant.get("data").asText(), grant.toString());
+        assertEquals("grant visibility permission ok!", grant.get("data").asText(), grant.toString());
 
-        JsonNode list = getJsonOk(AUTH_AI_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
+        JsonNode list = getJsonOk(AUTH_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
         assertEquals(1, list.size(), list.toString());
         JsonNode item = list.get(0);
         assertEquals(DEFAULT_NAMESPACE, item.get("namespaceId").asText(), item.toString());
@@ -73,20 +73,20 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
         assertEquals(grantee, item.get("username").asText(), item.toString());
         assertEquals("rw", item.get("action").asText(), item.toString());
 
-        JsonNode revoke = deleteJsonOk(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "w"));
-        assertEquals("revoke ai visibility permission ok!", revoke.get("data").asText(), revoke.toString());
+        JsonNode revoke = deleteJsonOk(AUTH_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "w"));
+        assertEquals("revoke visibility permission ok!", revoke.get("data").asText(), revoke.toString());
 
         JsonNode afterRevoke =
-                getJsonOk(AUTH_AI_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
+                getJsonOk(AUTH_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
         assertTrue(afterRevoke.isArray(), afterRevoke.toString());
         assertEquals(0, afterRevoke.size(), afterRevoke.toString());
     }
 
     @Test
    public void testGrantValidationAndNotFoundErrors() throws Exception {
-        assertError(postRaw(AUTH_AI_VISIBILITY_PATH,
+        assertError(postRaw(AUTH_VISIBILITY_PATH,
                visibilityGrantQuery(randomAiName("missing-visibility"), "nobody", "r")),
-                404, ErrorCode.RESOURCE_NOT_FOUND, "AI resource not found");
+                404, ErrorCode.RESOURCE_NOT_FOUND, "resource not found");
 
         String skillName = randomAiName("visibility-invalid-action");
         postFormOk(ADMIN_SKILL_PATH + "/draft",
@@ -95,7 +95,7 @@ public class AiVisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
         String grantee = randomAiName("visibility-invalid-action-grantee");
         createUserQuietly(grantee, "nacos123");
 
-        assertError(postRaw(AUTH_AI_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "x")),
+        assertError(postRaw(AUTH_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "x")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "unsupported action");
     }
 

@@ -23,8 +23,8 @@
 - 鉴权判断目标资源/动作上的身份和权限。
 - 可见性判断目标资源，或范围查询中的某个资源，是否应该对该身份可见。
 
-可见性对于 AI 注册中心资源尤其重要，因为用户可能创建仅 owner 可见、读者公开可见，或通过
-显式授权可见的资源。
+插件本身与领域无关。当前 Nacos 集成将其应用于 AI 注册中心资源；这类资源可能仅 owner
+可见、对读者公开可见，或通过显式授权可见。
 
 可见性补充[鉴权与权限规范](auth-permission-spec.md)，并遵守
 [Nacos 插件化规范](../plugin/plugin-spec.md)中的通用生命周期规则。它可以与
@@ -93,7 +93,7 @@ nacos.plugin.visibility.type=nacos
 
 列出资源的 API 或存储适配层必须组合这两部分，且不得泄漏私有资源。
 
-默认 AI 集成会在执行 count 和分页查询前，将 `QueryAdvisor` 转换为仓储层
+默认领域集成会在执行 count 和分页查询前，将 `QueryAdvisor` 转换为仓储层
 `QueryCondition`。基础谓词映射如下：
 
 | 谓词 | 查询行为 |
@@ -103,7 +103,7 @@ nacos.plugin.visibility.type=nacos
 | `OWNER` | 限制为 `owner=identity`；如果身份为空或 owner 冲突，则返回空集。 |
 | `PUBLIC_AND_OWNER` | 限制为 `scope=PUBLIC OR owner=identity`；匿名调用方退化为仅公开资源。 |
 
-如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认 AI
+如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认
 可见性实现会从当前鉴权插件管理的显式授权中填充该列表。存储态写授权会隐式包含读权限，
 而只读授权仅影响读/列表查询。
 
@@ -121,7 +121,7 @@ nacos.plugin.visibility.enabled=true
 nacos.plugin.visibility.{serviceName}.*
 ```
 
-当可见性被关闭时，所属领域必须定义行为是全部可见，还是拒绝可见性敏感操作。默认 AI
+当可见性被关闭时，所属领域必须定义行为是全部可见，还是拒绝可见性敏感操作。默认
 可见性实现会在鉴权未启用时允许可见。
 
 ## 与鉴权的关系

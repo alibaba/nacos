@@ -202,7 +202,7 @@ The default plugin owns these v3 API families:
 | `/v3/auth/user/admin` | Administrator bootstrap when no global admin exists. |
 | `/v3/auth/role` | Role management. |
 | `/v3/auth/permission` | Permission management. |
-| `/v3/auth/ai/visibility` | Explicit AI visibility grant management. |
+| `/v3/auth/visibility` | Explicit visibility grant management. |
 
 Management endpoints must be protected by console-scoped `@Secured` resources
 such as `console/users`, `console/roles`, `console/permissions`, and
@@ -214,11 +214,11 @@ administrator exists. These APIs are part of the
 [V3 API Surface](../http-api/v3-api-surface.md) and must follow the
 [HTTP Authorization Spec](../http-api/authorization-spec.md).
 
-The AI visibility grant API is plugin-owned, not part of the generic AI
-controller family. It uses identity-only request authentication and enforces
-resource management authority in the grant service. When auth is enabled, only
-the resource owner or a global administrator may grant, revoke, or list
-explicit visibility access for that AI resource.
+The visibility grant API is plugin-owned, not part of any domain controller
+family. It uses identity-only request authentication and enforces resource
+management authority in the grant service. When auth is enabled, only the
+resource owner or a global administrator may grant, revoke, or list explicit
+visibility access for that resource.
 
 ## Default Visibility Implementation
 
@@ -242,10 +242,10 @@ Explicit visibility permission resources use:
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
-AI explicit visibility grants are managed through:
+Explicit visibility grants for currently supported resources are managed through:
 
 ```text
-/v3/auth/ai/visibility
+/v3/auth/visibility
 ```
 
 Grant behavior:
@@ -257,10 +257,10 @@ Grant behavior:
   internal roles and permissions in the auth backend.
 - Resource existence and owner metadata are resolved through a domain-provided
   visibility resource locator instead of a direct compile-time dependency from
-  the auth plugin to AI persistence types.
+  the auth plugin to domain persistence types.
 
 Range queries must combine the base visibility predicate with explicitly
-authorized resources. The default AI visibility implementation populates
+authorized resources. The default visibility implementation populates
 explicit authorized resources from the grant service so list/search paths can
 include private resources that were granted to the caller.
 

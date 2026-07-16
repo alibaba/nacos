@@ -57,7 +57,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
                 applyPublicAndOwner(result, identity);
                 break;
         }
-        // TODO: stage-2 authorized resources integration.
+        // Explicitly authorized names are added as an OR branch so storage can page and count
+        // the complete visible set instead of filtering a fetched page in memory.
         List<String> authorized =
             advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
                 .getResources();

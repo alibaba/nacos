@@ -17,11 +17,11 @@
 package com.alibaba.nacos.plugin.auth.impl.visibility;
 
 /**
- * One AI visibility grant entry.
+ * One visibility grant entry.
  *
  * @author Zhengcy05
  */
-public class AiVisibilityGrantInfo {
+public class VisibilityGrantInfo {
     
     private String namespaceId;
     

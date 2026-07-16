@@ -25,9 +25,9 @@ caller. It is separate from auth:
 - Visibility decides whether the target resource, or a resource in a range
   query, should be visible to that identity.
 
-Visibility is especially important for AI registry resources, where users may
-create resources that are private to an owner, public to readers, or visible
-through explicit authorization.
+The plugin is domain-neutral. The current Nacos integration applies it to AI
+registry resources, where users may create resources that are private to an
+owner, public to readers, or visible through explicit authorization.
 
 Visibility complements the [Auth And Permission Spec](auth-permission-spec.md)
 and follows the common lifecycle rules in the
@@ -101,7 +101,7 @@ storage layer can apply visibility predicates. `QueryAdvisor` carries:
 The API or storage adapter that lists resources must combine both parts without
 leaking private resources.
 
-The default AI integration converts `QueryAdvisor` to repository `QueryCondition`
+The default domain integration converts `QueryAdvisor` to repository `QueryCondition`
 before count and page queries run. The base predicate maps as follows:
 
 | Predicate | Query behavior |
@@ -112,7 +112,7 @@ before count and page queries run. The base predicate maps as follows:
 | `PUBLIC_AND_OWNER` | Restrict to `scope=PUBLIC OR owner=identity`; anonymous callers degrade to public-only. |
 
 If `AuthorizedResources` is populated, it is added as an OR branch with the base
-predicate. The default AI visibility implementation populates this list from
+predicate. The default visibility implementation populates this list from
 plugin-owned explicit grants stored by the selected auth plugin. Stored write
 grants imply read visibility, while read grants only affect read/list queries.
 
@@ -133,7 +133,7 @@ nacos.plugin.visibility.{serviceName}.*
 
 If visibility is disabled, the owning domain must define whether it behaves as
 fully visible or whether it rejects visibility-sensitive operations. The default
-AI visibility implementation treats disabled auth as allowing visibility.
+visibility implementation treats disabled auth as allowing visibility.
 
 ## Relationship With Auth
 

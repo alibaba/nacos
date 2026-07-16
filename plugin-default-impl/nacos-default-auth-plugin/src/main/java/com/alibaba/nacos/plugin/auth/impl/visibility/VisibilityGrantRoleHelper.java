@@ -25,17 +25,17 @@ import java.util.Base64;
 import java.util.Locale;
 
 /**
- * Helper for internal AI visibility grant role naming.
+ * Helper for internal visibility grant role naming.
  *
  * @author Zhengcy05
  */
-final class AiVisibilityGrantRoleHelper {
+final class VisibilityGrantRoleHelper {
     
     private static final Base64.Encoder ENCODER = Base64.getUrlEncoder().withoutPadding();
     
     private static final Base64.Decoder DECODER = Base64.getUrlDecoder();
     
-    private AiVisibilityGrantRoleHelper() {
+    private VisibilityGrantRoleHelper() {
     }
     
     static String normalizeNamespaceId(String namespaceId) {
@@ -73,7 +73,7 @@ final class AiVisibilityGrantRoleHelper {
     static String buildRolePrefix(String namespaceId, String resourceType, String resourceName) {
         // Encode each segment so internal role names stay reversible without leaking delimiter rules
         // into resource names.
-        return AuthConstants.AI_VISIBILITY_GRANT_ROLE_PREFIX
+        return AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX
             + encode(normalizeNamespaceId(namespaceId))
             + "." + encode(normalizeResourceType(resourceType)) + "." + encode(resourceName) + ".";
     }
@@ -92,10 +92,10 @@ final class AiVisibilityGrantRoleHelper {
     
     static ParsedGrantRole tryParse(String roleName) {
         if (StringUtils.isBlank(roleName)
-            || !roleName.startsWith(AuthConstants.AI_VISIBILITY_GRANT_ROLE_PREFIX)) {
+            || !roleName.startsWith(AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX)) {
             return null;
         }
-        String body = roleName.substring(AuthConstants.AI_VISIBILITY_GRANT_ROLE_PREFIX.length());
+        String body = roleName.substring(AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX.length());
         String[] parts = body.split("\\.", 4);
         if (parts.length != 4) {
             return null;
