@@ -32,8 +32,8 @@ public final class CriticalPluginConfig {
     private static final Set<String> CRITICAL_PLUGINS;
     
     static {
-        // Only datasource dialects are critical - Nacos requires at least one database
-        // backend.
+        // Built-in datasource dialects and the default AI storage are critical because
+        // Nacos server capabilities depend on them.
         // Auth plugins are NOT critical - users can disable default auth to use custom
         // plugins.
         // TODO should be auto-loaded from Plugin defined, not bind by implementation

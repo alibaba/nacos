@@ -64,11 +64,14 @@ NamespaceId -> resourceType -> resourceName
 | `adviseQuery(identity, action, apiType, queryContext)` | 为范围查询返回查询谓词和显式授权资源。 |
 
 该插件通过 SPI 发现，并以 `visibility` 类型注册到插件系统。
-配置的可见性服务名称由以下配置选择：
+可见性服务名称在启动时由以下配置选择：
 
 ```properties
 nacos.plugin.visibility.type=nacos
 ```
+
+该选择重启后生效，用于决定 AI 领域请求的实现以及统一插件管理中的初始启用状态；它不是
+任何实现自身拥有的 `ConfigItemDefinition`。
 
 ## 动作
 
@@ -108,20 +111,30 @@ nacos.plugin.visibility.type=nacos
 
 ## 插件状态与配置
 
-可见性插件的启用状态由可见性插件管理器和核心插件状态检查器共同控制。全局开关为：
+运行时可用性同时要求插件族总开关和 `visibility:{serviceName}` 的统一插件 state 允许执行。
+插件族总开关为：
 
 ```properties
 nacos.plugin.visibility.enabled=true
 ```
 
-插件自身属性使用前缀：
+该开关是最外层运行时 gate。值为 `false` 时，无论统一插件 state 为何，任何 visibility
+实现都不得执行。核心插件管理器也会使用它生成所选实现的初始 state；持久化 state 可以覆盖
+该初始统一 state，但不能绕过插件族总开关。实现级运行时变更通过插件管理 API 完成。
+
+内置 `visibility:nacos` 没有私有配置，不实现 `PluginConfigSpec`，并以
+`configurable=false` 暴露。外部实现可以拥有以下前缀的配置：
 
 ```properties
-nacos.plugin.visibility.{serviceName}.*
+nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-当可见性被关闭时，所属领域必须定义行为是全部可见，还是拒绝可见性敏感操作。默认 AI
-可见性实现会在鉴权未启用时允许可见。
+历史实现通过 `VisibilityService.init(Properties)` 一次性接收实现本地属性。需要统一
+source、元数据、脱敏或更新语义的实现应实现 `PluginConfigSpec` 并声明自身 definitions。
+
+当所选插件被禁用或不可用时，当前 AI 领域会跳过可见性过滤和单资源可见性校验，创建资源时
+回退为 `PRIVATE` scope。这保持了历史关闭行为，但不能与鉴权开关混为一谈。内置实现也会在
+鉴权未启用时允许可见。
 
 ## 与鉴权的关系
 

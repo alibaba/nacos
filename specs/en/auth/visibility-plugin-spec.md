@@ -70,11 +70,15 @@ A visibility plugin implements `VisibilityService`.
 | `adviseQuery(identity, action, apiType, queryContext)` | Return query predicates and explicit resources for range queries. |
 
 The plugin is discovered by SPI and registered with plugin type `visibility`.
-The configured visibility service name is selected by:
+The visibility service name is selected at startup by:
 
 ```properties
 nacos.plugin.visibility.type=nacos
 ```
+
+The selection is restart-effective. It determines the implementation requested
+by the AI domain and the default enabled state in unified plugin management; it
+is not an implementation-owned `ConfigItemDefinition`.
 
 ## Actions
 
@@ -117,22 +121,38 @@ the field as the extension point for explicit resource grants.
 
 ## Plugin State And Configuration
 
-Visibility plugin enablement is controlled by the visibility plugin manager and
-the core plugin state checker. The global visibility plugin switch is:
+Runtime availability requires both the family-wide switch and unified plugin
+state for `visibility:{serviceName}`. The family-wide switch is:
 
 ```properties
 nacos.plugin.visibility.enabled=true
 ```
 
-Plugin-specific properties use the prefix:
+This switch is the outer runtime gate. When it is `false`, no visibility
+implementation may execute, regardless of its unified plugin state. The core
+plugin manager also uses it to derive the selected implementation's initial
+state. Persisted state may override that initial unified state, but it cannot
+override the family-wide gate. Implementation-level runtime changes use the
+plugin management API.
+
+The built-in `visibility:nacos` implementation has no private configuration,
+does not implement `PluginConfigSpec`, and is exposed as `configurable=false`.
+An external implementation may own properties under:
 
 ```properties
-nacos.plugin.visibility.{serviceName}.*
+nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-If visibility is disabled, the owning domain must define whether it behaves as
-fully visible or whether it rejects visibility-sensitive operations. The default
-AI visibility implementation treats disabled auth as allowing visibility.
+Legacy implementations receive their service-local properties once through
+`VisibilityService.init(Properties)`. Implementations that need unified source,
+metadata, masking, or update semantics should implement `PluginConfigSpec` and
+declare their own definitions.
+
+If the selected plugin is disabled or unavailable, the current AI domain skips
+visibility filtering and single-resource visibility validation; creation falls
+back to `PRIVATE` scope. This preserves the historical disabled behavior and
+must not be confused with auth being enabled or disabled. The built-in plugin
+also treats disabled auth as allowing visibility.
 
 ## Relationship With Auth
 

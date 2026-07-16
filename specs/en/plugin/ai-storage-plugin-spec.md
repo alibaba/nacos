@@ -75,6 +75,39 @@ and must not receive content operations.
 The default provider is `nacos_config`, which stores AI resource content through
 Nacos config storage.
 
+## Plugin State And Configuration
+
+AI storage providers participate in unified plugin state. Disabling a
+non-critical provider keeps the instance loaded and visible to plugin
+management, but the router rejects new operations for that provider. The
+built-in `ai-storage:nacos_config` provider is the default backend and a
+critical plugin required by server AI capabilities, so it cannot be disabled
+through plugin management while the server depends on it.
+
+The following properties select a provider for an AI resource domain:
+
+```properties
+nacos.ai.prompt.storage.provider=nacos_config
+nacos.ai.skill.storage.provider=nacos_config
+nacos.ai.agentspec.storage.provider=nacos_config
+```
+
+They are domain routing policy, not private configuration definitions owned by
+`ai-storage:nacos_config`.
+
+The built-in provider has no private configuration, does not implement
+`PluginConfigSpec`, and is exposed as `configurable=false`. A built
+`AiResourceStorage` implementation that owns private configuration may
+implement `PluginConfigSpec` and declare canonical keys under:
+
+```properties
+nacos.plugin.ai-storage.{provider}.{itemKey}
+```
+
+The storage builder is responsible for constructing the service before core
+plugin discovery. Unified configuration metadata and apply behavior belong to
+the built service instance, not to the builder or the domain routing keys.
+
 ## Requirements
 
 Storage plugins must preserve byte content exactly. They must not change
