@@ -305,7 +305,7 @@ class DefaultGrpcClientConfigTest {
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
         assertEquals(rpcPortOffset, config.rpcPortOffset());
     }
-
+    
     @Test
     void testDefaultRpcPortOffset() {
         GrpcClientConfig config = mock(GrpcClientConfig.class, CALLS_REAL_METHODS);
