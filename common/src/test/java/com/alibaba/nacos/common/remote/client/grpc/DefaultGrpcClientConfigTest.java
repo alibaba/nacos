@@ -27,9 +27,11 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
 
 class DefaultGrpcClientConfigTest {
     
@@ -302,5 +304,11 @@ class DefaultGrpcClientConfigTest {
         builder.setRpcPortOffset(rpcPortOffset);
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
         assertEquals(rpcPortOffset, config.rpcPortOffset());
+    }
+
+    @Test
+    void testDefaultRpcPortOffset() {
+        GrpcClientConfig config = mock(GrpcClientConfig.class, CALLS_REAL_METHODS);
+        assertNull(config.rpcPortOffset());
     }
 }
