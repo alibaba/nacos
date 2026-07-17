@@ -20,10 +20,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -34,14 +34,11 @@ import java.util.concurrent.TimeoutException;
  */
 public class RpcAckCallbackSynchronizer {
     
+    private static final int MAX_CALLBACK_CONTEXT_SIZE = 1000000;
+    
     @SuppressWarnings("checkstyle:linelength")
     public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT =
-        new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
-            .maximumWeightedCapacity(1000000)
-            .listener((s, pushCallBack) -> pushCallBack.entrySet().forEach(
-                stringDefaultPushFutureEntry -> stringDefaultPushFutureEntry.getValue()
-                    .setFailResult(new TimeoutException())))
-            .build();
+        new ConcurrentHashMap<>(128);
     
     /**
      * notify  ack.
@@ -126,6 +123,7 @@ public class RpcAckCallbackSynchronizer {
             Map<String, DefaultRequestFuture> context = new HashMap<>(128);
             Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
                 .putIfAbsent(connectionId, context);
+            trimCallbackContextIfNecessary();
             return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;
         } else {
             return CALLBACK_CONTEXT.get(connectionId);
@@ -147,6 +145,17 @@ public class RpcAckCallbackSynchronizer {
             return;
         }
         stringDefaultPushFutureMap.remove(requestId);
+    }
+    
+    private static void trimCallbackContextIfNecessary() {
+        while (CALLBACK_CONTEXT.size() > MAX_CALLBACK_CONTEXT_SIZE) {
+            String connectionId = CALLBACK_CONTEXT.keySet().iterator().next();
+            Map<String, DefaultRequestFuture> removed = CALLBACK_CONTEXT.remove(connectionId);
+            if (removed != null) {
+                removed.values().forEach(defaultRequestFuture -> defaultRequestFuture
+                    .setFailResult(new TimeoutException()));
+            }
+        }
     }
     
 }
