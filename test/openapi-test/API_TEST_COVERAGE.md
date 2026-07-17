@@ -70,7 +70,10 @@ Successful runtime mutation remains partial to avoid carrying
 persisted plugin state into later SDK suites in the shared standalone process;
 full-map replacement, source fallback, effect mode checks, same-source sensitive
 value preservation, and retained-source apply failure/retry are covered in core
-unit tests.
+unit tests. Anonymous AI access is not exercised in standalone OpenAPI IT for
+the same runtime-mutation reason; explicit credential presence, blank
+credential rejection, header/parameter collision, and HTTP 403 `ACCESS_DENIED`
+error mapping are covered by auth/core unit tests.
 
 Config scenario rows cover the current 3.3 Config model. Blank or omitted
 namespace inputs are expected to use `public`, and beta/tag gray behavior is

@@ -66,6 +66,16 @@ public class IdentityContext {
     }
     
     /**
+     * Whether the context contains identity parameter by key.
+     *
+     * @param key key of request
+     * @return {@code true} if the key was supplied
+     */
+    public boolean containsParameter(String key) {
+        return param.containsKey(key);
+    }
+
+    /**
      * put key and value to param.
      *
      * @param key   key of request

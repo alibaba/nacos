@@ -97,14 +97,10 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
     }
 
     private boolean hasExplicitCredential(IdentityContext identityContext) {
-        return StringUtils.isNotBlank(
-            identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY))
-            || StringUtils.isNotBlank(
-                identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY))
-            || StringUtils.isNotBlank(
-                identityContext.getParameter(AuthConstants.PARAM_USERNAME, StringUtils.EMPTY))
-            || StringUtils.isNotBlank(
-                identityContext.getParameter(AuthConstants.PARAM_PASSWORD, StringUtils.EMPTY));
+        return identityContext.containsParameter(AuthConstants.AUTHORIZATION_HEADER)
+            || identityContext.containsParameter(Constants.ACCESS_TOKEN)
+            || identityContext.containsParameter(AuthConstants.PARAM_USERNAME)
+            || identityContext.containsParameter(AuthConstants.PARAM_PASSWORD);
     }
 
     /**

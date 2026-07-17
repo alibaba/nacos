@@ -267,6 +267,13 @@ class NacosAuthPluginServiceTest {
         assertFalse(invalidBearer.isSuccess());
         assertEquals(HttpStatus.UNAUTHORIZED.value(), invalidBearer.getErrorCode());
 
+        IdentityContext blankAuthorizationContext = new IdentityContext();
+        blankAuthorizationContext.setParameter(AuthConstants.AUTHORIZATION_HEADER, "");
+        AuthResult<?> blankAuthorization = authPluginService.validateIdentity(
+            blankAuthorizationContext, resource);
+        assertFalse(blankAuthorization.isSuccess());
+        assertEquals(HttpStatus.UNAUTHORIZED.value(), blankAuthorization.getErrorCode());
+
         assertFalse(authPluginService.validateIdentity(new IdentityContext(), null).isSuccess());
         Resource noProperties = new Resource("ns", "g", "name", "type", null);
         assertFalse(authPluginService.validateIdentity(new IdentityContext(), noProperties)
