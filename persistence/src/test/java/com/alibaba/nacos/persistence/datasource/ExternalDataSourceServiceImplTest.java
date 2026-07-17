@@ -97,12 +97,12 @@ class ExternalDataSourceServiceImplTest {
         try {
             MockEnvironment environment = new MockEnvironment();
             EnvUtil.setEnvironment(environment);
-            environment.setProperty("db.num", "2");
-            environment.setProperty("db.user", "user");
-            environment.setProperty("db.password", "password");
-            environment.setProperty("db.url.0", "1.1.1.1");
-            environment.setProperty("db.url.1", "2.2.2.2");
-            environment.setProperty("db.pool.config.driverClassName",
+            environment.setProperty("nacos.plugin.datasource.db.num", "2");
+            environment.setProperty("nacos.plugin.datasource.db.user", "user");
+            environment.setProperty("nacos.plugin.datasource.db.password", "password");
+            environment.setProperty("nacos.plugin.datasource.db.url.0", "1.1.1.1");
+            environment.setProperty("nacos.plugin.datasource.db.url.1", "2.2.2.2");
+            environment.setProperty("nacos.plugin.datasource.db.pool.config.driver-class-name",
                 "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
             DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
@@ -124,6 +124,23 @@ class ExternalDataSourceServiceImplTest {
             DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
             assertThrows(RuntimeException.class, service1::init);
+        } finally {
+            DatasourceConfiguration.setUseExternalDb(false);
+            EnvUtil.setEnvironment(null);
+        }
+    }
+    
+    @Test
+    void testInitUsesCanonicalQueryTimeout() {
+        try {
+            MockEnvironment environment = new MockEnvironment();
+            environment.setProperty("nacos.plugin.datasource.db.query-timeout", "12");
+            EnvUtil.setEnvironment(environment);
+            DatasourceConfiguration.setUseExternalDb(false);
+            ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
+            service1.init();
+            assertEquals(12, ReflectionTestUtils.getField(service1, "queryTimeout"));
+            assertEquals(12, service1.getJdbcTemplate().getQueryTimeout());
         } finally {
             DatasourceConfiguration.setUseExternalDb(false);
             EnvUtil.setEnvironment(null);

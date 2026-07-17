@@ -84,3 +84,8 @@ Built-in implementations must:
 
 Built-in database dialect plugins are critical while the server is using them.
 They cannot be disabled through plugin state without breaking persistence.
+
+Built-in dialect implementations do not own datasource connection or pool
+configuration and do not implement `PluginConfigSpec`. They are exposed as
+`configurable=false`; datasource module configuration is defined by the parent
+dialect plugin spec.

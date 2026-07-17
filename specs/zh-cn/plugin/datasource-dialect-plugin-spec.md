@@ -120,8 +120,51 @@ spring.sql.init.platform=${databaseType}
 已移除的 `spring.datasource.platform` 不再读取。仍使用该配置的部署必须在升级前迁移到
 `spring.sql.init.platform`。
 
-数据源连接属性仍由 Nacos 持久化配置和数据库驱动管理。方言插件不得重新解释无关的数据库
-连接配置。
+### Datasource 模块配置
+
+数据源连接属性由 Nacos persistence 模块和数据库驱动持有，并统一使用以下模块前缀：
+
+```text
+nacos.plugin.datasource.db.{item}
+```
+
+该命名空间不会让数据库方言变为可配置插件。内置
+`datasource-dialect:{databaseType}` 仍以 `configurable=false` 暴露，因为连接凭据和连接池
+参数属于服务端唯一数据源，而不是分别属于每个已加载方言。这些配置均为静态配置，只在重启后
+生效，当前不进入插件 detail/PUT 配置 API。未来若要提供统一管理入口，必须先定义唯一的
+datasource 配置 owner，不能把同一份凭据复制到所有方言。
+
+稳定的 datasource 模块配置如下：
+
+| 标准 key 或 pattern | 历史 alias | 含义 |
+|---------------------|------------|------|
+| `nacos.plugin.datasource.db.num` | `db.num` | 外部数据源节点数量；使用外部存储时必填且必须为正数。 |
+| `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | 从 `0` 到 `num - 1` 每个 index 的 JDBC URL。 |
+| `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | 共享或按 index 配置的用户名；缺少某个 index 时回退共享值或 index `0`。 |
+| `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | 共享或按 index 配置的密码，回退规则与 `user` 相同；该值属于敏感信息。 |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒，默认 `3000`。 |
+| `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` 或对应 kebab-case | Hikari 校验超时，单位毫秒，默认 `10000`。 |
+| `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
+| `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
+| `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` 或对应 kebab-case | Hikari 最小空闲连接数，默认 `2`。 |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用 MySQL 驱动兼容默认值。 |
+| `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` 或对应 kebab-case | 连接测试 SQL；为空时使用 `SELECT 1`。 |
+| `nacos.plugin.datasource.db.query-timeout` | JVM 参数 `QUERYTIMEOUT` | JDBC 查询超时，单位秒，默认 `3`。 |
+
+对每个逻辑配置项，标准 key 的优先级都高于历史 alias，即使二者来自不同 Spring property
+source。索引项按 index 独立解析，因此迁移期间可以同时使用标准 `url.0` 和历史 `url.1`。
+读取历史配置时会输出迁移 WARN，但日志不得包含配置值。点号和方括号 index 写法都继续
+兼容；未携带 index 的单个 `url` 继续兼容 index `0`。
+
+`nacos.plugin.datasource.db.pool.config.{hikari-property}` 会在旧连接池前缀绑定后继续绑定到
+Hikari datasource，从而保留已有 Hikari 属性透传能力，并让标准值覆盖同名旧值。当前实现可
+接受随附 Hikari 版本提供的 JavaBean 配置面，但只有上表明确列出的稳定子集属于 Nacos 长期
+配置契约。
+
+`nacos.plugin.datasource.log.enabled` 仍是独立的数据源日志开关。embedded/external
+persistence 模式同样不属于方言私有配置。负责转换加密数据源凭据的 custom environment
+插件，需要在自身 `propertyKey()` 中声明新的标准 password key；只声明 `db.password.*` 的
+现有实现仍只处理旧格式输入。
 
 ## 兼容性规则
 
