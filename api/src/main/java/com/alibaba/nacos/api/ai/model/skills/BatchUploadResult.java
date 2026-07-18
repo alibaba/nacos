@@ -56,7 +56,11 @@ public class BatchUploadResult {
     }
     
     public void addFailed(String skillName, String reason) {
-        this.failed.add(new FailedItem(skillName, reason));
+        addFailed(skillName, null, reason);
+    }
+
+    public void addFailed(String skillName, String owner, String reason) {
+        this.failed.add(new FailedItem(skillName, owner, reason));
     }
     
     /**
@@ -67,12 +71,19 @@ public class BatchUploadResult {
         private String name;
         
         private String reason;
+
+        private String owner;
         
         public FailedItem() {
         }
         
         public FailedItem(String name, String reason) {
+            this(name, null, reason);
+        }
+
+        public FailedItem(String name, String owner, String reason) {
             this.name = name;
+            this.owner = owner;
             this.reason = reason;
         }
         
@@ -90,6 +101,14 @@ public class BatchUploadResult {
         
         public void setReason(String reason) {
             this.reason = reason;
+        }
+
+        public String getOwner() {
+            return owner;
+        }
+
+        public void setOwner(String owner) {
+            this.owner = owner;
         }
     }
 }

@@ -232,6 +232,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         
         result.setExists(true);
+        result.setOwner(meta.getOwner());
         try {
             checkWritableUploadResource(meta);
             result.setWritable(true);
@@ -320,7 +321,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 result.addSucceeded(skillName);
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
-                result.addFailed(skillName != null ? skillName : "unknown", e.getMessage());
+                String owner = null;
+                if (e instanceof NacosException && ((NacosException) e).getErrCode()
+                    == NacosException.NO_RIGHT && StringUtils.isNotBlank(skillName)) {
+                    AiResource meta = resourceManager.findMeta(namespaceId, skillName,
+                        RESOURCE_TYPE_SKILL);
+                    if (meta != null) {
+                        owner = meta.getOwner();
+                    }
+                }
+                result.addFailed(skillName != null ? skillName : "unknown", owner,
+                    e.getMessage());
             }
         }
         return result;

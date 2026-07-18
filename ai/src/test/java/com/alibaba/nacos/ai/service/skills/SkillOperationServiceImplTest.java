@@ -79,6 +79,7 @@ import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -644,6 +645,45 @@ class SkillOperationServiceImplTest {
         assertEquals("VALID", result.getStatus());
         assertTrue(result.getWarnings().get(0).contains("Invalid version"));
         assertEquals("0.0.1", result.getActions().get(0).getResultVersion());
+    }
+
+    @Test
+    void testBatchPrecheckUploadSkillReportsOwnerForForbiddenExistingSkill() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "protected-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName(skillName);
+
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+
+        assertEquals(1, results.size());
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals(SkillUploadPrecheckResult.STATUS_FORBIDDEN, result.getStatus());
+        assertEquals("ownerUser", result.getOwner());
+        assertTrue(result.getConflictTypes()
+            .contains(SkillUploadPrecheckResult.CONFLICT_NO_PERMISSION));
+        assertFalse(result.getErrors().isEmpty());
     }
     
     @Test
@@ -1230,7 +1270,8 @@ class SkillOperationServiceImplTest {
 
         assertEquals(1, result.getFailed().size());
         assertEquals("test-skill", result.getFailed().get(0).getName());
-        assertTrue(result.getFailed().get(0).getReason().contains("ownerUser"));
+        assertEquals("ownerUser", result.getFailed().get(0).getOwner());
+        assertTrue(result.getFailed().get(0).getReason().contains("No permission"));
     }
 
     @Test
