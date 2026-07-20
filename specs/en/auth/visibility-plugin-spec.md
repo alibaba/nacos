@@ -64,7 +64,7 @@ A visibility plugin implements `VisibilityService`.
 | Method | Requirement |
 |--------|-------------|
 | `getVisibilityServiceName()` | Return the stable plugin name. |
-| `init(properties)` | Initialize plugin-specific properties. |
+| `init(properties)` | Deprecated legacy initialization callback for implementations that do not use unified plugin configuration. |
 | `resolveDefaultScopeForCreate(identity, apiType, resourceType)` | Decide the default scope when a resource is created without an explicit scope. |
 | `validateVisibility(identity, action, apiType, resource)` | Validate visibility for one resource. |
 | `adviseQuery(identity, action, apiType, queryContext)` | Return query predicates and explicit resources for range queries. |
@@ -145,10 +145,14 @@ An external implementation may own properties under:
 nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-Legacy implementations receive their service-local properties once through
-`VisibilityService.init(Properties)`. Implementations that need unified source,
-metadata, masking, or update semantics should implement `PluginConfigSpec` and
-declare their own definitions.
+Legacy implementations that do not implement `PluginConfigSpec` receive their
+service-local properties once through `VisibilityService.init(Properties)`.
+Use of non-empty legacy properties emits a migration warning without logging
+configuration values. For an implementation that implements `PluginConfigSpec`,
+the visibility manager must not invoke the legacy callback; the core plugin
+manager's unified `applyConfig` lifecycle is its only configuration application
+path. Such implementations declare their own definitions and receive unified
+source, metadata, masking, and update semantics.
 
 If the selected plugin is disabled or unavailable, the current AI domain skips
 visibility filtering and single-resource visibility validation; creation falls

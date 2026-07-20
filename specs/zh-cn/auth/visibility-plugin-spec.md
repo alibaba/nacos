@@ -58,7 +58,7 @@ NamespaceId -> resourceType -> resourceName
 | 方法 | 要求 |
 |------|------|
 | `getVisibilityServiceName()` | 返回稳定的插件名称。 |
-| `init(properties)` | 初始化插件自身属性。 |
+| `init(properties)` | 已废弃的历史初始化回调，仅供未接入统一插件配置的实现兼容使用。 |
 | `resolveDefaultScopeForCreate(identity, apiType, resourceType)` | 当创建资源未显式指定 scope 时，决定默认 scope。 |
 | `validateVisibility(identity, action, apiType, resource)` | 校验单个资源的可见性。 |
 | `adviseQuery(identity, action, apiType, queryContext)` | 为范围查询返回查询谓词和显式授权资源。 |
@@ -131,8 +131,11 @@ nacos.plugin.visibility.enabled=true
 nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-历史实现通过 `VisibilityService.init(Properties)` 一次性接收实现本地属性。需要统一
-source、元数据、脱敏或更新语义的实现应实现 `PluginConfigSpec` 并声明自身 definitions。
+未实现 `PluginConfigSpec` 的历史实现仍通过 `VisibilityService.init(Properties)` 一次性接收
+实现本地属性。使用非空历史属性时，服务端记录迁移告警，但不得打印配置值。对于实现了
+`PluginConfigSpec` 的实现，Visibility manager 不得再调用历史回调；核心插件管理器统一的
+`applyConfig` 生命周期是唯一配置应用入口。此类实现应声明自身 definitions，并获得统一的
+source、元数据、脱敏和更新语义。
 
 当所选插件被禁用或不可用时，当前 AI 领域会跳过可见性过滤和单资源可见性校验，创建资源时
 回退为 `PRIVATE` scope。这保持了历史关闭行为，但不能与鉴权开关混为一谈。内置实现也会在
