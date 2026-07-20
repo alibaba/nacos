@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client.grpc;
+package com.alibaba.nacos.client.remote;
 
-import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,9 +30,9 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class GrpcSdkClientTest {
+class GrpcPortOffsetClientPropertiesTest {
     
-    GrpcSdkClient grpcSdkClient;
+    private GrpcSdkClient grpcSdkClient;
     
     @AfterEach
     void tearDown() throws NacosException {
@@ -39,38 +43,17 @@ class GrpcSdkClientTest {
     }
     
     @Test
-    void testAbilityMode() {
-        grpcSdkClient = new GrpcSdkClient("test");
-        assertEquals(AbilityMode.SDK_CLIENT, grpcSdkClient.abilityMode());
-    }
-    
-    @Test
-    void testRpcPortOffsetDefault() {
-        grpcSdkClient = new GrpcSdkClient("test");
-        assertEquals(1000, grpcSdkClient.rpcPortOffset());
-    }
-    
-    @Test
-    void testRpcPortOffsetFromSystemProperty() {
+    void testClientPropertiesGrpcPortOffsetOverridesSystemProperty() {
         System.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "10000");
-        grpcSdkClient = new GrpcSdkClient("test", 8, 8, Collections.emptyMap());
-        assertEquals(10000, grpcSdkClient.rpcPortOffset());
-    }
-    
-    @Test
-    void testRpcPortOffsetFromClientConfig() {
+        
         Properties properties = new Properties();
         properties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "1002");
-        GrpcClientConfig config =
-            DefaultGrpcClientConfig.newBuilder().buildSdkFromProperties(properties).build();
-        grpcSdkClient = new GrpcSdkClient(config);
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+            .createGrpcClientConfig(clientProperties.asProperties(), Collections.emptyMap());
+        
+        grpcSdkClient = new GrpcSdkClient(grpcClientConfig);
+        
         assertEquals(1002, grpcSdkClient.rpcPortOffset());
-    }
-    
-    @Test
-    void testGrpcClientByConfig() {
-        GrpcClientConfig config = DefaultGrpcClientConfig.newBuilder().setName("test111").build();
-        grpcSdkClient = new GrpcSdkClient(config);
-        assertEquals("test111", grpcSdkClient.getName());
     }
 }
