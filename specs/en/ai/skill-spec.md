@@ -43,6 +43,29 @@ per-skill success and failure. When upload fails because the caller lacks write
 permission on an existing Skill, the failure information must include the
 current owner when available.
 
+Upload precheck returns one compact result per Skill. The result contains
+`namespaceId`, `skillName`, `owner`, `maxPublishedVersion`, `parsedVersion`,
+`targetVersion`, `exists`, `editingVersion`, `reviewingVersion`, and one
+`precheckCode`. The code is the only field clients need to select the next
+action:
+
+`maxPublishedVersion` is the highest version that has been published, including
+both online and offline versions, or null when no version has been published.
+Draft, reviewing, and reviewed versions are excluded. `targetVersion` is the
+draft version that will exist after a successful upload.
+
+- `READY`: the upload can create a draft with `targetVersion`;
+- `VERSION_ADJUSTED`: the upload can create a draft, but the parsed version was
+  normalized, replaced, or advanced to `targetVersion`;
+- `DRAFT_EXISTS`: the upload can proceed only by overwriting the editing draft;
+- `REVIEWING_EXISTS`: a reviewing version blocks the upload;
+- `NO_PERMISSION`: the caller cannot modify the existing Skill;
+- `INVALID_SKILL`: the package or precheck input is invalid.
+
+When several conditions apply, precheck must choose one code in this order:
+`INVALID_SKILL`, `NO_PERMISSION`, `REVIEWING_EXISTS`, `DRAFT_EXISTS`,
+`VERSION_ADJUSTED`, `READY`. Clients must treat unknown codes as blocked.
+
 ## 3. Agent Skills Standard Compatibility
 
 Nacos Skill packages should align with the

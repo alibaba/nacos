@@ -2102,6 +2102,32 @@ class AiResourceManagerTest {
         assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
     }
     
+    // ---- resolveMaxPublishedVersion ----
+    
+    @Test
+    void resolveMaxPublishedVersionShouldIncludeOnlineAndOfflineVersions() {
+        AiResourceVersion online = new AiResourceVersion();
+        online.setVersion("1.0.0");
+        online.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        Page<AiResourceVersion> onlineVersions = new Page<>();
+        onlineVersions.setPageItems(List.of(online));
+        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_ONLINE, 1, 500)).thenReturn(onlineVersions);
+        AiResourceVersion offline = new AiResourceVersion();
+        offline.setVersion("2.0.0");
+        offline.setStatus(AiResourceConstants.VERSION_STATUS_OFFLINE);
+        Page<AiResourceVersion> offlineVersions = new Page<>();
+        offlineVersions.setPageItems(List.of(offline));
+        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_OFFLINE, 1, 500)).thenReturn(offlineVersions);
+        
+        String result = manager.resolveMaxPublishedVersion(NAMESPACE_ID, "res", RESOURCE_TYPE);
+        
+        assertEquals("2.0.0", result);
+        verify(aiResourceVersionPersistService, never()).list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            AiResourceConstants.VERSION_STATUS_REVIEWED, 1, 500);
+    }
+    
     // ---- toggleVersionOnlineStatus ----
     
     @Test

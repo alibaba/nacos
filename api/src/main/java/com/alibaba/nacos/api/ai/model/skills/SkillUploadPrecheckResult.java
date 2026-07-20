@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.skills;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Result of checking a skill ZIP upload before applying it.
  *
@@ -26,13 +23,17 @@ import java.util.List;
  */
 public class SkillUploadPrecheckResult {
     
-    public static final String STATUS_VALID = "VALID";
+    public static final String PRECHECK_CODE_READY = "READY";
     
-    public static final String STATUS_WARNING = "WARNING";
+    public static final String PRECHECK_CODE_VERSION_ADJUSTED = "VERSION_ADJUSTED";
     
-    public static final String STATUS_CONFLICT = "CONFLICT";
+    public static final String PRECHECK_CODE_DRAFT_EXISTS = "DRAFT_EXISTS";
     
-    public static final String STATUS_FORBIDDEN = "FORBIDDEN";
+    public static final String PRECHECK_CODE_REVIEWING_EXISTS = "REVIEWING_EXISTS";
+    
+    public static final String PRECHECK_CODE_NO_PERMISSION = "NO_PERMISSION";
+    
+    public static final String PRECHECK_CODE_INVALID_SKILL = "INVALID_SKILL";
     
     public static final String ACTION_CREATE_DRAFT = "CREATE_DRAFT";
     
@@ -40,53 +41,25 @@ public class SkillUploadPrecheckResult {
     
     public static final String ACTION_DELETE_DRAFT_AND_CREATE = "DELETE_DRAFT_AND_CREATE";
     
-    public static final String CONFLICT_EXISTING_SKILL = "existing_skill";
-    
-    public static final String CONFLICT_VERSION_EXISTS = "version_exists";
-    
-    public static final String CONFLICT_DRAFT_EXISTS = "draft_exists";
-    
-    public static final String CONFLICT_REVIEWING_VERSION = "reviewing_version";
-    
-    public static final String CONFLICT_NO_PERMISSION = "no_permission";
-    
     private String namespaceId;
     
     private String skillName;
     
-    private String description;
-    
     private String owner;
+    
+    private String maxPublishedVersion;
     
     private String parsedVersion;
     
-    private String resolvedVersion;
-    
-    private String versionSource;
+    private String targetVersion;
     
     private boolean exists;
-    
-    private boolean writable;
-    
-    private boolean versionExists;
-    
-    private boolean draftExists;
-    
-    private boolean reviewingExists;
     
     private String editingVersion;
     
     private String reviewingVersion;
     
-    private String status;
-    
-    private List<String> conflictTypes = new ArrayList<>();
-    
-    private List<String> warnings = new ArrayList<>();
-    
-    private List<String> errors = new ArrayList<>();
-    
-    private List<Action> actions = new ArrayList<>();
+    private String precheckCode;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -104,20 +77,20 @@ public class SkillUploadPrecheckResult {
         this.skillName = skillName;
     }
     
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
     public String getOwner() {
         return owner;
     }
     
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+    
+    public String getMaxPublishedVersion() {
+        return maxPublishedVersion;
+    }
+    
+    public void setMaxPublishedVersion(String maxPublishedVersion) {
+        this.maxPublishedVersion = maxPublishedVersion;
     }
     
     public String getParsedVersion() {
@@ -128,20 +101,12 @@ public class SkillUploadPrecheckResult {
         this.parsedVersion = parsedVersion;
     }
     
-    public String getResolvedVersion() {
-        return resolvedVersion;
+    public String getTargetVersion() {
+        return targetVersion;
     }
     
-    public void setResolvedVersion(String resolvedVersion) {
-        this.resolvedVersion = resolvedVersion;
-    }
-    
-    public String getVersionSource() {
-        return versionSource;
-    }
-    
-    public void setVersionSource(String versionSource) {
-        this.versionSource = versionSource;
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
     }
     
     public boolean isExists() {
@@ -150,38 +115,6 @@ public class SkillUploadPrecheckResult {
     
     public void setExists(boolean exists) {
         this.exists = exists;
-    }
-    
-    public boolean isWritable() {
-        return writable;
-    }
-    
-    public void setWritable(boolean writable) {
-        this.writable = writable;
-    }
-    
-    public boolean isVersionExists() {
-        return versionExists;
-    }
-    
-    public void setVersionExists(boolean versionExists) {
-        this.versionExists = versionExists;
-    }
-    
-    public boolean isDraftExists() {
-        return draftExists;
-    }
-    
-    public void setDraftExists(boolean draftExists) {
-        this.draftExists = draftExists;
-    }
-    
-    public boolean isReviewingExists() {
-        return reviewingExists;
-    }
-    
-    public void setReviewingExists(boolean reviewingExists) {
-        this.reviewingExists = reviewingExists;
     }
     
     public String getEditingVersion() {
@@ -200,104 +133,11 @@ public class SkillUploadPrecheckResult {
         this.reviewingVersion = reviewingVersion;
     }
     
-    public String getStatus() {
-        return status;
+    public String getPrecheckCode() {
+        return precheckCode;
     }
     
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
-    public List<String> getConflictTypes() {
-        return conflictTypes;
-    }
-    
-    public void setConflictTypes(List<String> conflictTypes) {
-        this.conflictTypes = conflictTypes;
-    }
-    
-    public List<String> getWarnings() {
-        return warnings;
-    }
-    
-    public void setWarnings(List<String> warnings) {
-        this.warnings = warnings;
-    }
-    
-    public List<String> getErrors() {
-        return errors;
-    }
-    
-    public void setErrors(List<String> errors) {
-        this.errors = errors;
-    }
-    
-    public List<Action> getActions() {
-        return actions;
-    }
-    
-    public void setActions(List<Action> actions) {
-        this.actions = actions;
-    }
-    
-    public void addConflictType(String conflictType) {
-        this.conflictTypes.add(conflictType);
-    }
-    
-    public void addWarning(String warning) {
-        this.warnings.add(warning);
-    }
-    
-    public void addError(String error) {
-        this.errors.add(error);
-    }
-    
-    public void addAction(String type, String resultVersion, String description) {
-        this.actions.add(new Action(type, resultVersion, description));
-    }
-    
-    /**
-     * Upload action that can be selected after precheck.
-     */
-    public static class Action {
-        
-        private String type;
-        
-        private String resultVersion;
-        
-        private String description;
-        
-        public Action() {
-        }
-        
-        public Action(String type, String resultVersion, String description) {
-            this.type = type;
-            this.resultVersion = resultVersion;
-            this.description = description;
-        }
-        
-        public String getType() {
-            return type;
-        }
-        
-        public void setType(String type) {
-            this.type = type;
-        }
-        
-        public String getResultVersion() {
-            return resultVersion;
-        }
-        
-        public void setResultVersion(String resultVersion) {
-            this.resultVersion = resultVersion;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
+    public void setPrecheckCode(String precheckCode) {
+        this.precheckCode = precheckCode;
     }
 }

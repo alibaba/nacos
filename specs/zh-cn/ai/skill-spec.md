@@ -40,6 +40,26 @@ Skill upload 接收 ZIP 包。Batch upload 是 best effort，必须报告每个 
 失败。当上传已有 Skill 因调用方缺少写权限而失败时，失败信息必须在可获取时包含当前
 owner。
 
+上传预检按 Skill 返回一条精简结果，包含 `namespaceId`、`skillName`、`owner`、
+`maxPublishedVersion`、`parsedVersion`、`targetVersion`、`exists`、`editingVersion`、
+`reviewingVersion` 和单值 `precheckCode`。客户端只需根据该编码选择下一步：
+
+`maxPublishedVersion` 是已经发布过的最大版本，包含 ONLINE 和 OFFLINE 版本；从未发布
+过版本时为空，不包含 DRAFT、REVIEWING 和 REVIEWED 版本。`targetVersion` 是本次上传
+成功后的草稿版本。
+
+- `READY`：可以按 `targetVersion` 创建草稿；
+- `VERSION_ADJUSTED`：可以创建草稿，但解析版本经过了规范化、替换或递增，实际版本为
+  `targetVersion`；
+- `DRAFT_EXISTS`：已有编辑中草稿，只能覆盖后继续上传；
+- `REVIEWING_EXISTS`：已有审核中版本，阻断上传；
+- `NO_PERMISSION`：调用方无权修改已有 Skill；
+- `INVALID_SKILL`：Skill 包或预检输入无效。
+
+同时命中多个条件时，预检必须按以下优先级返回一个编码：`INVALID_SKILL`、
+`NO_PERMISSION`、`REVIEWING_EXISTS`、`DRAFT_EXISTS`、`VERSION_ADJUSTED`、
+`READY`。客户端必须将未知编码按阻断处理。
+
 ## 3. Agent Skills 标准兼容
 
 Nacos Skill 包应与

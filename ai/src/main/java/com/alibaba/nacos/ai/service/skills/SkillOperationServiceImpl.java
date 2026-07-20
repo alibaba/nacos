@@ -188,8 +188,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 SkillUploadPrecheckResult failed = new SkillUploadPrecheckResult();
                 failed.setNamespaceId(request != null ? request.getNamespaceId() : null);
                 failed.setSkillName(request != null ? request.getSkillName() : null);
-                failed.setStatus(SkillUploadPrecheckResult.STATUS_FORBIDDEN);
-                failed.addError(e.getErrMsg() != null ? e.getErrMsg() : e.getMessage());
+                failed.setParsedVersion(request != null ? request.getParsedVersion() : null);
+                failed.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
                 results.add(failed);
             }
         }
@@ -234,8 +234,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
         result.setNamespaceId(namespaceId);
         result.setSkillName(failure.getFolder());
-        result.setStatus(SkillUploadPrecheckResult.STATUS_FORBIDDEN);
-        result.addError(failure.getReason());
+        result.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
         return result;
     }
     
@@ -256,7 +255,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
         result.setNamespaceId(request.getNamespaceId());
         result.setSkillName(name);
-        result.setDescription(StringUtils.trim(request.getDescription()));
+        result.setParsedVersion(uploadVersion.resolveDisplayVersion(null));
         
         AiResource meta = resourceManager.findMeta(request.getNamespaceId(), name,
             RESOURCE_TYPE_SKILL);
@@ -264,10 +263,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             String targetVersion = resolveNewUploadVersion(uploadVersion);
             fillPrecheckVersion(result, uploadVersion, targetVersion);
             result.setExists(false);
-            result.setWritable(true);
-            result.setStatus(SkillUploadPrecheckResult.STATUS_VALID);
-            result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT,
-                targetVersion, "Create a new skill draft");
+            result.setPrecheckCode(resolveVersionPrecheckCode(result));
             return result;
         }
         
@@ -275,19 +271,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         result.setOwner(meta.getOwner());
         try {
             checkWritableUploadResource(meta);
-            result.setWritable(true);
         } catch (NacosException e) {
             if (e.getErrCode() != NacosException.NO_RIGHT) {
                 throw e;
             }
-            result.setWritable(false);
-            result.setStatus(SkillUploadPrecheckResult.STATUS_FORBIDDEN);
-            result.addConflictType(SkillUploadPrecheckResult.CONFLICT_NO_PERMISSION);
-            result.addError(e.getErrMsg());
+            result.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_NO_PERMISSION);
             return result;
         }
         
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        result.setMaxPublishedVersion(resourceManager.resolveMaxPublishedVersion(
+            request.getNamespaceId(), name, RESOURCE_TYPE_SKILL));
         String editing = info.getEditingVersion();
         String reviewing = info.getReviewingVersion();
         List<String> existingVersions = resourceManager.listExistingVersions(
@@ -295,39 +289,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String targetVersion = resolvePrecheckTargetVersion(uploadVersion, existingVersions,
             editing);
         fillPrecheckVersion(result, uploadVersion, targetVersion);
-        boolean versionExists = uploadVersion.hasValidVersion()
-            && existingVersions.contains(uploadVersion.getVersion());
-        result.setVersionExists(versionExists);
-        result.setDraftExists(StringUtils.isNotBlank(editing));
-        result.setReviewingExists(StringUtils.isNotBlank(reviewing));
         result.setEditingVersion(editing);
         result.setReviewingVersion(reviewing);
-        if (versionExists) {
-            result.addConflictType(SkillUploadPrecheckResult.CONFLICT_VERSION_EXISTS);
-            result.addWarning("Version already exists: " + uploadVersion.getVersion());
-        }
         
         if (StringUtils.isNotBlank(reviewing)) {
-            result.setStatus(SkillUploadPrecheckResult.STATUS_CONFLICT);
-            result.addConflictType(SkillUploadPrecheckResult.CONFLICT_REVIEWING_VERSION);
-            result.addError("There is already a reviewing version: " + reviewing
-                + ", cannot upload until review finishes");
+            result.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_REVIEWING_EXISTS);
             return result;
         }
         
         if (StringUtils.isNotBlank(editing)) {
-            result.setStatus(SkillUploadPrecheckResult.STATUS_WARNING);
-            result.addConflictType(SkillUploadPrecheckResult.CONFLICT_DRAFT_EXISTS);
-            result.addWarning("There is already an editing draft: " + editing);
-            result.addAction(SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT, targetVersion,
-                "Overwrite the current editing draft");
+            result.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_DRAFT_EXISTS);
             return result;
         }
         
-        result.setStatus(versionExists ? SkillUploadPrecheckResult.STATUS_WARNING
-            : SkillUploadPrecheckResult.STATUS_VALID);
-        result.addAction(SkillUploadPrecheckResult.ACTION_CREATE_DRAFT, targetVersion,
-            "Create a new draft for the existing skill");
+        result.setPrecheckCode(resolveVersionPrecheckCode(result));
         return result;
     }
     
@@ -772,13 +747,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void fillPrecheckVersion(SkillUploadPrecheckResult result,
         UploadVersionCandidate uploadVersion, String targetVersion) {
         result.setParsedVersion(uploadVersion.resolveDisplayVersion(targetVersion));
-        result.setResolvedVersion(targetVersion);
-        result.setVersionSource(uploadVersion.getSource());
-        if (uploadVersion.hasInvalidVersion()) {
-            result.addWarning("Invalid version from " + uploadVersion.getSource() + ": '"
-                + uploadVersion.getRawVersion() + "', generated upload version "
-                + targetVersion + " instead");
-        }
+        result.setTargetVersion(targetVersion);
+    }
+    
+    private String resolveVersionPrecheckCode(SkillUploadPrecheckResult result) {
+        return StringUtils.equals(result.getParsedVersion(), result.getTargetVersion())
+            ? SkillUploadPrecheckResult.PRECHECK_CODE_READY
+            : SkillUploadPrecheckResult.PRECHECK_CODE_VERSION_ADJUSTED;
     }
     
     private String resolveUploadVersionAfterDeletingDraft(List<String> existingVersions,
@@ -1889,34 +1864,29 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         private final String rawVersion;
         
-        private final boolean invalidVersion;
-        
         UploadVersionCandidate(String version, String source) {
             this.version = version;
             this.source = source;
             this.rawVersion = version;
-            this.invalidVersion = false;
         }
         
-        private UploadVersionCandidate(String version, String source, String rawVersion,
-            boolean invalidVersion) {
+        private UploadVersionCandidate(String version, String source, String rawVersion) {
             this.version = version;
             this.source = source;
             this.rawVersion = rawVersion;
-            this.invalidVersion = invalidVersion;
         }
         
         static UploadVersionCandidate invalid(String rawVersion, String source) {
-            return new UploadVersionCandidate(null, source, rawVersion, true);
+            return new UploadVersionCandidate(null, source, rawVersion);
         }
         
         static UploadVersionCandidate normalized(String version, String source,
             String rawVersion) {
-            return new UploadVersionCandidate(version, source, rawVersion, false);
+            return new UploadVersionCandidate(version, source, rawVersion);
         }
         
         static UploadVersionCandidate empty() {
-            return new UploadVersionCandidate(null, "default", null, false);
+            return new UploadVersionCandidate(null, "default", null);
         }
         
         String getVersion() {
@@ -1933,10 +1903,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         boolean hasValidVersion() {
             return StringUtils.isNotBlank(version);
-        }
-        
-        boolean hasInvalidVersion() {
-            return invalidVersion;
         }
         
         String resolveDisplayVersion(String targetVersion) {

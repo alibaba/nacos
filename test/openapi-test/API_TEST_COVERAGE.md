@@ -84,6 +84,11 @@ migration paths, including empty-tenant storage migration and legacy
 `config_info_beta` / `config_info_tag` old-table migration, are not counted as
 missing OpenAPI IT coverage.
 
+Skill upload precheck response-shape coverage is maintained by the admin and
+console Skill upload scenario rows, including `maxPublishedVersion` and
+`targetVersion`. Contract-only field changes do not alter the scenario-row
+totals above.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |

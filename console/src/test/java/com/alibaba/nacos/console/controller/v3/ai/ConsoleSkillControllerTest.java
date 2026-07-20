@@ -35,6 +35,7 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -270,8 +272,10 @@ class ConsoleSkillControllerTest {
     void testBatchPrecheckUploadSkill() throws Exception {
         SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
         precheckResult.setSkillName(SKILL_NAME);
+        precheckResult.setMaxPublishedVersion("0.9.0");
         precheckResult.setParsedVersion("1.0.0");
-        precheckResult.setStatus(SkillUploadPrecheckResult.STATUS_VALID);
+        precheckResult.setTargetVersion("1.0.0");
+        precheckResult.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_READY);
         when(skillProxy.batchPrecheckUploadSkill(argThat(reqs -> reqs != null
             && reqs.size() == 1
             && NS.equals(reqs.get(0).getNamespaceId())
@@ -297,6 +301,14 @@ class ConsoleSkillControllerTest {
             });
         assertEquals(1, result.getData().size());
         assertEquals(SKILL_NAME, result.getData().get(0).getSkillName());
+        JsonNode precheckJson = JacksonUtils.toObj(response.getContentAsString())
+            .get("data").get(0);
+        assertEquals("READY", precheckJson.get("precheckCode").asText());
+        assertEquals("0.9.0", precheckJson.get("maxPublishedVersion").asText());
+        assertFalse(precheckJson.has("latestVersion"));
+        assertEquals("1.0.0", precheckJson.get("targetVersion").asText());
+        assertFalse(precheckJson.has("status"));
+        assertFalse(precheckJson.has("actions"));
     }
     
     @Test

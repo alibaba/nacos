@@ -74,14 +74,12 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                         + "/upload/batch/precheck", Query.EMPTY,
                 precheckRequestsJson(skillName, "1.0.0", "duplicate guide", "9.9.9")))
                 .get("data").get(0);
-        assertEquals("WARNING", precheck.get("status").asText(), precheck.toString());
+        assertEquals("DRAFT_EXISTS", precheck.get("precheckCode").asText(), precheck.toString());
         assertEquals(skillName, precheck.get("skillName").asText(), precheck.toString());
         assertTrue(precheck.has("owner"), precheck.toString());
-        assertEquals("duplicate guide", precheck.get("description").asText(), precheck.toString());
         assertEquals("1.0.0", precheck.get("parsedVersion").asText(), precheck.toString());
-        assertEquals("1.0.0", precheck.get("resolvedVersion").asText(), precheck.toString());
-        assertEquals(1, precheck.get("actions").size(), precheck.toString());
-        assertActionContains(precheck.get("actions"), "OVERWRITE_DRAFT");
+        assertEquals("1.0.0", precheck.get("targetVersion").asText(), precheck.toString());
+        assertCompactPrecheckResult(precheck);
         HttpResponse overwritten = postMultipartRaw(ADMIN_SKILL_PATH + "/upload",
                 uploadQuery(true, "9.9.9", "openapi overwrite"), "file", skillName + ".zip",
                 "application/zip",
@@ -91,18 +89,21 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 .get("data"), skillName, "1.0.0", "Overwritten body.", "overwritten guide");
 
         postFormOk(ADMIN_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "1.0.0"));
+        assertEquals("ok", postFormOk(ADMIN_SKILL_PATH + "/offline",
+                skillOnlineForm(skillName, "1.0.0", null)).get("data").asText());
         JsonNode shortVersionPrecheck = assertUploadResult(postJsonRaw(ADMIN_SKILL_PATH
                         + "/upload/batch/precheck", Query.EMPTY,
                 precheckRequestsJson(skillName, "1.0", "short version guide", null)))
                 .get("data").get(0);
-        assertEquals("WARNING", shortVersionPrecheck.get("status").asText(),
+        assertEquals("VERSION_ADJUSTED", shortVersionPrecheck.get("precheckCode").asText(),
                 shortVersionPrecheck.toString());
         assertEquals("1.0", shortVersionPrecheck.get("parsedVersion").asText(),
                 shortVersionPrecheck.toString());
-        assertEquals("1.0.1", shortVersionPrecheck.get("resolvedVersion").asText(),
+        assertEquals("1.0.0", shortVersionPrecheck.get("maxPublishedVersion").asText(),
                 shortVersionPrecheck.toString());
-        assertFalse(shortVersionPrecheck.get("warnings").toString().contains("Invalid version"),
+        assertEquals("1.0.1", shortVersionPrecheck.get("targetVersion").asText(),
                 shortVersionPrecheck.toString());
+        assertCompactPrecheckResult(shortVersionPrecheck);
         HttpResponse nextUpload = postMultipartRaw(ADMIN_SKILL_PATH + "/upload",
                 uploadQuery(false, null, "openapi next draft"), "file", skillName + ".zip",
                 "application/zip",
@@ -221,12 +222,13 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         throw new AssertionError("Expected " + expected + " in " + array);
     }
 
-    private void assertActionContains(JsonNode array, String expectedType) {
-        for (JsonNode item : array) {
-            if (expectedType.equals(item.get("type").asText())) {
-                return;
-            }
+    private void assertCompactPrecheckResult(JsonNode precheck) {
+        String[] removedFields = {"description", "latestVersion", "resolvedVersion",
+                "versionSource", "writable",
+                "versionExists", "draftExists", "reviewingExists", "status", "conflictTypes",
+                "warnings", "errors", "actions"};
+        for (String field : removedFields) {
+            assertFalse(precheck.has(field), precheck.toString());
         }
-        throw new AssertionError("Expected action " + expectedType + " in " + array);
     }
 }
