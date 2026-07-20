@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -41,8 +42,10 @@ import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
 /**
  * Service for reading, writing, and deleting skill index manifest in Nacos Config.
  *
- * <p>The manifest is stored at group={@code skill_{name}}, dataId={@code skill_index.json},
- * and serves as the single source of truth for client-side skill discovery.</p>
+ * <p>The canonical manifest coordinate is group={@code skill_{name}},
+ * dataId={@code skill_index.json}. The Nacos Config physical key mapping applies a SHA-256
+ * fallback when a coordinate exceeds its storage limit. The manifest serves as the single source
+ * of truth for client-side skill discovery.</p>
  *
  * @author nacos
  */
@@ -72,7 +75,7 @@ public class SkillIndexManifestService {
     public SkillIndexManifest query(String namespaceId, String skillName) {
         try {
             ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                SkillUtils.SKILL_INDEX_DATA_ID, SkillUtils.buildSkillGroup(skillName), namespaceId);
+                SkillUtils.SKILL_INDEX_DATA_ID, physicalGroup(skillName), namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
                 || response.getContent() == null) {
@@ -111,7 +114,7 @@ public class SkillIndexManifestService {
         long startTimeStamp = System.currentTimeMillis();
         ConfigForm form = new ConfigForm();
         form.setDataId(SkillUtils.SKILL_INDEX_DATA_ID);
-        form.setGroup(SkillUtils.buildSkillGroup(skillName));
+        form.setGroup(physicalGroup(skillName));
         form.setNamespaceId(namespaceId);
         form.setContent(JacksonUtils.toJson(manifest));
         form.setSrcUser("nacos");
@@ -133,7 +136,12 @@ public class SkillIndexManifestService {
      */
     public void delete(String namespaceId, String skillName) throws NacosException {
         configOperationService.deleteConfig(SkillUtils.SKILL_INDEX_DATA_ID,
-            SkillUtils.buildSkillGroup(skillName), namespaceId, null, null, "nacos", null);
+            physicalGroup(skillName), namespaceId, null, null, "nacos", null);
+    }
+    
+    private static String physicalGroup(String skillName) {
+        return NacosAiConfigKeyCodec.toPhysicalGroup(SkillUtils.buildSkillGroup(skillName),
+            SkillUtils.SKILL_GROUP_PREFIX);
     }
     
     /**

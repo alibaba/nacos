@@ -180,9 +180,11 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         long startTimeStamp = System.currentTimeMillis();
         KeyParts parts = parse(storageKey);
         ConfigForm form = new ConfigForm();
-        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
+        String physicalGroup =
+            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
         form.setDataId(physicalDataId);
-        form.setGroup(parts.group());
+        form.setGroup(physicalGroup);
         form.setNamespaceId(parts.namespaceId());
         form.setContent(
             content == null ? StringUtils.EMPTY : new String(content, StandardCharsets.UTF_8));
@@ -209,9 +211,11 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public byte[] get(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
-        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
+        String physicalGroup =
+            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-            physicalDataId, parts.group(), parts.namespaceId());
+            physicalDataId, physicalGroup, parts.namespaceId());
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
             return null;
@@ -223,9 +227,11 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public void delete(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
-        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
+        String physicalGroup =
+            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(),
+            configOperationService.deleteConfig(physicalDataId, physicalGroup, parts.namespaceId(),
                 null, null, "nacos",
                 null);
         }
@@ -274,16 +280,20 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             String version = parts[3];
             String filePath = parts[4];
             String group;
+            String groupPrefix;
             if (RESOURCE_TYPE_AGENTSPEC.equals(resourceType)) {
+                groupPrefix = AgentSpecUtils.AGENTSPEC_GROUP_PREFIX;
                 group = AgentSpecUtils.buildAgentSpecVersionGroup(name, version);
             } else if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
+                groupPrefix = SkillUtils.SKILL_GROUP_PREFIX;
                 group = SkillUtils.buildSkillVersionGroup(name, version);
             } else if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+                groupPrefix = PromptUtils.PROMPT_GROUP_PREFIX;
                 group = PromptUtils.buildPromptVersionGroup(name, version);
             } else {
                 throw new IllegalArgumentException("Unknown resource type: " + resourceType);
             }
-            return new KeyParts(namespaceId, group, filePath);
+            return new KeyParts(namespaceId, group, groupPrefix, filePath);
         }
         // Fall back to legacy 4-part format (Skill): namespaceId:name:version:filePath
         String[] legacyParts = storageKey.getKey().split(":", 4);
@@ -306,9 +316,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         } else {
             group = SkillUtils.buildSkillVersionGroup(skillName, version);
         }
-        return new KeyParts(namespaceId, group, filePath);
+        return new KeyParts(namespaceId, group, SkillUtils.SKILL_GROUP_PREFIX, filePath);
     }
     
-    record KeyParts(String namespaceId, String group, String dataId) {
+    record KeyParts(String namespaceId, String group, String groupPrefix, String dataId) {
     }
 }
