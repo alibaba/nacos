@@ -146,10 +146,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
             // Restore states
             Map<String, Boolean> states = snapshot.getStates();
             if (states != null) {
-                for (Map.Entry<String, Boolean> entry : states.entrySet()) {
-                    persistence.saveState(entry.getKey(), entry.getValue());
-                    pluginManager.applyStateChange(entry.getKey(), entry.getValue());
-                }
+                pluginManager.restorePluginStates(states);
             }
             
             // Restore configs

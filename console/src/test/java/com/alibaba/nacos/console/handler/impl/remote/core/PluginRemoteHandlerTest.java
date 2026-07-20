@@ -69,6 +69,8 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals("auth", result.get(0).getPluginType());
         assertEquals("test", result.get(0).getPluginName());
         assertTrue(result.get(0).getEnabled());
+        assertTrue(result.get(0).getTypeCritical());
+        assertEquals("EXCLUSIVE", result.get(0).getExecutionMode());
     }
     
     @Test
@@ -108,6 +110,9 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertEquals("auth", result.getPluginType());
         assertEquals("test", result.getPluginName());
         assertTrue(result.getConfigurable());
+        assertTrue(result.getTypeCritical());
+        assertEquals("EXCLUSIVE", result.getExecutionMode());
+        assertTrue(result.getExclusive());
         assertNotNull(result.getConfig());
         assertEquals("value1", result.getConfig().get("key1"));
     }
@@ -262,6 +267,8 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         data.put("enabled", true);
         data.put("critical", false);
         data.put("configurable", true);
+        data.put("typeCritical", true);
+        data.put("executionMode", "EXCLUSIVE");
         data.put("exclusive", true);
         return data;
     }

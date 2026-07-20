@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.pipeline.config;
+package com.alibaba.nacos.api.plugin;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
+import java.util.List;
 
 /**
- * Abstract provider for pipeline configuration, decoupling the config source (file, database, etc.).
+ * Declarative plugin configuration definition contract.
  *
- * @author kiro
- * @since 3.2.0
+ * <p>This contract is suitable for plugin factories that must expose configuration metadata
+ * before creating the runtime plugin instance.</p>
+ *
+ * @author Nacos
  */
-public interface PipelineConfigProvider {
+public interface PluginConfigDefinitionSpec {
     
     /**
-     * Get the current pipeline configuration.
+     * Get configuration item definitions.
      *
-     * @return pipeline configuration, never null
+     * @return list of configuration item definitions
      */
-    PipelineConfig getConfig();
-    
-    /**
-     * Configuration source type identifier, e.g. "file", "database".
-     *
-     * @return type string
-     */
-    String type();
+    List<ConfigItemDefinition> getConfigDefinitions();
 }

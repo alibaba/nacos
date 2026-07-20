@@ -74,6 +74,18 @@ class StandalonePluginStateSynchronizerTest {
     }
     
     @Test
+    void syncStateChangeInvalidParameter() {
+        doThrow(new IllegalArgumentException("invalid state")).when(applier)
+            .applyStateChange("auth:nacos", false);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> synchronizer.syncStateChange("auth:nacos", false));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        verify(persistence, never()).saveState(any(), anyBoolean());
+    }
+    
+    @Test
     void syncConfigChangeSuccess() throws NacosApiException {
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");

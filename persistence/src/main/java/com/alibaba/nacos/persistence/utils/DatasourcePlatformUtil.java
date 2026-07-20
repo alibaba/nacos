@@ -17,6 +17,7 @@
 package com.alibaba.nacos.persistence.utils;
 
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -33,7 +34,11 @@ public class DatasourcePlatformUtil {
      * @return
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
-        return EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY,
-            defaultPlatform);
+        String result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
+        if (StringUtils.isNotBlank(result)) {
+            return result.trim();
+        }
+        result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
+        return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
     }
 }

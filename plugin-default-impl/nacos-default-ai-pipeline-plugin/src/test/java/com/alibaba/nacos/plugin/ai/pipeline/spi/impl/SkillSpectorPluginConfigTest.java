@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -35,10 +36,12 @@ class SkillSpectorPluginConfigTest {
     
     @Test
     void defaultsTest() {
-        SkillSpectorPluginConfig config = SkillSpectorPluginConfig.fromProperties(null);
+        SkillSpectorPluginConfig config = SkillSpectorPluginConfig.fromMap(null);
         Map<String, String> values = config.toMap();
         
         assertEquals("skill-spector", config.getCommand());
+        assertEquals(SkillSpectorPluginConfig.DEFAULT_ORDER, config.getOrder());
+        assertEquals("90", values.get(SkillSpectorPluginConfig.ORDER));
         assertEquals("skill-spector", values.get(SkillSpectorPluginConfig.COMMAND));
         assertEquals("false", values.get(SkillSpectorPluginConfig.USE_LLM));
         assertEquals("", values.get(SkillSpectorPluginConfig.PROVIDER));
@@ -63,9 +66,10 @@ class SkillSpectorPluginConfigTest {
         properties.setProperty(SkillSpectorPluginConfig.LOG_LEVEL_ALIAS, " DEBUG ");
         properties.setProperty(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD_ALIAS, "80");
         properties.setProperty(SkillSpectorPluginConfig.MAX_FINDINGS_ALIAS, "12");
-        properties.setProperty("order", "90");
+        properties.setProperty(SkillSpectorPluginConfig.ORDER, "41");
         
-        SkillSpectorPluginConfig config = SkillSpectorPluginConfig.fromProperties(properties);
+        SkillSpectorPluginConfig config = SkillSpectorPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(properties));
         Map<String, String> values = config.toMap();
         
         assertEquals("/tmp/spector", values.get(SkillSpectorPluginConfig.COMMAND));
@@ -77,7 +81,8 @@ class SkillSpectorPluginConfigTest {
         assertEquals("DEBUG", values.get(SkillSpectorPluginConfig.LOG_LEVEL));
         assertEquals("80", values.get(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD));
         assertEquals("12", values.get(SkillSpectorPluginConfig.MAX_FINDINGS));
-        assertFalse(values.containsKey("order"));
+        assertEquals(41, config.getOrder());
+        assertEquals("41", values.get(SkillSpectorPluginConfig.ORDER));
         assertTrue(config.getScanOptions().isUseLlm());
         
         Properties executableAlias = new Properties();
@@ -86,7 +91,8 @@ class SkillSpectorPluginConfigTest {
         executableAlias.setProperty(SkillSpectorPluginConfig.COMMAND_ALIAS_PATH,
             "/tmp/path-spector");
         assertEquals("/tmp/executable-spector",
-            SkillSpectorPluginConfig.fromProperties(executableAlias).getCommand());
+            SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(executableAlias))
+                .getCommand());
     }
     
     @Test
@@ -102,7 +108,7 @@ class SkillSpectorPluginConfigTest {
         properties.setProperty(SkillSpectorPluginConfig.LOG_LEVEL_ALIAS, "DEBUG");
         
         Map<String, String> values =
-            SkillSpectorPluginConfig.fromProperties(properties).toMap();
+            SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties)).toMap();
         
         assertEquals("canonical", values.get(SkillSpectorPluginConfig.COMMAND));
         assertEquals("false", values.get(SkillSpectorPluginConfig.USE_LLM));
@@ -123,7 +129,8 @@ class SkillSpectorPluginConfigTest {
         properties.setProperty(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD, threshold);
         properties.setProperty(SkillSpectorPluginConfig.MAX_FINDINGS, maxFindings);
         
-        Map<String, String> values = SkillSpectorPluginConfig.fromProperties(properties).toMap();
+        Map<String, String> values = SkillSpectorPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(properties)).toMap();
         
         assertEquals(expectedThreshold,
             values.get(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD));
@@ -143,5 +150,16 @@ class SkillSpectorPluginConfigTest {
         assertEquals("skill-spector", values.get(SkillSpectorPluginConfig.COMMAND));
         assertEquals("model", values.get(SkillSpectorPluginConfig.MODEL));
         assertEquals("skill-spector", defaults.get(SkillSpectorPluginConfig.COMMAND));
+    }
+    
+    @Test
+    void invalidOrderShouldBeRejectedTest() {
+        Map<String, String> config = new HashMap<>();
+        config.put(SkillSpectorPluginConfig.ORDER, "1.5");
+        assertThrows(ArithmeticException.class,
+            () -> SkillSpectorPluginConfig.fromMap(config));
+        config.put(SkillSpectorPluginConfig.ORDER, "invalid");
+        assertThrows(NumberFormatException.class,
+            () -> SkillSpectorPluginConfig.fromMap(config));
     }
 }

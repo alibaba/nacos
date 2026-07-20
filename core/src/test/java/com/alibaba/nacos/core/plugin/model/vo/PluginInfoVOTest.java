@@ -32,6 +32,8 @@ class PluginInfoVOTest {
         vo.setEnabled(true);
         vo.setCritical(true);
         vo.setConfigurable(false);
+        vo.setTypeCritical(true);
+        vo.setExecutionMode("EXCLUSIVE");
         vo.setExclusive(true);
         vo.setAvailableNodeCount(3);
         vo.setTotalNodeCount(5);
@@ -42,6 +44,8 @@ class PluginInfoVOTest {
         assertEquals(true, vo.getEnabled());
         assertEquals(true, vo.getCritical());
         assertEquals(false, vo.getConfigurable());
+        assertEquals(true, vo.getTypeCritical());
+        assertEquals("EXCLUSIVE", vo.getExecutionMode());
         assertEquals(true, vo.getExclusive());
         assertEquals(3, vo.getAvailableNodeCount());
         assertEquals(5, vo.getTotalNodeCount());
@@ -50,5 +54,6 @@ class PluginInfoVOTest {
         assertNotNull(s);
         assertTrue(s.contains("auth:nacos"));
         assertTrue(s.contains("enabled=true"));
+        assertTrue(s.contains("executionMode='EXCLUSIVE'"));
     }
 }

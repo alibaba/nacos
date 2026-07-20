@@ -22,9 +22,8 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
+import com.alibaba.nacos.ai.pipeline.TestAiPipelineSupport;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
@@ -102,9 +101,6 @@ class PromptOperationServiceImplTest {
     private AiResourceVersionPersistService aiResourceVersionPersistService;
     
     @Mock
-    private PipelineConfigProvider pipelineConfigProvider;
-    
-    @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
     
     @Mock
@@ -128,12 +124,10 @@ class PromptOperationServiceImplTest {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
-        PipelineConfig disabledConfig = new PipelineConfig();
-        disabledConfig.setEnabled(false);
-        lenient().when(pipelineConfigProvider.getConfig()).thenReturn(disabledConfig);
+        PublishPipelineManager pipelineManager = TestAiPipelineSupport.newManager(false,
+            Collections.emptyList(), Collections.emptyList());
         PublishPipelineExecutor publishPipelineExecutor =
-            new PublishPipelineExecutor(new PublishPipelineManager(),
-                pipelineConfigProvider, pipelineExecutionRepository,
+            new PublishPipelineExecutor(pipelineManager, pipelineExecutionRepository,
                 Executors.newSingleThreadExecutor());
         AiResourceManager resourceManager =
             new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
@@ -154,6 +148,7 @@ class PromptOperationServiceImplTest {
         if (visibilityManagerStatic != null) {
             visibilityManagerStatic.close();
         }
+        TestAiPipelineSupport.clearStateChecker();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     

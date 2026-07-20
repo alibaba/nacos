@@ -18,10 +18,13 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import com.alibaba.nacos.core.plugin.PluginManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
@@ -30,7 +33,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link StartingApplicationListener} unit test.
@@ -96,11 +101,37 @@ class StartingApplicationListenerTest {
     void startedDelegatesToCurrentStartUp() {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
+        PluginManager pluginManager = mock(PluginManager.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<PluginManager> pluginManagerProvider = mock(ObjectProvider.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+        when(context.getBeanProvider(PluginManager.class)).thenReturn(pluginManagerProvider);
+        when(pluginManagerProvider.getIfAvailable()).thenReturn(pluginManager);
         try (
             MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
             listener.started(context);
+            InOrder inOrder = inOrder(pluginManager, mockStartUp);
+            inOrder.verify(pluginManager).initialize();
+            inOrder.verify(mockStartUp).started();
+            verify(mockStartUp).logStarted(any());
+        }
+    }
+    
+    @Test
+    void startedSupportsContextWithoutPluginManager() {
+        StartingApplicationListener listener = new StartingApplicationListener();
+        NacosStartUp mockStartUp = mock(NacosStartUp.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<PluginManager> pluginManagerProvider = mock(ObjectProvider.class);
+        ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+        when(context.getBeanProvider(PluginManager.class)).thenReturn(pluginManagerProvider);
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+            managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
+            
+            listener.started(context);
+            
             verify(mockStartUp).started();
             verify(mockStartUp).logStarted(any());
         }

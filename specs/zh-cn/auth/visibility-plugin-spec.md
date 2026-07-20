@@ -119,8 +119,10 @@ nacos.plugin.visibility.enabled=true
 ```
 
 该开关是最外层运行时 gate。值为 `false` 时，无论统一插件 state 为何，任何 visibility
-实现都不得执行。核心插件管理器也会使用它生成所选实现的初始 state；持久化 state 可以覆盖
-该初始统一 state，但不能绕过插件族总开关。实现级运行时变更通过插件管理 API 完成。
+实现都不得执行。核心插件管理器不会把该总开关转换为实现级 state。实现的初始 state 先由
+兼容选择配置 `nacos.plugin.visibility.type` 决定，再由标准实现开关
+`nacos.plugin.visibility.{serviceName}.enabled` 覆盖；持久化 state 优先于二者，但不能绕过
+插件族总开关。实现级运行时变更通过插件管理 API 完成。
 
 内置 `visibility:nacos` 没有私有配置，不实现 `PluginConfigSpec`，并以
 `configurable=false` 暴露。外部实现可以拥有以下前缀的配置：

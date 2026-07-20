@@ -16,23 +16,35 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.config;
 
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OidcAuthPluginService;
+import com.alibaba.nacos.plugin.auth.impl.oidc.condition.ConditionOnOidcAuth;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class OidcPluginAutoConfigurationTest {
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
+    }
     
     @Test
     void testGetOidcAuthPluginServiceAndCreateController() {
@@ -61,5 +73,20 @@ class OidcPluginAutoConfigurationTest {
             assertThrows(IllegalStateException.class,
                 OidcPluginAutoConfiguration::getOidcAuthPluginService);
         }
+    }
+    
+    @Test
+    void testConditionOnOidcAuthUsesStandardKeyAndLegacyAlias() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE,
+            OidcProtocolConstants.AUTH_PLUGIN_TYPE);
+        EnvUtil.setEnvironment(environment);
+        assertTrue(new ConditionOnOidcAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, " ");
+        assertTrue(new ConditionOnOidcAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        assertFalse(new ConditionOnOidcAuth().matches(null, null));
     }
 }

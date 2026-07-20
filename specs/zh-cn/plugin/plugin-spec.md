@@ -78,10 +78,10 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 
 | 形态 | 含义 | 示例 |
 |------|------|------|
-| 互斥选择 | 在进程或请求范围内选择一个实现，其他已加载实现不参与该次判断。 | `auth`、`datasource-dialect` |
-| 配置选择的单服务 | 可以加载多个实现，但领域根据配置或请求上下文选择一个服务。 | `visibility`、`ai-resource-import` |
-| 有序链式执行 | 多个匹配插件按稳定顺序执行。每个节点可以贡献结果，失败是否中断由领域定义。 | `ai-pipeline`、`config-change` |
-| 订阅或广播 | 多个订阅者观察同一个事件或 trace 点，不拥有主决策权。 | `trace`、事件型扩展 |
+| `EXCLUSIVE` | 在进程或请求范围内选择一个实现，其他已加载实现不参与该次判断。 | `auth`、`datasource-dialect`、`control` |
+| `ROUTED` | 可以加载多个实现，但领域根据配置、资源元数据或请求上下文选择一个服务。 | `encryption`、`visibility`、`ai-storage`、`ai-resource-import` |
+| `CHAIN` | 多个匹配插件按稳定顺序执行。每个节点可以贡献结果，失败是否中断由领域定义。 | `config-change`、`environment`、`ai-pipeline` |
+| `BROADCAST` | 多个订阅者观察同一个事件或 trace 点，不拥有主决策权。 | `trace`、事件型扩展 |
 
 对于链式插件，领域 SPI 必须定义：
 
@@ -94,6 +94,11 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 核心插件管理器记录插件的加载状态和启用状态，本身不定义执行形态。领域管理器负责稳定地
 应用对应执行形态。
 
+执行形态和关键能力属于插件类型，而不是某个内置实现。共享 `PluginType` 必须暴露
+`executionMode` 和 `critical`；已有 `exclusive` 信息继续由
+`executionMode == EXCLUSIVE` 推导，以保持 API 兼容。插件实现是否可配置则由该实例是否
+实现 `PluginConfigSpec` 决定，同一插件类型下允许同时存在可配置和零配置实现。
+
 ## SPI 层次
 
 Nacos 插件包含两个相关的 SPI 层次：
@@ -105,14 +110,19 @@ Nacos 插件包含两个相关的 SPI 层次：
 需要动态配置的插件应实现 `PluginConfigSpec`。支持启停状态判断的插件类别，应通过
 `PluginStateCheckerHolder` 获取状态，而不是维护一套独立状态来源。
 
+`PluginConfigDefinitionSpec` 是仅暴露 definitions 的父契约，供必须在创建实例之前声明
+配置元数据的 factory 使用。参与统一配置生命周期的运行时插件实例仍必须实现完整的
+`PluginConfigSpec`；只实现 definition contract 的 factory 不接收也不持有 effective config。
+
 ## 加载与生命周期
 
 插件实现通过 Nacos SPI 加载。部署时可以从 classpath 或服务端插件目录提供插件。
 插件实现必须能在不修改 Nacos 服务端代码的情况下被加载。
 
-核心 `PluginManager` 会在服务端应用就绪后发现 `PluginProvider` 实现。领域管理器也可以
-通过 SPI 加载自身领域服务，但是否可参与请求处理，仍必须遵守核心插件管理器维护的启停
-状态。
+核心 `PluginManager` 会在 Spring 上下文刷新完成后发现 `PluginProvider` 实现，并在 Nacos
+标记 started 之前装载状态、解析配置和执行 `applyConfig`。`ApplicationReadyEvent` 只作为
+非标准嵌入启动流程的幂等兜底。领域管理器也可以通过 SPI 提前构造自身领域服务，但服务端
+进入可用状态前的最终配置和是否可参与请求处理，仍必须遵守核心插件管理器的统一结果。
 
 插件启动必须具备确定性：
 
@@ -127,19 +137,71 @@ Nacos 插件包含两个相关的 SPI 层次：
 - 已加载：实现存在于运行时。
 - 已启用：实现可以参与请求处理。
 
-大多数插件类型在加载后默认启用。互斥插件类型会选择一个默认实现：
+核心模块开关和插件状态是两个独立层次。`nacos.core.auth.enabled`、
+`nacos.core.auth.admin.enabled` 和 `nacos.core.auth.console.enabled` 等模块开关决定
+核心请求链路是否调用插件，不属于插件实现配置，也不得由插件管理 API 修改。模块关闭时，
+插件仍可以保持加载、启用和完成配置初始化。
 
-| 类型 | 默认选择规则 |
-|------|--------------|
-| `auth` | 由 `nacos.core.auth.system.type` 指定，默认 `nacos`。 |
-| `datasource-dialect` | 由 SQL platform 配置指定，默认 `derby`。 |
+统一状态迁移阶段对现有内置开关的排查结论如下：
 
-只有 `auth` 和 `datasource-dialect` 在插件管理模型中标记为互斥类型。没有持久化插件状态时，
-历史选择配置用于生成初始状态；启动加载完成后，持久化状态优先。通过插件管理 API 选择插件
-是标准管理路径，读取到历史选择配置时服务端应记录迁移提示日志。
+| 配置 | 归属与迁移行为 |
+|------|----------------|
+| `nacos.core.auth.enabled`、`nacos.core.auth.admin.enabled`、`nacos.core.auth.console.enabled` | 核心请求入口开关，不进入 plugin state。 |
+| `nacos.extension.ai.enabled` | AI 模块开关，不进入 plugin state。 |
+| `nacos.core.config.plugin.{name}.enabled` | 历史实现开关，仅作为 `nacos.plugin.config-change.{name}.enabled` 的初始状态兼容 alias。 |
+| `nacos.plugin.visibility.enabled`、`nacos.plugin.ai-pipeline.enabled` | 已有领域能力入口开关；分别决定核心链路是否进入 visibility 或 AI pipeline，保留动态读取且不转换为子插件状态。 |
+| `nacos.plugin.visibility.type` | 历史 visibility 选择 key，仅用于推导对应实现的初始状态；运行时路由从 enabled 实现中按领域输入选择。 |
+| `nacos.plugin.ai-pipeline.type` | 历史 Pipeline 链成员输入，仅由 Core 按 `RESTART` 推导实现初始状态；实现配置和顺序统一使用各节点的 `PluginConfigSpec`。 |
+| `nacos.plugin.datasource.log.enabled` | 数据源行为和日志配置，不是实现启停状态。 |
+| `nacos.ai.resource.import.enabled` | 历史 AI import 链路，随 AI importer 重构另行移除或迁移。 |
 
-当服务端依赖某些插件维持基本运行能力时，这些插件不能被禁用。当前关键插件集合包括内置
-数据源方言，以及服务端需要的默认 AI 存储插件。
+后续不得新增与逐实现 state 含义重复的插件族开关。核心模块或领域能力入口开关可以决定是否
+进入整项能力，但不能选择或启停某个具体实现；具体实现是否参与执行只能由逐实现 plugin
+state 表达。
+
+已接入统一启动选择的互斥插件类型通过以下标准静态 key 选择实现：
+
+```text
+nacos.plugin.{pluginType}.type={pluginName}
+```
+
+该选择属于启动期配置，统一按 `RESTART` 生效。历史选择 key 仅作为 alias：
+
+| 类型 | 标准 key | 历史 alias | 默认值 |
+|------|----------|------------|--------|
+| `auth` | `nacos.plugin.auth.type` | `nacos.core.auth.system.type` | `nacos` |
+| `datasource-dialect` | `nacos.plugin.datasource-dialect.type` | `spring.sql.init.platform` | `derby` |
+
+标准 key 与 alias 同时存在时标准 key 优先，读取 alias 时服务端应记录迁移提示日志。当前
+互斥类型的选择会影响 Spring Bean、数据源等启动资源，插件 status API 不得把切换报告为
+运行时已生效；修改选择必须更新上述静态 key 并重启。只有领域实现具备受控重建生命周期后，
+才能进一步开放对应类型的运行时切换。
+`control` 仍属于 bootstrap 特例，当前选择 key 为
+`nacos.plugin.control.manager.type`。在 control manager 具备受控重建生命周期且选择 key
+迁移为标准格式之前，管理 API 只反映启动时选中的 builder，并拒绝运行时状态切换。
+
+非互斥插件实现可以通过以下标准静态 key 提供初始启用状态：
+
+```text
+nacos.plugin.{pluginType}.{pluginName}.enabled=true|false
+```
+
+运行时由插件管理 API 和统一 plugin state 管理。存在持久化状态时，持久化状态优先于静态
+初始值。`nacos.plugin.{pluginType}.enabled` 这类不包含实现名称的 key 不属于统一实现状态；
+已有 key 若实际承担核心模块或领域能力入口门禁，应继续由所属领域读取，且不得被持久化子
+插件状态绕过。链式和广播型插件的全部 enabled 实现参与执行；路由型插件只允许从 enabled
+候选中选择实际实现。
+
+`critical=true` 表示已激活的插件类型必须保留至少一个可用实现，而不是所有内置实现都不能
+关闭。当前关键类型包括 `auth`、`datasource-dialect` 和 `ai-storage`。某个关键类型一旦加载
+了实现，关键互斥类型必须选中一个实现，关键链式、广播或路由类型则至少保留一个 enabled
+实现。若领域模块已经启用但无法加载任何实现，仍由该模块负责拒绝启动；因此模块总开关继续
+归核心领域所有，而不会被插件状态反向接管。管理 API 必须拒绝会使已加载关键类型失去全部
+可用实现的更新。
+
+已有响应字段 `critical` 继续表示“当前具体实现是否不能被单独关闭”，因此它会随同类型其他
+实现的状态动态变化。列表和详情响应追加 `typeCritical` 和 `executionMode`；已有
+`exclusive` 字段保留并从执行形态推导。
 
 实现 `PluginConfigSpec` 的插件应暴露配置定义、当前配置和配置应用行为。除非请求明确
 声明为仅本机生效，否则集群级状态或配置变更必须通过插件状态操作链路进行同步。
@@ -166,6 +228,8 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 迁移提示日志。完成归一化后，alias
 不应写入运行时持久化文件或 local-only 内存表。如果输入同时包含同一配置项的多个
 alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
+`enabled` 是插件实现统一状态的保留 item key，插件不得在 `ConfigItemDefinition` 中将其
+声明为普通配置项。
 
 ### 配置来源与值元数据
 
@@ -203,12 +267,13 @@ core source registry 统一持有已启用 resolver 及其固定顺序。四个�
 ### 运行时状态约束
 
 对于每次运行时操作都会重新选择实现的插件类型，领域执行链路必须在调用扩展前检查统一插件
-状态。当前满足该契约的运行时路由型插件包括 `auth`、`datasource-dialect`、
-`encryption`、`trace`、`visibility`、`config-change`、`ai-pipeline` 和
-`ai-storage`。被禁用的插件仍保持加载并可由管理 API 查询，但不得参与领域执行。
+状态。当前使用该门禁的插件包括 `auth`、`datasource-dialect`、`encryption`、`trace`、
+`visibility`、`config-change`、`ai-pipeline` 和 `ai-storage`。被禁用的插件仍保持加载并
+可由管理 API 查询，但不得参与领域执行。门禁不等于实现选择：互斥类型仍按启动期 `type`
+选择，路由类型仍由领域路由决定，链式和广播类型执行全部 enabled 实现。
 
-插件类型是否互斥属于类型能力，必须由共享的 `PluginType` 定义提供。Core 和 Console
-的 API 适配层不得分别维护硬编码的互斥类型列表。
+插件类型的执行形态和 critical 能力必须由共享的 `PluginType` 定义提供。Core 和 Console
+的 API 适配层不得分别维护硬编码的互斥类型或关键实现列表。
 
 启动期或构建期插件不能通过较晚的运行时检查满足该契约。`control` 会在统一持久化状态加载前
 构建并缓存 manager，`environment` 会在 core 插件管理器就绪前转换 Spring 属性。管理 API

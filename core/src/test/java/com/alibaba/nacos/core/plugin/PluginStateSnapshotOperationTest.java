@@ -157,6 +157,22 @@ class PluginStateSnapshotOperationTest {
     }
     
     @Test
+    void onSnapshotSaveExceptionTest() {
+        IllegalStateException failure = new IllegalStateException("load failed");
+        when(persistence.loadAllStates()).thenThrow(failure);
+        AtomicBoolean callbackSuccess = new AtomicBoolean(true);
+        AtomicReference<Throwable> callbackError = new AtomicReference<>();
+        
+        snapshotOperation.onSnapshotSave(writer, (success, error) -> {
+            callbackSuccess.set(success);
+            callbackError.set(error);
+        });
+        
+        assertFalse(callbackSuccess.get());
+        assertTrue(callbackError.get() == failure);
+    }
+    
+    @Test
     void onSnapshotLoadSuccessTest() throws Exception {
         // Prepare snapshot data
         Map<String, Boolean> states = new HashMap<>();
@@ -186,15 +202,13 @@ class PluginStateSnapshotOperationTest {
         fileMeta.append("checksum", Long.toHexString(checksum.getValue()));
         when(reader.getFileMeta("plugin_state.zip")).thenReturn(fileMeta);
         
-        doNothing().when(persistence).saveState(anyString(), any(Boolean.class));
-        doNothing().when(pluginManager).applyStateChange(anyString(), any(Boolean.class));
+        doNothing().when(pluginManager).restorePluginStates(anyMap());
         doNothing().when(pluginManager).restoreConfigChange(anyString(), anyMap());
         
         boolean result = snapshotOperation.onSnapshotLoad(reader);
         
         assertTrue(result);
-        verify(persistence, times(2)).saveState(anyString(), any(Boolean.class));
-        verify(pluginManager, times(2)).applyStateChange(anyString(), any(Boolean.class));
+        verify(pluginManager).restorePluginStates(states);
         verify(pluginManager, times(1)).restoreConfigChange(anyString(), anyMap());
     }
     
@@ -222,9 +236,28 @@ class PluginStateSnapshotOperationTest {
         boolean result = snapshotOperation.onSnapshotLoad(reader);
         
         assertTrue(result);
-        verify(persistence, never()).saveState(anyString(), any(Boolean.class));
-        verify(pluginManager, never()).applyStateChange(anyString(), any(Boolean.class));
+        verify(pluginManager, never()).restorePluginStates(anyMap());
         verify(pluginManager, never()).restoreConfigChange(anyString(), anyMap());
+    }
+    
+    @Test
+    void onSnapshotLoadWithoutChecksumTest() throws Exception {
+        PluginStateSnapshot snapshot = new PluginStateSnapshot();
+        snapshot.setStates(new HashMap<>());
+        snapshot.setConfigs(new HashMap<>());
+        byte[] data = serializer.serialize(snapshot);
+        String snapshotFile = tempDir.resolve("plugin_state.zip").toString();
+        Checksum checksum = new CRC64();
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+            DiskUtils.compressIntoZipFile("plugin", inputStream, snapshotFile, checksum);
+        }
+        when(reader.getPath()).thenReturn(tempDir.toString());
+        when(reader.getFileMeta("plugin_state.zip")).thenReturn(new LocalFileMeta());
+        
+        boolean result = snapshotOperation.onSnapshotLoad(reader);
+        
+        assertTrue(result);
+        verify(pluginManager).restorePluginStates(anyMap());
     }
     
     @Test
@@ -251,8 +284,7 @@ class PluginStateSnapshotOperationTest {
         boolean result = snapshotOperation.onSnapshotLoad(reader);
         
         assertFalse(result);
-        verify(persistence, never()).saveState(anyString(), any(Boolean.class));
-        verify(pluginManager, never()).applyStateChange(anyString(), any(Boolean.class));
+        verify(pluginManager, never()).restorePluginStates(anyMap());
     }
     
     @Test

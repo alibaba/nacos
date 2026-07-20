@@ -89,7 +89,7 @@ class VisibilityPluginManagerTest {
     }
     
     @Test
-    void testFindVisibilityServiceWhenVisibilityPluginDisabled() {
+    void testFindVisibilityServiceWhenModuleDisabled() {
         System.setProperty(VISIBILITY_ENABLED_KEY, "false");
         Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
         assertFalse(result.isPresent());
@@ -152,6 +152,20 @@ class VisibilityPluginManagerTest {
     void testResolveInitPropertiesFallsBackWhenEnvUtilThrows() throws Exception {
         System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
         EnvUtil.setThrowException(true);
+        
+        Method propertiesMethod =
+            VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
+        propertiesMethod.setAccessible(true);
+        
+        Properties result = (Properties) propertiesMethod.invoke(manager);
+        
+        assertEquals("5000", result.getProperty("nacos.plugin.visibility.fallback.timeout"));
+    }
+    
+    @Test
+    void testResolveInitPropertiesFallsBackWhenEnvResultIsNotProperties() throws Exception {
+        System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
+        EnvUtil.setProperties("invalid-properties");
         
         Method propertiesMethod =
             VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");

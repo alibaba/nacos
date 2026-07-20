@@ -20,11 +20,12 @@ import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.web.NacosWebBean;
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnNonOidcAuth;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -45,7 +46,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @NacosWebBean
 @EnableWebSecurity
 @Import({NacosAuthPluginControllerConfig.class, NacosAuthPluginOldControllerConfig.class})
-@ConditionalOnExpression("!'oidc'.equalsIgnoreCase('${nacos.core.auth.system.type:nacos}')")
+@Conditional(ConditionOnNonOidcAuth.class)
 public class NacosAuthPluginWebConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";

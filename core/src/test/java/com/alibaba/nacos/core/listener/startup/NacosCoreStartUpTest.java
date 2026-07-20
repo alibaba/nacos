@@ -32,6 +32,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -291,6 +292,17 @@ class NacosCoreStartUpTest {
             System.clearProperty("nacos.mode");
         }
         startUp.started();
+    }
+    
+    @Test
+    void standardDatasourceDialectTakesPrecedence() {
+        NacosCoreStartUp startUp = new NacosCoreStartUp();
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("spring.sql.init.platform", "mysql");
+        env.setProperty("nacos.plugin.datasource-dialect.type", " postgresql ");
+        
+        assertEquals("postgresql",
+            ReflectionTestUtils.invokeMethod(startUp, "getDatasourcePlatform", env));
     }
     
     @Test
