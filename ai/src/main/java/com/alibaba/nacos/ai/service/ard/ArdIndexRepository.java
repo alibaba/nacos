@@ -60,6 +60,11 @@ public interface ArdIndexRepository {
         String resourceVersion);
     
     /**
+     * Find the current entry for a resource.
+     */
+    ArdEntry findEntry(String namespaceId, String resourceType, String resourceName);
+    
+    /**
      * Find entries by generated entry ids.
      */
     List<ArdEntry> findEntriesByIds(Collection<Long> entryIds);

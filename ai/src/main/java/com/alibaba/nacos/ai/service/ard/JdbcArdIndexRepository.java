@@ -121,6 +121,15 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
     }
     
     @Override
+    public ArdEntry findEntry(String namespaceId, String resourceType, String resourceName) {
+        List<ArdEntry> entries = getJdbcTemplate().query(
+            "SELECT * FROM ai_resource_ard_entry WHERE namespace_id=? AND resource_type=? "
+                + "AND resource_name=? ORDER BY id DESC",
+            ENTRY_ROW_MAPPER, namespaceId, resourceType, resourceName);
+        return entries.isEmpty() ? null : entries.get(0);
+    }
+    
+    @Override
     public List<ArdEntry> findEntriesByIds(Collection<Long> entryIds) {
         if (entryIds == null || entryIds.isEmpty()) {
             return Collections.emptyList();
