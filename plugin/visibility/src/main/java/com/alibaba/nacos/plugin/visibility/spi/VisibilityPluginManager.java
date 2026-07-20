@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.visibility.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -97,14 +98,23 @@ public class VisibilityPluginManager {
                 service.getClass());
             return;
         }
-        Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
-        try {
-            service.init(serviceProperties);
-        } catch (Throwable ex) {
-            LOGGER.warn(
-                "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
-                service.getClass(), serviceName, ex);
-            return;
+        if (!(service instanceof PluginConfigSpec)) {
+            Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
+            if (!serviceProperties.isEmpty()) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
+                        + "init(Properties) configuration. Implement PluginConfigSpec to use "
+                        + "unified plugin configuration.",
+                    service.getClass(), serviceName);
+            }
+            try {
+                service.init(serviceProperties);
+            } catch (Throwable ex) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
+                    service.getClass(), serviceName, ex);
+                return;
+            }
         }
         visibilityServiceMap.put(serviceName, service);
         LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",

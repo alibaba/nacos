@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.visibility.spi;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
@@ -29,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -126,6 +130,18 @@ class VisibilityPluginManagerTest {
         assertFalse(service.initProperties.containsKey("nacos.plugin.visibility.custom.timeout"));
         assertFalse(serviceMap.containsKey(""));
         assertFalse(serviceMap.containsKey("throw-init"));
+    }
+    
+    @Test
+    void testRegisterConfigurableVisibilityServiceSkipsLegacyInit() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.visibility.configurable.timeout", "1000");
+        ConfigurableVisibilityService service = new ConfigurableVisibilityService();
+        
+        registerVisibilityService(service, properties);
+        
+        assertEquals(service, serviceMap.get("configurable"));
+        assertFalse(service.legacyInitCalled);
     }
     
     @Test
@@ -256,6 +272,35 @@ class VisibilityPluginManagerTest {
         @Override
         public void init(Properties properties) {
             throw new IllegalStateException("init failed");
+        }
+    }
+    
+    private static class ConfigurableVisibilityService extends TestVisibilityService
+        implements PluginConfigSpec {
+        
+        private boolean legacyInitCalled;
+        
+        private ConfigurableVisibilityService() {
+            super("configurable");
+        }
+        
+        @Override
+        public void init(Properties properties) {
+            legacyInitCalled = true;
+        }
+        
+        @Override
+        public List<ConfigItemDefinition> getConfigDefinitions() {
+            return Collections.emptyList();
+        }
+        
+        @Override
+        public void applyConfig(Map<String, String> config) {
+        }
+        
+        @Override
+        public Map<String, String> getCurrentConfig() {
+            return Collections.emptyMap();
         }
     }
 }
