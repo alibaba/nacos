@@ -238,6 +238,8 @@ public class PluginInnerHandler implements PluginHandler {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
+        vo.setTypeCritical(pluginInfo.getPluginType().isCritical());
+        vo.setExecutionMode(pluginInfo.getPluginType().getExecutionMode().name());
         vo.setExclusive(pluginInfo.getPluginType().isExclusive());
         return vo;
     }
@@ -250,6 +252,9 @@ public class PluginInnerHandler implements PluginHandler {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
+        vo.setTypeCritical(pluginInfo.getPluginType().isCritical());
+        vo.setExecutionMode(pluginInfo.getPluginType().getExecutionMode().name());
+        vo.setExclusive(pluginInfo.getPluginType().isExclusive());
         PluginConfigResolution resolution = pluginManager.resolvePluginConfig(pluginInfo);
         if (resolution == null) {
             vo.setConfig(pluginInfo.getConfig());

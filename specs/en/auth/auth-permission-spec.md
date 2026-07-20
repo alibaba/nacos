@@ -187,7 +187,8 @@ Auth enablement is scoped by API audience:
 | `nacos.core.auth.admin.enabled` | Enables auth for Admin APIs. |
 | `nacos.core.auth.console.enabled` | Enables auth for Console APIs and login behavior. |
 
-The selected auth plugin is named by `nacos.core.auth.system.type`.
+The selected auth plugin is named by `nacos.plugin.auth.type`.
+`nacos.core.auth.system.type` remains a legacy startup alias.
 
 ## Plugin APIs
 

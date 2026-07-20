@@ -40,6 +40,12 @@ public class PluginDetailVO {
     
     private Boolean configurable;
     
+    private Boolean typeCritical;
+    
+    private String executionMode;
+    
+    private Boolean exclusive;
+    
     private Map<String, String> config;
     
     private List<ConfigItemDefinition> configDefinitions;
@@ -94,6 +100,30 @@ public class PluginDetailVO {
         this.configurable = configurable;
     }
     
+    public Boolean getTypeCritical() {
+        return typeCritical;
+    }
+    
+    public void setTypeCritical(Boolean typeCritical) {
+        this.typeCritical = typeCritical;
+    }
+    
+    public String getExecutionMode() {
+        return executionMode;
+    }
+    
+    public void setExecutionMode(String executionMode) {
+        this.executionMode = executionMode;
+    }
+    
+    public Boolean getExclusive() {
+        return exclusive;
+    }
+    
+    public void setExclusive(Boolean exclusive) {
+        this.exclusive = exclusive;
+    }
+    
     public Map<String, String> getConfig() {
         return config;
     }
@@ -123,9 +153,9 @@ public class PluginDetailVO {
         return "PluginDetailVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType
             + '\''
             + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical="
-            + critical
-            + ", configurable=" + configurable + ", config=" + config + ", configDefinitions="
-            + configDefinitions + ", configValueMetas=" + configValueMetas
-            + '}';
+            + critical + ", configurable=" + configurable + ", typeCritical=" + typeCritical
+            + ", executionMode='" + executionMode + '\'' + ", exclusive=" + exclusive
+            + ", config=" + config + ", configDefinitions=" + configDefinitions
+            + ", configValueMetas=" + configValueMetas + '}';
     }
 }

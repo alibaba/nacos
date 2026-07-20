@@ -35,9 +35,13 @@ public class PluginInfoVO {
     
     private Boolean configurable;
     
+    private Boolean typeCritical;
+    
+    private String executionMode;
+    
     /**
      * Whether this plugin type is exclusive (only one can be active at a time).
-     * Exclusive plugins (AUTH, DATASOURCE_DIALECT) cannot be switched via UI.
+     * Exclusive plugins cannot be switched through the runtime state API.
      */
     private Boolean exclusive;
     
@@ -93,6 +97,22 @@ public class PluginInfoVO {
         this.configurable = configurable;
     }
     
+    public Boolean getTypeCritical() {
+        return typeCritical;
+    }
+    
+    public void setTypeCritical(Boolean typeCritical) {
+        this.typeCritical = typeCritical;
+    }
+    
+    public String getExecutionMode() {
+        return executionMode;
+    }
+    
+    public void setExecutionMode(String executionMode) {
+        this.executionMode = executionMode;
+    }
+    
     public Boolean getExclusive() {
         return exclusive;
     }
@@ -122,7 +142,7 @@ public class PluginInfoVO {
         return "PluginInfoVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType
             + '\''
             + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical="
-            + critical
-            + ", configurable=" + configurable + ", exclusive=" + exclusive + '}';
+            + critical + ", configurable=" + configurable + ", typeCritical=" + typeCritical
+            + ", executionMode='" + executionMode + '\'' + ", exclusive=" + exclusive + '}';
     }
 }

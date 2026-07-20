@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.ai.pipeline.spi.impl.SkillScannerPipelineServiceBuilder
-com.alibaba.nacos.plugin.ai.pipeline.spi.impl.SkillSpectorPipelineServiceBuilder
+com.alibaba.nacos.plugin.ai.pipeline.spi.impl.SkillScannerPipelineService
+com.alibaba.nacos.plugin.ai.pipeline.spi.impl.SkillSpectorPipelineService

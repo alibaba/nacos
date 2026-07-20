@@ -38,7 +38,7 @@ A server auth plugin implements `AuthPluginService`.
 
 | Method | Requirement |
 |--------|-------------|
-| `getAuthServiceName()` | Return the stable plugin name selected by `nacos.core.auth.system.type`. |
+| `getAuthServiceName()` | Return the stable plugin name selected by `nacos.plugin.auth.type`; `nacos.core.auth.system.type` is the legacy alias. |
 | `identityNames()` | Declare identity fields that may be extracted from requests. |
 | `enableAuth(action, type)` | Decide whether this plugin requires auth for the action and sign type. |
 | `validateIdentity(identityContext, resource)` | Authenticate the caller and enrich identity metadata. |
@@ -93,12 +93,15 @@ payloads independently.
 The selected auth implementation is named by:
 
 ```properties
-nacos.core.auth.system.type=nacos
+nacos.plugin.auth.type=nacos
 ```
 
 Auth plugins are also registered in the core plugin system with type `auth`.
 Only the selected and enabled auth plugin may handle requests. If a plugin is
 loaded but disabled by plugin state, it must not be used for auth decisions.
+The legacy `nacos.core.auth.system.type` key remains a startup alias. Selection
+is static and requires restart; the runtime status API must not switch auth
+implementations.
 
 ## Identity Context
 

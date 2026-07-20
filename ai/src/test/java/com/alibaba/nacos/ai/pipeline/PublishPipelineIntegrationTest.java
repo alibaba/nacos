@@ -16,29 +16,24 @@
 
 package com.alibaba.nacos.ai.pipeline;
 
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepositoryImpl;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +85,11 @@ class PublishPipelineIntegrationTest {
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
     }
     
+    @AfterEach
+    void tearDown() {
+        TestAiPipelineSupport.clearStateChecker();
+    }
+    
     // ---- Synchronous executor for deterministic testing ----
     
     private static ExecutorService directExecutor() {
@@ -133,7 +133,7 @@ class PublishPipelineIntegrationTest {
     // ---- Helper: create a passing PublishPipelineService ----
     
     private static PublishPipelineService passingService(String id, int order) {
-        return new PublishPipelineService() {
+        return new TestPublishPipelineService() {
             
             @Override
             public String pipelineId() {
@@ -160,7 +160,7 @@ class PublishPipelineIntegrationTest {
     // ---- Helper: create a failing PublishPipelineService ----
     
     private static PublishPipelineService failingService(String id, int order) {
-        return new PublishPipelineService() {
+        return new TestPublishPipelineService() {
             
             @Override
             public String pipelineId() {
@@ -184,67 +184,15 @@ class PublishPipelineIntegrationTest {
         };
     }
     
-    // ---- Helper: create a builder from a service ----
-    
-    private static PublishPipelineServiceBuilder builderFor(PublishPipelineService service) {
-        return new PublishPipelineServiceBuilder() {
-            
-            @Override
-            public String pipelineId() {
-                return service.pipelineId();
-            }
-            
-            @Override
-            public PublishPipelineService build(Properties properties) {
-                return service;
-            }
-        };
-    }
-    
-    // ---- Helper: build PipelineConfig ----
-    
-    private static PipelineConfig buildConfig(boolean enabled, List<String> nodeIds) {
-        PipelineConfig config = new PipelineConfig();
-        config.setEnabled(enabled);
-        List<PipelineNodeConfig> nodes = new ArrayList<>();
-        for (String id : nodeIds) {
-            PipelineNodeConfig nc = new PipelineNodeConfig();
-            nc.setPipelineId(id);
-            nc.setProperties(new Properties());
-            nodes.add(nc);
-        }
-        config.setNodes(nodes);
-        return config;
-    }
-    
-    // ---- Helper: build PipelineConfigProvider ----
-    
-    private static PipelineConfigProvider fixedConfigProvider(PipelineConfig config) {
-        return new PipelineConfigProvider() {
-            
-            @Override
-            public PipelineConfig getConfig() {
-                return config;
-            }
-            
-            @Override
-            public String type() {
-                return "test";
-            }
-        };
+    private static PipelineTestSettings buildConfig(boolean enabled, List<String> nodeIds) {
+        return new PipelineTestSettings(enabled, nodeIds);
     }
     
     // ---- Helper: build PublishPipelineManager with given services ----
     
     private static PublishPipelineManager buildManager(List<PublishPipelineService> services,
-        PipelineConfig config) {
-        PublishPipelineManager manager = new PublishPipelineManager();
-        List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
-        for (PublishPipelineService service : services) {
-            builders.add(builderFor(service));
-        }
-        manager.initWithBuilders(builders, config);
-        return manager;
+        PipelineTestSettings config) {
+        return TestAiPipelineSupport.newManager(config.enabled, config.nodeIds, services);
     }
     
     // ---- Helper: build PublishPipelineContext ----
@@ -272,17 +220,15 @@ class PublishPipelineIntegrationTest {
     @Test
     void endToEndAllNodesPassed() {
         List<String> nodeIds = List.of("ai-review", "security-scan");
-        PipelineConfig config = buildConfig(true, nodeIds);
+        PipelineTestSettings config = buildConfig(true, nodeIds);
         
         List<PublishPipelineService> services = List.of(
             passingService("ai-review", 1),
             passingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
-        PipelineConfigProvider configProvider = fixedConfigProvider(config);
-        
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-            manager, configProvider, repository, directExecutor());
+            manager, repository, directExecutor());
         
         AtomicReference<PipelineExecutionResult> resultRef = new AtomicReference<>();
         AtomicInteger callbackCount = new AtomicInteger(0);
@@ -331,17 +277,16 @@ class PublishPipelineIntegrationTest {
      */
     @Test
     void pipelineNotEnabledDirectPassThrough() {
-        PipelineConfig config = buildConfig(false, List.of("ai-review", "security-scan"));
+        PipelineTestSettings config = buildConfig(false,
+            List.of("ai-review", "security-scan"));
         
         List<PublishPipelineService> services = List.of(
             passingService("ai-review", 1),
             passingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
-        PipelineConfigProvider configProvider = fixedConfigProvider(config);
-        
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-            manager, configProvider, repository, directExecutor());
+            manager, repository, directExecutor());
         
         AtomicInteger callbackCount = new AtomicInteger(0);
         PipelineCallback callback = result -> callbackCount.incrementAndGet();
@@ -373,17 +318,15 @@ class PublishPipelineIntegrationTest {
     @Test
     void oneNodeRejectsPipelineStopsRejected() {
         List<String> nodeIds = List.of("ai-review", "security-scan");
-        PipelineConfig config = buildConfig(true, nodeIds);
+        PipelineTestSettings config = buildConfig(true, nodeIds);
         
         List<PublishPipelineService> services = List.of(
             passingService("ai-review", 1),
             failingService("security-scan", 2));
         
         PublishPipelineManager manager = buildManager(services, config);
-        PipelineConfigProvider configProvider = fixedConfigProvider(config);
-        
         PublishPipelineExecutor executor = new PublishPipelineExecutor(
-            manager, configProvider, repository, directExecutor());
+            manager, repository, directExecutor());
         
         AtomicReference<PipelineExecutionResult> resultRef = new AtomicReference<>();
         AtomicInteger callbackCount = new AtomicInteger(0);
@@ -416,5 +359,17 @@ class PublishPipelineIntegrationTest {
         assertEquals(2, dbRecord.getPipeline().size());
         assertTrue(dbRecord.getPipeline().get(0).isPassed());
         assertFalse(dbRecord.getPipeline().get(1).isPassed());
+    }
+    
+    private static final class PipelineTestSettings {
+        
+        private final boolean enabled;
+        
+        private final List<String> nodeIds;
+        
+        private PipelineTestSettings(boolean enabled, List<String> nodeIds) {
+            this.enabled = enabled;
+            this.nodeIds = nodeIds;
+        }
     }
 }

@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.plugin.ConfigItemType;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -71,12 +71,19 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void configDefinitionsTest() {
         SkillSpectorPipelineService service = new SkillSpectorPipelineService(
-            SkillSpectorPluginConfig.fromProperties(null), command -> "/resolved/spector");
+            SkillSpectorPluginConfig.fromMap(null), command -> "/resolved/spector");
         Map<String, ConfigItemDefinition> definitions = new LinkedHashMap<>();
         service.getConfigDefinitions()
             .forEach(definition -> definitions.put(definition.getKey(), definition));
         
-        assertEquals(9, definitions.size());
+        assertEquals(10, definitions.size());
+        ConfigItemDefinition order = definitions.get(SkillSpectorPluginConfig.ORDER);
+        assertEquals(ConfigItemType.NUMBER, order.getType());
+        assertEquals("90", order.getDefaultValue());
+        assertEquals(ConfigItemEffectMode.RUNTIME, order.getEffectMode());
+        assertTrue(definitions.entrySet().stream()
+            .filter(entry -> !SkillSpectorPluginConfig.ORDER.equals(entry.getKey()))
+            .allMatch(entry -> ConfigItemEffectMode.RESTART == entry.getValue().getEffectMode()));
         ConfigItemDefinition command = definitions.get(SkillSpectorPluginConfig.COMMAND);
         assertEquals(ConfigItemType.STRING, command.getType());
         assertEquals("skill-spector", command.getDefaultValue());
@@ -94,26 +101,54 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void applyConfigReplacesRuntimeSnapshotTest() {
         SkillSpectorPipelineService unavailable = new SkillSpectorPipelineService(
-            SkillSpectorPluginConfig.fromProperties(null), command -> null);
+            SkillSpectorPluginConfig.fromMap(null), command -> null);
         assertEquals("skill-spector",
             unavailable.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
         
+        AtomicInteger resolveCount = new AtomicInteger();
         SkillSpectorPipelineService service = new SkillSpectorPipelineService(
-            SkillSpectorPluginConfig.fromProperties(null), command -> "/resolved/" + command);
+            SkillSpectorPluginConfig.fromMap(null), command -> {
+                resolveCount.incrementAndGet();
+                return "/resolved/" + command;
+            });
         Map<String, String> config = new LinkedHashMap<>();
         config.put(SkillSpectorPluginConfig.COMMAND, "custom-spector");
         config.put(SkillSpectorPluginConfig.USE_LLM, "true");
         config.put(SkillSpectorPluginConfig.API_KEY, "secret");
+        config.put(SkillSpectorPluginConfig.ORDER, "30");
         service.applyConfig(config);
         service.applyConfig(config);
+        Map<String, String> reordered = new LinkedHashMap<>(config);
+        reordered.put(SkillSpectorPluginConfig.ORDER, "3");
+        service.applyConfig(reordered);
         Map<String, String> current = service.getCurrentConfig();
         
+        assertEquals(2, resolveCount.get());
+        assertEquals(3, service.getPreferOrder());
         assertEquals("custom-spector", current.get(SkillSpectorPluginConfig.COMMAND));
         assertEquals("true", current.get(SkillSpectorPluginConfig.USE_LLM));
         assertEquals("secret", current.get(SkillSpectorPluginConfig.API_KEY));
         current.put(SkillSpectorPluginConfig.COMMAND, "mutated");
         assertEquals("custom-spector",
             service.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
+    }
+    
+    @Test
+    void spiConstructorShouldDeferRuntimeInitializationUntilApplyTest() {
+        AtomicInteger resolveCount = new AtomicInteger();
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService(command -> {
+            resolveCount.incrementAndGet();
+            return "/resolved/" + command;
+        });
+        assertEquals(0, resolveCount.get());
+        assertEquals("skill-spector",
+            service.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
+        assertFalse(service.execute(new PublishPipelineContext()).isPassed());
+        
+        service.applyConfig(service.getCurrentConfig());
+        
+        assertEquals(1, resolveCount.get());
+        assertEquals(SkillSpectorPluginConfig.DEFAULT_ORDER, service.getPreferOrder());
     }
     
     @Test
@@ -321,22 +356,19 @@ class SkillSpectorPipelineServiceTest {
     }
     
     @Test
-    void deleteRecursivelyHandlesMissingAndUndeletableFilesTest() throws Exception {
+    void deleteRecursivelyHandlesMissingAndUndeletableFilesTest() {
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("spector", null);
-        Method deleteRecursively =
-            SkillSpectorPipelineService.class.getDeclaredMethod("deleteRecursively", File.class);
-        deleteRecursively.setAccessible(true);
-        deleteRecursively.invoke(service, new Object[] {null});
+        service.deleteRecursively(null);
         File missing = mock(File.class);
         when(missing.exists()).thenReturn(false);
-        deleteRecursively.invoke(service, missing);
+        service.deleteRecursively(missing);
         File undeletable = mock(File.class);
         when(undeletable.exists()).thenReturn(true);
         when(undeletable.isDirectory()).thenReturn(false);
         when(undeletable.delete()).thenReturn(false);
         when(undeletable.getAbsolutePath()).thenReturn("/undeletable");
         
-        deleteRecursively.invoke(service, undeletable);
+        service.deleteRecursively(undeletable);
     }
     
     private SkillSpectorPipelineService createStubService(StubScanMode mode,
@@ -345,7 +377,8 @@ class SkillSpectorPipelineServiceTest {
     }
     
     private SkillSpectorScanOptions options(Properties properties) {
-        return SkillSpectorPluginConfig.fromProperties(properties).getScanOptions();
+        return SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties))
+            .getScanOptions();
     }
     
     private SkillPipelineContext createSkillContext(String name) {

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.plugin;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,14 +25,7 @@ import java.util.Map;
  * @author WangzJi
  * @since 3.2.0
  */
-public interface PluginConfigSpec {
-    
-    /**
-     * Get configuration item definitions.
-     *
-     * @return list of configuration item definitions
-     */
-    List<ConfigItemDefinition> getConfigDefinitions();
+public interface PluginConfigSpec extends PluginConfigDefinitionSpec {
     
     /**
      * Apply configuration to the plugin.

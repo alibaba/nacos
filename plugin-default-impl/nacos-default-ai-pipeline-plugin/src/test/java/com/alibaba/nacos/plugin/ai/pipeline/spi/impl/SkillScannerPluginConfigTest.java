@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -35,10 +36,12 @@ class SkillScannerPluginConfigTest {
     
     @Test
     void defaultsTest() {
-        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromProperties(null);
+        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromMap(null);
         Map<String, String> values = config.toMap();
         
         assertEquals("skill-scanner", config.getCommand());
+        assertEquals(SkillScannerPluginConfig.DEFAULT_ORDER, config.getOrder());
+        assertEquals("100", values.get(SkillScannerPluginConfig.ORDER));
         assertEquals("skill-scanner", values.get(SkillScannerPluginConfig.COMMAND));
         assertEquals("false", values.get(SkillScannerPluginConfig.USE_LLM));
         assertEquals("", values.get(SkillScannerPluginConfig.LLM_API_KEY));
@@ -57,9 +60,10 @@ class SkillScannerPluginConfigTest {
         properties.setProperty(SkillScannerPluginConfig.LLM_MODEL_ALIAS, " model ");
         properties.setProperty(SkillScannerPluginConfig.LLM_PROVIDER_ALIAS, " provider ");
         properties.setProperty(SkillScannerPluginConfig.ENABLE_META_ALIAS, "true");
-        properties.setProperty("order", "100");
+        properties.setProperty(SkillScannerPluginConfig.ORDER, "42");
         
-        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromProperties(properties);
+        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(properties));
         Map<String, String> values = config.toMap();
         
         assertEquals("/tmp/scanner", values.get(SkillScannerPluginConfig.COMMAND));
@@ -68,7 +72,8 @@ class SkillScannerPluginConfigTest {
         assertEquals("model", values.get(SkillScannerPluginConfig.LLM_MODEL));
         assertEquals("provider", values.get(SkillScannerPluginConfig.LLM_PROVIDER));
         assertEquals("true", values.get(SkillScannerPluginConfig.ENABLE_META));
-        assertFalse(values.containsKey("order"));
+        assertEquals(42, config.getOrder());
+        assertEquals("42", values.get(SkillScannerPluginConfig.ORDER));
         assertTrue(config.getScanOptions().isUseLlm());
         assertTrue(config.getScanOptions().isEnableMeta());
         
@@ -76,7 +81,8 @@ class SkillScannerPluginConfigTest {
         executableAlias.setProperty(SkillScannerPluginConfig.COMMAND_ALIAS_EXECUTABLE,
             "/tmp/executable-scanner");
         assertEquals("/tmp/executable-scanner",
-            SkillScannerPluginConfig.fromProperties(executableAlias).getCommand());
+            SkillScannerPluginConfig.fromMap(PluginConfigTestUtils.toMap(executableAlias))
+                .getCommand());
     }
     
     @Test
@@ -90,7 +96,7 @@ class SkillScannerPluginConfigTest {
         properties.setProperty(SkillScannerPluginConfig.LLM_API_KEY_ALIAS, "alias-key");
         
         Map<String, String> values =
-            SkillScannerPluginConfig.fromProperties(properties).toMap();
+            SkillScannerPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties)).toMap();
         
         assertEquals("canonical", values.get(SkillScannerPluginConfig.COMMAND));
         assertEquals("false", values.get(SkillScannerPluginConfig.USE_LLM));
@@ -110,5 +116,16 @@ class SkillScannerPluginConfigTest {
         assertEquals("skill-scanner", values.get(SkillScannerPluginConfig.COMMAND));
         assertEquals("model", values.get(SkillScannerPluginConfig.LLM_MODEL));
         assertEquals("skill-scanner", defaults.get(SkillScannerPluginConfig.COMMAND));
+    }
+    
+    @Test
+    void invalidOrderShouldBeRejectedTest() {
+        Map<String, String> config = new HashMap<>();
+        config.put(SkillScannerPluginConfig.ORDER, "1.5");
+        assertThrows(ArithmeticException.class,
+            () -> SkillScannerPluginConfig.fromMap(config));
+        config.put(SkillScannerPluginConfig.ORDER, "invalid");
+        assertThrows(NumberFormatException.class,
+            () -> SkillScannerPluginConfig.fromMap(config));
     }
 }

@@ -31,13 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: plugin list exposes discovered plugin inventory, pluginType filters narrow results, and
- *     plugin detail returns the same identity plus mutable-state fields.</li>
+ *     plugin detail returns the same identity plus type capability and mutable-state fields.</li>
  *     <li>Boundary/validation: unknown pluginType filters return an empty list; status update requires
  *     {@code pluginName}; config update requires {@code config} and rejects non-configurable plugins; missing plugin
  *     detail is reported as not found.</li>
- *     <li>Exception/error handling: plugin state/config mutation success paths are intentionally not executed because
- *     they change runtime extension state; required-parameter and detail not-found failures are verified as controlled
- *     v3 error envelopes.</li>
+ *     <li>Exception/error handling: critical disable and exclusive runtime-switch attempts are rejected without
+ *     mutation; required-parameter and detail not-found failures are verified as controlled v3 error envelopes.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -53,6 +52,9 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertTrue(plugin.get("pluginId").asText().contains(":"), plugin.toString());
         assertTrue(plugin.get("pluginType").asText().length() > 0, plugin.toString());
         assertTrue(plugin.get("pluginName").asText().length() > 0, plugin.toString());
+        assertTrue(plugin.has("typeCritical"), plugin.toString());
+        assertTrue(plugin.get("executionMode").asText().length() > 0, plugin.toString());
+        assertTrue(plugin.has("exclusive"), plugin.toString());
 
         JsonNode filtered = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
                 Query.newInstance().addParam("pluginType", plugin.get("pluginType").asText())).get("data");
@@ -69,6 +71,9 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertEquals(plugin.get("pluginName").asText(), detail.get("pluginName").asText(), detail.toString());
         assertTrue(detail.has("enabled"), detail.toString());
         assertTrue(detail.has("configurable"), detail.toString());
+        assertEquals(plugin.get("typeCritical"), detail.get("typeCritical"), detail.toString());
+        assertEquals(plugin.get("executionMode"), detail.get("executionMode"), detail.toString());
+        assertEquals(plugin.get("exclusive"), detail.get("exclusive"), detail.toString());
         assertTrue(detail.get("configValueMetas").isObject(), detail.toString());
 
         JsonNode unknownType = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
@@ -223,6 +228,27 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
     }
 
     @Test
+    public void testCriticalAndExclusiveStateChangesAreRejected() throws Exception {
+        JsonNode authPlugins = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
+                Query.newInstance().addParam("pluginType", "auth")).get("data");
+        JsonNode enabled = findByEnabled(authPlugins, true);
+        JsonNode disabled = findByEnabled(authPlugins, false);
+        assertNotNull(enabled, authPlugins.toString());
+        assertNotNull(disabled, authPlugins.toString());
+
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", enabled.get("pluginName").asText())
+                        .addParam("enabled", "false")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "critical plugin type");
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", disabled.get("pluginName").asText())
+                        .addParam("enabled", "true")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "requires restart");
+    }
+
+    @Test
     public void testNonConfigurablePluginRejectsConfigUpdate() throws Exception {
         JsonNode plugins = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list", Query.newInstance()).get("data");
         JsonNode nonConfigurable = null;
@@ -255,6 +281,15 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         for (JsonNode definition : definitions) {
             if (key.equals(definition.get("key").asText())) {
                 return definition;
+            }
+        }
+        return null;
+    }
+
+    private JsonNode findByEnabled(JsonNode plugins, boolean enabled) {
+        for (JsonNode plugin : plugins) {
+            if (plugin.get("enabled").asBoolean() == enabled) {
+                return plugin;
             }
         }
         return null;

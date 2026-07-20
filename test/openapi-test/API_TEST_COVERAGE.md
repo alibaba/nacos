@@ -65,7 +65,9 @@ Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
 built-in `auth:nacos`, `auth:ldap`, and `auth:oidc` configuration contracts. It
 verifies definitions, legacy aliases, effect modes, effective values, source
-metadata, API-side secret masking, and OIDC restart-only update rejection.
+metadata, API-side secret masking, plugin-type execution/criticality metadata,
+critical disable rejection, exclusive restart-only selection, and OIDC restart-only update
+rejection.
 Successful runtime mutation remains partial to avoid carrying
 persisted plugin state into later SDK suites in the shared standalone process;
 full-map replacement, source fallback, effect mode checks, same-source sensitive

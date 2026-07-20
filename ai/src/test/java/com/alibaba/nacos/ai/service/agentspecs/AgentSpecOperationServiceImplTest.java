@@ -21,8 +21,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
+import com.alibaba.nacos.ai.pipeline.TestAiPipelineSupport;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -92,9 +91,6 @@ class AgentSpecOperationServiceImplTest {
     private AiResourceVersionPersistService aiResourceVersionPersistService;
     
     @Mock
-    private PipelineConfigProvider pipelineConfigProvider;
-    
-    @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
     
     private AgentSpecOperationServiceImpl service;
@@ -112,12 +108,10 @@ class AgentSpecOperationServiceImplTest {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
-        PipelineConfig disabledConfig = new PipelineConfig();
-        disabledConfig.setEnabled(false);
-        lenient().when(pipelineConfigProvider.getConfig()).thenReturn(disabledConfig);
+        PublishPipelineManager pipelineManager = TestAiPipelineSupport.newManager(false,
+            List.of(), List.of());
         PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(
-            new PublishPipelineManager(), pipelineConfigProvider, pipelineExecutionRepository,
-            Executors.newSingleThreadExecutor());
+            pipelineManager, pipelineExecutionRepository, Executors.newSingleThreadExecutor());
         service = new AgentSpecOperationServiceImpl(aiResourcePersistService,
             aiResourceVersionPersistService,
             publishPipelineExecutor,
@@ -137,6 +131,7 @@ class AgentSpecOperationServiceImplTest {
             visibilityManagerStatic.close();
         }
         AiResourceStorageRouter.reset();
+        TestAiPipelineSupport.clearStateChecker();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     

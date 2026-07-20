@@ -64,7 +64,8 @@ public class PluginInfo implements Serializable {
     private boolean enabled;
     
     /**
-     * Whether this is a critical plugin (cannot be disabled).
+     * Whether this implementation currently cannot be disabled without violating its plugin
+     * type's critical constraint.
      */
     private boolean critical;
     

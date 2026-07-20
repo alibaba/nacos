@@ -115,8 +115,7 @@ public class NacosServerAdminAuthConfig extends AbstractDynamicConfig implements
         try {
             authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED,
                 Boolean.class, true);
-            nacosAuthSystemType =
-                EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+            nacosAuthSystemType = AuthPluginTypeResolver.resolve();
             serverIdentityKey =
                 EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue =

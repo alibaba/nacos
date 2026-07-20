@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
+package com.alibaba.nacos.ai.pipeline;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 
-import java.util.Properties;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Builder for {@link SkillSpectorPipelineService}.
+ * Minimal configurable pipeline service for unit tests.
  *
- * @author nacos
+ * @author Nacos
  */
-public class SkillSpectorPipelineServiceBuilder implements PublishPipelineServiceBuilder {
+abstract class TestPublishPipelineService implements PublishPipelineService {
     
     @Override
-    public String pipelineId() {
-        return SkillSpectorPipelineService.PIPELINE_ID;
+    public List<ConfigItemDefinition> getConfigDefinitions() {
+        return Collections.emptyList();
     }
     
     @Override
-    public PublishPipelineService build(Properties properties) {
-        SkillSpectorPluginConfig config = SkillSpectorPluginConfig.fromProperties(properties);
-        return new SkillSpectorPipelineService(config);
+    public void applyConfig(Map<String, String> config) {
+    }
+    
+    @Override
+    public Map<String, String> getCurrentConfig() {
+        return Collections.emptyMap();
     }
 }

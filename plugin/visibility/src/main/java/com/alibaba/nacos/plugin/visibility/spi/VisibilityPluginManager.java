@@ -137,7 +137,7 @@ public class VisibilityPluginManager {
      * @return optional visibility service
      */
     public Optional<VisibilityService> findVisibilityService(String serviceName) {
-        if (!isVisibilityPluginEnabled()) {
+        if (!isVisibilityModuleEnabled()) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}",
                 ENABLED_PROPERTY);
             return Optional.empty();
@@ -150,13 +150,10 @@ public class VisibilityPluginManager {
         return Optional.ofNullable(visibilityServiceMap.get(serviceName));
     }
     
-    private boolean isVisibilityPluginEnabled() {
+    private boolean isVisibilityModuleEnabled() {
         Properties allProperties = resolveInitProperties();
         String enabledValue = allProperties.getProperty(ENABLED_PROPERTY);
-        if (StringUtils.isBlank(enabledValue)) {
-            return true;
-        }
-        return Boolean.parseBoolean(enabledValue);
+        return StringUtils.isBlank(enabledValue) || Boolean.parseBoolean(enabledValue);
     }
     
     public Map<String, VisibilityService> getAllPlugins() {
@@ -176,7 +173,12 @@ public class VisibilityPluginManager {
             LOGGER.debug(
                 "[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.",
                 ex);
+            return copySystemProperties();
         }
+        return copySystemProperties();
+    }
+    
+    private Properties copySystemProperties() {
         Properties fallback = new Properties();
         fallback.putAll(System.getProperties());
         return fallback;

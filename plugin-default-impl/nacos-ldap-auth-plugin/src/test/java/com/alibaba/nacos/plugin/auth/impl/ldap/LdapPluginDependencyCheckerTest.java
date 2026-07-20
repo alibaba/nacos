@@ -80,6 +80,7 @@ class LdapPluginDependencyCheckerTest {
         String message = LdapPluginDependencyChecker.buildMissingDependencyMessage();
         
         assertTrue(message.contains("spring-ldap-core"));
+        assertTrue(message.contains("nacos.plugin.auth.type=ldap"));
         assertTrue(message.contains("nacos.core.auth.system.type=ldap"));
     }
 }

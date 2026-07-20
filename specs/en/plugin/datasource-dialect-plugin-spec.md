@@ -22,9 +22,10 @@ The data source dialect plugin type isolates database-specific SQL behavior from
 Nacos persistence logic. It covers SQL dialect functions, pagination, generated
 primary keys, and mapper implementations for Nacos tables.
 
-This is an exclusive-selection plugin. The initial active dialect is selected
-by `spring.sql.init.platform`. Common lifecycle and state rules are defined by
-the [Nacos Plugin Spec](plugin-spec.md), and bundled
+This is an exclusive-selection plugin. The active dialect is selected at
+startup by `nacos.plugin.datasource-dialect.type`;
+`spring.sql.init.platform` remains a legacy alias. Common lifecycle and state
+rules are defined by the [Nacos Plugin Spec](plugin-spec.md), and bundled
 database families are defined by the
 [Default Data Source Dialect Implementation Spec](default-datasource-dialect-plugin-spec.md).
 
@@ -114,12 +115,12 @@ operation error, not an empty result.
 ## Selection And State
 
 The core plugin manager exposes this plugin type as `datasource-dialect`.
-Only the configured dialect should be enabled by default. Built-in critical
-dialects required by the server cannot be disabled while in use.
+Only the configured dialect is enabled. The type is critical and must retain
+one selected implementation while loaded.
 
-The SQL platform property supplies bootstrap selection only. Persisted unified
-plugin state takes precedence after it is loaded. Future selection changes
-should use plugin management rather than modifying the bootstrap property.
+The dialect selector supplies bootstrap selection and requires restart.
+Persisted state entries for this exclusive type do not replace the static
+selection, and the runtime status API must reject selection changes.
 
 If a requested dialect is disabled, startup or persistence operations must fail
 explicitly. If the requested dialect is missing, the current manager searches for
@@ -135,11 +136,12 @@ dialect must not participate in persistence operations.
 The SQL platform is selected by:
 
 ```properties
-spring.sql.init.platform=${databaseType}
+nacos.plugin.datasource-dialect.type=${databaseType}
 ```
 
-The removed `spring.datasource.platform` property is no longer read. Deployments
-still using it must migrate to `spring.sql.init.platform` before upgrade.
+`spring.sql.init.platform` remains a legacy alias, with the standard key taking
+precedence when both are present. The removed `spring.datasource.platform`
+property is no longer read.
 
 ### Datasource Module Configuration
 

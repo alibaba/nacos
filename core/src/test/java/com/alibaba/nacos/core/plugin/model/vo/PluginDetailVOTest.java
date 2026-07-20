@@ -38,6 +38,9 @@ class PluginDetailVOTest {
         vo.setEnabled(false);
         vo.setCritical(false);
         vo.setConfigurable(true);
+        vo.setTypeCritical(false);
+        vo.setExecutionMode("BROADCAST");
+        vo.setExclusive(false);
         Map<String, String> config = new HashMap<>();
         config.put("endpoint", "http://localhost");
         vo.setConfig(config);
@@ -56,6 +59,9 @@ class PluginDetailVOTest {
         assertEquals(false, vo.getEnabled());
         assertEquals(false, vo.getCritical());
         assertEquals(true, vo.getConfigurable());
+        assertEquals(false, vo.getTypeCritical());
+        assertEquals("BROADCAST", vo.getExecutionMode());
+        assertEquals(false, vo.getExclusive());
         assertEquals("http://localhost", vo.getConfig().get("endpoint"));
         assertNotNull(vo.getConfigDefinitions());
         assertEquals(1, vo.getConfigDefinitions().size());
@@ -70,5 +76,6 @@ class PluginDetailVOTest {
         assertNotNull(s);
         assertTrue(s.contains("trace:otel"));
         assertTrue(s.contains("configValueMetas"));
+        assertTrue(s.contains("executionMode='BROADCAST'"));
     }
 }

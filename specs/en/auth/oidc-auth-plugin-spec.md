@@ -29,7 +29,8 @@ client also contains `OidcClientAuthServiceImpl`, which obtains bearer tokens
 through the OAuth2 client credentials flow and injects them into SDK requests.
 
 OIDC is not part of the default Nacos username/password auth plugin. It is an
-alternative auth mode selected by `nacos.core.auth.system.type=oidc`.
+alternative auth mode selected by `nacos.plugin.auth.type=oidc`.
+`nacos.core.auth.system.type=oidc` remains a legacy startup alias.
 
 ## Server SPI
 
@@ -54,7 +55,7 @@ surfaces should be hidden or disabled when OIDC is selected.
 OIDC mode is selected with:
 
 ```properties
-nacos.core.auth.system.type=oidc
+nacos.plugin.auth.type=oidc
 nacos.core.auth.enabled=true
 ```
 

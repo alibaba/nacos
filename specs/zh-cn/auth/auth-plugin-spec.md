@@ -35,7 +35,7 @@ IdentityContext + Resource + Action -> 允许或拒绝
 
 | 方法 | 要求 |
 |------|------|
-| `getAuthServiceName()` | 返回稳定的插件名称，由 `nacos.core.auth.system.type` 选择。 |
+| `getAuthServiceName()` | 返回稳定的插件名称，由 `nacos.plugin.auth.type` 选择；`nacos.core.auth.system.type` 是历史 alias。 |
 | `identityNames()` | 声明可以从请求中提取的身份字段。 |
 | `enableAuth(action, type)` | 判断该动作和 SignType 是否需要鉴权。 |
 | `validateIdentity(identityContext, resource)` | 认证调用方，并补充身份元数据。 |
@@ -82,11 +82,13 @@ payload。
 选中的鉴权实现由以下配置指定：
 
 ```properties
-nacos.core.auth.system.type=nacos
+nacos.plugin.auth.type=nacos
 ```
 
 鉴权插件同时以 `auth` 类型注册到核心插件系统。只有被选中且处于启用状态的鉴权插件可以
 处理请求。如果插件已加载但被插件状态禁用，则不得参与鉴权判断。
+历史 `nacos.core.auth.system.type` 继续作为启动期 alias。选择配置为静态配置，需要重启
+生效；运行时 status API 不得切换鉴权实现。
 
 ## 身份上下文
 

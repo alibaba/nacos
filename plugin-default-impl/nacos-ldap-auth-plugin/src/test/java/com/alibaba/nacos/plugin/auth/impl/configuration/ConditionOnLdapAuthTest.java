@@ -16,47 +16,42 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnLdapAuth;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ConditionOnLdapAuth test.
  *
  * @author ChenHao26
  */
-@ExtendWith(MockitoExtension.class)
 class ConditionOnLdapAuthTest {
     
-    @Mock
-    private static ConfigurableEnvironment environment;
-    
-    private ConditionOnLdapAuth conditionOnLdapAuth;
-    
-    @Mock
-    private ConditionContext conditionContext;
-    
-    @Mock
-    private AnnotatedTypeMetadata annotatedTypeMetadata;
-    
-    @BeforeEach
-    void setup() {
-        conditionOnLdapAuth = new ConditionOnLdapAuth();
-        EnvUtil.setEnvironment(environment);
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
     void matches() {
-        boolean matches = conditionOnLdapAuth.matches(conditionContext, annotatedTypeMetadata);
-        assertFalse(matches);
+        MockEnvironment environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+        ConditionOnLdapAuth condition = new ConditionOnLdapAuth();
+        assertFalse(condition.matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "ldap");
+        assertTrue(condition.matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        assertFalse(condition.matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "ldap");
+        assertTrue(condition.matches(null, null));
     }
 }
