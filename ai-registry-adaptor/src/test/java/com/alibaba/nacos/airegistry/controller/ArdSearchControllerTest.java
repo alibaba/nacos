@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.controller;
+package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.ard.ArdArtifact;
-import com.alibaba.nacos.ai.service.ard.ArdArtifactService;
-import com.alibaba.nacos.ai.service.ard.ArdSearchService;
-import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
+import com.alibaba.nacos.airegistry.service.ard.ArdArtifact;
+import com.alibaba.nacos.airegistry.service.ard.ArdArtifactService;
+import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.springframework.http.ResponseEntity;

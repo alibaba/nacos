@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.controller;
+package com.alibaba.nacos.airegistry.controller;
 
-import com.alibaba.nacos.ai.service.ard.ArdSearchService;
-import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;

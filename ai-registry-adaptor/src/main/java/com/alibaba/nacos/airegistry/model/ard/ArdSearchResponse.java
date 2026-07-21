@@ -14,47 +14,38 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Request body for Nacos Local ARD Search.
+ * Response body for Nacos Local ARD Search.
  *
  * @author nacos
  */
-public class ArdSearchRequest {
+public class ArdSearchResponse {
     
-    private ArdSearchQuery query;
+    private List<ArdSearchResult> results = new ArrayList<>();
     
-    private String federation;
-    
-    private Integer pageSize;
+    private List<ArdSearchResult> referrals = new ArrayList<>();
     
     private String pageToken;
     
-    private String namespaceId;
-    
-    public ArdSearchQuery getQuery() {
-        return query;
+    public List<ArdSearchResult> getResults() {
+        return results;
     }
     
-    public void setQuery(ArdSearchQuery query) {
-        this.query = query;
+    public void setResults(List<ArdSearchResult> results) {
+        this.results = results;
     }
     
-    public String getFederation() {
-        return federation;
+    public List<ArdSearchResult> getReferrals() {
+        return referrals;
     }
     
-    public void setFederation(String federation) {
-        this.federation = federation;
-    }
-    
-    public Integer getPageSize() {
-        return pageSize;
-    }
-    
-    public void setPageSize(Integer pageSize) {
-        this.pageSize = pageSize;
+    public void setReferrals(List<ArdSearchResult> referrals) {
+        this.referrals = referrals;
     }
     
     public String getPageToken() {
@@ -63,13 +54,5 @@ public class ArdSearchRequest {
     
     public void setPageToken(String pageToken) {
         this.pageToken = pageToken;
-    }
-    
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
     }
 }

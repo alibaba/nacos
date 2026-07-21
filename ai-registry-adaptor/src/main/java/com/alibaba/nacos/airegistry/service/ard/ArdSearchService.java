@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.ard;
+package com.alibaba.nacos.airegistry.service.ard;
 
-import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**

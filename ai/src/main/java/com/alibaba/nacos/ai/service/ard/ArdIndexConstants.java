@@ -21,54 +21,56 @@ package com.alibaba.nacos.ai.service.ard;
  *
  * @author nacos
  */
-final class ArdIndexConstants {
+public final class ArdIndexConstants {
     
-    static final String STATUS_ENABLED = "enabled";
+    public static final String STATUS_ENABLED = "enabled";
     
-    static final String GENERATE_MODE_AUTO = "auto";
+    public static final String GENERATE_MODE_AUTO = "auto";
     
-    static final String SOURCE_NACOS_LOCAL = "nacos-local";
+    public static final String SOURCE_NACOS_LOCAL = "nacos-local";
     
-    static final String KEY_CATALOG_HOST_IDENTIFIER =
+    public static final String FEDERATION_NONE = "none";
+    
+    public static final String KEY_CATALOG_HOST_IDENTIFIER =
         "nacos.ai.ard.catalog.host.identifier";
     
-    static final String DEFAULT_CATALOG_HOST_IDENTIFIER = "nacos";
+    public static final String DEFAULT_CATALOG_HOST_IDENTIFIER = "nacos";
     
-    static final String RESOURCE_TYPE_MCP = "mcp";
+    public static final String RESOURCE_TYPE_MCP = "mcp";
     
-    static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";
+    public static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";
     
-    static final String MEDIA_TYPE_SKILL_PACKAGE = "application/zip";
+    public static final String MEDIA_TYPE_SKILL_PACKAGE = "application/zip";
     
-    static final String MEDIA_TYPE_PROMPT = "application/vnd.nacos.ai-prompt+json";
+    public static final String MEDIA_TYPE_PROMPT = "application/vnd.nacos.ai-prompt+json";
     
-    static final String MEDIA_TYPE_MCP = "application/mcp-server-card+json";
+    public static final String MEDIA_TYPE_MCP = "application/mcp-server-card+json";
     
-    static final String CHUNK_TYPE_DESCRIPTION = "description";
+    public static final String CHUNK_TYPE_DESCRIPTION = "description";
     
-    static final String CHUNK_TYPE_CAPABILITY = "capability";
+    public static final String CHUNK_TYPE_CAPABILITY = "capability";
     
-    static final String CHUNK_TYPE_REPRESENTATIVE_QUERY = "representative_query";
+    public static final String CHUNK_TYPE_REPRESENTATIVE_QUERY = "representative_query";
     
-    static final String CHUNK_TYPE_TAG = "tag";
+    public static final String CHUNK_TYPE_TAG = "tag";
     
-    static final String CHUNK_TYPE_METADATA_IO = "metadata_io";
+    public static final String CHUNK_TYPE_METADATA_IO = "metadata_io";
     
-    static final String CHUNK_TYPE_METADATA_RISK = "metadata_risk";
+    public static final String CHUNK_TYPE_METADATA_RISK = "metadata_risk";
     
-    static final String CHUNK_TYPE_NOT_FOR = "not_for";
+    public static final String CHUNK_TYPE_NOT_FOR = "not_for";
     
-    static final String CHUNK_TYPE_SKILL_CONTENT = "skill_content";
+    public static final String CHUNK_TYPE_SKILL_CONTENT = "skill_content";
     
-    static final String CHUNK_TYPE_PROMPT_CONTENT = "prompt_content";
+    public static final String CHUNK_TYPE_PROMPT_CONTENT = "prompt_content";
     
-    static final String CHUNK_TYPE_MCP_CONTENT = "mcp_content";
+    public static final String CHUNK_TYPE_MCP_CONTENT = "mcp_content";
     
-    static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
+    public static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
     
-    static final String CHUNK_TYPE_SEARCH_INTENT = "search_intent";
+    public static final String CHUNK_TYPE_SEARCH_INTENT = "search_intent";
     
-    static final String CHUNK_TYPE_SEARCH_TERM = "search_term";
+    public static final String CHUNK_TYPE_SEARCH_TERM = "search_term";
     
     private ArdIndexConstants() {
     }

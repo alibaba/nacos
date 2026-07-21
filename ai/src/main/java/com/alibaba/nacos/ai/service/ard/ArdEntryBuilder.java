@@ -215,7 +215,7 @@ public class ArdEntryBuilder {
         Map<String, Object> trustManifest = new LinkedHashMap<>();
         trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
         trustManifest.put("resourceType", resourceType);
-        trustManifest.put("federation", ArdSearchServiceImpl.FEDERATION_NONE);
+        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
         return trustManifest;
     }
     

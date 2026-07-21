@@ -14,35 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.alibaba.nacos.airegistry.service.ard;
 
 /**
- * ARD deterministic list response.
+ * ARD artifact response body with media type.
  *
  * @author nacos
  */
-public class ArdListResponse {
+public class ArdArtifact {
     
-    private List<ArdSearchResult> results = new ArrayList<>();
+    private final String mediaType;
     
-    private String pageToken;
+    private final Object body;
     
-    public List<ArdSearchResult> getResults() {
-        return results;
+    public ArdArtifact(String mediaType, Object body) {
+        this.mediaType = mediaType;
+        this.body = body;
     }
     
-    public void setResults(List<ArdSearchResult> results) {
-        this.results = results;
+    public String getMediaType() {
+        return mediaType;
     }
     
-    public String getPageToken() {
-        return pageToken;
-    }
-    
-    public void setPageToken(String pageToken) {
-        this.pageToken = pageToken;
+    public Object getBody() {
+        return body;
     }
 }

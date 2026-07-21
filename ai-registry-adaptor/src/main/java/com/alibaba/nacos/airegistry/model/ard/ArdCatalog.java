@@ -14,47 +14,45 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * ARD search query.
+ * ARD ai-catalog.json manifest.
  *
  * @author nacos
  */
-public class ArdSearchQuery {
+public class ArdCatalog {
     
-    private String text;
+    private String specVersion;
     
-    private Map<String, Object> filter = new LinkedHashMap<>();
+    private ArdHostInfo host;
     
-    private List<ArdSearchFilter> filters = new ArrayList<>();
+    private List<ArdSearchResult> entries = new ArrayList<>();
     
-    public String getText() {
-        return text;
+    public String getSpecVersion() {
+        return specVersion;
     }
     
-    public void setText(String text) {
-        this.text = text;
+    public void setSpecVersion(String specVersion) {
+        this.specVersion = specVersion;
     }
     
-    public Map<String, Object> getFilter() {
-        return filter;
+    public ArdHostInfo getHost() {
+        return host;
     }
     
-    public void setFilter(Map<String, Object> filter) {
-        this.filter = filter;
+    public void setHost(ArdHostInfo host) {
+        this.host = host;
     }
     
-    public List<ArdSearchFilter> getFilters() {
-        return filters;
+    public List<ArdSearchResult> getEntries() {
+        return entries;
     }
     
-    public void setFilters(List<ArdSearchFilter> filters) {
-        this.filters = filters;
+    public void setEntries(List<ArdSearchResult> entries) {
+        this.entries = entries;
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

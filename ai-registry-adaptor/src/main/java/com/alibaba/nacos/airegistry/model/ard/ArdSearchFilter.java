@@ -14,42 +14,42 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
 
 /**
- * Explore facet request.
+ * ARD field-path filter.
  *
  * @author nacos
  */
-public class ArdFacetRequest {
+public class ArdSearchFilter {
     
-    private String field;
+    private String fieldPath;
     
-    private Integer limit;
+    private Object value;
     
-    private Integer minCount;
+    private Object values;
     
-    public String getField() {
-        return field;
+    public String getFieldPath() {
+        return fieldPath;
     }
     
-    public void setField(String field) {
-        this.field = field;
+    public void setFieldPath(String fieldPath) {
+        this.fieldPath = fieldPath;
     }
     
-    public Integer getLimit() {
-        return limit;
+    public Object getValue() {
+        return value;
     }
     
-    public void setLimit(Integer limit) {
-        this.limit = limit;
+    public void setValue(Object value) {
+        this.value = value;
     }
     
-    public Integer getMinCount() {
-        return minCount;
+    public Object getValues() {
+        return values;
     }
     
-    public void setMinCount(Integer minCount) {
-        this.minCount = minCount;
+    public void setValues(Object values) {
+        this.values = values;
     }
 }

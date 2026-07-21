@@ -14,45 +14,35 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ARD ai-catalog.json manifest.
+ * ARD deterministic list response.
  *
  * @author nacos
  */
-public class ArdCatalog {
+public class ArdListResponse {
     
-    private String specVersion;
+    private List<ArdSearchResult> results = new ArrayList<>();
     
-    private ArdHostInfo host;
+    private String pageToken;
     
-    private List<ArdSearchResult> entries = new ArrayList<>();
-    
-    public String getSpecVersion() {
-        return specVersion;
+    public List<ArdSearchResult> getResults() {
+        return results;
     }
     
-    public void setSpecVersion(String specVersion) {
-        this.specVersion = specVersion;
+    public void setResults(List<ArdSearchResult> results) {
+        this.results = results;
     }
     
-    public ArdHostInfo getHost() {
-        return host;
+    public String getPageToken() {
+        return pageToken;
     }
     
-    public void setHost(ArdHostInfo host) {
-        this.host = host;
-    }
-    
-    public List<ArdSearchResult> getEntries() {
-        return entries;
-    }
-    
-    public void setEntries(List<ArdSearchResult> entries) {
-        this.entries = entries;
+    public void setPageToken(String pageToken) {
+        this.pageToken = pageToken;
     }
 }

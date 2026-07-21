@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.ard;
+package com.alibaba.nacos.airegistry.service.ard;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
@@ -23,20 +23,23 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
+import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResultType;
-import com.alibaba.nacos.api.ai.model.ard.ArdFacetRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchFilter;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchQuery;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
+import com.alibaba.nacos.airegistry.model.ard.ArdFacetRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchFilter;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchQuery;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResult;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
@@ -569,7 +572,7 @@ class ArdSearchServiceImplTest {
             List.of("markdown"), "riskLevel", "low")));
         entry.setTrustManifest(JacksonUtils.toJson(Map.of("source",
             ArdIndexConstants.SOURCE_NACOS_LOCAL, "resourceType", "skill", "federation",
-            ArdSearchServiceImpl.FEDERATION_NONE)));
+            ArdIndexConstants.FEDERATION_NONE)));
         entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
         entry.setSource(ArdIndexConstants.SOURCE_NACOS_LOCAL);
         entry.setGmtCreate(Timestamp.from(Instant.parse("2026-06-28T01:00:00Z")));

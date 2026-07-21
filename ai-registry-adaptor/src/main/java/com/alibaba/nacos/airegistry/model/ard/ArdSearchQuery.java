@@ -14,45 +14,47 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.ard;
+package com.alibaba.nacos.airegistry.model.ard;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Response body for Nacos Local ARD Search.
+ * ARD search query.
  *
  * @author nacos
  */
-public class ArdSearchResponse {
+public class ArdSearchQuery {
     
-    private List<ArdSearchResult> results = new ArrayList<>();
+    private String text;
     
-    private List<ArdSearchResult> referrals = new ArrayList<>();
+    private Map<String, Object> filter = new LinkedHashMap<>();
     
-    private String pageToken;
+    private List<ArdSearchFilter> filters = new ArrayList<>();
     
-    public List<ArdSearchResult> getResults() {
-        return results;
+    public String getText() {
+        return text;
     }
     
-    public void setResults(List<ArdSearchResult> results) {
-        this.results = results;
+    public void setText(String text) {
+        this.text = text;
     }
     
-    public List<ArdSearchResult> getReferrals() {
-        return referrals;
+    public Map<String, Object> getFilter() {
+        return filter;
     }
     
-    public void setReferrals(List<ArdSearchResult> referrals) {
-        this.referrals = referrals;
+    public void setFilter(Map<String, Object> filter) {
+        this.filter = filter;
     }
     
-    public String getPageToken() {
-        return pageToken;
+    public List<ArdSearchFilter> getFilters() {
+        return filters;
     }
     
-    public void setPageToken(String pageToken) {
-        this.pageToken = pageToken;
+    public void setFilters(List<ArdSearchFilter> filters) {
+        this.filters = filters;
     }
 }

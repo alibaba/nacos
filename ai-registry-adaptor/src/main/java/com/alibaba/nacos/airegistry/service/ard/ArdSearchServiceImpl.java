@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.ard;
+package com.alibaba.nacos.airegistry.service.ard;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
@@ -24,21 +24,12 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
+import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdExploreResultType;
-import com.alibaba.nacos.api.ai.model.ard.ArdFacetRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdHostInfo;
-import com.alibaba.nacos.api.ai.model.ard.ArdListResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchFilter;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchQuery;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchRequest;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResponse;
-import com.alibaba.nacos.api.ai.model.ard.ArdSearchResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -46,6 +37,18 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
+import com.alibaba.nacos.airegistry.model.ard.ArdFacetRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdHostInfo;
+import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchFilter;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchQuery;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdSearchResult;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -82,8 +85,6 @@ import java.util.Set;
 @Service
 @ConditionalOnArdEnabled
 public class ArdSearchServiceImpl implements ArdSearchService {
-    
-    static final String FEDERATION_NONE = "none";
     
     private static final int DEFAULT_PAGE_SIZE = 10;
     
@@ -498,9 +499,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_MISSING, "Required parameter `query.text` not present");
         }
-        String federation = StringUtils.isBlank(request.getFederation()) ? FEDERATION_NONE
-            : request.getFederation();
-        if (!FEDERATION_NONE.equalsIgnoreCase(federation)) {
+        String federation = StringUtils.isBlank(request.getFederation())
+            ? ArdIndexConstants.FEDERATION_NONE : request.getFederation();
+        if (!ArdIndexConstants.FEDERATION_NONE.equalsIgnoreCase(federation)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Only federation `none` is supported by Nacos Local ARD Search");
@@ -951,7 +952,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         }
         Map<String, Object> trustManifest = new LinkedHashMap<>();
         trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("federation", FEDERATION_NONE);
+        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
         host.setTrustManifest(trustManifest);
         return host;
     }
@@ -973,7 +974,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         Map<String, Object> trustManifest = new LinkedHashMap<>();
         trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
         trustManifest.put("resourceType", "registry");
-        trustManifest.put("federation", FEDERATION_NONE);
+        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
         result.setTrustManifest(trustManifest);
         return result;
     }
