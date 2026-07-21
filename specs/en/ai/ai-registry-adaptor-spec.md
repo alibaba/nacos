@@ -18,7 +18,7 @@
 
 This document defines the contract for the `ai-registry-adaptor` module. The
 adaptor exposes Nacos AI Registry resources through selected community registry
-protocols so existing MCP and Skill clients can discover Nacos-managed
+protocols so existing MCP, Skill, and ARD clients can discover Nacos-managed
 resources without speaking Nacos v3 APIs directly.
 
 ## 1. Scope
@@ -29,6 +29,8 @@ Nacos AI Registry resources into external registry response shapes, including:
 - MCP Server data exposed through MCP Registry v0-compatible read APIs;
 - Skill data exposed through skills CLI and well-known discovery-compatible
   endpoints;
+- Skill, Prompt, and MCP data exposed through Agentic Resource Discovery (ARD)
+  search, explore, catalog, and artifact endpoints;
 - protocol-specific pagination, search, response, and file-fetch behavior
   required by those ecosystems.
 
@@ -40,9 +42,10 @@ visibility, or publish rules. Those rules remain defined by the
 External protocol references include the
 [MCP Registry](https://modelcontextprotocol.info/tools/registry/),
 [skills.sh documentation](https://skills.sh/docs), and the
-[Agent Skills Specification](https://agentskills.io/specification). Nacos uses
-these references for compatibility, not as ownership boundaries for its
-canonical resource model.
+[Agent Skills Specification](https://agentskills.io/specification), and the
+[ARD Specification](https://agenticresourcediscovery.org/spec/). Nacos uses
+these references for compatibility, not as ownership boundaries for its canonical
+resource model.
 
 ## 2. Startup And Enablement
 
@@ -54,6 +57,7 @@ registry surface is explicitly enabled:
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | Enables MCP Registry-compatible endpoints. |
 | `nacos.ai.skill.registry.enabled` | `false` | Enables Skill registry-compatible endpoints. |
+| `nacos.ai.ard.enabled` | `false` | Enables ARD endpoints and the supporting local indexes. |
 | `nacos.ai.registry.port` | `9080` | HTTP port used by the adaptor context. |
 | `nacos.ai.mcp.registry.port` | deprecated | Legacy fallback for the adaptor port. |
 
@@ -154,7 +158,26 @@ The canonical package and lifecycle rules are defined by the
 [Skill Spec](skill-spec.md). The adaptor only converts eligible Nacos Skills
 into the community discovery shape.
 
-## 6. Compatibility Rules
+## 6. Agentic Resource Discovery Compatibility
+
+When `nacos.ai.ard.enabled=true`, the adaptor exposes ARD discovery endpoints:
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| `POST` | `/v3/ai/ard/search` | Searches the latest online Skill, Prompt, and MCP resources. |
+| `POST` | `/v3/ai/ard/explore` | Returns facets for discoverable resources. |
+| `GET` | `/v3/ai/ard/agents` | Lists discoverable resources with filters and pagination. |
+| `GET` | `/v3/ai/ard/ai-catalog.json` | Returns a namespace-scoped catalog. |
+| `GET` | `/v3/ai/ard/artifacts` | Returns the versioned artifact referenced by a catalog entry. |
+| `GET` | `/.well-known/ai-catalog.json` | Returns the host-level ARD catalog. |
+
+ARD request and response models belong to this adaptor because they are external
+protocol contracts rather than canonical Nacos client API models. Canonical resource
+lifecycle, visibility, authorization, and index maintenance remain owned by the AI
+module. The global ARD switch starts the adaptor context even when the MCP and Skill
+compatibility switches remain disabled.
+
+## 7. Compatibility Rules
 
 - The adaptor must prefer external protocol compatibility over Nacos v3 response
   conventions on adaptor paths.
@@ -166,7 +189,7 @@ into the community discovery shape.
   protocol introduces incompatible field, pagination, authentication, or route
   changes.
 
-## 7. Pending Issues
+## 8. Pending Issues
 
 - Define a stable adaptor authentication model for operators who need to expose
   compatibility protocols without making data public.

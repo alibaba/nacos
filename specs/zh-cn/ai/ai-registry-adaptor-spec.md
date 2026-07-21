@@ -17,7 +17,7 @@
 # AI Registry 适配器规范
 
 本文档定义 `ai-registry-adaptor` 模块的契约。该适配器将 Nacos AI Registry
-资源以部分社区注册协议暴露出去，使已有 MCP 和 Skill 客户端可以发现 Nacos 管理的资源，
+资源以部分社区注册协议暴露出去，使已有 MCP、Skill 和 ARD 客户端可以发现 Nacos 管理的资源，
 而不需要直接使用 Nacos v3 API。
 
 ## 1. 范围
@@ -27,6 +27,8 @@ AI Registry 适配器负责协议兼容面。它将 Nacos AI Registry 资源转�
 
 - 通过 MCP Registry v0 兼容只读 API 暴露 MCP Server 数据；
 - 通过 skills CLI 与 well-known discovery 兼容端点暴露 Skill 数据；
+- 通过 Agentic Resource Discovery（ARD）的搜索、探索、目录和 artifact 端点暴露
+  Skill、Prompt 和 MCP 数据；
 - 这些生态需要的协议特定分页、搜索、响应和文件读取行为。
 
 适配器不负责标准 AI resource identity、生命周期、存储、可见性或发布规则。这些规则仍由
@@ -35,8 +37,9 @@ AI Registry 适配器负责协议兼容面。它将 Nacos AI Registry 资源转�
 
 外部协议参考包括 [MCP Registry](https://modelcontextprotocol.info/tools/registry/)、
 [skills.sh documentation](https://skills.sh/docs) 和
-[Agent Skills Specification](https://agentskills.io/specification)。Nacos 使用这些参考
-实现兼容，不把它们作为自身标准资源模型的归属边界。
+[Agent Skills Specification](https://agentskills.io/specification)，以及
+[ARD Specification](https://agenticresourcediscovery.org/spec/)。Nacos 使用这些参考实现兼容，
+不把它们作为自身标准资源模型的归属边界。
 
 ## 2. 启动与开关
 
@@ -47,6 +50,7 @@ AI Registry 适配器负责协议兼容面。它将 Nacos AI Registry 资源转�
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | 开启 MCP Registry 兼容端点。 |
 | `nacos.ai.skill.registry.enabled` | `false` | 开启 Skill registry 兼容端点。 |
+| `nacos.ai.ard.enabled` | `false` | 开启 ARD 端点及其本地索引能力。 |
 | `nacos.ai.registry.port` | `9080` | 适配器 Context 使用的 HTTP 端口。 |
 | `nacos.ai.mcp.registry.port` | deprecated | 适配器端口的历史兼容配置。 |
 
@@ -133,7 +137,24 @@ registry 用法的 Skill discovery 端点：
 标准包与生命周期规则由 [Skill 规范](skill-spec.md)定义。适配器只负责将符合条件的
 Nacos Skills 转换为社区 discovery 形态。
 
-## 6. 兼容规则
+## 6. Agentic Resource Discovery 兼容
+
+当 `nacos.ai.ard.enabled=true` 时，适配器暴露 ARD discovery 端点：
+
+| 方法 | 路径 | 行为 |
+| --- | --- | --- |
+| `POST` | `/v3/ai/ard/search` | 搜索最新 online 的 Skill、Prompt 和 MCP 资源。 |
+| `POST` | `/v3/ai/ard/explore` | 返回可发现资源的 facets。 |
+| `GET` | `/v3/ai/ard/agents` | 按过滤条件和分页参数列出可发现资源。 |
+| `GET` | `/v3/ai/ard/ai-catalog.json` | 返回 namespace 维度的 catalog。 |
+| `GET` | `/v3/ai/ard/artifacts` | 返回 catalog 条目引用的版本化 artifact。 |
+| `GET` | `/.well-known/ai-catalog.json` | 返回 host 维度的 ARD catalog。 |
+
+ARD 请求和响应模型属于该适配器，因为它们是外部协议契约，而不是 Nacos Client API
+标准模型。标准资源生命周期、可见性、鉴权和索引维护仍由 AI 模块负责。即使 MCP 和 Skill
+兼容开关均未开启，ARD 总开关也会启动适配器 Context。
+
+## 7. 兼容规则
 
 - 在适配器路径上，外部协议兼容性优先于 Nacos v3 响应约定。
 - 标准 Nacos API 仍是管理语义的事实来源。
@@ -141,7 +162,7 @@ Nacos Skills 转换为社区 discovery 形态。
   discovery 格式变化时，适配器可能需要不兼容调整。
 - 当上游协议引入不兼容字段、分页、鉴权或路由变化时，兼容行为应明确版本化或文档化。
 
-## 7. 待处理问题
+## 8. 待处理问题
 
 - 为需要暴露兼容协议但又不希望数据公开的运维场景定义稳定的适配器鉴权模型。
 - 跟踪 MCP Registry 版本变化，并明确未来是否支持写 API，还是继续将写操作保持在适配器
