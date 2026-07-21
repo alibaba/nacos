@@ -94,6 +94,7 @@ left as `Partial` or `Pending` without a documented reason.
 
 | Public SDK surface | Required scenarios | Current status | Notes |
 | --- | --- | --- | --- |
+| `AgentDiscoveryService` | Namespace-bound Search, Discover, Watch, Endpoint publication, local validation, response shapes, reconnect, cache, and redo behavior. | Pending | This change only adds the Agent/RAD contract models and deterministic local validation, covered by `nacos-api` unit tests. No SDK service method, transport binding, capability bit, or server behavior exists yet, so standalone Java SDK IT begins with the later `AgentDiscoveryService` implementation. |
 | Deprecated `NamingMaintainService` | Create/query/update/delete service and update instance if the deprecated client can still be created in the standalone IT. | Pending | Listed separately because the API is deprecated after 3.3.0. |
 | Maintainer client SDK interfaces | Maintainer API behavior, authorization assumptions, validation, and controlled errors. | Pending | Needs a separate batch because it uses a different artifact and service model. |
 
@@ -105,3 +106,6 @@ left as `Partial` or `Pending` without a documented reason.
 2. Add functional Prompt/Skill/AgentSpec Java SDK IT after the public SDK
    exposes stable create/upload setup APIs, or after the standalone framework
    provides an approved setup helper for AI resource metadata.
+3. Add the complete Agent discovery and Endpoint publication scenario matrix
+   when `AgentDiscoveryService` and its negotiated transport bindings are
+   implemented; model-only unit tests do not count as SDK IT coverage.
