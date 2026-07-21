@@ -272,15 +272,15 @@ class AuthFilterTest {
             .thenReturn(AuthResult.failureResult(401, "invalid token"));
         StringWriter out = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(out));
-
+        
         authFilter.doFilter(request, response, filterChain);
-
+        
         verify(filterChain, never()).doFilter(request, response);
         verify(response).setStatus(eq(403));
         assertTrue(out.toString().contains("\"code\":10001"));
         assertTrue(out.toString().contains("Code: 401, Message: invalid token."));
     }
-
+    
     @Test
     @Secured
     void testDoFilterWithNeedAuthSecuredAuthorityFailure()
