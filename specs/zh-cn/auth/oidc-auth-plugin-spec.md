@@ -26,7 +26,8 @@ OIDC 鉴权插件让 Nacos 将认证和授权委托给 OpenID Connect 1.0 / OAut
 OAuth2 client credentials flow 获取 bearer token，并注入到 SDK 请求中。
 
 OIDC 不属于默认 Nacos 用户名/密码鉴权插件。它是通过
-`nacos.core.auth.system.type=oidc` 选择的另一种鉴权模式。
+`nacos.plugin.auth.type=oidc` 选择的另一种鉴权模式。
+`nacos.core.auth.system.type=oidc` 继续作为历史启动 alias。
 
 ## 服务端 SPI
 
@@ -50,7 +51,7 @@ OIDC 不属于默认 Nacos 用户名/密码鉴权插件。它是通过
 OIDC 模式通过以下配置选择：
 
 ```properties
-nacos.core.auth.system.type=oidc
+nacos.plugin.auth.type=oidc
 nacos.core.auth.enabled=true
 ```
 

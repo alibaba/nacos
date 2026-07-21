@@ -142,6 +142,7 @@ class SkillSpectorScanOptionsTest {
     }
     
     private SkillSpectorScanOptions options(Properties properties) {
-        return SkillSpectorPluginConfig.fromProperties(properties).getScanOptions();
+        return SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties))
+            .getScanOptions();
     }
 }

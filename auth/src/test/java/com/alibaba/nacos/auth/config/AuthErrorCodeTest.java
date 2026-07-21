@@ -34,6 +34,7 @@ class AuthErrorCodeTest {
     @Test
     void testInvalidTypeMsg() {
         assertTrue(AuthErrorCode.INVALID_TYPE.getMsg().contains("Invalid auth type"));
+        assertTrue(AuthErrorCode.INVALID_TYPE.getMsg().contains("nacos.plugin.auth.type"));
         assertTrue(AuthErrorCode.INVALID_TYPE.getMsg().contains("nacos.core.auth.system.type"));
     }
     

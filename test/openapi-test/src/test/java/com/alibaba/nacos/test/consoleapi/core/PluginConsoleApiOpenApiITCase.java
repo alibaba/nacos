@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: list exposes discovered plugin inventory, pluginType filtering narrows results, detail
- *     returns identity and mutable-state fields, and availability returns the cluster-node availability map.</li>
+ *     returns identity, type capability, and mutable-state fields, and availability returns the cluster-node
+ *     availability map.</li>
  *     <li>Boundary/validation: unknown pluginType list filter returns an empty list; detail/status/config/availability
  *     require plugin identity parameters; config mutation requires a configuration map and rejects non-configurable
  *     plugins.</li>
- *     <li>Exception/error handling: plugin state/config success mutations are intentionally not executed because they
- *     change runtime extension state; missing plugin detail and validation errors are verified as controlled v3
- *     envelopes.</li>
+ *     <li>Exception/error handling: critical disable and exclusive runtime-switch attempts are rejected without
+ *     mutation; missing plugin detail and validation errors are verified as controlled v3 envelopes.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -55,6 +55,9 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertTrue(plugin.get("pluginId").asText().contains(":"), plugin.toString());
         assertTrue(pluginType.length() > 0, plugin.toString());
         assertTrue(pluginName.length() > 0, plugin.toString());
+        assertTrue(plugin.has("typeCritical"), plugin.toString());
+        assertTrue(plugin.get("executionMode").asText().length() > 0, plugin.toString());
+        assertTrue(plugin.has("exclusive"), plugin.toString());
 
         JsonNode filtered = getJsonOk(CONSOLE_PLUGIN_LIST_PATH,
                 Query.newInstance().addParam("pluginType", pluginType)).get("data");
@@ -71,6 +74,9 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertEquals(pluginName, detail.get("pluginName").asText(), detail.toString());
         assertTrue(detail.has("enabled"), detail.toString());
         assertTrue(detail.has("configurable"), detail.toString());
+        assertEquals(plugin.get("typeCritical"), detail.get("typeCritical"), detail.toString());
+        assertEquals(plugin.get("executionMode"), detail.get("executionMode"), detail.toString());
+        assertEquals(plugin.get("exclusive"), detail.get("exclusive"), detail.toString());
         assertTrue(detail.get("configValueMetas").isObject(), detail.toString());
 
         JsonNode availability = getJsonOk(CONSOLE_PLUGIN_AVAILABILITY_PATH,
@@ -250,6 +256,27 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "does not support configuration");
     }
 
+    @Test
+    public void testCriticalAndExclusiveStateChangesAreRejected() throws Exception {
+        JsonNode authPlugins = getJsonOk(CONSOLE_PLUGIN_LIST_PATH,
+                Query.newInstance().addParam("pluginType", "auth")).get("data");
+        JsonNode enabled = findByEnabled(authPlugins, true);
+        JsonNode disabled = findByEnabled(authPlugins, false);
+        assertNotNull(enabled, authPlugins.toString());
+        assertNotNull(disabled, authPlugins.toString());
+
+        assertError(putRaw(CONSOLE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", enabled.get("pluginName").asText())
+                        .addParam("enabled", "false")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "critical plugin type");
+        assertError(putRaw(CONSOLE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", disabled.get("pluginName").asText())
+                        .addParam("enabled", "true")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "requires restart");
+    }
+
     private void assertDefinition(JsonNode definitions, String key, String alias, String type,
             String effectMode, boolean sensitive) {
         JsonNode definition = findDefinition(definitions, key);
@@ -264,6 +291,15 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         for (JsonNode definition : definitions) {
             if (key.equals(definition.get("key").asText())) {
                 return definition;
+            }
+        }
+        return null;
+    }
+
+    private JsonNode findByEnabled(JsonNode plugins, boolean enabled) {
+        for (JsonNode plugin : plugins) {
+            if (plugin.get("enabled").asBoolean() == enabled) {
+                return plugin;
             }
         }
         return null;

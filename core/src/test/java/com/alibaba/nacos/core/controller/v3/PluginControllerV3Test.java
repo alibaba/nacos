@@ -86,6 +86,8 @@ class PluginControllerV3Test {
         assertEquals("auth:nacos", result.getData().get(0).getPluginId());
         assertEquals("auth", result.getData().get(0).getPluginType());
         assertEquals("nacos", result.getData().get(0).getPluginName());
+        assertTrue(result.getData().get(0).getTypeCritical());
+        assertEquals("EXCLUSIVE", result.getData().get(0).getExecutionMode());
         assertTrue(result.getData().get(0).getExclusive());
     }
     
@@ -132,6 +134,9 @@ class PluginControllerV3Test {
         assertEquals("auth:nacos", result.getData().getPluginId());
         assertEquals("auth", result.getData().getPluginType());
         assertEquals("nacos", result.getData().getPluginName());
+        assertTrue(result.getData().getTypeCritical());
+        assertEquals("EXCLUSIVE", result.getData().getExecutionMode());
+        assertTrue(result.getData().getExclusive());
         assertNotNull(result.getData().getConfig());
         assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,
             result.getData().getConfigValueMetas().get("key").getSource());

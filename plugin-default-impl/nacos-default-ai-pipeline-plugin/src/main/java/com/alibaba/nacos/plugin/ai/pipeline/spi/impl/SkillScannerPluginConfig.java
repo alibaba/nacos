@@ -18,9 +18,10 @@ package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Immutable configuration for the built-in skill-scanner pipeline.
@@ -28,6 +29,10 @@ import java.util.Properties;
  * @author Nacos
  */
 final class SkillScannerPluginConfig {
+    
+    static final String ORDER = "order";
+    
+    static final int DEFAULT_ORDER = 100;
     
     static final String COMMAND = "command";
     
@@ -59,6 +64,8 @@ final class SkillScannerPluginConfig {
     
     private final String command;
     
+    private final int order;
+    
     private final boolean useLlm;
     
     private final String llmApiKey;
@@ -69,9 +76,10 @@ final class SkillScannerPluginConfig {
     
     private final boolean enableMeta;
     
-    private SkillScannerPluginConfig(String command, boolean useLlm, String llmApiKey,
+    private SkillScannerPluginConfig(String command, int order, boolean useLlm, String llmApiKey,
         String llmModel, String llmProvider, boolean enableMeta) {
         this.command = command;
+        this.order = order;
         this.useLlm = useLlm;
         this.llmApiKey = llmApiKey;
         this.llmModel = llmModel;
@@ -79,38 +87,27 @@ final class SkillScannerPluginConfig {
         this.enableMeta = enableMeta;
     }
     
-    static SkillScannerPluginConfig fromProperties(Properties properties) {
-        Properties source = properties == null ? new Properties() : properties;
+    static SkillScannerPluginConfig fromMap(Map<String, String> config) {
+        Map<String, String> source = config == null ? Collections.emptyMap() : config;
         String command = normalizeCommand(read(source, COMMAND, COMMAND_ALIAS_EXECUTABLE,
             COMMAND_ALIAS_PATH));
+        int order = parseOrder(read(source, ORDER));
         boolean useLlm = Boolean.parseBoolean(read(source, USE_LLM, USE_LLM_ALIAS));
         String llmApiKey = trimToNull(read(source, LLM_API_KEY, LLM_API_KEY_ALIAS));
         String llmModel = trimToNull(read(source, LLM_MODEL, LLM_MODEL_ALIAS));
         String llmProvider = trimToNull(read(source, LLM_PROVIDER, LLM_PROVIDER_ALIAS));
         boolean enableMeta = Boolean.parseBoolean(read(source, ENABLE_META, ENABLE_META_ALIAS));
-        return new SkillScannerPluginConfig(command, useLlm, llmApiKey, llmModel,
+        return new SkillScannerPluginConfig(command, order, useLlm, llmApiKey, llmModel,
             llmProvider, enableMeta);
     }
     
-    static SkillScannerPluginConfig fromMap(Map<String, String> config) {
-        Properties properties = new Properties();
-        if (config != null) {
-            config.forEach((key, value) -> {
-                if (key != null && value != null) {
-                    properties.setProperty(key, value);
-                }
-            });
-        }
-        return fromProperties(properties);
-    }
-    
-    private static String read(Properties properties, String key, String... aliases) {
+    private static String read(Map<String, String> properties, String key, String... aliases) {
         if (properties.containsKey(key)) {
-            return properties.getProperty(key);
+            return properties.get(key);
         }
         for (String alias : aliases) {
             if (properties.containsKey(alias)) {
-                return properties.getProperty(alias);
+                return properties.get(alias);
             }
         }
         return null;
@@ -128,8 +125,19 @@ final class SkillScannerPluginConfig {
         return result.isEmpty() ? null : result;
     }
     
+    private static int parseOrder(String value) {
+        if (StringUtils.isBlank(value)) {
+            return DEFAULT_ORDER;
+        }
+        return new BigDecimal(value.trim()).intValueExact();
+    }
+    
     String getCommand() {
         return command;
+    }
+    
+    int getOrder() {
+        return order;
     }
     
     SkillScannerScanOptions getScanOptions() {
@@ -139,6 +147,7 @@ final class SkillScannerPluginConfig {
     
     Map<String, String> toMap() {
         Map<String, String> result = new LinkedHashMap<>();
+        result.put(ORDER, Integer.toString(order));
         result.put(COMMAND, command);
         result.put(USE_LLM, Boolean.toString(useLlm));
         result.put(LLM_API_KEY, valueOrEmpty(llmApiKey));

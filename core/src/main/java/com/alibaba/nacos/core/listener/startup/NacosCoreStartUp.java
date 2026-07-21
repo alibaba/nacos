@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -64,8 +65,6 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
     private static final String NACOS_MODE_CLUSTER = "cluster";
     
     private static final String DEFAULT_FUNCTION_MODE = "All";
-    
-    private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
     private static final String DERBY_DATABASE = "derby";
     
@@ -234,6 +233,11 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
     }
     
     private String getDatasourcePlatform(ConfigurableEnvironment env) {
-        return env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM);
+        String result = env.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
+        if (StringUtils.isNotBlank(result)) {
+            return result.trim();
+        }
+        result = env.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
+        return StringUtils.isBlank(result) ? DEFAULT_DATASOURCE_PLATFORM : result.trim();
     }
 }

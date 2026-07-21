@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Plus, Search, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Plus, Search, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react
 import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { buildServiceDetailPath } from '@/lib/list-navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function ServiceManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
 
   const {
@@ -85,6 +87,43 @@ export default function ServiceManagementPage() {
     metadata: '',
   });
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const urlServiceName = urlSearchParams.get('serviceNameParam') || '';
+    const urlGroupName = urlSearchParams.get('groupNameParam') || '';
+    const urlIgnoreEmptyService = urlSearchParams.get('ignoreEmptyService') !== 'false';
+    const urlPageNo = parseInt(urlSearchParams.get('pageNo') || '1', 10);
+    const urlPageSize = parseInt(urlSearchParams.get('pageSize') || '10', 10);
+
+    setLocalServiceName(urlServiceName);
+    setLocalGroupName(urlGroupName);
+    setSearchParams({
+      serviceNameParam: urlServiceName,
+      groupNameParam: urlGroupName,
+      ignoreEmptyService: urlIgnoreEmptyService,
+    });
+    setPage(urlPageNo, urlPageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (currentNamespace) params.set('namespace', currentNamespace);
+    if (serviceNameParam) params.set('serviceNameParam', serviceNameParam);
+    if (groupNameParam) params.set('groupNameParam', groupNameParam);
+    if (!ignoreEmptyService) params.set('ignoreEmptyService', 'false');
+    if (pageNo !== 1) params.set('pageNo', pageNo.toString());
+    if (pageSize !== 10) params.set('pageSize', pageSize.toString());
+    setUrlSearchParams(params, { replace: true });
+  }, [
+    currentNamespace,
+    groupNameParam,
+    ignoreEmptyService,
+    pageNo,
+    pageSize,
+    serviceNameParam,
+    setUrlSearchParams,
+  ]);
 
   const loadServices = useCallback(() => {
     fetchServices(currentNamespace);
@@ -318,7 +357,13 @@ export default function ServiceManagementPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            navigate(`/serviceDetail?serviceName=${encodeURIComponent(svc.name)}&groupName=${encodeURIComponent(svc.groupName)}&namespace=${encodeURIComponent(currentNamespace)}`)
+                            navigate(buildServiceDetailPath(svc.name, svc.groupName, currentNamespace, {
+                              serviceNameParam,
+                              groupNameParam,
+                              ignoreEmptyService,
+                              pageNo,
+                              pageSize,
+                            }))
                           }
                         >
                           {t('common.detail')}

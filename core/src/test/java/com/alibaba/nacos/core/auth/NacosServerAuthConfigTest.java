@@ -87,6 +87,14 @@ class NacosServerAuthConfigTest {
     }
     
     @Test
+    void testStandardAuthTypeTakesPrecedence() {
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "ldap");
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "oidc");
+        NacosServerAuthConfig config = new NacosServerAuthConfig();
+        assertEquals("oidc", config.getNacosAuthSystemType());
+    }
+    
+    @Test
     void testIsSupportServerIdentity() {
         NacosServerAuthConfig config = new NacosServerAuthConfig();
         assertTrue(config.isSupportServerIdentity());

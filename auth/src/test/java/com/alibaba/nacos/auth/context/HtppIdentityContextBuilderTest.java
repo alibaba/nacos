@@ -92,23 +92,6 @@ class HtppIdentityContextBuilderTest {
     }
     
     @Test
-    void testBuildPrefersHeaderWhenParameterIsBlank() {
-        when(request.getHeaderNames()).thenReturn(headerNames);
-        when(headerNames.hasMoreElements()).thenReturn(Boolean.TRUE, Boolean.FALSE);
-        when(headerNames.nextElement()).thenReturn(IDENTITY_TEST_KEY);
-        when(request.getHeader(IDENTITY_TEST_KEY)).thenReturn(IDENTITY_TEST_VALUE);
-        when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
-        when(request.getParameterNames()).thenReturn(parameterNames);
-        when(parameterNames.hasMoreElements()).thenReturn(Boolean.TRUE, Boolean.FALSE);
-        when(parameterNames.nextElement()).thenReturn(IDENTITY_TEST_KEY);
-        when(request.getParameter(IDENTITY_TEST_KEY)).thenReturn("");
-
-        IdentityContext actual = identityContextBuilder.build(request);
-
-        assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
-    }
-
-    @Test
     void testBuildWithXForwardedFor() {
         when(request.getHeader("X-Forwarded-For")).thenReturn("10.0.0.1, 10.0.0.2");
         mockHeader(false);

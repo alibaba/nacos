@@ -22,6 +22,7 @@ const SERVICE_STORE_SOURCE = fs.readFileSync(
 
 describe('Naming namespace routing', () => {
   it('carries the current namespace when opening service detail and subscriber pages', () => {
+    expect(MANAGEMENT_SOURCE).toContain('buildServiceDetailPath(svc.name, svc.groupName, currentNamespace');
     expect(MANAGEMENT_SOURCE).toContain('&namespace=${encodeURIComponent(currentNamespace)}');
   });
 
@@ -32,7 +33,7 @@ describe('Naming namespace routing', () => {
   });
 
   it('keeps service detail back navigation inside the active namespace', () => {
-    expect(DETAIL_SOURCE).toContain('getServiceManagementPath(activeNamespace)');
+    expect(DETAIL_SOURCE).toContain('buildServiceListPathFromDetail(searchParams, activeNamespace)');
   });
 
   it('guards namespace switching while a service detail dialog is open', () => {

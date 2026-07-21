@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.trace;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -43,8 +45,8 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
     public NacosCombinedTraceSubscriber(Class<? extends TraceEvent> combinedEvent) {
         this.interestedEvents = new ConcurrentHashMap<>();
         TraceEventPublisherFactory.getInstance().addPublisherEvent(combinedEvent);
-        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance()
-            .getAllTraceSubscribers()) {
+        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance().getAllPlugins()
+            .values()) {
             filterInterestedEvents(each, combinedEvent);
         }
         NotifyCenter.registerSubscriber(this, TraceEventPublisherFactory.getInstance());
@@ -78,6 +80,10 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
         }
         TraceEvent traceEvent = (TraceEvent) event;
         for (NacosTraceSubscriber each : subscribers) {
+            if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.TRACE.getType(),
+                each.getName())) {
+                continue;
+            }
             if (null != each.executor()) {
                 each.executor().execute(() -> onEvent0(each, traceEvent));
             } else {

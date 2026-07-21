@@ -18,9 +18,11 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -63,6 +65,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
     @Override
     public void started(ConfigurableApplicationContext context) {
         NacosStartUp currentStartUp = NacosStartUpManager.getCurrentStartUp();
+        ObjectProvider<PluginManager> pluginManagerProvider =
+            context.getBeanProvider(PluginManager.class);
+        PluginManager pluginManager = pluginManagerProvider.getIfAvailable();
+        if (pluginManager != null) {
+            pluginManager.initialize();
+        }
         currentStartUp.started();
         currentStartUp.logStarted(LOGGER);
     }

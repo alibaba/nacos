@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
+import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -28,7 +30,6 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
-import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
@@ -252,9 +254,76 @@ class NacosConfigAiResourceStorageTest {
         StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE,
             "ns1:agentspec:worker:v1:resource_x y.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
-        String physical = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        String physical = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
         assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(physical));
         assertEquals("resource_x y.json", NacosAiConfigKeyCodec.decodeSegment(physical));
+    }
+    
+    @Test
+    void testPhysicalDataIdEncodedWhenLogicalContainsUnicode() {
+        List<String> logicalDataIds = Arrays.asList(
+            NacosConfigAiResourceStorage.getAgentSpecResourceFilePath("docs", "说明.md"),
+            "说明.md");
+        for (String logicalDataId : logicalDataIds) {
+            String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(logicalDataId);
+            assertTrue(physicalDataId.startsWith(NacosAiConfigKeyCodec.ENCODED_PREFIX));
+            assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(physicalDataId));
+            assertEquals(logicalDataId, NacosAiConfigKeyCodec.decodeSegment(physicalDataId));
+        }
+    }
+    
+    @Test
+    void testStorageOperationsUseSameEncodedDataIdForUnicodeSkillPath() throws NacosException {
+        ConfigQueryChainService queryChainService = mock(ConfigQueryChainService.class);
+        ConfigOperationService operationService = mock(ConfigOperationService.class);
+        NacosConfigAiResourceStorage storage =
+            new NacosConfigAiResourceStorage(queryChainService, operationService, null);
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "public", "test-skill", "1.0.0", "说明.md");
+        byte[] content = "content".getBytes(StandardCharsets.UTF_8);
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("content");
+        when(queryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        
+        storage.save(key, content);
+        assertArrayEquals(content, storage.get(key));
+        storage.delete(key);
+        
+        ArgumentCaptor<ConfigForm> publishCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(operationService).publishConfig(publishCaptor.capture(), any(), isNull());
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(queryChainService).handle(queryCaptor.capture());
+        ArgumentCaptor<String> deleteDataIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> deleteGroupCaptor = ArgumentCaptor.forClass(String.class);
+        verify(operationService).deleteConfig(deleteDataIdCaptor.capture(),
+            deleteGroupCaptor.capture(), eq("public"), isNull(), isNull(), eq("nacos"), isNull());
+        
+        String physicalDataId = publishCaptor.getValue().getDataId();
+        String physicalGroup = publishCaptor.getValue().getGroup();
+        assertTrue(physicalDataId.startsWith(NacosAiConfigKeyCodec.ENCODED_PREFIX));
+        assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(physicalDataId));
+        assertEquals(physicalDataId, queryCaptor.getValue().getDataId());
+        assertEquals(physicalDataId, deleteDataIdCaptor.getValue());
+        assertEquals(SkillUtils.buildSkillVersionGroup("test-skill", "1.0.0"), physicalGroup);
+        assertEquals(physicalGroup, queryCaptor.getValue().getGroup());
+        assertEquals(physicalGroup, deleteGroupCaptor.getValue());
+        assertEquals("说明.md", NacosAiConfigKeyCodec.decodeSegment(physicalDataId));
+    }
+    
+    @Test
+    void testStorageOperationsUseSameHashedCoordinatesForLongKeys() throws NacosException {
+        List<String[]> resourceTypes = Arrays.asList(
+            new String[] {NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL,
+                SkillUtils.SKILL_GROUP_PREFIX},
+            new String[] {NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                AgentSpecUtils.AGENTSPEC_GROUP_PREFIX},
+            new String[] {NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
+                PromptUtils.PROMPT_GROUP_PREFIX});
+        for (String[] resourceType : resourceTypes) {
+            assertStorageOperationsUseSameHashedCoordinates(resourceType[0], resourceType[1]);
+        }
     }
     
     @Test
@@ -489,5 +558,62 @@ class NacosConfigAiResourceStorageTest {
             NacosAiConfigKeyCodec.encodeSegment("content.json"),
             PromptUtils.buildPromptVersionGroup("myPrompt", "1.0.0"), "ns1", null, null, "nacos",
             null);
+    }
+    
+    private void assertStorageOperationsUseSameHashedCoordinates(String resourceType,
+        String groupPrefix)
+        throws NacosException {
+        ConfigQueryChainService queryChainService = mock(ConfigQueryChainService.class);
+        ConfigOperationService operationService = mock(ConfigOperationService.class);
+        NacosConfigAiResourceStorage storage =
+            new NacosConfigAiResourceStorage(queryChainService, operationService, null);
+        String name = repeat("long-name-", 10);
+        String version = repeat("version-", 4);
+        String logicalDataId = repeat("说明", 50) + ".json";
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "public", resourceType, name, version,
+            logicalDataId);
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        byte[] content = "content".getBytes(StandardCharsets.UTF_8);
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("content");
+        when(queryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        
+        storage.save(key, content);
+        assertArrayEquals(content, storage.get(key));
+        storage.delete(key);
+        
+        ArgumentCaptor<ConfigForm> publishCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(operationService).publishConfig(publishCaptor.capture(), any(), isNull());
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(queryChainService).handle(queryCaptor.capture());
+        ArgumentCaptor<String> deleteDataIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> deleteGroupCaptor = ArgumentCaptor.forClass(String.class);
+        verify(operationService).deleteConfig(deleteDataIdCaptor.capture(),
+            deleteGroupCaptor.capture(), eq("public"), isNull(), isNull(), eq("nacos"), isNull());
+        
+        String expectedDataId = NacosAiConfigKeyCodec.toPhysicalDataId(logicalDataId);
+        String expectedGroup =
+            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), groupPrefix);
+        assertTrue(expectedDataId.startsWith(NacosAiConfigKeyCodec.HASHED_PREFIX));
+        assertTrue(expectedGroup.startsWith(groupPrefix + NacosAiConfigKeyCodec.HASHED_PREFIX));
+        assertTrue(expectedDataId.length() <= NacosAiConfigKeyCodec.MAX_DATA_ID_LENGTH);
+        assertTrue(expectedGroup.length() <= NacosAiConfigKeyCodec.MAX_GROUP_LENGTH);
+        assertEquals(expectedDataId, publishCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, publishCaptor.getValue().getGroup());
+        assertEquals(expectedDataId, queryCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, queryCaptor.getValue().getGroup());
+        assertEquals(expectedDataId, deleteDataIdCaptor.getValue());
+        assertEquals(expectedGroup, deleteGroupCaptor.getValue());
+    }
+    
+    private static String repeat(String value, int count) {
+        StringBuilder result = new StringBuilder(value.length() * count);
+        for (int i = 0; i < count; i++) {
+            result.append(value);
+        }
+        return result.toString();
     }
 }

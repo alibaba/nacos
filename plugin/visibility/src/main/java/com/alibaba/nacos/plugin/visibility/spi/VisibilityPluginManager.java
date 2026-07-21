@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.visibility.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -97,14 +98,23 @@ public class VisibilityPluginManager {
                 service.getClass());
             return;
         }
-        Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
-        try {
-            service.init(serviceProperties);
-        } catch (Throwable ex) {
-            LOGGER.warn(
-                "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
-                service.getClass(), serviceName, ex);
-            return;
+        if (!(service instanceof PluginConfigSpec)) {
+            Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
+            if (!serviceProperties.isEmpty()) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
+                        + "init(Properties) configuration. Implement PluginConfigSpec to use "
+                        + "unified plugin configuration.",
+                    service.getClass(), serviceName);
+            }
+            try {
+                service.init(serviceProperties);
+            } catch (Throwable ex) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
+                    service.getClass(), serviceName, ex);
+                return;
+            }
         }
         visibilityServiceMap.put(serviceName, service);
         LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",
@@ -137,7 +147,7 @@ public class VisibilityPluginManager {
      * @return optional visibility service
      */
     public Optional<VisibilityService> findVisibilityService(String serviceName) {
-        if (!isVisibilityPluginEnabled()) {
+        if (!isVisibilityModuleEnabled()) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}",
                 ENABLED_PROPERTY);
             return Optional.empty();
@@ -150,13 +160,10 @@ public class VisibilityPluginManager {
         return Optional.ofNullable(visibilityServiceMap.get(serviceName));
     }
     
-    private boolean isVisibilityPluginEnabled() {
+    private boolean isVisibilityModuleEnabled() {
         Properties allProperties = resolveInitProperties();
         String enabledValue = allProperties.getProperty(ENABLED_PROPERTY);
-        if (StringUtils.isBlank(enabledValue)) {
-            return true;
-        }
-        return Boolean.parseBoolean(enabledValue);
+        return StringUtils.isBlank(enabledValue) || Boolean.parseBoolean(enabledValue);
     }
     
     public Map<String, VisibilityService> getAllPlugins() {
@@ -176,7 +183,12 @@ public class VisibilityPluginManager {
             LOGGER.debug(
                 "[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.",
                 ex);
+            return copySystemProperties();
         }
+        return copySystemProperties();
+    }
+    
+    private Properties copySystemProperties() {
         Properties fallback = new Properties();
         fallback.putAll(System.getProperties());
         return fallback;

@@ -33,10 +33,15 @@ public interface VisibilityService {
      * Initialize service with external properties.
      *
      * <p>Property source is managed by {@link VisibilityPluginManager}. Default no-op keeps backward compatibility
-     * for existing SPI implementations.</p>
+     * for existing SPI implementations. The manager does not invoke this callback when the service implements
+     * {@link com.alibaba.nacos.api.plugin.PluginConfigSpec}; those services are initialized through unified plugin
+     * configuration.</p>
      *
      * @param properties service-specific properties
+     * @deprecated implement {@link com.alibaba.nacos.api.plugin.PluginConfigSpec} and use its unified configuration
+     * lifecycle instead
      */
+    @Deprecated
     default void init(Properties properties) {
     }
     

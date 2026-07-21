@@ -18,9 +18,10 @@ package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Immutable configuration for the built-in skill-spector pipeline.
@@ -28,6 +29,10 @@ import java.util.Properties;
  * @author Nacos
  */
 final class SkillSpectorPluginConfig {
+    
+    static final String ORDER = "order";
+    
+    static final int DEFAULT_ORDER = 90;
     
     static final String COMMAND = "command";
     
@@ -75,6 +80,8 @@ final class SkillSpectorPluginConfig {
     
     private final String command;
     
+    private final int order;
+    
     private final boolean useLlm;
     
     private final String provider;
@@ -91,10 +98,11 @@ final class SkillSpectorPluginConfig {
     
     private final int maxFindings;
     
-    private SkillSpectorPluginConfig(String command, boolean useLlm, String provider,
+    private SkillSpectorPluginConfig(String command, int order, boolean useLlm, String provider,
         String model, String apiKey, String baseUrl, String logLevel, int riskScoreThreshold,
         int maxFindings) {
         this.command = command;
+        this.order = order;
         this.useLlm = useLlm;
         this.provider = provider;
         this.model = model;
@@ -105,10 +113,11 @@ final class SkillSpectorPluginConfig {
         this.maxFindings = maxFindings;
     }
     
-    static SkillSpectorPluginConfig fromProperties(Properties properties) {
-        Properties source = properties == null ? new Properties() : properties;
+    static SkillSpectorPluginConfig fromMap(Map<String, String> config) {
+        Map<String, String> source = config == null ? Collections.emptyMap() : config;
         String command = normalizeCommand(read(source, COMMAND, COMMAND_ALIAS_EXECUTABLE,
             COMMAND_ALIAS_PATH));
+        int order = parseOrder(read(source, ORDER));
         boolean useLlm = Boolean.parseBoolean(read(source, USE_LLM, USE_LLM_ALIAS));
         String provider = trimToNull(read(source, PROVIDER));
         String model = trimToNull(read(source, MODEL));
@@ -119,29 +128,17 @@ final class SkillSpectorPluginConfig {
         int riskScoreThreshold = parseRiskScoreThreshold(read(source, RISK_SCORE_THRESHOLD,
             RISK_SCORE_THRESHOLD_ALIAS));
         int maxFindings = parseMaxFindings(read(source, MAX_FINDINGS, MAX_FINDINGS_ALIAS));
-        return new SkillSpectorPluginConfig(command, useLlm, provider, model, apiKey, baseUrl,
-            logLevel, riskScoreThreshold, maxFindings);
+        return new SkillSpectorPluginConfig(command, order, useLlm, provider, model, apiKey,
+            baseUrl, logLevel, riskScoreThreshold, maxFindings);
     }
     
-    static SkillSpectorPluginConfig fromMap(Map<String, String> config) {
-        Properties properties = new Properties();
-        if (config != null) {
-            config.forEach((key, value) -> {
-                if (key != null && value != null) {
-                    properties.setProperty(key, value);
-                }
-            });
-        }
-        return fromProperties(properties);
-    }
-    
-    private static String read(Properties properties, String key, String... aliases) {
+    private static String read(Map<String, String> properties, String key, String... aliases) {
         if (properties.containsKey(key)) {
-            return properties.getProperty(key);
+            return properties.get(key);
         }
         for (String alias : aliases) {
             if (properties.containsKey(alias)) {
-                return properties.getProperty(alias);
+                return properties.get(alias);
             }
         }
         return null;
@@ -153,6 +150,13 @@ final class SkillSpectorPluginConfig {
     
     private static String defaultIfBlank(String value, String defaultValue) {
         return StringUtils.isBlank(value) ? defaultValue : value.trim();
+    }
+    
+    private static int parseOrder(String value) {
+        if (StringUtils.isBlank(value)) {
+            return DEFAULT_ORDER;
+        }
+        return new BigDecimal(value.trim()).intValueExact();
     }
     
     private static String trimToNull(String value) {
@@ -197,6 +201,10 @@ final class SkillSpectorPluginConfig {
         return command;
     }
     
+    int getOrder() {
+        return order;
+    }
+    
     SkillSpectorScanOptions getScanOptions() {
         return new SkillSpectorScanOptions(useLlm, provider, model, apiKey, baseUrl, logLevel,
             riskScoreThreshold, maxFindings);
@@ -204,6 +212,7 @@ final class SkillSpectorPluginConfig {
     
     Map<String, String> toMap() {
         Map<String, String> result = new LinkedHashMap<>();
+        result.put(ORDER, Integer.toString(order));
         result.put(COMMAND, command);
         result.put(USE_LLM, Boolean.toString(useLlm));
         result.put(PROVIDER, valueOrEmpty(provider));

@@ -126,7 +126,8 @@ class SkillScannerMarkdownFindingParserTest {
         properties.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
         properties.setProperty(SkillScannerPluginConfig.ENABLE_META, "true");
         List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(
-            SkillScannerPluginConfig.fromProperties(properties).getScanOptions());
+            SkillScannerPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties))
+                .getScanOptions());
         assertEquals(7, cps.size());
         assertEquals("LLM semantic analysis 检查", cps.get(5).getTitle());
         assertTrue(cps.get(5).getPassed());

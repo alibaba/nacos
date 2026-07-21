@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -37,7 +38,7 @@ class SkillScannerScanOptionsTest {
     @Test
     void fromPropertiesEmptyTest() {
         SkillScannerScanOptions o =
-            SkillScannerPluginConfig.fromProperties(new Properties()).getScanOptions();
+            SkillScannerPluginConfig.fromMap(Collections.emptyMap()).getScanOptions();
         assertFalse(o.isUseLlm());
         assertFalse(o.isEnableMeta());
         assertNull(o.getLlmProvider());
@@ -55,7 +56,8 @@ class SkillScannerScanOptionsTest {
         p.setProperty(SkillScannerPluginConfig.LLM_PROVIDER, "openai");
         p.setProperty(SkillScannerPluginConfig.ENABLE_META, "true");
         
-        SkillScannerScanOptions o = SkillScannerPluginConfig.fromProperties(p).getScanOptions();
+        SkillScannerScanOptions o = SkillScannerPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(p)).getScanOptions();
         assertTrue(o.isUseLlm());
         assertTrue(o.isEnableMeta());
         assertEquals("openai", o.getLlmProvider());

@@ -31,19 +31,19 @@ Java 客户端为默认插件暴露的用户名/密码和 token 流程提供
 默认实现用于在可信内网环境中降低误用风险。它不是面向恶意公网环境的完整强鉴权方案。
 如果需要暴露到公网，应使用外部安全边界，或选择更强的鉴权插件。
 
-## 模块配置
+## 鉴权框架配置
 
 | 配置 | 目的 |
 |------|------|
 | `nacos.core.auth.enabled` | 启用通用鉴权系统和 Open API 鉴权。 |
 | `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 |
 | `nacos.core.auth.console.enabled` | 启用 Console API 鉴权和默认登录行为。 |
-| `nacos.core.auth.system.type` | 选择鉴权插件，默认 `nacos`。 |
+| `nacos.plugin.auth.type` | 启动时选择鉴权插件，默认 `nacos`；`nacos.core.auth.system.type` 是历史 alias。 |
 | `nacos.core.auth.server.identity.key` | 服务端之间调用的身份 key。 |
 | `nacos.core.auth.server.identity.value` | 服务端之间调用的身份 value。 |
 
-这些配置负责鉴权模块、API 范围、插件选择和服务端身份，不属于 `auth:nacos` 插件自身的
-配置项。服务端身份值必须由部署环境独立配置。
+这些配置负责鉴权模块、API 范围、启动期插件选择和服务端身份，不属于 `auth:nacos` 插件
+自身的配置项。插件选择需要重启生效，服务端身份值必须由部署环境独立配置。
 
 ## 统一管理的插件配置
 

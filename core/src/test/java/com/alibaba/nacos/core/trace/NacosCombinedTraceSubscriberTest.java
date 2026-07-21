@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.trace;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.TraceEvent;
@@ -44,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,6 +80,7 @@ class NacosCombinedTraceSubscriberTest {
     
     @BeforeEach
     void setUp() throws Exception {
+        PluginStateCheckerHolder.setInstance(null);
         Map<String, NacosTraceSubscriber> traceSubscribers = getTraceSubscribers();
         traceSubscribers.put("instanceSubscriber", mockInstanceSubscriber);
         traceSubscribers.put("serviceSubscriber", mockServiceSubscriber);
@@ -112,6 +115,7 @@ class NacosCombinedTraceSubscriberTest {
         traceSubscribers.remove("instanceSubscriber");
         traceSubscribers.remove("otherSubscriber");
         combinedTraceSubscriber.shutdown();
+        PluginStateCheckerHolder.setInstance(null);
     }
     
     @Test
@@ -224,6 +228,36 @@ class NacosCombinedTraceSubscriberTest {
         RegisterInstanceTraceEvent event =
             new RegisterInstanceTraceEvent(1L, "", true, "", "", "", "", 1);
         combinedTraceSubscriber.onEvent(event);
+        verify(mockInstanceSubscriber).onEvent(event);
+    }
+    
+    @Test
+    void testOnEventSkipsSubscriberDisabledAfterConstruction() {
+        when(mockInstanceSubscriber.getName()).thenReturn("instanceSubscriber");
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !"instanceSubscriber".equals(pluginName));
+        RegisterInstanceTraceEvent event =
+            new RegisterInstanceTraceEvent(1L, "", true, "", "", "", "", 1);
+        
+        combinedTraceSubscriber.onEvent(event);
+        
+        verify(mockInstanceSubscriber, never()).onEvent(event);
+    }
+    
+    @Test
+    void testOnEventDispatchesSubscriberEnabledAfterConstruction() {
+        combinedTraceSubscriber.shutdown();
+        when(mockInstanceSubscriber.getName()).thenReturn("instanceSubscriber");
+        AtomicBoolean enabled = new AtomicBoolean(false);
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !"instanceSubscriber".equals(pluginName) || enabled.get());
+        combinedTraceSubscriber = new NacosCombinedTraceSubscriber(NamingTraceEvent.class);
+        enabled.set(true);
+        RegisterInstanceTraceEvent event =
+            new RegisterInstanceTraceEvent(1L, "", true, "", "", "", "", 1);
+        
+        combinedTraceSubscriber.onEvent(event);
+        
         verify(mockInstanceSubscriber).onEvent(event);
     }
 }

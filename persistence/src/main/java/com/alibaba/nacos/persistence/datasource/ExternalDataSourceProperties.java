@@ -16,19 +16,14 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
 /**
  * Properties of external DataSource.
@@ -41,30 +36,6 @@ public class ExternalDataSourceProperties {
     
     private static final String TEST_QUERY = "SELECT 1";
     
-    private Integer num;
-    
-    private List<String> url = new ArrayList<>();
-    
-    private List<String> user = new ArrayList<>();
-    
-    private List<String> password = new ArrayList<>();
-    
-    public void setNum(Integer num) {
-        this.num = num;
-    }
-    
-    public void setUrl(List<String> url) {
-        this.url = url;
-    }
-    
-    public void setUser(List<String> user) {
-        this.user = user;
-    }
-    
-    public void setPassword(List<String> password) {
-        this.password = password;
-    }
-    
     /**
      * Build serveral HikariDataSource.
      *
@@ -74,22 +45,32 @@ public class ExternalDataSourceProperties {
      */
     List<HikariDataSource> build(Environment environment, Callback<HikariDataSource> callback) {
         List<HikariDataSource> dataSources = new ArrayList<>();
-        Binder.get(environment).bind("db", Bindable.ofInstance(this));
-        Preconditions.checkArgument(Objects.nonNull(num), "db.num is null");
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(user),
-            "db.user or db.user.[index] is null");
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(password),
-            "db.password or db.password.[index] is null");
+        DatasourceConfigResolver configResolver = new DatasourceConfigResolver(environment);
+        Integer num = configResolver.resolve("num", Integer.class);
+        Preconditions.checkArgument(Objects.nonNull(num),
+            "nacos.plugin.datasource.db.num (legacy db.num) is null");
+        String defaultUser = configResolver.resolveIndexed("user", 0, true);
+        Preconditions.checkArgument(Objects.nonNull(defaultUser),
+            "nacos.plugin.datasource.db.user[.index] (legacy db.user[.index]) is null");
+        String defaultPassword = configResolver.resolveIndexed("password", 0, true);
+        Preconditions.checkArgument(Objects.nonNull(defaultPassword),
+            "nacos.plugin.datasource.db.password[.index] "
+                + "(legacy db.password[.index]) is null");
         for (int index = 0; index < num; index++) {
-            int currentSize = index + 1;
-            Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
-            DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
+            String url = configResolver.resolveIndexed("url", index, false);
+            Preconditions.checkArgument(Objects.nonNull(url),
+                "nacos.plugin.datasource.db.url.%s (legacy db.url.%s) is null", index,
+                index);
+            String user = configResolver.resolveIndexed("user", index, true);
+            String password = configResolver.resolveIndexed("password", index, true);
+            DataSourcePoolProperties poolProperties =
+                DataSourcePoolProperties.build(configResolver);
             if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
                 poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
             }
-            poolProperties.setJdbcUrl(url.get(index).trim());
-            poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
-            poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
+            poolProperties.setJdbcUrl(url.trim());
+            poolProperties.setUsername(user.trim());
+            poolProperties.setPassword(password.trim());
             HikariDataSource ds = poolProperties.getDataSource();
             if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
                 ds.setConnectionTestQuery(TEST_QUERY);
@@ -98,8 +79,7 @@ public class ExternalDataSourceProperties {
             dataSources.add(ds);
             callback.accept(ds);
         }
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(dataSources),
-            "no datasource available");
+        Preconditions.checkArgument(!dataSources.isEmpty(), "no datasource available");
         return dataSources;
     }
     

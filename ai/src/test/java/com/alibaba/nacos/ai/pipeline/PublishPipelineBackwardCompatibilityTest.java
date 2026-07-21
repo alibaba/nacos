@@ -16,19 +16,16 @@
 
 package com.alibaba.nacos.ai.pipeline;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -59,40 +56,19 @@ class PublishPipelineBackwardCompatibilityTest {
     
     private PublishPipelineManager manager;
     
-    private List<PipelineNodeConfig> allNodes;
-    
     @BeforeEach
     void setUp() {
-        manager = new PublishPipelineManager();
-        
-        List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
-        
-        // Plugin supporting only SKILL
-        builders.add(createBuilder(PLUGIN_SKILL_ID, 1,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
-        
-        // Plugin supporting only AGENTSPEC
-        builders.add(createBuilder(PLUGIN_AGENTSPEC_ID, 2,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
-        
-        // Plugin supporting only PROMPT
-        builders.add(createBuilder(PLUGIN_PROMPT_ID, 3,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.PROMPT}));
-        
-        PipelineConfig config = new PipelineConfig();
-        config.setEnabled(true);
-        config.setNodes(new ArrayList<>());
-        
-        manager.initWithBuilders(builders, config);
-        
-        // Build nodes list referencing all three plugins
-        allNodes = new ArrayList<>();
-        for (String id : new String[] {PLUGIN_SKILL_ID, PLUGIN_AGENTSPEC_ID, PLUGIN_PROMPT_ID}) {
-            PipelineNodeConfig node = new PipelineNodeConfig();
-            node.setPipelineId(id);
-            node.setProperties(new Properties());
-            allNodes.add(node);
-        }
+        List<PublishPipelineService> services = Arrays.asList(
+            createService(PLUGIN_SKILL_ID, 1, PublishPipelineResourceType.SKILL),
+            createService(PLUGIN_AGENTSPEC_ID, 2, PublishPipelineResourceType.AGENTSPEC),
+            createService(PLUGIN_PROMPT_ID, 3, PublishPipelineResourceType.PROMPT));
+        manager = TestAiPipelineSupport.newManager(true,
+            Arrays.asList(PLUGIN_SKILL_ID, PLUGIN_AGENTSPEC_ID, PLUGIN_PROMPT_ID), services);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        TestAiPipelineSupport.clearStateChecker();
     }
     
     /**
@@ -103,7 +79,7 @@ class PublishPipelineBackwardCompatibilityTest {
     @Test
     void testSkillRoutingUnchangedAfterAgentspecAddition() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-            PublishPipelineResourceType.SKILL, allNodes);
+            PublishPipelineResourceType.SKILL);
         
         Set<String> resultIds = result.stream()
             .map(PublishPipelineService::pipelineId)
@@ -127,7 +103,7 @@ class PublishPipelineBackwardCompatibilityTest {
     @Test
     void testPromptRoutingUnchangedAfterAgentspecAddition() {
         List<PublishPipelineService> result = manager.getPipelineServices(
-            PublishPipelineResourceType.PROMPT, allNodes);
+            PublishPipelineResourceType.PROMPT);
         
         Set<String> resultIds = result.stream()
             .map(PublishPipelineService::pipelineId)
@@ -150,34 +126,17 @@ class PublishPipelineBackwardCompatibilityTest {
      */
     @Test
     void testSkillPluginOrderPreservedAfterAgentspecAddition() {
-        // Re-initialize with multiple SKILL plugins and an AGENTSPEC plugin
-        PublishPipelineManager orderManager = new PublishPipelineManager();
-        
-        List<PublishPipelineServiceBuilder> builders = new ArrayList<>();
-        builders.add(createBuilder(PLUGIN_SKILL_HIGH_ORDER_ID, 10,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
-        builders.add(createBuilder(PLUGIN_AGENTSPEC_ID, 5,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
-        builders.add(createBuilder(PLUGIN_SKILL_LOW_ORDER_ID, 1,
-            new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
-        
-        PipelineConfig config = new PipelineConfig();
-        config.setEnabled(true);
-        config.setNodes(new ArrayList<>());
-        
-        orderManager.initWithBuilders(builders, config);
-        
-        List<PipelineNodeConfig> nodes = new ArrayList<>();
-        for (String id : new String[] {PLUGIN_SKILL_HIGH_ORDER_ID, PLUGIN_AGENTSPEC_ID,
-            PLUGIN_SKILL_LOW_ORDER_ID}) {
-            PipelineNodeConfig node = new PipelineNodeConfig();
-            node.setPipelineId(id);
-            node.setProperties(new Properties());
-            nodes.add(node);
-        }
+        List<PublishPipelineService> services = Arrays.asList(
+            createService(PLUGIN_SKILL_HIGH_ORDER_ID, 10, PublishPipelineResourceType.SKILL),
+            createService(PLUGIN_AGENTSPEC_ID, 5, PublishPipelineResourceType.AGENTSPEC),
+            createService(PLUGIN_SKILL_LOW_ORDER_ID, 1, PublishPipelineResourceType.SKILL));
+        PublishPipelineManager orderManager = TestAiPipelineSupport.newManager(true,
+            Arrays.asList(PLUGIN_SKILL_HIGH_ORDER_ID, PLUGIN_AGENTSPEC_ID,
+                PLUGIN_SKILL_LOW_ORDER_ID),
+            services);
         
         List<PublishPipelineService> result = orderManager.getPipelineServices(
-            PublishPipelineResourceType.SKILL, nodes);
+            PublishPipelineResourceType.SKILL);
         
         assertEquals(2, result.size(),
             "Exactly 2 SKILL plugins should be returned");
@@ -194,9 +153,9 @@ class PublishPipelineBackwardCompatibilityTest {
             "AGENTSPEC plugin should NOT appear in SKILL routing results");
     }
     
-    private PublishPipelineServiceBuilder createBuilder(String pipelineId, int order,
-        PublishPipelineResourceType[] supportedTypes) {
-        return new PublishPipelineServiceBuilder() {
+    private PublishPipelineService createService(String pipelineId, int order,
+        PublishPipelineResourceType... supportedTypes) {
+        return new TestPublishPipelineService() {
             
             @Override
             public String pipelineId() {
@@ -204,30 +163,20 @@ class PublishPipelineBackwardCompatibilityTest {
             }
             
             @Override
-            public PublishPipelineService build(Properties properties) {
-                return new PublishPipelineService() {
-                    
-                    @Override
-                    public String pipelineId() {
-                        return pipelineId;
-                    }
-                    
-                    @Override
-                    public PublishPipelineResult execute(PublishPipelineContext context) {
-                        return null;
-                    }
-                    
-                    @Override
-                    public int getPreferOrder() {
-                        return order;
-                    }
-                    
-                    @Override
-                    public PublishPipelineResourceType[] pipelineResourceTypes() {
-                        return supportedTypes;
-                    }
-                };
+            public PublishPipelineResult execute(PublishPipelineContext context) {
+                return null;
+            }
+            
+            @Override
+            public int getPreferOrder() {
+                return order;
+            }
+            
+            @Override
+            public PublishPipelineResourceType[] pipelineResourceTypes() {
+                return supportedTypes;
             }
         };
     }
+    
 }

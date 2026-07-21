@@ -89,12 +89,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         while (paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();
             if (identityNames.containsKey(paraName)) {
-                String identityName = identityNames.get(paraName);
-                String parameter = request.getParameter(paraName);
-                if (StringUtils.isBlank(parameter) && result.containsParameter(identityName)) {
-                    continue;
-                }
-                result.setParameter(identityName, parameter);
+                result.setParameter(identityNames.get(paraName), request.getParameter(paraName));
             }
         }
     }

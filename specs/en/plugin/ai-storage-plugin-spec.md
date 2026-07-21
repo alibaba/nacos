@@ -74,6 +74,39 @@ and must not receive content operations.
 
 The default provider is `nacos_config`, which stores AI resource content through
 Nacos config storage.
+When the `nacos_config` provider maps an opaque key to a Nacos config coordinate,
+it must use stable physical mappings for the logical `dataId` and canonical
+resource group:
+
+- For `dataId`, only ASCII letters, ASCII digits, and `_`, `-`, `.`, and `:` are
+  preserved. If the logical value contains any other character, the entire value
+  is encoded as `enc.` followed by the lowercase hexadecimal representation of
+  its UTF-8 bytes. Logical values beginning with the reserved `enc.` prefix,
+  matched case-insensitively, are encoded in the same way so they cannot alias an
+  automatically encoded value. If that encoded candidate exceeds 255 characters,
+  it is replaced with `sha256.` followed by the complete lowercase hexadecimal
+  SHA-256 digest of the candidate.
+- A canonical resource group is preserved when it does not exceed 128
+  characters. If it exceeds that limit, it is replaced with the stable resource
+  prefix followed by `sha256.` and the complete lowercase hexadecimal SHA-256
+  digest of the canonical group. Conditional group segments reserve and escape
+  both the same case-insensitive `enc.` namespace and the exact
+  `sha256.<64-hex>` fallback shape before the canonical group is built.
+- Physical forms matching the reserved SHA-256 fallback shape are hashed again,
+  even when already within the length limit, so a logical key cannot directly
+  alias a generated fallback key.
+
+The SHA-256 fallback is deterministic but not reversible. Logical resource
+identity remains owned by AI resource metadata. `save`, `get`, and `delete` must
+apply exactly the same physical mappings.
+
+The provider does not dual-read coordinates produced by an earlier physical
+mapping. Existing affected `nacos_config` rows must therefore be migrated in a
+coordinated maintenance window before nodes using only the new mapping start.
+Migration must be limited to AI-owned coordinates, preflight target-key
+uniqueness, and rebuild config caches after the rewrite. The legacy Prompt
+mirror in group `nacos-ai-prompt` is a compatibility coordinate outside this
+mapping and must remain unchanged.
 
 ## Plugin State And Configuration
 
