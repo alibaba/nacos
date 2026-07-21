@@ -19,6 +19,8 @@ package com.alibaba.nacos.persistence.utils;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -33,6 +35,12 @@ class DatasourceDialectPluginTypePolicyTest {
     private final DatasourceDialectPluginTypePolicy policy =
         new DatasourceDialectPluginTypePolicy();
     
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setIsStandalone(null);
+        System.clearProperty(PersistenceConstant.EMBEDDED_STORAGE);
+    }
+    
     @Test
     void testTypeAndDiagnostics() {
         MapConfiguration configuration = new MapConfiguration();
@@ -44,9 +52,33 @@ class DatasourceDialectPluginTypePolicyTest {
     }
     
     @Test
-    void testDefaultSelection() {
+    void testStandaloneDefaultSelection() {
+        EnvUtil.setIsStandalone(true);
         MapConfiguration configuration = new MapConfiguration();
         configuration.setProperty("spring.datasource.platform", "mysql");
+        policy.initialize(configuration);
+        
+        assertTrue(policy.isPluginEnabledByDefault("DERBY", configuration));
+        assertFalse(policy.isPluginEnabledByDefault("mysql", configuration));
+        assertEquals("derby", policy.getRequiredPluginNames(configuration).iterator().next());
+    }
+    
+    @Test
+    void testClusterDefaultSelection() {
+        EnvUtil.setIsStandalone(false);
+        MapConfiguration configuration = new MapConfiguration();
+        policy.initialize(configuration);
+        
+        assertTrue(policy.isPluginEnabledByDefault("MYSQL", configuration));
+        assertFalse(policy.isPluginEnabledByDefault("derby", configuration));
+        assertEquals("mysql", policy.getRequiredPluginNames(configuration).iterator().next());
+    }
+    
+    @Test
+    void testEmbeddedClusterDefaultSelection() {
+        EnvUtil.setIsStandalone(false);
+        System.setProperty(PersistenceConstant.EMBEDDED_STORAGE, Boolean.TRUE.toString());
+        MapConfiguration configuration = new MapConfiguration();
         policy.initialize(configuration);
         
         assertTrue(policy.isPluginEnabledByDefault("DERBY", configuration));

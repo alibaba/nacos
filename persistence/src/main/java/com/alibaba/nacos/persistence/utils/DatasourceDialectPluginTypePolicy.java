@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
 import com.alibaba.nacos.api.plugin.PluginTypePolicy;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +38,7 @@ public class DatasourceDialectPluginTypePolicy implements PluginTypePolicy {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DatasourceDialectPluginTypePolicy.class);
     
-    private static final String DEFAULT_DIALECT = "derby";
-    
-    private String selectedPlugin = DEFAULT_DIALECT;
+    private String selectedPlugin = PersistenceConstant.DERBY;
     
     @Override
     public void initialize(PluginTypeConfiguration configuration) {
@@ -91,6 +90,8 @@ public class DatasourceDialectPluginTypePolicy implements PluginTypePolicy {
                 PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
             return selected.trim();
         }
-        return DEFAULT_DIALECT;
+        boolean embeddedStorage = EnvUtil.getStandaloneMode()
+            || Boolean.getBoolean(PersistenceConstant.EMBEDDED_STORAGE);
+        return embeddedStorage ? PersistenceConstant.DERBY : PersistenceConstant.MYSQL;
     }
 }
