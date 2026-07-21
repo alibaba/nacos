@@ -242,6 +242,21 @@ Explicit visibility permission resources use:
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
+The exact canonical resource string must be stored in the default RBAC
+`permissions.resource` column. The column must support at least 512 characters
+so namespaced resources can be persisted without truncation. Resource matching
+is exact and case-sensitive; the default MySQL schema therefore uses
+`utf8mb4_bin` for this column and `ROW_FORMAT=DYNAMIC` for the `permissions`
+table to keep the existing `(role, resource, action)` indexes valid with
+`utf8mb4`.
+
+Existing MySQL deployments should review the MySQL version, InnoDB page size,
+row format, and current `permissions` table definition before applying
+`META-INF/mysql-upgrade-visibility-permission-resource.sql`. Existing Oracle
+deployments should apply
+`META-INF/oracle-upgrade-visibility-permission-resource.sql` to expand
+`permissions.resource` to `VARCHAR2(512 CHAR)`.
+
 Explicit visibility grants for currently supported resources are managed through:
 
 ```text

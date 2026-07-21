@@ -205,6 +205,18 @@ identity-only 请求鉴权，并在授权服务层执行资源管理权限判断
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
+默认 RBAC `permissions.resource` 列必须保存完整、精确的 canonical 资源字符串。
+该列至少需要支持 512 个字符，以避免命名空间资源持久化时被截断。资源匹配语义是精确且
+大小写敏感的；因此默认 MySQL schema 对该列使用 `utf8mb4_bin`，并为
+`permissions` 表使用 `ROW_FORMAT=DYNAMIC`，以保证现有 `(role, resource, action)`
+索引在 `utf8mb4` 下可用。
+
+已有 MySQL 部署在应用 `META-INF/mysql-upgrade-visibility-permission-resource.sql`
+前，应检查 MySQL 版本、InnoDB page size、row format 以及当前 `permissions` 表结构。
+已有 Oracle 部署应应用
+`META-INF/oracle-upgrade-visibility-permission-resource.sql`，将 `permissions.resource`
+扩展为 `VARCHAR2(512 CHAR)`。
+
 当前支持资源的显式可见性授权通过以下接口管理：
 
 ```text
