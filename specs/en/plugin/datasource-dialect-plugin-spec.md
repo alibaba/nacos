@@ -122,6 +122,11 @@ The dialect selector supplies bootstrap selection and requires restart.
 Persisted state entries for this exclusive type do not replace the static
 selection, and the runtime status API must reject selection changes.
 
+When neither the standard selector nor its legacy alias is configured, the
+selection follows the server storage default: standalone mode and cluster mode
+with `-DembeddedStorage=true` select `derby`; ordinary cluster mode selects
+`mysql`. This implicit selection is also snapshotted at startup.
+
 The persistence subsystem always makes this critical type active. If the requested dialect is
 disabled or missing, startup must fail explicitly and identify the selected dialect and selection
 property. The server must not continue with another discovered dialect as a fallback.

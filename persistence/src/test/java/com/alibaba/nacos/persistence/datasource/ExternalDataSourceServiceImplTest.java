@@ -107,7 +107,7 @@ class ExternalDataSourceServiceImplTest {
             DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
             assertDoesNotThrow(service1::init);
-            assertEquals("", service1.getDataSourceType());
+            assertEquals("mysql", service1.getDataSourceType());
             assertNotNull(service1.getJdbcTemplate());
             assertNotNull(service1.getTransactionTemplate());
         } finally {
