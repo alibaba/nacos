@@ -47,6 +47,7 @@ Nacos design
   -> Extension model
   -> Security model
   -> Testing model
+  -> Shared JSON Schemas
 ```
 
 规范层次：
@@ -75,9 +76,14 @@ Nacos 顶层设计
   -> 扩展模型
   -> 安全模型
   -> 测试模型
+  -> 共享 JSON Schema
 ```
 
 Available languages:
 
 - [English](en/README.md)
 - [简体中文](zh-cn/README.md)
+
+Shared machine-readable contracts / 共享的机器可读契约：
+
+- [JSON Schema Index / JSON Schema 索引](schemas/README.md)

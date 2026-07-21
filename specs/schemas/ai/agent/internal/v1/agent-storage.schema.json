@@ -1,0 +1,1022 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nacos:schema:ai:agent:internal:v1:agent-storage",
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0. This is an internal schema and not a public wire compatibility contract.",
+  "title": "Nacos Agent Internal Storage And Projection Schema v1",
+  "description": "Definition bundle for Agent resource extension JSON, Version content and storage pointers, Naming Runtime Endpoint projection, stable physical identifiers, and digest contracts.",
+  "x-status": "experimental",
+  "x-visibility": "internal",
+  "x-schema-version": 1,
+  "x-identifiers": {
+    "resourceType": "agent",
+    "agentNameCodec": "rad-ascii-v1",
+    "versionStorageKeyFormat": "agent-version-config-v1",
+    "configDataIdComposer": "agent-version-data-id-v1",
+    "physicalConfigKeyCodec": "NacosAiConfigKeyCodec",
+    "namingServiceNameComposer": "rad-service-name-v1",
+    "runtimeRevision": "murmur3-x64-128-v1"
+  },
+  "x-constants": {
+    "configGroup": "agent-version",
+    "configMediaType": "application/vnd.nacos.agent-version+json",
+    "namingGroup": "agent-endpoints",
+    "protocolSearchTokenPrefix": "__nacos.agent.protocol:",
+    "namingMetadata": {
+      "path": "__nacos.agent.endpoint.path__",
+      "transport": "__nacos.agent.endpoint.transport__",
+      "protocol": "__nacos.agent.endpoint.protocol__",
+      "protocolVersion": "__nacos.agent.endpoint.protocolVersion__",
+      "supportTls": "__nacos.agent.endpoint.supportTls__",
+      "query": "__nacos.agent.endpoint.query__",
+      "tenant": "__nacos.agent.endpoint.tenant__",
+      "version": "__nacos.agent.endpoint.version__",
+      "versionRange": "__nacos.agent.endpoint.versionRange__",
+      "bindings": "__nacos.agent.endpoint.bindings__",
+      "priority": "__nacos.agent.endpoint.priority__"
+    }
+  },
+  "x-entrypoints": {
+    "AgentResourceExt": "#/$defs/AgentResourceExt",
+    "VersionCatalog": "#/$defs/VersionCatalog",
+    "AgentVersionContent": "#/$defs/AgentVersionContent",
+    "VersionStorageDescriptor": "#/$defs/VersionStorageDescriptor",
+    "NamingRuntimePublication": "#/$defs/NamingRuntimePublication",
+    "RadAsciiAgentIdCodecContract": "#/$defs/RadAsciiAgentIdCodecContract",
+    "AgentVersionDataIdComposerContract": "#/$defs/AgentVersionDataIdComposerContract",
+    "RadServiceNameComposerContract": "#/$defs/RadServiceNameComposerContract",
+    "RuntimeRevisionContract": "#/$defs/RuntimeRevisionContract"
+  },
+  "$defs": {
+    "SchemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "NamespaceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "AgentName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "allOf": [
+        {
+          "pattern": "^[ -~]+$"
+        },
+        {
+          "pattern": "[!-~]"
+        }
+      ]
+    },
+    "EncodedAgentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 260,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "description": "rad-ascii-v1 output. Canonical escape parsing and round-trip validation are domain responsibilities."
+    },
+    "AgentVersion": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$"
+    },
+    "VersionRange": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "anyOf": [
+        {
+          "pattern": "^\\[(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?\\]$"
+        },
+        {
+          "pattern": "^(?:\\[|\\()(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?,(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\]|\\))$"
+        },
+        {
+          "pattern": "^(?:\\[|\\()(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?,\\)$"
+        },
+        {
+          "pattern": "^\\(,(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\]|\\))$"
+        }
+      ]
+    },
+    "Label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "NonLatestLabel": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Label"
+        },
+        {
+          "not": {
+            "const": "latest"
+          }
+        }
+      ]
+    },
+    "ProtocolToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,31}$"
+    },
+    "ProtocolVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[!-~]+$"
+    },
+    "TransportToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9A-Za-z-]{1,64}$"
+    },
+    "ContentDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "AbsoluteUri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+    },
+    "AbsoluteEndpointUri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri",
+      "allOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*://"
+        },
+        {
+          "pattern": "^[^#]+$"
+        },
+        {
+          "not": {
+            "pattern": "^[A-Za-z][A-Za-z0-9+.-]*://[^/?#]*@"
+          }
+        }
+      ]
+    },
+    "MediaType": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[!-~]+/[!-~]+$"
+    },
+    "NonNullJsonValue": {
+      "not": {
+        "type": "null"
+      }
+    },
+    "AgentProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "url": {
+          "$ref": "#/$defs/AbsoluteUri"
+        }
+      }
+    },
+    "Extensions": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "additionalProperties": true,
+      "description": "Canonical JSON size must not exceed 16 KiB; JSON Schema cannot enforce encoded byte size."
+    },
+    "VersionCatalogEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "labels",
+        "protocols"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "labels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/NonLatestLabel"
+          }
+        },
+        "protocols": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/ProtocolToken"
+          }
+        }
+      }
+    },
+    "VersionCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "onlineVersions"
+      ],
+      "properties": {
+        "latestVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "onlineVersions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VersionCatalogEntry"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "onlineVersions": {
+                "maxItems": 0
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "latestVersion"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "latestVersion"
+            ]
+          }
+        }
+      ],
+      "description": "Server-derived catalog. latestVersion membership, descending version order, Version uniqueness, and global label uniqueness require domain validation."
+    },
+    "AgentResourceExt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "versionCatalog"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "iconUrl": {
+          "$ref": "#/$defs/AbsoluteUri"
+        },
+        "provider": {
+          "$ref": "#/$defs/AgentProvider"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        },
+        "versionCatalog": {
+          "$ref": "#/$defs/VersionCatalog"
+        }
+      }
+    },
+    "MetadataKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "allOf": [
+        {
+          "not": {
+            "enum": [
+              "preserved.heart.beat.interval",
+              "preserved.heart.beat.timeout",
+              "preserved.ip.delete.timeout"
+            ]
+          }
+        },
+        {
+          "not": {
+            "pattern": "^__nacos\\.agent\\.endpoint\\."
+          }
+        }
+      ]
+    },
+    "EndpointMetadata": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "$ref": "#/$defs/MetadataKey"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 256
+      }
+    },
+    "DeclaredEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "uri",
+        "transport"
+      ],
+      "properties": {
+        "uri": {
+          "$ref": "#/$defs/AbsoluteEndpointUri"
+        },
+        "transport": {
+          "$ref": "#/$defs/TransportToken"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647,
+          "default": 0
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 1.0
+        },
+        "metadata": {
+          "$ref": "#/$defs/EndpointMetadata"
+        }
+      }
+    },
+    "EndpointSource": {
+      "type": "string",
+      "enum": [
+        "RUNTIME",
+        "DECLARED"
+      ]
+    },
+    "AgentCallInterface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "descriptorMediaType",
+        "nativeDescriptor",
+        "endpointSourceOrder"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/ProtocolToken"
+        },
+        "protocolVersion": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "descriptorMediaType": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "nativeDescriptor": {
+          "$ref": "#/$defs/NonNullJsonValue"
+        },
+        "endpointSourceOrder": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/EndpointSource"
+          }
+        },
+        "declaredEndpoints": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/DeclaredEndpoint"
+          }
+        }
+      }
+    },
+    "AgentVersionContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "schemaVersion",
+        "callInterfaces"
+      ],
+      "properties": {
+        "kind": {
+          "const": "AgentVersionContent"
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "callInterfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/AgentCallInterface"
+          }
+        }
+      },
+      "description": "Serialize the complete object as RFC 8785 JSON Canonicalization Scheme bytes in UTF-8. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. The Version contentDigest is SHA-256 over those bytes. Protocol uniqueness, I-JSON validation, and descriptor-to-endpoint consistency require domain validation."
+    },
+    "VersionStorageDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "key",
+        "contentDigest",
+        "mediaType",
+        "schemaVersion",
+        "size"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "description": "Provider-opaque logical key. It may exceed the physical Config data-id limit; upper layers must neither reject it for that reason nor parse public Agent identity from a physical fallback value."
+        },
+        "keyFormat": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "agentNameCodec": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "contentDigest": {
+          "$ref": "#/$defs/ContentDigest"
+        },
+        "mediaType": {
+          "const": "application/vnd.nacos.agent-version+json"
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1048576
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "const": "nacos_config"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "keyFormat",
+              "agentNameCodec"
+            ],
+            "properties": {
+              "keyFormat": {
+                "const": "agent-version-config-v1"
+              },
+              "agentNameCodec": {
+                "const": "rad-ascii-v1"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RadAsciiAgentIdCodecContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "codecId",
+        "safeInputPattern",
+        "encodedPrefix",
+        "escapeRadix",
+        "escapeWidth",
+        "outputPattern",
+        "preserveCase"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "codecId": {
+          "const": "rad-ascii-v1"
+        },
+        "safeInputPattern": {
+          "const": "[A-Za-z0-9-]+"
+        },
+        "encodedPrefix": {
+          "const": "enc-"
+        },
+        "escapeRadix": {
+          "const": 10
+        },
+        "escapeWidth": {
+          "const": 3
+        },
+        "outputPattern": {
+          "const": "[A-Za-z0-9-]+"
+        },
+        "preserveCase": {
+          "const": true
+        }
+      },
+      "$comment": "If all input characters are safe, the result is unchanged. Otherwise prefix enc-, retain ASCII letters and digits, and encode every other printable ASCII character, including hyphen, as '-' plus its three-digit decimal code. Reject non-canonical escapes on decode. The known enc- source/result ambiguity is intentionally accepted in v1: there is no reserved prefix, collision index, or atomic encoded-id mapping, and public identity always comes from ai_resource.name. A collision-free form requires a new codec id and an explicit migration contract."
+    },
+    "AgentVersionDataIdComposerContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "composerId",
+        "groupId",
+        "format",
+        "physicalKeyCodec",
+        "physicalMaximumLength",
+        "overlengthPhysicalForm"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "composerId": {
+          "const": "agent-version-data-id-v1"
+        },
+        "groupId": {
+          "const": "agent-version"
+        },
+        "format": {
+          "const": "agent__<encodedAgentId>__<version>.json"
+        },
+        "physicalKeyCodec": {
+          "const": "NacosAiConfigKeyCodec"
+        },
+        "physicalMaximumLength": {
+          "const": 255
+        },
+        "overlengthPhysicalForm": {
+          "const": "sha256.<64-lowercase-hex>"
+        }
+      },
+      "$comment": "Version is not encoded. First compose the complete logical data id without applying a 255-character rejection. The built-in provider then applies NacosAiConfigKeyCodec to the complete logical group and data id. A safe value within the Config limit is unchanged; an overlong data id uses the deterministic sha256.<digest> physical fallback. Valid Agent identity must not be rejected because the logical data id exceeds the physical limit, and no upper layer may infer identity from a non-reversible physical key."
+    },
+    "RadServiceNameComposerContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "composerId",
+        "format",
+        "maximumLength",
+        "versionInIdentity",
+        "preserveCase"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "composerId": {
+          "const": "rad-service-name-v1"
+        },
+        "format": {
+          "const": "rad-<encodedAgentId.length>-<encodedAgentId>-<protocol>"
+        },
+        "maximumLength": {
+          "const": 512
+        },
+        "versionInIdentity": {
+          "const": false
+        },
+        "preserveCase": {
+          "const": true
+        }
+      },
+      "$comment": "The decimal length has no leading zero and counts ASCII characters. It makes the encodedAgentId/protocol tuple reversible despite hyphens. The composed value contains only [A-Za-z0-9-], starts with a letter or digit, may end with a letter, digit, or hyphen, and does not claim to be a DNS name."
+    },
+    "RuntimeVersionBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtimeVersion",
+        "versionRange"
+      ],
+      "properties": {
+        "runtimeVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "versionRange": {
+          "$ref": "#/$defs/VersionRange"
+        }
+      },
+      "description": "runtimeVersion must be contained by versionRange."
+    },
+    "RuntimeVersionBindings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/RuntimeVersionBinding"
+      },
+      "description": "Canonical order and semantic deduplication use runtimeVersion then canonical versionRange with case-sensitive Agent version ordering; JSON Schema only enforces exact JSON-value uniqueness."
+    },
+    "NamingRuntimeMetadata": {
+      "type": "object",
+      "maxProperties": 43,
+      "required": [
+        "__nacos.agent.endpoint.path__",
+        "__nacos.agent.endpoint.transport__",
+        "__nacos.agent.endpoint.protocol__",
+        "__nacos.agent.endpoint.supportTls__",
+        "__nacos.agent.endpoint.bindings__",
+        "__nacos.agent.endpoint.priority__"
+      ],
+      "properties": {
+        "__nacos.agent.endpoint.path__": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "__nacos.agent.endpoint.transport__": {
+          "$ref": "#/$defs/TransportToken"
+        },
+        "__nacos.agent.endpoint.protocol__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*$"
+        },
+        "__nacos.agent.endpoint.protocolVersion__": {
+          "$ref": "#/$defs/ProtocolVersion",
+          "description": "Optional legacy A2A compatibility fact. Only the compatibility adapter writes it, and only while all represented A2A contributions agree on one value. Public RAD projection and Runtime revision exclude it; differing values remove this singular key and use the target CallInterface fallback."
+        },
+        "__nacos.agent.endpoint.supportTls__": {
+          "type": "string",
+          "enum": [
+            "true",
+            "false"
+          ]
+        },
+        "__nacos.agent.endpoint.query__": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "__nacos.agent.endpoint.tenant__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "__nacos.agent.endpoint.version__": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "__nacos.agent.endpoint.versionRange__": {
+          "$ref": "#/$defs/VersionRange"
+        },
+        "__nacos.agent.endpoint.bindings__": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1024,
+          "pattern": "^\\[.*\\]$",
+          "description": "Canonical JSON array of RuntimeVersionBinding objects, sorted and deduplicated. Parsing and equality to NamingRuntimePublication.bindings require domain validation."
+        },
+        "__nacos.agent.endpoint.priority__": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "description": "Canonical decimal representation of an integer in 0..2147483647; the upper bound requires numeric domain validation."
+        }
+      },
+      "propertyNames": {
+        "anyOf": [
+          {
+            "enum": [
+              "__nacos.agent.endpoint.path__",
+              "__nacos.agent.endpoint.transport__",
+              "__nacos.agent.endpoint.protocol__",
+              "__nacos.agent.endpoint.protocolVersion__",
+              "__nacos.agent.endpoint.supportTls__",
+              "__nacos.agent.endpoint.query__",
+              "__nacos.agent.endpoint.tenant__",
+              "__nacos.agent.endpoint.version__",
+              "__nacos.agent.endpoint.versionRange__",
+              "__nacos.agent.endpoint.bindings__",
+              "__nacos.agent.endpoint.priority__"
+            ]
+          },
+          {
+            "$ref": "#/$defs/MetadataKey"
+          }
+        ]
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "description": "The sum of Java String.length() for all keys and values must not exceed 1024. At most 32 properties may be public Endpoint metadata; these encoded-size and category-count constraints require domain validation."
+    },
+    "NamingRuntimePublication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "namespaceId",
+        "groupName",
+        "serviceNameComposer",
+        "serviceName",
+        "clusterName",
+        "ip",
+        "port",
+        "weight",
+        "ephemeral",
+        "enabled",
+        "healthy",
+        "bindings",
+        "metadata"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "groupName": {
+          "const": "agent-endpoints"
+        },
+        "serviceNameComposer": {
+          "const": "rad-service-name-v1"
+        },
+        "serviceName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^rad-(?:0|[1-9][0-9]*)-[A-Za-z0-9-]+-[A-Za-z0-9][A-Za-z0-9-]{0,31}$",
+          "description": "Must parse exactly according to RadServiceNameComposerContract; the length prefix and constituent equality require domain validation."
+        },
+        "clusterName": {
+          "$ref": "#/$defs/TransportToken"
+        },
+        "ip": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "ephemeral": {
+          "const": true
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "healthy": {
+          "type": "boolean"
+        },
+        "bindings": {
+          "$ref": "#/$defs/RuntimeVersionBindings"
+        },
+        "metadata": {
+          "$ref": "#/$defs/NamingRuntimeMetadata"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "bindings": {
+              "maxItems": 1
+            },
+            "metadata": {
+              "required": [
+                "__nacos.agent.endpoint.version__",
+                "__nacos.agent.endpoint.versionRange__"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "bindings": {
+              "minItems": 2
+            },
+            "metadata": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "__nacos.agent.endpoint.version__"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "__nacos.agent.endpoint.versionRange__"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$comment": "clusterName must equal the reserved transport metadata. One binding mirrors its runtimeVersion and versionRange into the singular keys. Two or more bindings remove both singular keys. The bindings metadata string must be the canonical JSON serialization of bindings. Across all live contributions, one natural Endpoint key must have one canonical public payload; identical payloads aggregate all bindings into this Naming instance. IP, port, path, query, scheme, and TLS metadata must reconstruct that canonical Endpoint. The optional reserved protocolVersion is written only by the legacy A2A adapter and is excluded from public RAD Endpoint metadata and Runtime revision."
+    },
+    "RuntimeRevisionContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "algorithm",
+        "seed",
+        "canonicalForm",
+        "charset",
+        "canonicalJson",
+        "framing",
+        "byteOrder",
+        "longOrder",
+        "endpointOrder",
+        "metadataOrder",
+        "includedFields",
+        "excludedFields",
+        "outputEncoding",
+        "tokenPrefix"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "algorithm": {
+          "const": "murmur3-x64-128-v1"
+        },
+        "seed": {
+          "const": 0
+        },
+        "canonicalForm": {
+          "const": "rad-runtime-endpoint-projection-v1"
+        },
+        "charset": {
+          "const": "UTF-8"
+        },
+        "canonicalJson": {
+          "const": "RFC8785"
+        },
+        "framing": {
+          "const": "uint32be-count-and-length-prefixed-fields-v1"
+        },
+        "byteOrder": {
+          "const": "BIG_ENDIAN"
+        },
+        "longOrder": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "const": "h1"
+            },
+            {
+              "const": "h2"
+            }
+          ],
+          "items": false
+        },
+        "endpointOrder": {
+          "const": "natural-key"
+        },
+        "metadataOrder": {
+          "const": "key"
+        },
+        "includedFields": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "prefixItems": [
+            {
+              "const": "uri"
+            },
+            {
+              "const": "transport"
+            },
+            {
+              "const": "priority"
+            },
+            {
+              "const": "weight"
+            },
+            {
+              "const": "metadata"
+            },
+            {
+              "const": "healthy"
+            }
+          ],
+          "items": false
+        },
+        "excludedFields": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "prefixItems": [
+            {
+              "const": "namespaceId"
+            },
+            {
+              "const": "agentName"
+            },
+            {
+              "const": "source"
+            },
+            {
+              "const": "runtimeVersion"
+            },
+            {
+              "const": "versionRange"
+            },
+            {
+              "const": "bindings"
+            },
+            {
+              "const": "enabled"
+            },
+            {
+              "const": "publisherIdentity"
+            },
+            {
+              "const": "publisherCount"
+            },
+            {
+              "const": "heartbeatTime"
+            },
+            {
+              "const": "lastUpdatedTime"
+            },
+            {
+              "const": "namingRevision"
+            },
+            {
+              "const": "targetVersion"
+            },
+            {
+              "const": "protocol"
+            },
+            {
+              "const": "protocolVersion"
+            },
+            {
+              "const": "sourceRevision"
+            }
+          ],
+          "items": false
+        },
+        "outputEncoding": {
+          "const": "h1-h2-unsigned-big-endian-lowercase-hex"
+        },
+        "tokenPrefix": {
+          "const": "murmur3-x64-128-v1:"
+        }
+      },
+      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, aggregate publishers by natural Endpoint key, retain bindings matching targetVersion, remove enabled=false, retain both healthy values, materialize default priority=0 and weight=1.0, sort Endpoints by natural key, and sort public metadata by key. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Canonical bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode the six included fields in their declared order as RFC 8785 canonical JSON UTF-8; prefix each field with its four-byte unsigned big-endian byte length. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by bindings or enabled state change the input set; those control fields are not serialized into an included Endpoint. Golden vectors are required across server implementations."
+    }
+  }
+}

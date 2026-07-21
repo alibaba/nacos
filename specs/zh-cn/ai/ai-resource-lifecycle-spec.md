@@ -78,15 +78,21 @@ create/upload draft
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
 - 流水线通过和拒绝都会把版本改为 `reviewed`；拒绝后如果需要继续编辑，用户必须显式
   redraft 该版本。
-- Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并由服务端维护
-  `latest` label。
+- Publish 会把版本改为 `online`，清理 working 指针，按需增加 `onlineCnt`，并由服务端按照
+  资源类型规范维护 `latest` label。
 - Publish 和 force-publish 请求可以为兼容历史调用保留 `updateLatestLabel` 参数；
   该参数已废弃，新客户端不得继续发送。未指定或指定为 `true` 时，发布版本成为服务端维护的
   最新版本。标签更新 API 必须忽略客户端传入的 `latest` label key，并把当前服务端维护的
   `latest` 值合并回最终 labels map。
 - Force publish 会在跳过流水线通过校验的同时，执行与 publish 成功时一致的状态转换。
-- 任意上线/下线状态变更完成后，服务端必须基于当前在线版本重新计算 `latest`，
-  并指向最大的在线版本；没有任何在线版本时，服务端必须删除 `latest`。
+- 除非类型规范给出确定性细化，成功的 publish 或 online 操作会使目标版本成为 `latest`。
+  当前 latest 被删除或下线时，默认选择剩余 online Version 中最大的一个；不存在 online
+  Version 时删除 `latest`。类型细化仍必须保证 `latest` 由服务端管理、只指向 online Version，
+  并定义删除或下线时的回退规则。
+- Agent 类型只对旧 A2A 直接上线 facade 细化该规则：`setAsLatest=false` 可以保留当前有效指针。
+  标准 Agent publish 和 online 仍会移动 `latest`；当前指针被删除或下线时，选择剩余 online
+  Agent Version 中最大的一个。详见 [Agent 管理规范](agent-management-spec.md)和
+  [A2A Agent 规范](a2a-agent-spec.md)。
 
 流水线扩展行为由 [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
 本领域规范只定义 AI 资源生命周期如何响应流水线结果。

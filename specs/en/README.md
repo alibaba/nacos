@@ -75,6 +75,10 @@ extension mechanisms, and cross-cutting security rules.
 - [API Integration Test Spec](testing/api-integration-test-spec.md)
 - [Java SDK Integration Test Spec](testing/java-sdk-integration-test-spec.md)
 
+## Shared Schemas
+
+- [JSON Schema Index](../schemas/README.md)
+
 Agent guidance files such as [AGENTS.md](../../AGENTS.md) should summarize these
 specs for local execution. The specs remain the rule source when API guidance is
 used by humans, AI agents, templates, or validation tools.

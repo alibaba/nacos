@@ -44,8 +44,9 @@ the capabilities that a runtime application normally needs:
 - read known configuration items and subscribe to their changes;
 - register and deregister the current application instance;
 - query and subscribe to known services used by the application;
-- register, resolve, and subscribe to runtime AI resources, such as MCP
-  endpoints, A2A agent endpoints, Prompt, Skill, and AgentSpec resources;
+- register, discover, and subscribe to runtime AI resources, including callable
+  Agent endpoints, while retaining historical MCP, A2A, Prompt, Skill, and
+  AgentSpec compatibility surfaces;
 - use optional runtime primitives such as
   [distributed lock](../lock/lock-spec.md) when the language SDK supports them;
 - manage its own lifecycle, local cache, listeners, and connections according to
@@ -77,15 +78,39 @@ capabilities that are intentionally absent from the Client SDK:
   dump, and metadata operations;
 - service, instance, cluster metadata, subscriber, client, and health-check
   maintenance;
-- AI resource management for MCP, A2A, Prompt, Skill, AgentSpec, and Pipeline
-  resources;
+- AI resource management for Agent, MCP, A2A, Prompt, Skill, AgentSpec, and
+  Pipeline resources;
 - paginated and filterable access to large management datasets.
 
 The Maintainer SDK should be treated as a typed facade over the Nacos Admin API
 surface. When a capability is only useful for management, UI, gateway, or
 operation tools, it belongs here instead of the Client SDK.
 
-## 4. Security Rules
+## 4. Agent And RAD Target Contract
+
+This section defines the target SDK contract for Agent management and
+[Remote Agent Discovery (RAD)](../ai/rad-protocol-spec.md). It does not claim
+that an SDK already implements these capabilities. Until the Agent/RAD
+abilities defined by the [Agent API Spec](../ai/agent-api-spec.md) are
+implemented and negotiated, the existing A2A SDK surface remains the active
+compatibility contract.
+
+The target Client SDK must:
+
+- bind each SDK instance to one namespace and omit namespace arguments from
+  public Agent discovery, watch, registration, and deregistration methods;
+- expose Agent Search, Discover with and without a Filter, Watch and cancel,
+  and runtime Endpoint Register and Deregister;
+- inject the bound namespace into a transport request without mutating a
+  caller-owned object; and
+- preserve Watch and Endpoint publication intent across reconnect according to
+  the client recovery specs.
+
+The target Maintainer SDK is not namespace-bound. Every Agent management call
+must explicitly identify its namespace. It exposes the new Agent management
+facade while retaining the A2A management facade for its compatibility window.
+
+## 5. Security Rules
 
 SDK capability design must follow least privilege:
 
@@ -100,7 +125,7 @@ SDK capability design must follow least privilege:
 - SDK documentation should make data-leakage risks visible when an API can list
   or export a large amount of configuration, service, client, or metadata.
 
-## 5. Transport and API Alignment
+## 6. Transport and API Alignment
 
 The SDK contract is a semantic contract, not a transport contract:
 
@@ -117,7 +142,7 @@ The SDK contract is a semantic contract, not a transport contract:
   language-idiomatic exceptions or result types without hiding server-side
   semantics.
 
-## 6. Multi-language Alignment
+## 7. Multi-language Alignment
 
 Java is currently the baseline implementation for defining shared SDK
 semantics. Other language SDKs should align with the same capability families:

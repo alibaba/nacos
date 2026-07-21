@@ -236,6 +236,29 @@ AI payload semantics are defined by the
 | `BatchAgentEndpointRequest` | `AgentEndpointResponse` | write | `agentName`, `endpoints` | Replace this client's endpoints for an Agent. |
 | `QueryPromptRequest` | `QueryPromptResponse` | read | `namespace`, `promptKey`, `version`, `label`, `md5` | Query Prompt by version, label, latest, or md5. |
 
+The following Agent/RAD payloads are the approved Experimental target defined
+by the [Agent API Spec](../ai/agent-api-spec.md). They are not part of the
+current implemented payload inventory until their classes, handlers, SPI
+registrations, and negotiated abilities are present in the runtime.
+
+| Target request type | Target response type | Direction | Contract |
+| --- | --- | --- | --- |
+| `AgentSearchRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
+| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
+| `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | Subscribe or unsubscribe an Agent reference and optional filter; subscribe returns an opaque `watchKey` and the current complete result. |
+| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | Push one `SNAPSHOT` or `TERMINATED` event for a `watchKey` and receive an acknowledgement. |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | Upsert one runtime Endpoint registration batch owned by the current connection. |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | Idempotently remove one runtime Endpoint deregistration batch owned by the current connection. |
+
+For this target binding, `AgentDiscoveryNotifyRequest` contains `watchKey` and
+`eventType`. `SNAPSHOT` requires a complete `AgentDiscoveryResult` and no
+error. `TERMINATED` requires no result and `errorCode=NOT_FOUND`. The client
+acknowledges both event types. A terminal event ends only the identified Watch
+on the shared Payload connection; it does not end the connection or another
+Watch. `AgentSubscribeResponse` is the source of the connection-scoped opaque
+`watchKey`, including after reconnect. These wrappers remain gRPC binding
+objects and do not extend RAD's six root messages.
+
 Skill ZIP download and AgentSpec assembly are Java SDK interface capabilities,
 but current Java client implementation uses HTTP/config composition rather than a
 dedicated gRPC payload.

@@ -63,6 +63,41 @@ instance metadata keys for core behavior:
 | `preserved.ip.delete.timeout` | Heartbeat deletion timeout override. |
 | `preserved.instance.id.generator` | Instance id generator selection. |
 
+The complete `__nacos.agent.endpoint.*__` namespace is reserved for the Agent
+Runtime Endpoint projection. Its version-1 keys are:
+
+| Key | Meaning |
+| --- | --- |
+| `__nacos.agent.endpoint.path__` | URI path. |
+| `__nacos.agent.endpoint.transport__` | Canonical transport; it must agree with the Naming cluster. |
+| `__nacos.agent.endpoint.protocol__` | URI scheme, not the Agent CallInterface protocol token. |
+| `__nacos.agent.endpoint.protocolVersion__` | Optional legacy A2A protocol-version compatibility fact. |
+| `__nacos.agent.endpoint.supportTls__` | Whether the projected URI uses TLS. |
+| `__nacos.agent.endpoint.query__` | Raw URI query. |
+| `__nacos.agent.endpoint.tenant__` | Protocol-native tenant when present. |
+| `__nacos.agent.endpoint.version__` | Single-binding runtime Version compatibility and diagnostic mirror. |
+| `__nacos.agent.endpoint.versionRange__` | Single-binding canonical Version range compatibility and diagnostic mirror. |
+| `__nacos.agent.endpoint.bindings__` | Canonical JSON array of runtime Version and Version-range bindings. |
+| `__nacos.agent.endpoint.priority__` | Endpoint priority; a lower number has higher priority. |
+
+Only the Agent Runtime Registry may write keys under this prefix. Public
+runtime and operational metadata writes must reject them, so the ordinary
+operational-over-runtime priority rule does not override Agent projection
+facts. Endpoint weight, enabled state, and health continue to use their native
+Naming Instance fields rather than reserved metadata keys.
+
+Only the A2A compatibility adapter writes `protocolVersion`. Public RAD
+Endpoint metadata and Runtime revision exclude it. The old A2A response
+projection prefers this value and falls back to the target Agent CallInterface
+`protocolVersion` when it is absent.
+
+`bindings` is the Version-matching fact. When it has exactly one item, the
+Registry also writes `version` and `versionRange` as mirrors. When it has more
+than one item, the Registry removes both singular keys. Readers use `bindings`
+when present and must not merge stale singular values. The exact canonical
+array and Runtime projection rules are defined by the
+[Agent Storage Spec](../ai/agent-storage-spec.md).
+
 New core behavior must not be bound to arbitrary user metadata keys. If a
 metadata key changes Naming behavior, it must be reserved and documented.
 
@@ -123,5 +158,6 @@ after recovery.
 - [Naming Resource Spec](naming-resource-spec.md)
 - [Naming Health And Protection Spec](naming-health-protection-spec.md)
 - [Naming Consistency And Client State Spec](naming-consistency-client-spec.md)
+- [Agent Storage Spec](../ai/agent-storage-spec.md)
 - [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md)

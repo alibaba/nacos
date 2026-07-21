@@ -84,6 +84,28 @@ Nacos 资源身份。
 SHA-256 兜底具有确定性但不可逆，逻辑资源身份仍由 AI 资源元数据持有；`save`、`get`、
 `delete` 必须使用完全一致的物理映射。
 
+### Agent 逻辑坐标
+
+对于 `type=agent`，Agent 领域在向 provider 传递 opaque `StorageKey` 前构造以下 Nacos
+Config 逻辑坐标：
+
+```text
+group  = agent-version
+dataId = agent__<rad-ascii-v1(agentName)>__<version>.json
+```
+
+`rad-ascii-v1` 和完整 Agent Version 存储契约由
+[Agent 存储规范](../ai/agent-storage-spec.md)定义。该坐标是 provider 的逻辑输入，不是向
+调用方暴露的物理 Config 身份。
+
+内置 provider 必须把两个逻辑段都传给通用 `NacosAiConfigKeyCodec`；不能因为 Agent 领域已经
+编码 `agentName` 就跳过该 codec。物理限制内的安全值与逻辑值相同。长度和保留格式处理完全由
+通用 codec 负责：超长候选值使用其确定性 SHA-256 兜底，得到的物理结果不可逆。
+
+上层可以持久化逻辑 key format 和 content digest，但不得解析物理 Config key、要求物理 key
+可逆，或根据物理 key 重建 Agent 身份。`save`、`get`、`delete` 始终通过同一个 codec 重新
+计算物理坐标。
+
 provider 不会双读旧版物理映射产生的坐标。对已受影响的 `nacos_config` 存量数据，
 必须在只使用新映射的节点启动前，通过协调的维护窗口完成迁移。迁移必须仅限 AI 自有
 坐标，提前校验目标唯一键冲突，并在坐标改写后重建 Config 缓存。`nacos-ai-prompt` group
@@ -101,6 +123,7 @@ AI 存储 provider 接入统一插件 state。禁用非 critical provider 后，
 nacos.ai.prompt.storage.provider=nacos_config
 nacos.ai.skill.storage.provider=nacos_config
 nacos.ai.agentspec.storage.provider=nacos_config
+nacos.ai.agent.storage.provider=nacos_config
 ```
 
 它们属于领域路由策略，不是 `ai-storage:nacos_config` 所拥有的私有配置 definitions。
