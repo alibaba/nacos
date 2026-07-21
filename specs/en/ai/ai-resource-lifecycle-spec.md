@@ -86,7 +86,8 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
   must explicitly redraft the version when further editing is required after a
   rejected result.
 - Publish moves the version to `online`, clears working pointers, increments
-  `onlineCnt` when needed, and the server manages the `latest` label.
+  `onlineCnt` when needed, and the server manages the `latest` label according
+  to the resource type spec.
 - Publish and force-publish requests may keep the historical
   `updateLatestLabel` parameter for compatibility. This parameter is deprecated;
   new clients must not send it. When it is absent or `true`, the published
@@ -96,9 +97,18 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
   map.
 - Force publish applies the same successful state transition as publish while
   skipping pipeline approval checks.
-- After any online/offline status change, the server must recalculate `latest`
-  from the current online versions and point it to the greatest online version.
-  If no online version remains, the server must remove `latest`.
+- Unless a type spec defines a deterministic refinement, a successful publish
+  or online operation makes the target version `latest`. When the current
+  latest version is deleted or taken offline, the default replacement is the
+  greatest remaining online version; if no online version remains, the server
+  removes `latest`. A type refinement must still keep `latest` server-managed,
+  point it to an online version, and define deletion/offline fallback.
+- The Agent type refines this rule only for its legacy A2A direct-online
+  facade: `setAsLatest=false` may preserve the current valid pointer. Standard
+  Agent publish and online operations still move `latest`, and deletion or
+  offline of the current pointer selects the greatest remaining online Agent
+  version. See the [Agent Management Spec](agent-management-spec.md) and the
+  [A2A Agent Spec](a2a-agent-spec.md).
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This

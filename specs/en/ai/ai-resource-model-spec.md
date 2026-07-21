@@ -44,7 +44,7 @@ still `resourceName`.
 | Field | Meaning |
 | --- | --- |
 | `namespaceId` | Namespace isolation boundary. |
-| `type` | Resource type, such as `prompt`, `skill`, or `agentspec`. |
+| `type` | Resource type, such as `agent`, `prompt`, `skill`, or `agentspec`. |
 | `name` | Stable resource name. |
 | `desc` | Resource description. |
 | `status` | Resource metadata status, currently `enable` or `disable`. |
@@ -108,6 +108,15 @@ be treated as user-owned Config resources.
 Storage extension behavior is defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md). Database dialect
 behavior is defined by the [Data Source Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md).
+
+Type-owned JSON must have an explicit schema contract. For `type=agent`, `ext`
+contains the directory extension and derived online-version catalog, while the
+version `storage` points to one complete Agent version content object. Exact
+fields and rebuild rules are defined by the
+[Agent Management Spec](agent-management-spec.md) and the
+[Agent Storage Spec](agent-storage-spec.md). Runtime Agent endpoints are not
+stored in `AiResourceVersion.storage` because they follow a client-owned Naming
+lifecycle.
 
 ## 6. Visibility
 

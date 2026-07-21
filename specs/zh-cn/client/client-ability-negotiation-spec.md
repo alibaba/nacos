@@ -41,7 +41,7 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 | `SDK_CLIENT_FUZZY_WATCH` | 客户端可以使用 Config 或 Naming fuzzy watch。 |
 | `SDK_CLIENT_DISTRIBUTED_LOCK` | 客户端可以使用分布式锁功能。 |
 | `SDK_MCP_REGISTRY` | 客户端可以使用 MCP registry 运行时功能。 |
-| `SDK_AGENT_REGISTRY` | 客户端可以使用 Agent 和 AgentCard 运行时功能。 |
+| `SDK_AGENT_REGISTRY` | 客户端可以使用旧 A2A Agent 和 AgentCard 运行时功能。 |
 
 当前服务端声明支持：
 
@@ -51,10 +51,26 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 | `SERVER_FUZZY_WATCH` | 支持 Config 或 Naming fuzzy watch。 |
 | `SERVER_DISTRIBUTED_LOCK` | 支持分布式锁。 |
 | `SERVER_MCP_REGISTRY` | 支持 MCP registry 操作。 |
-| `SERVER_AGENT_REGISTRY` | 支持 Agent 和 AgentCard registry 操作。 |
+| `SERVER_AGENT_REGISTRY` | 支持旧 A2A Agent 和 AgentCard registry 操作。 |
 | `SERVER_AGENT_CARD_V1` | 支持 A2A AgentCard 1.0 协议字段。 |
 
 新增 ability 需要同时提供具名 key 和领域规则，说明该 ability 控制的行为。
+
+### 2.1 实验性 Agent/RAD 目标能力
+
+[Agent API 规范](../ai/agent-api-spec.md)为 Nacos 3.3 版本线确定下列目标能力位。
+它们描述目标契约；在对应常量和 Handler 完成实现前，不属于当前 Runtime 能力。
+
+| Mode | 常量 | Wire key | 含义 |
+|---|---|---|---|
+| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search、Discover 和 Watch Payload。 |
+| `SERVER` | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Runtime Endpoint 发布 Payload。 |
+| `SDK_CLIENT` | `SDK_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | SDK 接受 RAD Discovery Push Payload。 |
+
+Ability name 按 Mode 划分作用域，因此 `agentDiscoveryV1` 可以同时作为 `SERVER` 和
+`SDK_CLIENT` 表中的 Wire key。旧 `SERVER_AGENT_REGISTRY`、
+`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 继续只控制旧 A2A 契约，不作为任何
+RAD 操作的 fallback。
 
 ## 3. gRPC 协商流程
 
@@ -94,11 +110,20 @@ Unknown 不是成功。新功能应优先返回 fail-fast unsupported error，�
 - Config 和 Naming fuzzy watch 必须要求 `SERVER_FUZZY_WATCH`。
 - 分布式锁必须要求 `SERVER_DISTRIBUTED_LOCK`，因为该功能实验性且不保证所有服务端可用。
 - AI MCP registry 操作必须要求 `SERVER_MCP_REGISTRY`。
-- AI Agent 和 AgentCard 操作必须要求 `SERVER_AGENT_REGISTRY`。
+- 旧 A2A Agent 和 AgentCard 操作必须要求 `SERVER_AGENT_REGISTRY`。
 - A2A AgentCard 1.0 字段应要求 `SERVER_AGENT_CARD_V1`，或使用显式文档化的兼容转换。
+- RAD Search、Discover 和 Watch 请求必须要求 `SERVER_AGENT_DISCOVERY_V1`。
+- RAD Runtime Endpoint 注册和注销必须要求 `SERVER_AGENT_ENDPOINT_V1`。
+- 只有 Client 声明 `SDK_AGENT_DISCOVERY_V1` 时，Server 才能 Push `SNAPSHOT` 或
+  `TERMINATED` 类型的 `AgentDiscoveryNotifyRequest`。该能力同时覆盖 ACK 和按
+  `watchKey` 隔离终止一个 Watch；它不允许因某个 Watch 终止而关闭共享 Payload
+  Connection。
 
 功能代码不应把 positive ability result 缓存在当前 connection 生命周期之外。执行操作前应查询
 运行时 connection ability，或确认缓存值属于当前 connection。
+
+Reconnect 后，Client 必须重新协商能力，再恢复 Watch 意图。恢复后的订阅从
+`AgentSubscribeResponse` 取得新的 Connection 维度不透明 `watchKey`，不得复用旧 Key。
 
 ## 6. 兼容规则
 

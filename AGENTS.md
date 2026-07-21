@@ -210,6 +210,10 @@ English:
   [AI Resource Model Spec](./specs/en/ai/ai-resource-model-spec.md),
   [AI Resource Lifecycle Spec](./specs/en/ai/ai-resource-lifecycle-spec.md),
   [AI Registry Adaptor Spec](./specs/en/ai/ai-registry-adaptor-spec.md),
+  [Agent Management Spec](./specs/en/ai/agent-management-spec.md),
+  [Remote Agent Discovery Protocol Spec](./specs/en/ai/rad-protocol-spec.md),
+  [Agent API Spec](./specs/en/ai/agent-api-spec.md),
+  [Agent Storage Spec](./specs/en/ai/agent-storage-spec.md),
   [MCP Server Spec](./specs/en/ai/mcp-server-spec.md),
   [A2A Agent Spec](./specs/en/ai/a2a-agent-spec.md),
   [Prompt Spec](./specs/en/ai/prompt-spec.md),
@@ -231,6 +235,8 @@ English:
 - Testing model:
   [API Integration Test Spec](./specs/en/testing/api-integration-test-spec.md),
   [Java SDK Integration Test Spec](./specs/en/testing/java-sdk-integration-test-spec.md)
+- Shared schemas:
+  [JSON Schema Index](./specs/schemas/README.md)
 
 Simplified Chinese:
 
@@ -287,6 +293,10 @@ Simplified Chinese:
   [AI 资源模型规范](./specs/zh-cn/ai/ai-resource-model-spec.md)，
   [AI 资源生命周期规范](./specs/zh-cn/ai/ai-resource-lifecycle-spec.md)，
   [AI Registry 适配器规范](./specs/zh-cn/ai/ai-registry-adaptor-spec.md)，
+  [Agent 管理规范](./specs/zh-cn/ai/agent-management-spec.md)，
+  [Remote Agent Discovery 协议规范](./specs/zh-cn/ai/rad-protocol-spec.md)，
+  [Agent API 规范](./specs/zh-cn/ai/agent-api-spec.md)，
+  [Agent 存储规范](./specs/zh-cn/ai/agent-storage-spec.md)，
   [MCP Server 规范](./specs/zh-cn/ai/mcp-server-spec.md)，
   [A2A Agent 规范](./specs/zh-cn/ai/a2a-agent-spec.md)，
   [Prompt 规范](./specs/zh-cn/ai/prompt-spec.md)，
@@ -308,6 +318,8 @@ Simplified Chinese:
 - 测试模型：
   [API 集成测试规范](./specs/zh-cn/testing/api-integration-test-spec.md)，
   [Java SDK 集成测试规范](./specs/zh-cn/testing/java-sdk-integration-test-spec.md)
+- 共享 Schema：
+  [JSON Schema 索引](./specs/schemas/README.md)
 
 This section is a quick implementation checklist for agents. If it conflicts
 with the specs, follow the specs and update this checklist.

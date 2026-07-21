@@ -26,7 +26,7 @@ AI Registry 是 Nacos 中负责 AI 资源注册、治理、发现和分发的领
 AI Registry 负责：
 
 - AI 资源元数据、版本、标签、状态、scope、owner 和业务标签；
-- MCP Server、A2A Agent、Prompt、Skill、AgentSpec 等资源类型契约；
+- MCP Server、Agent、Prompt、Skill、AgentSpec 等资源类型契约；
 - 已支持 AI 资源的运行时查询和订阅行为；
 - draft 创建、审核、发布、强制发布、上线/下线、删除、上传、导入和下载等管理流程；
 - AI 发布流水线、存储插件、可见性、鉴权和 Trace 钩子的领域使用方式。
@@ -34,7 +34,7 @@ AI Registry 负责：
 AI Registry 不负责：
 
 - Config 资源语义，即使默认 AI 存储实现通过 Config 保存资源内容；
-- Naming service 语义，即使 MCP 或 A2A endpoint 通过 Naming service 和 instance 表达；
+- Naming service 语义，即使 MCP 或 Agent endpoint 通过 Naming service 和 instance 表达；
 - [AI Registry 适配器规范](ai-registry-adaptor-spec.md)暴露的社区 registry 协议定义；
 - 插件扩展契约。流水线、存储、资源导入、可见性和 Trace 的扩展规则由对应插件规范定义。
 
@@ -75,16 +75,16 @@ JSON。
 
 ## 4. 资源类型清单
 
-| Type | 标准身份 | 当前持久化形态 | 规范 |
+| Type | 标准身份 | 当前或已批准目标持久化形态 | 规范 |
 | --- | --- | --- | --- |
 | `mcp` | `namespaceId -> mcp -> mcpName` | 当前通过 Config 记录 MCP 元数据、版本、tool、resource 数据，通过 Naming service 表达 endpoint。 | [MCP Server 规范](mcp-server-spec.md) |
-| `a2a` | `namespaceId -> a2a -> agentName` | 当前通过 Config 记录 AgentCard 元数据和版本数据，通过 Naming service 表达 endpoint。 | [A2A Agent 规范](a2a-agent-spec.md) |
+| `agent` | `namespaceId -> agent -> agentName` | 已批准目标为 `ai_resource`、`ai_resource_version`、AI 存储和 Naming 承载的 Runtime Endpoint publication；迁移完成前，历史 A2A 存储仍是兼容来源。 | [Agent 管理规范](agent-management-spec.md) |
 | `prompt` | `namespaceId -> prompt -> promptKey` | 使用 `ai_resource`、`ai_resource_version` 和 AI 存储；旧 Prompt 数据可迁移。 | [Prompt 规范](prompt-spec.md) |
 | `skill` | `namespaceId -> skill -> name` | 使用 `ai_resource`、`ai_resource_version`、AI 存储和轻量 discovery manifest。 | [Skill 规范](skill-spec.md) |
 | `agentspec` | `namespaceId -> agentspec -> name` | 使用 `ai_resource`、`ai_resource_version` 和 AI 存储。 | [AgentSpec 规范](agentspec-spec.md) |
 
-MCP 和 A2A 即使当前持久化尚未完全适配 `ai_resource`，也仍属于 AI Registry 资源。
-它们的标准规范应以标准身份为准，并把当前兼容存储单独记录。
+A2A AgentCard 是 `agent` Version 内的一种协议 binding。历史 `a2a` 资源身份和 API
+是 [A2A Agent 规范](a2a-agent-spec.md)定义的兼容 facade，不得形成第二套标准 Agent 身份。
 
 ## 5. 接口面
 
@@ -95,7 +95,7 @@ AI Registry 通过多个接口面暴露：
 | `/v3/client/ai/...` | 运行时客户端和 Agent framework。 | 查询已知资源、下载运行时产物、订阅，以及注册客户端拥有的 endpoint。 |
 | `/v3/admin/ai/...` | 管理工具和 Maintainer SDK。 | 创建、更新、列表、发布、删除、上传和版本运维。 |
 | `/v3/console/ai/...` | Nacos 控制台。 | 围绕相同领域语义进行 UI 编排。 |
-| gRPC AI requests | Java Client SDK 运行时流量。 | 查询和发布 MCP/A2A/Prompt 资源，并在支持时注册 endpoint。 |
+| gRPC AI requests | Java Client SDK 运行时流量。 | 查询 AI 资源、执行 RAD 发现与订阅，并在支持时发布客户端拥有的 endpoint。 |
 | Java SDK | 运行时应用集成。 | 参见 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)。 |
 | Java Maintainer SDK | 类型化管理集成。 | 应与 Admin API 语义和资源类型规范保持一致。 |
 | AI Registry 适配器 | 外部社区 registry 客户端。 | 独立端口上的可选兼容端点，参见 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)。 |
@@ -121,11 +121,11 @@ AI Registry 通过多个接口面暴露：
 
 - MCP Server 应将持久元数据和版本模型从 Config 形态记录迁移到标准的
   `ai_resource` 和 `ai_resource_version` 模型，同时保留现有数据兼容。
-- A2A Agent 应将 AgentCard 元数据和版本数据从 Config 形态记录迁移到标准 AI
-  资源模型。
+- 历史 A2A AgentCard 和 Naming endpoint 数据必须通过滚动升级方案迁移到 Agent 模型；
+  旧 API 只是投影视图，不再拥有独立资源存储。
 - Prompt 已有从旧 Config 形态 Prompt 数据迁移到标准 AI 资源模型的路径。旧映射
   必须作为兼容存储，而不是正式 Config 资源语义。
-- A2A 当前在多个兼容 endpoint 中随机选择 endpoint。未来如有需要，应定义可插拔或
-  确定性的 endpoint 选择规范。
+- RAD 返回确定性的 endpoint 集合。健康过滤、priority/weight 选择和负载均衡属于客户端策略，
+  不改变 Registry snapshot。
 - 随着 MCP、A2A 和 Agent 包生态演进，AI 资源 schema 和协议 payload 可能需要
   大幅调整。

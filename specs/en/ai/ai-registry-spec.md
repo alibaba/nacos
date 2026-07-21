@@ -28,7 +28,7 @@ AI Registry owns:
 
 - AI resource metadata, versions, labels, status, scope, owner, and business
   tags;
-- resource type contracts for MCP Server, A2A Agent, Prompt, Skill, and
+- resource type contracts for MCP Server, Agent, Prompt, Skill, and
   AgentSpec;
 - runtime query and subscription behavior for supported AI resources;
 - management workflows such as draft creation, review, publish, force publish,
@@ -40,7 +40,7 @@ AI Registry does not own:
 
 - Config resource semantics, even when the default AI storage implementation
   stores resource content through Config;
-- Naming service semantics, even when MCP or A2A endpoints are represented by
+- Naming service semantics, even when MCP or Agent endpoints are represented by
   Naming services and instances;
 - community registry protocol definitions exposed by the
   [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md);
@@ -92,17 +92,18 @@ Detailed field and lifecycle rules are defined by the
 
 ## 4. Resource Type Inventory
 
-| Type | Standard identity | Current persistence shape | Spec |
+| Type | Standard identity | Current or approved target persistence shape | Spec |
 | --- | --- | --- | --- |
 | `mcp` | `namespaceId -> mcp -> mcpName` | Currently uses Config records for MCP metadata/version/tool/resource data and Naming services for endpoints. | [MCP Server Spec](mcp-server-spec.md) |
-| `a2a` | `namespaceId -> a2a -> agentName` | Currently uses Config records for AgentCard metadata/version data and Naming services for endpoints. | [A2A Agent Spec](a2a-agent-spec.md) |
+| `agent` | `namespaceId -> agent -> agentName` | Approved target: `ai_resource`, `ai_resource_version`, AI storage, and Naming-backed runtime endpoint publications. Historical A2A storage remains a compatibility source until migration. | [Agent Management Spec](agent-management-spec.md) |
 | `prompt` | `namespaceId -> prompt -> promptKey` | Uses `ai_resource`, `ai_resource_version`, and AI storage; legacy Prompt data may be migrated. | [Prompt Spec](prompt-spec.md) |
 | `skill` | `namespaceId -> skill -> name` | Uses `ai_resource`, `ai_resource_version`, AI storage, and a lightweight manifest for discovery. | [Skill Spec](skill-spec.md) |
 | `agentspec` | `namespaceId -> agentspec -> name` | Uses `ai_resource`, `ai_resource_version`, and AI storage. | [AgentSpec Spec](agentspec-spec.md) |
 
-MCP and A2A are AI Registry resources even when their current persistence is not
-fully adapted to `ai_resource`. Their canonical specs must be written against
-the standard identity and must record current compatibility storage separately.
+An A2A AgentCard is a protocol binding inside an `agent` version. The historical
+`a2a` resource identity and APIs are compatibility facades described by the
+[A2A Agent Spec](a2a-agent-spec.md); they must not create a second canonical
+Agent identity.
 
 ## 5. Interface Surfaces
 
@@ -113,7 +114,7 @@ AI Registry is exposed through multiple surfaces:
 | `/v3/client/ai/...` | Runtime clients and agent frameworks. | Query known resources, download runtime artifacts, subscribe, and register client-owned endpoints. |
 | `/v3/admin/ai/...` | Management tools and Maintainer SDK. | Create, update, list, publish, delete, upload, import, and operate versions. |
 | `/v3/console/ai/...` | Nacos console UI. | UI orchestration over the same domain semantics. |
-| gRPC AI requests | Java Client SDK runtime traffic. | Query and release MCP/A2A/Prompt resources and register endpoints where supported. |
+| gRPC AI requests | Java Client SDK runtime traffic. | Query AI resources, perform RAD discovery and subscription, and publish client-owned endpoints where supported. |
 | Java SDK | Runtime application integration. | See the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md). |
 | Java Maintainer SDK | Typed management integration. | Should align with Admin API semantics and the resource type specs. |
 | AI Registry adaptor | External community registry clients. | Optional compatibility endpoints on a separate port; see the [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md). |
@@ -143,13 +144,14 @@ AI Registry is exposed through multiple surfaces:
 - MCP Server should migrate its durable metadata and version model from
   Config-shaped records to the standard `ai_resource` and `ai_resource_version`
   model while preserving existing data compatibility.
-- A2A Agent should migrate AgentCard metadata and version data from
-  Config-shaped records to the standard AI resource model.
+- Historical A2A AgentCard and Naming endpoint data must migrate to the Agent
+  model through the rolling-upgrade plan; the legacy APIs remain projections,
+  not an independent resource store.
 - Prompt has a migration path from legacy Config-shaped Prompt data to the
   standard AI resource model. Legacy mappings must remain compatibility
   storage, not formal Config resource semantics.
-- Endpoint selection policy for A2A currently uses random choice among
-  compatible endpoints. A future spec should define pluggable or deterministic
-  endpoint selection if needed.
+- RAD returns a deterministic endpoint set. Health filtering, priority/weight
+  selection, and load balancing are client-side policies and do not change the
+  Registry snapshot.
 - AI resource schemas and protocol-specific payloads may require major revision
   as upstream MCP, A2A, and agent package ecosystems evolve.

@@ -219,6 +219,27 @@ AI payload 语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各资源
 | `BatchAgentEndpointRequest` | `AgentEndpointResponse` | write | `agentName`, `endpoints` | 替换当前客户端为某个 Agent 注册的 endpoints。 |
 | `QueryPromptRequest` | `QueryPromptResponse` | read | `namespace`, `promptKey`, `version`, `label`, `md5` | 按版本、标签、latest 或 md5 查询 Prompt。 |
 
+下列 Agent/RAD Payload 是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性目标。
+在 Runtime 中具备对应类、Handler、SPI 注册和协商能力位之前，它们不属于当前已实现
+Payload 清单。
+
+| 目标 Request type | 目标 Response type | 方向 | 契约 |
+| --- | --- | --- | --- |
+| `AgentSearchRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
+| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
+| `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | 订阅或取消订阅 Agent Reference 和可选 Filter；订阅时返回不透明 `watchKey` 和当前完整结果。 |
+| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK。 |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | Upsert 归当前 Connection 所有的一批 Runtime Endpoint 注册。 |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | 幂等删除归当前 Connection 所有的一批 Runtime Endpoint 注册。 |
+
+在该目标 Binding 中，`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和
+`eventType`。`SNAPSHOT` 必须携带完整 `AgentDiscoveryResult` 且不携带错误；
+`TERMINATED` 不携带 Result，并固定要求 `errorCode=NOT_FOUND`。Client 对两种事件都
+发送 ACK。终止事件只结束共享 Payload Connection 上由该 `watchKey` 标识的 Watch，
+不结束 Connection 或其他 Watch。`AgentSubscribeResponse` 是 Connection 维度不透明
+`watchKey` 的来源，Reconnect 后也由新 Response 提供。这些 Wrapper 仍属于 gRPC
+Binding 对象，不扩展 RAD 的六个根消息。
+
 Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前 Java 客户端
 实现使用 HTTP/config 组合，不对应专用 gRPC payload。
 

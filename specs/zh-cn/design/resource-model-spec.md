@@ -86,7 +86,7 @@ Group 适合表达同一类微服务资源的业务隔离，例如应用、业�
 ### 3.2 resourceType
 
 resourceType 是资源类型分组。它适合表达一类共享治理模型中的不同资源类型，例如
-AI Registry 中的 `mcp`、`a2a`、`prompt`、`skill`、`agentspec`。
+AI Registry 中的 `mcp`、`agent`、`prompt`、`skill`、`agentspec`。
 
 resourceType 不表达业务分组。AI 资源不应再引入 Group 作为身份字段，除非对应领域
 规范明确给出额外语义。
@@ -102,7 +102,7 @@ resourceName 是在 `NamespaceId + Group/resourceType` 下稳定标识资源的�
 | Config | `dataId` |
 | Naming service | `serviceName` |
 | MCP Server | `name` 或 `mcpName` |
-| A2A AgentCard | `name` 或 `agentName` |
+| Agent | `agentName` |
 | Prompt | `promptKey` |
 | Skill | `name` |
 | AgentSpec | `name` |
@@ -193,7 +193,7 @@ NamespaceId -> resourceType -> resourceName
 ```
 
 它覆盖 [MCP Server](../ai/mcp-server-spec.md)、
-[A2A AgentCard](../ai/a2a-agent-spec.md)、[Prompt](../ai/prompt-spec.md)、
+[Agent](../ai/agent-management-spec.md)、[Prompt](../ai/prompt-spec.md)、
 [Skill](../ai/skill-spec.md)、[AgentSpec](../ai/agentspec-spec.md) 等 AI Registry
 资源。共享 AI 模型由 [AI Registry 规范](../ai/ai-registry-spec.md)和
 [AI 资源模型规范](../ai/ai-resource-model-spec.md)定义。
@@ -232,19 +232,21 @@ MCP 特有元数据包括 protocol、front protocol、repository、packages、ic
 website URL、本地或远程 server config、endpoint spec、tool spec、status 和自动
 发现的 capabilities。
 
-### 6.2 A2A AgentCard
+### 6.2 Agent
 
-A2A AgentCard 的标准资源身份为：
+Agent 的标准资源身份为：
 
 ```text
-namespaceId -> a2a -> agentName
+namespaceId -> agent -> agentName
 ```
 
-AgentCard 资源描述 Agent 的能力、skills、supported interfaces、provider 信息、
-security schemes、signatures 和 endpoint 元数据。
+Agent 拥有目录和治理元数据。每个 Agent Version 拥有有序的协议无关调用接口。
+A2A 是其中一种协议 binding，其原生描述为 AgentCard；它不是第二种顶层 AI 资源身份。
+Runtime Endpoint 由客户端生命周期持有，并投影到 Agent 发现结果中，但不成为 Version 内容。
 
-`registrationType` 参与 AgentCard 查询和兼容语义，但它不是顶层第二层字段。需要
-在具体 A2A 领域规范中定义它与 resourceName、version 和 endpoint 的关系。
+完整模型由 [Agent 管理规范](../ai/agent-management-spec.md)定义；远程调用方发现遵循
+[RAD 协议规范](../ai/rad-protocol-spec.md)，旧 AgentCard API 作为兼容 facade 由
+[A2A Agent 规范](../ai/a2a-agent-spec.md)定义。
 
 ### 6.3 Prompt
 
@@ -285,7 +287,7 @@ AgentSpec 的标准资源身份为：
 namespaceId -> agentspec -> agentSpecName
 ```
 
-AgentSpec 通过引用 Prompt、Skill、MCP Server、A2A Agent 或其他必要资源来组装
+AgentSpec 通过引用 Prompt、Skill、MCP Server、Agent 或其他必要资源来组装
 Agent 配置。AgentSpec 应通过稳定身份和 version 或 label 引用其他资源，不应引用
 存储实现细节。
 

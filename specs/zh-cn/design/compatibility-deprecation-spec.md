@@ -103,6 +103,7 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
   [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)；
 - spec 出现前发布的 v3 兼容端点；
 - AI Prompt legacy endpoints 和旧 Pipeline REST 风格端点；
+- 旧 A2A AgentCard Java、gRPC、Admin、Maintainer 和 Console facade；
 - Naming API 定义的 service selector 字段和请求参数；
 - Config 聚合配置字段及相关数据库列；
 - 历史插件配置 key；
@@ -131,7 +132,21 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 
 领域规范只应在迁移上下文中提及 legacy v1/v2 行为，或在当前兼容路径依赖它时进行说明。
 
-## 10. 相关规范
+## 10. 旧 A2A Agent Facade
+
+标准 Agent 模型使用 `type=agent`、协议无关 Version 和 RAD 发现。历史 A2A AgentCard
+表面仅用于兼容，并按照 [A2A Agent 规范](../ai/a2a-agent-spec.md)在服务端边界适配。
+
+不同受众采用不同兼容窗口：
+
+- Java `A2aService` 和旧 A2A gRPC Payload 当前不设删除版本；
+- Admin `/v3/admin/ai/a2a` 和 `A2aMaintainerService` 兼容到 4.0.x 窗口；
+- Console `/v3/console/ai/a2a` 兼容到 3.4.x 窗口，内置 UI 完成迁移后可以移除。
+
+不得只向这些 facade 增加新能力。新增开发以 Agent Management 和 RAD 契约为目标。
+历史数据与混合 Server 滚动升级使用独立迁移方案，本身不延长 API 兼容窗口。
+
+## 11. 相关规范
 
 - [HTTP API 规范](../http-api/api-spec.md)
 - [V3 API 范围](../http-api/v3-api-surface.md)
@@ -141,3 +156,5 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [集成与适配器规范](../integration/integration-adapter-spec.md)
 - [插件规范](../plugin/README.md)
+- [Agent 管理规范](../ai/agent-management-spec.md)
+- [RAD 协议规范](../ai/rad-protocol-spec.md)

@@ -39,8 +39,8 @@ Client SDK 面向应用运行时访问，应只暴露运行时应用通常需要
 - 读取已知配置项，并订阅这些配置的变更；
 - 注册和注销当前应用实例；
 - 查询和订阅应用已知依赖的服务；
-- 注册、解析和订阅运行时 AI 资源，例如 MCP endpoint、A2A agent endpoint、
-  Prompt、Skill 和 AgentSpec；
+- 注册、发现和订阅运行时 AI 资源，包括可调用 Agent Endpoint，并继续保留历史
+  MCP、A2A、Prompt、Skill 和 AgentSpec 兼容面；
 - 在语言 SDK 支持时，提供[分布式锁](../lock/lock-spec.md)等可选运行时原语；
 - 按[客户端运行时规范](../client/README.md)管理自身生命周期、本地缓存、监听器和连接。
 
@@ -63,13 +63,32 @@ Maintainer SDK 面向管理接入，可以暴露 Client SDK 有意不包含的�
 - 命名空间、集群、服务端状态、readiness/liveness、日志级别等维护能力；
 - 配置的列表、搜索、发布、删除、历史、beta、dump 和元数据管理；
 - 服务、实例、集群元数据、订阅者、客户端、健康检查等注册中心维护能力；
-- MCP、A2A、Prompt、Skill、AgentSpec 和 Pipeline 等 AI 资源管理；
+- Agent、MCP、A2A、Prompt、Skill、AgentSpec 和 Pipeline 等 AI 资源管理；
 - 对大规模管理数据提供分页和过滤能力。
 
 Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对管理、UI、
 网关或运维工具有意义的能力，应归入 Maintainer SDK，而不是 Client SDK。
 
-## 4. 安全规则
+## 4. Agent 与 RAD 目标契约
+
+本节定义 Agent 管理和 [Remote Agent Discovery（RAD）](../ai/rad-protocol-spec.md)
+的目标 SDK 契约，不表示任一 SDK 当前已经实现这些能力。在
+[Agent API 规范](../ai/agent-api-spec.md)定义的 Agent/RAD 能力完成实现和协商前，
+现有 A2A SDK 接口仍是生效的兼容契约。
+
+目标 Client SDK 必须：
+
+- 每个 SDK 实例绑定一个 namespace，公开的 Agent 发现、Watch、注册和注销方法
+  不传 namespace；
+- 提供 Agent Search、带或不带 Filter 的 Discover、Watch 与取消 Watch，以及运行时
+  Endpoint Register 和 Deregister；
+- 在不修改调用方对象的前提下，把绑定的 namespace 注入传输请求；
+- 按客户端恢复规范在 reconnect 后恢复 Watch 和 Endpoint 发布意图。
+
+目标 Maintainer SDK 不绑定 namespace；每个 Agent 管理调用都必须显式标识 namespace。
+它提供新的 Agent 管理 Facade，并在 A2A 兼容窗口内继续保留 A2A 管理 Facade。
+
+## 5. 安全规则
 
 SDK 能力设计必须遵循最小权限原则：
 
@@ -80,7 +99,7 @@ SDK 能力设计必须遵循最小权限原则：
 - 当 API 可以列举或导出大量配置、服务、客户端或元数据时，SDK 文档应明确说明
   可能的数据泄露风险。
 
-## 5. 传输和 API 对齐
+## 6. 传输和 API 对齐
 
 SDK 契约是语义契约，而不是传输契约：
 
@@ -96,7 +115,7 @@ SDK 契约是语义契约，而不是传输契约：
 - SDK 错误应将 Nacos 错误码和校验失败映射为符合语言习惯的异常或结果类型，
   同时保留服务端语义。
 
-## 6. 多语言 SDK 对齐
+## 7. 多语言 SDK 对齐
 
 Java 目前是定义共享 SDK 语义的基准实现。其他语言 SDK 应对齐相同的能力分类：
 

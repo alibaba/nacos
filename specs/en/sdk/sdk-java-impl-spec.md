@@ -57,9 +57,12 @@ lifecycle behavior, or exception mapping change.
 `NamingMaintainService` is deprecated after 3.3.0. New management integrations
 should use `nacos-maintainer-client`.
 
-One Java SDK instance is bound to one namespace. Applications that need multiple
-namespaces should create separate SDK instances and close them when no longer
-used.
+One Java Client SDK instance is bound to one namespace. Applications that need
+multiple namespaces should create separate Client SDK instances and close them
+when no longer used. Public runtime interfaces do not expose a namespace
+argument; their implementations use the namespace bound at construction.
+This rule does not apply to the Maintainer SDK: its Agent management interface
+is not namespace-bound and requires an explicit namespace on every call.
 
 ## 3. Java Client SDK Configuration
 
@@ -171,11 +174,54 @@ SDK instead of `ConfigService`.
 The selector overload of `getServicesOfServer` is deprecated and remains only as
 a compatibility surface.
 
-### 5.3 AiService and A2aService
+### 5.3 AiService, AgentDiscoveryService, And A2aService
 
-`AiService` extends `A2aService`.
-Resource semantics are defined by the [AI Registry Spec](../ai/ai-registry-spec.md)
-and the individual AI resource type specs.
+The Agent/RAD contract in this subsection is a target contract, not an
+inventory of currently implemented Java methods. It becomes active only after
+the new Agent/RAD abilities are implemented and negotiated. Until then, the
+existing `AiService` and `A2aService` methods remain the active compatibility
+surface.
+
+The target inheritance is:
+
+```text
+AiService extends AgentDiscoveryService, A2aService
+```
+
+Adding this parent must not make an already compiled third-party `AiService`
+implementation fail linkage immediately. Newly inherited methods use
+compatibility default bridges that report unsupported behavior until an
+implementation overrides them; the official Nacos implementation overrides the
+complete target surface.
+
+`AgentDiscoveryService` provides these namespace-bound methods:
+
+| Capability | Methods | Contract |
+| --- | --- | --- |
+| Search | `searchAgents` | Accept `AgentSearchRequest` and return `Page<AgentCatalogEntry>`. |
+| Discover | `discoverAgent` overloads | Accept `AgentReference`, with an optional `AgentDiscoveryFilter`, and return one complete `AgentDiscoveryResult`. |
+| Watch | `subscribeAgent` overloads | Accept the same reference, optional Filter, and listener; return the current complete result and later deliver complete replacement results. |
+| Cancel Watch | `unsubscribeAgent` overloads | Remove the Watch identified by the same reference, Filter, and listener identity. |
+| Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationBatch` and retain it as redo intent. |
+| Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `AgentEndpointDeregistrationBatch` owned by this SDK publisher. |
+
+These public methods do not accept `namespaceId`. The proxy copies the caller's
+request or Batch, injects the SDK namespace into the transport object, and does
+not mutate the caller's object. If a shared input model already carries a
+nonempty namespace different from the SDK namespace, the proxy rejects it
+locally. Target Watch, cache, and redo behavior follows the
+[Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md)
+and the
+[Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md).
+
+The inherited `A2aService` remains a compatibility facade. New Agent
+applications use `AgentDiscoveryService`; existing AgentCard calls continue
+through the A2A compatibility adapter.
+
+Resource semantics are defined by the [AI Registry Spec](../ai/ai-registry-spec.md),
+the [Agent API Spec](../ai/agent-api-spec.md), the
+[RAD Protocol Spec](../ai/rad-protocol-spec.md), and the individual AI resource
+type specs. The currently implemented compatibility methods include:
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
@@ -289,6 +335,13 @@ maintenance belong to the Maintainer SDK.
 - `skill()` for Skill management;
 - `agentSpec()` for AgentSpec management;
 - `pipeline()` for Pipeline management.
+
+The target Agent management addition is `agent()`, which returns
+`AgentMaintainerService`. This is a target contract and must not be documented
+as currently implemented until the new Agent Admin API is available.
+`AgentMaintainerService` maps one-to-one to that Admin HTTP API. Its instance is
+not namespace-bound, and every method explicitly carries `namespaceId`.
+`a2a()` remains available for its compatibility window.
 
 Runtime AI registration and subscription can remain in `AiService`; broad AI
 resource management belongs to `AiMaintainerService`.
