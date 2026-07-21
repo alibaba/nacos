@@ -106,21 +106,22 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             if (body != null && !"".equals(body)) {
                 if (body instanceof File) {
                     handleFileUpload(conn, (File) body);
-                }
-                String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-                String bodyStr = body instanceof String ? (String) body : JsonUtils.toJson(body);
-                if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
-                    Map<String, String> map = JsonUtils.toObj(bodyStr, HashMap.class);
-                    bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
-                }
-                if (bodyStr != null) {
-                    conn.setDoOutput(true);
-                    byte[] b = bodyStr.getBytes(StandardCharsets.UTF_8);
-                    conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
-                    OutputStream outputStream = conn.getOutputStream();
-                    outputStream.write(b, 0, b.length);
-                    outputStream.flush();
-                    IoUtils.closeQuietly(outputStream);
+                } else {
+                    String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
+                    String bodyStr = body instanceof String ? (String) body : JsonUtils.toJson(body);
+                    if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
+                        Map<String, String> map = JsonUtils.toObj(bodyStr, HashMap.class);
+                        bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
+                    }
+                    if (bodyStr != null) {
+                        conn.setDoOutput(true);
+                        byte[] b = bodyStr.getBytes(StandardCharsets.UTF_8);
+                        conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
+                        OutputStream outputStream = conn.getOutputStream();
+                        outputStream.write(b, 0, b.length);
+                        outputStream.flush();
+                        IoUtils.closeQuietly(outputStream);
+                    }
                 }
             }
             conn.connect();
