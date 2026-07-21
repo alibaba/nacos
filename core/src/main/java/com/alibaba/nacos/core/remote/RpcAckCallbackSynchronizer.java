@@ -21,9 +21,10 @@ import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.utils.Loggers;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -36,9 +37,15 @@ public class RpcAckCallbackSynchronizer {
     
     private static final int MAX_CALLBACK_CONTEXT_SIZE = 1000000;
     
+    private static final String CAPACITY_EXCEEDED_REASON =
+        "RPC_ACK_CALLBACK_CONTEXT_CAPACITY_EXCEEDED";
+    
+    private static final ConcurrentMap<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT_STORE =
+        new ConcurrentHashMap<>(128);
+    
     @SuppressWarnings("checkstyle:linelength")
     public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT =
-        new ConcurrentHashMap<>(128);
+        CALLBACK_CONTEXT_STORE;
     
     /**
      * notify  ack.
@@ -90,18 +97,21 @@ public class RpcAckCallbackSynchronizer {
         DefaultRequestFuture defaultPushFuture)
         throws NacosException {
         
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap =
-            initContextIfNecessary(connectionId);
-        
-        if (!stringDefaultPushFutureMap.containsKey(requestId)) {
-            DefaultRequestFuture pushCallBackPrev = stringDefaultPushFutureMap
-                .putIfAbsent(requestId, defaultPushFuture);
-            if (pushCallBackPrev == null) {
+        while (true) {
+            Map<String, DefaultRequestFuture> context = initContextIfNecessary(connectionId);
+            DefaultRequestFuture previous = context.putIfAbsent(requestId, defaultPushFuture);
+            
+            if (CALLBACK_CONTEXT_STORE.get(connectionId) == context) {
+                if (previous == null) {
+                    return;
+                }
+                throw new NacosException(NacosException.INVALID_PARAM, "request id conflict");
+            }
+            
+            if (previous == null && !context.remove(requestId, defaultPushFuture)) {
                 return;
             }
         }
-        throw new NacosException(NacosException.INVALID_PARAM, "request id conflict");
-        
     }
     
     /**
@@ -119,15 +129,15 @@ public class RpcAckCallbackSynchronizer {
      * @param connectionId connectionId
      */
     public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connectionId) {
-        if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
-            Map<String, DefaultRequestFuture> context = new HashMap<>(128);
-            Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
-                .putIfAbsent(connectionId, context);
-            trimCallbackContextIfNecessary();
-            return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;
-        } else {
-            return CALLBACK_CONTEXT.get(connectionId);
+        Map<String, DefaultRequestFuture> context = CALLBACK_CONTEXT_STORE.get(connectionId);
+        if (context != null) {
+            return context;
         }
+        Map<String, DefaultRequestFuture> newContext = new ConcurrentHashMap<>(128);
+        Map<String, DefaultRequestFuture> existingContext =
+            CALLBACK_CONTEXT_STORE.putIfAbsent(connectionId, newContext);
+        trimCallbackContextIfNecessary();
+        return existingContext == null ? newContext : existingContext;
     }
     
     /**
@@ -148,13 +158,68 @@ public class RpcAckCallbackSynchronizer {
     }
     
     private static void trimCallbackContextIfNecessary() {
-        while (CALLBACK_CONTEXT.size() > MAX_CALLBACK_CONTEXT_SIZE) {
-            String connectionId = CALLBACK_CONTEXT.keySet().iterator().next();
-            Map<String, DefaultRequestFuture> removed = CALLBACK_CONTEXT.remove(connectionId);
-            if (removed != null) {
-                removed.values().forEach(defaultRequestFuture -> defaultRequestFuture
-                    .setFailResult(new TimeoutException()));
+        trimCallbackContextIfNecessary(MAX_CALLBACK_CONTEXT_SIZE);
+    }
+    
+    static void trimCallbackContextIfNecessary(int maxSize) {
+        while (CALLBACK_CONTEXT_STORE.size() > maxSize) {
+            Iterator<String> iterator = CALLBACK_CONTEXT_STORE.keySet().iterator();
+            if (!iterator.hasNext()) {
+                return;
             }
+            
+            int sizeBefore = CALLBACK_CONTEXT_STORE.size();
+            String connectionId = iterator.next();
+            Map<String, DefaultRequestFuture> removed = CALLBACK_CONTEXT_STORE.remove(connectionId);
+            int failedFutureCount = failRemovedContext(connectionId, removed, maxSize);
+            logCapacityTrimIfNecessary(connectionId, failedFutureCount, sizeBefore,
+                CALLBACK_CONTEXT_STORE.size(), maxSize);
+        }
+    }
+    
+    private static int failRemovedContext(String connectionId,
+        Map<String, DefaultRequestFuture> removed, int maxSize) {
+        if (removed == null) {
+            return 0;
+        }
+        
+        int failedCount = 0;
+        for (Map.Entry<String, DefaultRequestFuture> entry : removed.entrySet()) {
+            String requestId = entry.getKey();
+            DefaultRequestFuture future = entry.getValue();
+            if (removed.remove(requestId, future)) {
+                failedCount++;
+                try {
+                    future.setFailResult(new TimeoutException(CAPACITY_EXCEEDED_REASON
+                        + ": RPC ACK future was evicted because callback context capacity was exceeded,"
+                        + " connectionId=" + connectionId + ", requestId=" + requestId
+                        + ", maxContextSize="
+                        + maxSize));
+                } catch (Throwable throwable) {
+                    Loggers.REMOTE_DIGEST
+                        .warn("Failed to notify an evicted RPC ACK future, connectionId={},"
+                            + " requestId={}", connectionId, requestId, throwable);
+                }
+            }
+        }
+        return failedCount;
+    }
+    
+    private static void logCapacityTrimIfNecessary(String connectionId, int failedFutureCount,
+        int contextSizeBefore,
+        int contextSizeAfter, int maxSize) {
+        if (failedFutureCount > 0) {
+            Loggers.REMOTE_DIGEST.warn(CAPACITY_EXCEEDED_REASON
+                + ": RPC ACK callback context was evicted because"
+                + " capacity was exceeded, connectionId={}, failedFutureCount={}, contextSizeBefore={},"
+                + " contextSizeAfter={}, maxContextSize={}", connectionId, failedFutureCount,
+                contextSizeBefore, contextSizeAfter, maxSize);
+        } else {
+            Loggers.REMOTE_DIGEST.debug(CAPACITY_EXCEEDED_REASON
+                + ": empty RPC ACK callback context was evicted,"
+                + " connectionId={}, contextSizeBefore={}, contextSizeAfter={}, maxContextSize={}",
+                connectionId,
+                contextSizeBefore, contextSizeAfter, maxSize);
         }
     }
     
