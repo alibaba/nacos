@@ -121,6 +121,17 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     }
     
     @Override
+    public Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo,
+        int pageSize) {
+        Page<PermissionInfo> pageInfo =
+            permissionPersistService.getPermissionsByResource(resource, pageNo, pageSize);
+        if (pageInfo == null) {
+            return new Page<>();
+        }
+        return pageInfo;
+    }
+    
+    @Override
     public void addRole(String role, String username) {
         if (userDetailsService.getUser(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
@@ -143,6 +154,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         
         rolePersistService.addRole(role, username);
         getCachedRoleSet().add(role);
+        invalidateUserRoles(username);
     }
     
     @Override
@@ -164,13 +176,14 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     public void deleteRole(String role, String userName) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role, userName);
+        invalidateUserRoles(userName);
     }
     
     @Override
     public void deleteRole(String role) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role);
-        getCachedRoleInfoMap().remove(role);
+        reload();
     }
     
     @Override
@@ -179,11 +192,13 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
             throw new IllegalArgumentException("role " + role + " not found!");
         }
         permissionPersistService.addPermission(role, resource, action);
+        invalidateRolePermissions(role);
     }
     
     @Override
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
+        invalidateRolePermissions(role);
     }
     
     @Override

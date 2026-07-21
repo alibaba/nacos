@@ -129,8 +129,8 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
             resourceType, resourceName);
         Page<PermissionInfo> permissionPage =
-            roleService.findPermissions(VisibilityGrantRoleHelper.buildUserRoleNamePrefix() + "*",
-                DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            roleService.getPermissionsByResource(resourceId, DEFAULT_PAGE_NO,
+                Integer.MAX_VALUE);
         if (permissionPage == null || CollectionUtils.isEmpty(permissionPage.getPageItems())) {
             return result;
         }

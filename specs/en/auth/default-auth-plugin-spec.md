@@ -260,6 +260,13 @@ Grant behavior:
   grantee, and bounded by the existing role-name column. Resource and action
   data must be stored only in permission rows attached to that role, not encoded
   into the role name.
+- List/search authorization must derive explicit resources from the actual
+  permission rows attached to the caller's reserved visibility role. A role
+  binding without a matching permission row must not grant visibility. Resource
+  grant-list lookup must use exact permission resource matching and then resolve
+  the matched visibility roles back to users. The storage schema should index
+  both `permissions(resource, action, role)` and `roles(role, username)` for
+  this reverse lookup path.
 - Resource existence and owner metadata are resolved through a domain-provided
   visibility resource locator instead of a direct compile-time dependency from
   the auth plugin to domain persistence types.

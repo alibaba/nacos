@@ -95,10 +95,13 @@ class EmbeddedPermissionPersistServiceImplTest {
         when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(null);
         
         Page<PermissionInfo> permissions = service.getPermissions("", 1, 10);
+        Page<PermissionInfo> byResource = service.getPermissionsByResource("", 1, 10);
         Page<PermissionInfo> found = service.findPermissionsLike4Page("ro_le*", 1, 10);
         
         assertEquals(0, permissions.getTotalCount());
         assertEquals(Collections.emptyList(), permissions.getPageItems());
+        assertEquals(0, byResource.getTotalCount());
+        assertEquals(Collections.emptyList(), byResource.getPageItems());
         assertEquals(0, found.getTotalCount());
         assertEquals(Collections.emptyList(), found.getPageItems());
         assertEquals("ro\\_le%", service.generateLikeArgument("ro_le*"));
@@ -119,6 +122,7 @@ class EmbeddedPermissionPersistServiceImplTest {
         when(helper.fetchPage(any(), any(), any(), eq(1), eq(10), any())).thenReturn(page);
         
         assertSame(page, service.findPermissionsLike4Page("", 1, 10));
+        assertSame(page, service.getPermissionsByResource("resource", 1, 10));
     }
     
     private EmbeddedPermissionPersistServiceImpl serviceWithHelper(

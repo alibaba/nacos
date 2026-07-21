@@ -58,6 +58,14 @@ public abstract class AbstractCachedRoleService implements NacosRoleService {
         return permissionInfoMap;
     }
     
+    protected void invalidateUserRoles(String username) {
+        roleInfoMap.remove(username);
+    }
+    
+    protected void invalidateRolePermissions(String role) {
+        permissionInfoMap.remove(role);
+    }
+    
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     protected void reload() {
         try {

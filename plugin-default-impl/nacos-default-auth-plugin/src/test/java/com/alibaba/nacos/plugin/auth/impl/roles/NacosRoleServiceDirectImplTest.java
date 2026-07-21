@@ -336,11 +336,33 @@ class NacosRoleServiceDirectImplTest {
             .thenReturn(Collections.singletonList("role-admin"));
         when(permissionPersistService.findPermissionsLike4Page("role", 1, 10))
             .thenReturn(permissionPage);
+        when(permissionPersistService.getPermissionsByResource("resource", 1, 10))
+            .thenReturn(permissionPage);
         
         assertSame(rolePage, nacosRoleService.findRoles("nacos", "role", 1, 10));
         assertEquals(Collections.singletonList("role-admin"),
             nacosRoleService.findRoleNames("role"));
         assertSame(permissionPage, nacosRoleService.findPermissions("role", 1, 10));
+        assertSame(permissionPage, nacosRoleService.getPermissionsByResource("resource", 1,
+            10));
+    }
+    
+    @Test
+    void addAndDeletePermissionInvalidatePermissionCache() {
+        nacosRoleService.getCachedRoleSet().add("role-admin");
+        nacosRoleService.getCachedPermissionInfoMap().put("role-admin",
+            Collections.singletonList(permissionInfo("role-admin", "resource", "r")));
+        
+        nacosRoleService.addPermission("role-admin", "resource", "rw");
+        
+        assertFalse(nacosRoleService.getCachedPermissionInfoMap().containsKey("role-admin"));
+        
+        nacosRoleService.getCachedPermissionInfoMap().put("role-admin",
+            Collections.singletonList(permissionInfo("role-admin", "resource", "rw")));
+        
+        nacosRoleService.deletePermission("role-admin", "resource", "rw");
+        
+        assertFalse(nacosRoleService.getCachedPermissionInfoMap().containsKey("role-admin"));
     }
     
     @Test

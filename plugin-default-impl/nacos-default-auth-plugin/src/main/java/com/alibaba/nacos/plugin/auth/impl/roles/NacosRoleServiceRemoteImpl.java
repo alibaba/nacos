@@ -62,6 +62,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 buildRemotePermissionUrlPath(AuthConstants.PERMISSION_PATH),
                 RemoteServerUtil.buildServerRemoteHeader(), null, body, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateRolePermissions(role);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -79,6 +80,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 buildRemotePermissionUrlPath(AuthConstants.PERMISSION_PATH),
                 RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateRolePermissions(role);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -101,6 +103,15 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("role", role).addParam("pageNo", pageNo)
             .addParam("pageSize", pageSize).addParam("search", "accurate");
+        return getPermissionInfoPageFromRemote(query);
+    }
+    
+    @Override
+    public Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo,
+        int pageSize) {
+        Query query = Query.newInstance().addParam("resource", resource)
+            .addParam("pageNo", pageNo).addParam("pageSize", pageSize)
+            .addParam("search", "accurate");
         return getPermissionInfoPageFromRemote(query);
     }
     
@@ -179,6 +190,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 RemoteServerUtil.buildServerRemoteHeader(), body, String.class);
             RemoteServerUtil.singleCheckResult(httpResult);
             getCachedRoleSet().add(role);
+            invalidateUserRoles(username);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -196,6 +208,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 nacosRestTemplate.delete(buildRemoteRoleUrlPath(AuthConstants.ROLE_PATH),
                     RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateUserRoles(userName);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -214,6 +227,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                     RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
             getCachedRoleSet().remove(role);
+            reload();
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {

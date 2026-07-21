@@ -81,6 +81,16 @@ public interface NacosRoleService {
     Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
     
     /**
+     * Accurate search permissions by resource.
+     *
+     * @param resource resource
+     * @param pageNo   page number
+     * @param pageSize page size
+     * @return List of {@link PermissionInfo} match resource
+     */
+    Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo, int pageSize);
+    
+    /**
      * Blur search permissions by role name pattern.
      *
      * @param role      role name pattern

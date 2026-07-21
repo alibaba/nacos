@@ -223,9 +223,10 @@ class DefaultVisibilityGrantServiceTest {
             com.alibaba.nacos.api.model.Page<RoleInfo> rolePage =
                 new com.alibaba.nacos.api.model.Page<>();
             rolePage.setPageItems(List.of(roleInfo));
-            when(roleService.findPermissions(
-                VisibilityGrantRoleHelper.buildUserRoleNamePrefix() + "*", 1,
-                Integer.MAX_VALUE)).thenReturn(permissionPage);
+            when(roleService.getPermissionsByResource(
+                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                    "demo-skill"),
+                1, Integer.MAX_VALUE)).thenReturn(permissionPage);
             when(roleService.getRoles("", roleName, 1, Integer.MAX_VALUE))
                 .thenReturn(rolePage);
             
