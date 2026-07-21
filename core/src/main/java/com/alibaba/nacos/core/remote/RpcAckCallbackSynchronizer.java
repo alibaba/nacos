@@ -25,7 +25,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * server push ack synchronier.
@@ -39,6 +41,10 @@ public class RpcAckCallbackSynchronizer {
     
     private static final String CAPACITY_EXCEEDED_REASON =
         "RPC_ACK_CALLBACK_CONTEXT_CAPACITY_EXCEEDED";
+    
+    private static final long CAPACITY_WARN_LOG_INTERVAL_MILLIS = TimeUnit.MINUTES.toMillis(1);
+    
+    private static final AtomicLong LAST_CAPACITY_WARN_LOG_TIME = new AtomicLong();
     
     private static final ConcurrentMap<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT_STORE =
         new ConcurrentHashMap<>(128);
@@ -136,8 +142,11 @@ public class RpcAckCallbackSynchronizer {
         Map<String, DefaultRequestFuture> newContext = new ConcurrentHashMap<>(128);
         Map<String, DefaultRequestFuture> existingContext =
             CALLBACK_CONTEXT_STORE.putIfAbsent(connectionId, newContext);
+        if (existingContext != null) {
+            return existingContext;
+        }
         trimCallbackContextIfNecessary();
-        return existingContext == null ? newContext : existingContext;
+        return newContext;
     }
     
     /**
@@ -208,7 +217,7 @@ public class RpcAckCallbackSynchronizer {
     private static void logCapacityTrimIfNecessary(String connectionId, int failedFutureCount,
         int contextSizeBefore,
         int contextSizeAfter, int maxSize) {
-        if (failedFutureCount > 0) {
+        if (failedFutureCount > 0 && shouldLogCapacityWarn()) {
             Loggers.REMOTE_DIGEST.warn(CAPACITY_EXCEEDED_REASON
                 + ": RPC ACK callback context was evicted because"
                 + " capacity was exceeded, connectionId={}, failedFutureCount={}, contextSizeBefore={},"
@@ -220,6 +229,19 @@ public class RpcAckCallbackSynchronizer {
                 + " connectionId={}, contextSizeBefore={}, contextSizeAfter={}, maxContextSize={}",
                 connectionId,
                 contextSizeBefore, contextSizeAfter, maxSize);
+        }
+    }
+    
+    private static boolean shouldLogCapacityWarn() {
+        long now = System.currentTimeMillis();
+        while (true) {
+            long lastWarnTime = LAST_CAPACITY_WARN_LOG_TIME.get();
+            if (now - lastWarnTime < CAPACITY_WARN_LOG_INTERVAL_MILLIS) {
+                return false;
+            }
+            if (LAST_CAPACITY_WARN_LOG_TIME.compareAndSet(lastWarnTime, now)) {
+                return true;
+            }
         }
     }
     

@@ -47,8 +47,12 @@ class RpcAckCallbackSynchronizerTest {
     
     private static final String CONN_ID = "conn-" + System.currentTimeMillis();
     
+    private final List<DefaultRequestFuture> callbackFutures = new ArrayList<>();
+    
     @AfterEach
     void tearDown() {
+        callbackFutures.forEach(future -> future.cancel(true));
+        callbackFutures.clear();
         RpcAckCallbackSynchronizer.clearContext(CONN_ID);
         RpcAckCallbackSynchronizer.CALLBACK_CONTEXT.clear();
     }
@@ -159,8 +163,8 @@ class RpcAckCallbackSynchronizerTest {
     @Test
     void testTrimCallbackContextUsesCapacityReason() throws NacosException {
         AtomicReference<Throwable> throwableRef = new AtomicReference<>();
-        DefaultRequestFuture future = new DefaultRequestFuture("conn-reason", "req-reason",
-            new CapturingRequestCallBack(throwableRef), null);
+        DefaultRequestFuture future = newCallbackFuture("conn-reason", "req-reason",
+            new CapturingRequestCallBack(throwableRef));
         RpcAckCallbackSynchronizer.syncCallback("conn-reason", "req-reason", future);
         
         RpcAckCallbackSynchronizer.trimCallbackContextIfNecessary(0);
@@ -177,11 +181,10 @@ class RpcAckCallbackSynchronizerTest {
     void testTrimCallbackContextContinuesWhenCallbackThrows() throws NacosException {
         AtomicInteger notifiedCount = new AtomicInteger();
         RpcAckCallbackSynchronizer.syncCallback("conn-callback", "req-throw",
-            new DefaultRequestFuture("conn-callback", "req-throw", new ThrowingRequestCallBack(),
-                null));
+            newCallbackFuture("conn-callback", "req-throw", new ThrowingRequestCallBack()));
         RpcAckCallbackSynchronizer.syncCallback("conn-callback", "req-ok",
-            new DefaultRequestFuture("conn-callback", "req-ok",
-                new CountingRequestCallBack(notifiedCount), null));
+            newCallbackFuture("conn-callback", "req-ok",
+                new CountingRequestCallBack(notifiedCount)));
         
         RpcAckCallbackSynchronizer.trimCallbackContextIfNecessary(0);
         
@@ -230,10 +233,10 @@ class RpcAckCallbackSynchronizerTest {
     }
     
     @Test
-    void testAckRacingWithTrimCompletesFutureAtMostOnce() throws Exception {
+    void testAckAndTrimOwnershipRaceCompletesFutureOnce() throws Exception {
         AtomicInteger completionCount = new AtomicInteger();
-        DefaultRequestFuture future = new DefaultRequestFuture("conn-ack-race", "req-ack-race",
-            new CountingRequestCallBack(completionCount), null);
+        DefaultRequestFuture future = newCallbackFuture("conn-ack-race", "req-ack-race",
+            new CountingRequestCallBack(completionCount));
         RpcAckCallbackSynchronizer.syncCallback("conn-ack-race", "req-ack-race", future);
         RpcAckCallbackSynchronizer.initContextIfNecessary("conn-ack-race-keep");
         Response response = new HealthCheckResponse();
@@ -254,7 +257,15 @@ class RpcAckCallbackSynchronizerTest {
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
         
-        assertTrue(completionCount.get() <= 1);
+        assertEquals(1, completionCount.get());
+    }
+    
+    private DefaultRequestFuture newCallbackFuture(String connectionId, String requestId,
+        RequestCallBack<Response> requestCallBack) {
+        DefaultRequestFuture future =
+            new DefaultRequestFuture(connectionId, requestId, requestCallBack, null);
+        callbackFutures.add(future);
+        return future;
     }
     
     private static void await(CountDownLatch latch) {
