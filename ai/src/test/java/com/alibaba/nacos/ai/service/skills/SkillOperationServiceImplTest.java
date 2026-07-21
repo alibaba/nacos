@@ -646,7 +646,7 @@ class SkillOperationServiceImplTest {
         assertTrue(result.getWarnings().get(0).contains("Invalid version"));
         assertEquals("0.0.1", result.getActions().get(0).getResultVersion());
     }
-
+    
     @Test
     void testBatchPrecheckUploadSkillReportsOwnerForForbiddenExistingSkill() throws NacosException {
         String namespaceId = "test-ns";
@@ -661,22 +661,22 @@ class SkillOperationServiceImplTest {
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
             .thenReturn(meta);
-
+        
         VisibilityService mockFilter = mock(VisibilityService.class);
         when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
             anyString(), any()))
             .thenReturn(ValidationResult.deny("denied"));
         when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(mockFilter));
-
+        
         setupRequestContext("attackerUser");
         SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
         request.setNamespaceId(namespaceId);
         request.setSkillName(skillName);
-
+        
         List<SkillUploadPrecheckResult> results =
             skillOperationService.batchPrecheckUploadSkill(List.of(request));
-
+        
         assertEquals(1, results.size());
         SkillUploadPrecheckResult result = results.get(0);
         assertEquals(SkillUploadPrecheckResult.STATUS_FORBIDDEN, result.getStatus());
@@ -980,7 +980,7 @@ class SkillOperationServiceImplTest {
         }
         return baos.toByteArray();
     }
-
+    
     private byte[] createMultiSkillZipBytes() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -997,7 +997,7 @@ class SkillOperationServiceImplTest {
         }
         return baos.toByteArray();
     }
-
+    
     private byte[] createZipBytesWithWrapperDirectoryResources() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -1214,7 +1214,7 @@ class SkillOperationServiceImplTest {
         verify(aiResourcePersistService).insert(captor.capture());
         assertEquals("creatorUser", captor.getValue().getOwner());
     }
-
+    
     @Test
     void testUploadSkillDeniedByWriteFilterReportsOwner() throws IOException {
         String namespaceId = "test-ns";
@@ -1228,21 +1228,21 @@ class SkillOperationServiceImplTest {
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
             .thenReturn(meta);
-
+        
         VisibilityService mockFilter = mock(VisibilityService.class);
         when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
             anyString(), any()))
             .thenReturn(ValidationResult.deny("denied"));
         when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(mockFilter));
-
+        
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> uploadSkill(namespaceId, createValidZipBytes()));
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
         assertTrue(ex.getErrMsg().contains("ownerUser"));
     }
-
+    
     @Test
     void testBatchUploadDeniedByWriteFilterReportsOwner() throws IOException, NacosException {
         String namespaceId = "test-ns";
@@ -1256,24 +1256,24 @@ class SkillOperationServiceImplTest {
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
             .thenReturn(meta);
-
+        
         VisibilityService mockFilter = mock(VisibilityService.class);
         when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
             anyString(), any()))
             .thenReturn(ValidationResult.deny("denied"));
         when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(mockFilter));
-
+        
         setupRequestContext("attackerUser");
         BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId,
             createMultiSkillZipBytes(), false);
-
+        
         assertEquals(1, result.getFailed().size());
         assertEquals("test-skill", result.getFailed().get(0).getName());
         assertEquals("ownerUser", result.getFailed().get(0).getOwner());
         assertTrue(result.getFailed().get(0).getReason().contains("No permission"));
     }
-
+    
     @Test
     void testListSkillsNoFilterServiceAvailable() throws NacosException {
         String namespaceId = "test-ns";

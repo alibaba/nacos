@@ -322,8 +322,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
                 String owner = null;
-                if (e instanceof NacosException && ((NacosException) e).getErrCode()
-                    == NacosException.NO_RIGHT && StringUtils.isNotBlank(skillName)) {
+                if (e instanceof NacosException
+                    && ((NacosException) e).getErrCode() == NacosException.NO_RIGHT
+                    && StringUtils.isNotBlank(skillName)) {
                     AiResource meta = resourceManager.findMeta(namespaceId, skillName,
                         RESOURCE_TYPE_SKILL);
                     if (meta != null) {
@@ -372,7 +373,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throw new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
     }
-
+    
     private void checkWritableUploadResource(AiResource meta) throws NacosException {
         try {
             VisibilityHelper.checkWritableResource(meta);
@@ -384,7 +385,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 e.getErrMsg() + ", owner: " + meta.getOwner());
         }
     }
-
+    
     /**
      * Bootstrap a built-in skill from a ZIP archive (delegates to the overload with null source).
      */
