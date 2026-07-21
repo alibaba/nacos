@@ -86,6 +86,9 @@ class PluginManagerTest {
     private PluginStateSynchronizer synchronizer;
     
     @Mock
+    private PluginTypePolicyRegistry policyRegistry;
+    
+    @Mock
     private ApplicationReadyEvent applicationReadyEvent;
     
     private PluginManager manager;
@@ -104,8 +107,19 @@ class PluginManagerTest {
         lenient().when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
         lenient().doNothing().when(persistence).saveState(any(), anyBoolean());
         lenient().doNothing().when(persistence).saveConfig(any(), anyMap());
+        lenient().when(policyRegistry.isActive(any())).thenReturn(false);
+        lenient().when(policyRegistry.isPluginEnabledByDefault(any(), any())).thenReturn(true);
+        lenient().when(policyRegistry.getRequiredPluginNames(any()))
+            .thenReturn(Collections.emptySet());
+        lenient().when(policyRegistry.getSelectionProperty(any())).thenAnswer(invocation -> {
+            PluginType type = invocation.getArgument(0);
+            return PluginType.CONTROL == type ? "nacos.plugin.control.manager.type"
+                : "nacos.plugin." + type.getType() + ".type";
+        });
+        lenient().when(policyRegistry.getActivationDescription(any()))
+            .thenAnswer(invocation -> ((PluginType) invocation.getArgument(0)).getDescription());
         
-        manager = new PluginManager(persistence, synchronizer);
+        manager = new PluginManager(persistence, synchronizer, policyRegistry);
     }
     
     @AfterEach
@@ -118,6 +132,11 @@ class PluginManagerTest {
     void isPluginEnabledDefaultValueTest() {
         boolean enabled = manager.isPluginEnabled("auth", "test");
         assertTrue(enabled);
+    }
+    
+    @Test
+    void publicConstructorCreatesManagerWithServiceLoadedPoliciesTest() {
+        assertNotNull(new PluginManager(persistence, synchronizer));
     }
     
     @Test
@@ -174,6 +193,7 @@ class PluginManagerTest {
     
     @Test
     void setPluginEnabledDisableCriticalPluginTest() {
+        activateCriticalType(PluginType.AUTH, "nacos");
         registerTestPlugin("auth", "nacos", true);
         
         NacosApiException exception = assertThrows(NacosApiException.class, () -> {
@@ -182,7 +202,7 @@ class PluginManagerTest {
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
-        assertTrue(exception.getErrMsg().contains("last enabled implementation"));
+        assertTrue(exception.getErrMsg().contains("requires implementation 'nacos'"));
     }
     
     @Test
@@ -209,6 +229,7 @@ class PluginManagerTest {
     
     @Test
     void setPluginEnabledRejectsLastCriticalRoutedPluginTest() throws NacosApiException {
+        activateCriticalType(PluginType.AI_STORAGE);
         registerTestPlugin("ai-storage", "nacos_config", true);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
@@ -220,12 +241,35 @@ class PluginManagerTest {
     
     @Test
     void setPluginEnabledAllowsOneOfMultipleCriticalPluginsTest() throws NacosApiException {
+        activateCriticalType(PluginType.AI_STORAGE);
         registerTestPlugin("ai-storage", "nacos_config", true);
         registerTestPlugin("ai-storage", "custom", true);
         
         manager.setPluginEnabled("ai-storage:custom", false);
         
         verify(synchronizer).syncStateChange("ai-storage:custom", false);
+    }
+    
+    @Test
+    void setPluginEnabledRejectsRequiredRoutedPluginTest() throws NacosApiException {
+        activateCriticalType(PluginType.AI_STORAGE, "custom");
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        registerTestPlugin("ai-storage", "custom", true);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.setPluginEnabled("ai-storage:custom", false));
+        
+        assertTrue(exception.getErrMsg().contains("requires implementation 'custom'"));
+        verify(synchronizer, never()).syncStateChange(any(), anyBoolean());
+    }
+    
+    @Test
+    void setPluginEnabledAllowsInactiveCriticalPluginTest() throws NacosApiException {
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        
+        manager.setPluginEnabled("ai-storage:nacos_config", false);
+        
+        verify(synchronizer).syncStateChange("ai-storage:nacos_config", false);
     }
     
     @Test
@@ -405,6 +449,7 @@ class PluginManagerTest {
     
     @Test
     void loadPersistedDataRejectsUnselectedCriticalExclusiveTypeTest() {
+        activateCriticalType(PluginType.AUTH);
         registerTestPlugin("auth", "nacos", false);
         registerTestPlugin("auth", "ldap", false);
         
@@ -415,7 +460,44 @@ class PluginManagerTest {
     }
     
     @Test
-    void loadPersistedDataRestoresCriticalRoutedTypeTest() {
+    void loadPersistedDataRejectsMissingActiveCriticalTypeTest() {
+        activateCriticalType(PluginType.AUTH, "missing");
+        
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(manager, "loadPersistedData"));
+        
+        assertTrue(exception.getMessage().contains("has no discovered implementation"));
+    }
+    
+    @Test
+    void loadPersistedDataRejectsMissingRequiredImplementationTest() {
+        activateCriticalType(PluginType.AI_STORAGE, "custom");
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(manager, "loadPersistedData"));
+        
+        assertTrue(exception.getMessage().contains("requires implementation 'custom'"));
+        assertTrue(exception.getMessage().contains("nacos.plugin.ai-storage.type"));
+    }
+    
+    @Test
+    void loadPersistedDataRejectsDisabledRequiredImplementationTest() {
+        activateCriticalType(PluginType.AI_STORAGE, "custom");
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        registerTestPlugin("ai-storage", "custom", true);
+        when(persistence.loadAllStates()).thenReturn(
+            Collections.singletonMap("ai-storage:custom", false));
+        
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(manager, "loadPersistedData"));
+        
+        assertTrue(exception.getMessage().contains("but it is disabled"));
+    }
+    
+    @Test
+    void loadPersistedDataRejectsDisabledCriticalRoutedTypeTest() {
+        activateCriticalType(PluginType.AI_STORAGE);
         registerTestPlugin("ai-storage", "a", true);
         registerTestPlugin("ai-storage", "b", true);
         Map<String, Boolean> states = new HashMap<>();
@@ -423,11 +505,13 @@ class PluginManagerTest {
         states.put("ai-storage:b", false);
         when(persistence.loadAllStates()).thenReturn(states);
         
-        ReflectionTestUtils.invokeMethod(manager, "loadPersistedData");
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(manager, "loadPersistedData"));
         
-        assertTrue(manager.isPluginEnabled("ai-storage", "a"));
+        assertTrue(exception.getMessage().contains("no enabled implementation"));
+        assertFalse(manager.isPluginEnabled("ai-storage", "a"));
         assertFalse(manager.isPluginEnabled("ai-storage", "b"));
-        verify(persistence).saveState("ai-storage:a", true);
+        verify(persistence, never()).saveState(any(), anyBoolean());
     }
     
     @Test
@@ -453,9 +537,7 @@ class PluginManagerTest {
     
     @Test
     void persistedStateOverridesInitialVisibilitySelectionTest() {
-        environment.setProperty("nacos.plugin.visibility.type", "custom");
-        boolean initialEnabled = calculateDefaultEnabled(PluginType.VISIBILITY, "nacos");
-        registerPluginInstance("visibility", "nacos", new Object(), initialEnabled);
+        registerPluginInstance("visibility", "nacos", new Object(), false);
         registerSelectedAuthPlugin();
         when(persistence.loadAllStates()).thenReturn(
             Collections.singletonMap("visibility:nacos", true));
@@ -463,49 +545,6 @@ class PluginManagerTest {
         manager.onApplicationEvent(applicationReadyEvent);
         
         assertTrue(manager.isPluginEnabled("visibility", "nacos"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledUsesCurrentSelectionPropertiesTest() {
-        environment.setProperty("nacos.core.auth.system.type", "custom");
-        environment.setProperty("spring.sql.init.platform", "mysql");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.AUTH, "custom"));
-        assertFalse(calculateDefaultEnabled(PluginType.AUTH, "nacos"));
-        assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
-        assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "derby"));
-        assertTrue(calculateDefaultEnabled(PluginType.TRACE, "test"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledPrefersStandardSelectionPropertiesTest() {
-        environment.setProperty("nacos.core.auth.system.type", "ldap");
-        environment.setProperty("nacos.plugin.auth.type", "oidc");
-        environment.setProperty("spring.sql.init.platform", "mysql");
-        environment.setProperty("nacos.plugin.datasource-dialect.type", "postgresql");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.AUTH, "oidc"));
-        assertFalse(calculateDefaultEnabled(PluginType.AUTH, "ldap"));
-        assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "postgresql"));
-        assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledIgnoresRemovedDatasourcePropertyTest() {
-        environment.setProperty("spring.datasource.platform", "mysql");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "derby"));
-        assertFalse(calculateDefaultEnabled(PluginType.DATASOURCE_DIALECT, "mysql"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledUsesControlBootstrapSelectionTest() {
-        assertFalse(calculateDefaultEnabled(PluginType.CONTROL, "local"));
-        
-        environment.setProperty("nacos.plugin.control.manager.type", "local");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.CONTROL, "local"));
-        assertFalse(calculateDefaultEnabled(PluginType.CONTROL, "remote"));
     }
     
     @Test
@@ -517,61 +556,6 @@ class PluginManagerTest {
             () -> manager.setPluginEnabled("control:remote", true));
         
         assertTrue(exception.getErrMsg().contains("nacos.plugin.control.manager.type"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledMigratesConfigChangePropertyTest() {
-        assertFalse(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
-        
-        environment.setProperty("nacos.core.config.plugin.webhook.enabled", "true");
-        assertTrue(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
-        
-        environment.setProperty("nacos.core.config.plugin.webhook.enabled", "false");
-        assertFalse(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledPrefersImplementationKeyTest() {
-        environment.setProperty("nacos.core.config.plugin.webhook.enabled", "false");
-        environment.setProperty("nacos.plugin.config-change.webhook.enabled", "true");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.CONFIG_CHANGE, "webhook"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledUsesVisibilityPropertiesTest() {
-        assertTrue(calculateDefaultEnabled(PluginType.VISIBILITY, "nacos"));
-        assertFalse(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
-        
-        environment.setProperty("nacos.plugin.visibility.type", "custom");
-        assertFalse(calculateDefaultEnabled(PluginType.VISIBILITY, "nacos"));
-        assertTrue(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledPrefersVisibilityImplementationKeyTest() {
-        environment.setProperty("nacos.plugin.visibility.type", "custom");
-        environment.setProperty("nacos.plugin.visibility.enabled", "false");
-        environment.setProperty("nacos.plugin.visibility.custom.enabled", "true");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.VISIBILITY, "custom"));
-    }
-    
-    @Test
-    void calculateDefaultEnabledMigratesAiPipelinePropertiesTest() {
-        assertFalse(calculateDefaultEnabled(PluginType.AI_PIPELINE, "skill-scanner"));
-        
-        environment.setProperty("nacos.plugin.ai-pipeline.type",
-            "skill-scanner, skill-spector");
-        
-        assertTrue(calculateDefaultEnabled(PluginType.AI_PIPELINE, "skill-scanner"));
-        assertFalse(calculateDefaultEnabled(PluginType.AI_PIPELINE, "other"));
-        
-        environment.setProperty("nacos.plugin.ai-pipeline.enabled", "false");
-        assertTrue(calculateDefaultEnabled(PluginType.AI_PIPELINE, "skill-scanner"));
-        
-        environment.setProperty("nacos.plugin.ai-pipeline.skill-scanner.enabled", "true");
-        assertTrue(calculateDefaultEnabled(PluginType.AI_PIPELINE, "skill-scanner"));
     }
     
     @Test
@@ -604,6 +588,19 @@ class PluginManagerTest {
         assertTrue(info.isConfigurable());
         assertEquals(plugin.getConfigDefinitions(), info.getConfigDefinitions());
         assertEquals(plugin.getCurrentConfig(), info.getConfig());
+    }
+    
+    @Test
+    void registerPluginUsesPolicyInitialStateTest() {
+        when(policyRegistry.isPluginEnabledByDefault(PluginType.TRACE, "disabled"))
+            .thenReturn(false);
+        
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "disabled", new Object());
+        
+        PluginInfo info = manager.getPlugin("trace:disabled").get();
+        assertFalse(info.isEnabled());
+        assertFalse(manager.isPluginEnabled("trace", "disabled"));
     }
     
     @Test
@@ -857,6 +854,30 @@ class PluginManagerTest {
     }
     
     @Test
+    void refreshPluginTypePoliciesMarksOnlyRequiredImplementationCriticalTest() {
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        registerTestPlugin("ai-storage", "custom", true);
+        activateCriticalType(PluginType.AI_STORAGE, "custom");
+        
+        manager.refreshPluginTypePolicies();
+        
+        assertFalse(manager.getPlugin("ai-storage:nacos_config").get().isCritical());
+        assertTrue(manager.getPlugin("ai-storage:custom").get().isCritical());
+    }
+    
+    @Test
+    void refreshPluginTypePoliciesRejectsNewMissingRequirementTest() {
+        registerTestPlugin("ai-storage", "nacos_config", true);
+        activateCriticalType(PluginType.AI_STORAGE, "missing");
+        
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            manager::refreshPluginTypePolicies);
+        
+        assertTrue(exception.getMessage().contains("requires implementation 'missing'"));
+        assertFalse(manager.getPlugin("ai-storage:nacos_config").get().isCritical());
+    }
+    
+    @Test
     void getLocalPluginIdsTest() {
         registerTestPlugin("trace", "test1", false, false);
         registerTestPlugin("auth", "test2", false, false);
@@ -887,6 +908,7 @@ class PluginManagerTest {
     
     @Test
     void applyStateChangeRefreshesCriticalFlagTest() {
+        activateCriticalType(PluginType.AI_STORAGE);
         registerTestPlugin("ai-storage", "nacos_config", true);
         registerTestPlugin("ai-storage", "custom", true);
         assertFalse(manager.getPlugin("ai-storage:nacos_config").get().isCritical());
@@ -918,16 +940,19 @@ class PluginManagerTest {
     }
     
     @Test
-    void restorePluginStatesNormalizesCriticalFinalStateTest() {
+    void restorePluginStatesRejectsInvalidCriticalFinalStateTest() {
+        activateCriticalType(PluginType.AI_STORAGE);
         registerTestPlugin("ai-storage", "a", false);
         registerTestPlugin("ai-storage", "b", true);
         
-        manager.restorePluginStates(Collections.singletonMap("ai-storage:b", false));
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> manager.restorePluginStates(
+                Collections.singletonMap("ai-storage:b", false)));
         
-        assertTrue(manager.isPluginEnabled("ai-storage", "a"));
-        assertFalse(manager.isPluginEnabled("ai-storage", "b"));
-        verify(persistence).saveState("ai-storage:a", true);
-        verify(persistence).saveState("ai-storage:b", false);
+        assertTrue(exception.getMessage().contains("no enabled implementation"));
+        assertFalse(manager.isPluginEnabled("ai-storage", "a"));
+        assertTrue(manager.isPluginEnabled("ai-storage", "b"));
+        verify(persistence, never()).saveState(any(), anyBoolean());
     }
     
     @Test
@@ -950,6 +975,7 @@ class PluginManagerTest {
     
     @Test
     void restorePluginStatesRejectsInvalidExclusiveFinalStateTest() {
+        activateCriticalType(PluginType.AUTH);
         registerTestPlugin("auth", "nacos", false);
         registerTestPlugin("auth", "ldap", false);
         
@@ -1037,6 +1063,13 @@ class PluginManagerTest {
         registerTestPlugin("auth", "nacos", true);
     }
     
+    private void activateCriticalType(PluginType type, String... requiredPluginNames) {
+        when(policyRegistry.isActive(type)).thenReturn(true);
+        lenient().when(policyRegistry.getRequiredPluginNames(type))
+            .thenReturn(
+                new java.util.LinkedHashSet<>(java.util.Arrays.asList(requiredPluginNames)));
+    }
+    
     private void registerConfigurablePlugin(String type, String name,
         TestConfigurablePlugin plugin) {
         registerConfigurablePlugin(type, name, (PluginConfigSpec) plugin);
@@ -1099,11 +1132,6 @@ class PluginManagerTest {
             }
         }
         return null;
-    }
-    
-    private boolean calculateDefaultEnabled(PluginType type, String pluginName) {
-        return Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(manager,
-            "calculateDefaultEnabled", type, pluginName));
     }
     
     @SuppressWarnings("unchecked")

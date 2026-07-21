@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigService;
@@ -34,12 +33,9 @@ import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateApplier;
 import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
-import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Lazy;
@@ -47,7 +43,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -70,34 +65,6 @@ public class PluginManager
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     
     /**
-     * Default auth plugin type.
-     */
-    private static final String AUTH_TYPE_DEFAULT = "nacos";
-    
-    /**
-     * Default datasource platform.
-     */
-    private static final String DATASOURCE_PLATFORM_DEFAULT = "derby";
-    
-    /**
-     * Legacy configuration property for visibility plugin selection.
-     */
-    private static final String VISIBILITY_TYPE_PROPERTY = "nacos.plugin.visibility.type";
-    
-    /**
-     * Default visibility plugin type.
-     */
-    private static final String VISIBILITY_TYPE_DEFAULT = "nacos";
-    
-    private static final String AI_PIPELINE_TYPE_PROPERTY = "nacos.plugin.ai-pipeline.type";
-    
-    private static final String CONTROL_TYPE_PROPERTY = "nacos.plugin.control.manager.type";
-    
-    private static final String PLUGIN_CONFIG_PREFIX = "nacos.plugin.";
-    
-    private static final String PLUGIN_ENABLED_SUFFIX = ".enabled";
-    
-    /**
      * Plugin registry: pluginId -> PluginInfo.
      */
     private final Map<String, PluginInfo> pluginRegistry = new ConcurrentHashMap<>();
@@ -116,6 +83,8 @@ public class PluginManager
     
     private final PluginStatePersistenceService persistence;
     
+    private final PluginTypePolicyRegistry policyRegistry;
+    
     /**
      * Plugin state synchronizer for cluster synchronization.
      */
@@ -123,10 +92,17 @@ public class PluginManager
     
     private boolean initialized;
     
+    @Autowired
     public PluginManager(PluginStatePersistenceService persistence,
         @Lazy PluginStateSynchronizer synchronizer) {
+        this(persistence, synchronizer, new PluginTypePolicyRegistry());
+    }
+    
+    PluginManager(PluginStatePersistenceService persistence,
+        PluginStateSynchronizer synchronizer, PluginTypePolicyRegistry policyRegistry) {
         this.persistence = persistence;
         this.synchronizer = synchronizer;
+        this.policyRegistry = policyRegistry;
         this.pluginConfigService = new PluginConfigService(persistence);
     }
     
@@ -146,6 +122,7 @@ public class PluginManager
         }
         // Register to static holder
         PluginStateCheckerHolder.setInstance(this);
+        policyRegistry.initialize();
         
         // Discover all plugins
         discoverAllPlugins();
@@ -353,6 +330,14 @@ public class PluginManager
     }
     
     /**
+     * Re-evaluate domain policies after server configuration changes.
+     */
+    public synchronized void refreshPluginTypePolicies() {
+        ensureCriticalTypesAvailable();
+        refreshAllCriticalFlags();
+    }
+    
+    /**
      * Get local plugin IDs.
      *
      * @return set of plugin IDs
@@ -408,7 +393,7 @@ public class PluginManager
         info.setClassName(instance.getClass().getName());
         info.setCritical(false);
         info.setLoadTimestamp(System.currentTimeMillis());
-        boolean defaultEnabled = calculateDefaultEnabled(type, name);
+        boolean defaultEnabled = policyRegistry.isPluginEnabledByDefault(type, name);
         info.setEnabled(defaultEnabled);
         
         // Check if plugin supports configuration
@@ -467,127 +452,8 @@ public class PluginManager
         });
     }
     
-    /**
-     * Calculate the default enabled status for a plugin based on its type and configuration.
-     * For exclusive plugins (AUTH, DATASOURCE), only the configured one is enabled by default.
-     * Config change plugins preserve their legacy opt-in default. Other non-exclusive plugins
-     * are enabled by default.
-     *
-     * @param type plugin type
-     * @param pluginName plugin name
-     * @return default enabled status
-     */
-    private boolean calculateDefaultEnabled(PluginType type, String pluginName) {
-        switch (type) {
-            case AUTH:
-                String authType = getSelectedPlugin(type,
-                    Constants.Auth.NACOS_PLUGIN_AUTH_TYPE,
-                    Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, AUTH_TYPE_DEFAULT);
-                return pluginName.equalsIgnoreCase(authType);
-            case DATASOURCE_DIALECT:
-                String platform = getDatasourcePlatform();
-                return pluginName.equalsIgnoreCase(platform);
-            case CONTROL:
-                String controlType = EnvUtil.getProperty(CONTROL_TYPE_PROPERTY);
-                return StringUtils.isNotBlank(controlType)
-                    && pluginName.equalsIgnoreCase(controlType.trim());
-            case CONFIG_CHANGE:
-                return getImplementationDefaultEnabled(type, pluginName,
-                    getConfigChangePluginDefaultEnabled(pluginName));
-            case VISIBILITY:
-                return getImplementationDefaultEnabled(type, pluginName,
-                    getVisibilityPluginDefaultEnabled(pluginName));
-            case AI_PIPELINE:
-                return getImplementationDefaultEnabled(type, pluginName,
-                    getAiPipelinePluginDefaultEnabled(pluginName));
-            default:
-                return getImplementationDefaultEnabled(type, pluginName, true);
-        }
-    }
-    
-    private boolean getImplementationDefaultEnabled(PluginType type, String pluginName,
-        boolean defaultValue) {
-        String property = buildEnabledProperty(type, pluginName);
-        return EnvUtil.containsProperty(property)
-            ? EnvUtil.getProperty(property, Boolean.class, defaultValue) : defaultValue;
-    }
-    
-    private boolean getConfigChangePluginDefaultEnabled(String pluginName) {
-        String property = ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX + pluginName
-            + ".enabled";
-        boolean enabled = EnvUtil.getProperty(property, Boolean.class, false);
-        if (EnvUtil.containsProperty(property)) {
-            LOGGER.warn("[PluginManager] Plugin config-change:{} initial enabled state '{}' is "
-                + "read from legacy property '{}'. Persisted plugin state takes precedence; "
-                + "use the plugin management API for future state changes.", pluginName,
-                enabled, property);
-        }
-        return enabled;
-    }
-    
-    private boolean getVisibilityPluginDefaultEnabled(String pluginName) {
-        String visibilityType = EnvUtil.getProperty(VISIBILITY_TYPE_PROPERTY,
-            VISIBILITY_TYPE_DEFAULT).trim();
-        boolean selected = pluginName.equalsIgnoreCase(visibilityType);
-        if (selected && EnvUtil.containsProperty(VISIBILITY_TYPE_PROPERTY)) {
-            LOGGER.warn("[PluginManager] Plugin visibility initial selection '{}' is read from "
-                + "compatibility property '{}'. Persisted implementation state takes precedence; "
-                + "use the plugin management API for future state changes.", visibilityType,
-                VISIBILITY_TYPE_PROPERTY);
-        }
-        return selected;
-    }
-    
-    private boolean getAiPipelinePluginDefaultEnabled(String pluginName) {
-        String configuredTypes = EnvUtil.getProperty(AI_PIPELINE_TYPE_PROPERTY);
-        if (StringUtils.isBlank(configuredTypes)) {
-            return false;
-        }
-        for (String each : configuredTypes.split(",")) {
-            if (pluginName.equals(each.trim())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Get the configured datasource platform.
-     *
-     * @return datasource platform name
-     */
-    private String getDatasourcePlatform() {
-        return getSelectedPlugin(PluginType.DATASOURCE_DIALECT,
-            PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY,
-            PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, DATASOURCE_PLATFORM_DEFAULT);
-    }
-    
-    private String getSelectedPlugin(PluginType type, String standardProperty,
-        String legacyProperty, String defaultPlugin) {
-        String selected = EnvUtil.getProperty(standardProperty);
-        if (StringUtils.isNotBlank(selected)) {
-            return selected.trim();
-        }
-        selected = EnvUtil.getProperty(legacyProperty);
-        if (StringUtils.isNotBlank(selected)) {
-            LOGGER.warn("[PluginManager] Plugin {} selection '{}' is read from legacy property "
-                + "'{}'. Migrate to '{}'.", type.getType(), selected, legacyProperty,
-                standardProperty);
-            return selected.trim();
-        }
-        return defaultPlugin;
-    }
-    
     private String getSelectionProperty(PluginType type) {
-        if (PluginType.CONTROL == type) {
-            return CONTROL_TYPE_PROPERTY;
-        }
-        return PLUGIN_CONFIG_PREFIX + type.getType() + ".type";
-    }
-    
-    private String buildEnabledProperty(PluginType type, String pluginName) {
-        return PLUGIN_CONFIG_PREFIX + type.getType() + "." + pluginName
-            + PLUGIN_ENABLED_SUFFIX;
+        return policyRegistry.getSelectionProperty(type);
     }
     
     /**
@@ -637,7 +503,7 @@ public class PluginManager
             }
             targetStates.put(pluginId, enabled);
         });
-        normalizeCriticalStates(targetStates);
+        validateCriticalStates(targetStates);
         pluginRegistry.forEach((pluginId, info) -> {
             if (info.getPluginType().isExclusive()) {
                 return;
@@ -662,9 +528,13 @@ public class PluginManager
             return;
         }
         PluginType type = info.getPluginType();
-        if (!enabled && type.isCritical() && countEnabledPlugins(type) <= 1) {
-            throw new IllegalArgumentException("Cannot disable the last enabled implementation of "
-                + "critical plugin type: " + type.getType());
+        if (type.isCritical() && policyRegistry.isActive(type)) {
+            Map<String, Boolean> targetStates = getCurrentStates();
+            targetStates.put(info.getPluginId(), enabled);
+            String validationError = getCriticalValidationError(type, targetStates);
+            if (validationError != null) {
+                throw new IllegalArgumentException(validationError);
+            }
         }
         if (type.isExclusive()) {
             throw new IllegalArgumentException("Plugin selection for exclusive type '"
@@ -678,58 +548,18 @@ public class PluginManager
             .filter(info -> type == info.getPluginType() && info.isEnabled()).count();
     }
     
-    private void normalizeCriticalStates(Map<String, Boolean> targetStates) {
+    private void validateCriticalStates(Map<String, Boolean> targetStates) {
         for (PluginType type : PluginType.values()) {
-            if (!type.isCritical()) {
-                continue;
+            String validationError = getCriticalValidationError(type, targetStates);
+            if (validationError != null) {
+                LOGGER.error("[PluginManager] {}", validationError);
+                throw new IllegalStateException(validationError);
             }
-            Optional<PluginInfo> fallback = pluginRegistry.values().stream()
-                .filter(info -> type == info.getPluginType())
-                .min(Comparator.comparing(PluginInfo::getPluginId));
-            if (fallback.isEmpty()) {
-                continue;
-            }
-            boolean hasEnabledImplementation = pluginRegistry.values().stream()
-                .filter(info -> type == info.getPluginType())
-                .anyMatch(info -> Boolean.TRUE.equals(targetStates.get(info.getPluginId())));
-            if (hasEnabledImplementation) {
-                continue;
-            }
-            if (type.isExclusive()) {
-                throw new IllegalStateException("No implementation is selected for critical "
-                    + "plugin type '" + type.getType() + "' by '" + getSelectionProperty(type)
-                    + "'.");
-            }
-            PluginInfo pluginInfo = fallback.get();
-            LOGGER.warn("[PluginManager] Restoring {} because critical plugin type {} cannot have "
-                + "all implementations disabled.", pluginInfo.getPluginId(), type.getType());
-            targetStates.put(pluginInfo.getPluginId(), true);
         }
     }
     
     private void ensureCriticalTypesAvailable() {
-        for (PluginType type : PluginType.values()) {
-            if (!type.isCritical()) {
-                continue;
-            }
-            Optional<PluginInfo> fallback = pluginRegistry.values().stream()
-                .filter(info -> type == info.getPluginType())
-                .min(Comparator.comparing(PluginInfo::getPluginId));
-            if (fallback.isEmpty() || countEnabledPlugins(type) > 0) {
-                continue;
-            }
-            if (type.isExclusive()) {
-                throw new IllegalStateException("No implementation is selected for critical "
-                    + "plugin type '" + type.getType() + "' by '" + getSelectionProperty(type)
-                    + "'.");
-            }
-            PluginInfo pluginInfo = fallback.get();
-            LOGGER.warn("[PluginManager] Restoring {} because critical plugin type {} cannot have "
-                + "all implementations disabled.", pluginInfo.getPluginId(), type.getType());
-            pluginStates.put(pluginInfo.getPluginId(), true);
-            pluginInfo.setEnabled(true);
-            persistence.saveState(pluginInfo.getPluginId(), true);
-        }
+        validateCriticalStates(getCurrentStates());
     }
     
     private void refreshAllCriticalFlags() {
@@ -739,10 +569,36 @@ public class PluginManager
     }
     
     private void refreshCriticalFlags(PluginType type) {
+        if (!type.isCritical() || !policyRegistry.isActive(type)) {
+            pluginRegistry.values().stream().filter(info -> type == info.getPluginType())
+                .forEach(info -> info.setCritical(false));
+            return;
+        }
+        Set<String> requiredPlugins = policyRegistry.getRequiredPluginNames(type);
         long enabledCount = countEnabledPlugins(type);
         pluginRegistry.values().stream().filter(info -> type == info.getPluginType())
-            .forEach(info -> info.setCritical(type.isCritical() && info.isEnabled()
-                && enabledCount <= 1));
+            .forEach(info -> info.setCritical(info.isEnabled()
+                && (requiredPlugins.contains(info.getPluginName())
+                    || requiredPlugins.isEmpty() && enabledCount <= 1)));
+    }
+    
+    private Map<String, Boolean> getCurrentStates() {
+        Map<String, Boolean> result = new HashMap<>();
+        pluginRegistry.forEach((pluginId, info) -> result.put(pluginId, info.isEnabled()));
+        return result;
+    }
+    
+    private String getCriticalValidationError(PluginType type,
+        Map<String, Boolean> targetStates) {
+        Map<String, Boolean> implementations = new HashMap<>();
+        for (PluginInfo info : pluginRegistry.values()) {
+            if (type == info.getPluginType()) {
+                implementations.put(info.getPluginName(),
+                    Boolean.TRUE.equals(targetStates.get(info.getPluginId())));
+            }
+        }
+        return PluginTypePolicyRegistry.getCriticalValidationError(policyRegistry, type,
+            implementations);
     }
     
     /**

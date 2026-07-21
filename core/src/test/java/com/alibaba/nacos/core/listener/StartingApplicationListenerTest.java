@@ -18,7 +18,10 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import com.alibaba.nacos.core.plugin.PluginCriticalBootstrapValidator;
 import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.sys.env.DeploymentType;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
@@ -89,11 +92,55 @@ class StartingApplicationListenerTest {
         StartingApplicationListener listener = new StartingApplicationListener();
         NacosStartUp mockStartUp = mock(NacosStartUp.class);
         ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+        when(mockStartUp.startUpPhase()).thenReturn(NacosStartUp.CORE_START_UP_PHASE);
         try (
-            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class)) {
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class);
+            MockedStatic<EnvUtil> envUtilMock = mockStatic(EnvUtil.class);
+            MockedStatic<PluginCriticalBootstrapValidator> validatorMock =
+                mockStatic(PluginCriticalBootstrapValidator.class)) {
             managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
+            envUtilMock.when(EnvUtil::getDeploymentType).thenReturn(DeploymentType.MERGED);
             listener.contextLoaded(context);
             verify(mockStartUp).customEnvironment();
+            validatorMock.verify(PluginCriticalBootstrapValidator::validate);
+        }
+    }
+    
+    @Test
+    void contextLoadedSkipsValidationOutsideNacosDeployment() {
+        StartingApplicationListener listener = new StartingApplicationListener();
+        NacosStartUp mockStartUp = mock(NacosStartUp.class);
+        ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+        when(mockStartUp.startUpPhase()).thenReturn(NacosStartUp.CORE_START_UP_PHASE);
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class);
+            MockedStatic<EnvUtil> envUtilMock = mockStatic(EnvUtil.class);
+            MockedStatic<PluginCriticalBootstrapValidator> validatorMock =
+                mockStatic(PluginCriticalBootstrapValidator.class)) {
+            managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
+            envUtilMock.when(EnvUtil::getDeploymentType).thenReturn(null);
+            listener.contextLoaded(context);
+            verify(mockStartUp).customEnvironment();
+            validatorMock.verifyNoInteractions();
+        }
+    }
+    
+    @Test
+    void contextLoadedSkipsValidationOutsideCorePhase() {
+        StartingApplicationListener listener = new StartingApplicationListener();
+        NacosStartUp mockStartUp = mock(NacosStartUp.class);
+        ConfigurableApplicationContext context = mock(ConfigurableApplicationContext.class);
+        when(mockStartUp.startUpPhase()).thenReturn(NacosStartUp.WEB_START_UP_PHASE);
+        try (
+            MockedStatic<NacosStartUpManager> managerMock = mockStatic(NacosStartUpManager.class);
+            MockedStatic<EnvUtil> envUtilMock = mockStatic(EnvUtil.class);
+            MockedStatic<PluginCriticalBootstrapValidator> validatorMock =
+                mockStatic(PluginCriticalBootstrapValidator.class)) {
+            managerMock.when(NacosStartUpManager::getCurrentStartUp).thenReturn(mockStartUp);
+            envUtilMock.when(EnvUtil::getDeploymentType).thenReturn(DeploymentType.MERGED);
+            listener.contextLoaded(context);
+            verify(mockStartUp).customEnvironment();
+            validatorMock.verifyNoInteractions();
         }
     }
     

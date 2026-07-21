@@ -111,9 +111,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * <p>Similar to Nacos datasource type selection, this allows choosing
      * different storage providers via service-level configuration.</p>
      */
-    private static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY =
-        "nacos.ai.skill.storage.provider";
-    
     private static final String AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY =
         "nacos.ai.skill.auto-publish-after-review.enabled";
     
@@ -1489,7 +1486,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private static String resolveSkillStorageProvider() {
         String provider =
-            EnvUtil.getProperty(SKILL_STORAGE_PROVIDER_CONFIG_KEY, STORAGE_PROVIDER_NACOS_CONFIG);
+            EnvUtil.getProperty(Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
+                STORAGE_PROVIDER_NACOS_CONFIG);
         return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
     }
     

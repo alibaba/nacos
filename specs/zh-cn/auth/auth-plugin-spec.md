@@ -90,6 +90,13 @@ nacos.plugin.auth.type=nacos
 历史 `nacos.core.auth.system.type` 继续作为启动期 alias。选择配置为静态配置，需要重启
 生效；运行时 status API 不得切换鉴权实现。
 
+当 `nacos.core.auth.enabled`、`nacos.core.auth.admin.enabled`、
+`nacos.core.auth.console.enabled` 中任一请求入口开关开启时，auth 插件类型是 active 的
+critical 依赖。即使三个入口开关全部关闭，只要显式配置了 auth type，该类型也保持 active，
+并在启动时预加载和应用选中的实现。这样运维人员可以先确认客户端身份配置完毕，再通过服务
+配置刷新开启某个鉴权范围。选中实现未被发现时启动必须明确失败，不得 fallback 到其他鉴权
+实现。
+
 ## 身份上下文
 
 `IdentityContext` 是与传输协议无关的调用方描述。它可以包含：
