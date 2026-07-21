@@ -255,6 +255,11 @@ Grant behavior:
   visibility when list/search queries are advised.
 - Grant data reuses the default RBAC persistence by storing plugin-owned
   internal roles and permissions in the auth backend.
+- The default implementation creates at most one reserved internal visibility
+  role for each grantee user. The role name is deterministic, unique to the
+  grantee, and bounded by the existing role-name column. Resource and action
+  data must be stored only in permission rows attached to that role, not encoded
+  into the role name.
 - Resource existence and owner metadata are resolved through a domain-provided
   visibility resource locator instead of a direct compile-time dependency from
   the auth plugin to domain persistence types.

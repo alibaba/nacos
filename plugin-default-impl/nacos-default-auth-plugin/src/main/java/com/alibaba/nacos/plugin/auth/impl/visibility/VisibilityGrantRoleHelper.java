@@ -20,20 +20,23 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Locale;
 
 /**
- * Helper for internal visibility grant role naming.
+ * Helper for internal visibility grant persistence keys.
  *
  * @author Zhengcy05
  */
 final class VisibilityGrantRoleHelper {
     
-    private static final Base64.Encoder ENCODER = Base64.getUrlEncoder().withoutPadding();
+    private static final String RESOURCE_IDENTIFIER_PREFIX = "@@visibility/";
     
-    private static final Base64.Decoder DECODER = Base64.getUrlDecoder();
+    private static final String USER_ROLE_MARKER = "u.";
+    
+    private static final int USER_ROLE_HASH_HEX_LENGTH = 32;
     
     private VisibilityGrantRoleHelper() {
     }
@@ -69,54 +72,59 @@ final class VisibilityGrantRoleHelper {
         return "r".equals(storedAction) || "rw".equals(storedAction);
     }
     
-    // base64(namespace).base64(resourceType).base64(resourceName)
-    static String buildRolePrefix(String namespaceId, String resourceType, String resourceName) {
-        // Encode each segment so internal role names stay reversible without leaking delimiter rules
-        // into resource names.
-        return AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX
-            + encode(normalizeNamespaceId(namespaceId))
-            + "." + encode(normalizeResourceType(resourceType)) + "." + encode(resourceName) + ".";
+    static String buildUserRoleName(String username) {
+        if (StringUtils.isBlank(username)) {
+            throw new IllegalArgumentException("username is blank");
+        }
+        // Use a deterministic short SHA-256 prefix so internal role names stay within
+        // the existing roles.role varchar(50) limit and do not expose user names.
+        return buildUserRoleNamePrefix() + sha256LowerHex(username).substring(0,
+            USER_ROLE_HASH_HEX_LENGTH);
     }
     
-    static String buildRoleName(String namespaceId, String resourceType, String resourceName,
-        String action) {
-        return buildRolePrefix(namespaceId, resourceType, resourceName)
-            + normalizeStoredAction(action);
+    static String buildUserRoleNamePrefix() {
+        return AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX + USER_ROLE_MARKER;
+    }
+    
+    static boolean isUserGrantRole(String roleName) {
+        return StringUtils.isNotBlank(roleName) && roleName.startsWith(buildUserRoleNamePrefix());
     }
     
     static String buildResourceIdentifier(String namespaceId, String resourceType,
         String resourceName) {
-        return "@@visibility/" + normalizeNamespaceId(namespaceId) + "/"
+        return RESOURCE_IDENTIFIER_PREFIX + normalizeNamespaceId(namespaceId) + "/"
             + normalizeResourceType(resourceType) + "/" + resourceName;
     }
     
-    static ParsedGrantRole tryParse(String roleName) {
-        if (StringUtils.isBlank(roleName)
-            || !roleName.startsWith(AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX)) {
+    static ParsedGrantResource tryParseResourceIdentifier(String resourceIdentifier) {
+        if (StringUtils.isBlank(resourceIdentifier)
+            || !resourceIdentifier.startsWith(RESOURCE_IDENTIFIER_PREFIX)) {
             return null;
         }
-        String body = roleName.substring(AuthConstants.VISIBILITY_GRANT_ROLE_PREFIX.length());
-        String[] parts = body.split("\\.", 4);
-        if (parts.length != 4) {
+        String body = resourceIdentifier.substring(RESOURCE_IDENTIFIER_PREFIX.length());
+        String[] parts = body.split("/", 3);
+        if (parts.length != 3 || StringUtils.isBlank(parts[0]) || StringUtils.isBlank(parts[1])
+            || StringUtils.isBlank(parts[2])) {
             return null;
         }
+        return new ParsedGrantResource(parts[0], parts[1], parts[2]);
+    }
+    
+    private static String sha256LowerHex(String value) {
         try {
-            return new ParsedGrantRole(decode(parts[0]), decode(parts[1]), decode(parts[2]),
-                normalizeStoredAction(parts[3]));
-        } catch (IllegalArgumentException e) {
-            return null;
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder(bytes.length * 2);
+            for (byte each : bytes) {
+                result.append(String.format("%02x", each));
+            }
+            return result.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
         }
     }
     
-    private static String encode(String value) {
-        return ENCODER.encodeToString(value.getBytes(StandardCharsets.UTF_8));
-    }
-    
-    private static String decode(String value) {
-        return new String(DECODER.decode(value), StandardCharsets.UTF_8);
-    }
-    
-    static final class ParsedGrantRole {
+    static final class ParsedGrantResource {
         
         private final String namespaceId;
         
@@ -124,14 +132,11 @@ final class VisibilityGrantRoleHelper {
         
         private final String resourceName;
         
-        private final String storedAction;
-        
-        private ParsedGrantRole(String namespaceId, String resourceType, String resourceName,
-            String storedAction) {
+        private ParsedGrantResource(String namespaceId, String resourceType,
+            String resourceName) {
             this.namespaceId = namespaceId;
             this.resourceType = resourceType;
             this.resourceName = resourceName;
-            this.storedAction = storedAction;
         }
         
         String getNamespaceId() {
@@ -144,10 +149,6 @@ final class VisibilityGrantRoleHelper {
         
         String getResourceName() {
             return resourceName;
-        }
-        
-        String getStoredAction() {
-            return storedAction;
         }
     }
 }

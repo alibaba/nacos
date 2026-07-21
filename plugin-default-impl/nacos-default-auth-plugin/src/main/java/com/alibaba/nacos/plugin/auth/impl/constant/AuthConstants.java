@@ -142,7 +142,10 @@ public class AuthConstants {
     
     public static final String VISIBILITY_RESOURCE = "auth/visibility";
     
-    public static final String VISIBILITY_GRANT_ROLE_PREFIX = "__nacos_visibility__.";
+    /**
+     * Prefix for system-reserved per-user roles used by explicit visibility grants.
+     */
+    public static final String VISIBILITY_GRANT_ROLE_PREFIX = "__nacos_vis__.";
     
     /**
      * System-reserved anonymous user name. Used for unauthenticated access to PUBLIC AI resources.

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
@@ -69,20 +70,19 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         validateUsername(username);
         validateGranteeExists(username);
         String storedAction = normalizeGrantAction(action);
-        String roleName = VisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
-            resourceName, storedAction);
+        String roleName = VisibilityGrantRoleHelper.buildUserRoleName(username);
         String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
             resourceType, resourceName);
-        // Scenario 1: The user has already bound this authorized role; simply ensure that the role has permission
+        // Scenario 1: the grantee already has the dedicated visibility role; only
+        // ensure the requested permission row exists.
         if (userHasRole(username, roleName)) {
-            // Permissions are shared by the internal grant role, so an existing binding only
-            // needs the backing permission row to be present.
             if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
                 roleService.addPermission(roleName, resourceId, storedAction);
             }
             return;
         }
-        // Scenario 2: User not bound to a role, create a new role + bind the user + bind permissions, ensuring atomic operations.
+        // Scenario 2: create the user's reserved visibility role binding first, then
+        // attach the resource/action permission to that role.
         boolean roleAdded = false;
         try {
             roleService.addRole(roleName, username);
@@ -110,16 +110,13 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         checkManageGrantAuthority(resource);
         validateUsername(username);
         String storedAction = normalizeGrantAction(action);
-        String roleName = VisibilityGrantRoleHelper.buildRoleName(namespaceId, resourceType,
-            resourceName, storedAction);
-        roleService.deleteRole(roleName, username);
-        if (!roleHasBindings(roleName)) {
-            // Drop the shared permission row only after the last grantee is removed.
-            roleService.deletePermission(roleName,
-                VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
-                    resourceName),
-                storedAction);
-        }
+        String roleName = VisibilityGrantRoleHelper.buildUserRoleName(username);
+        // Keep the empty internal role binding; without a matching permission row it
+        // cannot grant visibility, and retaining it makes future grants idempotent.
+        roleService.deletePermission(roleName,
+            VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
+                resourceName),
+            storedAction);
     }
     
     @Override
@@ -128,28 +125,35 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         VisibilityResource resource =
             requireManagedResource(namespaceId, resourceType, resourceName);
         checkManageGrantAuthority(resource);
-        String rolePrefix = VisibilityGrantRoleHelper.buildRolePrefix(namespaceId, resourceType,
-            resourceName);
-        Page<RoleInfo> rolePage =
-            roleService.findRoles(StringUtils.EMPTY, rolePrefix, DEFAULT_PAGE_NO,
-                Integer.MAX_VALUE);
         List<VisibilityGrantInfo> result = new ArrayList<>();
-        if (rolePage == null || CollectionUtils.isEmpty(rolePage.getPageItems())) {
+        String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
+            resourceType, resourceName);
+        Page<PermissionInfo> permissionPage =
+            roleService.findPermissions(VisibilityGrantRoleHelper.buildUserRoleNamePrefix() + "*",
+                DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+        if (permissionPage == null || CollectionUtils.isEmpty(permissionPage.getPageItems())) {
             return result;
         }
-        for (RoleInfo roleInfo : rolePage.getPageItems()) {
-            VisibilityGrantRoleHelper.ParsedGrantRole parsed =
-                VisibilityGrantRoleHelper.tryParse(roleInfo.getRole());
-            if (parsed == null || !roleInfo.getRole().startsWith(rolePrefix)) {
+        for (PermissionInfo permissionInfo : permissionPage.getPageItems()) {
+            if (!resourceId.equals(permissionInfo.getResource())
+                || !VisibilityGrantRoleHelper.isUserGrantRole(permissionInfo.getRole())) {
                 continue;
             }
-            VisibilityGrantInfo item = new VisibilityGrantInfo();
-            item.setNamespaceId(parsed.getNamespaceId());
-            item.setResourceType(parsed.getResourceType());
-            item.setResourceName(parsed.getResourceName());
-            item.setUsername(roleInfo.getUsername());
-            item.setAction(parsed.getStoredAction());
-            result.add(item);
+            Page<RoleInfo> rolePage =
+                roleService.getRoles(StringUtils.EMPTY, permissionInfo.getRole(),
+                    DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            if (rolePage == null || CollectionUtils.isEmpty(rolePage.getPageItems())) {
+                continue;
+            }
+            for (RoleInfo roleInfo : rolePage.getPageItems()) {
+                VisibilityGrantInfo item = new VisibilityGrantInfo();
+                item.setNamespaceId(resource.getNamespaceId());
+                item.setResourceType(resource.getResourceType());
+                item.setResourceName(resource.getResourceName());
+                item.setUsername(roleInfo.getUsername());
+                item.setAction(permissionInfo.getAction());
+                result.add(item);
+            }
         }
         result.sort(Comparator.comparing(VisibilityGrantInfo::getUsername)
             .thenComparing(VisibilityGrantInfo::getAction));
@@ -169,13 +173,23 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         if (CollectionUtils.isEmpty(roles)) {
             return Collections.emptyList();
         }
+        String dedicatedRoleName = VisibilityGrantRoleHelper.buildUserRoleName(username);
+        boolean hasDedicatedRole =
+            roles.stream().anyMatch(each -> dedicatedRoleName.equals(each.getRole()));
+        if (!hasDedicatedRole) {
+            return Collections.emptyList();
+        }
         String resolvedNamespaceId = VisibilityGrantRoleHelper.normalizeNamespaceId(namespaceId);
         String normalizedResourceType =
             VisibilityGrantRoleHelper.normalizeResourceType(resourceType);
         Set<String> names = new LinkedHashSet<>();
-        for (RoleInfo role : roles) {
-            VisibilityGrantRoleHelper.ParsedGrantRole parsed =
-                VisibilityGrantRoleHelper.tryParse(role.getRole());
+        List<PermissionInfo> permissions = roleService.getPermissions(dedicatedRoleName);
+        if (CollectionUtils.isEmpty(permissions)) {
+            return Collections.emptyList();
+        }
+        for (PermissionInfo permission : permissions) {
+            VisibilityGrantRoleHelper.ParsedGrantResource parsed =
+                VisibilityGrantRoleHelper.tryParseResourceIdentifier(permission.getResource());
             if (parsed == null) {
                 continue;
             }
@@ -183,7 +197,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
                 || !normalizedResourceType.equals(parsed.getResourceType())) {
                 continue;
             }
-            if (VisibilityGrantRoleHelper.matchesRequestedAction(parsed.getStoredAction(),
+            if (VisibilityGrantRoleHelper.matchesRequestedAction(permission.getAction(),
                 action)) {
                 names.add(parsed.getResourceName());
             }
@@ -273,9 +287,4 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         return roles.stream().anyMatch(each -> roleName.equals(each.getRole()));
     }
     
-    private boolean roleHasBindings(String roleName) {
-        Page<RoleInfo> rolePage =
-            roleService.getRoles(StringUtils.EMPTY, roleName, DEFAULT_PAGE_NO, 1);
-        return rolePage != null && CollectionUtils.isNotEmpty(rolePage.getPageItems());
-    }
 }
