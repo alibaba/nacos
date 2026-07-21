@@ -44,7 +44,7 @@ public class AiVectorPluginProvider implements PluginProvider<AiResourceVectorIn
             return Collections.emptyMap();
         }
         try {
-            return ApplicationUtils.getBean(ArdVectorIndexRouter.class).selectedIndex();
+            return ApplicationUtils.getBean(ArdVectorIndexRouter.class).allIndexes();
         } catch (BeansException | IllegalStateException ignored) {
             return Collections.emptyMap();
         }

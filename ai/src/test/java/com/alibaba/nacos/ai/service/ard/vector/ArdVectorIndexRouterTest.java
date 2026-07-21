@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.ai.service.ard.vector;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndexBuilder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -37,6 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class ArdVectorIndexRouterTest {
+    
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
+    }
     
     @Test
     void shouldUseConfiguredProvider() {
@@ -68,15 +77,75 @@ class ArdVectorIndexRouterTest {
     }
     
     @Test
-    void shouldCloseSelectedProviderOnDestroy() throws Exception {
+    void shouldRejectDuplicateProviderTypeWhenFirstBuilderReturnsNull() {
+        assertThrows(IllegalStateException.class, () -> new ArdVectorIndexRouter(
+            List.of(new FakeVectorIndexBuilder("custom", null),
+                new FakeVectorIndexBuilder("custom", new FakeVectorIndex(true))),
+            "custom"));
+    }
+    
+    @Test
+    void shouldIgnoreProviderThatFailsToBuild() {
+        AiResourceVectorIndexBuilder builder = new AiResourceVectorIndexBuilder() {
+            
+            @Override
+            public String type() {
+                return "broken";
+            }
+            
+            @Override
+            public AiResourceVectorIndex build() {
+                throw new IllegalStateException("failed");
+            }
+        };
+        
+        ArdVectorIndexRouter router = new ArdVectorIndexRouter(List.of(builder), "broken");
+        
+        assertFalse(router.available());
+        assertTrue(router.allIndexes().isEmpty());
+    }
+    
+    @Test
+    void shouldExposeAllLoadedProviders() {
+        FakeVectorIndex first = new FakeVectorIndex(true);
+        FakeVectorIndex second = new FakeVectorIndex(true);
+        ArdVectorIndexRouter router = new ArdVectorIndexRouter(
+            List.of(new FakeVectorIndexBuilder("first", first),
+                new FakeVectorIndexBuilder("second", second)),
+            "first");
+        
+        Map<String, AiResourceVectorIndex> indexes = router.allIndexes();
+        
+        assertSame(first, indexes.get("first"));
+        assertSame(second, indexes.get("second"));
+    }
+    
+    @Test
+    void shouldFallbackToNoopWhenConfiguredProviderIsDisabled() {
         FakeVectorIndex index = new FakeVectorIndex(true);
         ArdVectorIndexRouter router = new ArdVectorIndexRouter(
             List.of(new FakeVectorIndexBuilder("custom", index)), "custom");
+        PluginStateCheckerHolder.setInstance(
+            (pluginType, pluginName) -> !PluginType.AI_VECTOR.getType().equals(pluginType)
+                || !"custom".equals(pluginName));
+        
+        assertFalse(router.available());
+    }
+    
+    @Test
+    void shouldCloseAllProvidersOnDestroy() throws Exception {
+        FakeVectorIndex selected = new FakeVectorIndex(true);
+        FakeVectorIndex other = new FakeVectorIndex(true);
+        ArdVectorIndexRouter router = new ArdVectorIndexRouter(
+            List.of(new FakeVectorIndexBuilder("selected", selected),
+                new FakeVectorIndexBuilder("other", other)),
+            "selected");
         
         router.available();
         router.destroy();
         
-        assertTrue(index.closed);
+        assertTrue(selected.closed);
+        assertTrue(other.closed);
     }
     
     private static class FakeVectorIndexBuilder implements AiResourceVectorIndexBuilder {

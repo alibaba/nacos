@@ -17,3 +17,4 @@
 com.alibaba.nacos.ai.plugin.AiPipelinePluginTypePolicy
 com.alibaba.nacos.ai.plugin.AiResourceImportPluginTypePolicy
 com.alibaba.nacos.ai.plugin.AiStoragePluginTypePolicy
+com.alibaba.nacos.ai.plugin.AiVectorPluginTypePolicy

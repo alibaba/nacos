@@ -22,12 +22,12 @@ package com.alibaba.nacos.plugin.ai.ard.vector.spi;
  * @author nacos
  */
 public interface AiResourceVectorIndexBuilder {
-
+    
     /**
      * Provider type, e.g. {@code postgresql}.
      */
     String type();
-
+    
     /**
      * Build vector index plugin instance.
      */

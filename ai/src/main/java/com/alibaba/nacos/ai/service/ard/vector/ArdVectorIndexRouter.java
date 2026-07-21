@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service.ard.vector;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
@@ -32,8 +34,10 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Routes ARD vector operations to the configured vector index plugin.
@@ -50,11 +54,9 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ArdVectorIndexRouter.class);
     
-    private final Map<String, AiResourceVectorIndexBuilder> builders;
+    private final Map<String, AiResourceVectorIndex> indexes;
     
-    private final String providerOverride;
-    
-    private volatile AiResourceVectorIndex delegate;
+    private final String provider;
     
     public ArdVectorIndexRouter() {
         this(NacosServiceLoader.load(AiResourceVectorIndexBuilder.class), null);
@@ -62,8 +64,14 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
     
     ArdVectorIndexRouter(Collection<AiResourceVectorIndexBuilder> builders,
         String providerOverride) {
-        this.builders = Collections.unmodifiableMap(loadBuilders(builders));
-        this.providerOverride = providerOverride;
+        this.indexes = Collections.unmodifiableMap(loadIndexes(builders));
+        this.provider = resolveProvider(providerOverride);
+        if (indexes.containsKey(provider)) {
+            LOGGER.info("Using ARD vector index provider: {}", provider);
+        } else {
+            LOGGER.warn("ARD vector index provider `{}` not found, vector retrieval disabled",
+                provider);
+        }
     }
     
     @Override
@@ -104,57 +112,28 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
     
     @Override
     public void destroy() throws Exception {
-        AiResourceVectorIndex selected = delegate;
-        if (selected != null) {
-            selected.close();
+        for (AiResourceVectorIndex index : indexes.values()) {
+            index.close();
         }
     }
     
     AiResourceVectorIndex delegate() {
-        AiResourceVectorIndex selected = delegate;
-        if (selected != null) {
-            return selected;
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.AI_VECTOR.getType(), provider)) {
+            return NoopAiResourceVectorIndex.INSTANCE;
         }
-        synchronized (this) {
-            if (delegate == null) {
-                delegate = buildDelegate();
-            }
-            return delegate;
-        }
+        return indexes.getOrDefault(provider, NoopAiResourceVectorIndex.INSTANCE);
     }
     
     /**
-     * Return the configured vector index plugin for plugin manager listing.
+     * Return all loaded vector index plugins for plugin manager discovery.
      *
-     * @return selected vector index plugin, empty when the provider is not installed
+     * @return loaded vector index plugins by provider name
      */
-    public Map<String, AiResourceVectorIndex> selectedIndex() {
-        String provider = resolveProvider();
-        if (!builders.containsKey(provider)) {
-            return Collections.emptyMap();
-        }
-        return Collections.singletonMap(provider, delegate());
+    public Map<String, AiResourceVectorIndex> allIndexes() {
+        return indexes;
     }
     
-    private AiResourceVectorIndex buildDelegate() {
-        String provider = resolveProvider();
-        AiResourceVectorIndexBuilder builder = builders.get(provider);
-        if (builder == null) {
-            LOGGER.warn("ARD vector index provider `{}` not found, vector retrieval disabled",
-                provider);
-            return NoopAiResourceVectorIndex.INSTANCE;
-        }
-        AiResourceVectorIndex index = builder.build();
-        if (index == null) {
-            LOGGER.warn("ARD vector index provider `{}` returned null, vector retrieval disabled",
-                provider);
-            return NoopAiResourceVectorIndex.INSTANCE;
-        }
-        LOGGER.info("Using ARD vector index provider: {}", provider);
-        return index;
-    }
-    
-    private String resolveProvider() {
+    private String resolveProvider(String providerOverride) {
         if (StringUtils.isNotBlank(providerOverride)) {
             return providerOverride;
         }
@@ -169,9 +148,10 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         }
     }
     
-    private Map<String, AiResourceVectorIndexBuilder> loadBuilders(
+    private Map<String, AiResourceVectorIndex> loadIndexes(
         Collection<AiResourceVectorIndexBuilder> builders) {
-        Map<String, AiResourceVectorIndexBuilder> result = new LinkedHashMap<>();
+        Map<String, AiResourceVectorIndex> result = new LinkedHashMap<>();
+        Set<String> providerTypes = new LinkedHashSet<>();
         if (builders == null) {
             return result;
         }
@@ -181,11 +161,23 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
                     "ARD vector index provider type must not be empty.");
             }
             String type = builder.type().trim();
-            if (result.containsKey(type)) {
+            if (!providerTypes.add(type)) {
                 throw new IllegalStateException(
                     "Duplicate ARD vector index provider type: " + type);
             }
-            result.put(type, builder);
+            AiResourceVectorIndex index;
+            try {
+                index = builder.build();
+            } catch (RuntimeException e) {
+                LOGGER.warn("Failed to build ARD vector index provider `{}` and it was ignored",
+                    type, e);
+                continue;
+            }
+            if (index == null) {
+                LOGGER.warn("ARD vector index provider `{}` returned null and was ignored", type);
+                continue;
+            }
+            result.put(type, index);
         }
         return result;
     }

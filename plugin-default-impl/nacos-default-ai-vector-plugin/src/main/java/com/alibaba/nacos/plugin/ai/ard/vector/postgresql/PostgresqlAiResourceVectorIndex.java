@@ -39,41 +39,41 @@ import java.util.Locale;
  * @author nacos
  */
 public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
-
+    
     public static final String TYPE = "postgresql";
-
+    
     private static final String POSTGRES = "postgres";
-
+    
     static final String KEY_POSTGRESQL_URL = "nacos.ai.ard.vector.postgresql.url";
-
+    
     static final String KEY_POSTGRESQL_USER = "nacos.ai.ard.vector.postgresql.user";
-
+    
     static final String KEY_POSTGRESQL_PASSWORD = "nacos.ai.ard.vector.postgresql.password";
-
+    
     static final String KEY_POSTGRESQL_DRIVER_CLASS_NAME =
         "nacos.ai.ard.vector.postgresql.driver-class-name";
-
+    
     private static final String DEFAULT_POSTGRESQL_DRIVER_CLASS_NAME = "org.postgresql.Driver";
-
+    
     private static final String SQL_INSERT = "INSERT INTO ai_resource_ard_embedding_pg "
         + "(namespace_id, entry_id, chunk_id, identifier, resource_type, resource_name, "
         + "resource_version, embedding_model, embedding_dimension, embedding, gmt_create, gmt_modified) "
         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::vector, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
-
+    
     private final JdbcTemplate injectedJdbcTemplate;
-
+    
     private volatile JdbcTemplate dedicatedJdbcTemplate;
-
+    
     private volatile AutoCloseable dedicatedDataSource;
-
+    
     public PostgresqlAiResourceVectorIndex() {
         this.injectedJdbcTemplate = null;
     }
-
+    
     public PostgresqlAiResourceVectorIndex(JdbcTemplate jdbcTemplate) {
         this.injectedJdbcTemplate = jdbcTemplate;
     }
-
+    
     @Override
     public void close() throws Exception {
         AutoCloseable dataSource = dedicatedDataSource;
@@ -81,7 +81,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             dataSource.close();
         }
     }
-
+    
     @Override
     public boolean available() {
         if (!isPostgresql()) {
@@ -96,7 +96,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             return false;
         }
     }
-
+    
     @Override
     public void replaceResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion,
@@ -104,7 +104,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         deleteByResourceVersion(namespaceId, resourceType, resourceName, resourceVersion);
         addDocuments(documents);
     }
-
+    
     @Override
     public void addDocuments(Collection<AiResourceVectorDocument> documents) {
         if (documents == null || documents.isEmpty()) {
@@ -114,14 +114,14 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             insert(document);
         }
     }
-
+    
     @Override
     public void deleteByResource(String namespaceId, String resourceType, String resourceName) {
         getJdbcTemplate().update("DELETE FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
             + "AND resource_type=? AND resource_name=?",
             namespaceId, resourceType, resourceName);
     }
-
+    
     @Override
     public void deleteByResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion) {
@@ -129,7 +129,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             + "AND resource_type=? AND resource_name=? AND resource_version=?",
             namespaceId, resourceType, resourceName, resourceVersion);
     }
-
+    
     @Override
     public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
         double[] queryVector, List<String> resourceTypes, int limit) {
@@ -162,7 +162,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             return hit;
         }, args.toArray());
     }
-
+    
     private void insert(AiResourceVectorDocument document) {
         AiResourceVectorChunk chunk = document.getChunk();
         getJdbcTemplate().update(SQL_INSERT, chunk.getNamespaceId(), chunk.getEntryId(),
@@ -170,7 +170,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             chunk.getResourceVersion(), document.getEmbeddingModel(),
             document.getEmbedding().length, toVectorLiteral(document.getEmbedding()));
     }
-
+    
     private void appendResourceTypeFilter(StringBuilder sql, List<Object> args,
         List<String> resourceTypes) {
         if (resourceTypes == null || resourceTypes.isEmpty()) {
@@ -180,7 +180,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             .append(")");
         args.addAll(resourceTypes);
     }
-
+    
     private String placeholders(int size) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < size; i++) {
@@ -191,7 +191,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         }
         return result.toString();
     }
-
+    
     private String toVectorLiteral(double[] vector) {
         StringBuilder result = new StringBuilder("[");
         for (int i = 0; i < vector.length; i++) {
@@ -203,7 +203,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         result.append(']');
         return result.toString();
     }
-
+    
     private JdbcTemplate getJdbcTemplate() {
         if (injectedJdbcTemplate != null) {
             return injectedJdbcTemplate;
@@ -214,7 +214,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         }
         return DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
     }
-
+    
     JdbcTemplate getDedicatedJdbcTemplate(String jdbcUrl) {
         JdbcTemplate result = dedicatedJdbcTemplate;
         if (result != null) {
@@ -227,7 +227,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             return dedicatedJdbcTemplate;
         }
     }
-
+    
     private JdbcTemplate createDedicatedJdbcTemplate(String jdbcUrl) {
         DataSourcePoolProperties poolProperties =
             DataSourcePoolProperties.build(EnvUtil.getEnvironment());
@@ -246,7 +246,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         dedicatedDataSource = (AutoCloseable) dataSource;
         return new JdbcTemplate(dataSource);
     }
-
+    
     private boolean isPostgresql() {
         if (injectedJdbcTemplate != null) {
             return true;
@@ -257,16 +257,17 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         try {
             String dataSourceType =
                 DynamicDataSource.getInstance().getDataSource().getDataSourceType();
-            return TYPE.equalsIgnoreCase(dataSourceType) || POSTGRES.equalsIgnoreCase(dataSourceType);
+            return TYPE.equalsIgnoreCase(dataSourceType)
+                || POSTGRES.equalsIgnoreCase(dataSourceType);
         } catch (Exception ignored) {
             return false;
         }
     }
-
+    
     private String envProperty(String key) {
         return envProperty(key, StringUtils.EMPTY);
     }
-
+    
     private String envProperty(String key, String defaultValue) {
         try {
             if (EnvUtil.getEnvironment() == null) {

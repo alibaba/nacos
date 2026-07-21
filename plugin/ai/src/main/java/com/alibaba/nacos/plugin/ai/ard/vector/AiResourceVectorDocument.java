@@ -22,28 +22,28 @@ package com.alibaba.nacos.plugin.ai.ard.vector;
  * @author nacos
  */
 public class AiResourceVectorDocument {
-
+    
     private final AiResourceVectorChunk chunk;
-
+    
     private final String embeddingModel;
-
+    
     private final double[] embedding;
-
+    
     public AiResourceVectorDocument(AiResourceVectorChunk chunk, String embeddingModel,
         double[] embedding) {
         this.chunk = chunk;
         this.embeddingModel = embeddingModel;
         this.embedding = embedding;
     }
-
+    
     public AiResourceVectorChunk getChunk() {
         return chunk;
     }
-
+    
     public String getEmbeddingModel() {
         return embeddingModel;
     }
-
+    
     public double[] getEmbedding() {
         return embedding;
     }

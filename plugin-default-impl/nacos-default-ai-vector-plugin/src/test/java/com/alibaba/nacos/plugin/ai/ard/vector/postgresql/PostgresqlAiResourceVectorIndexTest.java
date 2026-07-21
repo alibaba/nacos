@@ -38,13 +38,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class PostgresqlAiResourceVectorIndexTest {
-
+    
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     private MockEnvironment environment;
-
+    
     private PostgresqlAiResourceVectorIndex vectorIndex;
-
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
@@ -56,7 +56,7 @@ class PostgresqlAiResourceVectorIndexTest {
         EnvUtil.setEnvironment(environment);
         vectorIndex = new PostgresqlAiResourceVectorIndex();
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         if (vectorIndex != null) {
@@ -64,32 +64,32 @@ class PostgresqlAiResourceVectorIndexTest {
         }
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-
+    
     @Test
     void shouldReuseDedicatedJdbcTemplateWhenPostgresqlUrlConfigured() {
         JdbcTemplate first = vectorIndex.getDedicatedJdbcTemplate(
             environment.getProperty(PostgresqlAiResourceVectorIndex.KEY_POSTGRESQL_URL));
         JdbcTemplate second = vectorIndex.getDedicatedJdbcTemplate("jdbc:h2:mem:another");
-
+        
         assertSame(first, second);
     }
-
+    
     @Test
     void availableShouldProbeDedicatedDatasourceWhenPostgresqlUrlConfigured() {
         JdbcTemplate jdbcTemplate = vectorIndex.getDedicatedJdbcTemplate(
             environment.getProperty(PostgresqlAiResourceVectorIndex.KEY_POSTGRESQL_URL));
         jdbcTemplate.execute("CREATE TABLE ai_resource_ard_embedding_pg (id bigint)");
-
+        
         assertTrue(vectorIndex.available());
     }
-
+    
     @Test
     void searchShouldPushLimitToSql() {
         CapturingJdbcTemplate jdbcTemplate = new CapturingJdbcTemplate();
         PostgresqlAiResourceVectorIndex index = new PostgresqlAiResourceVectorIndex(jdbcTemplate);
-
+        
         index.search("public", "test-model", new double[] {1.0D, 2.0D}, List.of("skill"), 7);
-
+        
         assertTrue(jdbcTemplate.sql.contains("LIMIT ?"));
         assertTrue(jdbcTemplate.sql.contains("embedding_model=?"));
         assertTrue(jdbcTemplate.sql.contains("embedding_dimension=?"));
@@ -97,13 +97,13 @@ class PostgresqlAiResourceVectorIndexTest {
         assertEquals(2, jdbcTemplate.args[3]);
         assertEquals(7, jdbcTemplate.args[jdbcTemplate.args.length - 1]);
     }
-
+    
     private static class CapturingJdbcTemplate extends JdbcTemplate {
-
+        
         private String sql;
-
+        
         private Object[] args;
-
+        
         @Override
         public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
             this.sql = sql;

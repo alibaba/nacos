@@ -22,83 +22,83 @@ package com.alibaba.nacos.plugin.ai.ard.vector;
  * @author nacos
  */
 public class AiResourceVectorHit {
-
+    
     private Long entryId;
-
+    
     private Long chunkId;
-
+    
     private String identifier;
-
+    
     private String resourceType;
-
+    
     private String resourceName;
-
+    
     private String resourceVersion;
-
+    
     private String chunkType;
-
+    
     private double score;
-
+    
     public Long getEntryId() {
         return entryId;
     }
-
+    
     public void setEntryId(Long entryId) {
         this.entryId = entryId;
     }
-
+    
     public Long getChunkId() {
         return chunkId;
     }
-
+    
     public void setChunkId(Long chunkId) {
         this.chunkId = chunkId;
     }
-
+    
     public String getIdentifier() {
         return identifier;
     }
-
+    
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
     }
-
+    
     public String getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getResourceName() {
         return resourceName;
     }
-
+    
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
-
+    
     public String getResourceVersion() {
         return resourceVersion;
     }
-
+    
     public void setResourceVersion(String resourceVersion) {
         this.resourceVersion = resourceVersion;
     }
-
+    
     public String getChunkType() {
         return chunkType;
     }
-
+    
     public void setChunkType(String chunkType) {
         this.chunkType = chunkType;
     }
-
+    
     public double getScore() {
         return score;
     }
-
+    
     public void setScore(double score) {
         this.score = score;
     }

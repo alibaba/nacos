@@ -25,12 +25,12 @@ import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndexBuilder;
  * @author nacos
  */
 public class PostgresqlAiResourceVectorIndexBuilder implements AiResourceVectorIndexBuilder {
-
+    
     @Override
     public String type() {
         return PostgresqlAiResourceVectorIndex.TYPE;
     }
-
+    
     @Override
     public AiResourceVectorIndex build() {
         return new PostgresqlAiResourceVectorIndex();
