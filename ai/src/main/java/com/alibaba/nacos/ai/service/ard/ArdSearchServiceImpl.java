@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -79,6 +80,7 @@ import java.util.Set;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class ArdSearchServiceImpl implements ArdSearchService {
     
     static final String FEDERATION_NONE = "none";

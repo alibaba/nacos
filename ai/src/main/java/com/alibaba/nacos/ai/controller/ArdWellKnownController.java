@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.ai.model.ard.ArdCatalog;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @NacosApi
 @RestController
+@ConditionalOnArdEnabled
 @RequestMapping(Constants.ARD_WELL_KNOWN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
 public class ArdWellKnownController {

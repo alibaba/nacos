@@ -78,12 +78,6 @@ public final class ExecutorUtils {
             resolveAgentSpecStorageIoConcurrency(),
             new NameThreadFactory("com.alibaba.nacos.ai.agentspec.storage-io"));
     
-    private static final ExecutorService ARD_INDEX_ENHANCEMENT_EXECUTOR =
-        ExecutorFactory.Managed.newFixedExecutorService(
-            ExecutorUtils.class.getCanonicalName(),
-            resolveArdIndexEnhancementConcurrency(),
-            new NameThreadFactory("com.alibaba.nacos.ai.ard-index-enhancement"));
-    
     /**
      * Executor for async storage IO of skill resources.
      */
@@ -102,7 +96,7 @@ public final class ExecutorUtils {
      * Executor for async ARD index enhancement.
      */
     public static ExecutorService getArdIndexEnhancementExecutor() {
-        return ARD_INDEX_ENHANCEMENT_EXECUTOR;
+        return ArdIndexEnhancementExecutorHolder.INSTANCE;
     }
     
     private static int resolveSkillStorageIoConcurrency() {
@@ -133,5 +127,14 @@ public final class ExecutorUtils {
         } catch (Exception ignored) {
             return DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY;
         }
+    }
+    
+    private static class ArdIndexEnhancementExecutorHolder {
+        
+        private static final ExecutorService INSTANCE =
+            ExecutorFactory.Managed.newFixedExecutorService(
+                ExecutorUtils.class.getCanonicalName(),
+                resolveArdIndexEnhancementConcurrency(),
+                new NameThreadFactory("com.alibaba.nacos.ai.ard-index-enhancement"));
     }
 }

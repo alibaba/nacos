@@ -37,6 +37,8 @@ public class Constants {
     
     public static final String ARD_WELL_KNOWN_PATH = "/.well-known";
     
+    public static final String ARD_ENABLED_KEY = "nacos.ai.ard.enabled";
+    
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
     public static final String MCP_LIST_SEARCH_BLUR = "blur";

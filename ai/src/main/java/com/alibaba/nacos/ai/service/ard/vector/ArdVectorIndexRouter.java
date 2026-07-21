@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard.vector;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
@@ -40,6 +41,7 @@ import java.util.Map;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBean {
     
     public static final String KEY_VECTOR_PROVIDER = "nacos.ai.ard.vector.provider";

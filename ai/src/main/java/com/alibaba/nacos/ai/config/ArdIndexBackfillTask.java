@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author nacos
  */
 @Component
+@ConditionalOnArdEnabled
 public class ArdIndexBackfillTask implements ApplicationListener<ApplicationReadyEvent> {
     
     static final String BACKFILL_ENABLED_KEY = "nacos.ai.ard.index.backfill.enabled";

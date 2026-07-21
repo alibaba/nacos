@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -54,6 +55,7 @@ import java.util.concurrent.Executor;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ArdIndexBuildServiceImpl.class);

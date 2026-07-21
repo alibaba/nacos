@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
@@ -44,6 +45,7 @@ import java.util.Map;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
     
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";

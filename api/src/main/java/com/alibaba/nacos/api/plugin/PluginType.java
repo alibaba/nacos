@@ -55,7 +55,7 @@ public enum PluginType {
      */
     ENVIRONMENT("environment", "Environment plugin", PluginExecutionMode.CHAIN, false,
         PluginInitializationPhase.PRE_CONTEXT),
-    
+
     /**
      * Control plugin.
      */
@@ -79,8 +79,7 @@ public enum PluginType {
     /**
      * AI ARD vector index plugin.
      */
-    AI_VECTOR("ai-vector", "AI ARD vector index plugin"),
-
+    AI_VECTOR("ai-vector", "AI ARD vector index plugin", PluginExecutionMode.ROUTED, false),
     /**
      * AI resource import plugin.
      */

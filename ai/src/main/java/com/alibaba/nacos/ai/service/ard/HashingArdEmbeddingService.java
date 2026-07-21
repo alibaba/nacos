@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import java.util.zip.CRC32;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class HashingArdEmbeddingService implements ArdEmbeddingService {
     
     private static final String MODEL = "nacos-local-hashing-embedding-v1";

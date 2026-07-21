@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -43,6 +44,7 @@ import java.util.Map;
  * @author nacos
  */
 @Service
+@ConditionalOnArdEnabled
 public class OpenAiCompatibleArdIndexEnhancementService implements ArdIndexEnhancementService {
     
     static final String KEY_ENABLED = "nacos.ai.ard.index.enhancement.enabled";

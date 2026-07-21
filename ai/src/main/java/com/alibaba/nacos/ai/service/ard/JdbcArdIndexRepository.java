@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
+import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
@@ -42,6 +43,7 @@ import java.util.Locale;
  * @author nacos
  */
 @Repository
+@ConditionalOnArdEnabled
 public class JdbcArdIndexRepository implements ArdIndexRepository {
     
     private static final String SQL_INSERT_ENTRY = "INSERT INTO ai_resource_ard_entry "
