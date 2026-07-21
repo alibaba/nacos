@@ -58,7 +58,7 @@ class IdentityContextTest {
             identityContext.getParameter(TEST, null);
         });
     }
-
+    
     @Test
     void testContainsParameter() {
         assertFalse(identityContext.containsParameter(TEST));
