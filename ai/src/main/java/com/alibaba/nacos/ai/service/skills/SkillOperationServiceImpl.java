@@ -232,8 +232,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         
         result.setExists(true);
+        result.setOwner(meta.getOwner());
         try {
-            VisibilityHelper.checkWritableResource(meta);
+            checkWritableUploadResource(meta);
             result.setWritable(true);
         } catch (NacosException e) {
             if (e.getErrCode() != NacosException.NO_RIGHT) {
@@ -320,7 +321,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 result.addSucceeded(skillName);
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
-                result.addFailed(skillName != null ? skillName : "unknown", e.getMessage());
+                String owner = null;
+                if (e instanceof NacosException
+                    && ((NacosException) e).getErrCode() == NacosException.NO_RIGHT
+                    && StringUtils.isNotBlank(skillName)) {
+                    AiResource meta = resourceManager.findMeta(namespaceId, skillName,
+                        RESOURCE_TYPE_SKILL);
+                    if (meta != null) {
+                        owner = meta.getOwner();
+                    }
+                }
+                result.addFailed(skillName != null ? skillName : "unknown", owner,
+                    e.getMessage());
             }
         }
         return result;
@@ -337,7 +349,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta != null) {
-            VisibilityHelper.checkWritableResource(meta);
+            checkWritableUploadResource(meta);
         }
         String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersion);
         if (StringUtils.isBlank(uploadAction)) {
@@ -360,6 +372,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         throw new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
+    }
+    
+    private void checkWritableUploadResource(AiResource meta) throws NacosException {
+        try {
+            VisibilityHelper.checkWritableResource(meta);
+        } catch (NacosException e) {
+            if (e.getErrCode() != NacosException.NO_RIGHT || StringUtils.isBlank(meta.getOwner())) {
+                throw e;
+            }
+            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                e.getErrMsg() + ", owner: " + meta.getOwner());
+        }
     }
     
     /**
@@ -429,7 +453,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return name;
         }
         
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         AiResourceManager.ensureNoWorkingVersion(info, "upload");
         
@@ -460,7 +484,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return name;
         }
         
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         ensureNoReviewingVersion(info, "overwrite upload");
         String editing = info.getEditingVersion();
@@ -493,7 +517,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "No editing draft to delete: " + name);
         }
-        VisibilityHelper.checkWritableResource(meta);
+        checkWritableUploadResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         ensureNoReviewingVersion(info, "replace upload draft");
         if (StringUtils.isBlank(info.getEditingVersion())) {

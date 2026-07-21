@@ -56,6 +56,8 @@ public class SkillUploadPrecheckResult {
     
     private String description;
     
+    private String owner;
+    
     private String parsedVersion;
     
     private String resolvedVersion;
@@ -108,6 +110,14 @@ public class SkillUploadPrecheckResult {
     
     public void setDescription(String description) {
         this.description = description;
+    }
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
     
     public String getParsedVersion() {

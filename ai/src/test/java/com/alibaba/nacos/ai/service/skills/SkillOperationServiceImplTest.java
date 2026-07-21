@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
@@ -77,6 +78,7 @@ import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -641,6 +643,45 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testBatchPrecheckUploadSkillReportsOwnerForForbiddenExistingSkill() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "protected-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("attackerUser");
+        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
+        request.setNamespaceId(namespaceId);
+        request.setSkillName(skillName);
+        
+        List<SkillUploadPrecheckResult> results =
+            skillOperationService.batchPrecheckUploadSkill(List.of(request));
+        
+        assertEquals(1, results.size());
+        SkillUploadPrecheckResult result = results.get(0);
+        assertEquals(SkillUploadPrecheckResult.STATUS_FORBIDDEN, result.getStatus());
+        assertEquals("ownerUser", result.getOwner());
+        assertTrue(result.getConflictTypes()
+            .contains(SkillUploadPrecheckResult.CONFLICT_NO_PERMISSION));
+        assertFalse(result.getErrors().isEmpty());
+    }
+    
+    @Test
     void testUploadSkillFromZipWithShortVersionOverwritesExistingDraft()
         throws NacosException, IOException {
         String namespaceId = "test-namespace";
@@ -935,6 +976,23 @@ class SkillOperationServiceImplTest {
         return baos.toByteArray();
     }
     
+    private byte[] createMultiSkillZipBytes() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                + "name: test-skill\n"
+                + "description: Test skill description\n"
+                + "version: 3.0.6\n"
+                + "---\n\n"
+                + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+    
     private byte[] createZipBytesWithWrapperDirectoryResources() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -1150,6 +1208,65 @@ class SkillOperationServiceImplTest {
             org.mockito.ArgumentCaptor.forClass(AiResource.class);
         verify(aiResourcePersistService).insert(captor.capture());
         assertEquals("creatorUser", captor.getValue().getOwner());
+    }
+    
+    @Test
+    void testUploadSkillDeniedByWriteFilterReportsOwner() throws IOException {
+        String namespaceId = "test-ns";
+        AiResource meta = new AiResource();
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("attackerUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> uploadSkill(namespaceId, createValidZipBytes()));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("ownerUser"));
+    }
+    
+    @Test
+    void testBatchUploadDeniedByWriteFilterReportsOwner() throws IOException, NacosException {
+        String namespaceId = "test-ns";
+        AiResource meta = new AiResource();
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE),
+            anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("attackerUser");
+        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId,
+            createMultiSkillZipBytes(), false);
+        
+        assertEquals(1, result.getFailed().size());
+        assertEquals("test-skill", result.getFailed().get(0).getName());
+        assertEquals("ownerUser", result.getFailed().get(0).getOwner());
+        assertTrue(result.getFailed().get(0).getReason().contains("No permission"));
     }
     
     @Test
