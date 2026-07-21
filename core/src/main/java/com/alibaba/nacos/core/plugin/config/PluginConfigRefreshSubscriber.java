@@ -57,6 +57,7 @@ public class PluginConfigRefreshSubscriber extends Subscriber<ServerConfigChange
     
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
+        pluginManager.refreshPluginTypePolicies();
         pluginManager.refreshStaticPluginConfigs();
     }
     

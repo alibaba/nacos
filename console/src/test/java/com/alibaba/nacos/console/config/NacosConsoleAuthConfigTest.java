@@ -51,17 +51,19 @@ class NacosConsoleAuthConfigTest {
     void resetConfig() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, "true");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "oidc");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "identityKey");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE,
             "identityValue");
         NacosConsoleAuthConfig config = new NacosConsoleAuthConfig();
         assertTrue(config.isAuthEnabled());
-        assertEquals("nacos", config.getNacosAuthSystemType());
+        assertEquals("oidc", config.getNacosAuthSystemType());
         assertTrue(config.isSupportServerIdentity());
         assertEquals("identityKey", config.getServerIdentityKey());
         assertEquals("identityValue", config.getServerIdentityValue());
         
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, "false");
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");

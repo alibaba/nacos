@@ -103,6 +103,14 @@ The legacy `nacos.core.auth.system.type` key remains a startup alias. Selection
 is static and requires restart; the runtime status API must not switch auth
 implementations.
 
+The auth plugin type is an active critical dependency when any of
+`nacos.core.auth.enabled`, `nacos.core.auth.admin.enabled`, or
+`nacos.core.auth.console.enabled` is enabled. It is also active when an auth type is explicitly
+configured while all three request-entry switches are disabled. The latter preloads and applies the
+selected plugin so an operator may verify client identities before enabling an auth scope through a
+server configuration refresh. Startup must fail clearly when the selected implementation is not
+discovered; it must not fall back to another auth implementation.
+
 ## Identity Context
 
 `IdentityContext` is the transport-neutral caller description. It may contain:

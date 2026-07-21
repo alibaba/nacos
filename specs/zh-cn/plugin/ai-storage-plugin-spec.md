@@ -128,6 +128,16 @@ nacos.ai.agent.storage.provider=nacos_config
 
 它们属于领域路由策略，不是 `ai-storage:nacos_config` 所拥有的私有配置 definitions。
 
+AI 模块 active 时，为 Prompt、Skill、AgentSpec 分别选择的所有 provider 都是该 critical
+路由类型的必需实现；同一 provider 可以同时满足多个领域。Nacos 启动成功前，每个去重后的
+选中 provider 都必须已被发现且处于 enabled 状态，另一个可用 provider 不能作为 fallback。
+AI 模块因 function mode 或 `nacos.extension.ai.enabled=false` 关闭时，AI storage 为 inactive，
+不产生启动约束。
+
+AI storage 实现需要在 context refresh 期间使用 Spring 管理的服务完成构建，因此该类型不参与
+pre-refresh critical 校验。storage builder 注册完实例后，统一插件管理器必须立即执行相同的
+provider 级校验，并且必须在 Nacos 报告启动成功前完成。
+
 内置 provider 没有私有配置，不实现 `PluginConfigSpec`，并以 `configurable=false` 暴露。
 拥有私有配置的 `AiResourceStorage` 构建结果可以实现 `PluginConfigSpec`，并声明以下标准 key：
 

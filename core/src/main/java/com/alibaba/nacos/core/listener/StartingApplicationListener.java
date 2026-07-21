@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import com.alibaba.nacos.core.plugin.PluginCriticalBootstrapValidator;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -59,7 +60,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-        NacosStartUpManager.getCurrentStartUp().customEnvironment();
+        NacosStartUp currentStartUp = NacosStartUpManager.getCurrentStartUp();
+        currentStartUp.customEnvironment();
+        if (NacosStartUp.CORE_START_UP_PHASE.equals(currentStartUp.startUpPhase())
+            && EnvUtil.getDeploymentType() != null) {
+            PluginCriticalBootstrapValidator.validate();
+        }
     }
     
     @Override

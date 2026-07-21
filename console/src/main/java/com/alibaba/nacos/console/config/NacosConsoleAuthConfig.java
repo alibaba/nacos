@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.auth.AuthPluginTypeResolver;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -86,7 +87,7 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
     protected void getConfigFromEnv() {
         authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED,
             Boolean.class, true);
-        nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+        nacosAuthSystemType = AuthPluginTypeResolver.resolve();
         serverIdentityKey =
             EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
         serverIdentityValue =

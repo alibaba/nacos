@@ -153,6 +153,9 @@ public class Constants {
         
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
         
+        public static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.skill.storage.provider";
+        
         /**
          * Resource type constant used in {@code ai_resource_version.type} for skill rows.
          */
@@ -296,6 +299,9 @@ public class Constants {
          * Default namespace for prompt.
          */
         public static final String PROMPT_DEFAULT_NAMESPACE = "public";
+        
+        public static final String PROMPT_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.prompt.storage.provider";
         
         /**
          * Config type for prompt.

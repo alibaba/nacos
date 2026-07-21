@@ -163,6 +163,43 @@ Core module switches and plugin state are separate layers. Module switches such 
 They are not implementation configuration and must not be modified by the plugin management API.
 A plugin may remain loaded, enabled, and initialized while its owning core module is disabled.
 
+Each managed plugin type may provide one internal `PluginTypePolicy`. The policy is owned by the
+domain module rather than by the core plugin manager, and defines:
+
+- whether the domain currently requires the plugin type;
+- the initial enabled state of each discovered implementation;
+- the concrete implementation names required while a critical type is active;
+- the selection property and activation reason used in diagnostics.
+
+The core initializes every policy once before plugin discovery. Selection and provider properties
+with `RESTART` semantics must be captured during that initialization; later server configuration
+refreshes may re-evaluate dynamic module activation switches, but must not change the required
+implementation until Nacos restarts.
+
+`PluginType.isCritical()` remains the single static declaration that a type can be required for
+correct server operation. A critical type is enforced only while its domain policy is active. The
+core manager performs the generic validation; it must not contain type-specific property keys or
+selection branches.
+
+Before Nacos reports startup success, every active critical type must have all concrete
+implementations required by its policy discovered and enabled. A missing implementation, a missing
+selection for an active exclusive type, or a disabled required implementation is a startup error.
+The error must identify the plugin type, required implementation, and relevant selection
+configuration. Nacos must not silently select or re-enable an arbitrary fallback implementation.
+
+Policies whose providers expose usable instances before the Spring context refreshes must support
+pre-refresh validation so missing auth or datasource implementations fail before dependent business
+beans are created. A policy whose implementations require Spring-managed resources to be built must
+declare that pre-refresh validation is unsupported; the unified manager validates that type after
+context refresh and still before Nacos reports startup success. Deferring this validation must not
+weaken the required implementation or enabled-state checks.
+
+The same validation runs before an accepted runtime state change, after restoring a state snapshot,
+and after server configuration refresh changes whether a policy is active. A failed validation
+keeps the proposed plugin state unapplied. `critical` in plugin detail describes whether that
+specific enabled implementation is currently required, not merely whether its type can ever be
+critical.
+
 Built-in switches audited during the unified-state migration are classified as follows:
 
 | Configuration | Ownership and migration behavior |
@@ -218,14 +255,13 @@ gates a core module or domain capability, the owning domain continues to read it
 implementation state must not bypass it. All enabled chain and broadcast implementations
 participate, while routed types may select only from enabled candidates.
 
-`critical=true` means that an active plugin type must retain at least one usable implementation; it
-does not make every built-in implementation permanently non-disableable. The current critical types
-are `auth`, `datasource-dialect`, and `ai-storage`. Once implementations of a critical type are loaded,
-a critical exclusive type must have one selected implementation and critical chain, broadcast, or
-routed types must retain at least one enabled implementation. The owning module remains responsible
-for rejecting startup when that module is enabled but no implementation can be loaded. This keeps
-module switches in the core domain rather than in plugin state. The management API must reject
-updates that would leave a loaded critical type without any usable implementation.
+`critical=true` means that an active plugin type must retain its policy-required usable
+implementations; it does not make every built-in implementation permanently non-disableable. The
+current critical types are `auth`, `datasource-dialect`, and `ai-storage`. The owning domain policy
+decides when the type is active and which concrete implementations are required, while the core
+manager rejects startup when those implementations are missing or disabled. The management API
+must also reject updates that would leave an active critical type without its required usable
+implementations. Module switches remain owned by the core domain rather than by plugin state.
 
 The existing response field `critical` continues to mean that the concrete implementation cannot
 currently be disabled by itself, so it may change as peer implementation states change. List and

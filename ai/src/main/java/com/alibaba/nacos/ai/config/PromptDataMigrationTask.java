@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.config;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.prompt.PromptOperationService;
@@ -83,9 +84,6 @@ public class PromptDataMigrationTask implements ApplicationListener<ApplicationR
     private static final String META_STATUS_ENABLE = "enable";
     
     private static final String STORAGE_PROVIDER_NACOS_CONFIG = "nacos_config";
-    
-    private static final String PROMPT_STORAGE_PROVIDER_CONFIG_KEY =
-        "nacos.ai.prompt.storage.provider";
     
     private static final String MIGRATION_ENABLED_KEY = "nacos.ai.prompt.migration.enabled";
     
@@ -477,7 +475,8 @@ public class PromptDataMigrationTask implements ApplicationListener<ApplicationR
     
     private static String resolveStorageProvider() {
         String provider =
-            EnvUtil.getProperty(PROMPT_STORAGE_PROVIDER_CONFIG_KEY, STORAGE_PROVIDER_NACOS_CONFIG);
+            EnvUtil.getProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
+                STORAGE_PROVIDER_NACOS_CONFIG);
         return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
     }
 }

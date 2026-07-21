@@ -102,9 +102,9 @@ legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部�
 方言 selector 只提供启动选择并需要重启生效。该互斥类型的持久化状态不能替代静态选择，
 运行时 status API 必须拒绝选择变更。
 
-如果请求的方言被禁用，启动或持久化操作必须显式失败。如果请求的方言缺失，当前 manager
-会查找其他已启用方言并记录 fallback。该 fallback 属于兼容行为；新部署应明确配置受支持的
-SQL platform。
+持久化子系统始终使该 critical 类型处于 active 状态。如果请求的方言被禁用或缺失，启动
+必须显式失败，并明确记录选中的方言和选择配置。服务端不得 fallback 到另一个已发现方言后
+继续启动。
 
 当前 `DatabaseDialectManager` 在返回 dialect 前，会检查
 `datasource-dialect:{databaseType}` 的统一插件状态。被禁用的 dialect 不得参与持久化
