@@ -87,7 +87,7 @@ The datasource-dialect type is critical while loaded. The selected built-in
 dialect cannot be disabled through runtime plugin state, but another bundled
 dialect is not individually critical merely because it is present.
 
-Built-in dialect implementations do not own datasource connection or pool
-configuration and do not implement `PluginConfigSpec`. They are exposed as
-`configurable=false`; datasource module configuration is defined by the parent
-dialect plugin spec.
+Built-in dialect implementations do not own datasource connection or pool configuration. They
+inherit `PluginConfigSpec` through `DatabaseDialect` but declare no definitions, so they are exposed
+as `configurable=false`; datasource module configuration is defined by the parent dialect plugin
+spec.

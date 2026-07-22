@@ -138,8 +138,9 @@ AI storage 实现需要在 context refresh 期间使用 Spring 管理的服务�
 pre-refresh critical 校验。storage builder 注册完实例后，统一插件管理器必须立即执行相同的
 provider 级校验，并且必须在 Nacos 报告启动成功前完成。
 
-内置 provider 没有私有配置，不实现 `PluginConfigSpec`，并以 `configurable=false` 暴露。
-拥有私有配置的 `AiResourceStorage` 构建结果可以实现 `PluginConfigSpec`，并声明以下标准 key：
+`AiResourceStorage` 统一继承 `PluginConfigSpec`。内置 provider 没有私有配置、不声明
+definitions，并以 `configurable=false` 暴露。拥有私有配置的构建结果通过继承契约声明
+definitions 和配置回调，并使用以下标准 key：
 
 ```properties
 nacos.plugin.ai-storage.{provider}.{itemKey}

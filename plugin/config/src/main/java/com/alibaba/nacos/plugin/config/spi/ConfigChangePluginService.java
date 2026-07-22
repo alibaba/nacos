@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.config.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeExecuteTypes;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
@@ -27,7 +28,7 @@ import com.alibaba.nacos.plugin.config.model.ConfigChangeResponse;
  *
  * @author liyunfei
  */
-public interface ConfigChangePluginService {
+public interface ConfigChangePluginService extends PluginConfigSpec {
     
     /**
      * execute config change plugin service.

@@ -167,10 +167,10 @@ type does not participate in pre-refresh critical validation. The unified plugin
 the same provider-specific validation immediately after the storage builders register their
 instances and before Nacos reports startup success.
 
-The built-in provider has no private configuration, does not implement
-`PluginConfigSpec`, and is exposed as `configurable=false`. A built
-`AiResourceStorage` implementation that owns private configuration may
-implement `PluginConfigSpec` and declare canonical keys under:
+`AiResourceStorage` extends `PluginConfigSpec`. The built-in provider has no private configuration,
+declares no definitions, and is exposed as `configurable=false`. A built storage implementation
+that owns private configuration declares definitions and callbacks through the inherited contract,
+using canonical keys under:
 
 ```properties
 nacos.plugin.ai-storage.{provider}.{itemKey}

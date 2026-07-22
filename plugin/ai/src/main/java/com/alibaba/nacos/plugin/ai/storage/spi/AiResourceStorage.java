@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.ai.storage.spi;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 
 /**
@@ -30,7 +31,7 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
  * @author mosong.lp
  * @since 3.2.0
  */
-public interface AiResourceStorage {
+public interface AiResourceStorage extends PluginConfigSpec {
     
     /**
      * Type identifier, corresponding to {@link StorageKey#getProvider()}.

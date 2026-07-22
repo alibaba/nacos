@@ -75,5 +75,6 @@ Nacos 从 `nacos.plugin.datasource-dialect.type` 选择启动数据库类型。
 `datasource-dialect` 类型加载后属于 critical。当前选中的内置方言不能通过运行时插件状态
 禁用，但其他已加载内置方言不会仅因存在就分别成为 critical。
 
-内置方言实现不持有数据源连接或连接池配置，也不实现 `PluginConfigSpec`，因此以
-`configurable=false` 暴露。Datasource 模块配置由上层数据源方言插件规范定义。
+内置方言实现不持有数据源连接或连接池配置。它们通过 `DatabaseDialect` 继承
+`PluginConfigSpec`，但不声明 definitions，因此以 `configurable=false` 暴露。Datasource
+模块配置由上层数据源方言插件规范定义。

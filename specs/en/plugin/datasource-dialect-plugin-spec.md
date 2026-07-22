@@ -156,10 +156,10 @@ the database driver. They are standardized under the following module prefix:
 nacos.plugin.datasource.db.{item}
 ```
 
-This namespace does not make a database dialect configurable. The built-in
-`datasource-dialect:{databaseType}` instances still expose
-`configurable=false`, because connection credentials and pool settings belong
-to one server datasource rather than to each loaded dialect. These settings are
+This namespace does not make a database dialect configurable. `DatabaseDialect` inherits the common
+configuration contract, but the built-in `datasource-dialect:{databaseType}` instances declare no
+definitions and still expose `configurable=false`, because connection credentials and pool settings
+belong to one server datasource rather than to each loaded dialect. These settings are
 static, take effect on restart, and are not accepted by the plugin detail/PUT
 configuration API. A future management surface must first define one unique
 datasource configuration owner instead of copying the same credentials into

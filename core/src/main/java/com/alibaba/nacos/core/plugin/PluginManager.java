@@ -399,9 +399,11 @@ public class PluginManager
         // Check if plugin supports configuration
         if (instance instanceof PluginConfigSpec) {
             PluginConfigSpec configSpec = (PluginConfigSpec) instance;
-            info.setConfigurable(true);
-            info.setConfigDefinitions(configSpec.getConfigDefinitions());
-            info.setConfig(configSpec.getCurrentConfig());
+            info.setConfigurable(configSpec.isConfigurable());
+            if (info.isConfigurable()) {
+                info.setConfigDefinitions(configSpec.getConfigDefinitions());
+                info.setConfig(configSpec.getCurrentConfig());
+            }
         }
         
         pluginRegistry.put(pluginId, info);

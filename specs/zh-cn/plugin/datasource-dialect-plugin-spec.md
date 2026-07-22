@@ -133,9 +133,9 @@ nacos.plugin.datasource-dialect.type=${databaseType}
 nacos.plugin.datasource.db.{item}
 ```
 
-该命名空间不会让数据库方言变为可配置插件。内置
-`datasource-dialect:{databaseType}` 仍以 `configurable=false` 暴露，因为连接凭据和连接池
-参数属于服务端唯一数据源，而不是分别属于每个已加载方言。这些配置均为静态配置，只在重启后
+该命名空间不会让数据库方言变为可配置插件。`DatabaseDialect` 虽继承统一配置契约，但内置
+`datasource-dialect:{databaseType}` 不声明 definitions，仍以 `configurable=false` 暴露，
+因为连接凭据和连接池参数属于服务端唯一数据源，而不是分别属于每个已加载方言。这些配置均为静态配置，只在重启后
 生效，当前不进入插件 detail/PUT 配置 API。未来若要提供统一管理入口，必须先定义唯一的
 datasource 配置 owner，不能把同一份凭据复制到所有方言。
 

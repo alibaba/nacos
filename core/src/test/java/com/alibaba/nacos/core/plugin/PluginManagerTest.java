@@ -55,6 +55,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -588,6 +589,20 @@ class PluginManagerTest {
         assertTrue(info.isConfigurable());
         assertEquals(plugin.getConfigDefinitions(), info.getConfigDefinitions());
         assertEquals(plugin.getCurrentConfig(), info.getConfig());
+    }
+    
+    @Test
+    void registerPluginKeepsZeroConfigSpecNonConfigurableTest() {
+        PluginConfigSpec plugin = new PluginConfigSpec() {
+        };
+        
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "zero-config", plugin);
+        
+        PluginInfo info = manager.getPlugin("trace:zero-config").get();
+        assertFalse(info.isConfigurable());
+        assertNull(info.getConfigDefinitions());
+        assertNull(info.getConfig());
     }
     
     @Test

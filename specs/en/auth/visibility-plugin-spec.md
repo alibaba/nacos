@@ -137,19 +137,20 @@ implementation state comes from the compatibility selector
 precedence over both, but cannot override the family-wide gate.
 Implementation-level runtime changes use the plugin management API.
 
-The built-in `visibility:nacos` implementation has no private configuration,
-does not implement `PluginConfigSpec`, and is exposed as `configurable=false`.
+`VisibilityService` extends `PluginConfigSpec`. The built-in `visibility:nacos` implementation has
+no private configuration, declares no definitions, and is exposed as `configurable=false`.
 An external implementation may own properties under:
 
 ```properties
 nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-Legacy implementations that do not implement `PluginConfigSpec` receive their
-service-local properties once through `VisibilityService.init(Properties)`.
+Legacy implementations compiled against the older SPI, and implementations that declare no
+definitions, receive their service-local properties once through
+`VisibilityService.init(Properties)`.
 Use of non-empty legacy properties emits a migration warning without logging
-configuration values. For an implementation that implements `PluginConfigSpec`,
-the visibility manager must not invoke the legacy callback; the core plugin
+configuration values. When an implementation reports `isConfigurable()=true`, the visibility
+manager must not invoke the legacy callback; the core plugin
 manager's unified `applyConfig` lifecycle is its only configuration application
 path. Such implementations declare their own definitions and receive unified
 source, metadata, masking, and update semantics.

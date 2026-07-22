@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
@@ -515,17 +514,17 @@ class ConfigChangeAspectTest {
     }
     
     @Test
-    void testPluginConfigSpecUsesCurrentEffectiveConfig() throws Throwable {
+    void testConfigurablePluginUsesCurrentEffectiveConfig() throws Throwable {
         ConfigChangePluginManager.reset();
-        ConfigChangePluginService configurableService = Mockito.mock(
-            ConfigChangePluginService.class,
-            Mockito.withSettings().extraInterfaces(PluginConfigSpec.class));
+        ConfigChangePluginService configurableService =
+            Mockito.mock(ConfigChangePluginService.class);
         Mockito.when(configurableService.getServiceType()).thenReturn("configurable");
         Mockito.when(configurableService.pointcutMethodNames())
             .thenReturn(ConfigChangePointCutTypes.values());
         Mockito.when(configurableService.executeType())
             .thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
-        Mockito.when(((PluginConfigSpec) configurableService).getCurrentConfig())
+        Mockito.when(configurableService.isConfigurable()).thenReturn(true);
+        Mockito.when(configurableService.getCurrentConfig())
             .thenReturn(Collections.singletonMap("endpoint", "runtime-endpoint"));
         ConfigChangePluginManager.join(configurableService);
         

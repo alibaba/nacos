@@ -96,8 +96,8 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 
 执行形态和关键能力属于插件类型，而不是某个内置实现。共享 `PluginType` 必须暴露
 `executionMode` 和 `critical`；已有 `exclusive` 信息继续由
-`executionMode == EXCLUSIVE` 推导，以保持 API 兼容。插件实现是否可配置则由该实例是否
-实现 `PluginConfigSpec` 决定，同一插件类型下允许同时存在可配置和零配置实现。
+`executionMode == EXCLUSIVE` 推导，以保持 API 兼容。插件实现是否可配置由
+`PluginConfigSpec.isConfigurable()` 决定，同一插件类型下允许同时存在可配置和零配置实现。
 
 ## SPI 层次
 
@@ -107,8 +107,13 @@ Nacos 插件包含两个相关的 SPI 层次：
 2. 核心插件 SPI，即 `PluginProvider`，将插件实例暴露给核心插件管理器，用于列表查询、
    状态管理、配置管理和运行时观测。
 
-需要动态配置的插件应实现 `PluginConfigSpec`。支持启停状态判断的插件类别，应通过
-`PluginStateCheckerHolder` 获取状态，而不是维护一套独立状态来源。
+已接入统一配置的领域插件 SPI 统一继承 `PluginConfigSpec`。该契约的兼容默认实现返回空
+definitions、空 current map，并提供空 apply 回调，因此按旧版领域 SPI 编译的实现和新版
+零配置实现都会保持 `configurable=false`。声明至少一个 `ConfigItemDefinition` 的插件属于
+可配置实现，必须实现 current-map 和 apply 回调。`environment`、`control` 在统一 bootstrap
+配置生命周期完成设计前继续作为例外；`ai-resource-import` 在自身重构前仍不进入统一管理。
+支持启停状态判断的插件类别，应通过 `PluginStateCheckerHolder` 获取状态，而不是维护一套
+独立状态来源。
 
 `PluginConfigDefinitionSpec` 是仅暴露 definitions 的父契约，供必须在创建实例之前声明
 配置元数据的 factory 使用。参与统一配置生命周期的运行时插件实例仍必须实现完整的
@@ -233,7 +238,8 @@ nacos.plugin.{pluginType}.{pluginName}.enabled=true|false
 实现的状态动态变化。列表和详情响应追加 `typeCritical` 和 `executionMode`；已有
 `exclusive` 字段保留并从执行形态推导。
 
-实现 `PluginConfigSpec` 的插件应暴露配置定义、当前配置和配置应用行为。除非请求明确
+`PluginConfigSpec.isConfigurable()` 返回 `true` 的插件应暴露配置定义、当前配置和配置应用
+行为；默认实现仅在 `getConfigDefinitions()` 非空且非空列表时返回 `true`。除非请求明确
 声明为仅本机生效，否则集群级状态或配置变更必须通过插件状态操作链路进行同步。
 
 ### 配置定义
