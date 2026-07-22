@@ -95,14 +95,14 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
         return properties.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)
             && isAnonymousAccessEnabled();
     }
-
+    
     private boolean hasExplicitCredential(IdentityContext identityContext) {
         return identityContext.containsParameter(AuthConstants.AUTHORIZATION_HEADER)
             || identityContext.containsParameter(Constants.ACCESS_TOKEN)
             || identityContext.containsParameter(AuthConstants.PARAM_USERNAME)
             || identityContext.containsParameter(AuthConstants.PARAM_PASSWORD);
     }
-
+    
     /**
      * Whether this concrete plugin currently accepts the reserved anonymous identity.
      *
