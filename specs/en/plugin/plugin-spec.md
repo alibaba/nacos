@@ -205,6 +205,14 @@ keeps the proposed plugin state unapplied. `critical` in plugin detail describes
 specific enabled implementation is currently required, not merely whether its type can ever be
 critical.
 
+The `plugin_state` consensus group may restore a snapshot while the Spring context is still being
+created, before the unified manager has discovered implementations. In that phase, the manager
+must validate the snapshot value format and stage or persist the complete state without treating
+an empty registry as a missing critical implementation. Unified startup then discovers providers,
+merges the staged state, and performs the same strict critical validation before Nacos reports
+startup success. Snapshot restoration after manager initialization continues to validate the
+candidate final state before applying it.
+
 Built-in switches audited during the unified-state migration are classified as follows:
 
 | Configuration | Ownership and migration behavior |

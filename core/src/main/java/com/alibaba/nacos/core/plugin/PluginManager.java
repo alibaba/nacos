@@ -480,13 +480,21 @@ public class PluginManager
      * @param states restored plugin states
      */
     public synchronized void restorePluginStates(Map<String, Boolean> states) {
+        for (Map.Entry<String, Boolean> entry : states.entrySet()) {
+            if (entry.getValue() == null) {
+                throw new IllegalArgumentException(
+                    "Enabled state cannot be null for plugin: " + entry.getKey());
+            }
+        }
+        if (!initialized) {
+            states.forEach(persistence::saveState);
+            LOGGER.info("[PluginManager] Staged {} plugin states restored before plugin "
+                + "discovery; critical validation will run during initialization.", states.size());
+            return;
+        }
         Map<String, Boolean> targetStates = new HashMap<>();
         pluginRegistry.forEach((pluginId, info) -> targetStates.put(pluginId, info.isEnabled()));
         states.forEach((pluginId, enabled) -> {
-            if (enabled == null) {
-                throw new IllegalArgumentException(
-                    "Enabled state cannot be null for plugin: " + pluginId);
-            }
             PluginInfo info = pluginRegistry.get(pluginId);
             if (info == null) {
                 return;
