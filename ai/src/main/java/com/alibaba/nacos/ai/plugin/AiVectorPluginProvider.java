@@ -16,22 +16,30 @@
 
 package com.alibaba.nacos.ai.plugin;
 
-import com.alibaba.nacos.ai.service.ard.vector.ArdVectorIndexRouter;
 import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorIndexRegistry;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.BeansException;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
- * Bridges configured ARD vector index plugin to {@link com.alibaba.nacos.core.plugin.PluginManager}.
+ * Bridges installed ARD vector index plugins to
+ * {@link com.alibaba.nacos.core.plugin.PluginManager}.
  *
  * @author nacos
  */
 public class AiVectorPluginProvider implements PluginProvider<AiResourceVectorIndex> {
+    
+    private final AiResourceVectorIndexRegistry registry;
+    
+    public AiVectorPluginProvider() {
+        this(AiResourceVectorIndexRegistry.getInstance());
+    }
+    
+    AiVectorPluginProvider(AiResourceVectorIndexRegistry registry) {
+        this.registry = registry;
+    }
     
     @Override
     public PluginType getPluginType() {
@@ -40,13 +48,6 @@ public class AiVectorPluginProvider implements PluginProvider<AiResourceVectorIn
     
     @Override
     public Map<String, AiResourceVectorIndex> getAllPlugins() {
-        if (ApplicationUtils.getApplicationContext() == null) {
-            return Collections.emptyMap();
-        }
-        try {
-            return ApplicationUtils.getBean(ArdVectorIndexRouter.class).allIndexes();
-        } catch (BeansException | IllegalStateException ignored) {
-            return Collections.emptyMap();
-        }
+        return registry.getAllIndexes();
     }
 }

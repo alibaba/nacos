@@ -19,12 +19,11 @@ package com.alibaba.nacos.ai.service.ard.vector;
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
+import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorIndexRegistry;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
-import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndexBuilder;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +32,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Routes ARD vector operations to the configured vector index plugin.
@@ -59,12 +55,12 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
     private final String provider;
     
     public ArdVectorIndexRouter() {
-        this(NacosServiceLoader.load(AiResourceVectorIndexBuilder.class), null);
+        this(AiResourceVectorIndexRegistry.getInstance().getAllIndexes(), null);
     }
     
-    ArdVectorIndexRouter(Collection<AiResourceVectorIndexBuilder> builders,
+    ArdVectorIndexRouter(Map<String, AiResourceVectorIndex> indexes,
         String providerOverride) {
-        this.indexes = Collections.unmodifiableMap(loadIndexes(builders));
+        this.indexes = indexes;
         this.provider = resolveProvider(providerOverride);
         if (indexes.containsKey(provider)) {
             LOGGER.info("Using ARD vector index provider: {}", provider);
@@ -124,15 +120,6 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         return indexes.getOrDefault(provider, NoopAiResourceVectorIndex.INSTANCE);
     }
     
-    /**
-     * Return all loaded vector index plugins for plugin manager discovery.
-     *
-     * @return loaded vector index plugins by provider name
-     */
-    public Map<String, AiResourceVectorIndex> allIndexes() {
-        return indexes;
-    }
-    
     private String resolveProvider(String providerOverride) {
         if (StringUtils.isNotBlank(providerOverride)) {
             return providerOverride;
@@ -146,40 +133,6 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
         } catch (Exception ignored) {
             return DEFAULT_VECTOR_PROVIDER;
         }
-    }
-    
-    private Map<String, AiResourceVectorIndex> loadIndexes(
-        Collection<AiResourceVectorIndexBuilder> builders) {
-        Map<String, AiResourceVectorIndex> result = new LinkedHashMap<>();
-        Set<String> providerTypes = new LinkedHashSet<>();
-        if (builders == null) {
-            return result;
-        }
-        for (AiResourceVectorIndexBuilder builder : builders) {
-            if (builder == null || StringUtils.isBlank(builder.type())) {
-                throw new IllegalStateException(
-                    "ARD vector index provider type must not be empty.");
-            }
-            String type = builder.type().trim();
-            if (!providerTypes.add(type)) {
-                throw new IllegalStateException(
-                    "Duplicate ARD vector index provider type: " + type);
-            }
-            AiResourceVectorIndex index;
-            try {
-                index = builder.build();
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed to build ARD vector index provider `{}` and it was ignored",
-                    type, e);
-                continue;
-            }
-            if (index == null) {
-                LOGGER.warn("ARD vector index provider `{}` returned null and was ignored", type);
-                continue;
-            }
-            result.put(type, index);
-        }
-        return result;
     }
     
     private static class NoopAiResourceVectorIndex implements AiResourceVectorIndex {
