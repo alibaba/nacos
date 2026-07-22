@@ -47,6 +47,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * Nacos Local ARD Search client controller.
  *
@@ -74,7 +76,8 @@ public class ArdSearchController {
      */
     @Since("3.3.0")
     @PostMapping("/search")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ArdSearchResponse search(@RequestParam(required = false) String namespaceId,
         @RequestBody ArdSearchRequest request)
         throws NacosException {
@@ -87,7 +90,8 @@ public class ArdSearchController {
      */
     @Since("3.3.0")
     @PostMapping("/explore")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ArdExploreResponse explore(@RequestParam(required = false) String namespaceId,
         @RequestBody ArdExploreRequest request)
         throws NacosException {
@@ -100,7 +104,8 @@ public class ArdSearchController {
      */
     @Since("3.3.0")
     @GetMapping("/ai-catalog.json")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ArdCatalog catalog(@RequestParam(required = false) String namespaceId)
         throws NacosException {
         return ardSearchService.catalog(namespaceId);
@@ -111,7 +116,8 @@ public class ArdSearchController {
      */
     @Since("3.3.0")
     @GetMapping("/agents")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ArdListResponse agents(
         @RequestParam(required = false) String namespaceId,
         @RequestParam(required = false) String filter,
@@ -160,7 +166,8 @@ public class ArdSearchController {
      */
     @Since("3.3.0")
     @GetMapping("/artifacts")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ResponseEntity<Object> artifact(
         @RequestParam String namespaceId,
         @RequestParam String resourceType,

@@ -26,17 +26,28 @@ import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.airegistry.service.ard.ArdArtifact;
 import com.alibaba.nacos.airegistry.service.ard.ArdArtifactService;
 import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import org.springframework.http.ResponseEntity;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
+import java.lang.reflect.Method;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -135,6 +146,25 @@ class ArdSearchControllerTest {
     @Test
     void ardWellKnownPathShouldUseStandardEndpoint() {
         assertEquals("/.well-known", ArdProtocolConstants.WELL_KNOWN_PATH);
+    }
+    
+    @Test
+    void endpointsShouldUseConditionalAnonymousAiAuthentication() {
+        int endpointCount = 0;
+        for (Method method : ArdSearchController.class.getDeclaredMethods()) {
+            if (!method.isAnnotationPresent(GetMapping.class)
+                && !method.isAnnotationPresent(PostMapping.class)) {
+                continue;
+            }
+            endpointCount++;
+            Secured secured = method.getAnnotation(Secured.class);
+            assertNotNull(secured, method.getName());
+            assertEquals(ActionTypes.READ, secured.action(), method.getName());
+            assertEquals(SignType.AI, secured.signType(), method.getName());
+            assertEquals(ApiType.OPEN_API, secured.apiType(), method.getName());
+            assertArrayEquals(new String[] {ALLOW_ANONYMOUS}, secured.tags(), method.getName());
+        }
+        assertEquals(5, endpointCount);
     }
     
     private ArdSearchController controller() {

@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * Standard ARD well-known discovery controller.
  *
@@ -56,7 +58,8 @@ public class ArdWellKnownController {
      */
     @Since("3.3.0")
     @GetMapping(value = "/ai-catalog.json", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
     public ArdCatalog catalog() throws NacosException {
         return ardSearchService.hostCatalog();
     }

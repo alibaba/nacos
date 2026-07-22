@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConditionalOnArdProtocolEnabledTest {
     
     private static final Class<?>[] ARD_PROTOCOL_COMPONENTS = {ArdSearchController.class,
-        ArdWellKnownController.class, ArdArtifactService.class, ArdSearchServiceImpl.class};
+        ArdWellKnownController.class, ArdArtifactService.class, ArdSearchServiceImpl.class,
+        ArdWebConfiguration.class};
     
     @Test
     void shouldBeDisabledByDefault() {

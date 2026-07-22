@@ -30,6 +30,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Method;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -63,6 +65,7 @@ class ArdWellKnownControllerTest {
         assertEquals(ActionTypes.READ, secured.action());
         assertEquals(SignType.AI, secured.signType());
         assertEquals(ApiType.OPEN_API, secured.apiType());
+        assertArrayEquals(new String[] {ALLOW_ANONYMOUS}, secured.tags());
     }
     
     private ArdWellKnownController controller() {
