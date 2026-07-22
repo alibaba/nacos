@@ -50,9 +50,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -201,6 +199,26 @@ class JdkHttpClientRequestTest {
         verify(connection, atLeast(1)).setDoOutput(true);
         verify(outputStream, atLeast(1)).flush();
         assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("execute with File body should not fall into else-if branch")
+    void testExecuteFileBody() throws Exception {
+        File tempFile = File.createTempFile("test", ".txt");
+        tempFile.deleteOnExit();
+        Files.write(tempFile.toPath(), "test content".getBytes(StandardCharsets.UTF_8));
+
+        Header header = Header.newInstance();
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, tempFile);
+        HttpClientResponse response = httpClientRequest.execute(uri, "POST", httpEntity);
+
+        // handleFileUpload will set multipart Content-Type
+        verify(connection).setRequestProperty(eq("Content-Type"), startsWith("multipart/form-data; boundary="));
+        // should not fall into else-if branch, so Content-Length will not be set
+        verify(connection, never()).setRequestProperty(eq("Content-Length"), anyString());
+        assertEquals(connection, getActualConnection(response));
+        tempFile.delete();
     }
     
     @Test
