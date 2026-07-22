@@ -45,21 +45,18 @@ public class PluginConfigService {
     
     private final PluginConfigApplier applier;
     
-    private final PluginStatePersistenceService persistence;
-    
     private final Map<String, Object> pluginLocks = new ConcurrentHashMap<>();
     
     public PluginConfigService(PluginStatePersistenceService persistence) {
-        this(new PluginConfigResolver(), new PluginConfigBasicChecker(),
-            new PluginConfigApplier(), persistence);
+        this(new PluginConfigResolver(persistence), new PluginConfigBasicChecker(),
+            new PluginConfigApplier());
     }
     
     PluginConfigService(PluginConfigResolver resolver, PluginConfigBasicChecker checker,
-        PluginConfigApplier applier, PluginStatePersistenceService persistence) {
+        PluginConfigApplier applier) {
         this.resolver = resolver;
         this.checker = checker;
         this.applier = applier;
-        this.persistence = persistence;
     }
     
     /**
@@ -83,18 +80,10 @@ public class PluginConfigService {
     }
     
     /**
-     * Load one persisted source snapshot without applying it.
-     *
-     * @param pluginInfo plugin info, may be {@code null} when the plugin is not loaded locally
-     * @param pluginId plugin id
-     * @param config persisted config
+     * Load the complete runtime persisted source during startup.
      */
-    public void loadRuntimePersistedConfig(PluginInfo pluginInfo, String pluginId,
-        Map<String, String> config) {
-        synchronized (getPluginLock(pluginId)) {
-            resolver.updateConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginId,
-                normalizeConfig(pluginInfo, config));
-        }
+    public void initializeRuntimePersistedConfigs() {
+        resolver.initializeRuntimePersistedConfigs();
     }
     
     /**
@@ -105,6 +94,7 @@ public class PluginConfigService {
      */
     public void initializePluginConfig(PluginInfo pluginInfo, Object pluginInstance) {
         synchronized (getPluginLock(pluginInfo.getPluginId())) {
+            resolver.initializeRuntimePersistedConfig(pluginInfo);
             resolver.initializeStaticConfig(pluginInfo);
             PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
             try {
@@ -157,7 +147,7 @@ public class PluginConfigService {
     public void updateLocalOnlyConfig(PluginInfo pluginInfo, Object pluginInstance,
         Map<String, String> config) {
         replaceAndApply(pluginInfo.getPluginId(), pluginInfo, pluginInstance,
-            PluginConfigSourceType.LOCAL_ONLY, config, true, false);
+            PluginConfigSourceType.LOCAL_ONLY, config, true);
     }
     
     /**
@@ -171,21 +161,48 @@ public class PluginConfigService {
     public void applyRuntimePersistedConfig(String pluginId, PluginInfo pluginInfo,
         Object pluginInstance, Map<String, String> config) {
         replaceAndApply(pluginId, pluginInfo, pluginInstance,
-            PluginConfigSourceType.RUNTIME_PERSISTED, config, true, true);
+            PluginConfigSourceType.RUNTIME_PERSISTED, config, true);
     }
     
     /**
-     * Restore a runtime source snapshot and effective config while loading a Raft snapshot.
+     * Get the complete runtime persisted source for a Raft snapshot.
      *
-     * @param pluginId plugin id
-     * @param pluginInfo plugin info, may be {@code null} when not loaded locally
-     * @param pluginInstance plugin instance
-     * @param config full override map
+     * @return complete runtime persisted source snapshot
      */
-    public void restoreRuntimePersistedConfig(String pluginId, PluginInfo pluginInfo,
-        Object pluginInstance, Map<String, String> config) {
-        replaceAndApply(pluginId, pluginInfo, pluginInstance,
-            PluginConfigSourceType.RUNTIME_PERSISTED, config, false, true);
+    public Map<String, Map<String, String>> getAllRuntimePersistedConfigs() {
+        return resolver.getAllRuntimePersistedConfigs();
+    }
+    
+    /**
+     * Restore the complete runtime persisted source from a Raft snapshot.
+     *
+     * @param configs complete runtime persisted source snapshot
+     */
+    public void restoreRuntimePersistedConfigs(Map<String, Map<String, String>> configs) {
+        resolver.restoreRuntimePersistedConfigs(configs);
+    }
+    
+    /**
+     * Resolve and apply effective config after restoring the persisted source.
+     *
+     * @param pluginInfo plugin info
+     * @param pluginInstance plugin instance
+     */
+    public void applyRestoredPluginConfig(PluginInfo pluginInfo, Object pluginInstance) {
+        synchronized (getPluginLock(pluginInfo.getPluginId())) {
+            resolver.initializeRuntimePersistedConfig(pluginInfo);
+            PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
+            try {
+                checker.validateEffectiveConfig(pluginInfo, resolution.getConfig());
+                applier.apply(pluginInfo.getPluginId(), pluginInstance, resolution.getConfig());
+            } catch (RuntimeException e) {
+                LOGGER.error("[PluginConfigService] Failed to apply restored plugin config, "
+                    + "pluginId={}", pluginInfo.getPluginId(), e);
+                throw new PluginConfigApplyException("Failed to apply restored plugin config: "
+                    + pluginInfo.getPluginId(), e);
+            }
+            pluginInfo.setConfig(copyConfig(resolution.getConfig()));
+        }
     }
     
     /**
@@ -203,16 +220,13 @@ public class PluginConfigService {
     
     private void replaceAndApply(String pluginId, PluginInfo pluginInfo, Object pluginInstance,
         PluginConfigSourceType sourceType, Map<String, String> config,
-        boolean validateRuntimeUpdate, boolean persist) {
+        boolean validateRuntimeUpdate) {
         synchronized (getPluginLock(pluginId)) {
             Map<String, String> normalizedConfig = normalizeConfig(pluginInfo, config);
             if (validateRuntimeUpdate && pluginInfo != null) {
                 normalizedConfig = preserveMaskedSensitiveValues(pluginInfo, normalizedConfig,
                     sourceType);
                 validateRuntimeUpdate(pluginInfo, normalizedConfig, sourceType);
-            }
-            if (persist) {
-                persistence.saveConfig(pluginId, normalizedConfig);
             }
             resolver.updateConfig(sourceType, pluginId, normalizedConfig);
             if (pluginInfo == null) {

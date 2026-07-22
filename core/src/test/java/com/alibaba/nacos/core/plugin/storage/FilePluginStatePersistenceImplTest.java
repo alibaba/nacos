@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,12 +31,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -147,6 +150,29 @@ class FilePluginStatePersistenceImplTest {
         assertEquals(2, configs.size());
         assertEquals("value1", configs.get("trace:test1").get("key1"));
         assertEquals("value2", configs.get("auth:test2").get("key2"));
+    }
+    
+    @Test
+    void replaceAllConfigsTest() {
+        persistence.saveConfig("trace:old", Collections.singletonMap("key", "old"));
+        Map<String, Map<String, String>> replacement = new HashMap<>();
+        replacement.put("trace:new", Collections.singletonMap("key", "new"));
+        
+        persistence.replaceAllConfigs(replacement);
+        
+        assertEquals(replacement, persistence.loadAllConfigs());
+        
+        persistence.replaceAllConfigs(null);
+        assertTrue(persistence.loadAllConfigs().isEmpty());
+    }
+    
+    @Test
+    void replaceAllConfigsFailureTest() {
+        ReflectionTestUtils.setField(persistence, "dataDir",
+            tempDir.resolve("missing").toString());
+        
+        assertThrows(PluginPersistenceException.class,
+            () -> persistence.replaceAllConfigs(Collections.emptyMap()));
     }
     
     @Test

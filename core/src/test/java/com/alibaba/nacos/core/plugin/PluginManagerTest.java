@@ -1017,19 +1017,21 @@ class PluginManagerTest {
         manager.applyConfigChange("trace:test", config);
         
         assertEquals("v", plugin.getCurrentConfig().get("k"));
+        assertEquals(config, manager.getRuntimePersistedConfigs().get("trace:test"));
         verify(persistence).saveConfig("trace:test", config);
     }
     
     @Test
-    void restoreConfigChangeDirectTest() {
+    void restorePluginConfigsReplacesCompleteSourceTest() {
         TestConfigurablePlugin plugin = new TestConfigurablePlugin();
         registerConfigurablePlugin("trace", "test", plugin);
         Map<String, String> config = Collections.singletonMap("k", "restored");
+        Map<String, Map<String, String>> configs = Collections.singletonMap("trace:test", config);
         
-        manager.restoreConfigChange("trace:test", config);
+        manager.restorePluginConfigs(configs);
         
         assertEquals("restored", plugin.getCurrentConfig().get("k"));
-        verify(persistence).saveConfig("trace:test", config);
+        verify(persistence).replaceAllConfigs(configs);
     }
     
     @Test

@@ -65,6 +65,22 @@ public interface PluginStatePersistenceService {
     void saveConfig(String pluginId, Map<String, String> config);
     
     /**
+     * Replace all plugin configurations.
+     *
+     * @param configs complete plugin configuration map
+     */
+    default void replaceAllConfigs(Map<String, Map<String, String>> configs) {
+        Map<String, Map<String, String>> targetConfigs = configs == null
+            ? java.util.Collections.emptyMap() : configs;
+        for (String pluginId : new java.util.HashSet<>(loadAllConfigs().keySet())) {
+            if (!targetConfigs.containsKey(pluginId)) {
+                deleteConfig(pluginId);
+            }
+        }
+        targetConfigs.forEach(this::saveConfig);
+    }
+    
+    /**
      * Delete plugin configuration.
      *
      * @param pluginId plugin ID

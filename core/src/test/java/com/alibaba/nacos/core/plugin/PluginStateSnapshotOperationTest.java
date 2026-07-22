@@ -47,11 +47,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -107,7 +105,7 @@ class PluginStateSnapshotOperationTest {
         configs.put("trace:otel", otelConfig);
         
         when(persistence.loadAllStates()).thenReturn(states);
-        when(persistence.loadAllConfigs()).thenReturn(configs);
+        when(pluginManager.getRuntimePersistedConfigs()).thenReturn(configs);
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(true);
         
@@ -127,7 +125,7 @@ class PluginStateSnapshotOperationTest {
     @Test
     void onSnapshotSaveEmptyDataTest() throws Exception {
         when(persistence.loadAllStates()).thenReturn(new HashMap<>());
-        when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
+        when(pluginManager.getRuntimePersistedConfigs()).thenReturn(new HashMap<>());
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(true);
         
@@ -143,7 +141,7 @@ class PluginStateSnapshotOperationTest {
     @Test
     void onSnapshotSaveFailureTest() throws Exception {
         when(persistence.loadAllStates()).thenReturn(new HashMap<>());
-        when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
+        when(pluginManager.getRuntimePersistedConfigs()).thenReturn(new HashMap<>());
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(false);
         
@@ -203,13 +201,13 @@ class PluginStateSnapshotOperationTest {
         when(reader.getFileMeta("plugin_state.zip")).thenReturn(fileMeta);
         
         doNothing().when(pluginManager).restorePluginStates(anyMap());
-        doNothing().when(pluginManager).restoreConfigChange(anyString(), anyMap());
+        doNothing().when(pluginManager).restorePluginConfigs(anyMap());
         
         boolean result = snapshotOperation.onSnapshotLoad(reader);
         
         assertTrue(result);
         verify(pluginManager).restorePluginStates(states);
-        verify(pluginManager, times(1)).restoreConfigChange(anyString(), anyMap());
+        verify(pluginManager).restorePluginConfigs(configs);
     }
     
     @Test
@@ -237,7 +235,7 @@ class PluginStateSnapshotOperationTest {
         
         assertTrue(result);
         verify(pluginManager, never()).restorePluginStates(anyMap());
-        verify(pluginManager, never()).restoreConfigChange(anyString(), anyMap());
+        verify(pluginManager, never()).restorePluginConfigs(anyMap());
     }
     
     @Test
