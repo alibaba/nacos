@@ -29,8 +29,6 @@ public class AiResourceVectorChunk {
     
     private String namespaceId;
     
-    private String identifier;
-    
     private String resourceType;
     
     private String resourceName;
@@ -61,14 +59,6 @@ public class AiResourceVectorChunk {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
-    }
-    
-    public String getIdentifier() {
-        return identifier;
-    }
-    
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
     }
     
     public String getResourceType() {

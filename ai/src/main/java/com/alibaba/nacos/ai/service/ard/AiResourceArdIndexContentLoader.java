@@ -17,27 +17,21 @@
 package com.alibaba.nacos.ai.service.ard;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
-import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Loads stored AI resource files as compact input for ARD indexing and enhancement.
@@ -55,18 +49,10 @@ public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
     
     private static final int DEFAULT_MAX_CONTENT_CHARS = 12000;
     
-    private static final TypeReference<Map<String, Object>> MAP_TYPE =
-        new TypeReference<Map<String, Object>>() {
-        };
+    private final AiResourceFileReader fileReader;
     
-    private final AiResourceStorageRouter storageRouter;
-    
-    public AiResourceArdIndexContentLoader() {
-        this(AiResourceStorageRouter.getInstance());
-    }
-    
-    AiResourceArdIndexContentLoader(AiResourceStorageRouter storageRouter) {
-        this.storageRouter = storageRouter;
+    public AiResourceArdIndexContentLoader(AiResourceFileReader fileReader) {
+        this.fileReader = fileReader;
     }
     
     @Override
@@ -75,30 +61,19 @@ public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
         if (entry == null || version == null || StringUtils.isBlank(version.getStorage())) {
             return Collections.emptyList();
         }
-        Map<String, Object> storage = parseStorage(version.getStorage());
-        List<String> files = parseFiles(storage.get("files"));
-        if (files.isEmpty()) {
-            return Collections.emptyList();
+        if (AiResourceConstants.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())) {
+            return loadSkillContent(entry, version);
         }
-        String provider = provider(storage.get("provider"));
-        if (Constants.Skills.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())) {
-            return loadSkillContent(entry, provider, files);
-        }
-        if (NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())) {
-            return loadPromptContent(entry, provider, files);
+        if (AiResourceConstants.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())) {
+            return loadPromptContent(entry, version);
         }
         return Collections.emptyList();
     }
     
-    private List<ArdIndexEnhancementContent> loadSkillContent(ArdEntry entry, String provider,
-        List<String> files) throws Exception {
-        if (!files.contains(SKILL_MD_RESOURCE_NAME)) {
-            return Collections.emptyList();
-        }
-        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider,
-            entry.getNamespaceId(), entry.getResourceName(), entry.getResourceVersion(),
-            SKILL_MD_RESOURCE_NAME);
-        byte[] bytes = storageRouter.route(key).get(key);
+    private List<ArdIndexEnhancementContent> loadSkillContent(ArdEntry entry,
+        AiResourceVersion version) throws Exception {
+        byte[] bytes = fileReader.read(version, entry.getNamespaceId(), entry.getResourceType(),
+            entry.getResourceName(), entry.getResourceVersion(), SKILL_MD_RESOURCE_NAME);
         if (bytes == null || bytes.length == 0) {
             return Collections.emptyList();
         }
@@ -110,15 +85,10 @@ public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
             limit(text, maxContentChars())));
     }
     
-    private List<ArdIndexEnhancementContent> loadPromptContent(ArdEntry entry, String provider,
-        List<String> files) throws Exception {
-        if (!files.contains(PromptUtils.PROMPT_MAIN_DATA_ID)) {
-            return Collections.emptyList();
-        }
-        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider,
-            entry.getNamespaceId(), NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
+    private List<ArdIndexEnhancementContent> loadPromptContent(ArdEntry entry,
+        AiResourceVersion version) throws Exception {
+        byte[] bytes = fileReader.read(version, entry.getNamespaceId(), entry.getResourceType(),
             entry.getResourceName(), entry.getResourceVersion(), PromptUtils.PROMPT_MAIN_DATA_ID);
-        byte[] bytes = storageRouter.route(key).get(key);
         if (bytes == null || bytes.length == 0) {
             return Collections.emptyList();
         }
@@ -128,33 +98,6 @@ public class AiResourceArdIndexContentLoader implements ArdIndexContentLoader {
         }
         return Collections.singletonList(new ArdIndexEnhancementContent(
             PromptUtils.PROMPT_MAIN_DATA_ID, limit(text, maxContentChars())));
-    }
-    
-    private Map<String, Object> parseStorage(String storageJson) {
-        try {
-            Map<String, Object> parsed = JacksonUtils.toObj(storageJson, MAP_TYPE);
-            return parsed == null ? Collections.emptyMap() : parsed;
-        } catch (Exception ignored) {
-            return Collections.emptyMap();
-        }
-    }
-    
-    private List<String> parseFiles(Object files) {
-        if (!(files instanceof Collection)) {
-            return Collections.emptyList();
-        }
-        List<String> result = new ArrayList<>();
-        for (Object file : (Collection<?>) files) {
-            if (file != null && StringUtils.isNotBlank(String.valueOf(file))) {
-                result.add(String.valueOf(file));
-            }
-        }
-        return result;
-    }
-    
-    private String provider(Object provider) {
-        String value = provider == null ? null : String.valueOf(provider);
-        return StringUtils.isBlank(value) ? NacosConfigAiResourceStorage.TYPE : value;
     }
     
     private String normalize(String text) {

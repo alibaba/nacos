@@ -574,20 +574,15 @@ CREATE TABLE "ai_resource_ard_entry" (
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
   "resource_version" varchar(64) NOT NULL,
-  "identifier" varchar(512) NOT NULL,
   "display_name" varchar(256) NOT NULL,
-  "entry_type" varchar(128) NOT NULL,
-  "entry_url" varchar(1024),
   "c_desc" varchar(2048),
   "tags" text,
   "capabilities" text,
   "representative_queries" text,
   "metadata" text,
-  "trust_manifest" text,
   "source_digest" varchar(64) NOT NULL,
   "status" varchar(32) NOT NULL,
-  "generate_mode" varchar(32) NOT NULL,
-  "source" varchar(64) NOT NULL
+  "generate_mode" varchar(32) NOT NULL
 );
 
 ALTER TABLE "ai_resource_ard_entry" ADD CONSTRAINT "ai_resource_ard_entry_pkey" PRIMARY KEY ("id");
@@ -597,7 +592,6 @@ CREATE UNIQUE INDEX "uk_ard_entry_resource_version" ON "ai_resource_ard_entry" U
   "resource_name",
   "resource_version"
 );
-CREATE INDEX "idx_ard_entry_identifier" ON "ai_resource_ard_entry" USING btree ("identifier");
 CREATE INDEX "idx_ard_entry_type_status" ON "ai_resource_ard_entry" USING btree (
   "namespace_id",
   "resource_type",
@@ -614,7 +608,6 @@ CREATE TABLE "ai_resource_ard_chunk" (
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "entry_id" bigint NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
-  "identifier" varchar(512) NOT NULL,
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
   "resource_version" varchar(64) NOT NULL,
@@ -654,7 +647,6 @@ CREATE TABLE "ai_resource_ard_embedding_pg" (
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "entry_id" bigint NOT NULL,
   "chunk_id" bigint NOT NULL,
-  "identifier" varchar(512) NOT NULL,
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
   "resource_version" varchar(64) NOT NULL,

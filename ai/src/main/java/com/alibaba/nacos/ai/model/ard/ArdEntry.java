@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.model.ard;
 import java.sql.Timestamp;
 
 /**
- * Persistent ARD catalog entry generated from a Nacos AI resource.
+ * Persistent ARD search index entry generated from a Nacos AI resource.
  *
  * @author nacos
  */
@@ -39,13 +39,7 @@ public class ArdEntry {
     
     private String resourceVersion;
     
-    private String identifier;
-    
     private String displayName;
-    
-    private String type;
-    
-    private String url;
     
     private String description;
     
@@ -57,15 +51,11 @@ public class ArdEntry {
     
     private String metadata;
     
-    private String trustManifest;
-    
     private String sourceDigest;
     
     private String status;
     
     private String generateMode;
-    
-    private String source;
     
     public Long getId() {
         return id;
@@ -123,36 +113,12 @@ public class ArdEntry {
         this.resourceVersion = resourceVersion;
     }
     
-    public String getIdentifier() {
-        return identifier;
-    }
-    
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-    
     public String getDisplayName() {
         return displayName;
     }
     
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-    
-    public String getType() {
-        return type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    public String getUrl() {
-        return url;
-    }
-    
-    public void setUrl(String url) {
-        this.url = url;
     }
     
     public String getDescription() {
@@ -195,14 +161,6 @@ public class ArdEntry {
         this.metadata = metadata;
     }
     
-    public String getTrustManifest() {
-        return trustManifest;
-    }
-    
-    public void setTrustManifest(String trustManifest) {
-        this.trustManifest = trustManifest;
-    }
-    
     public String getSourceDigest() {
         return sourceDigest;
     }
@@ -227,11 +185,4 @@ public class ArdEntry {
         this.generateMode = generateMode;
     }
     
-    public String getSource() {
-        return source;
-    }
-    
-    public void setSource(String source) {
-        this.source = source;
-    }
 }

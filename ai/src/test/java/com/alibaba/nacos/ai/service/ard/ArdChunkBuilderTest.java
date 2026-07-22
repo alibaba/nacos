@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
@@ -41,8 +40,7 @@ class ArdChunkBuilderTest {
     void buildChunksShouldIncludeDescriptionTagsCapabilitiesAndMetadata() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setIdentifier("urn:air:nacos:public:skill:api-helper");
-        entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_SKILL);
         entry.setResourceName("api-helper");
         entry.setResourceVersion("1.0.0");
         entry.setDisplayName("api-helper");
@@ -106,7 +104,7 @@ class ArdChunkBuilderTest {
     @Test
     void buildSourceContentChunksShouldIncludePromptContentText() {
         ArdEntry entry = entry();
-        entry.setResourceType(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_PROMPT);
         
         List<ArdChunk> chunks = new ArdChunkBuilder().buildSourceContentChunks(entry,
             List.of(new ArdIndexEnhancementContent(PromptUtils.PROMPT_MAIN_DATA_ID,
@@ -121,7 +119,7 @@ class ArdChunkBuilderTest {
     @Test
     void buildSourceContentChunksShouldIncludeMcpToolText() {
         ArdEntry entry = entry();
-        entry.setResourceType(ArdIndexConstants.RESOURCE_TYPE_MCP);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         
         List<ArdChunk> chunks = new ArdChunkBuilder().buildSourceContentChunks(entry,
             List.of(new ArdIndexEnhancementContent("mcp-tools.json",
@@ -136,8 +134,7 @@ class ArdChunkBuilderTest {
     private ArdEntry entry() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setIdentifier("urn:air:nacos:public:skill:api-helper");
-        entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_SKILL);
         entry.setResourceName("api-helper");
         entry.setResourceVersion("1.0.0");
         entry.setDisplayName("api-helper");

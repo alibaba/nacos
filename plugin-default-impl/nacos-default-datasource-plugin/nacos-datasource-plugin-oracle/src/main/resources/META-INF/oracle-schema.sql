@@ -272,24 +272,18 @@ CREATE TABLE ai_resource_ard_entry (
     resource_type VARCHAR2(32) NOT NULL,
     resource_name VARCHAR2(256) NOT NULL,
     resource_version VARCHAR2(64) NOT NULL,
-    identifier VARCHAR2(512) NOT NULL,
     display_name VARCHAR2(256) NOT NULL,
-    entry_type VARCHAR2(128) NOT NULL,
-    entry_url VARCHAR2(1024) DEFAULT NULL,
     c_desc VARCHAR2(2048) DEFAULT NULL,
     tags CLOB DEFAULT NULL,
     capabilities CLOB DEFAULT NULL,
     representative_queries CLOB DEFAULT NULL,
     metadata CLOB DEFAULT NULL,
-    trust_manifest CLOB DEFAULT NULL,
     source_digest VARCHAR2(64) NOT NULL,
     status VARCHAR2(32) NOT NULL,
     generate_mode VARCHAR2(32) NOT NULL,
-    source VARCHAR2(64) NOT NULL,
     CONSTRAINT uk_ard_entry_res_ver UNIQUE (namespace_id, resource_type, resource_name, resource_version)
 );
 
-CREATE INDEX idx_ard_entry_identifier ON ai_resource_ard_entry(identifier);
 CREATE INDEX idx_ard_entry_type_status ON ai_resource_ard_entry(namespace_id, resource_type, status);
 
 /******************************************/
@@ -301,7 +295,6 @@ CREATE TABLE ai_resource_ard_chunk (
     gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     entry_id NUMBER(20) NOT NULL,
     namespace_id VARCHAR2(128) DEFAULT '' NOT NULL,
-    identifier VARCHAR2(512) NOT NULL,
     resource_type VARCHAR2(32) NOT NULL,
     resource_name VARCHAR2(256) NOT NULL,
     resource_version VARCHAR2(64) NOT NULL,

@@ -27,8 +27,6 @@ public class ArdSearchHit {
     
     private Long chunkId;
     
-    private String identifier;
-    
     private String resourceType;
     
     private String resourceName;
@@ -53,14 +51,6 @@ public class ArdSearchHit {
     
     public void setChunkId(Long chunkId) {
         this.chunkId = chunkId;
-    }
-    
-    public String getIdentifier() {
-        return identifier;
-    }
-    
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
     }
     
     public String getResourceType() {

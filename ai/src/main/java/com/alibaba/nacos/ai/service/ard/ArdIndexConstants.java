@@ -27,25 +27,6 @@ public final class ArdIndexConstants {
     
     public static final String GENERATE_MODE_AUTO = "auto";
     
-    public static final String SOURCE_NACOS_LOCAL = "nacos-local";
-    
-    public static final String FEDERATION_NONE = "none";
-    
-    public static final String KEY_CATALOG_HOST_IDENTIFIER =
-        "nacos.ai.ard.catalog.host.identifier";
-    
-    public static final String DEFAULT_CATALOG_HOST_IDENTIFIER = "nacos";
-    
-    public static final String RESOURCE_TYPE_MCP = "mcp";
-    
-    public static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";
-    
-    public static final String MEDIA_TYPE_SKILL_PACKAGE = "application/zip";
-    
-    public static final String MEDIA_TYPE_PROMPT = "application/vnd.nacos.ai-prompt+json";
-    
-    public static final String MEDIA_TYPE_MCP = "application/mcp-server-card+json";
-    
     public static final String CHUNK_TYPE_DESCRIPTION = "description";
     
     public static final String CHUNK_TYPE_CAPABILITY = "capability";

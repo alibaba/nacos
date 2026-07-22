@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
@@ -129,12 +129,12 @@ class ArdSearchControllerTest {
     
     @Test
     void ardPathShouldUseProtocolEndpoint() {
-        assertEquals("/v3/ai/ard", Constants.ARD_CLIENT_PATH);
+        assertEquals("/v3/ai/ard", ArdProtocolConstants.CLIENT_PATH);
     }
     
     @Test
     void ardWellKnownPathShouldUseStandardEndpoint() {
-        assertEquals("/.well-known", Constants.ARD_WELL_KNOWN_PATH);
+        assertEquals("/.well-known", ArdProtocolConstants.WELL_KNOWN_PATH);
     }
     
     private ArdSearchController controller() {

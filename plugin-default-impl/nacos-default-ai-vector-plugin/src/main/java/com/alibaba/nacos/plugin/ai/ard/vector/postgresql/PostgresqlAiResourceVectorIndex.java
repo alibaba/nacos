@@ -56,9 +56,9 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     private static final String DEFAULT_POSTGRESQL_DRIVER_CLASS_NAME = "org.postgresql.Driver";
     
     private static final String SQL_INSERT = "INSERT INTO ai_resource_ard_embedding_pg "
-        + "(namespace_id, entry_id, chunk_id, identifier, resource_type, resource_name, "
+        + "(namespace_id, entry_id, chunk_id, resource_type, resource_name, "
         + "resource_version, embedding_model, embedding_dimension, embedding, gmt_create, gmt_modified) "
-        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::vector, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::vector, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     
     private final JdbcTemplate injectedJdbcTemplate;
     
@@ -138,7 +138,7 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         }
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT entry_id, chunk_id, identifier, resource_type, resource_name, "
+            "SELECT entry_id, chunk_id, resource_type, resource_name, "
                 + "resource_version, (1 - (embedding <=> ?::vector)) AS score "
                 + "FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
                 + "AND embedding_model=? AND embedding_dimension=?");
@@ -154,7 +154,6 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
             AiResourceVectorHit hit = new AiResourceVectorHit();
             hit.setEntryId(rs.getLong("entry_id"));
             hit.setChunkId(rs.getLong("chunk_id"));
-            hit.setIdentifier(rs.getString("identifier"));
             hit.setResourceType(rs.getString("resource_type"));
             hit.setResourceName(rs.getString("resource_name"));
             hit.setResourceVersion(rs.getString("resource_version"));
@@ -166,9 +165,10 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     private void insert(AiResourceVectorDocument document) {
         AiResourceVectorChunk chunk = document.getChunk();
         getJdbcTemplate().update(SQL_INSERT, chunk.getNamespaceId(), chunk.getEntryId(),
-            chunk.getId(), chunk.getIdentifier(), chunk.getResourceType(), chunk.getResourceName(),
+            chunk.getId(), chunk.getResourceType(), chunk.getResourceName(),
             chunk.getResourceVersion(), document.getEmbeddingModel(),
-            document.getEmbedding().length, toVectorLiteral(document.getEmbedding()));
+            document.getEmbedding().length,
+            toVectorLiteral(document.getEmbedding()));
     }
     
     private void appendResourceTypeFilter(StringBuilder sql, List<Object> args,

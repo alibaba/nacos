@@ -17,7 +17,7 @@
 package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
@@ -55,7 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 @NacosApi
 @RestController
 @ConditionalOnArdEnabled
-@RequestMapping(Constants.ARD_CLIENT_PATH)
+@RequestMapping(ArdProtocolConstants.CLIENT_PATH)
 @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
 public class ArdSearchController {
     

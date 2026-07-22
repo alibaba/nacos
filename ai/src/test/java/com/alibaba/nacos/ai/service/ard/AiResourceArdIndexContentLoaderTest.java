@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
+import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
@@ -60,7 +61,7 @@ class AiResourceArdIndexContentLoaderTest {
         save(storage, "assets/logo.png", "binary");
         
         AiResourceArdIndexContentLoader loader = new AiResourceArdIndexContentLoader(
-            AiResourceStorageRouter.getInstance());
+            new AiResourceFileReader());
         List<ArdIndexEnhancementContent> contents = loader.load(entry(), version());
         
         assertEquals(1, contents.size());
@@ -79,7 +80,7 @@ class AiResourceArdIndexContentLoaderTest {
         savePrompt(storage, JacksonUtils.toJson(prompt));
         
         AiResourceArdIndexContentLoader loader = new AiResourceArdIndexContentLoader(
-            AiResourceStorageRouter.getInstance());
+            new AiResourceFileReader());
         List<ArdIndexEnhancementContent> contents = loader.load(promptEntry(), promptVersion());
         
         assertEquals(1, contents.size());
@@ -105,7 +106,7 @@ class AiResourceArdIndexContentLoaderTest {
     private ArdEntry entry() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_SKILL);
         entry.setResourceName("ai-video-avatar");
         entry.setResourceVersion("1.0.0");
         return entry;
@@ -114,7 +115,7 @@ class AiResourceArdIndexContentLoaderTest {
     private ArdEntry promptEntry() {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId("public");
-        entry.setResourceType(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT);
+        entry.setResourceType(AiResourceConstants.RESOURCE_TYPE_PROMPT);
         entry.setResourceName("avatar-prompt");
         entry.setResourceVersion("1.0.0");
         return entry;

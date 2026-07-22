@@ -28,7 +28,6 @@ import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
 import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
 import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -37,6 +36,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
@@ -60,6 +60,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -97,10 +98,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final int DEFAULT_FACET_LIMIT = 20;
     
     private static final int MAX_LIST_CANDIDATES = 1000;
-    
-    private static final String SPEC_VERSION = "1.0";
-    
-    private static final String MEDIA_TYPE_REGISTRY = "application/ai-registry+json";
     
     private static final int MAX_CHUNK_CANDIDATES = 500;
     
@@ -221,7 +218,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     @Override
     public ArdCatalog hostCatalog() {
         ArdCatalog catalog = new ArdCatalog();
-        catalog.setSpecVersion(SPEC_VERSION);
+        catalog.setSpecVersion(ArdProtocolConstants.SPEC_VERSION);
         catalog.setHost(hostInfo());
         catalog.setEntries(Collections.singletonList(registryEntry()));
         return catalog;
@@ -231,7 +228,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     public ArdCatalog catalog(String namespaceId) throws NacosException {
         String resolvedNamespace = normalizeNamespaceId(namespaceId);
         ArdCatalog catalog = new ArdCatalog();
-        catalog.setSpecVersion(SPEC_VERSION);
+        catalog.setSpecVersion(ArdProtocolConstants.SPEC_VERSION);
         catalog.setHost(hostInfo());
         List<ArdSearchResult> entries = new ArrayList<>();
         entries.add(registryEntry());
@@ -352,7 +349,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             ArdSearchHit converted = new ArdSearchHit();
             converted.setEntryId(hit.getEntryId());
             converted.setChunkId(hit.getChunkId());
-            converted.setIdentifier(hit.getIdentifier());
             converted.setResourceType(hit.getResourceType());
             converted.setResourceName(hit.getResourceName());
             converted.setResourceVersion(hit.getResourceVersion());
@@ -396,7 +392,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         String compactQuery = compact(query);
         double identityBoost = Math.max(identityBoost(entry.getResourceName(), normalizedQuery,
             compactQuery), identityBoost(entry.getDisplayName(), normalizedQuery, compactQuery));
-        if (containsNormalized(entry.getIdentifier(), normalizedQuery)) {
+        if (containsNormalized(buildIdentifier(entry), normalizedQuery)) {
             identityBoost = Math.max(identityBoost, 1.2D);
         }
         double listBoost = 0D;
@@ -500,8 +496,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
                 ErrorCode.PARAMETER_MISSING, "Required parameter `query.text` not present");
         }
         String federation = StringUtils.isBlank(request.getFederation())
-            ? ArdIndexConstants.FEDERATION_NONE : request.getFederation();
-        if (!ArdIndexConstants.FEDERATION_NONE.equalsIgnoreCase(federation)) {
+            ? ArdProtocolConstants.FEDERATION_NONE : request.getFederation();
+        if (!ArdProtocolConstants.FEDERATION_NONE.equalsIgnoreCase(federation)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Only federation `none` is supported by Nacos Local ARD Search");
@@ -921,8 +917,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         ArdSearchResult result = new ArdSearchResult();
         result.setIdentifier(buildIdentifier(entry));
         result.setDisplayName(entry.getDisplayName());
-        result.setType(entry.getType());
-        result.setUrl(withBaseUrl(entry.getUrl()));
+        result.setType(resourceKind(entry.getResourceType()).mediaType);
+        result.setUrl(withBaseUrl(buildResourceUrl(entry)));
         result.setDescription(entry.getDescription());
         result.setTags(parseStringList(entry.getTags()));
         result.setCapabilities(parseStringList(entry.getCapabilities()));
@@ -934,8 +930,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             metadata.put("createdAt", formatTimestamp(entry.getGmtCreate()));
         }
         result.setMetadata(metadata);
-        result.setTrustManifest(parseMap(entry.getTrustManifest()));
-        result.setSource(entry.getSource());
+        result.setTrustManifest(trustManifest(entry.getResourceType()));
+        result.setSource(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
         return result;
     }
     
@@ -951,8 +947,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             host.setDocumentationUrl(documentationUrl);
         }
         Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
+        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
+        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
         host.setTrustManifest(trustManifest);
         return host;
     }
@@ -961,30 +957,30 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         ArdSearchResult result = new ArdSearchResult();
         result.setIdentifier("urn:air:" + catalogHostIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
-        result.setType(MEDIA_TYPE_REGISTRY);
-        result.setUrl(withBaseUrl(Constants.ARD_CLIENT_PATH));
+        result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
+        result.setUrl(withBaseUrl(ArdProtocolConstants.CLIENT_PATH));
         result.setDescription("Nacos local AI Registry ARD search endpoint.");
         result.setTags(List.of("registry", "search", "dynamic"));
         result.setCapabilities(List.of("search", "explore", "list"));
-        result.setSource(ArdIndexConstants.SOURCE_NACOS_LOCAL);
+        result.setSource(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("endpoints", endpoints());
         metadata.put("resourceTypes", List.of("skill", "prompt", "mcp"));
         result.setMetadata(metadata);
         Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
+        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
         trustManifest.put("resourceType", "registry");
-        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
+        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
         result.setTrustManifest(trustManifest);
         return result;
     }
     
     private Map<String, String> endpoints() {
         Map<String, String> endpoints = new LinkedHashMap<>();
-        endpoints.put("search", withBaseUrl(Constants.ARD_CLIENT_PATH + "/search"));
-        endpoints.put("explore", withBaseUrl(Constants.ARD_CLIENT_PATH + "/explore"));
-        endpoints.put("agents", withBaseUrl(Constants.ARD_CLIENT_PATH + "/agents"));
-        endpoints.put("artifacts", withBaseUrl(Constants.ARD_CLIENT_PATH + "/artifacts"));
+        endpoints.put("search", withBaseUrl(ArdProtocolConstants.CLIENT_PATH + "/search"));
+        endpoints.put("explore", withBaseUrl(ArdProtocolConstants.CLIENT_PATH + "/explore"));
+        endpoints.put("agents", withBaseUrl(ArdProtocolConstants.CLIENT_PATH + "/agents"));
+        endpoints.put("artifacts", withBaseUrl(ArdProtocolConstants.CLIENT_PATH + "/artifacts"));
         return endpoints;
     }
     
@@ -1032,15 +1028,57 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (StringUtils.isBlank(entry.getNamespaceId())
             || StringUtils.isBlank(entry.getResourceType())
             || StringUtils.isBlank(entry.getResourceName())) {
-            return entry.getIdentifier();
+            return null;
         }
         return "urn:air:" + catalogHostIdentifier() + ":" + entry.getNamespaceId() + ":"
             + entry.getResourceType() + ":" + entry.getResourceName();
     }
     
+    private String buildResourceUrl(ArdEntry entry) {
+        ResourceKind kind = resourceKind(entry.getResourceType());
+        if (ResourceKind.SKILL == kind) {
+            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(entry.getNamespaceId())
+                + "&name=" + encode(entry.getResourceName()) + "&version="
+                + encode(entry.getResourceVersion());
+        }
+        StringBuilder url = new StringBuilder(ArdProtocolConstants.CLIENT_PATH)
+            .append("/artifacts?namespaceId=").append(encode(entry.getNamespaceId()))
+            .append("&resourceType=").append(encode(entry.getResourceType()))
+            .append("&resourceName=").append(encode(entry.getResourceName()))
+            .append("&version=").append(encode(entry.getResourceVersion()));
+        if (ResourceKind.MCP == kind) {
+            String mcpName = stringValue(parseMap(entry.getMetadata()).get("mcpName"));
+            if (StringUtils.isNotBlank(mcpName)) {
+                url.append("&mcpName=").append(encode(mcpName));
+            }
+        }
+        return url.toString();
+    }
+    
+    private Map<String, Object> trustManifest(String resourceType) {
+        Map<String, Object> trustManifest = new LinkedHashMap<>();
+        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
+        trustManifest.put("resourceType", resourceType);
+        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
+        return trustManifest;
+    }
+    
+    private ResourceKind resourceKind(String resourceType) {
+        for (ResourceKind kind : ResourceKind.values()) {
+            if (kind.resourceType.equals(resourceType)) {
+                return kind;
+            }
+        }
+        throw new IllegalStateException("Unsupported ARD indexed resource type: " + resourceType);
+    }
+    
+    private String encode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
+    }
+    
     private String catalogHostIdentifier() {
-        return property(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER,
-            ArdIndexConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
+        return property(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER,
+            ArdProtocolConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
     }
     
     private ArdExploreResponse.FacetResult facet(List<ArdSearchResult> results,
@@ -1083,16 +1121,16 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return singleton(entry.getDisplayName());
         }
         if ("type".equals(field)) {
-            return singleton(entry.getType());
+            return singleton(resourceKind(entry.getResourceType()).mediaType);
         }
         if ("publisher".equals(field) || "publisherId".equals(field)) {
-            return singleton(publisher(entry.getIdentifier()));
+            return singleton(publisher(buildIdentifier(entry)));
         }
         if ("version".equals(field)) {
             return singleton(entry.getResourceVersion());
         }
         if ("source".equals(field)) {
-            return singleton(entry.getSource());
+            return singleton(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
         }
         if ("tags".equals(field)) {
             return parseStringList(entry.getTags());
@@ -1107,7 +1145,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return toStringList(parseMap(entry.getMetadata()).get(field.substring(9)));
         }
         if (field.startsWith("trustManifest.")) {
-            return toStringList(parseMap(entry.getTrustManifest()).get(field.substring(14)));
+            return toStringList(trustManifest(entry.getResourceType()).get(field.substring(14)));
         }
         return Collections.emptyList();
     }
@@ -1332,12 +1370,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private enum ResourceKind {
         
-        SKILL(Constants.Skills.RESOURCE_TYPE_SKILL, ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE),
+        SKILL(AiResourceConstants.RESOURCE_TYPE_SKILL,
+            ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE),
         
-        PROMPT(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
-            ArdIndexConstants.MEDIA_TYPE_PROMPT),
+        PROMPT(AiResourceConstants.RESOURCE_TYPE_PROMPT, ArdProtocolConstants.MEDIA_TYPE_PROMPT),
         
-        MCP(ArdIndexConstants.RESOURCE_TYPE_MCP, ArdIndexConstants.MEDIA_TYPE_MCP);
+        MCP(AiResourceConstants.RESOURCE_TYPE_MCP, ArdProtocolConstants.MEDIA_TYPE_MCP);
         
         private final String resourceType;
         

@@ -34,7 +34,6 @@ CREATE TABLE "ai_resource_ard_embedding_pg" (
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "entry_id" bigint NOT NULL,
   "chunk_id" bigint NOT NULL,
-  "identifier" varchar(512) NOT NULL,
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
   "resource_version" varchar(64) NOT NULL,

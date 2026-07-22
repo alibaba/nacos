@@ -16,22 +16,19 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -43,16 +40,15 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Converts Nacos AI resources to ARD catalog entries.
+ * Converts Nacos AI resources to ARD search index entries.
  *
  * @author nacos
  */
 public class ArdEntryBuilder {
     
-    private static final String RESOURCE_TYPE_SKILL = Constants.Skills.RESOURCE_TYPE_SKILL;
+    private static final String RESOURCE_TYPE_SKILL = AiResourceConstants.RESOURCE_TYPE_SKILL;
     
-    private static final String RESOURCE_TYPE_PROMPT =
-        NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
+    private static final String RESOURCE_TYPE_PROMPT = AiResourceConstants.RESOURCE_TYPE_PROMPT;
     
     private static final TypeReference<Map<String, Object>> MAP_TYPE =
         new TypeReference<Map<String, Object>>() {
@@ -66,7 +62,6 @@ public class ArdEntryBuilder {
      * Build an ARD entry from a skill or prompt meta/version pair.
      */
     public ArdEntry fromAiResource(AiResource meta, AiResourceVersion version) {
-        String mediaType = mediaType(meta.getType());
         Map<String, Object> metadata = baseMetadata(meta.getNamespaceId(), meta.getType(),
             meta.getName(), version.getVersion(), AiResourceManager.resolveScope(meta));
         if (RESOURCE_TYPE_SKILL.equals(meta.getType())) {
@@ -77,15 +72,12 @@ public class ArdEntryBuilder {
         List<String> tags = parseStringList(meta.getBizTags());
         List<String> capabilities = capabilities(meta.getType(), tags, ext);
         ArdEntry entry = baseEntry(meta.getNamespaceId(), meta.getType(), meta.getName(),
-            version.getVersion(), meta.getName(), mediaType);
-        entry.setUrl(buildAiResourceUrl(meta.getNamespaceId(), meta.getType(), meta.getName(),
-            version.getVersion()));
+            version.getVersion(), meta.getName());
         entry.setDescription(firstNotBlank(version.getDesc(), meta.getDesc()));
         entry.setTags(JacksonUtils.toJson(tags));
         entry.setCapabilities(JacksonUtils.toJson(capabilities));
         entry.setRepresentativeQueries(JacksonUtils.toJson(representativeQueries(meta, version)));
         entry.setMetadata(JacksonUtils.toJson(metadata));
-        entry.setTrustManifest(JacksonUtils.toJson(trustManifest(meta.getType())));
         entry.setSourceDigest(sourceDigest(meta, version, metadata));
         entry.setGmtModified(resolveModified(meta.getGmtModified(), version.getGmtModified()));
         return entry;
@@ -98,7 +90,7 @@ public class ArdEntryBuilder {
         String resourceVersion = resolveMcpVersion(mcpServer);
         String resourceName = firstNotBlank(mcpServer.getId(), mcpServer.getName());
         Map<String, Object> metadata =
-            baseMetadata(namespaceId, ArdIndexConstants.RESOURCE_TYPE_MCP,
+            baseMetadata(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
                 resourceName, resourceVersion, null);
         metadata.put("mcpName", mcpServer.getName());
         metadata.put("mcpServerId", mcpServer.getId());
@@ -110,34 +102,27 @@ public class ArdEntryBuilder {
             metadata.put("websiteUrl", mcpServer.getWebsiteUrl());
         }
         List<String> capabilities = capabilities(mcpServer.getCapabilities());
-        ArdEntry entry = baseEntry(namespaceId, ArdIndexConstants.RESOURCE_TYPE_MCP, resourceName,
-            resourceVersion, mcpServer.getName(), ArdIndexConstants.MEDIA_TYPE_MCP);
-        entry
-            .setUrl(buildMcpArtifactUrl(namespaceId, resourceName, resourceVersion, mcpServer));
+        ArdEntry entry = baseEntry(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP, resourceName,
+            resourceVersion, mcpServer.getName());
         entry.setDescription(mcpServer.getDescription());
         entry.setTags(JacksonUtils.toJson(Collections.emptyList()));
         entry.setCapabilities(JacksonUtils.toJson(capabilities));
         entry.setRepresentativeQueries(JacksonUtils.toJson(representativeQueries(mcpServer)));
         entry.setMetadata(JacksonUtils.toJson(metadata));
-        entry.setTrustManifest(
-            JacksonUtils.toJson(trustManifest(ArdIndexConstants.RESOURCE_TYPE_MCP)));
         entry.setSourceDigest(sourceDigest(mcpServer, metadata));
         return entry;
     }
     
     private ArdEntry baseEntry(String namespaceId, String resourceType, String resourceName,
-        String resourceVersion, String displayName, String mediaType) {
+        String resourceVersion, String displayName) {
         ArdEntry entry = new ArdEntry();
         entry.setNamespaceId(namespaceId);
         entry.setResourceType(resourceType);
         entry.setResourceName(resourceName);
         entry.setResourceVersion(resourceVersion);
-        entry.setIdentifier(buildIdentifier(namespaceId, resourceType, resourceName));
         entry.setDisplayName(displayName);
-        entry.setType(mediaType);
         entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
         entry.setGenerateMode(ArdIndexConstants.GENERATE_MODE_AUTO);
-        entry.setSource(ArdIndexConstants.SOURCE_NACOS_LOCAL);
         return entry;
     }
     
@@ -211,14 +196,6 @@ public class ArdEntryBuilder {
         return dedupe(queries);
     }
     
-    private Map<String, Object> trustManifest(String resourceType) {
-        Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdIndexConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("resourceType", resourceType);
-        trustManifest.put("federation", ArdIndexConstants.FEDERATION_NONE);
-        return trustManifest;
-    }
-    
     private String sourceDigest(AiResource meta, AiResourceVersion version,
         Map<String, Object> metadata) {
         Map<String, Object> digest = new LinkedHashMap<>();
@@ -242,16 +219,6 @@ public class ArdEntryBuilder {
         digest.put("capabilities", capabilities(mcpServer.getCapabilities()));
         digest.put("metadata", metadata);
         return md5(digest);
-    }
-    
-    private String mediaType(String resourceType) {
-        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE;
-        }
-        if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
-            return ArdIndexConstants.MEDIA_TYPE_PROMPT;
-        }
-        throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
     }
     
     private String resolveMcpVersion(McpServerBasicInfo mcpServer) {
@@ -353,62 +320,6 @@ public class ArdEntryBuilder {
             }
         }
         return false;
-    }
-    
-    private String buildIdentifier(String namespaceId, String resourceType, String resourceName) {
-        return "urn:air:" + catalogHostIdentifier() + ":" + namespaceId + ":" + resourceType
-            + ":" + resourceName;
-    }
-    
-    private String buildArtifactUrl(String namespaceId, String resourceType, String resourceName,
-        String version) {
-        if (!RESOURCE_TYPE_PROMPT.equals(resourceType)) {
-            throw new IllegalArgumentException("Unsupported ARD resource type: " + resourceType);
-        }
-        return Constants.ARD_CLIENT_PATH + "/artifacts?namespaceId=" + encode(namespaceId)
-            + "&resourceType=" + encode(resourceType) + "&resourceName=" + encode(resourceName)
-            + "&version=" + encode(version);
-    }
-    
-    private String buildAiResourceUrl(String namespaceId, String resourceType, String resourceName,
-        String version) {
-        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(namespaceId)
-                + "&name=" + encode(resourceName) + "&version=" + encode(version);
-        }
-        return buildArtifactUrl(namespaceId, resourceType, resourceName, version);
-    }
-    
-    private String buildMcpArtifactUrl(String namespaceId, String resourceName, String version,
-        McpServerBasicInfo mcpServer) {
-        String url = Constants.ARD_CLIENT_PATH + "/artifacts?namespaceId="
-            + encode(namespaceId) + "&resourceType=" + encode(ArdIndexConstants.RESOURCE_TYPE_MCP)
-            + "&resourceName=" + encode(resourceName) + "&version=" + encode(version);
-        if (StringUtils.isNotBlank(mcpServer.getName())) {
-            url += "&mcpName=" + encode(mcpServer.getName());
-        }
-        return url;
-    }
-    
-    private String encode(String value) {
-        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
-    }
-    
-    private String catalogHostIdentifier() {
-        return property(ArdIndexConstants.KEY_CATALOG_HOST_IDENTIFIER,
-            ArdIndexConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
-    }
-    
-    private String property(String key, String defaultValue) {
-        String value = System.getProperty(key);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        try {
-            return EnvUtil.getProperty(key, defaultValue);
-        } catch (Exception ignored) {
-            return defaultValue;
-        }
     }
     
     private String firstNotBlank(String first, String second) {

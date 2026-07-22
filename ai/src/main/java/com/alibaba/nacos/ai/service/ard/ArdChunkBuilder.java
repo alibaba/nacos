@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.ard.ArdChunk;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -154,7 +153,6 @@ public class ArdChunkBuilder {
         }
         ArdChunk chunk = new ArdChunk();
         chunk.setNamespaceId(entry.getNamespaceId());
-        chunk.setIdentifier(entry.getIdentifier());
         chunk.setResourceType(entry.getResourceType());
         chunk.setResourceName(entry.getResourceName());
         chunk.setResourceVersion(entry.getResourceVersion());
@@ -164,9 +162,14 @@ public class ArdChunkBuilder {
         chunk.setLanguage("und");
         chunk.setMetadata(metadata);
         chunk.setStatus(ArdIndexConstants.STATUS_ENABLED);
-        chunk.setChunkHash(
-            md5(entry.getIdentifier() + ":" + chunkType + ":" + chunk.getCanonicalText()));
+        chunk.setChunkHash(md5(resourceKey(entry) + ":" + chunkType + ":"
+            + chunk.getCanonicalText()));
         chunks.add(chunk);
+    }
+    
+    private String resourceKey(ArdEntry entry) {
+        return entry.getNamespaceId() + ":" + entry.getResourceType() + ":"
+            + entry.getResourceName() + ":" + entry.getResourceVersion();
     }
     
     private String canonicalText(ArdEntry entry, String chunkType, String text) {
@@ -238,15 +241,15 @@ public class ArdChunkBuilder {
         if (entry == null || content == null) {
             return null;
         }
-        if (Constants.Skills.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())
+        if (AiResourceConstants.RESOURCE_TYPE_SKILL.equals(entry.getResourceType())
             && SKILL_MD_RESOURCE_NAME.equals(content.getPath())) {
             return ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT;
         }
-        if (NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())
+        if (AiResourceConstants.RESOURCE_TYPE_PROMPT.equals(entry.getResourceType())
             && PromptUtils.PROMPT_MAIN_DATA_ID.equals(content.getPath())) {
             return ArdIndexConstants.CHUNK_TYPE_PROMPT_CONTENT;
         }
-        if (ArdIndexConstants.RESOURCE_TYPE_MCP.equals(entry.getResourceType())
+        if (AiResourceConstants.RESOURCE_TYPE_MCP.equals(entry.getResourceType())
             && StringUtils.isNotBlank(content.getPath())
             && content.getPath().startsWith(MCP_CONTENT_PATH_PREFIX)) {
             return ArdIndexConstants.CHUNK_TYPE_MCP_CONTENT;

@@ -169,7 +169,7 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         String resourceVersion = resolveMcpVersion(mcpServer);
         if (!isIndexable(mcpServer) || StringUtils.isBlank(resourceName)
             || StringUtils.isBlank(resourceVersion)) {
-            deleteResource(namespaceId, ArdIndexConstants.RESOURCE_TYPE_MCP, resourceName);
+            deleteResource(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP, resourceName);
             return;
         }
         replace(entryBuilder.fromMcpServer(namespaceId, mcpServer), null, mcpContents(mcpServer));
@@ -420,7 +420,6 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         result.setId(chunk.getId());
         result.setEntryId(chunk.getEntryId());
         result.setNamespaceId(chunk.getNamespaceId());
-        result.setIdentifier(chunk.getIdentifier());
         result.setResourceType(chunk.getResourceType());
         result.setResourceName(chunk.getResourceName());
         result.setResourceVersion(chunk.getResourceVersion());

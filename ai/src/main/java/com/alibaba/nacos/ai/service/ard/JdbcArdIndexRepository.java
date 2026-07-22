@@ -47,15 +47,15 @@ import java.util.Locale;
 public class JdbcArdIndexRepository implements ArdIndexRepository {
     
     private static final String SQL_INSERT_ENTRY = "INSERT INTO ai_resource_ard_entry "
-        + "(namespace_id, resource_type, resource_name, resource_version, identifier, display_name, "
-        + "entry_type, entry_url, c_desc, tags, capabilities, representative_queries, "
-        + "metadata, trust_manifest, source_digest, status, generate_mode, source, gmt_create, gmt_modified) "
-        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        + "(namespace_id, resource_type, resource_name, resource_version, display_name, c_desc, "
+        + "tags, capabilities, representative_queries, metadata, source_digest, status, "
+        + "generate_mode, gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     
     private static final String SQL_INSERT_CHUNK = "INSERT INTO ai_resource_ard_chunk "
-        + "(entry_id, namespace_id, identifier, resource_type, resource_name, resource_version, "
+        + "(entry_id, namespace_id, resource_type, resource_name, resource_version, "
         + "chunk_type, chunk_text, canonical_text, language, chunk_hash, metadata, status, gmt_create, gmt_modified) "
-        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     
     private static final RowMapper<ArdEntry> ENTRY_ROW_MAPPER = new ArdEntryRowMapper();
     
@@ -90,7 +90,6 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
         for (ArdChunk chunk : chunks) {
             chunk.setEntryId(entry.getId());
             chunk.setNamespaceId(entry.getNamespaceId());
-            chunk.setIdentifier(entry.getIdentifier());
             chunk.setResourceType(entry.getResourceType());
             chunk.setResourceName(entry.getResourceName());
             chunk.setResourceVersion(entry.getResourceVersion());
@@ -152,7 +151,7 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
         }
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT entry_id, id AS chunk_id, identifier, resource_type, resource_name, "
+            "SELECT entry_id, id AS chunk_id, resource_type, resource_name, "
                 + "resource_version, chunk_type, CASE WHEN LOWER(canonical_text) LIKE ? THEN 1.0 "
                 + "WHEN LOWER(chunk_text) LIKE ? THEN 0.8 ELSE 0.4 END AS score "
                 + "FROM ai_resource_ard_chunk WHERE namespace_id=? AND status=? "
@@ -196,20 +195,15 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             ps.setString(2, entry.getResourceType());
             ps.setString(3, entry.getResourceName());
             ps.setString(4, entry.getResourceVersion());
-            ps.setString(5, entry.getIdentifier());
-            ps.setString(6, entry.getDisplayName());
-            ps.setString(7, entry.getType());
-            ps.setString(8, entry.getUrl());
-            ps.setString(9, entry.getDescription());
-            ps.setString(10, entry.getTags());
-            ps.setString(11, entry.getCapabilities());
-            ps.setString(12, entry.getRepresentativeQueries());
-            ps.setString(13, entry.getMetadata());
-            ps.setString(14, entry.getTrustManifest());
-            ps.setString(15, entry.getSourceDigest());
-            ps.setString(16, entry.getStatus());
-            ps.setString(17, entry.getGenerateMode());
-            ps.setString(18, entry.getSource());
+            ps.setString(5, entry.getDisplayName());
+            ps.setString(6, entry.getDescription());
+            ps.setString(7, entry.getTags());
+            ps.setString(8, entry.getCapabilities());
+            ps.setString(9, entry.getRepresentativeQueries());
+            ps.setString(10, entry.getMetadata());
+            ps.setString(11, entry.getSourceDigest());
+            ps.setString(12, entry.getStatus());
+            ps.setString(13, entry.getGenerateMode());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -227,17 +221,16 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
                 new String[] {"id"});
             ps.setLong(1, chunk.getEntryId());
             ps.setString(2, chunk.getNamespaceId());
-            ps.setString(3, chunk.getIdentifier());
-            ps.setString(4, chunk.getResourceType());
-            ps.setString(5, chunk.getResourceName());
-            ps.setString(6, chunk.getResourceVersion());
-            ps.setString(7, chunk.getChunkType());
-            ps.setString(8, chunk.getChunkText());
-            ps.setString(9, chunk.getCanonicalText());
-            ps.setString(10, chunk.getLanguage());
-            ps.setString(11, chunk.getChunkHash());
-            ps.setString(12, chunk.getMetadata());
-            ps.setString(13, chunk.getStatus());
+            ps.setString(3, chunk.getResourceType());
+            ps.setString(4, chunk.getResourceName());
+            ps.setString(5, chunk.getResourceVersion());
+            ps.setString(6, chunk.getChunkType());
+            ps.setString(7, chunk.getChunkText());
+            ps.setString(8, chunk.getCanonicalText());
+            ps.setString(9, chunk.getLanguage());
+            ps.setString(10, chunk.getChunkHash());
+            ps.setString(11, chunk.getMetadata());
+            ps.setString(12, chunk.getStatus());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -312,20 +305,15 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             entry.setResourceType(rs.getString("resource_type"));
             entry.setResourceName(rs.getString("resource_name"));
             entry.setResourceVersion(rs.getString("resource_version"));
-            entry.setIdentifier(rs.getString("identifier"));
             entry.setDisplayName(rs.getString("display_name"));
-            entry.setType(rs.getString("entry_type"));
-            entry.setUrl(rs.getString("entry_url"));
             entry.setDescription(rs.getString("c_desc"));
             entry.setTags(rs.getString("tags"));
             entry.setCapabilities(rs.getString("capabilities"));
             entry.setRepresentativeQueries(rs.getString("representative_queries"));
             entry.setMetadata(rs.getString("metadata"));
-            entry.setTrustManifest(rs.getString("trust_manifest"));
             entry.setSourceDigest(rs.getString("source_digest"));
             entry.setStatus(rs.getString("status"));
             entry.setGenerateMode(rs.getString("generate_mode"));
-            entry.setSource(rs.getString("source"));
             return entry;
         }
     }
@@ -337,7 +325,6 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             ArdSearchHit hit = new ArdSearchHit();
             hit.setEntryId(rs.getLong("entry_id"));
             hit.setChunkId(rs.getLong("chunk_id"));
-            hit.setIdentifier(rs.getString("identifier"));
             hit.setResourceType(rs.getString("resource_type"));
             hit.setResourceName(rs.getString("resource_name"));
             hit.setResourceVersion(rs.getString("resource_version"));

@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.ai.service.ard;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
@@ -39,31 +38,30 @@ class ArdEntryBuilderTest {
     private final ArdEntryBuilder builder = new ArdEntryBuilder();
     
     @Test
-    void fromAiResourceShouldExposeSkillClientUrl() {
-        ArdEntry entry = builder.fromAiResource(resource(Constants.Skills.RESOURCE_TYPE_SKILL,
+    void fromAiResourceShouldBuildSkillSearchEntry() {
+        ArdEntry entry = builder.fromAiResource(resource(AiResourceConstants.RESOURCE_TYPE_SKILL,
             "avatar skill"), version("1.0.0"));
         
-        assertEquals("/v3/client/ai/skills?namespaceId=public&name=avatar+skill&version=1.0.0",
-            entry.getUrl());
-        assertEquals(ArdIndexConstants.MEDIA_TYPE_SKILL_PACKAGE, entry.getType());
-        assertEquals("urn:air:nacos:public:skill:avatar skill", entry.getIdentifier());
+        assertEquals(AiResourceConstants.RESOURCE_TYPE_SKILL, entry.getResourceType());
+        assertEquals("avatar skill", entry.getResourceName());
+        assertEquals("1.0.0", entry.getResourceVersion());
         Map<?, ?> metadata = JacksonUtils.toObj(entry.getMetadata(), Map.class);
         assertEquals("SKILL.md", metadata.get("entrypoint"));
     }
     
     @Test
-    void fromAiResourceShouldExposePromptClientUrl() {
+    void fromAiResourceShouldBuildPromptSearchEntry() {
         ArdEntry entry = builder.fromAiResource(
-            resource(NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "avatar prompt"),
+            resource(AiResourceConstants.RESOURCE_TYPE_PROMPT, "avatar prompt"),
             version("2.0.0"));
         
-        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=prompt"
-            + "&resourceName=avatar+prompt&version=2.0.0", entry.getUrl());
-        assertEquals("urn:air:nacos:public:prompt:avatar prompt", entry.getIdentifier());
+        assertEquals(AiResourceConstants.RESOURCE_TYPE_PROMPT, entry.getResourceType());
+        assertEquals("avatar prompt", entry.getResourceName());
+        assertEquals("2.0.0", entry.getResourceVersion());
     }
     
     @Test
-    void fromMcpServerShouldExposeMcpDetailUrl() {
+    void fromMcpServerShouldRetainArtifactLookupMetadata() {
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setId("mcp/avatar server");
         server.setName("avatar-server");
@@ -71,9 +69,10 @@ class ArdEntryBuilderTest {
         
         ArdEntry entry = builder.fromMcpServer("public", server);
         
-        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
-            + "&resourceName=mcp%2Favatar+server&version=3.0.0&mcpName=avatar-server",
-            entry.getUrl());
+        assertEquals(AiResourceConstants.RESOURCE_TYPE_MCP, entry.getResourceType());
+        assertEquals("mcp/avatar server", entry.getResourceName());
+        Map<?, ?> metadata = JacksonUtils.toObj(entry.getMetadata(), Map.class);
+        assertEquals("avatar-server", metadata.get("mcpName"));
     }
     
     @Test
@@ -84,9 +83,7 @@ class ArdEntryBuilderTest {
         
         ArdEntry entry = builder.fromMcpServer("public", server);
         
-        assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
-            + "&resourceName=avatar+server&version=3.0.0&mcpName=avatar+server",
-            entry.getUrl());
+        assertEquals("avatar server", entry.getResourceName());
     }
     
     private AiResource resource(String type, String name) {
