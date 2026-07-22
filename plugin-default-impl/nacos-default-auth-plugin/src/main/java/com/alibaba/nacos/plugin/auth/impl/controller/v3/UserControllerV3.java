@@ -107,7 +107,7 @@ public class UserControllerV3 {
      * @since 1.2.0
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
-        action = ActionTypes.WRITE)
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     @Since("3.0.0")
     @PostMapping
     public Result<String> createUser(@RequestParam String username, @RequestParam String password) {
@@ -158,7 +158,7 @@ public class UserControllerV3 {
     @Since("3.0.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
-        action = ActionTypes.WRITE)
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> deleteUser(@RequestParam String username) {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
@@ -188,7 +188,8 @@ public class UserControllerV3 {
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE,
         tags = {
             com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY,
-            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
+            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT},
+        apiType = ApiType.ADMIN_API)
     public Result<String> updateUser(@RequestParam String username,
         @RequestParam String newPassword,
         HttpServletResponse response, HttpServletRequest request) throws IOException {
@@ -259,7 +260,7 @@ public class UserControllerV3 {
     @Since("3.0.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
-        action = ActionTypes.READ)
+        action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Page<User>> getUserList(@RequestParam int pageNo, @RequestParam int pageSize,
         @RequestParam(name = "username", required = false, defaultValue = "") String username,
         @RequestParam(name = "search", required = false, defaultValue = "accurate") String search) {
@@ -281,7 +282,7 @@ public class UserControllerV3 {
     @Since("3.0.0")
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users",
-        action = ActionTypes.WRITE)
+        action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<List<String>> getUserListByUsername(@RequestParam String username) {
         List<String> userList = userDetailsService.findUserNames(username);
         return Result.success(userList);
