@@ -144,6 +144,16 @@ Anonymous AI access is allowed only when all of these are true:
 - `anonymous.ai.enabled` is enabled in `auth:nacos` configuration.
 - The default plugin accepts the request as the built-in anonymous identity.
 
+Anonymous fallback is available only when the request does not explicitly
+supply any default-auth credential key. Supplying `Authorization`,
+`accessToken`, `username`, or `password` counts as explicit credential
+presence even when the supplied value is blank. If such a credential is blank
+or invalid, the plugin must return an authentication failure instead of
+falling back to anonymous identity. At the HTTP filter layer, failed identity
+or authority results are converted to an `ACCESS_DENIED` response with HTTP
+403; the plugin-level failure code and message may remain visible in the
+response detail.
+
 Enabling anonymous access immediately enables only identity acceptance. A
 background reconciler then ensures the reserved anonymous user and role exist.
 On first initialization it adds read permission on `public:*:ai/*` and writes
