@@ -393,21 +393,28 @@ Canonical protocol tokens match
 `[A-Za-z0-9][A-Za-z0-9-]{0,31}`. The service-name algorithm is:
 
 ```text
-rad-<encodedAgentId.length>-<encodedAgentId>-<protocol>
+rad-<encodedAgentId>-<protocol>
 ```
 
-The decimal length has no leading zero. It counts ASCII characters, which is
-equivalent to Java `String.length()` for `encodedAgentId`. The result preserves
-case, contains only `[A-Za-z0-9-]`, starts with an alphanumeric character, may
-end with an alphanumeric character or `-`, contains no Version, and is at most
-512 characters.
+The result preserves case, contains only `[A-Za-z0-9-]`, starts with an
+alphanumeric character, may end with an alphanumeric character or `-`, and
+contains no Version. Its effective maximum is 297 characters under the field
+limits, below the Naming limit of 512 characters.
 
 Examples:
 
 ```text
-Nacos-Agent / a2a -> rad-11-Nacos-Agent-a2a
-Nacos Agent / a2a -> rad-18-enc-Nacos-032Agent-a2a
+Nacos-Agent / a2a -> rad-Nacos-Agent-a2a
+Nacos Agent / a2a -> rad-enc-Nacos-032Agent-a2a
 ```
+
+Version 1 favors a concise, readable physical name and adds no length framing
+between `encodedAgentId` and protocol. Consequently, `(A, B-C)` and `(A-B, C)`
+both compose to `rad-A-B-C`. Version 1 accepts this low-probability collision
+and defines no collision index or extra disambiguation. Implementations must
+not recover the two components from serviceName; readers recompose and compare
+using the known AgentName and protocol. A future collision-free rule requires
+a new composer id and an explicit migration contract.
 
 The alphabet guarantees that `lb://<serviceName>` can be parsed as a Gateway
 URI. It does not define a DNS name and does not lowercase the case-sensitive

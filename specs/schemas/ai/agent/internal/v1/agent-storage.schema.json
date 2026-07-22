@@ -615,10 +615,10 @@
           "const": "rad-service-name-v1"
         },
         "format": {
-          "const": "rad-<encodedAgentId.length>-<encodedAgentId>-<protocol>"
+          "const": "rad-<encodedAgentId>-<protocol>"
         },
         "maximumLength": {
-          "const": 512
+          "const": 297
         },
         "versionInIdentity": {
           "const": false
@@ -627,7 +627,7 @@
           "const": true
         }
       },
-      "$comment": "The decimal length has no leading zero and counts ASCII characters. It makes the encodedAgentId/protocol tuple reversible despite hyphens. The composed value contains only [A-Za-z0-9-], starts with a letter or digit, may end with a letter, digit, or hyphen, and does not claim to be a DNS name."
+      "$comment": "Version 1 favors a concise readable value and accepts the low-probability tuple collision caused by hyphens in both components; for example, (A, B-C) and (A-B, C) both compose to rad-A-B-C. A collision-free rule requires a new composer id and explicit migration. The value contains only [A-Za-z0-9-], starts with a letter or digit, may end with a letter, digit, or hyphen, and does not claim to be a DNS name."
     },
     "RuntimeVersionBinding": {
       "type": "object",
@@ -781,10 +781,10 @@
         },
         "serviceName": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 512,
-          "pattern": "^rad-(?:0|[1-9][0-9]*)-[A-Za-z0-9-]+-[A-Za-z0-9][A-Za-z0-9-]{0,31}$",
-          "description": "Must parse exactly according to RadServiceNameComposerContract; the length prefix and constituent equality require domain validation."
+          "minLength": 7,
+          "maxLength": 297,
+          "pattern": "^rad-[A-Za-z0-9-]{1,260}-[A-Za-z0-9][A-Za-z0-9-]{0,31}$",
+          "description": "Must equal the RadServiceNameComposerContract output for the known encodedAgentId and protocol. The regex alone cannot recover the component boundary."
         },
         "clusterName": {
           "$ref": "#/$defs/TransportToken"
