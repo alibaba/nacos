@@ -1,0 +1,85 @@
+{
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
+  "format": "nacos-rad-identity-golden-vectors-v1",
+  "codecId": "rad-ascii-v1",
+  "serviceNameComposerId": "rad-service-name-v1",
+  "codecVectors": [
+    {
+      "agentName": "Nacos-Agent",
+      "encodedAgentId": "Nacos-Agent",
+      "decodedAgentName": "Nacos-Agent"
+    },
+    {
+      "agentName": "Nacos Agent",
+      "encodedAgentId": "enc-Nacos-032Agent",
+      "decodedAgentName": "Nacos Agent"
+    },
+    {
+      "agentName": "name-ok.1:2",
+      "encodedAgentId": "enc-name-045ok-0461-0582",
+      "decodedAgentName": "name-ok.1:2"
+    },
+    {
+      "agentName": "Agent_01",
+      "encodedAgentId": "enc-Agent-09501",
+      "decodedAgentName": "Agent_01"
+    },
+    {
+      "agentName": "A/B",
+      "encodedAgentId": "enc-A-047B",
+      "decodedAgentName": "A/B"
+    },
+    {
+      "agentName": "A~",
+      "encodedAgentId": "enc-A-126",
+      "decodedAgentName": "A~"
+    },
+    {
+      "agentName": "enc-Nacos-032Agent",
+      "encodedAgentId": "enc-Nacos-032Agent",
+      "decodedAgentName": "Nacos Agent"
+    }
+  ],
+  "serviceNameVectors": [
+    {
+      "agentName": "Nacos-Agent",
+      "protocol": "a2a",
+      "serviceName": "rad-Nacos-Agent-a2a"
+    },
+    {
+      "agentName": "Nacos Agent",
+      "protocol": "a2a",
+      "serviceName": "rad-enc-Nacos-032Agent-a2a"
+    },
+    {
+      "agentName": "name-ok.1:2",
+      "protocol": "a2a",
+      "serviceName": "rad-enc-name-045ok-0461-0582-a2a"
+    },
+    {
+      "agentName": "Agent_01",
+      "protocol": "A2A-v1",
+      "serviceName": "rad-enc-Agent-09501-A2A-v1"
+    },
+    {
+      "agentName": "A/B",
+      "protocol": "a2a-",
+      "serviceName": "rad-enc-A-047B-a2a-"
+    },
+    {
+      "agentName": "A",
+      "protocol": "B-C",
+      "serviceName": "rad-A-B-C"
+    },
+    {
+      "agentName": "A-B",
+      "protocol": "C",
+      "serviceName": "rad-A-B-C"
+    },
+    {
+      "agentName": "enc-Nacos-032Agent",
+      "protocol": "a2a",
+      "serviceName": "rad-enc-Nacos-032Agent-a2a"
+    }
+  ]
+}

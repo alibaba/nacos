@@ -343,19 +343,24 @@ namespaceId
 规范 protocol token 匹配 `[A-Za-z0-9][A-Za-z0-9-]{0,31}`。ServiceName 算法为：
 
 ```text
-rad-<encodedAgentId.length>-<encodedAgentId>-<protocol>
+rad-<encodedAgentId>-<protocol>
 ```
 
-十进制长度不带前导零。它计算 ASCII 字符数；对 `encodedAgentId` 而言，等价于 Java
-`String.length()`。结果保留大小写，只包含 `[A-Za-z0-9-]`，以字母或数字开头；protocol
-token 可以以 `-` 结尾。结果不包含 Version，并且总长不超过 512。
+结果保留大小写，只包含 `[A-Za-z0-9-]`，以字母或数字开头；protocol token 可以以 `-`
+结尾。结果不包含 Version；按字段长度限制计算，实际最大长度为 297，低于 Naming 的 512
+字符限制。
 
 示例：
 
 ```text
-Nacos-Agent / a2a -> rad-11-Nacos-Agent-a2a
-Nacos Agent / a2a -> rad-18-enc-Nacos-032Agent-a2a
+Nacos-Agent / a2a -> rad-Nacos-Agent-a2a
+Nacos Agent / a2a -> rad-enc-Nacos-032Agent-a2a
 ```
+
+Version 1 优先保持物理名称简洁可读，不为 `encodedAgentId` 和 protocol 增加长度 framing。
+因此 `(A, B-C)` 与 `(A-B, C)` 都会生成 `rad-A-B-C`。Version 1 接受该低概率冲突，不定义
+冲突索引或额外消歧逻辑，也不得从 serviceName 反解两个组成部分。读取方使用已知的 AgentName
+和 protocol 重新组合并比较。未来如需无冲突组合规则，必须使用新的 composer id 和显式迁移契约。
 
 该字符集只保证 `lb://<serviceName>` 能作为 Gateway URI 正常解析；它不定义 DNS 名称，也不
 lowercase 大小写敏感的 Nacos Service 身份。会把 service id 规范化为小写的集成不在该兼容
