@@ -106,9 +106,9 @@ the mode consistently.
 Execution mode and criticality are plugin-type capabilities rather than properties of a particular
 built-in implementation. The shared `PluginType` must expose `executionMode` and `critical`.
 The existing `exclusive` information remains derived from `executionMode == EXCLUSIVE` for API
-compatibility. Whether an implementation is configurable is derived from whether that instance
-implements `PluginConfigSpec`; configurable and zero-config implementations may coexist under the
-same plugin type.
+compatibility. Whether an implementation is configurable is derived from
+`PluginConfigSpec.isConfigurable()`; configurable and zero-config implementations may coexist under
+the same plugin type.
 
 ## SPI Layers
 
@@ -120,8 +120,13 @@ Nacos plugins have two related SPI layers:
    plugin manager for listing, status management, configuration, and
    observability.
 
-A plugin that needs dynamic configuration implements `PluginConfigSpec`. A
-plugin category that supports enable or disable checks must use
+Unified domain plugin SPIs extend `PluginConfigSpec`. Its compatibility defaults expose no
+definitions, an empty current map, and a no-op apply callback, so an implementation compiled against
+an older domain SPI and a new zero-config implementation both remain `configurable=false`. A plugin
+that declares at least one `ConfigItemDefinition` is configurable and must implement the current-map
+and apply callbacks. `environment` and `control` remain bootstrap exceptions until their unified
+configuration lifecycle is designed; `ai-resource-import` remains outside unified management until
+its redesign. A plugin category that supports enable or disable checks must use
 `PluginStateCheckerHolder` rather than keeping an independent status source.
 
 `PluginConfigDefinitionSpec` is the definition-only parent contract for a factory
@@ -268,10 +273,10 @@ currently be disabled by itself, so it may change as peer implementation states 
 detail responses add `typeCritical` and `executionMode`; the existing `exclusive` field remains and
 is derived from the execution mode.
 
-Plugins with `PluginConfigSpec` expose config definitions, current config, and
-config application behavior. Cluster-wide status or config changes must be
-synchronized through the plugin state operation path unless the request is
-explicitly local only.
+Plugins for which `PluginConfigSpec.isConfigurable()` returns `true` expose config definitions,
+current config, and config application behavior. Its default implementation returns `true` only
+when `getConfigDefinitions()` is non-null and non-empty. Cluster-wide status or config changes must
+be synchronized through the plugin state operation path unless the request is explicitly local only.
 
 ### Configuration Definition
 

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -315,9 +314,9 @@ public class ConfigChangeAspect {
     
     private Properties resolvePluginProperties(
         ConfigChangePluginService configChangePluginService) {
-        if (configChangePluginService instanceof PluginConfigSpec) {
+        if (configChangePluginService.isConfigurable()) {
             Properties result = new Properties();
-            result.putAll(((PluginConfigSpec) configChangePluginService).getCurrentConfig());
+            result.putAll(configChangePluginService.getCurrentConfig());
             return result;
         }
         String serviceType = configChangePluginService.getServiceType().toLowerCase(Locale.ROOT);

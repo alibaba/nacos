@@ -37,8 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * config change plugin configs.
  *
  * @author liyunfei
- * @deprecated use {@link com.alibaba.nacos.api.plugin.PluginConfigSpec} to declare and apply
- *             config change plugin configuration
+ * @deprecated declare config definitions and implement the unified config callbacks on
+ *             {@link com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService}
  **/
 @Deprecated
 @Configuration
@@ -83,8 +83,8 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     public Properties getPluginProperties(String configPluginType) {
         if (legacyUsageWarnedPlugins.add(configPluginType)) {
             LOGGER.warn("[ConfigChangeConfigs] Applying deprecated legacy configuration with "
-                + "prefix '{}' to config change plugin '{}'. Implement PluginConfigSpec "
-                + "to use unified plugin configuration management.", PREFIX,
+                + "prefix '{}' to config change plugin '{}'. Declare configuration definitions "
+                + "and implement the unified configuration callbacks to migrate.", PREFIX,
                 configPluginType);
         }
         Properties properties = configPluginProperties.get(configPluginType);

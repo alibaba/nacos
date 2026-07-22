@@ -118,8 +118,9 @@ committed config mutation.
 
 ### Unified Plugin Configuration
 
-A config change plugin that owns configurable properties should also implement
-`PluginConfigSpec`. Its canonical full keys use the standard prefix:
+`ConfigChangePluginService` extends `PluginConfigSpec`. A config change plugin that owns
+configurable properties declares them through that inherited contract. Its canonical full keys use
+the standard prefix:
 
 ```properties
 nacos.plugin.config-change.{pluginName}.{itemKey}
@@ -129,8 +130,8 @@ The implementation declares item keys, legacy aliases, sensitivity, and effect
 mode through `ConfigItemDefinition`. The common plugin configuration resolver
 loads and applies the effective configuration. For compatibility with the
 config change SPI request contract, `ConfigChangeConstants.PLUGIN_PROPERTIES`
-contains the implementation's current effective item-key map when the service
-implements `PluginConfigSpec`.
+contains the implementation's current effective item-key map when the service reports
+`isConfigurable()=true`.
 
 Plugin enablement is unified plugin state for
 `config-change:{pluginName}` and is not a `ConfigItemDefinition`. Pointcut
@@ -138,8 +139,9 @@ candidate lookup is the only runtime enablement gate.
 
 ### Legacy Compatibility
 
-Plugins that do not implement `PluginConfigSpec` remain supported through the
-deprecated legacy configuration adapter. Their properties continue to use:
+Plugins compiled against the older SPI, and implementations that declare no configuration
+definitions, remain supported through the deprecated legacy configuration adapter. Their properties
+continue to use:
 
 ```properties
 nacos.core.config.plugin.{pluginName}.{propertyKey}

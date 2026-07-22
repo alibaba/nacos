@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.visibility.spi;
 
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
-import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
@@ -275,8 +274,7 @@ class VisibilityPluginManagerTest {
         }
     }
     
-    private static class ConfigurableVisibilityService extends TestVisibilityService
-        implements PluginConfigSpec {
+    private static class ConfigurableVisibilityService extends TestVisibilityService {
         
         private boolean legacyInitCalled;
         
@@ -291,7 +289,7 @@ class VisibilityPluginManagerTest {
         
         @Override
         public List<ConfigItemDefinition> getConfigDefinitions() {
-            return Collections.emptyList();
+            return Collections.singletonList(new ConfigItemDefinition());
         }
         
         @Override

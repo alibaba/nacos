@@ -108,7 +108,8 @@ Nacos 还会通过 request arguments 传递 `ConfigChangeConstants.ORIGINAL_ARGS
 
 ### 统一插件配置
 
-拥有可配置属性的配置变更插件应同时实现 `PluginConfigSpec`。标准完整配置 key 使用统一前缀：
+`ConfigChangePluginService` 统一继承 `PluginConfigSpec`。拥有可配置属性的配置变更插件通过
+该继承契约声明配置，标准完整配置 key 使用统一前缀：
 
 ```properties
 nacos.plugin.config-change.{pluginName}.{itemKey}
@@ -116,15 +117,16 @@ nacos.plugin.config-change.{pluginName}.{itemKey}
 
 插件实现通过 `ConfigItemDefinition` 声明 item key、历史 alias、敏感性和生效模式，通用插件
 配置 resolver 负责加载 effective config 并 apply。为兼容配置变更 SPI 的请求契约，当服务
-实现 `PluginConfigSpec` 时，`ConfigChangeConstants.PLUGIN_PROPERTIES` 中传递该实现当前
-effective config 的 item-key map。
+返回 `isConfigurable()=true` 时，`ConfigChangeConstants.PLUGIN_PROPERTIES` 中传递
+该实现当前 effective config 的 item-key map。
 
 `config-change:{pluginName}` 的启停属于统一 plugin state，不是 `ConfigItemDefinition`。
 pointcut 候选查询是运行时唯一的启停 gate。
 
 ### 历史兼容
 
-未实现 `PluginConfigSpec` 的插件继续由已废弃的历史配置适配器支持，其属性仍使用：
+按旧版 SPI 编译的插件，以及没有声明配置 definitions 的实现，继续由已废弃的历史配置
+适配器支持，其属性仍使用：
 
 ```properties
 nacos.core.config.plugin.{pluginName}.{propertyKey}

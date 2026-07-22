@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.visibility.spi;
 
-import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -98,12 +97,12 @@ public class VisibilityPluginManager {
                 service.getClass());
             return;
         }
-        if (!(service instanceof PluginConfigSpec)) {
+        if (!service.isConfigurable()) {
             Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
             if (!serviceProperties.isEmpty()) {
                 LOGGER.warn(
                     "[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
-                        + "init(Properties) configuration. Implement PluginConfigSpec to use "
+                        + "init(Properties) configuration. Declare configuration definitions to use "
                         + "unified plugin configuration.",
                     service.getClass(), serviceName);
             }

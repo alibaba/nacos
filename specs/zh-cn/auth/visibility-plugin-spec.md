@@ -124,16 +124,17 @@ nacos.plugin.visibility.enabled=true
 `nacos.plugin.visibility.{serviceName}.enabled` 覆盖；持久化 state 优先于二者，但不能绕过
 插件族总开关。实现级运行时变更通过插件管理 API 完成。
 
-内置 `visibility:nacos` 没有私有配置，不实现 `PluginConfigSpec`，并以
-`configurable=false` 暴露。外部实现可以拥有以下前缀的配置：
+`VisibilityService` 统一继承 `PluginConfigSpec`。内置 `visibility:nacos` 没有私有配置、
+不声明 definitions，并以 `configurable=false` 暴露。外部实现可以拥有以下前缀的配置：
 
 ```properties
 nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
-未实现 `PluginConfigSpec` 的历史实现仍通过 `VisibilityService.init(Properties)` 一次性接收
-实现本地属性。使用非空历史属性时，服务端记录迁移告警，但不得打印配置值。对于实现了
-`PluginConfigSpec` 的实现，Visibility manager 不得再调用历史回调；核心插件管理器统一的
+按旧版 SPI 编译的历史实现，以及没有声明 definitions 的实现，仍通过
+`VisibilityService.init(Properties)` 一次性接收实现本地属性。使用非空历史属性时，服务端
+记录迁移告警，但不得打印配置值。对于返回 `isConfigurable()=true` 的实现，Visibility
+manager 不得再调用历史回调；核心插件管理器统一的
 `applyConfig` 生命周期是唯一配置应用入口。此类实现应声明自身 definitions，并获得统一的
 source、元数据、脱敏和更新语义。
 

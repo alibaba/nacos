@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.plugin.datasource.dialect;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+
 /**
  * DatabaseDialect interface.
  * @author Long Yu
  */
-public interface DatabaseDialect {
+public interface DatabaseDialect extends PluginConfigSpec {
     
     /**
      * Fully-qualified name of Spring's {@code DuplicateKeyException}. Matched by name rather than

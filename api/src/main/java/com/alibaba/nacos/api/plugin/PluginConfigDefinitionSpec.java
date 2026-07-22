@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.plugin;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,5 +34,7 @@ public interface PluginConfigDefinitionSpec {
      *
      * @return list of configuration item definitions
      */
-    List<ConfigItemDefinition> getConfigDefinitions();
+    default List<ConfigItemDefinition> getConfigDefinitions() {
+        return Collections.emptyList();
+    }
 }
