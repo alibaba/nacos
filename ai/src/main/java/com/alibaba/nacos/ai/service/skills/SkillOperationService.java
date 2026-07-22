@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -47,25 +46,15 @@ public interface SkillOperationService {
     String uploadSkillFromZip(SkillUploadRequest request) throws NacosException;
     
     /**
-     * Batch precheck multiple skill uploads.
-     *
-     * @param requests list of precheck requests
-     * @return list of precheck results (same order as input)
-     * @throws NacosException if precheck failed unexpectedly
-     */
-    List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
-        List<SkillUploadPrecheckRequest> requests) throws NacosException;
-    
-    /**
-     * Batch precheck multiple skill uploads from a single zip archive.
+     * Precheck one or more skill uploads from a zip archive.
      *
      * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes containing multiple skill subdirectories
-     * @param targetVersion target version specified by the caller
+     * @param zipBytes zip file bytes containing one skill or multiple skill subdirectories
+     * @param targetVersion target version for a single-skill zip, or {@code null}
      * @return list of precheck results
      * @throws NacosException if zip parsing fails entirely
      */
-    List<SkillUploadPrecheckResult> batchPrecheckUploadSkillFromZip(String namespaceId,
+    List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
         byte[] zipBytes, String targetVersion) throws NacosException;
     
     /**

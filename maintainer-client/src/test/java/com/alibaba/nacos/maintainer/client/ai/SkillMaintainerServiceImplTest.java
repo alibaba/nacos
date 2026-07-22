@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -159,8 +158,8 @@ class SkillMaintainerServiceImplTest {
     }
     
     @Test
-    @DisplayName("batchPrecheckUploadSkill should call batch upload precheck path")
-    void testBatchPrecheckUploadSkill() throws NacosException {
+    @DisplayName("precheckUploadSkillFromZip should call zip precheck path")
+    void testPrecheckUploadSkillFromZip() throws NacosException {
         SkillUploadPrecheckResult item = new SkillUploadPrecheckResult();
         item.setSkillName("test-skill");
         item.setParsedVersion("v2");
@@ -169,25 +168,18 @@ class SkillMaintainerServiceImplTest {
             java.util.Collections.singletonList(item))));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
-        SkillUploadPrecheckRequest precheckRequest = new SkillUploadPrecheckRequest();
-        precheckRequest.setNamespaceId("public");
-        precheckRequest.setSkillName("test-skill");
-        precheckRequest.setDescription("desc");
-        precheckRequest.setParsedVersion("v2");
-        precheckRequest.setVersionSource("SKILL.md frontmatter");
-        precheckRequest.setTargetVersion("v2");
-        
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillService.batchPrecheckUploadSkill(
-                java.util.Collections.singletonList(precheckRequest));
+            skillService.precheckUploadSkillFromZip("public", "zip".getBytes(), "v2");
         
         assertEquals(1, actual.size());
         assertEquals("test-skill", actual.get(0).getSkillName());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
         HttpRequest request = requestCaptor.getValue();
-        assertEquals(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_PRECHECK_ADMIN_PATH,
+        assertEquals(Constants.AdminApiPath.AI_SKILL_UPLOAD_PRECHECK_ADMIN_PATH,
             request.getPath());
+        assertEquals("v2", request.getParamValues().get("targetVersion"));
+        assertTrue(request.isFileUpload());
     }
     
     @Test

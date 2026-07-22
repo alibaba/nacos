@@ -33,6 +33,8 @@ public class SkillUploadPrecheckResult {
     
     public static final String PRECHECK_CODE_NO_PERMISSION = "NO_PERMISSION";
     
+    public static final String PRECHECK_CODE_NOT_A_SKILL = "NOT_A_SKILL";
+    
     public static final String PRECHECK_CODE_INVALID_SKILL = "INVALID_SKILL";
     
     public static final String ACTION_CREATE_DRAFT = "CREATE_DRAFT";
@@ -43,7 +45,11 @@ public class SkillUploadPrecheckResult {
     
     private String namespaceId;
     
+    private String entryPath;
+    
     private String skillName;
+    
+    private String reason;
     
     private String owner;
     
@@ -69,12 +75,28 @@ public class SkillUploadPrecheckResult {
         this.namespaceId = namespaceId;
     }
     
+    public String getEntryPath() {
+        return entryPath;
+    }
+    
+    public void setEntryPath(String entryPath) {
+        this.entryPath = entryPath;
+    }
+    
     public String getSkillName() {
         return skillName;
     }
     
     public void setSkillName(String skillName) {
         this.skillName = skillName;
+    }
+    
+    public String getReason() {
+        return reason;
+    }
+    
+    public void setReason(String reason) {
+        this.reason = reason;
     }
     
     public String getOwner() {

@@ -24,7 +24,6 @@ import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -42,7 +41,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -56,8 +54,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -269,30 +269,24 @@ class ConsoleSkillControllerTest {
     }
     
     @Test
-    void testBatchPrecheckUploadSkill() throws Exception {
+    void testPrecheckUploadSkill() throws Exception {
+        byte[] zipBytes = "zip-content".getBytes();
         SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
         precheckResult.setSkillName(SKILL_NAME);
         precheckResult.setMaxPublishedVersion("0.9.0");
         precheckResult.setParsedVersion("1.0.0");
         precheckResult.setTargetVersion("1.0.0");
         precheckResult.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_READY);
-        when(skillProxy.batchPrecheckUploadSkill(argThat(reqs -> reqs != null
-            && reqs.size() == 1
-            && NS.equals(reqs.get(0).getNamespaceId())
-            && SKILL_NAME.equals(reqs.get(0).getSkillName()))))
+        when(skillProxy.precheckUploadSkillFromZip(eq(NS), aryEq(zipBytes), eq("1.0.0")))
             .thenReturn(java.util.Collections.singletonList(precheckResult));
-        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
-        request.setNamespaceId(NS);
-        request.setSkillName(SKILL_NAME);
-        request.setDescription("desc");
-        request.setParsedVersion("1.0.0");
-        request.setVersionSource("SKILL.md frontmatter");
-        request.setTargetVersion("1.0.0");
+        MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
+            "application/zip", zipBytes);
         
         MockHttpServletResponse response = mockMvc.perform(
-            MockMvcRequestBuilders.post(BASE_PATH + "/upload/batch/precheck")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JacksonUtils.toJson(java.util.Collections.singletonList(request))))
+            MockMvcRequestBuilders.multipart(BASE_PATH + "/upload/precheck")
+                .file(file)
+                .param("namespaceId", NS)
+                .param("targetVersion", "1.0.0"))
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());

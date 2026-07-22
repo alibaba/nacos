@@ -31,7 +31,6 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -231,24 +230,21 @@ class SkillRemoteHandlerTest {
     }
     
     @Test
-    void testBatchPrecheckUploadSkill() throws NacosException {
-        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
-        request.setNamespaceId(NAMESPACE_ID);
-        request.setSkillName(SKILL_NAME);
+    void testPrecheckUploadSkillFromZip() throws NacosException {
+        byte[] zipBytes = "zip".getBytes();
         SkillUploadPrecheckResult precheckResult = new SkillUploadPrecheckResult();
         precheckResult.setSkillName(SKILL_NAME);
-        java.util.List<SkillUploadPrecheckRequest> requests =
-            java.util.Collections.singletonList(request);
         java.util.List<SkillUploadPrecheckResult> results =
             java.util.Collections.singletonList(precheckResult);
-        when(skillMaintainerService.batchPrecheckUploadSkill(requests)).thenReturn(results);
+        when(skillMaintainerService.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0"))
+            .thenReturn(results);
         
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillRemoteHandler.batchPrecheckUploadSkill(requests);
+            skillRemoteHandler.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
         
         assertEquals(1, actual.size());
         assertEquals(SKILL_NAME, actual.get(0).getSkillName());
-        verify(skillMaintainerService).batchPrecheckUploadSkill(requests);
+        verify(skillMaintainerService).precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
     }
     
     @Test

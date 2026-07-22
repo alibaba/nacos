@@ -27,7 +27,6 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -97,14 +96,9 @@ class SkillNoopHandlerTest {
     }
     
     @Test
-    void testBatchPrecheckUploadSkillThrowsNotImplemented() {
-        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
-        request.setNamespaceId("public");
-        request.setSkillName("test-skill");
-        java.util.List<SkillUploadPrecheckRequest> requests =
-            java.util.Collections.singletonList(request);
+    void testPrecheckUploadSkillFromZipThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> skillNoopHandler.batchPrecheckUploadSkill(requests));
+            () -> skillNoopHandler.precheckUploadSkillFromZip("public", new byte[0], null));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     

@@ -41,7 +41,6 @@ import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -120,6 +119,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
     
+    private static final String META_JSON_RESOURCE_NAME = "_meta.json";
+    
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
     
     private static final String SCOPE_SKILL = "skill";
@@ -167,101 +168,81 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Skill name is required");
         }
-        UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill.getSkillMd(),
-            request.getZipBytes(),
+        UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill,
             request.getTargetVersion());
         return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersion,
             request.isOverwrite(), request.getUploadAction(), request.getCommitMsg());
     }
     
     @Override
-    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
-        List<SkillUploadPrecheckRequest> requests) throws NacosException {
-        if (requests == null || requests.isEmpty()) {
-            return Collections.emptyList();
+    public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
+        byte[] zipBytes, String targetVersion) throws NacosException {
+        SkillZipParser.MultiSkillParseResult parseResult =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
+        if (StringUtils.isNotBlank(targetVersion) && parseResult.getSkills().size() > 1) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "targetVersion is only supported for a single-skill zip");
         }
-        List<SkillUploadPrecheckResult> results = new ArrayList<>(requests.size());
-        for (SkillUploadPrecheckRequest request : requests) {
+        List<SkillUploadPrecheckResult> results = new ArrayList<>(
+            parseResult.getFailures().size() + parseResult.getSkills().size());
+        for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
+            results.add(buildPrecheckParseFailureResult(namespaceId, failure));
+        }
+        for (Skill skill : parseResult.getSkills()) {
             try {
-                results.add(precheckUploadSkill(request));
+                results.add(precheckUploadSkill(namespaceId, skill, targetVersion,
+                    parseResult.getEntryPath(skill)));
             } catch (NacosException e) {
                 SkillUploadPrecheckResult failed = new SkillUploadPrecheckResult();
-                failed.setNamespaceId(request != null ? request.getNamespaceId() : null);
-                failed.setSkillName(request != null ? request.getSkillName() : null);
-                failed.setParsedVersion(request != null ? request.getParsedVersion() : null);
-                failed.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
+                failed.setNamespaceId(namespaceId);
+                failed.setEntryPath(parseResult.getEntryPath(skill));
+                failed.setSkillName(skill.getName());
+                failed.setReason(e.getErrMsg());
+                failed.setPrecheckCode(
+                    SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
                 results.add(failed);
             }
         }
         return results;
     }
     
-    @Override
-    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
-        SkillZipParser.MultiSkillParseResult parseResult =
-            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
-        List<SkillUploadPrecheckResult> results = new ArrayList<>(
-            parseResult.getFailures().size() + parseResult.getSkills().size());
-        for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
-            results.add(buildPrecheckParseFailureResult(namespaceId, failure));
-        }
-        List<SkillUploadPrecheckRequest> requests =
-            new ArrayList<>(parseResult.getSkills().size());
-        for (Skill skill : parseResult.getSkills()) {
-            requests.add(buildPrecheckRequest(namespaceId, skill, targetVersion));
-        }
-        results.addAll(batchPrecheckUploadSkill(requests));
-        return results;
-    }
-    
-    private SkillUploadPrecheckRequest buildPrecheckRequest(String namespaceId, Skill skill,
-        String targetVersion) {
-        UploadVersionCandidate uploadVersion =
-            resolveUploadVersionCandidate(skill.getSkillMd(), null, targetVersion);
-        SkillUploadPrecheckRequest request = new SkillUploadPrecheckRequest();
-        request.setNamespaceId(namespaceId);
-        request.setSkillName(skill.getName());
-        request.setDescription(skill.getDescription());
-        request.setParsedVersion(uploadVersion.resolveDisplayVersion(targetVersion));
-        request.setVersionSource(uploadVersion.getSource());
-        request.setTargetVersion(targetVersion);
-        return request;
-    }
-    
     private SkillUploadPrecheckResult buildPrecheckParseFailureResult(String namespaceId,
         SkillZipParser.ParseFailure failure) {
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
         result.setNamespaceId(namespaceId);
-        result.setSkillName(failure.getFolder());
-        result.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
+        result.setEntryPath(failure.getEntryPath());
+        result.setReason(failure.getReason());
+        result.setPrecheckCode(failure.getType() == SkillZipParser.ParseFailureType.NOT_A_SKILL
+            ? SkillUploadPrecheckResult.PRECHECK_CODE_NOT_A_SKILL
+            : SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL);
         return result;
     }
     
     /**
-     * Precheck a single skill upload. Internal helper used by batchPrecheckUploadSkill.
+     * Precheck a single parsed skill from the uploaded ZIP.
      */
-    private SkillUploadPrecheckResult precheckUploadSkill(SkillUploadPrecheckRequest request)
-        throws NacosException {
-        String name = StringUtils.trim(request.getSkillName());
+    private SkillUploadPrecheckResult precheckUploadSkill(String namespaceId, Skill skill,
+        String targetVersion, String entryPath) throws NacosException {
+        String name = StringUtils.trim(skill.getName());
         if (StringUtils.isBlank(name)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Skill name is required");
         }
         validateSkillNameByParamChecker(name);
-        UploadVersionCandidate uploadVersion = resolvePrecheckVersionCandidate(
-            request.getParsedVersion(), request.getVersionSource(), request.getTargetVersion());
+        UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill,
+            targetVersion);
         
         SkillUploadPrecheckResult result = new SkillUploadPrecheckResult();
-        result.setNamespaceId(request.getNamespaceId());
+        result.setNamespaceId(namespaceId);
+        result.setEntryPath(entryPath);
         result.setSkillName(name);
         result.setParsedVersion(uploadVersion.resolveDisplayVersion(null));
         
-        AiResource meta = resourceManager.findMeta(request.getNamespaceId(), name,
-            RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta == null) {
-            String targetVersion = resolveNewUploadVersion(uploadVersion);
-            fillPrecheckVersion(result, uploadVersion, targetVersion);
+            String resolvedTargetVersion = resolveNewUploadVersion(uploadVersion);
+            fillPrecheckVersion(result, uploadVersion, resolvedTargetVersion);
             result.setExists(false);
             result.setPrecheckCode(resolveVersionPrecheckCode(result));
             return result;
@@ -281,14 +262,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         result.setMaxPublishedVersion(resourceManager.resolveMaxPublishedVersion(
-            request.getNamespaceId(), name, RESOURCE_TYPE_SKILL));
+            namespaceId, name, RESOURCE_TYPE_SKILL));
         String editing = info.getEditingVersion();
         String reviewing = info.getReviewingVersion();
         List<String> existingVersions = resourceManager.listExistingVersions(
-            request.getNamespaceId(), name, RESOURCE_TYPE_SKILL);
-        String targetVersion = resolvePrecheckTargetVersion(uploadVersion, existingVersions,
+            namespaceId, name, RESOURCE_TYPE_SKILL);
+        String resolvedTargetVersion = resolvePrecheckTargetVersion(uploadVersion, existingVersions,
             editing);
-        fillPrecheckVersion(result, uploadVersion, targetVersion);
+        fillPrecheckVersion(result, uploadVersion, resolvedTargetVersion);
         result.setEditingVersion(editing);
         result.setReviewingVersion(reviewing);
         
@@ -329,8 +310,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     result.addFailed("unknown", "Skill name is required in YAML front matter");
                     continue;
                 }
-                UploadVersionCandidate uploadVersion =
-                    resolveUploadVersionCandidate(skill.getSkillMd(), null, null);
+                UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill, null);
                 doUploadSingleSkill(namespaceId, skill, uploadVersion, overwrite, null, null);
                 result.addSucceeded(skillName);
             } catch (Exception e) {
@@ -591,14 +571,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return new UploadVersionCandidate(DEFAULT_INITIAL_UPLOAD_VERSION, "default");
     }
     
-    private UploadVersionCandidate resolveUploadVersionCandidate(String skillMd, byte[] zipBytes,
+    private UploadVersionCandidate resolveUploadVersionCandidate(Skill skill,
         String targetVersion) {
-        String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
+        String versionFromSkillMd = resolveVersionFromSkillMd(skill.getSkillMd());
         if (StringUtils.isNotBlank(versionFromSkillMd)) {
             return buildLenientUploadVersionCandidate(versionFromSkillMd,
                 "SKILL.md frontmatter");
         }
-        String versionFromMetaJson = SkillZipParser.resolveVersionFromZip(zipBytes);
+        String versionFromMetaJson = resolveVersionFromSkillMetaJson(skill);
         if (StringUtils.isNotBlank(versionFromMetaJson)) {
             return buildLenientUploadVersionCandidate(versionFromMetaJson, "_meta.json");
         }
@@ -609,18 +589,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return UploadVersionCandidate.empty();
     }
     
-    private UploadVersionCandidate resolvePrecheckVersionCandidate(String parsedVersion,
-        String versionSource, String targetVersion) {
-        if (StringUtils.isNotBlank(parsedVersion)) {
-            String source = StringUtils.isNotBlank(versionSource) ? versionSource
-                : "client parsed metadata";
-            return buildLenientUploadVersionCandidate(parsedVersion.trim(), source);
+    private String resolveVersionFromSkillMetaJson(Skill skill) {
+        if (skill.getResource() == null) {
+            return null;
         }
-        if (StringUtils.isNotBlank(targetVersion)) {
-            return buildLenientUploadVersionCandidate(targetVersion.trim(),
-                "targetVersion parameter");
+        String resourceId = SkillUtils.generateResourceId("", META_JSON_RESOURCE_NAME);
+        SkillResource metaResource = skill.getResource().get(resourceId);
+        if (metaResource == null || StringUtils.isBlank(metaResource.getContent())) {
+            return null;
         }
-        return UploadVersionCandidate.empty();
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> meta = JacksonUtils.toObj(metaResource.getContent(), Map.class);
+            Object version = meta == null ? null : meta.get("version");
+            return version == null ? null : StringUtils.trim(String.valueOf(version));
+        } catch (Exception e) {
+            LOGGER.warn("Failed to resolve version from skill _meta.json: {}", e.getMessage());
+            return null;
+        }
     }
     
     private static String validateUploadVersionFormat(String version, String source)
