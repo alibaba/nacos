@@ -204,21 +204,22 @@ class JdkHttpClientRequestTest {
         verify(outputStream, atLeast(1)).flush();
         assertNotNull(response);
     }
-
+    
     @Test
     @DisplayName("execute with File body should not fall into else-if branch")
     void testExecuteFileBody() throws Exception {
         File tempFile = File.createTempFile("test", ".txt");
         tempFile.deleteOnExit();
         Files.write(tempFile.toPath(), "test content".getBytes(StandardCharsets.UTF_8));
-
+        
         Header header = Header.newInstance();
         HttpClientConfig config = HttpClientConfig.builder().build();
         RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, tempFile);
         HttpClientResponse response = httpClientRequest.execute(uri, "POST", httpEntity);
-
+        
         // handleFileUpload will set multipart Content-Type
-        verify(connection).setRequestProperty(eq("Content-Type"), startsWith("multipart/form-data; boundary="));
+        verify(connection).setRequestProperty(eq("Content-Type"),
+            startsWith("multipart/form-data; boundary="));
         // should not fall into else-if branch, so Content-Length will not be set
         verify(connection, never()).setRequestProperty(eq("Content-Length"), anyString());
         assertEquals(connection, getActualConnection(response));

@@ -108,7 +108,8 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                     handleFileUpload(conn, (File) body);
                 } else {
                     String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-                    String bodyStr = body instanceof String ? (String) body : JsonUtils.toJson(body);
+                    String bodyStr =
+                        body instanceof String ? (String) body : JsonUtils.toJson(body);
                     if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
                         Map<String, String> map = JsonUtils.toObj(bodyStr, HashMap.class);
                         bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
