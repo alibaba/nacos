@@ -1276,7 +1276,7 @@
     "batchItemInvalidSkill": "Parse failed",
     "batchItemInvalidSkillDesc": "SKILL.md is not a valid skill descriptor",
     "batchItemNonSkillFolder": "Non-skill",
-    "batchItemNonSkillFolderDesc": "This folder has no SKILL.md and is not prechecked as a skill",
+    "batchItemNonSkillFolderDesc": "SKILL.md not found; skipped",
     "batchItemNoPermissionWithOwner": "No edit permission. Owner: {{owner}}",
     "batchItemExistingVersionSummary": "Highest published version: {{maxPublishedVersion}}; version after upload: {{targetVersion}}",
     "batchItemNewVersionSummary": "Version after upload: {{targetVersion}}",

@@ -1276,7 +1276,7 @@
     "batchItemInvalidSkill": "解析失败",
     "batchItemInvalidSkillDesc": "SKILL.md 不是有效 Skill 描述文件",
     "batchItemNonSkillFolder": "非 Skill",
-    "batchItemNonSkillFolderDesc": "目录内没有 SKILL.md，不作为 Skill 预检",
+    "batchItemNonSkillFolderDesc": "未找到 SKILL.md，已跳过",
     "batchItemNoPermissionWithOwner": "无编辑权限，所有者：{{owner}}",
     "batchItemExistingVersionSummary": "最高已发布版本：{{maxPublishedVersion}}；上传后版本：{{targetVersion}}",
     "batchItemNewVersionSummary": "上传后版本：{{targetVersion}}",
