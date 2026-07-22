@@ -129,6 +129,20 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
         }
     }
     
+    @Override
+    public void replaceAllConfigs(Map<String, Map<String, String>> configs) {
+        synchronized (configLock) {
+            try {
+                Map<String, Map<String, String>> configsToStore = configs == null
+                    ? new HashMap<>() : new HashMap<>(configs);
+                writeJsonToFile(PLUGIN_CONFIG_FILE, configsToStore);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Replaced all plugin configs");
+            } catch (Exception e) {
+                throw new PluginPersistenceException("Failed to replace all plugin configs", e);
+            }
+        }
+    }
+    
     /**
      * Load all plugin states.
      *

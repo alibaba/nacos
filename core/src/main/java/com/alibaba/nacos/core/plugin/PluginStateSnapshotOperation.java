@@ -78,7 +78,8 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
         try {
             // Load all states and configs
             Map<String, Boolean> states = persistence.loadAllStates();
-            Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
+            Map<String, Map<String, String>> configs =
+                pluginManager.getRuntimePersistedConfigs();
             
             // Create snapshot
             PluginStateSnapshot snapshot = new PluginStateSnapshot();
@@ -152,9 +153,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
             // Restore configs
             Map<String, Map<String, String>> configs = snapshot.getConfigs();
             if (configs != null) {
-                for (Map.Entry<String, Map<String, String>> entry : configs.entrySet()) {
-                    pluginManager.restoreConfigChange(entry.getKey(), entry.getValue());
-                }
+                pluginManager.restorePluginConfigs(configs);
             }
             
             LOGGER.info("[PluginStateSnapshotOperation] Snapshot loaded: {} states, {} configs",

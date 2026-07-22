@@ -50,16 +50,24 @@ class PluginConfigSourceRegistryTest {
     @Test
     void testRegistryDelegatesSourceLifecycle() {
         TestSourceResolver staticResolver = new TestSourceResolver(PluginConfigSourceType.STATIC);
-        PluginConfigSourceRegistry registry = registryWithStaticResolver(staticResolver);
+        TestPersistedSourceResolver persistedResolver = new TestPersistedSourceResolver();
+        PluginConfigSourceRegistry registry = registryWithResolvers(staticResolver,
+            persistedResolver);
         PluginInfo pluginInfo = new PluginInfo();
+        Map<String, Map<String, String>> restored = Collections.singletonMap("trace:test",
+            Collections.singletonMap("key", "value"));
         
         registry.initializeConfig(PluginConfigSourceType.STATIC, pluginInfo);
         registry.refreshConfig(PluginConfigSourceType.STATIC, pluginInfo);
+        registry.initializePersistedConfigs();
+        registry.restorePersistedConfigs(restored);
         
         assertSame(staticResolver,
             registry.getSourceResolver(PluginConfigSourceType.STATIC));
         assertTrue(staticResolver.initialized);
         assertTrue(staticResolver.refreshed);
+        assertTrue(persistedResolver.persistedInitialized);
+        assertEquals(restored, registry.getAllPersistedConfigs());
     }
     
     @Test
@@ -73,15 +81,24 @@ class PluginConfigSourceRegistryTest {
             () -> new PluginConfigSourceRegistry(Collections.emptyList()));
         IllegalArgumentException unknownException = assertThrows(IllegalArgumentException.class,
             () -> new PluginConfigSourceRegistry().getSourceResolver(null));
+        List<PluginConfigSourceResolver> unsupportedPersistedSource = defaultSources();
+        unsupportedPersistedSource.set(1,
+            new TestSourceResolver(PluginConfigSourceType.RUNTIME_PERSISTED));
+        IllegalArgumentException unsupportedException = assertThrows(
+            IllegalArgumentException.class,
+            () -> new PluginConfigSourceRegistry(unsupportedPersistedSource));
         
         assertTrue(duplicateException.getMessage().contains("Duplicate"));
         assertTrue(missingException.getMessage().contains("Required"));
         assertTrue(unknownException.getMessage().contains("not found"));
+        assertTrue(unsupportedException.getMessage().contains("persistence lifecycle"));
     }
     
-    private PluginConfigSourceRegistry registryWithStaticResolver(
-        PluginConfigSourceResolver staticResolver) {
+    private PluginConfigSourceRegistry registryWithResolvers(
+        PluginConfigSourceResolver staticResolver,
+        PersistedPluginConfigSourceResolver persistedResolver) {
         List<PluginConfigSourceResolver> sources = defaultSources();
+        sources.set(1, persistedResolver);
         sources.set(2, staticResolver);
         return new PluginConfigSourceRegistry(sources);
     }
@@ -89,9 +106,36 @@ class PluginConfigSourceRegistryTest {
     private List<PluginConfigSourceResolver> defaultSources() {
         return new java.util.ArrayList<>(Arrays.asList(
             new TestSourceResolver(PluginConfigSourceType.LOCAL_ONLY),
-            new TestSourceResolver(PluginConfigSourceType.RUNTIME_PERSISTED),
+            new TestPersistedSourceResolver(),
             new TestSourceResolver(PluginConfigSourceType.STATIC),
             new TestSourceResolver(PluginConfigSourceType.DEFAULT)));
+    }
+    
+    private static class TestPersistedSourceResolver extends TestSourceResolver
+        implements PersistedPluginConfigSourceResolver {
+        
+        private boolean persistedInitialized;
+        
+        private Map<String, Map<String, String>> configs = Collections.emptyMap();
+        
+        TestPersistedSourceResolver() {
+            super(PluginConfigSourceType.RUNTIME_PERSISTED);
+        }
+        
+        @Override
+        public void initialize() {
+            persistedInitialized = true;
+        }
+        
+        @Override
+        public Map<String, Map<String, String>> getAllConfigs() {
+            return configs;
+        }
+        
+        @Override
+        public void restoreConfigs(Map<String, Map<String, String>> configs) {
+            this.configs = configs;
+        }
     }
     
     private static class TestSourceResolver implements PluginConfigSourceResolver {

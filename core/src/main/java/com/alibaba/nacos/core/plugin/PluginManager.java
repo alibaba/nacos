@@ -442,11 +442,7 @@ public class PluginManager
         refreshAllCriticalFlags();
         
         // Load configs
-        Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
-        configs.forEach((pluginId, config) -> {
-            PluginInfo info = pluginRegistry.get(pluginId);
-            pluginConfigService.loadRuntimePersistedConfig(info, pluginId, config);
-        });
+        pluginConfigService.initializeRuntimePersistedConfigs();
         pluginRegistry.forEach((pluginId, info) -> {
             if (info.isConfigurable()) {
                 pluginConfigService.initializePluginConfig(info, pluginInstances.get(pluginId));
@@ -618,15 +614,27 @@ public class PluginManager
     }
     
     /**
-     * Restore config change from a consensus snapshot.
+     * Get all runtime persisted configs for a consensus snapshot.
      *
-     * @param pluginId plugin ID
-     * @param config configuration
+     * @return complete runtime persisted config snapshot
      */
-    public void restoreConfigChange(String pluginId, Map<String, String> config) {
-        PluginInfo info = pluginRegistry.get(pluginId);
-        pluginConfigService.restoreRuntimePersistedConfig(pluginId, info,
-            pluginInstances.get(pluginId), config);
+    public Map<String, Map<String, String>> getRuntimePersistedConfigs() {
+        return pluginConfigService.getAllRuntimePersistedConfigs();
+    }
+    
+    /**
+     * Restore all runtime persisted configs from a consensus snapshot.
+     *
+     * @param configs complete runtime persisted config snapshot
+     */
+    public synchronized void restorePluginConfigs(Map<String, Map<String, String>> configs) {
+        pluginConfigService.restoreRuntimePersistedConfigs(configs);
+        pluginRegistry.forEach((pluginId, info) -> {
+            if (info.isConfigurable()) {
+                pluginConfigService.applyRestoredPluginConfig(info,
+                    pluginInstances.get(pluginId));
+            }
+        });
     }
     
     /**

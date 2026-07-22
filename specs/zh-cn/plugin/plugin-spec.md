@@ -289,6 +289,12 @@ LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
 运行时持久化配置和 local-only 配置只保存 `pluginId + itemKey` 对应的值，不保存
 normalized full key、alias key、source 或版本信息。
 
+runtime persisted source resolver 负责完整的持久化生命周期：在插件配置初始化前加载
+全部 source；单插件更新时先持久化归一化后的完整 map，再替换内存 source；为一致性
+快照导出内存终态 map；恢复快照时先完整替换持久化 source，再应用插件配置。
+插件编排层不得直接读写 `plugin-configs.json`。插件 enabled state 的持久化仍由状态管理
+链路负责。
+
 每个内部 source resolver 都必须通过 `getConfig(PluginInfo)` 返回使用 canonical
 item key 的完整 map。读取能力与写入能力相互独立：`DEFAULT` 从 definition 读取默认值，
 `STATIC` 根据标准 key 和 alias 从环境读取，两个运行时 source 读取各自内部 map。
@@ -343,8 +349,8 @@ source 的 effective value 复制成 runtime override。服务端应记录 WARN 
 
 启动和运行时更新复用同一套 source resolver 与 effective config 计算逻辑：
 
-1. 启动时先将 `plugin-configs.json` 中的全部内容装载到 runtime persisted source，
-   再开始应用插件配置。
+1. runtime persisted source resolver 先将 `plugin-configs.json` 中的全部内容装载到
+   source，再开始应用插件配置。
 2. 随后对每个已加载的可配置插件执行 resolve 和 apply，即使该插件没有持久化
    override 也要处理。启动属于初始化阶段，可以同时应用 `RUNTIME` 和 `RESTART`
    字段。

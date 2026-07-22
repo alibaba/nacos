@@ -331,6 +331,14 @@ Runtime persisted config and local-only config store only values by
 `pluginId + itemKey`. They do not store normalized full keys, alias keys,
 source, or version information.
 
+The runtime persisted source resolver owns its persistence lifecycle. It loads
+the complete source before plugin config initialization, persists a normalized
+complete map before replacing one plugin source, exports the in-memory terminal
+map for consensus snapshots, and replaces the complete persisted source before
+applying a restored snapshot. Plugin orchestration does not directly read or
+write `plugin-configs.json`. Persisted plugin enabled state remains owned by the
+state-management path.
+
 Every internal source resolver must expose its canonical item-key map through
 `getConfig(PluginInfo)`. Reading is independent from update capability:
 `DEFAULT` reads definition defaults, `STATIC` reads normalized and alias keys
@@ -404,8 +412,8 @@ only `pluginId`, item key, and target source, and must not log the value.
 Startup and runtime updates use the same source resolver and effective config
 calculation:
 
-1. Startup loads all `plugin-configs.json` entries into the runtime persisted
-   source before applying any plugin config.
+1. The runtime persisted source resolver loads all `plugin-configs.json`
+   entries before any plugin config is applied.
 2. Every loaded configurable plugin is then resolved and applied, including
    plugins without a persisted override. Startup may apply both `RUNTIME` and
    `RESTART` fields because the plugin is being initialized.

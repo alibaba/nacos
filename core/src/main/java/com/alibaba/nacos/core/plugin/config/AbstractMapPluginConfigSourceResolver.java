@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 abstract class AbstractMapPluginConfigSourceResolver implements PluginConfigSourceResolver {
     
-    private final Map<String, Map<String, String>> configs = new ConcurrentHashMap<>();
+    private volatile Map<String, Map<String, String>> configs = new ConcurrentHashMap<>();
     
     /**
      * Update source config for one plugin.
@@ -56,6 +56,31 @@ abstract class AbstractMapPluginConfigSourceResolver implements PluginConfigSour
     public Map<String, String> getConfig(PluginInfo pluginInfo) {
         Map<String, String> config = configs.get(pluginInfo.getPluginId());
         return config == null ? null : new HashMap<>(config);
+    }
+    
+    /**
+     * Replace configs for all plugins.
+     *
+     * @param configs complete source config
+     */
+    protected void replaceAllConfigs(Map<String, Map<String, String>> configs) {
+        Map<String, Map<String, String>> replacement = new ConcurrentHashMap<>();
+        if (configs != null) {
+            configs.forEach((pluginId, config) -> replacement.put(pluginId,
+                config == null ? Collections.emptyMap() : new HashMap<>(config)));
+        }
+        this.configs = replacement;
+    }
+    
+    /**
+     * Get configs for all plugins.
+     *
+     * @return complete source config snapshot
+     */
+    protected Map<String, Map<String, String>> getAllConfigsSnapshot() {
+        Map<String, Map<String, String>> result = new HashMap<>();
+        configs.forEach((pluginId, config) -> result.put(pluginId, new HashMap<>(config)));
+        return result;
     }
     
     @Override

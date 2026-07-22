@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.plugin.config;
 
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,8 +42,12 @@ class PluginConfigSourceRegistry {
         new EnumMap<>(PluginConfigSourceType.class);
     
     PluginConfigSourceRegistry() {
+        this((PluginStatePersistenceService) null);
+    }
+    
+    PluginConfigSourceRegistry(PluginStatePersistenceService persistence) {
         this(Arrays.asList(new LocalOnlyPluginConfigSourceResolver(),
-            new RuntimePersistedPluginConfigSourceResolver(),
+            new RuntimePersistedPluginConfigSourceResolver(persistence),
             new StaticPluginConfigSourceResolver(), new DefaultPluginConfigSourceResolver()));
     }
     
@@ -59,6 +64,11 @@ class PluginConfigSourceRegistry {
                 throw new IllegalArgumentException(
                     "Required plugin config source not found: " + sourceType);
             }
+        }
+        if (!(this.sourceResolvers.get(
+            PluginConfigSourceType.RUNTIME_PERSISTED) instanceof PersistedPluginConfigSourceResolver)) {
+            throw new IllegalArgumentException("Runtime persisted plugin config source must "
+                + "support persistence lifecycle");
         }
     }
     
@@ -84,5 +94,22 @@ class PluginConfigSourceRegistry {
     
     void refreshConfig(PluginConfigSourceType sourceType, PluginInfo pluginInfo) {
         getSourceResolver(sourceType).refreshConfig(pluginInfo);
+    }
+    
+    void initializePersistedConfigs() {
+        getPersistedSourceResolver().initialize();
+    }
+    
+    Map<String, Map<String, String>> getAllPersistedConfigs() {
+        return getPersistedSourceResolver().getAllConfigs();
+    }
+    
+    void restorePersistedConfigs(Map<String, Map<String, String>> configs) {
+        getPersistedSourceResolver().restoreConfigs(configs);
+    }
+    
+    private PersistedPluginConfigSourceResolver getPersistedSourceResolver() {
+        return (PersistedPluginConfigSourceResolver) getSourceResolver(
+            PluginConfigSourceType.RUNTIME_PERSISTED);
     }
 }
