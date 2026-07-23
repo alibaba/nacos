@@ -373,7 +373,7 @@
                         <!-- Strict JSON Schema cannot carry a source-code comment header. -->
                         <exclude>specs/schemas/**/*.schema.json</exclude>
                         <!-- Pinned upstream ARD schema; license and provenance are stored beside it. -->
-                        <exclude>ai-registry-adaptor/src/test/resources/ard-spec/**/ai-catalog.schema.json</exclude>
+                        <exclude>**/ard-spec/**/ai-catalog.schema.json</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>
