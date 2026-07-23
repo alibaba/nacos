@@ -167,6 +167,14 @@
         }
       ]
     },
+    "CanonicalEndpointUri": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/AbsoluteEndpointUri"
+        }
+      ],
+      "$comment": "Stored AgentVersionContent requires the exact output of the common Endpoint URI canonicalizer: lowercase scheme, normalized host, explicit effective port, preserved raw path and query, and no fragment or user info. JSON Schema cannot fully express this equality; domain validation is mandatory."
+    },
     "MediaType": {
       "type": "string",
       "minLength": 3,
@@ -330,6 +338,7 @@
     },
     "EndpointMetadata": {
       "type": "object",
+      "minProperties": 1,
       "maxProperties": 32,
       "propertyNames": {
         "$ref": "#/$defs/MetadataKey"
@@ -344,11 +353,13 @@
       "additionalProperties": false,
       "required": [
         "uri",
-        "transport"
+        "transport",
+        "priority",
+        "weight"
       ],
       "properties": {
         "uri": {
-          "$ref": "#/$defs/AbsoluteEndpointUri"
+          "$ref": "#/$defs/CanonicalEndpointUri"
         },
         "transport": {
           "$ref": "#/$defs/TransportToken"
@@ -356,14 +367,12 @@
         "priority": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 2147483647,
-          "default": 0
+          "maximum": 2147483647
         },
         "weight": {
           "type": "number",
           "minimum": 0,
-          "maximum": 10000,
-          "default": 1.0
+          "maximum": 10000
         },
         "metadata": {
           "$ref": "#/$defs/EndpointMetadata"
@@ -410,6 +419,7 @@
         },
         "declaredEndpoints": {
           "type": "array",
+          "minItems": 1,
           "maxItems": 64,
           "items": {
             "$ref": "#/$defs/DeclaredEndpoint"
@@ -441,7 +451,7 @@
           }
         }
       },
-      "description": "Serialize the complete object as RFC 8785 JSON Canonicalization Scheme bytes in UTF-8. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. The Version contentDigest is SHA-256 over those bytes. Protocol uniqueness, I-JSON validation, and descriptor-to-endpoint consistency require domain validation."
+      "description": "Storage projection serialized once with the common Nacos JSON serializer as UTF-8. The exact emitted bytes are persisted and used for size and SHA-256 contentDigest; no semantic JSON canonicalization is defined. Reject unknown schema properties on the envelope, CallInterface, and Endpoint objects; nativeDescriptor members and metadata map entries remain open within their value constraints. Before serialization, canonicalize declared Endpoint URI, validate and preserve transport, materialize priority and weight, and omit empty metadata and declaredEndpoints. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. Protocol uniqueness, URI canonicalization, and descriptor-to-endpoint consistency require domain validation."
     },
     "VersionStorageDescriptor": {
       "type": "object",
@@ -869,13 +879,19 @@
         "schemaVersion",
         "algorithm",
         "seed",
-        "canonicalForm",
         "charset",
-        "canonicalJson",
         "framing",
+        "stringEncoding",
+        "priorityEncoding",
+        "weightEncoding",
+        "metadataEncoding",
+        "healthyEncoding",
         "byteOrder",
         "longOrder",
+        "endpointNormalization",
         "endpointOrder",
+        "naturalKeyFields",
+        "stringOrder",
         "metadataOrder",
         "includedFields",
         "excludedFields",
@@ -892,17 +908,26 @@
         "seed": {
           "const": 0
         },
-        "canonicalForm": {
-          "const": "rad-runtime-endpoint-projection-v1"
-        },
         "charset": {
           "const": "UTF-8"
         },
-        "canonicalJson": {
-          "const": "RFC8785"
-        },
         "framing": {
-          "const": "uint32be-count-and-length-prefixed-fields-v1"
+          "const": "rad-runtime-endpoint-fixed-binary-v1"
+        },
+        "stringEncoding": {
+          "const": "uint32be-byte-length-followed-by-utf8"
+        },
+        "priorityEncoding": {
+          "const": "int32be"
+        },
+        "weightEncoding": {
+          "const": "ieee754-binary64-big-endian-normalize-negative-zero"
+        },
+        "metadataEncoding": {
+          "const": "uint32be-entry-count-followed-by-key-value-strings"
+        },
+        "healthyEncoding": {
+          "const": "uint8-zero-or-one"
         },
         "byteOrder": {
           "const": "BIG_ENDIAN"
@@ -921,11 +946,51 @@
           ],
           "items": false
         },
+        "endpointNormalization": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {
+              "const": "canonicalize-uri"
+            },
+            {
+              "const": "validate-preserve-transport"
+            },
+            {
+              "const": "materialize-priority-weight"
+            },
+            {
+              "const": "require-healthy"
+            }
+          ],
+          "items": false
+        },
         "endpointOrder": {
           "const": "natural-key"
         },
+        "naturalKeyFields": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            {
+              "const": "normalizedHost"
+            },
+            {
+              "const": "effectivePort"
+            },
+            {
+              "const": "transport"
+            }
+          ],
+          "items": false
+        },
+        "stringOrder": {
+          "const": "UTF16-CODE-UNIT-ORDINAL"
+        },
         "metadataOrder": {
-          "const": "key"
+          "const": "UTF16-CODE-UNIT-ORDINAL"
         },
         "includedFields": {
           "type": "array",
@@ -1016,7 +1081,7 @@
           "const": "murmur3-x64-128-v1:"
         }
       },
-      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, aggregate publishers by natural Endpoint key, retain bindings matching targetVersion, remove enabled=false, retain both healthy values, materialize default priority=0 and weight=1.0, sort Endpoints by natural key, and sort public metadata by key. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Canonical bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode the six included fields in their declared order as RFC 8785 canonical JSON UTF-8; prefix each field with its four-byte unsigned big-endian byte length. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by bindings or enabled state change the input set; those control fields are not serialized into an included Endpoint. Golden vectors are required across server implementations."
+      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, aggregate publishers by natural Endpoint key, retain bindings matching targetVersion, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, and healthy as one byte 0 or 1. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by bindings or enabled state change the input set; those control fields are not serialized into an included Endpoint."
     }
   }
 }

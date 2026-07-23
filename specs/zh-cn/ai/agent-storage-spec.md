@@ -124,11 +124,29 @@ AgentVersionContent
     declaredEndpoints[]
 ```
 
-Canonical 序列化使用 RFC 8785 JSON Canonicalization Scheme（JCS）。因此
-CallInterface、来源偏好和 declared Endpoint 的数组顺序保持不变，而对象成员顺序和 JSON
-数字表示被规范化。包含重复对象 key 或不能表示为 I-JSON 的值时拒绝请求。
-`contentDigest` 是对 UTF-8 JCS bytes 计算的 `sha256:<lowercase hex>`。Version 行的
-`storage` JSON 包含：
+服务端校验对象并构造下述存储投影，然后使用 Nacos 公共 JSON serializer 一次序列化为
+UTF-8。同一份输出 bytes 传递给 AI Storage，并用于计算 `size` 和
+`contentDigest=sha256:<lowercase hex>`。Agent Storage 不定义 JSON 语义规范化：两个解析后
+等价的 JSON 表达不要求得到相同摘要。
+
+序列化前，服务端先构造 storage projection：
+
+1. 拒绝 envelope、CallInterface 和 Endpoint object 上的未知 schema property，再仅投影
+   schema version 1 定义的字段；
+2. 使用公共 Endpoint canonicalizer 规范每个 declared Endpoint 的 URI，并校验且保持其
+   transport 原值；
+3. 显式写入 Endpoint 的有效默认值 `priority=0` 和 `weight=1`；
+4. 省略缺失或为空的 Endpoint `metadata` 和 `declaredEndpoints`；
+5. 除上述规范化外，保持所有数组顺序和 descriptor JSON value 不变。
+
+`nativeDescriptor` 的 JSON member 和 Endpoint `metadata` map entry 仍是开放内容，但必须
+满足各自定义的 value 约束。
+
+这些投影规则只规范 Agent 自有字段，不重排 `nativeDescriptor` 内部 member，也不改写协议
+自有 JSON。读取时先对 AI Storage 返回的原始 bytes 计算摘要再解码，不得通过重新序列化
+解码后的对象完成摘要校验。
+
+Version 行的 `storage` JSON 包含：
 
 | 字段 | 值或含义 |
 | --- | --- |
@@ -139,7 +157,7 @@ CallInterface、来源偏好和 declared Endpoint 的数组顺序保持不变，
 | `contentDigest` | `sha256:<lowercase hex>`。 |
 | `mediaType` | `application/vnd.nacos.agent-version+json`。 |
 | `schemaVersion` | `1`。 |
-| `size` | Canonical 内容字节数。 |
+| `size` | 持久化内容字节数。 |
 
 上层将 `StorageKey.key` 视为 opaque。替换 provider 时仍保持一个 Version 对应一个对象，
 但物理 key 由 provider 自己管理。内置 provider 使用第 3.2 节的映射。
@@ -154,7 +172,7 @@ CallInterface、来源偏好和 declared Endpoint 的数组顺序保持不变，
 | `namespaceId` | `tenant_id=namespaceId`。 |
 | 内容类别 | `group_id=agent-version`。 |
 | `agentName`、`version` | `data_id=agent__<encodedAgentId>__<version>.json`。 |
-| `AgentVersionContent` | `type=json` 的 canonical JSON `content`。 |
+| `AgentVersionContent` | `type=json` 的 UTF-8 JSON `content`。 |
 
 内置 provider 随后对完整逻辑 group 和 data id 应用通用 `NacosAiConfigKeyCodec`。Config
 限制内的安全值原样保存；超长 data id 使用 codec 确定性的 `sha256.<digest>` 物理回退。
@@ -162,8 +180,8 @@ CallInterface、来源偏好和 declared Endpoint 的数组顺序保持不变，
 长于 Config 物理限制而拒绝合法 Agent 身份。
 
 更新 draft 时覆盖相同 key。Version 进入 reviewing 后内容不可变。`contentDigest` 不参与
-data id，只用于内容校验和缓存相等性。读取、审核和发布操作必须校验 Storage pointer、
-byte count 和 digest。
+data id，只用于校验实际持久化 bytes 和缓存相等性。读取、审核和发布操作必须校验
+Storage pointer、byte count 和 digest。
 
 ### 3.3 RAD ASCII AgentName Codec
 
@@ -440,10 +458,16 @@ metadata。
 
 1. 聚合活跃 publisher contribution；
 2. 选择包含目标 Version 的 binding；
-3. 校验每个自然键只有一个 canonical payload；
-4. 移除 `enabled=false`，并保留两种健康状态；
-5. 按自然键排序 Endpoint，按 key 排序 metadata；
-6. 对 canonical bytes 计算 MurmurHash3 x64 128。
+3. 规范每个 Endpoint URI，校验并保持 transport，显式写入有效默认值 `priority=0` 和
+   `weight=1`，并要求 `healthy` 存在；
+4. 校验每个自然键只有一个 canonical payload；
+5. 移除 `enabled=false`，并保留两种健康状态；
+6. 按自然键排序 Endpoint，并按 UTF-16 code-unit ordinal 顺序排序 metadata key；
+7. 对下文定义的 revision bytes 计算 MurmurHash3 x64 128。
+
+在同一个投影中，自然键依次按 `normalizedHost` 的 UTF-16 code-unit ordinal 顺序、
+`effectivePort` 的数值顺序、transport 的 UTF-16 code-unit ordinal 顺序比较。实现不得使用
+locale-sensitive collation。URI path 和 query 不属于自然键，因此不参与排序。
 
 外部 token 为：
 
@@ -451,20 +475,31 @@ metadata。
 murmur3-x64-128-v1:<32 lowercase hex>
 ```
 
-Canonical 输入包含 URI、transport、effective priority 和 weight、公开 Endpoint metadata 和
+Revision 输入包含 URI、transport、effective priority 和 weight、公开 Endpoint metadata 和
 `healthy`。它不包含 runtimeVersion、versionRange、publisher identity 和 count、heartbeat
 时间、last-updated time 或 Naming 内部 revision。Runtime Version 和 range 不进入 hash，
 因为目标投影已经完成过滤。Range 或 enabled 变化会改变成员；health 变化会改变返回内容。
 目标投影变化时，两者都会推进 revision。
 
+公开 Endpoint metadata 缺失或为空时，metadata entry count 均编码为零。
+
 空集合具有稳定 revision。增加或删除冗余 publisher 不改变它。Token 只用于 cache equality 和
 Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 
-所有节点使用 seed `0`。Canonical bytes 以 unsigned 四字节 big-endian Endpoint 数量开头；
-对每个有序 Endpoint，按上述顺序将六个字段编码成 RFC 8785 JSON UTF-8，并在每个字段前
-写入 unsigned 四字节 big-endian byte length。空集合恰好为 `uint32be(0)`。Murmur 结果先输出
-`h1` 再输出 `h2`，每个都是 unsigned 八字节 big-endian 值，最后编码为小写十六进制。内部
-Storage Schema version 1 同时以机器可读形式记录这些规则。
+所有节点使用 seed `0` 和以下固定的 big-endian 二进制布局：
+
+| 元素 | 编码 |
+| --- | --- |
+| Endpoint 数量 | unsigned 四字节整数。 |
+| `uri`、`transport` | unsigned 四字节 UTF-8 byte length，随后写入 bytes。 |
+| `priority` | signed 四字节整数。 |
+| `weight` | 八字节 IEEE-754 binary64 bits；negative zero 规范为 positive zero。 |
+| metadata | unsigned 四字节 entry count；随后按上述 string 编码依次写入有序 key 和 value。 |
+| `healthy` | 一个 byte：false 为 `0`，true 为 `1`。 |
+
+空集合恰好为 `uint32be(0)`。Murmur 结果先输出 `h1` 再输出 `h2`，每个都是 unsigned
+八字节 big-endian 值，最后编码为小写十六进制。内部 Storage Schema version 1 同时以
+机器可读形式记录这些规则。
 
 实现对语义投影标脏、合并突发变化并缓存结果，不得对每次 heartbeat 或每次 Discover 读取都
 执行 hash。

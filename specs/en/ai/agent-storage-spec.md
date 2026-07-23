@@ -133,12 +133,32 @@ AgentVersionContent
     declaredEndpoints[]
 ```
 
-Canonical serialization uses RFC 8785 JSON Canonicalization Scheme (JCS).
-Array order is therefore preserved for CallInterfaces, source preference, and
-declared Endpoints, while object-member order and JSON number representation
-are normalized. Duplicate object keys and values that cannot be represented as
-I-JSON are rejected. `contentDigest` is `sha256:<lowercase hex>` over the
-UTF-8 JCS bytes.
+The server validates the object, creates the storage projection below, and
+serializes it once with the common Nacos JSON serializer as UTF-8. The exact
+emitted bytes are passed to AI Storage and are also used for `size` and
+`contentDigest=sha256:<lowercase hex>`. Agent storage does not define semantic
+JSON canonicalization: two JSON representations that decode to equivalent
+values are not required to produce the same digest.
+
+Before serialization, the server creates the storage projection:
+
+1. it rejects unknown schema properties on the envelope, CallInterface, and
+   Endpoint objects, then projects only schema-version-1 fields;
+2. it canonicalizes every declared Endpoint URI, and validates and preserves
+   its transport, through the common Endpoint canonicalizer;
+3. it materializes effective Endpoint `priority=0` and `weight=1`;
+4. it omits absent or empty Endpoint `metadata` and `declaredEndpoints`; and
+5. it otherwise preserves all array order and descriptor JSON values.
+
+`nativeDescriptor` JSON members and Endpoint `metadata` map entries remain
+open content within their separately defined value constraints.
+
+These projection rules normalize Agent-owned fields only. They do not reorder
+members inside `nativeDescriptor` or otherwise rewrite protocol-owned JSON.
+On read, integrity validation hashes the exact bytes returned by AI Storage
+before decoding; it must not reserialize the decoded object for digest
+comparison.
+
 The Version row's `storage` JSON contains:
 
 | Field | Value or meaning |
@@ -150,7 +170,7 @@ The Version row's `storage` JSON contains:
 | `contentDigest` | `sha256:<lowercase hex>`. |
 | `mediaType` | `application/vnd.nacos.agent-version+json`. |
 | `schemaVersion` | `1`. |
-| `size` | Canonical content byte count. |
+| `size` | Persisted content byte count. |
 
 Upper layers treat `StorageKey.key` as opaque. A replacement provider keeps
 the one-Version/one-object rule but owns its physical key. The built-in
@@ -167,7 +187,7 @@ Agent service.
 | `namespaceId` | `tenant_id=namespaceId`. |
 | Content category | `group_id=agent-version`. |
 | `agentName`, `version` | `data_id=agent__<encodedAgentId>__<version>.json`. |
-| `AgentVersionContent` | Canonical JSON `content` with `type=json`. |
+| `AgentVersionContent` | UTF-8 JSON `content` with `type=json`. |
 
 The built-in provider then applies the common `NacosAiConfigKeyCodec` to the
 complete logical group and data id. A safe value within the Config limits is
@@ -179,8 +199,8 @@ is longer than the Config physical limit.
 
 A draft update overwrites the same key. Content becomes immutable when the
 Version enters reviewing. `contentDigest` never participates in the data id;
-it validates content and cache equality. Read, review, and publish operations
-must verify the Storage pointer, byte count, and digest.
+it validates the exact persisted bytes and cache equality. Read, review, and
+publish operations must verify the Storage pointer, byte count, and digest.
 
 ### 3.3 RAD ASCII AgentName Codec
 
@@ -510,10 +530,19 @@ generates an opaque `sourceRevision` after it:
 
 1. aggregates live publisher contributions;
 2. selects bindings that contain the target Version;
-3. validates one canonical payload per natural key;
-4. removes `enabled=false` and retains both health states;
-5. sorts Endpoints by natural key and metadata by key; and
-6. computes MurmurHash3 x64 128 over canonical bytes.
+3. canonicalizes each Endpoint URI, validates and preserves transport,
+   materializes effective `priority=0` and `weight=1`, and requires `healthy`;
+4. validates one canonical payload per natural key;
+5. removes `enabled=false` and retains both health states;
+6. sorts Endpoints by natural key and metadata keys by UTF-16 code-unit ordinal
+   order; and
+7. computes MurmurHash3 x64 128 over the revision bytes defined below.
+
+Within one projection, natural-key order compares `normalizedHost` by UTF-16
+code-unit ordinal order, then `effectivePort` numerically, then transport by
+UTF-16 code-unit ordinal order. Implementations must not use locale-sensitive
+collation. URI path and query do not participate in ordering because they are
+not natural-key fields.
 
 The external token is:
 
@@ -521,7 +550,7 @@ The external token is:
 murmur3-x64-128-v1:<32 lowercase hex>
 ```
 
-Canonical input contains URI, transport, effective priority and weight, public
+Revision input contains URI, transport, effective priority and weight, public
 Endpoint metadata, and `healthy`. It excludes runtimeVersion, versionRange,
 publisher identity and count, heartbeat time, last-updated time, and Naming
 internal revisions. Runtime Version and range do not enter the hash because the
@@ -529,17 +558,28 @@ target projection has already filtered them. Range or enabled changes alter
 membership; health changes alter returned content. Both therefore advance the
 revision when the target projection changes.
 
+Absent and empty public Endpoint metadata both use a metadata entry count of
+zero.
+
 The empty set has a stable revision. An additional or removed redundant
 publisher does not change it. The token is only cache equality and watch
 deduplication; it is not identity, authorization, CAS, or tamper protection.
 
-All nodes use seed `0`. Canonical bytes start with an unsigned four-byte
-big-endian Endpoint count. For each ordered Endpoint, the six included fields
-are encoded in the stated order as RFC 8785 JSON UTF-8 and each field is
-prefixed with its unsigned four-byte big-endian byte length. The empty set is
-exactly `uint32be(0)`. The Murmur result emits `h1` followed by `h2`, each as an
-unsigned eight-byte big-endian value, and then lowercase hexadecimal. These
-rules are also machine-readable in internal storage schema version 1.
+All nodes use seed `0` and the following fixed big-endian binary layout:
+
+| Element | Encoding |
+| --- | --- |
+| Endpoint count | Unsigned four-byte integer. |
+| `uri`, `transport` | Unsigned four-byte UTF-8 byte length followed by the bytes. |
+| `priority` | Signed four-byte integer. |
+| `weight` | Eight-byte IEEE-754 binary64 bits; negative zero is normalized to positive zero. |
+| metadata | Unsigned four-byte entry count, followed by each ordered key and value using the string encoding above. |
+| `healthy` | One byte: `0` for false and `1` for true. |
+
+The empty set is exactly `uint32be(0)`. The Murmur result emits `h1` followed
+by `h2`, each as an unsigned eight-byte big-endian value, and then lowercase
+hexadecimal. These rules are also machine-readable in internal storage schema
+version 1.
 
 Implementations mark semantic projections dirty, coalesce bursts, and cache
 the result. They must not hash every heartbeat or every discovery read.

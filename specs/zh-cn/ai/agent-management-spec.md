@@ -164,7 +164,7 @@ Agent Version 暴露以下元数据：
 | `callInterfaces[]` | 是 | 有序协议绑定；至少一个。 |
 | `author` | 否 | Version 作者。 |
 | `changeDescription` | 否 | Version 变更说明。 |
-| `contentDigest` | 只读 | canonical Version 内容的 SHA-256 摘要。 |
+| `contentDigest` | 只读 | Version 持久化内容 bytes 的 SHA-256 摘要。 |
 | `createTime`、`updateTime` | 只读 | 审计时间。 |
 
 完整存储 payload 是一个 `AgentVersionContent` 对象：
@@ -176,9 +176,9 @@ AgentVersionContent
   callInterfaces[]
 ```
 
-Canonical 序列化使用 RFC 8785 JCS，并保留 CallInterface 和 declared Endpoint 的业务
-顺序。`contentDigest` 对 canonical UTF-8 bytes 计算并使用 `sha256:<lowercase hex>`。
-准确的 I-JSON 与校验规则由 [Agent 存储规范](agent-storage-spec.md)定义。
+服务端将校验后的对象一次序列化为 UTF-8 JSON；同一份 bytes 用于持久化、计算 `size`，并以
+`sha256:<lowercase hex>` 生成摘要。读取时直接校验 AI Storage 返回 bytes 的摘要，不重新
+序列化对象。存储规范化和校验规则由 [Agent 存储规范](agent-storage-spec.md)定义。
 
 ### 4.2 生命周期规则
 
