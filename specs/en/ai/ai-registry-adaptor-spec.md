@@ -231,16 +231,19 @@ service owns:
 - ranking and deterministic tie-breaking;
 - visibility query advice and per-resource visibility enforcement;
 - latest-label and current online-version resolution;
-- canonical filters, facets, and opaque cursor pagination.
+- canonical filters and opaque cursor pagination.
 
 Visibility and current-version validation occur before the requested result
 limit is applied. Candidate recall may use bounded batches internally, but it
 must continue until the page is full or the eligible result set is exhausted.
-The cursor is derived from a stable sort key rather than a mutable list offset.
+The cursor identifies a stable resource anchor rather than a mutable list
+offset.
 
 The adaptor validates and parses ARD requests, invokes the canonical discovery
 service, and maps canonical discovery results to ARD DTOs. It must not directly
 query ARD index repositories or reimplement lifecycle and visibility rules.
+ARD-specific facet names and values may be aggregated while mapping the
+canonical eligible result set.
 
 ### 6.4 Index Consistency
 

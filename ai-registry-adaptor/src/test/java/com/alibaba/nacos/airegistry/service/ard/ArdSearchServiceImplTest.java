@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
 import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
 import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
+import com.alibaba.nacos.ai.service.discovery.AiResourceDiscoveryService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -137,7 +138,8 @@ class ArdSearchServiceImplTest {
         servletRequest.setContextPath("/nacos");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -173,9 +175,10 @@ class ArdSearchServiceImplTest {
         when(embeddingService.model()).thenReturn("test-model");
         when(embeddingService.embed("api")).thenReturn(vector);
         when(vectorIndex.search(eq("public"), eq("test-model"), eq(vector), eq(List.of("skill")),
-            eq(500)))
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(vectorHit(100L, 0.9D)));
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of());
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -194,7 +197,8 @@ class ArdSearchServiceImplTest {
     void searchShouldPreferHighValueChunkTypeOverContentChunk() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("avatar"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("avatar"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(
                 hit(101L, 1.0D, "generic-video", ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT),
                 hit(102L, 0.8D, "avatar-tool",
@@ -221,7 +225,8 @@ class ArdSearchServiceImplTest {
         System.setProperty(RANKING_ENABLED_KEY, "false");
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(100L, 0.4D), hit(100L, 0.9D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -241,7 +246,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill", "prompt", "mcp")),
-            eq(500)))
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -260,7 +265,8 @@ class ArdSearchServiceImplTest {
     void searchShouldApplyFieldPathFilters() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -279,7 +285,8 @@ class ArdSearchServiceImplTest {
     void searchShouldPageResultsWithPageToken() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(101L, 1.0D, "api-one"), hit(102L, 0.9D, "api-two"),
                 hit(103L, 0.8D, "api-three")));
         when(repository.findEntriesByIds(anyCollection()))
@@ -330,7 +337,8 @@ class ArdSearchServiceImplTest {
     void searchShouldSkipEntryWhenVersionIsNotLatest() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(500)))
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
+            eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(any(Collection.class))).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -373,7 +381,7 @@ class ArdSearchServiceImplTest {
     @Test
     void exploreShouldReturnFacetBuckets() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill"), 1000))
+        when(repository.listEnabledEntries("public", List.of("skill"), Integer.MAX_VALUE))
             .thenReturn(List.of(entry(101L, "api-one"), entry(102L, "api-two")));
         when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("api-one", "1.0.0"));
@@ -395,7 +403,7 @@ class ArdSearchServiceImplTest {
     @Test
     void listShouldFilterOrderAndPageEntries() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill"), 1000))
+        when(repository.listEnabledEntries("public", List.of("skill"), Integer.MAX_VALUE))
             .thenReturn(List.of(entry(101L, "api-two"), entry(102L, "api-one")));
         when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("api-one", "1.0.0"));
@@ -420,7 +428,8 @@ class ArdSearchServiceImplTest {
     @Test
     void catalogShouldExposeRegistryAndLocalEntries() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
+            Integer.MAX_VALUE))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -458,7 +467,8 @@ class ArdSearchServiceImplTest {
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
         EnvUtil.setContextPath("/nacos");
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
+            Integer.MAX_VALUE))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -502,7 +512,8 @@ class ArdSearchServiceImplTest {
         mcp.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         mcp.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "mcp", "mcpName",
             "avatar-server")));
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"), 100))
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
+            Integer.MAX_VALUE))
             .thenReturn(List.of(prompt, mcp));
         when(resourceManager.findMeta("public", "avatar prompt",
             AiResourceConstants.RESOURCE_TYPE_PROMPT)).thenReturn(meta("avatar prompt",
@@ -534,8 +545,10 @@ class ArdSearchServiceImplTest {
     }
     
     private ArdSearchServiceImpl service() {
-        return new ArdSearchServiceImpl(resourceManager, mcpServerOperationService, repository,
-            embeddingService, vectorIndex);
+        AiResourceDiscoveryService discoveryService = new AiResourceDiscoveryService(
+            resourceManager, mcpServerOperationService, repository, embeddingService,
+            vectorIndex);
+        return new ArdSearchServiceImpl(discoveryService);
     }
     
     private void assertCatalogSchemaValid(ArdCatalog catalog) throws Exception {
