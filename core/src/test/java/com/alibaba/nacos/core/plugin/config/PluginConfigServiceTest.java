@@ -176,6 +176,12 @@ class PluginConfigServiceTest {
         assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
         assertEquals("default", pluginInfo.getConfig().get("endpoint"));
         assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
+        
+        service.refreshStaticConfig(pluginInfo, plugin);
+        
+        assertEquals("bad", plugin.getCurrentConfig().get("endpoint"));
+        assertEquals("bad", pluginInfo.getConfig().get("endpoint"));
+        assertEquals(2, plugin.getApplyCount());
     }
     
     @Test
@@ -244,10 +250,6 @@ class PluginConfigServiceTest {
         assertEquals("default", pluginInfo.getConfig().get("endpoint"));
         assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
         verify(persistence).saveConfig(PLUGIN_ID, failedConfig);
-        
-        service.refreshStaticConfig(pluginInfo, plugin);
-        
-        assertEquals(1, plugin.getApplyCount());
         
         service.applyRuntimePersistedConfig(PLUGIN_ID, pluginInfo, plugin, failedConfig);
         

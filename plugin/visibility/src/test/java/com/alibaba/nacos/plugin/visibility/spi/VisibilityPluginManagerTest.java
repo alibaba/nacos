@@ -92,10 +92,15 @@ class VisibilityPluginManagerTest {
     }
     
     @Test
-    void testFindVisibilityServiceWhenModuleDisabled() {
+    void testFindVisibilityServiceWhenModuleDisabled() throws Exception {
+        Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
+        initialized.setAccessible(true);
+        initialized.set(manager, false);
         System.setProperty(VISIBILITY_ENABLED_KEY, "false");
         Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
+        
         assertFalse(result.isPresent());
+        assertFalse((Boolean) initialized.get(manager));
     }
     
     @Test

@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -75,9 +76,30 @@ public class PluginManager
     private final Map<String, Boolean> pluginStates = new ConcurrentHashMap<>();
     
     /**
+     * Plugin states derived from startup policy before persisted overrides are applied.
+     */
+    private final Map<String, Boolean> pluginDefaultStates = new ConcurrentHashMap<>();
+    
+    /**
      * Plugin instances: pluginId -> instance.
      */
     private final Map<String, Object> pluginInstances = new ConcurrentHashMap<>();
+    
+    /**
+     * Discovered lightweight providers grouped by plugin type.
+     */
+    private final Map<PluginType, List<PluginProvider<?>>> pluginProviders =
+        new EnumMap<>(PluginType.class);
+    
+    /**
+     * Providers whose implementation instances have already been loaded.
+     */
+    private final Set<PluginProvider<?>> loadedProviders = new HashSet<>();
+    
+    /**
+     * Configurable plugins that have been discovered but not initialized successfully.
+     */
+    private final Set<String> pendingConfigInitializationPluginIds = new HashSet<>();
     
     private final PluginConfigService pluginConfigService;
     
@@ -124,8 +146,9 @@ public class PluginManager
         PluginStateCheckerHolder.setInstance(this);
         policyRegistry.initialize();
         
-        // Discover all plugins
-        discoverAllPlugins();
+        // Discover lightweight providers, then load only currently required plugin types.
+        discoverPluginProviders();
+        loadEnabledPluginTypes();
         
         // Load persisted states and configs
         loadPersistedData();
@@ -179,7 +202,7 @@ public class PluginManager
         }
         
         try {
-            validateStateChange(info, enabled);
+            validateStateChangeInternal(info, enabled);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
@@ -333,8 +356,11 @@ public class PluginManager
      * Re-evaluate domain policies after server configuration changes.
      */
     public synchronized void refreshPluginTypePolicies() {
+        Set<String> loadedPluginIds = loadEnabledPluginTypes();
+        loadPersistedStates(loadedPluginIds);
         ensureCriticalTypesAvailable();
         refreshAllCriticalFlags();
+        initializePluginConfigs(pendingConfigInitializationPluginIds);
     }
     
     /**
@@ -347,21 +373,49 @@ public class PluginManager
     }
     
     /**
-     * Discover all plugins using SPI-based PluginProvider mechanism.
-     * No hard-coded plugin type discovery needed.
+     * Discover lightweight plugin providers without loading their implementation instances.
      */
     @SuppressWarnings("rawtypes")
-    private void discoverAllPlugins() {
+    private void discoverPluginProviders() {
         Collection<PluginProvider> providers = NacosServiceLoader.load(PluginProvider.class);
         
         for (PluginProvider provider : providers) {
             try {
-                discoverPluginsFromProvider(provider);
+                PluginType pluginType = provider.getPluginType();
+                if (pluginType == null) {
+                    LOGGER.warn("[PluginManager] Ignore plugin provider without type: {}",
+                        provider.getClass().getName());
+                    continue;
+                }
+                pluginProviders.computeIfAbsent(pluginType, key -> new ArrayList<>()).add(provider);
             } catch (Exception e) {
-                LOGGER.warn("[PluginManager] Failed to discover plugins from provider: {}",
+                LOGGER.warn("[PluginManager] Failed to identify plugin provider: {}",
                     provider.getClass().getName(), e);
             }
         }
+    }
+    
+    private Set<String> loadEnabledPluginTypes() {
+        Set<String> result = new HashSet<>();
+        for (Map.Entry<PluginType, List<PluginProvider<?>>> entry : pluginProviders.entrySet()) {
+            PluginType pluginType = entry.getKey();
+            if (!policyRegistry.shouldLoad(pluginType)) {
+                continue;
+            }
+            for (PluginProvider<?> provider : entry.getValue()) {
+                if (loadedProviders.contains(provider)) {
+                    continue;
+                }
+                try {
+                    result.addAll(discoverPluginsFromProvider(pluginType, provider));
+                    loadedProviders.add(provider);
+                } catch (Exception e) {
+                    LOGGER.warn("[PluginManager] Failed to discover plugins from provider: {}",
+                        provider.getClass().getName(), e);
+                }
+            }
+        }
+        return result;
     }
     
     /**
@@ -369,21 +423,24 @@ public class PluginManager
      *
      * @param provider the plugin provider
      */
-    private void discoverPluginsFromProvider(PluginProvider<?> provider) {
-        PluginType pluginType = provider.getPluginType();
+    private Set<String> discoverPluginsFromProvider(PluginType pluginType,
+        PluginProvider<?> provider) {
         Map<String, ?> plugins = provider.getAllPlugins();
         
         if (plugins == null || plugins.isEmpty()) {
             LOGGER.info("[PluginManager] No plugins found for type: {}", pluginType.getType());
-            return;
+            return new HashSet<>();
         }
         
-        plugins.forEach((name, instance) -> registerPlugin(pluginType, name, instance));
+        Set<String> result = new HashSet<>();
+        plugins.forEach((name, instance) -> result.add(
+            registerPlugin(pluginType, name, instance)));
         LOGGER.info("[PluginManager] Discovered {} {} plugins", plugins.size(),
             pluginType.getType());
+        return result;
     }
     
-    private void registerPlugin(PluginType type, String name, Object instance) {
+    private String registerPlugin(PluginType type, String name, Object instance) {
         String pluginId = buildPluginId(type.getType(), name);
         
         PluginInfo info = new PluginInfo();
@@ -403,22 +460,41 @@ public class PluginManager
             if (info.isConfigurable()) {
                 info.setConfigDefinitions(configSpec.getConfigDefinitions());
                 info.setConfig(configSpec.getCurrentConfig());
+                pendingConfigInitializationPluginIds.add(pluginId);
             }
         }
         
         pluginRegistry.put(pluginId, info);
         pluginInstances.put(pluginId, instance);
+        pluginDefaultStates.put(pluginId, defaultEnabled);
         pluginStates.put(pluginId, defaultEnabled);
         refreshCriticalFlags(type);
         
         LOGGER.debug("[PluginManager] Registered plugin {} with default enabled={}", pluginId,
             defaultEnabled);
+        return pluginId;
     }
     
     private void loadPersistedData() {
-        // Load states
+        loadPersistedStates(pluginRegistry.keySet());
+        ensureCriticalTypesAvailable();
+        refreshAllCriticalFlags();
+        
+        // Load configs
+        pluginConfigService.initializeRuntimePersistedConfigs();
+        initializePluginConfigs(pluginRegistry.keySet());
+    }
+    
+    private void loadPersistedStates(Collection<String> pluginIds) {
+        if (pluginIds.isEmpty()) {
+            return;
+        }
+        Set<String> targetPluginIds = new HashSet<>(pluginIds);
         Map<String, Boolean> states = persistence.loadAllStates();
         states.forEach((pluginId, enabled) -> {
+            if (!targetPluginIds.contains(pluginId)) {
+                return;
+            }
             PluginInfo pluginInfo = pluginRegistry.get(pluginId);
             if (pluginInfo != null) {
                 if (enabled == null) {
@@ -438,20 +514,34 @@ public class PluginManager
                 pluginInfo.setEnabled(enabled);
             }
         });
-        ensureCriticalTypesAvailable();
-        refreshAllCriticalFlags();
-        
-        // Load configs
-        pluginConfigService.initializeRuntimePersistedConfigs();
-        pluginRegistry.forEach((pluginId, info) -> {
+    }
+    
+    private void initializePluginConfigs(Collection<String> pluginIds) {
+        for (String pluginId : new HashSet<>(pluginIds)) {
+            PluginInfo info = pluginRegistry.get(pluginId);
             if (info.isConfigurable()) {
                 pluginConfigService.initializePluginConfig(info, pluginInstances.get(pluginId));
+                pendingConfigInitializationPluginIds.remove(pluginId);
             }
-        });
+        }
     }
     
     private String getSelectionProperty(PluginType type) {
         return policyRegistry.getSelectionProperty(type);
+    }
+    
+    /**
+     * Validate a state change without mutating the current state.
+     *
+     * @param pluginId plugin ID
+     * @param enabled whether enabled
+     */
+    @Override
+    public synchronized void validateStateChange(String pluginId, boolean enabled) {
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            validateStateChangeInternal(info, enabled);
+        }
     }
     
     /**
@@ -464,9 +554,7 @@ public class PluginManager
     @Override
     public synchronized void applyStateChange(String pluginId, boolean enabled) {
         PluginInfo info = pluginRegistry.get(pluginId);
-        if (info != null) {
-            validateStateChange(info, enabled);
-        }
+        validateStateChange(pluginId, enabled);
         pluginStates.put(pluginId, enabled);
         if (info != null) {
             info.setEnabled(enabled);
@@ -487,13 +575,12 @@ public class PluginManager
             }
         }
         if (!initialized) {
-            states.forEach(persistence::saveState);
+            persistence.replaceAllStates(states);
             LOGGER.info("[PluginManager] Staged {} plugin states restored before plugin "
                 + "discovery; critical validation will run during initialization.", states.size());
             return;
         }
-        Map<String, Boolean> targetStates = new HashMap<>();
-        pluginRegistry.forEach((pluginId, info) -> targetStates.put(pluginId, info.isEnabled()));
+        Map<String, Boolean> targetStates = new HashMap<>(pluginDefaultStates);
         states.forEach((pluginId, enabled) -> {
             PluginInfo info = pluginRegistry.get(pluginId);
             if (info == null) {
@@ -510,26 +597,19 @@ public class PluginManager
             targetStates.put(pluginId, enabled);
         });
         validateCriticalStates(targetStates);
+        persistence.replaceAllStates(states);
         pluginRegistry.forEach((pluginId, info) -> {
             if (info.getPluginType().isExclusive()) {
                 return;
             }
             boolean targetEnabled = targetStates.get(pluginId);
-            if (states.containsKey(pluginId) || info.isEnabled() != targetEnabled) {
-                pluginStates.put(pluginId, targetEnabled);
-                info.setEnabled(targetEnabled);
-                persistence.saveState(pluginId, targetEnabled);
-            }
-        });
-        states.forEach((pluginId, enabled) -> {
-            if (!pluginRegistry.containsKey(pluginId)) {
-                persistence.saveState(pluginId, enabled);
-            }
+            pluginStates.put(pluginId, targetEnabled);
+            info.setEnabled(targetEnabled);
         });
         refreshAllCriticalFlags();
     }
     
-    private void validateStateChange(PluginInfo info, boolean enabled) {
+    private void validateStateChangeInternal(PluginInfo info, boolean enabled) {
         if (info.isEnabled() == enabled) {
             return;
         }

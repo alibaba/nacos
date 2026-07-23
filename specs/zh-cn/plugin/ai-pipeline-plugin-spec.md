@@ -43,9 +43,11 @@ Pipeline 属于 AI 资源治理。它可以批准或拒绝一次发布操作，�
 
 Pipeline 实现直接实现 `PublishPipelineService`。该接口继承
 `PluginConfigSpec`，实现类通过 Java SPI 注册，并且必须提供公开无参构造方法。
-Pipeline Manager 负责加载和持有轻量 service 实例；Core PluginManager 在启动及受支持的
-配置更新阶段解析 effective config，并调用 service 的 `applyConfig`。service 必须将运行时
-资源初始化延迟到首次 `applyConfig`。
+只有 Core plugin provider 被要求加载 `ai-pipeline` 类型时，Pipeline Manager 才加载并持有
+轻量 service 实例。`nacos.plugin.ai-pipeline.enabled=false` 时，启动阶段延迟这次 SPI 加载；
+后续服务配置刷新开启框架后，Core PluginManager 必须先加载 service、恢复实现 state、解析
+effective config 并调用 `applyConfig`，节点才能参与执行。service 必须将运行时资源初始化
+延迟到首次 `applyConfig`。
 
 服务实现：
 

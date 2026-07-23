@@ -56,6 +56,7 @@ class PluginTypePolicyTest {
         policy.initialize(configuration);
         
         assertFalse(policy.isActive(configuration));
+        assertTrue(policy.isLoadingEnabled(configuration));
         assertTrue(policy.supportsPreRefreshValidation());
         assertTrue(policy.isPluginEnabledByDefault("test", configuration));
         configuration.setProperty("nacos.plugin.trace.test.enabled", "false");

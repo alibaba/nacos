@@ -26,7 +26,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  */
 public class AiPipelineModuleConfig extends AbstractDynamicConfig {
     
-    static final String ENABLED_PROPERTY = "nacos.plugin.ai-pipeline.enabled";
+    public static final String ENABLED_PROPERTY = "nacos.plugin.ai-pipeline.enabled";
     
     private volatile boolean enabled;
     

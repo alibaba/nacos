@@ -130,8 +130,14 @@ nacos.plugin.visibility.enabled=true
 
 This switch is the outer runtime gate. When it is `false`, no visibility
 implementation may execute, regardless of its unified plugin state. The core
-plugin manager does not convert this switch into implementation state. Initial
-implementation state comes from the compatibility selector
+plugin manager does not convert this switch into implementation state. Startup also defers
+visibility implementation discovery while this switch is false. A server
+configuration refresh that changes it to true triggers one-time discovery, persisted state
+restoration, and unified configuration application before visibility services become available.
+After discovery, changing the switch back to false keeps instances registered while the outer gate
+prevents their execution.
+
+Initial implementation state comes from the compatibility selector
 `nacos.plugin.visibility.type`, then the standard implementation key
 `nacos.plugin.visibility.{serviceName}.enabled`; persisted state takes
 precedence over both, but cannot override the family-wide gate.

@@ -53,6 +53,7 @@ public class AiPipelinePluginProvider implements PluginProvider<PublishPipelineS
         }
         try {
             PublishPipelineManager manager = ApplicationUtils.getBean(PublishPipelineManager.class);
+            manager.init();
             Map<String, PublishPipelineService> map = new LinkedHashMap<>();
             for (PublishPipelineService service : manager.getAllServices()) {
                 if (service != null && service.pipelineId() != null) {

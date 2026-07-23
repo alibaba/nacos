@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
@@ -37,6 +38,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -60,8 +62,10 @@ class StandalonePluginStateSynchronizerTest {
     void syncStateChangeSuccess() throws NacosApiException {
         synchronizer.syncStateChange("auth:nacos", true);
         
-        verify(applier).applyStateChange("auth:nacos", true);
-        verify(persistence).saveState(eq("auth:nacos"), eq(true));
+        InOrder inOrder = inOrder(applier, persistence);
+        inOrder.verify(applier).validateStateChange("auth:nacos", true);
+        inOrder.verify(persistence).saveState(eq("auth:nacos"), eq(true));
+        inOrder.verify(applier).applyStateChange("auth:nacos", true);
     }
     
     @Test
@@ -71,18 +75,21 @@ class StandalonePluginStateSynchronizerTest {
         
         assertThrows(NacosApiException.class,
             () -> synchronizer.syncStateChange("auth:nacos", false));
+        verify(applier).validateStateChange("auth:nacos", false);
+        verify(applier, never()).applyStateChange(any(), anyBoolean());
     }
     
     @Test
     void syncStateChangeInvalidParameter() {
         doThrow(new IllegalArgumentException("invalid state")).when(applier)
-            .applyStateChange("auth:nacos", false);
+            .validateStateChange("auth:nacos", false);
         
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> synchronizer.syncStateChange("auth:nacos", false));
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         verify(persistence, never()).saveState(any(), anyBoolean());
+        verify(applier, never()).applyStateChange(any(), anyBoolean());
     }
     
     @Test

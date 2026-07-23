@@ -43,6 +43,8 @@ class PluginTypePolicyRegistryTest {
             new PluginTypePolicyRegistry(Collections.emptyList(), configuration);
         
         assertFalse(registry.isActive(PluginType.TRACE));
+        assertTrue(registry.shouldLoad(PluginType.TRACE));
+        assertFalse(registry.shouldLoad(PluginType.AUTH));
         assertTrue(registry.supportsPreRefreshValidation(PluginType.TRACE));
         assertTrue(registry.isPluginEnabledByDefault(PluginType.TRACE, "test"));
         configuration.setProperty("nacos.plugin.trace.test.enabled", "false");
@@ -66,6 +68,7 @@ class PluginTypePolicyRegistryTest {
         
         assertTrue(policy.initialized);
         assertTrue(registry.isActive(PluginType.AUTH));
+        assertTrue(registry.shouldLoad(PluginType.AUTH));
         assertTrue(registry.isPluginEnabledByDefault(PluginType.AUTH, "selected"));
         assertFalse(registry.isPluginEnabledByDefault(PluginType.AUTH, "other"));
         assertEquals(Collections.singleton("selected"),
@@ -175,6 +178,11 @@ class PluginTypePolicyRegistryTest {
         @Override
         public boolean isActive(PluginTypeConfiguration configuration) {
             return configuration.getBooleanProperty("active", false);
+        }
+        
+        @Override
+        public boolean isLoadingEnabled(PluginTypeConfiguration configuration) {
+            return false;
         }
         
         @Override

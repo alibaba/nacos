@@ -28,6 +28,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PluginStatePersistenceServiceTest {
     
     @Test
+    void testDefaultReplaceAllStates() {
+        InMemoryPersistence persistence = new InMemoryPersistence();
+        persistence.saveState("trace:old", true);
+        persistence.saveState("trace:updated", false);
+        Map<String, Boolean> replacement = new HashMap<>();
+        replacement.put("trace:updated", true);
+        replacement.put("trace:new", false);
+        
+        persistence.replaceAllStates(replacement);
+        
+        assertEquals(replacement, persistence.loadAllStates());
+        
+        persistence.replaceAllStates(null);
+        assertTrue(persistence.loadAllStates().isEmpty());
+    }
+    
+    @Test
     void testDefaultReplaceAllConfigs() {
         InMemoryPersistence persistence = new InMemoryPersistence();
         persistence.saveConfig("trace:old", Collections.singletonMap("key", "old"));
@@ -46,19 +63,23 @@ class PluginStatePersistenceServiceTest {
     
     private static class InMemoryPersistence implements PluginStatePersistenceService {
         
+        private final Map<String, Boolean> states = new HashMap<>();
+        
         private final Map<String, Map<String, String>> configs = new HashMap<>();
         
         @Override
         public Map<String, Boolean> loadAllStates() {
-            return Collections.emptyMap();
+            return new HashMap<>(states);
         }
         
         @Override
         public void saveState(String pluginId, boolean enabled) {
+            states.put(pluginId, enabled);
         }
         
         @Override
         public void deleteState(String pluginId) {
+            states.remove(pluginId);
         }
         
         @Override

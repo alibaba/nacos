@@ -35,7 +35,26 @@ class AiPipelinePluginTypePolicyTest {
     void testTypeAndEmptySelection() {
         MapConfiguration configuration = new MapConfiguration();
         assertEquals(PluginType.AI_PIPELINE, policy.getPluginType());
+        assertTrue(policy.isLoadingEnabled(configuration));
         assertFalse(policy.isPluginEnabledByDefault("skill-scanner", configuration));
+    }
+    
+    @Test
+    void testLoadingEnabledByModuleSwitches() {
+        MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty("nacos.plugin.ai-pipeline.enabled", "false");
+        assertFalse(policy.isLoadingEnabled(configuration));
+        
+        configuration.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+        configuration.setProperty("nacos.extension.ai.enabled", "false");
+        assertFalse(policy.isLoadingEnabled(configuration));
+        
+        configuration.setProperty("nacos.extension.ai.enabled", "true");
+        configuration.setProperty("nacos.functionMode", "config");
+        assertFalse(policy.isLoadingEnabled(configuration));
+        
+        configuration.setProperty("nacos.functionMode", "ai");
+        assertTrue(policy.isLoadingEnabled(configuration));
     }
     
     @Test

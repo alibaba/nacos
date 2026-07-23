@@ -36,8 +36,12 @@ class VisibilityPluginTypePolicyTest {
         MapConfiguration configuration = new MapConfiguration();
         
         assertEquals(PluginType.VISIBILITY, policy.getPluginType());
+        assertTrue(policy.isLoadingEnabled(configuration));
         assertTrue(policy.isPluginEnabledByDefault("nacos", configuration));
         assertFalse(policy.isPluginEnabledByDefault("custom", configuration));
+        
+        configuration.setProperty("nacos.plugin.visibility.enabled", "false");
+        assertFalse(policy.isLoadingEnabled(configuration));
     }
     
     @Test

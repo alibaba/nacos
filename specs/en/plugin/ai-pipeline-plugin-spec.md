@@ -48,10 +48,13 @@ reaction to pipeline results is defined by the
 Pipeline implementations directly implement `PublishPipelineService`, which
 extends `PluginConfigSpec`, and register the service class through Java SPI.
 Implementations must provide a public no-argument constructor. The pipeline
-manager loads and retains a lightweight service instance; the core plugin
-manager then resolves its effective configuration and invokes `applyConfig`
-during startup and supported configuration updates. A service must defer
-runtime resource initialization until this first `applyConfig` invocation.
+manager loads and retains lightweight service instances only when the core
+plugin provider is asked to load the `ai-pipeline` type. With
+`nacos.plugin.ai-pipeline.enabled=false`, startup defers this SPI loading. When a
+server configuration refresh enables the framework, the core plugin manager loads the
+services, restores implementation state, resolves effective configuration, and invokes
+`applyConfig` before a node may execute. A service must defer runtime resource initialization
+until this first `applyConfig` invocation.
 
 The service implements:
 

@@ -124,10 +124,20 @@ definitions、空 current map，并提供空 apply 回调，因此按旧版领�
 插件实现通过 Nacos SPI 加载。部署时可以从 classpath 或服务端插件目录提供插件。
 插件实现必须能在不修改 Nacos 服务端代码的情况下被加载。
 
-核心 `PluginManager` 会在 Spring 上下文刷新完成后发现 `PluginProvider` 实现，并在 Nacos
-标记 started 之前装载状态、解析配置和执行 `applyConfig`。`ApplicationReadyEvent` 只作为
-非标准嵌入启动流程的幂等兜底。领域管理器也可以通过 SPI 提前构造自身领域服务，但服务端
-进入可用状态前的最终配置和是否可参与请求处理，仍必须遵守核心插件管理器的统一结果。
+核心 `PluginManager` 会在 Spring 上下文刷新完成后先发现轻量 `PluginProvider` 实现。
+只有领域 policy 当前允许加载的插件类型才会立即调用 `getAllPlugins`；active critical 类型
+不受可选加载判据影响，必须加载。对于被延迟的非 critical 类型，后续服务配置刷新使加载
+判据变为 true 时，必须先发现实现、恢复持久化实现 state、解析 effective config 并调用
+`applyConfig`，然后才能让这些实现参与执行。类型一旦加载，加载判据再次变为 false 时不卸载
+实例，仍由所属领域入口总开关阻止执行。
+
+加载判据不能替代实现级 state。为保持二进制兼容，其默认值为 true；只有拥有类型级模块或
+能力总开关的领域才应覆盖该判据。尚未发现的实现不能通过插件 API 定向启用，延迟类型应先
+通过其静态或领域总开关开启。
+
+`ApplicationReadyEvent` 只作为非标准嵌入启动流程的幂等兜底。领域管理器也可以通过 SPI
+提前构造自身领域服务，但选择延迟加载的类型在加载判据为 false 时不得自行实例化实现。
+服务端进入可用状态前的最终配置和是否可参与请求处理，仍必须遵守核心插件管理器的统一结果。
 
 插件启动必须具备确定性：
 
@@ -151,6 +161,7 @@ definitions、空 current map，并提供空 apply 回调，因此按旧版领�
 由核心插件管理器维护领域判断。该 policy 负责定义：
 
 - 当前领域是否需要该插件类型；
+- 非 critical 类型当前是否允许加载实现；
 - 每个已发现实现的初始 enabled 状态；
 - critical 类型处于 active 状态时必需存在的具体实现名称；
 - 诊断信息中使用的选择配置和激活原因。
@@ -178,10 +189,18 @@ pre-refresh 校验，使 auth、datasource 等缺失实现在依赖它们的业�
 都必须执行同一校验。校验失败时不得应用候选插件状态。插件 detail 中的 `critical` 表示该
 具体 enabled 实现当前是否必需，而不是仅表示其类型是否曾有可能成为 critical。
 
+持久化状态变更必须遵循 validate、persist、apply 顺序：先校验完整候选终态，再写入持久化
+状态；只有持久化成功后才能修改管理器内存状态。持久化失败时，内存保持原值并允许重试。
+`localOnly` 状态变更按定义跳过持久化，只应用到当前节点。
+
 `plugin_state` 一致性组可能在 Spring context 创建期间、统一管理器尚未发现插件实现时恢复
 快照。该阶段管理器必须先校验快照值格式，并暂存或持久化完整状态，不能把空 registry 误判为
 critical 实现缺失。统一启动流程随后发现 provider、合并暂存状态，并在 Nacos 报告启动成功前
 执行同一套严格 critical 校验。管理器初始化完成后的快照恢复仍必须在应用候选终态前完成校验。
+快照中的 `states` map 表示完整的持久化 override，而不是增量 patch：恢复时必须整体替换本机
+持久化 map；快照中缺失的条目用于移除本机陈旧 override，已加载的非互斥实现恢复为启动 policy
+默认状态；尚未加载实现的条目继续持久化，并在对应插件类型后续加载时应用。互斥实现的选择仍由
+要求重启的选择配置控制。
 
 统一状态迁移阶段对现有内置开关的排查结论如下：
 
@@ -372,7 +391,9 @@ source 的 effective value 复制成 runtime override。服务端应记录 WARN 
 字段时，运行中快照继续保留启动值，直到服务端重启，并输出只包含 plugin ID 和 item
 keys、不包含配置值的 WARN。detail 查询继续返回已接受的 effective 快照，不能把尚未
 应用的 restart-required 环境值报告为已生效。静态字段变化如果被更高优先级 source
-覆盖，可以更新来源视图；effective config 未变化时不需要再次调用插件。
+覆盖，可以更新来源视图；effective config 与最近一次成功 apply 的快照相同时不需要再次调用
+插件。若静态快照已接受但 apply 失败，插件继续保留此前成功应用的配置；后续刷新时，只要解析
+所得 effective config 仍与该成功快照不同，就应再次尝试 apply。
 
 同一插件的更新应串行执行。runtime persisted 更新先持久化归一化后的完整 source
 map，再替换 resolver source、解析并校验 effective config，最后应用到插件。持久化

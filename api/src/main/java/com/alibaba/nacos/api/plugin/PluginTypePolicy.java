@@ -59,6 +59,21 @@ public interface PluginTypePolicy {
     }
     
     /**
+     * Whether implementations of this non-critical plugin type should be loaded now.
+     *
+     * <p>This predicate is re-evaluated after server configuration changes. Returning
+     * {@code false} delays implementation discovery until it becomes {@code true}; implementations
+     * that have already been loaded are retained. Active critical types are always loaded by the
+     * core plugin manager regardless of this value.
+     *
+     * @param configuration server configuration
+     * @return true when implementation discovery is enabled
+     */
+    default boolean isLoadingEnabled(PluginTypeConfiguration configuration) {
+        return true;
+    }
+    
+    /**
      * Whether critical availability can be validated before the Spring context refreshes.
      *
      * <p>Return {@code false} when implementations are constructed from Spring-managed resources

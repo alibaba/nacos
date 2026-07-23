@@ -50,6 +50,22 @@ public interface PluginStatePersistenceService {
     void deleteState(String pluginId);
     
     /**
+     * Replace all plugin states.
+     *
+     * @param states complete plugin state map
+     */
+    default void replaceAllStates(Map<String, Boolean> states) {
+        Map<String, Boolean> targetStates = states == null
+            ? java.util.Collections.emptyMap() : states;
+        for (String pluginId : new java.util.HashSet<>(loadAllStates().keySet())) {
+            if (!targetStates.containsKey(pluginId)) {
+                deleteState(pluginId);
+            }
+        }
+        targetStates.forEach(this::saveState);
+    }
+    
+    /**
      * Load all plugin configurations.
      *
      * @return map of plugin ID to configuration

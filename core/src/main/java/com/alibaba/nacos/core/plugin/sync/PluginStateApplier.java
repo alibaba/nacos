@@ -28,6 +28,14 @@ import java.util.Map;
 public interface PluginStateApplier {
     
     /**
+     * Validate a plugin state change without mutating the current state.
+     *
+     * @param pluginId plugin ID
+     * @param enabled whether enabled
+     */
+    void validateStateChange(String pluginId, boolean enabled);
+    
+    /**
      * Apply plugin state change.
      *
      * @param pluginId plugin ID
