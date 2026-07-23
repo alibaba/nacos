@@ -109,7 +109,7 @@ class AuthorizationClientTest {
     
     private OidcAuthPluginConfig mockConfig(String endpoint) {
         OidcAuthPluginConfig config = mock(OidcAuthPluginConfig.class);
-        when(config.getAuthorizationTimeoutMs()).thenReturn(1000L);
+        when(config.getAuthorizationTimeoutMs()).thenReturn(5000L);
         when(config.getAuthorizationEndpoint()).thenReturn(endpoint);
         return config;
     }
