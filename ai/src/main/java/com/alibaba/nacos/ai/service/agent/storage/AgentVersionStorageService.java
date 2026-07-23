@@ -19,7 +19,6 @@ package com.alibaba.nacos.ai.service.agent.storage;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
-import com.alibaba.nacos.ai.service.agent.fingerprint.AgentVersionContentCodec;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -62,7 +61,30 @@ public class AgentVersionStorageService {
     }
     
     /**
-     * Encode and save one Agent Version content object at its stable logical key.
+     * Serialize one Agent Version content object and build its deterministic storage descriptor
+     * without accessing AI Storage.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName Agent public name
+     * @param version exact Agent Version
+     * @param content complete Agent Version content
+     * @return immutable prepared content and storage descriptor
+     * @throws IllegalArgumentException when the identity or content is invalid
+     */
+    public PreparedAgentVersionWrite prepare(String namespaceId, String agentName, String version,
+        AgentVersionContent content) {
+        String provider = resolveStorageProvider();
+        StorageKey storageKey = AgentVersionStorageKeyComposer.compose(provider, namespaceId,
+            agentName, version);
+        AgentVersionContentSerializer.SerializedContent serializedContent =
+            AgentVersionContentSerializer.serialize(content);
+        AgentVersionStorageDescriptor descriptor =
+            buildDescriptor(storageKey, serializedContent);
+        return new PreparedAgentVersionWrite(descriptor, serializedContent);
+    }
+    
+    /**
+     * Prepare and save one Agent Version content object at its stable logical key.
      *
      * @param namespaceId namespace identifier
      * @param agentName Agent public name
@@ -73,23 +95,36 @@ public class AgentVersionStorageService {
      */
     public AgentVersionStorageDescriptor save(String namespaceId, String agentName, String version,
         AgentVersionContent content) throws NacosException {
-        String provider = resolveStorageProvider();
-        StorageKey storageKey = AgentVersionStorageKeyComposer.compose(provider, namespaceId,
-            agentName, version);
-        AgentVersionContentCodec.EncodedContent encoded = AgentVersionContentCodec.encode(content);
-        AgentVersionStorageDescriptor descriptor = buildDescriptor(storageKey, encoded);
-        AgentVersionStorageDescriptorCodec.validate(descriptor);
+        PreparedAgentVersionWrite prepared = prepare(namespaceId, agentName, version, content);
+        save(prepared);
+        return prepared.getDescriptor();
+    }
+    
+    /**
+     * Save content that was previously returned by {@link #prepare(String, String, String,
+     * AgentVersionContent)}.
+     *
+     * <p>The provider and key captured during preparation are used even when the current storage
+     * provider configuration has changed.</p>
+     *
+     * @param prepared prepared Agent Version content
+     * @throws NacosException when the selected storage provider fails
+     */
+    public void save(PreparedAgentVersionWrite prepared) throws NacosException {
+        if (prepared == null) {
+            throw new IllegalArgumentException("Prepared Agent Version content must not be null");
+        }
+        StorageKey storageKey = prepared.getStorageKey();
         try {
-            route(storageKey).save(storageKey, encoded.getBytes());
+            route(storageKey).save(storageKey, prepared.getBytes());
         } catch (IllegalArgumentException e) {
             throw new NacosException(NacosException.SERVER_ERROR,
                 "Agent Version content cannot be saved", e);
         }
-        return descriptor;
     }
     
     /**
-     * Read, verify, and decode one Agent Version content object.
+     * Read, verify, and deserialize one Agent Version content object.
      *
      * <p>Size and digest are checked against the exact bytes returned by AI Storage before JSON
      * decoding. Unverified content is never returned.</p>
@@ -114,13 +149,13 @@ public class AgentVersionStorageService {
             throw corruptedContent("Agent Version content size does not match its descriptor",
                 null);
         }
-        String actualDigest = AgentVersionContentCodec.digest(bytes);
+        String actualDigest = AgentVersionContentSerializer.digest(bytes);
         if (!descriptor.getContentDigest().equals(actualDigest)) {
             throw corruptedContent("Agent Version content digest does not match its descriptor",
                 null);
         }
         try {
-            return AgentVersionContentCodec.decode(bytes);
+            return AgentVersionContentSerializer.deserialize(bytes);
         } catch (IllegalArgumentException e) {
             throw corruptedContent("Agent Version content cannot be decoded", e);
         }
@@ -142,7 +177,7 @@ public class AgentVersionStorageService {
     }
     
     private AgentVersionStorageDescriptor buildDescriptor(StorageKey storageKey,
-        AgentVersionContentCodec.EncodedContent encoded) {
+        AgentVersionContentSerializer.SerializedContent serializedContent) {
         AgentVersionStorageDescriptor result = new AgentVersionStorageDescriptor();
         result.setProvider(storageKey.getProvider());
         result.setKey(storageKey.getKey());
@@ -150,17 +185,17 @@ public class AgentVersionStorageService {
             result.setKeyFormat(AgentVersionStorageDescriptor.NACOS_CONFIG_KEY_FORMAT);
             result.setAgentNameCodec(AgentVersionStorageDescriptor.RAD_AGENT_NAME_CODEC);
         }
-        result.setContentDigest(encoded.getContentDigest());
+        result.setContentDigest(serializedContent.getContentDigest());
         result.setMediaType(AgentVersionStorageDescriptor.MEDIA_TYPE);
         result.setSchemaVersion(AgentVersionStorageDescriptor.SCHEMA_VERSION);
-        result.setSize((long) encoded.getSize());
+        result.setSize((long) serializedContent.getSize());
         return result;
     }
     
     private StorageKey checkedStorageKey(AgentVersionStorageDescriptor descriptor)
         throws NacosException {
         try {
-            AgentVersionStorageDescriptorCodec.validate(descriptor);
+            AgentVersionStorageDescriptorSerializer.validate(descriptor);
         } catch (IllegalArgumentException e) {
             throw corruptedContent("Invalid Agent Version storage descriptor", e);
         }

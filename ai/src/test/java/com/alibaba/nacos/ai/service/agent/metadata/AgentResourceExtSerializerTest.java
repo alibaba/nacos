@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentResourceExtCodecTest {
+class AgentResourceExtSerializerTest {
     
     private static final String MINIMAL_JSON =
         "{\"schemaVersion\":1,\"versionCatalog\":{\"onlineVersions\":[]}}";
@@ -44,8 +44,8 @@ class AgentResourceExtCodecTest {
     void testFullRoundTripUsesFixedProjection() {
         AgentResourceExt original = createFullResourceExt();
         
-        String json = AgentResourceExtCodec.encode(original);
-        AgentResourceExt restored = AgentResourceExtCodec.decode(json);
+        String json = AgentResourceExtSerializer.serialize(original);
+        AgentResourceExt restored = AgentResourceExtSerializer.deserialize(json);
         
         assertTrue(json.startsWith("{\"schemaVersion\":1,\"displayName\":"));
         assertTrue(json.contains("\"provider\":{\"name\":\"Nacos\",\"url\":"));
@@ -63,8 +63,8 @@ class AgentResourceExtCodecTest {
     void testMinimalRoundTripOmitsAbsentFields() {
         AgentResourceExt resourceExt = createMinimalResourceExt();
         
-        String json = AgentResourceExtCodec.encode(resourceExt);
-        AgentResourceExt restored = AgentResourceExtCodec.decode(json);
+        String json = AgentResourceExtSerializer.serialize(resourceExt);
+        AgentResourceExt restored = AgentResourceExtSerializer.deserialize(json);
         
         assertEquals(MINIMAL_JSON, json);
         assertEquals(1, restored.getSchemaVersion());
@@ -93,11 +93,11 @@ class AgentResourceExtCodecTest {
         extensions.put(repeat("键", 128), null);
         resourceExt.setExtensions(extensions);
         
-        AgentResourceExtCodec.decode(AgentResourceExtCodec.encode(resourceExt));
+        AgentResourceExtSerializer.deserialize(AgentResourceExtSerializer.serialize(resourceExt));
         
         resourceExt.setExtensions(
             Collections.<String, Object>singletonMap("k", repeat("a", 16376)));
-        String exactLimitJson = AgentResourceExtCodec.encode(resourceExt);
+        String exactLimitJson = AgentResourceExtSerializer.serialize(resourceExt);
         assertTrue(exactLimitJson.contains(repeat("a", 16376)));
     }
     
@@ -151,7 +151,8 @@ class AgentResourceExtCodecTest {
         resourceExt.setExtensions(Collections.<String, Object>singletonMap("nested", nested));
         
         AgentResourceExt restored =
-            AgentResourceExtCodec.decode(AgentResourceExtCodec.encode(resourceExt));
+            AgentResourceExtSerializer
+                .deserialize(AgentResourceExtSerializer.serialize(resourceExt));
         
         assertTrue(restored.getExtensions().get("nested") instanceof Map);
     }
@@ -185,7 +186,7 @@ class AgentResourceExtCodecTest {
     @Test
     void testRejectInvalidSchemaAndUris() {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentResourceExtCodec.validate(null));
+            () -> AgentResourceExtSerializer.validate(null));
         AgentResourceExt resourceExt = createMinimalResourceExt();
         resourceExt.setSchemaVersion(null);
         assertEncodeRejected(resourceExt);
@@ -330,12 +331,12 @@ class AgentResourceExtCodecTest {
     
     private void assertEncodeRejected(AgentResourceExt resourceExt) {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentResourceExtCodec.encode(resourceExt));
+            () -> AgentResourceExtSerializer.serialize(resourceExt));
     }
     
     private void assertDecodeRejected(String json) {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentResourceExtCodec.decode(json));
+            () -> AgentResourceExtSerializer.deserialize(json));
     }
     
     private String addRootField(String field) {

@@ -183,11 +183,6 @@ class AgentModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(oversizedTags));
         
-        Agent reservedTag = newValidAgent();
-        reservedTag.setTags(Collections.singletonList("__nacos.agent.internal"));
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentModelValidator.validateAgent(reservedTag));
-        
         Agent duplicateTags = newValidAgent();
         duplicateTags.setTags(Arrays.asList("demo", "demo"));
         assertThrows(IllegalArgumentException.class,
@@ -211,6 +206,14 @@ class AgentModelValidatorTest {
         inconsistentOnlineCount.getVersionInfo().setOnlineCnt(0);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(inconsistentOnlineCount));
+    }
+    
+    @Test
+    void testAcceptsUserDefinedTagPrefixes() {
+        Agent agent = newValidAgent();
+        agent.setTags(Collections.singletonList("__nacos.agent.internal"));
+        
+        assertDoesNotThrow(() -> AgentModelValidator.validateAgent(agent));
     }
     
     @Test

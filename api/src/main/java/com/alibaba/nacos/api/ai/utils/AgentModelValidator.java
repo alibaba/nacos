@@ -46,10 +46,10 @@ import java.util.Set;
  * Aggregate validation for the public Agent management model.
  *
  * <p>This validator checks the structural, capacity, and cross-field invariants that cannot be
- * represented by individual value objects. The 16 KiB canonical JSON limit for
+ * represented by individual value objects. The 16 KiB serialized UTF-8 JSON limit for
  * {@link Agent#getExtensions()} is intentionally not checked here because the API module does not
  * own the JSON serialization layer. Bindings and server write paths must enforce that byte limit
- * after canonical serialization.</p>
+ * after serialization.</p>
  *
  * @author Nacos
  */
@@ -84,8 +84,6 @@ public final class AgentModelValidator {
     private static final int MAX_RUNTIME_ENDPOINTS = 1000;
     
     private static final int MAX_VERSION_PAGE_ITEMS = 100;
-    
-    private static final String INTERNAL_TAG_PREFIX = "__nacos.agent.";
     
     private AgentModelValidator() {
     }
@@ -363,9 +361,6 @@ public final class AgentModelValidator {
         Set<String> uniqueTags = new HashSet<String>();
         for (String tag : tags) {
             validateRequiredLength(tag, MAX_TAG_LENGTH, "tag");
-            if (tag.startsWith(INTERNAL_TAG_PREFIX)) {
-                throw new IllegalArgumentException("Tag uses reserved prefix: " + tag);
-            }
             if (!uniqueTags.add(tag)) {
                 throw new IllegalArgumentException("Duplicate tag: " + tag);
             }

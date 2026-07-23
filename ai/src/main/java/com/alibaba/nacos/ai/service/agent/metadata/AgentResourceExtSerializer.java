@@ -40,11 +40,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Strict JSON codec for the typed Agent content persisted in {@code ai_resource.ext}.
+ * Strict JSON serializer for the typed Agent content persisted in {@code ai_resource.ext}.
  *
  * @author Nacos
  */
-public final class AgentResourceExtCodec {
+public final class AgentResourceExtSerializer {
     
     public static final int MAX_EXTENSIONS_SIZE = 16 * 1024;
     
@@ -72,16 +72,16 @@ public final class AgentResourceExtCodec {
     private static final Set<String> CATALOG_ENTRY_FIELDS =
         unmodifiableSet("version", "labels", "protocols");
     
-    private AgentResourceExtCodec() {
+    private AgentResourceExtSerializer() {
     }
     
     /**
-     * Validate and encode Agent resource extension data.
+     * Validate and serialize Agent resource extension data.
      *
      * @param resourceExt typed extension object
      * @return JSON persisted in {@code ai_resource.ext}
      */
-    public static String encode(AgentResourceExt resourceExt) {
+    public static String serialize(AgentResourceExt resourceExt) {
         validate(resourceExt);
         try {
             return JacksonUtils.toJson(toStorageProjection(resourceExt));
@@ -91,12 +91,12 @@ public final class AgentResourceExtCodec {
     }
     
     /**
-     * Decode and validate Agent resource extension data.
+     * Deserialize and validate Agent resource extension data.
      *
      * @param json JSON read from {@code ai_resource.ext}
-     * @return typed extension object
+     * @return deserialized extension object
      */
-    public static AgentResourceExt decode(String json) {
+    public static AgentResourceExt deserialize(String json) {
         validateJsonShape(json);
         final AgentResourceExt result;
         try {

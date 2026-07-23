@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.fingerprint;
+package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -40,14 +40,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Encodes and decodes the JSON bytes stored for one Agent Version.
+ * Serializes and deserializes the JSON bytes stored for one Agent Version.
  *
  * <p>The returned bytes are the single fact used both for persistence and SHA-256 calculation, so
  * storage content, size and digest cannot diverge through a second serialization pass.</p>
  *
  * @author Nacos
  */
-public final class AgentVersionContentCodec {
+public final class AgentVersionContentSerializer {
     
     public static final String DIGEST_PREFIX = "sha256:";
     
@@ -70,17 +70,17 @@ public final class AgentVersionContentCodec {
     private static final Set<String> ENDPOINT_FIELDS = new HashSet<String>(Arrays.asList(
         "uri", "transport", "priority", "weight", "metadata"));
     
-    private AgentVersionContentCodec() {
+    private AgentVersionContentSerializer() {
     }
     
     /**
-     * Validate and encode one Agent Version content object.
+     * Validate and serialize one Agent Version content object.
      *
      * @param content Agent Version content
-     * @return immutable storage encoding result
+     * @return immutable serialized storage result
      * @throws IllegalArgumentException when content is invalid or exceeds the storage limit
      */
-    public static EncodedContent encode(AgentVersionContent content) {
+    public static SerializedContent serialize(AgentVersionContent content) {
         validate(content);
         final byte[] bytes;
         try {
@@ -92,7 +92,7 @@ public final class AgentVersionContentCodec {
             throw new IllegalArgumentException(
                 "AgentVersionContent exceeds " + MAX_CONTENT_SIZE + " bytes");
         }
-        return new EncodedContent(bytes, digest(bytes));
+        return new SerializedContent(bytes, digest(bytes));
     }
     
     /**
@@ -114,13 +114,13 @@ public final class AgentVersionContentCodec {
     }
     
     /**
-     * Decode Agent Version bytes and verify the storage model.
+     * Deserialize Agent Version bytes and verify the storage model.
      *
      * @param bytes persisted Agent Version content bytes
-     * @return decoded content
+     * @return deserialized content
      * @throws IllegalArgumentException when bytes are invalid or out of contract
      */
-    public static AgentVersionContent decode(byte[] bytes) {
+    public static AgentVersionContent deserialize(byte[] bytes) {
         if (bytes == null) {
             throw new IllegalArgumentException("AgentVersionContent bytes must not be null");
         }
@@ -295,13 +295,13 @@ public final class AgentVersionContentCodec {
     /**
      * Immutable persisted bytes, digest and byte count for one Agent Version content object.
      */
-    public static final class EncodedContent {
+    public static final class SerializedContent {
         
         private final byte[] bytes;
         
         private final String contentDigest;
         
-        private EncodedContent(byte[] bytes, String contentDigest) {
+        private SerializedContent(byte[] bytes, String contentDigest) {
             this.bytes = bytes;
             this.contentDigest = contentDigest;
         }

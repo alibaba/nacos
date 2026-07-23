@@ -234,7 +234,7 @@ The following Agent-specific rules refine the common AI lifecycle rule:
   not trigger recalculation.
 
 Whenever online status or labels change, the server must rebuild
-`versionCatalog` and the derived protocol search tokens as one logical update.
+`versionCatalog` as one logical update.
 When at least one online version exists, exactly one valid `latestVersion` must
 exist and must occur in `onlineVersions`.
 
@@ -352,16 +352,15 @@ Version fact:
 | `description` | 2048 characters. |
 | Icon, provider, or declared Endpoint URI | 2048 characters. |
 | Public tags | 32 items, 64 characters each. |
-| Agent `extensions` | 32 items; key 128 characters; canonical JSON total 16 KiB. |
+| Agent `extensions` | 32 items; key 128 characters; serialized UTF-8 JSON total 16 KiB. |
 | `protocol`, `protocolVersion` | 32 and 64 characters. |
 | CallInterfaces per Version | 16. |
 | Declared Endpoints per CallInterface | 64. |
 | Endpoint metadata | 32 items; key 64 and value 256 characters. |
 | `AgentVersionContent` | 1 MiB. |
 
-Public tags and internal protocol tokens share the persistence capacity of
-`biz_tags`; the server validates the canonical combined length before atomically
-accepting either a tag or online-protocol change.
+`biz_tags` stores only public tags supplied by the user and does not contain
+server-derived indexes. Its serialized JSON must not exceed 1024 characters.
 
 Descriptors, extensions, and Endpoint metadata must not contain plaintext
 credentials. Audit records must not log complete native descriptors, security

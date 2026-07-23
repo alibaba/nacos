@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
-import com.alibaba.nacos.ai.service.agent.fingerprint.AgentVersionContentCodec;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -35,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,10 +71,74 @@ class AgentVersionStorageServiceTest {
     }
     
     @Test
+    void testPrepareBuildsDescriptorAndBytesWithoutAccessingStorage() {
+        AgentVersionContent content = newContent();
+        AgentVersionContentSerializer.SerializedContent expected =
+            AgentVersionContentSerializer.serialize(content);
+        
+        PreparedAgentVersionWrite prepared = service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION,
+            content);
+        
+        AgentVersionStorageDescriptor descriptor = prepared.getDescriptor();
+        assertArrayEquals(expected.getBytes(), prepared.getBytes());
+        assertEquals(NacosConfigAiResourceStorage.TYPE, descriptor.getProvider());
+        assertEquals("public:agent-version:agent__enc-Nacos-032Agent__1.0.0-RC1.json",
+            descriptor.getKey());
+        assertEquals(AgentVersionStorageDescriptor.NACOS_CONFIG_KEY_FORMAT,
+            descriptor.getKeyFormat());
+        assertEquals(AgentVersionStorageDescriptor.RAD_AGENT_NAME_CODEC,
+            descriptor.getAgentNameCodec());
+        assertEquals(expected.getContentDigest(), descriptor.getContentDigest());
+        assertEquals((long) expected.getSize(), descriptor.getSize());
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
+    void testSavePreparedUsesProviderAndKeyCapturedDuringPrepare() throws NacosException {
+        AtomicReference<String> configuredProvider = new AtomicReference<String>("object-store");
+        service = new AgentVersionStorageService(storageRouter, configuredProvider::get);
+        PreparedAgentVersionWrite prepared = service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION,
+            newContent());
+        configuredProvider.set("other-store");
+        when(storageRouter.route(any(StorageKey.class))).thenReturn(storage);
+        ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
+        
+        service.save(prepared);
+        
+        verify(storage).save(keyCaptor.capture(), any(byte[].class));
+        assertEquals("object-store", keyCaptor.getValue().getProvider());
+        assertEquals("public:agent-version:agent__enc-Nacos-032Agent__1.0.0-RC1.json",
+            keyCaptor.getValue().getKey());
+        assertEquals("object-store", prepared.getDescriptor().getProvider());
+    }
+    
+    @Test
+    void testPrepareSaveAndLoadRoundTrip() throws NacosException {
+        PreparedAgentVersionWrite prepared = service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION,
+            newContent());
+        when(storageRouter.route(any(StorageKey.class))).thenReturn(storage);
+        when(storage.get(any(StorageKey.class))).thenReturn(prepared.getBytes());
+        
+        service.save(prepared);
+        AgentVersionContent loaded = service.load(prepared.getDescriptor());
+        
+        verify(storage).save(any(StorageKey.class), any(byte[].class));
+        assertEquals("a2a", loaded.getCallInterfaces().get(0).getProtocol());
+    }
+    
+    @Test
+    void testSavePreparedRejectsNullBeforeRouting() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.save((PreparedAgentVersionWrite) null));
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
     void testSaveUsesExactEncodedBytesAndReturnsDescriptor() throws NacosException {
         when(storageRouter.route(any(StorageKey.class))).thenReturn(storage);
         AgentVersionContent content = newContent();
-        AgentVersionContentCodec.EncodedContent expected = AgentVersionContentCodec.encode(content);
+        AgentVersionContentSerializer.SerializedContent expected =
+            AgentVersionContentSerializer.serialize(content);
         ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
         ArgumentCaptor<byte[]> contentCaptor = ArgumentCaptor.forClass(byte[].class);
         
@@ -142,6 +207,19 @@ class AgentVersionStorageServiceTest {
     }
     
     @Test
+    void testPrepareRejectsInvalidInputWithoutAccessingStorage() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.prepare("invalid namespace", AGENT_NAME, VERSION, newContent()));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.prepare(NAMESPACE_ID, "Agent代理", VERSION, newContent()));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.prepare(NAMESPACE_ID, AGENT_NAME, "v1", newContent()));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION, null));
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
     void testLoadValidatesRawBytesBeforeDecoding() throws NacosException {
         byte[] bytes = reorderedContentBytes();
         AgentVersionStorageDescriptor descriptor = descriptor(bytes);
@@ -192,7 +270,7 @@ class AgentVersionStorageServiceTest {
     void testLoadRejectsDigestMismatch() throws NacosException {
         byte[] bytes = reorderedContentBytes();
         AgentVersionStorageDescriptor descriptor = descriptor(bytes);
-        descriptor.setContentDigest(AgentVersionContentCodec.digest("other".getBytes(
+        descriptor.setContentDigest(AgentVersionContentSerializer.digest("other".getBytes(
             StandardCharsets.UTF_8)));
         when(storageRouter.route(any(StorageKey.class))).thenReturn(storage);
         when(storage.get(any(StorageKey.class))).thenReturn(bytes);
@@ -339,7 +417,7 @@ class AgentVersionStorageServiceTest {
         result.setKey("public:agent-version:agent__enc-Nacos-032Agent__1.0.0-RC1.json");
         result.setKeyFormat(AgentVersionStorageDescriptor.NACOS_CONFIG_KEY_FORMAT);
         result.setAgentNameCodec(AgentVersionStorageDescriptor.RAD_AGENT_NAME_CODEC);
-        result.setContentDigest(AgentVersionContentCodec.digest(bytes));
+        result.setContentDigest(AgentVersionContentSerializer.digest(bytes));
         result.setMediaType(AgentVersionStorageDescriptor.MEDIA_TYPE);
         result.setSchemaVersion(AgentVersionStorageDescriptor.SCHEMA_VERSION);
         result.setSize((long) bytes.length);
