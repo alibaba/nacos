@@ -48,6 +48,11 @@ import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +63,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.sql.Timestamp;
+import java.io.InputStream;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -87,6 +94,12 @@ class ArdSearchServiceImplTest {
     
     private static final String CATALOG_BASE_URL_KEY = "nacos.ai.ard.catalog.base-url";
     
+    private static final String CATALOG_TRUST_IDENTITY_KEY =
+        "nacos.ai.ard.catalog.trust.identity";
+    
+    private static final String CATALOG_TRUST_IDENTITY_TYPE_KEY =
+        "nacos.ai.ard.catalog.trust.identity-type";
+    
     @Mock
     private AiResourceManager resourceManager;
     
@@ -107,6 +120,8 @@ class ArdSearchServiceImplTest {
         System.clearProperty(RANKING_ENABLED_KEY);
         System.clearProperty(CATALOG_BASE_URL_KEY);
         System.clearProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER);
+        System.clearProperty(CATALOG_TRUST_IDENTITY_KEY);
+        System.clearProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY);
         EnvUtil.setContextPath(null);
         RequestContextHolder.resetRequestAttributes();
     }
@@ -137,15 +152,16 @@ class ArdSearchServiceImplTest {
         ArdSearchResult result = response.getResults().get(0);
         assertEquals("api-helper", result.getDisplayName());
         assertEquals(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE, result.getType());
-        assertEquals("http://localhost:8850/nacos/v3/client/ai/skills"
-            + "?namespaceId=public&name=api-helper&version=1.0.0",
+        assertEquals("http://localhost:8850/nacos/v3/ai/ard/artifacts"
+            + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
             result.getUrl());
         assertEquals("urn:air:nacos:public:skill:api-helper", result.getIdentifier());
-        assertEquals(ArdProtocolConstants.SOURCE_NACOS_LOCAL, result.getSource());
+        assertTrue(URI.create(result.getSource()).isAbsolute());
         assertEquals("skill", result.getMetadata().get("resourceType"));
         assertEquals("SKILL.md", result.getMetadata().get("entrypoint"));
-        assertEquals("skill", result.getTrustManifest().get("resourceType"));
-        assertEquals(100.0D, result.getScore(), 0.001D);
+        assertNull(result.getTrustManifest());
+        JsonNode serialized = JacksonUtils.toObj(JacksonUtils.toJson(result), JsonNode.class);
+        assertTrue(serialized.get("score").isIntegralNumber());
         assertTrue(response.getReferrals().isEmpty());
     }
     
@@ -171,7 +187,7 @@ class ArdSearchServiceImplTest {
             Map.of("metadata.resourceType", (Object) "skill")));
         
         assertEquals(1, response.getResults().size());
-        assertEquals(100.0D, response.getResults().get(0).getScore(), 0.001D);
+        assertEquals(100, response.getResults().get(0).getScore());
     }
     
     @Test
@@ -217,7 +233,7 @@ class ArdSearchServiceImplTest {
             Map.of("type", (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE))));
         
         assertEquals(1, response.getResults().size());
-        assertEquals(100.0D, response.getResults().get(0).getScore(), 0.001D);
+        assertEquals(100, response.getResults().get(0).getScore());
     }
     
     @Test
@@ -390,11 +406,15 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdListResponse response = service.list("public",
-            "type=application/zip;displayName=api", "displayName ASC", 1, null);
+            "type=" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE + ";displayName=api",
+            "displayName ASC", 1, null);
         
-        assertEquals(1, response.getResults().size());
-        assertEquals("api-one", response.getResults().get(0).getDisplayName());
+        assertEquals(1, response.getItems().size());
+        assertEquals("api-one", response.getItems().get(0).getDisplayName());
         assertNotNull(response.getPageToken());
+        JsonNode serialized = JacksonUtils.toObj(JacksonUtils.toJson(response), JsonNode.class);
+        assertTrue(serialized.has("items"));
+        assertTrue(!serialized.has("results"));
     }
     
     @Test
@@ -454,9 +474,23 @@ class ArdSearchServiceImplTest {
             catalog.getEntries().get(0).getUrl());
         assertEquals("urn:air:nacos.example.com:public:skill:api-helper",
             catalog.getEntries().get(1).getIdentifier());
-        assertEquals("https://nacos.example.com/nacos/v3/client/ai/skills"
-            + "?namespaceId=public&name=api-helper&version=1.0.0",
+        assertEquals("https://nacos.example.com/nacos/v3/ai/ard/artifacts"
+            + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
             catalog.getEntries().get(1).getUrl());
+        assertCatalogSchemaValid(catalog);
+    }
+    
+    @Test
+    void catalogShouldIncludeConfiguredTrustIdentity() {
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "spiffe://example.com/nacos/ard");
+        System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "spiffe");
+        ArdSearchServiceImpl service = service();
+        
+        ArdCatalog catalog = service.hostCatalog();
+        
+        assertEquals("spiffe://example.com/nacos/ard",
+            catalog.getHost().getTrustManifest().get("identity"));
+        assertEquals("spiffe", catalog.getHost().getTrustManifest().get("identityType"));
     }
     
     @Test
@@ -502,6 +536,20 @@ class ArdSearchServiceImplTest {
     private ArdSearchServiceImpl service() {
         return new ArdSearchServiceImpl(resourceManager, mcpServerOperationService, repository,
             embeddingService, vectorIndex);
+    }
+    
+    private void assertCatalogSchemaValid(ArdCatalog catalog) throws Exception {
+        String path =
+            "/ard-spec/5fa2f5aef790b478319f6a3b43adf4661b0ed0e0/ai-catalog.schema.json";
+        try (InputStream input = getClass().getResourceAsStream(path)) {
+            assertNotNull(input);
+            Schema schema = SchemaRegistry
+                .withDefaultDialect(SpecificationVersion.DRAFT_2020_12).getSchema(input);
+            JsonNode document =
+                JacksonUtils.toObj(JacksonUtils.toJson(catalog), JsonNode.class);
+            List<Error> errors = schema.validate(document);
+            assertTrue(errors.isEmpty(), errors.toString());
+        }
     }
     
     private ArdSearchRequest request(String text, Map<String, Object> filter) {

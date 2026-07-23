@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
+import com.alibaba.nacos.airegistry.annotation.ArdApi;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.airegistry.service.ard.ArdArtifact;
 import com.alibaba.nacos.airegistry.service.ard.ArdArtifactService;
 import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -46,6 +48,7 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMO
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -146,6 +149,12 @@ class ArdSearchControllerTest {
     @Test
     void ardWellKnownPathShouldUseStandardEndpoint() {
         assertEquals("/.well-known", ArdProtocolConstants.WELL_KNOWN_PATH);
+    }
+    
+    @Test
+    void controllerShouldUseArdProtocolAdvice() {
+        assertNotNull(ArdSearchController.class.getAnnotation(ArdApi.class));
+        assertFalse(ArdSearchController.class.isAnnotationPresent(NacosApi.class));
     }
     
     @Test

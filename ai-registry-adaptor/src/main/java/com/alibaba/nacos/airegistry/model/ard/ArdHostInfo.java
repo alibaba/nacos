@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.airegistry.model.ard;
 
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.Map;
 
 /**
@@ -24,6 +25,7 @@ import java.util.Map;
  *
  * @author nacos
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArdHostInfo {
     
     private String displayName;
@@ -32,7 +34,7 @@ public class ArdHostInfo {
     
     private String documentationUrl;
     
-    private Map<String, Object> trustManifest = new LinkedHashMap<>();
+    private Map<String, Object> trustManifest;
     
     public String getDisplayName() {
         return displayName;

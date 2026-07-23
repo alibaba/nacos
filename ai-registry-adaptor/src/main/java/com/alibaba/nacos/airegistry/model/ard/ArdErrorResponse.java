@@ -17,29 +17,26 @@
 package com.alibaba.nacos.airegistry.model.ard;
 
 /**
- * Single Nacos Local ARD Search result.
+ * ARD protocol error response.
  *
  * @author nacos
  */
-public class ArdSearchResult extends ArdCatalogEntry {
+public class ArdErrorResponse {
     
-    private Integer score;
+    private final String errorCode;
     
-    private String source;
+    private final String message;
     
-    public Integer getScore() {
-        return score;
+    public ArdErrorResponse(String errorCode, String message) {
+        this.errorCode = errorCode;
+        this.message = message;
     }
     
-    public void setScore(Integer score) {
-        this.score = score;
+    public String getErrorCode() {
+        return errorCode;
     }
     
-    public String getSource() {
-        return source;
-    }
-    
-    public void setSource(String source) {
-        this.source = source;
+    public String getMessage() {
+        return message;
     }
 }

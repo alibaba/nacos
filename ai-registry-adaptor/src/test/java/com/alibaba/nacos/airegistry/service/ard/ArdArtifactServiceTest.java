@@ -17,24 +17,31 @@
 package com.alibaba.nacos.airegistry.service.ard;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
-import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayInputStream;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -54,27 +61,29 @@ class ArdArtifactServiceTest {
     @Mock
     private AiResourceFileReader fileReader;
     
+    @Mock
+    private SkillClientOperationService skillClientOperationService;
+    
     @Test
-    void getShouldReadSkillArtifactThroughResourceReader() throws Exception {
-        mockOnlineResource(AiResourceConstants.RESOURCE_TYPE_SKILL, "demo", "1.0.0");
-        when(fileReader.read(any(AiResourceVersion.class), eq("public"),
-            eq(AiResourceConstants.RESOURCE_TYPE_SKILL), eq("demo"), eq("1.0.0"), eq("SKILL.md")))
-            .thenReturn("# Demo".getBytes(StandardCharsets.UTF_8));
+    void getShouldReturnCompleteSkillZip() throws Exception {
+        Skill skill = skill();
+        when(skillClientOperationService.querySkill("public", "demo", "1.0.0", null, null))
+            .thenReturn(new SkillQueryResult(skill, "md5", "1.0.0"));
         ArdArtifactService service = service();
         
         ArdArtifact artifact = service.get("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
             "demo", "1.0.0", null);
         
-        assertEquals(ArdProtocolConstants.MEDIA_TYPE_SKILL, artifact.getMediaType());
-        assertEquals("# Demo", artifact.getBody());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE, artifact.getMediaType());
+        assertEquals(Set.of("demo/SKILL.md", "demo/references/guide.md"),
+            zipEntries((byte[]) artifact.getBody()));
     }
     
     @Test
-    void getShouldReturnNotFoundWhenDeclaredArtifactContentIsMissing() throws Exception {
-        mockOnlineResource(AiResourceConstants.RESOURCE_TYPE_SKILL, "demo", "1.0.0");
-        when(fileReader.read(any(AiResourceVersion.class), eq("public"),
-            eq(AiResourceConstants.RESOURCE_TYPE_SKILL), eq("demo"), eq("1.0.0"), eq("SKILL.md")))
-            .thenReturn(null);
+    void getShouldPropagateSkillNotFound() throws Exception {
+        when(skillClientOperationService.querySkill("public", "demo", "1.0.0", null, null))
+            .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
+                ErrorCode.RESOURCE_NOT_FOUND, "skill not found"));
         ArdArtifactService service = service();
         
         NacosException exception = assertThrows(NacosException.class,
@@ -85,21 +94,30 @@ class ArdArtifactServiceTest {
     }
     
     private ArdArtifactService service() {
-        return new ArdArtifactService(resourceManager, mcpServerOperationService, fileReader);
+        return new ArdArtifactService(resourceManager, mcpServerOperationService, fileReader,
+            skillClientOperationService);
     }
     
-    private void mockOnlineResource(String resourceType, String resourceName,
-        String resourceVersion) throws NacosException {
-        AiResource meta = new AiResource();
-        meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
-        when(resourceManager.findMeta("public", resourceName, resourceType)).thenReturn(meta);
-        when(resourceManager.findVersion("public", resourceName, resourceType, resourceVersion))
-            .thenReturn(version());
+    private Skill skill() {
+        Skill skill = new Skill();
+        skill.setName("demo");
+        skill.setSkillMd("# Demo");
+        SkillResource resource = new SkillResource();
+        resource.setName("guide.md");
+        resource.setType("references");
+        resource.setContent("Guide");
+        skill.setResource(Map.of(resource.getResourceIdentifier(), resource));
+        return skill;
     }
     
-    private AiResourceVersion version() {
-        AiResourceVersion version = new AiResourceVersion();
-        version.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        return version;
+    private Set<String> zipEntries(byte[] bytes) throws Exception {
+        Set<String> result = new HashSet<>();
+        try (ZipInputStream input = new ZipInputStream(new ByteArrayInputStream(bytes))) {
+            ZipEntry entry;
+            while ((entry = input.getNextEntry()) != null) {
+                result.add(entry.getName());
+            }
+        }
+        return result;
     }
 }

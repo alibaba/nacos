@@ -14,32 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.airegistry.model.ard;
+package com.alibaba.nacos.airegistry.annotation;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Single Nacos Local ARD Search result.
+ * Marks controllers that expose the external ARD protocol.
  *
  * @author nacos
  */
-public class ArdSearchResult extends ArdCatalogEntry {
-    
-    private Integer score;
-    
-    private String source;
-    
-    public Integer getScore() {
-        return score;
-    }
-    
-    public void setScore(Integer score) {
-        this.score = score;
-    }
-    
-    public String getSource() {
-        return source;
-    }
-    
-    public void setSource(String source) {
-        this.source = source;
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface ArdApi {
 }

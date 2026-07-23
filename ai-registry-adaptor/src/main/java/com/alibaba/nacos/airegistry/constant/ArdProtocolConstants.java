@@ -29,8 +29,6 @@ public final class ArdProtocolConstants {
     
     public static final String SPEC_VERSION = "1.0";
     
-    public static final String SOURCE_NACOS_LOCAL = "nacos-local";
-    
     public static final String FEDERATION_NONE = "none";
     
     public static final String KEY_CATALOG_HOST_IDENTIFIER =
@@ -40,9 +38,7 @@ public final class ArdProtocolConstants {
     
     public static final String MEDIA_TYPE_REGISTRY = "application/ai-registry+json";
     
-    public static final String MEDIA_TYPE_SKILL = "application/ai-skill+md";
-    
-    public static final String MEDIA_TYPE_SKILL_PACKAGE = "application/zip";
+    public static final String MEDIA_TYPE_SKILL_PACKAGE = "application/agent-skills+zip";
     
     public static final String MEDIA_TYPE_PROMPT = "application/vnd.nacos.ai-prompt+json";
     

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
+import com.alibaba.nacos.airegistry.annotation.ArdApi;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.airegistry.service.ard.ArdArtifact;
 import com.alibaba.nacos.airegistry.service.ard.ArdArtifactService;
 import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
-import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -54,7 +54,7 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMO
  *
  * @author nacos
  */
-@NacosApi
+@ArdApi
 @RestController
 @ConditionalOnArdEnabled
 @RequestMapping(ArdProtocolConstants.CLIENT_PATH)

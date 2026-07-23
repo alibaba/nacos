@@ -18,7 +18,6 @@ package com.alibaba.nacos.airegistry.service.ard;
 
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
@@ -38,6 +37,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdCatalogEntry;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
@@ -120,6 +120,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final String KEY_CATALOG_HOST_DOCUMENTATION_URL =
         "nacos.ai.ard.catalog.host.documentation-url";
     
+    private static final String KEY_CATALOG_TRUST_IDENTITY =
+        "nacos.ai.ard.catalog.trust.identity";
+    
+    private static final String KEY_CATALOG_TRUST_IDENTITY_TYPE =
+        "nacos.ai.ard.catalog.trust.identity-type";
+    
     private static final String KEY_CATALOG_MAX_ENTRIES = "nacos.ai.ard.catalog.max-entries";
     
     private static final TypeReference<List<String>> STRING_LIST_TYPE =
@@ -137,8 +143,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             "publisherId", "version", "source", "tags", "capabilities",
             "representativeQueries", "metadata.resourceType", "metadata.inputTypes",
             "metadata.outputTypes", "metadata.sideEffects", "metadata.riskLevel",
-            "metadata.scope", "trustManifest.source", "trustManifest.resourceType",
-            "trustManifest.federation"));
+            "metadata.scope", "trustManifest.identity", "trustManifest.identityType"));
     
     private static final Map<String, Double> CHUNK_TYPE_WEIGHTS = chunkTypeWeights();
     
@@ -179,8 +184,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             if (enhancedRanking) {
                 finalScore += exactMatchBoost(entry, context.text);
             }
-            result.setScore(finalScore);
-            candidates.add(new RankedResult(result, entry.getId(), entry.getGmtModified()));
+            candidates.add(new RankedResult(result, entry.getId(), entry.getGmtModified(),
+                finalScore));
         }
         candidates.sort(resultComparator());
         normalizeScores(candidates);
@@ -205,8 +210,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         Integer pageSize, String pageToken) throws NacosException {
         ListContext context = validateAndBuildListContext(namespaceId, filter, orderBy, pageSize,
             pageToken);
-        List<ArdSearchResult> results = new ArrayList<>();
-        for (ArdSearchResult result : matchedResults(context)) {
+        List<ArdCatalogEntry> results = new ArrayList<>();
+        for (ArdEntry entry : matchedEntries(context)) {
+            ArdCatalogEntry result = toCatalogEntry(entry);
             if (matchesListFilters(context, result)) {
                 results.add(result);
             }
@@ -230,11 +236,11 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         ArdCatalog catalog = new ArdCatalog();
         catalog.setSpecVersion(ArdProtocolConstants.SPEC_VERSION);
         catalog.setHost(hostInfo());
-        List<ArdSearchResult> entries = new ArrayList<>();
+        List<ArdCatalogEntry> entries = new ArrayList<>();
         entries.add(registryEntry());
         for (ArdEntry entry : currentEntries(resolvedNamespace, allResourceTypes(),
             positiveInt(KEY_CATALOG_MAX_ENTRIES, 100))) {
-            entries.add(toResult(entry));
+            entries.add(toCatalogEntry(entry));
         }
         catalog.setEntries(entries);
         return catalog;
@@ -447,26 +453,22 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private void normalizeScores(List<RankedResult> candidates) {
         double maxScore = 0D;
         for (RankedResult candidate : candidates) {
-            Double score = candidate.result.getScore();
-            if (score != null) {
-                maxScore = Math.max(maxScore, score);
-            }
+            maxScore = Math.max(maxScore, candidate.rankScore);
         }
         for (RankedResult candidate : candidates) {
-            candidate.result.setScore(normalizeScore(candidate.result.getScore(), maxScore));
+            candidate.result.setScore(normalizeScore(candidate.rankScore, maxScore));
         }
     }
     
-    private double normalizeScore(Double score, double maxScore) {
-        if (score == null || score <= 0D || maxScore <= 0D) {
-            return 0D;
+    private int normalizeScore(double score, double maxScore) {
+        if (score <= 0D || maxScore <= 0D) {
+            return 0;
         }
-        return Math.min(100D, score * 100D / maxScore);
+        return (int) Math.min(100L, Math.round(score * 100D / maxScore));
     }
     
     private Comparator<RankedResult> resultComparator() {
-        return Comparator.comparing((RankedResult result) -> result.result.getScore(),
-            Comparator.nullsLast(Comparator.reverseOrder()))
+        return Comparator.comparingDouble((RankedResult result) -> result.rankScore).reversed()
             .thenComparing((RankedResult result) -> result.gmtModified,
                 Comparator.nullsLast(Comparator.reverseOrder()))
             .thenComparing(result -> result.entryId, Comparator.nullsLast(Long::compareTo));
@@ -828,7 +830,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return true;
     }
     
-    private boolean matchesListFilters(ListContext context, ArdSearchResult result) {
+    private boolean matchesListFilters(ListContext context, ArdCatalogEntry result) {
         if (context.createdAfter != null && !isAfter(result.getMetadata().get("createdAt"),
             context.createdAfter)) {
             return false;
@@ -913,8 +915,20 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         }
     }
     
+    private ArdCatalogEntry toCatalogEntry(ArdEntry entry) {
+        ArdCatalogEntry result = new ArdCatalogEntry();
+        populateCatalogEntry(result, entry);
+        return result;
+    }
+    
     private ArdSearchResult toResult(ArdEntry entry) {
         ArdSearchResult result = new ArdSearchResult();
+        populateCatalogEntry(result, entry);
+        result.setSource(sourceUri());
+        return result;
+    }
+    
+    private void populateCatalogEntry(ArdCatalogEntry result, ArdEntry entry) {
         result.setIdentifier(buildIdentifier(entry));
         result.setDisplayName(entry.getDisplayName());
         result.setType(resourceKind(entry.getResourceType()).mediaType);
@@ -922,17 +936,18 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         result.setDescription(entry.getDescription());
         result.setTags(parseStringList(entry.getTags()));
         result.setCapabilities(parseStringList(entry.getCapabilities()));
-        result.setRepresentativeQueries(parseStringList(entry.getRepresentativeQueries()));
+        List<String> representativeQueries =
+            parseStringList(entry.getRepresentativeQueries());
+        result.setRepresentativeQueries(representativeQueries.size() < 2 ? null
+            : representativeQueries);
         result.setVersion(entry.getResourceVersion());
         result.setUpdatedAt(formatTimestamp(entry.getGmtModified()));
-        Map<String, Object> metadata = new LinkedHashMap<>(parseMap(entry.getMetadata()));
+        Map<String, Object> metadata = protocolMetadata(parseMap(entry.getMetadata()));
         if (entry.getGmtCreate() != null) {
             metadata.put("createdAt", formatTimestamp(entry.getGmtCreate()));
         }
         result.setMetadata(metadata);
-        result.setTrustManifest(trustManifest(entry.getResourceType()));
-        result.setSource(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
-        return result;
+        result.setTrustManifest(trustManifest());
     }
     
     private ArdHostInfo hostInfo() {
@@ -946,15 +961,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (StringUtils.isNotBlank(documentationUrl)) {
             host.setDocumentationUrl(documentationUrl);
         }
-        Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
-        host.setTrustManifest(trustManifest);
+        host.setTrustManifest(trustManifest());
         return host;
     }
     
-    private ArdSearchResult registryEntry() {
-        ArdSearchResult result = new ArdSearchResult();
+    private ArdCatalogEntry registryEntry() {
+        ArdCatalogEntry result = new ArdCatalogEntry();
         result.setIdentifier("urn:air:" + catalogHostIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
@@ -962,16 +974,14 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         result.setDescription("Nacos local AI Registry ARD search endpoint.");
         result.setTags(List.of("registry", "search", "dynamic"));
         result.setCapabilities(List.of("search", "explore", "list"));
-        result.setSource(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
         Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("endpoints", endpoints());
-        metadata.put("resourceTypes", List.of("skill", "prompt", "mcp"));
+        metadata.put("searchEndpoint", endpoints().get("search"));
+        metadata.put("exploreEndpoint", endpoints().get("explore"));
+        metadata.put("listEndpoint", endpoints().get("agents"));
+        metadata.put("artifactEndpoint", endpoints().get("artifacts"));
+        metadata.put("resourceTypes", "skill,prompt,mcp");
         result.setMetadata(metadata);
-        Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("resourceType", "registry");
-        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
-        result.setTrustManifest(trustManifest);
+        result.setTrustManifest(trustManifest());
         return result;
     }
     
@@ -1036,11 +1046,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private String buildResourceUrl(ArdEntry entry) {
         ResourceKind kind = resourceKind(entry.getResourceType());
-        if (ResourceKind.SKILL == kind) {
-            return Constants.Skills.CLIENT_PATH + "?namespaceId=" + encode(entry.getNamespaceId())
-                + "&name=" + encode(entry.getResourceName()) + "&version="
-                + encode(entry.getResourceVersion());
-        }
         StringBuilder url = new StringBuilder(ArdProtocolConstants.CLIENT_PATH)
             .append("/artifacts?namespaceId=").append(encode(entry.getNamespaceId()))
             .append("&resourceType=").append(encode(entry.getResourceType()))
@@ -1055,12 +1060,34 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return url.toString();
     }
     
-    private Map<String, Object> trustManifest(String resourceType) {
+    private Map<String, Object> trustManifest() {
+        String identity = property(KEY_CATALOG_TRUST_IDENTITY, "");
+        if (StringUtils.isBlank(identity)) {
+            return null;
+        }
         Map<String, Object> trustManifest = new LinkedHashMap<>();
-        trustManifest.put("source", ArdProtocolConstants.SOURCE_NACOS_LOCAL);
-        trustManifest.put("resourceType", resourceType);
-        trustManifest.put("federation", ArdProtocolConstants.FEDERATION_NONE);
+        trustManifest.put("identity", identity);
+        String identityType = property(KEY_CATALOG_TRUST_IDENTITY_TYPE, "");
+        if (Arrays.asList("spiffe", "did", "https", "other").contains(identityType)) {
+            trustManifest.put("identityType", identityType);
+        }
         return trustManifest;
+    }
+    
+    private String sourceUri() {
+        return withBaseUrl(ArdProtocolConstants.CLIENT_PATH);
+    }
+    
+    private Map<String, Object> protocolMetadata(Map<String, Object> metadata) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : metadata.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null || value instanceof String || value instanceof Number
+                || value instanceof Boolean) {
+                result.put(entry.getKey(), value);
+            }
+        }
+        return result;
     }
     
     private ResourceKind resourceKind(String resourceType) {
@@ -1130,7 +1157,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return singleton(entry.getResourceVersion());
         }
         if ("source".equals(field)) {
-            return singleton(ArdProtocolConstants.SOURCE_NACOS_LOCAL);
+            return singleton(sourceUri());
         }
         if ("tags".equals(field)) {
             return parseStringList(entry.getTags());
@@ -1145,12 +1172,14 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return toStringList(parseMap(entry.getMetadata()).get(field.substring(9)));
         }
         if (field.startsWith("trustManifest.")) {
-            return toStringList(trustManifest(entry.getResourceType()).get(field.substring(14)));
+            Map<String, Object> trustManifest = trustManifest();
+            return trustManifest == null ? Collections.emptyList()
+                : toStringList(trustManifest.get(field.substring(14)));
         }
         return Collections.emptyList();
     }
     
-    private List<String> fieldValues(ArdSearchResult result, String field) {
+    private List<String> fieldValues(ArdCatalogEntry result, String field) {
         if ("displayName".equals(field)) {
             return singleton(result.getDisplayName());
         }
@@ -1164,7 +1193,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return singleton(result.getVersion());
         }
         if ("source".equals(field)) {
-            return singleton(result.getSource());
+            return singleton(sourceUri());
         }
         if ("tags".equals(field)) {
             return result.getTags();
@@ -1179,7 +1208,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             return toStringList(result.getMetadata().get(field.substring(9)));
         }
         if (field.startsWith("trustManifest.")) {
-            return toStringList(result.getTrustManifest().get(field.substring(14)));
+            return result.getTrustManifest() == null ? Collections.emptyList()
+                : toStringList(result.getTrustManifest().get(field.substring(14)));
         }
         return Collections.emptyList();
     }
@@ -1294,34 +1324,34 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return response;
     }
     
-    private ArdListResponse listPage(List<ArdSearchResult> candidates, int pageSize,
+    private ArdListResponse listPage(List<ArdCatalogEntry> candidates, int pageSize,
         int pageOffset) {
         ArdListResponse response = new ArdListResponse();
         int fromIndex = Math.min(pageOffset, candidates.size());
         int toIndex = Math.min(fromIndex + pageSize, candidates.size());
-        response.setResults(new ArrayList<>(candidates.subList(fromIndex, toIndex)));
+        response.setItems(new ArrayList<>(candidates.subList(fromIndex, toIndex)));
         if (toIndex < candidates.size()) {
             response.setPageToken(encodePageToken(toIndex));
         }
         return response;
     }
     
-    private Comparator<ArdSearchResult> listComparator(String orderBy, boolean descending) {
-        Comparator<ArdSearchResult> comparator;
+    private Comparator<ArdCatalogEntry> listComparator(String orderBy, boolean descending) {
+        Comparator<ArdCatalogEntry> comparator;
         if ("displayName".equals(orderBy)) {
-            comparator = Comparator.comparing(ArdSearchResult::getDisplayName,
+            comparator = Comparator.comparing(ArdCatalogEntry::getDisplayName,
                 Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
         } else if ("identifier".equals(orderBy)) {
-            comparator = Comparator.comparing(ArdSearchResult::getIdentifier,
+            comparator = Comparator.comparing(ArdCatalogEntry::getIdentifier,
                 Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
         } else {
-            comparator = Comparator.comparing(ArdSearchResult::getUpdatedAt,
+            comparator = Comparator.comparing(ArdCatalogEntry::getUpdatedAt,
                 Comparator.nullsLast(String::compareTo));
         }
         if (descending) {
             comparator = comparator.reversed();
         }
-        return comparator.thenComparing(ArdSearchResult::getIdentifier,
+        return comparator.thenComparing(ArdCatalogEntry::getIdentifier,
             Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
     }
     
@@ -1445,10 +1475,14 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         
         private final Timestamp gmtModified;
         
-        private RankedResult(ArdSearchResult result, Long entryId, Timestamp gmtModified) {
+        private final double rankScore;
+        
+        private RankedResult(ArdSearchResult result, Long entryId, Timestamp gmtModified,
+            double rankScore) {
             this.result = result;
             this.entryId = entryId;
             this.gmtModified = gmtModified;
+            this.rankScore = rankScore;
         }
     }
     

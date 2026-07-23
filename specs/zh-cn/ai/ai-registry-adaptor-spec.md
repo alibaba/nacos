@@ -145,7 +145,13 @@ Nacos Skills 转换为社区 discovery 形态。
 
 ## 6. Agentic Resource Discovery 兼容
 
-当 `nacos.ai.ard.enabled=true` 时，适配器暴露 ARD discovery 端点：
+Nacos 以 ARD 上游 commit
+[`5fa2f5aef790b478319f6a3b43adf4661b0ed0e0`](https://github.com/ards-project/ard-spec/commit/5fa2f5aef790b478319f6a3b43adf4661b0ed0e0)
+对应的草案为兼容基线。由于草案的版本标签仍可能变化，仓库内固定的 OpenAPI、JSON Schema
+和一致性测试 fixture 均以该 commit 为准，而不是只依赖版本标签。
+
+当 `nacos.ai.ard.enabled=true` 时，适配器通过自身 Web Context 暴露以下 ARD discovery
+端点：
 
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
@@ -156,14 +162,81 @@ Nacos Skills 转换为社区 discovery 形态。
 | `GET` | `/v3/ai/ard/artifacts` | 返回 catalog 条目引用的版本化 artifact。 |
 | `GET` | `/.well-known/ai-catalog.json` | 返回 host 维度的 ARD catalog。 |
 
+即使 MCP 和 Skill 兼容开关均未开启，ARD 总开关也会启动适配器 Context。
+
+### 6.1 协议契约
+
 ARD 请求和响应模型属于该适配器，因为它们是外部协议契约，而不是 Nacos Client API
-标准模型。标准资源生命周期、可见性、鉴权和索引维护仍由 AI 模块负责。即使 MCP 和 Skill
-兼容开关均未开启，ARD 总开关也会启动适配器 Context。
+标准模型。模型必须遵循固定版本的上游 Schema：
+
+- 列表响应使用 `items`，不得将其重命名为 `results`；
+- 搜索结果的 `score` 为 0 到 100 的整数；
+- 搜索结果的 `source` 为标识当前 registry 的绝对 URI；
+- ARD 错误严格使用 `{ "errorCode": "...", "message": "..." }`，不得包裹为
+  Nacos `Result<T>`；
+- 生成的 `trustManifest` 如果存在，必须包含必填的 `identity`；未配置合法 identity
+  时，适配器不返回该 manifest；
+- catalog、list 和 search 使用独立 DTO，避免 search 专属字段出现在 catalog 条目中。
+
+ARD Controller 使用协议专属异常处理。Nacos v3 Controller 注解和 Nacos API 异常包裹
+不适用于这些路径。参数校验、资源不存在、访问拒绝和未预期异常必须按照固定版本 ARD
+OpenAPI 转换为对应 HTTP 状态码和 error code。
+
+### 6.2 Artifact 归属
+
+ARD 响应生成的所有 artifact URL 均指向公开适配器 base URL 下、由适配器自身提供的
+`/v3/ai/ard/artifacts` 端点。除非契约中引入独立且显式配置的主服务 base URL，否则不得
+指向主服务 Controller。
+
+对于 Skill 资源，artifact 端点以 `application/agent-skills+zip` 返回完整 Skill
+压缩包，其中包含 `SKILL.md` 及其打包资源。Prompt 和 MCP artifact 使用各自协议规定的
+表示形式。默认 Nacos 主服务运行在 8848、适配器运行在 9080 时，无需通过网关合并路径
+也必须可以正常获取 artifact。
+
+### 6.3 Discovery 边界
+
+AI 模块负责协议无关的 discovery 应用服务。该服务负责：
+
+- 关键词与向量召回；
+- 排序与确定性的同分处理；
+- 可见性 QueryAdvice 和逐资源可见性校验；
+- latest label 与当前 online version 解析；
+- 标准过滤、facet 与不透明 cursor 分页。
+
+可见性与当前版本校验必须在截取请求结果数量之前执行。内部召回可以分批限制候选数量，
+但必须持续取数，直到填满当前页或符合条件的结果耗尽。Cursor 基于稳定排序键生成，不使用
+易受结果变化影响的列表 offset。
+
+适配器只负责校验和解析 ARD 请求、调用标准 discovery 服务，并将标准搜索结果转换为
+ARD DTO。适配器不得直接访问 ARD index repository，也不得重复实现生命周期和可见性规则。
+
+### 6.4 索引一致性
+
+标准资源写入是事实来源。单个资源对应的 ARD entry 和 chunks 必须原子替换：删除旧索引行、
+插入新 entry、插入全部 chunks 必须在同一个数据源事务中完成。
+
+关系索引与向量索引之间不要求分布式事务。AI 模块改为记录资源级、幂等、持久化的索引任务，
+任务以 namespace、resource type 和 resource name 为键。Consumer 重新读取标准资源状态，
+替换或删除关系索引，再使所选向量索引收敛。只有已配置的两类索引均完成收敛，任务才算完成。
+
+失败任务保留 attempt count、next retry time、lease 和 last error 等重试状态。周期性
+reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。只记录
+日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
+
+### 6.5 一致性测试
+
+适配器模块保存固定版本的上游 OpenAPI 和 Schema 测试 fixture，并记录来源和许可证信息。
+自动化测试必须使用这些 fixture 校验序列化响应。端到端测试还需要针对真实适配器 Web
+Context 运行固定版本的官方 conformance runner，或运行从该 runner 等价转换出的测试矩阵。
+
+集成测试至少覆盖列表 `items`、整数搜索 score、URI `source`、trust identity 行为、
+协议错误体、catalog schema，以及主服务和适配器使用不同端口时的 Skill ZIP 获取。
 
 ## 7. 兼容规则
 
 - 在适配器路径上，外部协议兼容性优先于 Nacos v3 响应约定。
 - 标准 Nacos API 仍是管理语义的事实来源。
+- ARD 兼容性变更必须同时更新固定的上游 revision、仓库内 fixture、本规范和一致性测试。
 - 社区协议变化很快。当 MCP Registry、skills CLI、skills.sh 或 well-known Skill
   discovery 格式变化时，适配器可能需要不兼容调整。
 - 当上游协议引入不兼容字段、分页、鉴权或路由变化时，兼容行为应明确版本化或文档化。

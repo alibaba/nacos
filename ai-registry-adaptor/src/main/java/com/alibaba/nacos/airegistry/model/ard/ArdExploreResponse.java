@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.airegistry.model.ard;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.Map;
  *
  * @author nacos
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArdExploreResponse {
     
     private String resultType = "facets";
@@ -51,6 +54,7 @@ public class ArdExploreResponse {
     /**
      * Facet buckets for one field.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class FacetResult {
         
         private List<FacetBucket> buckets = new ArrayList<>();

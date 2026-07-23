@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.airegistry.model.ard;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,18 +26,19 @@ import java.util.List;
  *
  * @author nacos
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArdListResponse {
     
-    private List<ArdSearchResult> results = new ArrayList<>();
+    private List<ArdCatalogEntry> items = new ArrayList<>();
     
     private String pageToken;
     
-    public List<ArdSearchResult> getResults() {
-        return results;
+    public List<ArdCatalogEntry> getItems() {
+        return items;
     }
     
-    public void setResults(List<ArdSearchResult> results) {
-        this.results = results;
+    public void setItems(List<ArdCatalogEntry> items) {
+        this.items = items;
     }
     
     public String getPageToken() {

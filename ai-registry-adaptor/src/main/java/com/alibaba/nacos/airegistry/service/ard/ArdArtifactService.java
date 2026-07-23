@@ -23,9 +23,12 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -46,21 +49,22 @@ import java.nio.charset.StandardCharsets;
 @ConditionalOnArdEnabled
 public class ArdArtifactService {
     
-    private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
-    
     private final AiResourceManager resourceManager;
     
     private final McpServerOperationService mcpServerOperationService;
     
     private final AiResourceFileReader fileReader;
     
+    private final SkillClientOperationService skillClientOperationService;
+    
     @Autowired
     public ArdArtifactService(AiResourceManager resourceManager,
         McpServerOperationService mcpServerOperationService,
-        AiResourceFileReader fileReader) {
+        AiResourceFileReader fileReader, SkillClientOperationService skillClientOperationService) {
         this.resourceManager = resourceManager;
         this.mcpServerOperationService = mcpServerOperationService;
         this.fileReader = fileReader;
+        this.skillClientOperationService = skillClientOperationService;
     }
     
     /**
@@ -75,7 +79,7 @@ public class ArdArtifactService {
                 "Required ARD artifact parameter not present");
         }
         if (AiResourceConstants.RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return skillArtifact(namespaceId, resourceType, resourceName, version);
+            return skillArtifact(namespaceId, resourceName, version);
         }
         if (AiResourceConstants.RESOURCE_TYPE_PROMPT.equals(resourceType)) {
             return promptArtifact(namespaceId, resourceType, resourceName, version);
@@ -90,14 +94,17 @@ public class ArdArtifactService {
             "Unsupported ARD artifact resourceType: " + resourceType);
     }
     
-    private ArdArtifact skillArtifact(String namespaceId, String resourceType,
-        String resourceName, String version) throws NacosException {
-        AiResourceVersion resourceVersion =
-            readableOnlineVersion(namespaceId, resourceType, resourceName, version);
-        byte[] bytes = readResourceFile(resourceVersion, namespaceId, resourceType, resourceName,
-            version, SKILL_MD_RESOURCE_NAME);
-        return new ArdArtifact(ArdProtocolConstants.MEDIA_TYPE_SKILL,
-            new String(bytes, StandardCharsets.UTF_8));
+    private ArdArtifact skillArtifact(String namespaceId, String resourceName, String version)
+        throws NacosException {
+        SkillQueryResult result =
+            skillClientOperationService.querySkill(namespaceId, resourceName, version, null, null);
+        try {
+            return new ArdArtifact(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+                SkillUtils.toZipBytes(result.getSkill()));
+        } catch (Exception e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.DATA_ACCESS_ERROR, e, "Failed to create ARD Skill artifact");
+        }
     }
     
     private ArdArtifact promptArtifact(String namespaceId, String resourceType,
