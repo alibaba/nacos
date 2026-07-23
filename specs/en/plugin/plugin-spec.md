@@ -486,6 +486,31 @@ a supported manual apply retry. A `LOCAL_ONLY` update follows the same
 replace-resolve-apply behavior without persistence or synchronization; its new
 local source map also remains when apply fails.
 
+### Console Configuration Workflow
+
+The Console plugin detail view uses the detail API as the authoritative source
+for effective values, definitions, and value metadata. It must:
+
+- render `RUNTIME` items as editable controls and render `RESTART` items as
+  read-only, with guidance to update the Nacos configuration file and restart;
+- show the effective source and override state without revealing unmasked
+  sensitive values;
+- expose cluster-wide runtime persisted updates and current-node local-only
+  updates as explicit, separate modes;
+- preserve the full-map update contract by reconstructing the target source
+  only from values whose effective metadata identifies that source, then
+  applying the user's edits and explicit override removals; effective
+  `STATIC` or `DEFAULT` values must not be copied into a runtime source merely
+  because the form was submitted.
+
+An effective `LOCAL_ONLY` value can hide an existing runtime persisted value,
+and the current detail model intentionally does not expose that lower-priority
+value. The Console must therefore block cluster configuration submission while
+the current node has any local-only overrides. It may clear the complete
+local-only source by submitting an empty map with `localOnly=true`; after the
+detail is refreshed, cluster editing can proceed without accidentally deleting
+or replacing a hidden persisted value.
+
 ## Admin API
 
 The core plugin admin API is:

@@ -67,13 +67,14 @@ built-in `auth:nacos`, `auth:ldap`, and `auth:oidc` configuration contracts. It
 verifies definitions, legacy aliases, effect modes, effective values, source
 metadata, API-side secret masking, plugin-type execution/criticality metadata,
 critical disable rejection, exclusive restart-only selection, and OIDC restart-only update
-rejection.
-Successful runtime mutation remains partial to avoid carrying
-persisted plugin state into later SDK suites in the shared standalone process;
-full-map replacement, source fallback, effect mode checks, same-source sensitive
-value preservation, and retained-source apply failure/retry are covered in core
-unit tests. Anonymous AI access is not exercised in standalone OpenAPI IT for
-the same runtime-mutation reason; explicit credential presence, blank
+rejection. It also verifies local-only runtime mutation and empty-map source
+clear through refreshed detail metadata.
+Persisted runtime mutation remains partial to avoid carrying plugin state into
+later SDK suites in the shared standalone process; persisted full-map
+replacement, source fallback, effect mode checks, same-source sensitive value
+preservation, and retained-source apply failure/retry are covered in core unit
+tests. Anonymous AI access is not exercised in standalone OpenAPI IT; explicit
+credential presence, blank
 credential rejection, and HTTP 403 `ACCESS_DENIED` error mapping are covered
 by auth/core unit tests.
 

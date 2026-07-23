@@ -404,6 +404,25 @@ API 应明确返回“配置已更新但 apply 失败”的服务端错误，日
 的 replace、resolve、apply 流程，但不持久化、不同步；apply 失败后新的本机 source map
 同样保留。
 
+### 控制台配置流程
+
+控制台插件详情以 detail API 返回的 effective value、definition 和 value metadata
+作为唯一权威输入，并遵守以下规则：
+
+- `RUNTIME` 字段使用可编辑控件，`RESTART` 字段只读，并提示通过 Nacos 配置文件修改后
+  重启生效；
+- 展示 effective source 和 overridden 状态，但不得获得或显示未脱敏的敏感值；
+- 将集群级 runtime persisted 更新与当前节点 local-only 更新作为两个明确、独立的模式；
+- 按完整 map 更新契约重建目标 source：只把 effective metadata 指向目标 source 的现有值
+  作为基线，再合并用户编辑和显式移除 override 的操作。不能因为提交了表单，就把
+  `STATIC` 或 `DEFAULT` 的 effective value 复制成运行时 override。
+
+effective `LOCAL_ONLY` 值可能遮住同一字段已经存在的 runtime persisted 值，而当前 detail
+模型有意不暴露这个低优先级值。因此，只要当前节点仍有任意 local-only override，控制台就
+必须阻止提交集群配置。控制台可以通过 `localOnly=true` 提交空 map，完整清空该插件在当前
+节点的 local-only source；刷新 detail 后，才能在不误删或替换隐藏持久化值的前提下继续编辑
+集群配置。
+
 ## 管理 API
 
 核心插件管理 API 如下：

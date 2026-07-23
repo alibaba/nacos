@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -34,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     returns identity, type capability, and mutable-state fields, and availability returns the cluster-node
  *     availability map.</li>
  *     <li>Boundary/validation: unknown pluginType list filter returns an empty list; detail/status/config/availability
- *     require plugin identity parameters; config mutation requires a configuration map and rejects non-configurable
- *     plugins.</li>
+ *     require plugin identity parameters; an empty config map clears the selected source, while non-configurable
+ *     plugins reject config mutation.</li>
  *     <li>Exception/error handling: critical disable and exclusive runtime-switch attempts are rejected without
  *     mutation; missing plugin detail and validation errors are verified as controlled v3 envelopes.</li>
  * </ul>
@@ -219,6 +220,44 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
     }
 
     @Test
+    public void testLocalOnlyConfigCanBeClearedWithEmptyMap() throws Exception {
+        Query pluginQuery = Query.newInstance().addParam("pluginType", "auth")
+                .addParam("pluginName", "nacos");
+        JsonNode before = getJsonOk(CONSOLE_PLUGIN_PATH, pluginQuery).get("data");
+        JsonNode beforeMetas = before.get("configValueMetas");
+        for (JsonNode meta : beforeMetas) {
+            assertNotEquals("LOCAL_ONLY", meta.get("source").asText(), beforeMetas.toString());
+        }
+        String originalValue = before.get("config").get("anonymous.ai.enabled").asText();
+        String localOnlyValue = Boolean.toString(!Boolean.parseBoolean(originalValue));
+        Query clearQuery = Query.newInstance().addParam("pluginType", "auth")
+                .addParam("pluginName", "nacos").addParam("localOnly", "true");
+        try {
+            putFormOk(CONSOLE_PLUGIN_PATH + "/config",
+                    Query.newInstance().addParam("pluginType", "auth")
+                            .addParam("pluginName", "nacos").addParam("localOnly", "true")
+                            .addParam("config%5Banonymous.ai.enabled%5D", localOnlyValue));
+
+            JsonNode localOnlyDetail = getJsonOk(CONSOLE_PLUGIN_PATH, pluginQuery).get("data");
+            assertEquals(localOnlyValue,
+                    localOnlyDetail.get("config").get("anonymous.ai.enabled").asText(),
+                    localOnlyDetail.toString());
+            assertEquals("LOCAL_ONLY", localOnlyDetail.get("configValueMetas")
+                    .get("anonymous.ai.enabled").get("source").asText(), localOnlyDetail.toString());
+
+            putFormOk(CONSOLE_PLUGIN_PATH + "/config", clearQuery);
+            JsonNode clearedDetail = getJsonOk(CONSOLE_PLUGIN_PATH, pluginQuery).get("data");
+            assertEquals(originalValue,
+                    clearedDetail.get("config").get("anonymous.ai.enabled").asText(),
+                    clearedDetail.toString());
+            assertNotEquals("LOCAL_ONLY", clearedDetail.get("configValueMetas")
+                    .get("anonymous.ai.enabled").get("source").asText(), clearedDetail.toString());
+        } finally {
+            clearLocalOnlyConfigQuietly(clearQuery);
+        }
+    }
+
+    @Test
     public void testPluginValidationAndNotFoundReturnControlledErrors() throws Exception {
         assertError(getRaw(CONSOLE_PLUGIN_PATH,
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
@@ -234,7 +273,7 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
                 400, ErrorCode.PARAMETER_MISSING, "pluginName");
         assertError(putRaw(CONSOLE_PLUGIN_PATH + "/config",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
-                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "configuration");
+                404, ErrorCode.RESOURCE_NOT_FOUND, "auth:missing-plugin");
     }
 
     @Test
@@ -303,5 +342,17 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
             }
         }
         return null;
+    }
+
+    private void clearLocalOnlyConfigQuietly(Query clearQuery) {
+        try {
+            HttpResponse response = putRaw(CONSOLE_PLUGIN_PATH + "/config", clearQuery);
+            if (response.code() != 200) {
+                logger().warn("Failed to clear local-only plugin config during cleanup: code={}, body={}",
+                        response.code(), response.body());
+            }
+        } catch (Exception e) {
+            logger().warn("Failed to clear local-only plugin config during cleanup", e);
+        }
     }
 }
