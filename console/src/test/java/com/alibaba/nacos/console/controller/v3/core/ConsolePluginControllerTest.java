@@ -151,6 +151,18 @@ class ConsolePluginControllerTest {
     }
     
     @Test
+    void testClearPluginConfig() throws Exception {
+        doNothing().when(pluginProxy)
+            .updatePluginConfig(anyString(), anyString(), any(), anyBoolean());
+        
+        mockMvc.perform(put("/v3/console/plugin/config").param("pluginType", "auth")
+            .param("pluginName", "test-plugin").param("localOnly", "true"))
+            .andExpect(status().isOk());
+        
+        verify(pluginProxy).updatePluginConfig("auth", "test-plugin", Collections.emptyMap(), true);
+    }
+    
+    @Test
     void testUpdatePluginConfigMissingType() throws Exception {
         mockMvc.perform(put("/v3/console/plugin/config").param("pluginName", "test-plugin")
             .param("config[key1]", "val1"))

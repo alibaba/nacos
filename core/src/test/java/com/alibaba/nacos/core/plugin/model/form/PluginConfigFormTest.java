@@ -32,6 +32,8 @@ class PluginConfigFormTest {
     void gettersSettersAndDefaults() {
         PluginConfigForm form = new PluginConfigForm();
         assertEquals(false, form.isLocalOnly());
+        assertNotNull(form.getConfig());
+        assertTrue(form.getConfig().isEmpty());
         
         form.setPluginType("auth");
         form.setPluginName("nacos");
