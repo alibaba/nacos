@@ -46,6 +46,8 @@ class AiStoragePluginTypePolicyTest {
             .contains(Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY));
         assertTrue(policy.getSelectionProperty()
             .contains(Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY));
+        assertTrue(policy.getSelectionProperty()
+            .contains(Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY));
     }
     
     @Test
@@ -89,13 +91,16 @@ class AiStoragePluginTypePolicyTest {
         configuration.setProperty(Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
             "skill-store");
         configuration.setProperty(Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY,
+            "agentspec-store");
+        configuration.setProperty(Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY,
             "agent-store");
         policy.initialize(configuration);
         
         Set<String> required = policy.getRequiredPluginNames(configuration);
-        assertEquals(3, required.size());
+        assertEquals(4, required.size());
         assertTrue(required.contains("prompt-store"));
         assertTrue(required.contains("skill-store"));
+        assertTrue(required.contains("agentspec-store"));
         assertTrue(required.contains("agent-store"));
         configuration.setProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
             "changed-store");

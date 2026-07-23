@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.service.agent.identity.RadAsciiAgentIdCodec;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageKeyComposer;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -92,6 +94,90 @@ class NacosConfigAiResourceStorageTest {
         assertNotNull(key);
         assertEquals(NacosConfigAiResourceStorage.TYPE, key.getProvider());
         assertEquals("ns1:mySkill:v1:skill.json", key.getKey());
+    }
+    
+    @Test
+    void testBuildAndParseAgentVersionStorageKey() {
+        StorageKey key = AgentVersionStorageKeyComposer.compose(
+            NacosConfigAiResourceStorage.TYPE, "ns1", "Nacos Agent", "1.0.0-RC1");
+        
+        assertEquals(NacosConfigAiResourceStorage.TYPE, key.getProvider());
+        assertEquals("ns1:agent-version:agent__enc-Nacos-032Agent__1.0.0-RC1.json",
+            key.getKey());
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        assertEquals("ns1", parts.namespaceId());
+        assertEquals("agent-version", parts.group());
+        assertEquals("agent__enc-Nacos-032Agent__1.0.0-RC1.json", parts.dataId());
+    }
+    
+    @Test
+    void testBuildAgentVersionStorageKeyRejectsInvalidCoordinates() {
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentVersionStorageKeyComposer.compose(
+                NacosConfigAiResourceStorage.TYPE, "invalid namespace", "Agent", "1.0.0"));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentVersionStorageKeyComposer.compose(
+                NacosConfigAiResourceStorage.TYPE, "ns1", "Agent代理", "1.0.0"));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentVersionStorageKeyComposer.compose(
+                NacosConfigAiResourceStorage.TYPE, "ns1", "Agent", "v1"));
+    }
+    
+    @Test
+    void testParseRejectsMalformedAgentVersionStorageKey() {
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__Agent_01__1.0.0.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__Agent__v1.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__Agent__1.0.0")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__Agent1.0.0.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent____1.0.0.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__" + repeat("a", 261) + "__1.0.0.json")));
+        NacosConfigAiResourceStorage.KeyParts maximumParts =
+            NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE,
+                "ns1:agent-version:agent__" + repeat("a", 260) + "__1.0.0.json"));
+        assertEquals("agent-version", maximumParts.group());
+    }
+    
+    @Test
+    void testAgentVersionGroupTokenDoesNotBreakLegacySkillName() {
+        StorageKey versionKey = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1", "agent-version", "v1", "skill.json");
+        StorageKey manifestKey = NacosConfigAiResourceStorage.buildManifestStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1", "agent-version");
+        StorageKey prefixedVersionKey = NacosConfigAiResourceStorage.buildStorageKey(
+            NacosConfigAiResourceStorage.TYPE, "ns1", "agent-version", "agent__legacy",
+            "skill.json");
+        
+        NacosConfigAiResourceStorage.KeyParts versionParts =
+            NacosConfigAiResourceStorage.parse(versionKey);
+        NacosConfigAiResourceStorage.KeyParts manifestParts =
+            NacosConfigAiResourceStorage.parse(manifestKey);
+        NacosConfigAiResourceStorage.KeyParts prefixedVersionParts =
+            NacosConfigAiResourceStorage.parse(prefixedVersionKey);
+        
+        assertEquals(SkillUtils.buildSkillVersionGroup("agent-version", "v1"),
+            versionParts.group());
+        assertEquals(SkillUtils.buildSkillGroup("agent-version"), manifestParts.group());
+        assertEquals(SkillUtils.buildSkillVersionGroup("agent-version", "agent__legacy"),
+            prefixedVersionParts.group());
     }
     
     @Test
@@ -324,6 +410,21 @@ class NacosConfigAiResourceStorageTest {
         for (String[] resourceType : resourceTypes) {
             assertStorageOperationsUseSameHashedCoordinates(resourceType[0], resourceType[1]);
         }
+    }
+    
+    @Test
+    void testAgentVersionStorageOperationsUseSpecialAgentNameCoordinates()
+        throws NacosException {
+        assertAgentVersionStorageOperations("Nacos Agent", "1.0.0-RC1", false);
+    }
+    
+    @Test
+    void testAgentVersionStorageOperationsHashMaximumEncodedAgentName()
+        throws NacosException {
+        String agentName = repeat("!", 64);
+        String encodedAgentId = RadAsciiAgentIdCodec.encode(agentName);
+        assertEquals(260, encodedAgentId.length());
+        assertAgentVersionStorageOperations(agentName, "1.0.0", true);
     }
     
     @Test
@@ -607,6 +708,46 @@ class NacosConfigAiResourceStorageTest {
         assertEquals(expectedGroup, queryCaptor.getValue().getGroup());
         assertEquals(expectedDataId, deleteDataIdCaptor.getValue());
         assertEquals(expectedGroup, deleteGroupCaptor.getValue());
+    }
+    
+    private void assertAgentVersionStorageOperations(String agentName, String version,
+        boolean expectHashedDataId) throws NacosException {
+        StorageKey key = AgentVersionStorageKeyComposer.compose(
+            NacosConfigAiResourceStorage.TYPE, "public", agentName, version);
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        byte[] content = "content".getBytes(StandardCharsets.UTF_8);
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("content");
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        storage.save(key, content);
+        assertArrayEquals(content, storage.get(key));
+        storage.delete(key);
+        
+        ArgumentCaptor<ConfigForm> publishCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(publishCaptor.capture(), any(), isNull());
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(queryCaptor.capture());
+        ArgumentCaptor<String> deleteDataIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> deleteGroupCaptor = ArgumentCaptor.forClass(String.class);
+        verify(configOperationService).deleteConfig(deleteDataIdCaptor.capture(),
+            deleteGroupCaptor.capture(), eq("public"), isNull(), isNull(), eq("nacos"), isNull());
+        
+        String expectedDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
+        if (expectHashedDataId) {
+            assertTrue(expectedDataId.startsWith(NacosAiConfigKeyCodec.HASHED_PREFIX));
+        } else {
+            assertEquals(parts.dataId(), expectedDataId);
+        }
+        assertEquals(expectedDataId, publishCaptor.getValue().getDataId());
+        assertEquals(expectedDataId, queryCaptor.getValue().getDataId());
+        assertEquals(expectedDataId, deleteDataIdCaptor.getValue());
+        assertEquals("agent-version", publishCaptor.getValue().getGroup());
+        assertEquals("agent-version", queryCaptor.getValue().getGroup());
+        assertEquals("agent-version", deleteGroupCaptor.getValue());
     }
     
     private static String repeat(String value, int count) {

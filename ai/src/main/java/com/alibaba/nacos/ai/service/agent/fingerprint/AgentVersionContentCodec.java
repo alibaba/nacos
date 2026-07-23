@@ -25,7 +25,10 @@ import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -53,6 +56,19 @@ public final class AgentVersionContentCodec {
     private static final int MAX_CALL_INTERFACES = 16;
     
     private static final char[] HEX = "0123456789abcdef".toCharArray();
+    
+    private static final JsonFactory STRICT_JSON_FACTORY = new JsonFactory()
+        .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+    
+    private static final Set<String> CONTENT_FIELDS = new HashSet<String>(Arrays.asList(
+        "kind", "schemaVersion", "callInterfaces"));
+    
+    private static final Set<String> CALL_INTERFACE_FIELDS = new HashSet<String>(Arrays.asList(
+        "protocol", "protocolVersion", "descriptorMediaType", "nativeDescriptor",
+        "endpointSourceOrder", "declaredEndpoints"));
+    
+    private static final Set<String> ENDPOINT_FIELDS = new HashSet<String>(Arrays.asList(
+        "uri", "transport", "priority", "weight", "metadata"));
     
     private AgentVersionContentCodec() {
     }
@@ -112,6 +128,7 @@ public final class AgentVersionContentCodec {
             throw new IllegalArgumentException(
                 "AgentVersionContent exceeds " + MAX_CONTENT_SIZE + " bytes");
         }
+        validateStorageJsonShape(bytes);
         final AgentVersionContent content;
         try {
             content = JacksonUtils.toObj(bytes, AgentVersionContent.class);
@@ -214,6 +231,65 @@ public final class AgentVersionContentCodec {
             encoded[i * 2 + 1] = HEX[value & 0x0F];
         }
         return new String(encoded);
+    }
+    
+    private static void validateStorageJsonShape(byte[] bytes) {
+        validateSingleJsonValue(bytes);
+        final Map<?, ?> root;
+        try {
+            root = JacksonUtils.toObj(bytes, Map.class);
+        } catch (NacosDeserializationException e) {
+            throw new IllegalArgumentException("Invalid AgentVersionContent", e);
+        }
+        if (root == null) {
+            throw new IllegalArgumentException("AgentVersionContent must be a JSON object");
+        }
+        rejectUnknownFields(root, CONTENT_FIELDS, "AgentVersionContent");
+        Object callInterfaces = root.get("callInterfaces");
+        if (!(callInterfaces instanceof List)) {
+            return;
+        }
+        for (Object callInterface : (List<?>) callInterfaces) {
+            if (!(callInterface instanceof Map)) {
+                continue;
+            }
+            Map<?, ?> interfaceObject = (Map<?, ?>) callInterface;
+            rejectUnknownFields(interfaceObject, CALL_INTERFACE_FIELDS, "AgentCallInterface");
+            Object endpoints = interfaceObject.get("declaredEndpoints");
+            if (!(endpoints instanceof List)) {
+                continue;
+            }
+            for (Object endpoint : (List<?>) endpoints) {
+                if (endpoint instanceof Map) {
+                    rejectUnknownFields((Map<?, ?>) endpoint, ENDPOINT_FIELDS,
+                        "DeclaredEndpoint");
+                }
+            }
+        }
+    }
+    
+    private static void validateSingleJsonValue(byte[] bytes) {
+        try (JsonParser parser = STRICT_JSON_FACTORY.createParser(bytes)) {
+            if (parser.nextToken() == null) {
+                throw new IllegalArgumentException("AgentVersionContent JSON must not be empty");
+            }
+            parser.skipChildren();
+            if (parser.nextToken() != null) {
+                throw new IllegalArgumentException(
+                    "AgentVersionContent must contain one JSON value");
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid AgentVersionContent", e);
+        }
+    }
+    
+    private static void rejectUnknownFields(Map<?, ?> value, Set<String> fields,
+        String objectName) {
+        for (Object field : value.keySet()) {
+            if (!fields.contains(field)) {
+                throw new IllegalArgumentException("Unknown " + objectName + " field: " + field);
+            }
+        }
     }
     
     /**

@@ -128,7 +128,7 @@ nacos.ai.agent.storage.provider=nacos_config
 
 它们属于领域路由策略，不是 `ai-storage:nacos_config` 所拥有的私有配置 definitions。
 
-AI 模块 active 时，为 Prompt、Skill、AgentSpec 分别选择的所有 provider 都是该 critical
+AI 模块 active 时，为 Prompt、Skill、AgentSpec、Agent 分别选择的所有 provider 都是该 critical
 路由类型的必需实现；同一 provider 可以同时满足多个领域。Nacos 启动成功前，每个去重后的
 选中 provider 都必须已被发现且处于 enabled 状态，另一个可用 provider 不能作为 fallback。
 AI 模块因 function mode 或 `nacos.extension.ai.enabled=false` 关闭时，AI storage 为 inactive，

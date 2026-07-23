@@ -475,7 +475,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 1024,
-          "description": "Provider-opaque logical key. It may exceed the physical Config data-id limit; upper layers must neither reject it for that reason nor parse public Agent identity from a physical fallback value."
+          "description": "Provider-neutral logical key passed opaquely to the selected provider. It may exceed the physical Config data-id limit; upper layers must neither reject it for that reason nor parse public Agent identity from a physical fallback value."
         },
         "keyFormat": {
           "type": "string",

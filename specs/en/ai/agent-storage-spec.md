@@ -172,15 +172,17 @@ The Version row's `storage` JSON contains:
 | `schemaVersion` | `1`. |
 | `size` | Persisted content byte count. |
 
-Upper layers treat `StorageKey.key` as opaque. A replacement provider keeps
-the one-Version/one-object rule but owns its physical key. The built-in
-provider uses the mapping in section 3.2.
+The Agent service composes one provider-neutral logical `StorageKey.key` and
+passes it to every provider as an opaque value. A replacement provider keeps
+the one-Version/one-object rule and owns the mapping from that logical key to
+its physical key. The built-in provider uses the mapping in section 3.2.
 
 ### 3.2 Built-in Nacos Config Mapping
 
 The `agent-version-config-v1` provider key carries this logical Config
-coordinate. Its serialized `StorageKey.key` remains provider-opaque to the
-Agent service.
+coordinate. The Agent service composes the logical `StorageKey.key`; after it
+is persisted in a descriptor, upper-layer consumers pass it through without
+parsing it. The built-in provider parses it only to perform this mapping.
 
 | Logical value | Logical `config_info` coordinate |
 | --- | --- |
@@ -196,6 +198,14 @@ stored unchanged. An overlong data id uses the codec's deterministic
 always reversible, and no upper layer may derive Agent identity from it.
 Valid Agent identity must not be rejected merely because this logical data id
 is longer than the Config physical limit.
+
+The provider-neutral `StorageKey.key` serializes the logical identity as
+`<namespaceId>:agent-version:<logicalDataId>`. Every provider receives this
+value, but only the built-in provider parses it into the Config coordinate
+above. The key has exactly three colon-delimited segments because the
+Namespace, encoded AgentName, and Version grammars exclude `:`. Existing
+four- and five-part Skill, Prompt, and AgentSpec keys retain their original
+interpretation.
 
 A draft update overwrites the same key. Content becomes immutable when the
 Version enters reviewing. `contentDigest` never participates in the data id;

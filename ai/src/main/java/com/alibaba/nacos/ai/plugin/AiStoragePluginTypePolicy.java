@@ -55,6 +55,8 @@ public class AiStoragePluginTypePolicy implements PluginTypePolicy {
             Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY));
         result.add(resolveProvider(configuration,
             Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY));
+        result.add(resolveProvider(configuration,
+            Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY));
         requiredPluginNames = Collections.unmodifiableSet(result);
     }
     
@@ -83,12 +85,13 @@ public class AiStoragePluginTypePolicy implements PluginTypePolicy {
     public String getSelectionProperty() {
         return Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY + ", "
             + Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY + ", "
-            + Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY;
+            + Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY + ", "
+            + Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY;
     }
     
     @Override
     public String getActivationDescription() {
-        return "the AI module requires the configured Prompt, Skill, and AgentSpec storage providers";
+        return "the AI module requires the configured Prompt, Skill, AgentSpec, and Agent storage providers";
     }
     
     private String resolveProvider(PluginTypeConfiguration configuration, String property) {

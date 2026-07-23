@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
+import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -40,11 +41,12 @@ import java.nio.charset.StandardCharsets;
 /**
  * Nacos Config based {@link AiResourceStorage} implementation.
  *
- * <p>Supports Skill, AgentSpec and Prompt resource types via parameterized group prefixes.
+ * <p>Supports Skill, AgentSpec, Prompt and Agent Version resources.
  * StorageKey.key format:
  * <ul>
  *   <li>Legacy (Skill): {@code namespaceId:name:version:filePath} (4-part, defaults to skill__ prefix)</li>
  *   <li>Typed: {@code namespaceId:resourceType:name:version:filePath} (5-part, resourceType = "skill", "agentspec" or "prompt")</li>
+ *   <li>Agent Version: {@code namespaceId:agent-version:dataId} (3-part opaque key)</li>
  * </ul>
  * File path convention: main = {@link #getMainFilePath()} / {@link #getMainFilePath(String)},
  * resources = {@link #getResourceFilePath(String, String)} / {@link #getAgentSpecResourceFilePath(String, String)},
@@ -62,6 +64,16 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     
     /** Resource type identifier for Prompt storage keys. */
     public static final String RESOURCE_TYPE_PROMPT = "prompt";
+    
+    private static final String AGENT_VERSION_GROUP = "agent-version";
+    
+    private static final String AGENT_VERSION_DATA_ID_PREFIX = "agent__";
+    
+    private static final String AGENT_VERSION_DATA_ID_SEPARATOR = "__";
+    
+    private static final String AGENT_VERSION_DATA_ID_SUFFIX = ".json";
+    
+    private static final int MAX_ENCODED_AGENT_ID_LENGTH = 260;
     
     /**
      * Build storage key for Skill resources (legacy 4-part format).
@@ -257,8 +269,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     }
     
     /**
-     * Parse StorageKey into KeyParts. Supports three key formats:
+     * Parse StorageKey into KeyParts. Supports four key formats:
      * <ul>
+     *   <li>Agent Version: {@code namespaceId:agent-version:dataId} → group = agent-version</li>
      *   <li>Legacy 4-part (Skill): {@code namespaceId:name:version:filePath} → group = skill__{name}__{version}</li>
      *   <li>Legacy 4-part manifest: {@code namespaceId:name::filePath} (blank version) → group = skill_{name}</li>
      *   <li>Typed 5-part: {@code namespaceId:resourceType:name:version:filePath} → group = {prefix}{name}__{version}</li>
@@ -268,6 +281,15 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     static KeyParts parse(StorageKey storageKey) {
         if (storageKey == null || StringUtils.isBlank(storageKey.getKey())) {
             throw new IllegalArgumentException("StorageKey.key is blank");
+        }
+        String[] agentVersionParts = storageKey.getKey().split(":", -1);
+        if (agentVersionParts.length == 3 && AGENT_VERSION_GROUP.equals(agentVersionParts[1])
+            && agentVersionParts[2].startsWith(AGENT_VERSION_DATA_ID_PREFIX)) {
+            String namespaceId = agentVersionParts[0];
+            String dataId = agentVersionParts[2];
+            AgentValidationUtils.validateNamespaceId(namespaceId);
+            validateAgentVersionDataId(dataId);
+            return new KeyParts(namespaceId, AGENT_VERSION_GROUP, AGENT_VERSION_GROUP, dataId);
         }
         String[] parts = storageKey.getKey().split(":", 5);
         if (parts.length == 5 && !StringUtils.isBlank(parts[0]) && !StringUtils.isBlank(parts[1])
@@ -317,6 +339,40 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             group = SkillUtils.buildSkillVersionGroup(skillName, version);
         }
         return new KeyParts(namespaceId, group, SkillUtils.SKILL_GROUP_PREFIX, filePath);
+    }
+    
+    private static void validateAgentVersionDataId(String dataId) {
+        if (dataId == null || !dataId.startsWith(AGENT_VERSION_DATA_ID_PREFIX)
+            || !dataId.endsWith(AGENT_VERSION_DATA_ID_SUFFIX)) {
+            throw new IllegalArgumentException("Invalid Agent Version dataId: " + dataId);
+        }
+        int separatorIndex = dataId.indexOf(AGENT_VERSION_DATA_ID_SEPARATOR,
+            AGENT_VERSION_DATA_ID_PREFIX.length());
+        if (separatorIndex < 0) {
+            throw new IllegalArgumentException("Invalid Agent Version dataId: " + dataId);
+        }
+        String encodedAgentId = dataId.substring(AGENT_VERSION_DATA_ID_PREFIX.length(),
+            separatorIndex);
+        String version = dataId.substring(separatorIndex + AGENT_VERSION_DATA_ID_SEPARATOR.length(),
+            dataId.length() - AGENT_VERSION_DATA_ID_SUFFIX.length());
+        validateEncodedAgentId(encodedAgentId);
+        AgentValidationUtils.validateVersion(version);
+    }
+    
+    private static void validateEncodedAgentId(String encodedAgentId) {
+        if (StringUtils.isBlank(encodedAgentId)
+            || encodedAgentId.length() > MAX_ENCODED_AGENT_ID_LENGTH) {
+            throw new IllegalArgumentException("Invalid encodedAgentId: " + encodedAgentId);
+        }
+        for (int i = 0; i < encodedAgentId.length(); i++) {
+            char current = encodedAgentId.charAt(i);
+            boolean asciiLetterOrDigit = current >= 'A' && current <= 'Z'
+                || current >= 'a' && current <= 'z'
+                || current >= '0' && current <= '9';
+            if (!asciiLetterOrDigit && current != '-') {
+                throw new IllegalArgumentException("Invalid encodedAgentId: " + encodedAgentId);
+            }
+        }
     }
     
     record KeyParts(String namespaceId, String group, String groupPrefix, String dataId) {

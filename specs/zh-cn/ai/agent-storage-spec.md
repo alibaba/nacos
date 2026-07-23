@@ -159,13 +159,15 @@ Version 行的 `storage` JSON 包含：
 | `schemaVersion` | `1`。 |
 | `size` | 持久化内容字节数。 |
 
-上层将 `StorageKey.key` 视为 opaque。替换 provider 时仍保持一个 Version 对应一个对象，
-但物理 key 由 provider 自己管理。内置 provider 使用第 3.2 节的映射。
+Agent service 生成统一的、provider-neutral 的逻辑 `StorageKey.key`，并将其作为 opaque 值
+传给所有 provider。替换 provider 时仍保持一个 Version 对应一个对象，并由 provider 管理
+该逻辑 key 到物理 key 的映射。内置 provider 使用第 3.2 节的映射。
 
 ### 3.2 内置 Nacos Config 映射
 
-`agent-version-config-v1` provider key 携带下列逻辑 Config 坐标；其序列化后的
-`StorageKey.key` 对 Agent service 保持 provider opaque。
+`agent-version-config-v1` provider key 携带下列逻辑 Config 坐标。Agent service 负责生成逻辑
+`StorageKey.key`；该值存入 descriptor 后，上层消费者只透传而不解析，内置 provider 仅在执行
+下列映射时解析它。
 
 | 逻辑值 | 逻辑 `config_info` 坐标 |
 | --- | --- |
@@ -178,6 +180,12 @@ Version 行的 `storage` JSON 包含：
 限制内的安全值原样保存；超长 data id 使用 codec 确定性的 `sha256.<digest>` 物理回退。
 因此物理 key 不一定可逆，任何上层都不得从中推导 Agent 身份。不能仅因为逻辑 data id
 长于 Config 物理限制而拒绝合法 Agent 身份。
+
+Provider-neutral 的 `StorageKey.key` 将逻辑身份序列化为
+`<namespaceId>:agent-version:<logicalDataId>`。所有 provider 都接收该值，但只有内置 provider
+将其解析为上述 Config 坐标。Namespace、编码后的 AgentName 和 Version 语法均排除 `:`，
+因此该 key 必须恰好包含三个冒号分隔段。已有 Skill、Prompt 和 AgentSpec 的四段、五段 key
+保持原解释方式。
 
 更新 draft 时覆盖相同 key。Version 进入 reviewing 后内容不可变。`contentDigest` 不参与
 data id，只用于校验实际持久化 bytes 和缓存相等性。读取、审核和发布操作必须校验

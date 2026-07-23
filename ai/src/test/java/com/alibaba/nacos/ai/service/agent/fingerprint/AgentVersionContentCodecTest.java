@@ -294,6 +294,27 @@ class AgentVersionContentCodecTest {
             () -> AgentVersionContentCodec.decode(invalidModel));
     }
     
+    @Test
+    void testDecodeRejectsUnknownOwnedFieldsDuplicateMembersAndTrailingJson() {
+        String valid = new String(AgentVersionContentCodec.encode(createGoldenContent()).getBytes(),
+            StandardCharsets.UTF_8);
+        assertDecodeRejected(valid.substring(0, valid.length() - 1) + ",\"unknown\":true}");
+        assertDecodeRejected(valid.replace("\"protocol\":\"a2a\",",
+            "\"protocol\":\"a2a\",\"unknown\":true,"));
+        assertDecodeRejected(valid.replace(
+            "\"uri\":\"https://example.com:443/a2a?b=2&a=1\",",
+            "\"uri\":\"https://example.com:443/a2a?b=2&a=1\",\"unknown\":true,"));
+        assertDecodeRejected(valid.replace("{\"kind\":\"AgentVersionContent\"",
+            "{\"kind\":\"AgentVersionContent\",\"kind\":\"AgentVersionContent\""));
+        assertDecodeRejected(valid + "{}");
+        
+        AgentVersionContent decoded = AgentVersionContentCodec.decode(
+            valid.getBytes(StandardCharsets.UTF_8));
+        assertTrue(decoded.getCallInterfaces().get(0).getNativeDescriptor() instanceof Map);
+        assertEquals("h", decoded.getCallInterfaces().get(0).getDeclaredEndpoints().get(0)
+            .getMetadata().get("az"));
+    }
+    
     private AgentVersionContent createGoldenContent() {
         AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
@@ -343,6 +364,11 @@ class AgentVersionContentCodecTest {
     private void assertEncodingRejected(AgentVersionContent content) {
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionContentCodec.encode(content));
+    }
+    
+    private void assertDecodeRejected(String content) {
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentVersionContentCodec.decode(content.getBytes(StandardCharsets.UTF_8)));
     }
     
     private String repeat(char value, int count) {
