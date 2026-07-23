@@ -17,8 +17,9 @@
 /*
  * Full PostgreSQL schema for Nacos main datasource.
  *
- * If Nacos main datasource is MySQL/Derby/Oracle and PostgreSQL is used only
- * for ARD pgvector embeddings, load pg-ard-vector-schema.sql instead.
+ * This schema does not require pgvector. Before enabling ARD with PostgreSQL
+ * vector storage, also load pg-ard-vector-schema.sql into the datasource used
+ * for ARD embeddings.
  */
 
 -- ----------------------------
@@ -633,39 +634,4 @@ CREATE INDEX "idx_ard_chunk_type_status" ON "ai_resource_ard_chunk" USING btree 
   "namespace_id",
   "resource_type",
   "status"
-);
-
--- ----------------------------
--- Table structure for ai_resource_ard_embedding_pg
--- ----------------------------
-CREATE EXTENSION IF NOT EXISTS vector;
-DROP TABLE IF EXISTS "ai_resource_ard_embedding_pg";
-CREATE TABLE "ai_resource_ard_embedding_pg" (
-  "id" bigserial NOT NULL,
-  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "namespace_id" varchar(128) NOT NULL DEFAULT '',
-  "entry_id" bigint NOT NULL,
-  "chunk_id" bigint NOT NULL,
-  "resource_type" varchar(32) NOT NULL,
-  "resource_name" varchar(256) NOT NULL,
-  "resource_version" varchar(64) NOT NULL,
-  "embedding_model" varchar(128) NOT NULL,
-  "embedding_dimension" integer NOT NULL,
-  "embedding" vector NOT NULL
-);
-
-ALTER TABLE "ai_resource_ard_embedding_pg" ADD CONSTRAINT "ai_resource_ard_embedding_pg_pkey" PRIMARY KEY ("id");
-CREATE INDEX "idx_ard_embedding_pg_chunk" ON "ai_resource_ard_embedding_pg" USING btree ("chunk_id");
-CREATE INDEX "idx_ard_embedding_pg_model" ON "ai_resource_ard_embedding_pg" USING btree (
-  "namespace_id",
-  "embedding_model",
-  "embedding_dimension",
-  "resource_type"
-);
-CREATE INDEX "idx_ard_embedding_pg_resource" ON "ai_resource_ard_embedding_pg" USING btree (
-  "namespace_id",
-  "resource_type",
-  "resource_name",
-  "resource_version"
 );

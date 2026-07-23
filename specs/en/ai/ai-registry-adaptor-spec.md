@@ -65,6 +65,13 @@ Users must opt in because the adaptor consumes an additional port and exposes
 protocol shapes that are designed for community clients rather than Nacos
 Admin, Console, or Client API consumers.
 
+Disabling ARD must not require PostgreSQL pgvector. ARD entry and chunk
+metadata use the main datasource, while the pgvector extension and
+`ai_resource_ard_embedding_pg` table are initialized exclusively through
+`pg-ard-vector-schema.sql` in the PostgreSQL datasource used for embeddings.
+This datasource may be the Nacos main datasource or a dedicated datasource;
+the main `pg-schema.sql` must remain usable without pgvector.
+
 ## 3. Security Boundary
 
 Adaptor endpoints must be treated as public-protocol compatibility endpoints.

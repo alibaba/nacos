@@ -57,6 +57,12 @@ AI Registry 适配器负责协议兼容面。它将 Nacos AI Registry 资源转�
 用户必须主动开启该能力，因为适配器会额外占用端口，并暴露面向社区客户端的协议形态，
 而不是面向 Nacos Admin、Console 或 Client API 消费者的标准接口。
 
+关闭 ARD 时不能要求安装 PostgreSQL pgvector。ARD entry 和 chunk 元数据使用主数据源；
+pgvector 扩展及 `ai_resource_ard_embedding_pg` 表只能通过
+`pg-ard-vector-schema.sql` 初始化到用于存储 embedding 的 PostgreSQL 数据源中。
+该数据源既可以是 Nacos PostgreSQL 主数据源，也可以是独立数据源；主
+`pg-schema.sql` 必须在未安装 pgvector 时仍可正常执行。
+
 ## 3. 安全边界
 
 适配器端点必须被视为公共协议兼容端点。它们不是 v3 Nacos API，也不要求使用 v3

@@ -17,11 +17,10 @@
 /*
  * ARD pgvector schema only.
  *
- * Use this file when Nacos main datasource is not PostgreSQL, but ARD embeddings
- * are stored in an independent PostgreSQL pgvector datasource configured by
+ * Before enabling ARD with PostgreSQL vector storage, load this file into the
+ * PostgreSQL datasource used for embeddings. This can be the Nacos main
+ * datasource or an independent datasource configured by
  * nacos.ai.ard.vector.postgresql.*.
- *
- * If PostgreSQL is the Nacos main datasource, use pg-schema.sql instead.
  */
 
 CREATE EXTENSION IF NOT EXISTS vector;
