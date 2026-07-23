@@ -120,6 +120,29 @@ class FilePluginStatePersistenceImplTest {
     }
     
     @Test
+    void replaceAllStatesTest() {
+        persistence.saveState("trace:old", true);
+        Map<String, Boolean> replacement = new HashMap<>();
+        replacement.put("trace:new", false);
+        
+        persistence.replaceAllStates(replacement);
+        
+        assertEquals(replacement, persistence.loadAllStates());
+        
+        persistence.replaceAllStates(null);
+        assertTrue(persistence.loadAllStates().isEmpty());
+    }
+    
+    @Test
+    void replaceAllStatesFailureTest() {
+        ReflectionTestUtils.setField(persistence, "dataDir",
+            tempDir.resolve("missing").toString());
+        
+        assertThrows(PluginPersistenceException.class,
+            () -> persistence.replaceAllStates(Collections.emptyMap()));
+    }
+    
+    @Test
     void saveConfigTest() {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");

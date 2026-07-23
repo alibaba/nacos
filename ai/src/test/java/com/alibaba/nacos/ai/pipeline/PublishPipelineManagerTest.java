@@ -56,6 +56,7 @@ class PublishPipelineManagerTest {
         PublishPipelineManager manager = new PublishPipelineManager(moduleConfig(true));
         
         manager.init();
+        manager.init();
         
         assertNotNull(manager.getAllServices());
     }

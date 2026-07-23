@@ -45,14 +45,11 @@ public class VisibilityPluginManager {
     
     private static final String PROPERTIES_PREFIX = "nacos.plugin.visibility.";
     
-    private static final String ENABLED_PROPERTY = PROPERTIES_PREFIX + "enabled";
-    
     private final Map<String, VisibilityService> visibilityServiceMap = new ConcurrentHashMap<>();
     
     private volatile boolean initialized;
     
     private VisibilityPluginManager() {
-        initVisibilityServices();
     }
     
     private synchronized void initVisibilityServices() {
@@ -148,9 +145,10 @@ public class VisibilityPluginManager {
     public Optional<VisibilityService> findVisibilityService(String serviceName) {
         if (!isVisibilityModuleEnabled()) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}",
-                ENABLED_PROPERTY);
+                VisibilityPluginTypePolicy.VISIBILITY_ENABLED_PROPERTY);
             return Optional.empty();
         }
+        initVisibilityServices();
         if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.VISIBILITY.getType(),
             serviceName)) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY:{} is disabled", serviceName);
@@ -161,11 +159,13 @@ public class VisibilityPluginManager {
     
     private boolean isVisibilityModuleEnabled() {
         Properties allProperties = resolveInitProperties();
-        String enabledValue = allProperties.getProperty(ENABLED_PROPERTY);
+        String enabledValue = allProperties.getProperty(
+            VisibilityPluginTypePolicy.VISIBILITY_ENABLED_PROPERTY);
         return StringUtils.isBlank(enabledValue) || Boolean.parseBoolean(enabledValue);
     }
     
     public Map<String, VisibilityService> getAllPlugins() {
+        initVisibilityServices();
         return Collections.unmodifiableMap(visibilityServiceMap);
     }
     

@@ -59,8 +59,9 @@ public class StandalonePluginStateSynchronizer implements PluginStateSynchronize
     @Override
     public void syncStateChange(String pluginId, boolean enabled) throws NacosApiException {
         try {
-            applier.applyStateChange(pluginId, enabled);
+            applier.validateStateChange(pluginId, enabled);
             persistence.saveState(pluginId, enabled);
+            applier.applyStateChange(pluginId, enabled);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());

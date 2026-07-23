@@ -58,6 +58,8 @@ public class PublishPipelineManager {
      */
     private final Map<String, PublishPipelineService> serviceMap = new HashMap<>();
     
+    private volatile boolean initialized;
+    
     public PublishPipelineManager(AiPipelineModuleConfig moduleConfig) {
         this.moduleConfig = Objects.requireNonNull(moduleConfig,
             "AI pipeline module config cannot be null");
@@ -66,10 +68,14 @@ public class PublishPipelineManager {
     /**
      * Load direct pipeline service implementations through Java SPI.
      */
-    public void init() {
+    public synchronized void init() {
+        if (initialized) {
+            return;
+        }
         ServiceLoader<PublishPipelineService> services =
             ServiceLoader.load(PublishPipelineService.class);
         initWithServices(services);
+        initialized = true;
     }
     
     /**

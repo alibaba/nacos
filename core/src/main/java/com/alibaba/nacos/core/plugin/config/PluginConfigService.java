@@ -118,10 +118,9 @@ public class PluginConfigService {
      */
     public void refreshStaticConfig(PluginInfo pluginInfo, Object pluginInstance) {
         synchronized (getPluginLock(pluginInfo.getPluginId())) {
-            PluginConfigResolution previousResolution = resolver.resolve(pluginInfo, false);
             resolver.refreshStaticConfig(pluginInfo);
             PluginConfigResolution resolution = resolver.resolve(pluginInfo, false);
-            if (previousResolution.getConfig().equals(resolution.getConfig())) {
+            if (resolution.getConfig().equals(pluginInfo.getConfig())) {
                 return;
             }
             try {

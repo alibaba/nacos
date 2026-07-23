@@ -26,12 +26,14 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
+import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
@@ -46,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -115,8 +119,38 @@ class PluginStateProcessorTest {
         
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        verify(pluginManager, times(1)).applyStateChange("trace:otel", false);
-        verify(persistence, times(1)).saveState("trace:otel", false);
+        InOrder inOrder = inOrder(pluginManager, persistence);
+        inOrder.verify(pluginManager).validateStateChange("trace:otel", false);
+        inOrder.verify(persistence).saveState("trace:otel", false);
+        inOrder.verify(pluginManager).applyStateChange("trace:otel", false);
+    }
+    
+    @Test
+    void onApplyChangeStateValidationFailureDoesNotPersistOrApply() throws Exception {
+        doThrow(new IllegalArgumentException("invalid state")).when(pluginManager)
+            .validateStateChange("trace:otel", false);
+        WriteRequest request = changeStateRequest(false);
+        
+        Response response = processor.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().startsWith(
+            PluginStateOperation.INVALID_PARAM_ERROR_PREFIX));
+        verify(persistence, never()).saveState("trace:otel", false);
+        verify(pluginManager, never()).applyStateChange("trace:otel", false);
+    }
+    
+    @Test
+    void onApplyChangeStatePersistenceFailureDoesNotApply() throws Exception {
+        doThrow(new PluginPersistenceException("save failed")).when(persistence)
+            .saveState("trace:otel", false);
+        WriteRequest request = changeStateRequest(false);
+        
+        Response response = processor.onApply(request);
+        
+        assertFalse(response.getSuccess());
+        verify(pluginManager).validateStateChange("trace:otel", false);
+        verify(pluginManager, never()).applyStateChange("trace:otel", false);
     }
     
     @Test
@@ -230,5 +264,16 @@ class PluginStateProcessorTest {
         assertNotNull(operations);
         assertEquals(1, operations.size());
         assertTrue(operations.get(0) instanceof PluginStateSnapshotOperation);
+    }
+    
+    private WriteRequest changeStateRequest(boolean enabled) throws Exception {
+        PluginStateOperation operation = PluginStateOperation.builder()
+            .type(PluginStateOperation.OperationType.CHANGE_STATE)
+            .pluginId("trace:otel")
+            .enabled(enabled)
+            .build();
+        return WriteRequest.newBuilder()
+            .setData(ByteString.copyFrom(serializer.serialize(operation)))
+            .build();
     }
 }

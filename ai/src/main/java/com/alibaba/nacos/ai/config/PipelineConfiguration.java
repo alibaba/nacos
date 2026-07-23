@@ -43,9 +43,7 @@ public class PipelineConfiguration {
     
     @Bean
     public PublishPipelineManager publishPipelineManager(AiPipelineModuleConfig moduleConfig) {
-        PublishPipelineManager manager = new PublishPipelineManager(moduleConfig);
-        manager.init();
-        return manager;
+        return new PublishPipelineManager(moduleConfig);
     }
     
     @Bean

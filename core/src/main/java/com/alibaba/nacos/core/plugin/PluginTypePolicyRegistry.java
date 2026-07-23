@@ -68,6 +68,12 @@ class PluginTypePolicyRegistry {
         return policy != null && policy.isActive(configuration);
     }
     
+    boolean shouldLoad(PluginType type) {
+        PluginTypePolicy policy = getPolicy(type);
+        return type.isCritical() ? policy.isActive(configuration)
+            : policy.isLoadingEnabled(configuration);
+    }
+    
     boolean supportsPreRefreshValidation(PluginType type) {
         return getPolicy(type).supportsPreRefreshValidation();
     }

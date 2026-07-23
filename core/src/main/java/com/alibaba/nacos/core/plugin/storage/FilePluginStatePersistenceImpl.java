@@ -107,6 +107,20 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
         }
     }
     
+    @Override
+    public void replaceAllStates(Map<String, Boolean> states) {
+        synchronized (stateLock) {
+            try {
+                Map<String, Boolean> statesToStore = states == null
+                    ? new HashMap<>() : new HashMap<>(states);
+                writeJsonToFile(PLUGIN_STATE_FILE, statesToStore);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Replaced all plugin states");
+            } catch (Exception e) {
+                throw new PluginPersistenceException("Failed to replace all plugin states", e);
+            }
+        }
+    }
+    
     /**
      * Save plugin configuration.
      *
