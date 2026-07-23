@@ -47,7 +47,6 @@ class AgentVersionCatalogBuilderTest {
         assertEquals(Collections.emptyList(),
             result.getVersionCatalog().getOnlineVersions());
         assertEquals(Collections.singletonMap("archived", "0.9.0"), result.getLabels());
-        assertEquals(Collections.emptyList(), result.getProtocols());
     }
     
     @Test
@@ -78,8 +77,6 @@ class AgentVersionCatalogBuilderTest {
             catalog.getOnlineVersions().get(2).getLabels());
         assertEquals(Arrays.asList("grpc", "a2a"),
             catalog.getOnlineVersions().get(2).getProtocols());
-        assertEquals(Arrays.asList("A2A-v1", "a2a", "grpc", "json-rpc"),
-            result.getProtocols());
         assertEquals(Arrays.asList("beta", "canary", "latest", "offline", "stable"),
             new ArrayList<String>(result.getLabels().keySet()));
     }
@@ -112,7 +109,8 @@ class AgentVersionCatalogBuilderTest {
         
         assertEquals(Arrays.asList("1.0.0-rc1", "1.0.0-RC1"),
             catalogVersions(result.getVersionCatalog()));
-        assertEquals(Arrays.asList("A2A", "a2a"), result.getProtocols());
+        assertEquals(Arrays.asList("A2A", "a2a"),
+            result.getVersionCatalog().getOnlineVersions().get(1).getProtocols());
     }
     
     @Test
@@ -123,8 +121,6 @@ class AgentVersionCatalogBuilderTest {
         
         assertThrows(UnsupportedOperationException.class,
             () -> result.getLabels().put("stable", "1.0.0"));
-        assertThrows(UnsupportedOperationException.class,
-            () -> result.getProtocols().add("grpc"));
         assertThrows(UnsupportedOperationException.class,
             () -> result.getVersionCatalog().getOnlineVersions().add(
                 new AgentVersionCatalogEntry()));

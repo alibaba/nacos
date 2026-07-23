@@ -280,6 +280,8 @@ class AgentVersionContentSerializerTest {
                 new byte[AgentVersionContentSerializer.MAX_CONTENT_SIZE + 1]));
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionContentSerializer.deserialize(new byte[] {(byte) 0xC3, 0x28}));
+        assertDecodeRejected("   ");
+        assertDecodeRejected("null");
         
         byte[] persisted =
             AgentVersionContentSerializer.serialize(createGoldenContent()).getBytes();
@@ -294,6 +296,19 @@ class AgentVersionContentSerializerTest {
             .getBytes(StandardCharsets.UTF_8);
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionContentSerializer.deserialize(invalidModel));
+    }
+    
+    @Test
+    void testDecodeRejectsInvalidNestedJsonTypes() {
+        assertDecodeRejected("{\"kind\":\"AgentVersionContent\",\"schemaVersion\":1,"
+            + "\"callInterfaces\":[1]}");
+        assertDecodeRejected("{\"kind\":\"AgentVersionContent\",\"schemaVersion\":1,"
+            + "\"callInterfaces\":{}}");
+        assertDecodeRejected("{\"kind\":\"AgentVersionContent\",\"schemaVersion\":1,"
+            + "\"callInterfaces\":[{\"protocol\":\"a2a\","
+            + "\"descriptorMediaType\":\"application/json\","
+            + "\"nativeDescriptor\":{},\"endpointSourceOrder\":[\"DECLARED\"],"
+            + "\"declaredEndpoints\":[1]}]}");
     }
     
     @Test

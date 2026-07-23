@@ -133,7 +133,7 @@ The Agent resource contains the following fields:
 
 | Field | Required | Meaning |
 | --- | :---: | --- |
-| `namespaceId` | Yes | Isolation boundary. |
+| `namespaceId` | Yes | Nacos namespace isolation boundary; 1 to 128 `[A-Za-z0-9_-]` characters. |
 | `agentName` | Yes | Stable public identity. |
 | `displayName` | No | Unicode presentation name. |
 | `description` | No | Catalog description. |
@@ -143,7 +143,7 @@ The Agent resource contains the following fields:
 | `extensions` | No | Namespaced `Map<String, JsonValue>` for public Agent-level extensions. |
 | `status` | Yes | `enable` or `disable`. |
 | `owner` | Yes | Management owner. |
-| `scope` | Yes | Visibility scope. |
+| `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` in this version. |
 | `versionInfo` | Read-only | Shared editing, reviewing, online-count, and label summary. |
 | `versionCatalog` | Read-only | Compact catalog of online versions and protocols. |
 | `metaVersion` | Read-only | Metadata CAS version. |

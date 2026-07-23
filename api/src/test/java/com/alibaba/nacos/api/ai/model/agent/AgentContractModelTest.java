@@ -42,8 +42,6 @@ class AgentContractModelTest extends BasicRequestTest {
         endpoint.setTransport("JSON-RPC");
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
         
-        assertEquals(0, endpoint.getEffectivePriority());
-        assertEquals(1.0D, endpoint.getEffectiveWeight());
         String json = mapper.writeValueAsString(endpoint);
         assertFalse(json.contains("effectivePriority"));
         assertFalse(json.contains("effectiveWeight"));
@@ -71,8 +69,6 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals(Integer.valueOf(10), deserialized.getPriority());
         assertEquals(Double.valueOf(2.5D), deserialized.getWeight());
         assertEquals(Boolean.FALSE, deserialized.getHealthy());
-        assertEquals(10, deserialized.getEffectivePriority());
-        assertEquals(2.5D, deserialized.getEffectiveWeight());
     }
     
     @Test
@@ -108,7 +104,7 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals("blue", restored.getExtensions().get("example.com/color"));
         assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE, restored.getStatus());
         assertEquals("nacos", restored.getOwner());
-        assertEquals("public", restored.getScope());
+        assertEquals("PUBLIC", restored.getScope());
         assertVersionInfo(restored.getVersionInfo());
         assertVersionCatalog(restored.getVersionCatalog());
         assertEquals(Long.valueOf(3L), restored.getMetaVersion());
@@ -128,7 +124,7 @@ class AgentContractModelTest extends BasicRequestTest {
         summary.setTags(Arrays.asList("assistant", "demo"));
         summary.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
         summary.setOwner("nacos");
-        summary.setScope("public");
+        summary.setScope("PUBLIC");
         summary.setVersionInfo(newVersionInfo());
         summary.setVersionCatalog(newVersionCatalog());
         summary.setMetaVersion(3L);
@@ -146,7 +142,7 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals(Arrays.asList("assistant", "demo"), restored.getTags());
         assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE, restored.getStatus());
         assertEquals("nacos", restored.getOwner());
-        assertEquals("public", restored.getScope());
+        assertEquals("PUBLIC", restored.getScope());
         assertVersionInfo(restored.getVersionInfo());
         assertVersionCatalog(restored.getVersionCatalog());
         assertEquals(Long.valueOf(3L), restored.getMetaVersion());
@@ -248,7 +244,7 @@ class AgentContractModelTest extends BasicRequestTest {
         agent.setExtensions(extensions);
         agent.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
         agent.setOwner("nacos");
-        agent.setScope("public");
+        agent.setScope("PUBLIC");
         agent.setVersionInfo(newVersionInfo());
         agent.setVersionCatalog(newVersionCatalog());
         agent.setMetaVersion(3L);

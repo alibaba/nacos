@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
@@ -31,10 +30,6 @@ import java.util.Map;
 public class Endpoint implements Serializable {
     
     private static final long serialVersionUID = 1L;
-    
-    private static final int DEFAULT_PRIORITY = 0;
-    
-    private static final double DEFAULT_WEIGHT = 1.0D;
     
     private String uri;
     
@@ -94,26 +89,6 @@ public class Endpoint implements Serializable {
     
     public void setHealthy(Boolean healthy) {
         this.healthy = healthy;
-    }
-    
-    /**
-     * Return priority after applying the protocol default.
-     *
-     * @return effective priority
-     */
-    @JsonIgnore
-    public int getEffectivePriority() {
-        return priority == null ? DEFAULT_PRIORITY : priority;
-    }
-    
-    /**
-     * Return weight after applying the protocol default.
-     *
-     * @return effective weight
-     */
-    @JsonIgnore
-    public double getEffectiveWeight() {
-        return weight == null ? DEFAULT_WEIGHT : weight;
     }
     
 }

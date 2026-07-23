@@ -217,6 +217,19 @@ class AgentModelValidatorTest {
     }
     
     @Test
+    void testRejectsUnsupportedVisibilityScope() {
+        Agent lowercaseScope = newValidAgent();
+        lowercaseScope.setScope("public");
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateAgent(lowercaseScope));
+        
+        Agent customScope = newValidAgent();
+        customScope.setScope("TEAM");
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateAgent(customScope));
+    }
+    
+    @Test
     void testRejectsInconsistentCatalogLabels() {
         Agent catalogLabelMismatch = newValidAgent();
         catalogLabelMismatch.getVersionInfo().getLabels().put("stable", "2.0.0");
@@ -478,7 +491,7 @@ class AgentModelValidatorTest {
         agent.setExtensions(Collections.<String, Object>singletonMap("example.com/color", "blue"));
         agent.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
         agent.setOwner("nacos");
-        agent.setScope("public");
+        agent.setScope("PUBLIC");
         agent.setVersionInfo(versionInfo);
         agent.setVersionCatalog(catalog);
         agent.setMetaVersion(1L);

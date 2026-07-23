@@ -19,7 +19,7 @@
     "NamespaceId": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 64,
+      "maxLength": 128,
       "pattern": "^[A-Za-z0-9_-]+$"
     },
     "AgentName": {
@@ -225,7 +225,7 @@
         }
       }
     },
-    "VersionCatalogEntry": {
+    "AgentVersionCatalogEntry": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -255,7 +255,7 @@
         }
       }
     },
-    "VersionCatalog": {
+    "AgentVersionCatalog": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -268,7 +268,7 @@
         "onlineVersions": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/VersionCatalogEntry"
+            "$ref": "#/$defs/AgentVersionCatalogEntry"
           }
         }
       },
@@ -354,14 +354,16 @@
         },
         "scope": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 64
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
         },
         "versionInfo": {
           "$ref": "#/$defs/AgentVersionInfo"
         },
         "versionCatalog": {
-          "$ref": "#/$defs/VersionCatalog"
+          "$ref": "#/$defs/AgentVersionCatalog"
         },
         "metaVersion": {
           "type": "integer",
@@ -430,14 +432,16 @@
         },
         "scope": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 64
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
         },
         "versionInfo": {
           "$ref": "#/$defs/AgentVersionInfo"
         },
         "versionCatalog": {
-          "$ref": "#/$defs/VersionCatalog"
+          "$ref": "#/$defs/AgentVersionCatalog"
         },
         "metaVersion": {
           "type": "integer",

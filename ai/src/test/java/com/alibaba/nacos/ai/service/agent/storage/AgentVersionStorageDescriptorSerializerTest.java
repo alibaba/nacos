@@ -85,6 +85,8 @@ class AgentVersionStorageDescriptorSerializerTest {
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionStorageDescriptorSerializer.deserialize(""));
         assertThrows(IllegalArgumentException.class,
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("   "));
+        assertThrows(IllegalArgumentException.class,
             () -> AgentVersionStorageDescriptorSerializer.deserialize("not-json"));
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionStorageDescriptorSerializer.deserialize("[]"));

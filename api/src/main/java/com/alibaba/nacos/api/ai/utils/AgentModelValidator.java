@@ -65,8 +65,6 @@ public final class AgentModelValidator {
     
     private static final int MAX_OWNER_LENGTH = 128;
     
-    private static final int MAX_SCOPE_LENGTH = 64;
-    
     private static final int MAX_AUTHOR_LENGTH = 128;
     
     private static final int MAX_TAGS = 32;
@@ -315,7 +313,7 @@ public final class AgentModelValidator {
         validateTags(tags);
         validateResourceStatus(status);
         validateRequiredLength(owner, MAX_OWNER_LENGTH, "owner");
-        validateRequiredLength(scope, MAX_SCOPE_LENGTH, "scope");
+        validateScope(scope);
         validateVersionInfo(versionInfo);
         validateVersionCatalog(versionCatalog);
         validateVersionInfoCatalogConsistency(versionInfo, versionCatalog);
@@ -331,6 +329,12 @@ public final class AgentModelValidator {
         validateRequiredLength(provider.getName(), MAX_PROVIDER_NAME_LENGTH, "provider.name");
         if (provider.getUrl() != null) {
             validateAbsoluteUri(provider.getUrl(), "provider.url");
+        }
+    }
+    
+    private static void validateScope(String scope) {
+        if (!"PUBLIC".equals(scope) && !"PRIVATE".equals(scope)) {
+            throw new IllegalArgumentException("scope must be PUBLIC or PRIVATE");
         }
     }
     

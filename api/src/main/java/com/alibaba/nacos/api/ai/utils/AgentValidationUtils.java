@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  */
 public final class AgentValidationUtils {
     
-    private static final int MAX_NAMESPACE_LENGTH = 64;
+    private static final int MAX_NAMESPACE_LENGTH = 128;
     
     private static final int MAX_AGENT_NAME_LENGTH = 64;
     
