@@ -74,6 +74,11 @@ class RadModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(searchRequest));
         
+        AgentSearchRequest emptyProtocols = newValidSearchRequest();
+        emptyProtocols.setProtocolsAny(Collections.<String>emptyList());
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(emptyProtocols));
+        
         AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
         filter.setProtocols(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(filter));
@@ -380,6 +385,11 @@ class RadModelValidatorTest {
         duplicateTags.setTagsAll(Arrays.asList("demo", "demo"));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(duplicateTags));
+        
+        AgentSearchRequest duplicateProtocols = newValidSearchRequest();
+        duplicateProtocols.setProtocolsAny(Arrays.asList("a2a", "a2a"));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(duplicateProtocols));
         
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate((AgentSearchRequest) null));

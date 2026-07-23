@@ -159,9 +159,12 @@ Schema 只暴露以下六个根消息：
 | `namespaceId` | 是 | 生效命名空间 |
 | `agentNameContains` | 否 | 对 `agentName` 执行大小写敏感的字面量子串匹配 |
 | `tagsAll[]` | 否 | Agent 包含全部给定 Tag |
-| `protocolsAny[]` | 否 | 至少一个在线版本包含任一给定 Protocol |
+| `protocolsAny[]` | 否 | 至少一个 online Version 暴露任一给定调用协议 |
 | `pageNo` | 否 | 从 1 开始的页码，缺省为 `1` |
 | `pageSize` | 否 | 每页数量，缺省为 `20`，最大为 `100` |
+
+按 Protocol 筛选是 RAD 的结果语义，不规定物理索引实现。实现可以读取 online Version
+目录，也可以维护独立的派生索引，但不得把 Protocol 值编码为公开 Agent tag。
 
 `%`、`_` 等对底层查询语言具有特殊含义的字符必须作为普通字面量处理。
 

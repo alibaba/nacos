@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.fingerprint;
+package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -38,12 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentVersionContentCodecTest {
+class AgentVersionContentSerializerTest {
     
     @Test
     void testEncodePersistedContentAndDecodeRoundTrip() {
-        AgentVersionContentCodec.EncodedContent encoded =
-            AgentVersionContentCodec.encode(createGoldenContent());
+        AgentVersionContentSerializer.SerializedContent encoded =
+            AgentVersionContentSerializer.serialize(createGoldenContent());
         
         String storedJson = new String(encoded.getBytes(), StandardCharsets.UTF_8);
         assertTrue(storedJson.startsWith("{\"kind\":\"AgentVersionContent\","));
@@ -55,9 +55,9 @@ class AgentVersionContentCodecTest {
         assertEquals("sha256:" + DigestUtils.sha256Hex(encoded.getBytes()),
             encoded.getContentDigest());
         assertEquals(encoded.getContentDigest(),
-            AgentVersionContentCodec.digest(encoded.getBytes()));
+            AgentVersionContentSerializer.digest(encoded.getBytes()));
         
-        AgentVersionContent decoded = AgentVersionContentCodec.decode(encoded.getBytes());
+        AgentVersionContent decoded = AgentVersionContentSerializer.deserialize(encoded.getBytes());
         assertEquals(AgentVersionContent.KIND, decoded.getKind());
         assertEquals(AgentVersionContent.SCHEMA_VERSION, decoded.getSchemaVersion());
         AgentCallInterface callInterface = decoded.getCallInterfaces().get(0);
@@ -85,9 +85,10 @@ class AgentVersionContentCodecTest {
         endpoint.setMetadata(metadata);
         
         AgentVersionContent original = createGoldenContent();
-        AgentVersionContentCodec.EncodedContent first = AgentVersionContentCodec.encode(original);
-        AgentVersionContentCodec.EncodedContent second =
-            AgentVersionContentCodec.encode(normalized);
+        AgentVersionContentSerializer.SerializedContent first =
+            AgentVersionContentSerializer.serialize(original);
+        AgentVersionContentSerializer.SerializedContent second =
+            AgentVersionContentSerializer.serialize(normalized);
         assertArrayEquals(first.getBytes(), second.getBytes());
         assertEquals(first.getContentDigest(), second.getContentDigest());
     }
@@ -106,10 +107,10 @@ class AgentVersionContentCodecTest {
         reordered.put("version", "1.0.6");
         second.getCallInterfaces().get(0).setNativeDescriptor(reordered);
         
-        AgentVersionContentCodec.EncodedContent firstEncoded =
-            AgentVersionContentCodec.encode(first);
-        AgentVersionContentCodec.EncodedContent secondEncoded =
-            AgentVersionContentCodec.encode(second);
+        AgentVersionContentSerializer.SerializedContent firstEncoded =
+            AgentVersionContentSerializer.serialize(first);
+        AgentVersionContentSerializer.SerializedContent secondEncoded =
+            AgentVersionContentSerializer.serialize(second);
         assertFalse(Arrays.equals(firstEncoded.getBytes(), secondEncoded.getBytes()));
         assertNotEquals(firstEncoded.getContentDigest(), secondEncoded.getContentDigest());
     }
@@ -120,18 +121,18 @@ class AgentVersionContentCodecTest {
         AgentCallInterface grpc = createCallInterface("grpc", "http://g.example/rpc");
         AgentVersionContent first = new AgentVersionContent(Arrays.asList(a2a, grpc));
         AgentVersionContent second = new AgentVersionContent(Arrays.asList(grpc, a2a));
-        assertNotEquals(AgentVersionContentCodec.encode(first).getContentDigest(),
-            AgentVersionContentCodec.encode(second).getContentDigest());
+        assertNotEquals(AgentVersionContentSerializer.serialize(first).getContentDigest(),
+            AgentVersionContentSerializer.serialize(second).getContentDigest());
         
         AgentCallInterface firstEndpoints = createCallInterface("a2a", "http://a.example/rpc");
         firstEndpoints.getDeclaredEndpoints().add(createEndpoint("http://b.example/rpc"));
         AgentCallInterface secondEndpoints = createCallInterface("a2a", "http://b.example/rpc");
         secondEndpoints.getDeclaredEndpoints().add(createEndpoint("http://a.example/rpc"));
-        assertNotEquals(AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(firstEndpoints)))
+        assertNotEquals(AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(firstEndpoints)))
             .getContentDigest(),
-            AgentVersionContentCodec
-                .encode(new AgentVersionContent(Collections.singletonList(secondEndpoints)))
+            AgentVersionContentSerializer
+                .serialize(new AgentVersionContent(Collections.singletonList(secondEndpoints)))
                 .getContentDigest());
         
         AgentCallInterface runtimeFirst = createCallInterface("a2a", null);
@@ -140,11 +141,11 @@ class AgentVersionContentCodecTest {
         AgentCallInterface declaredFirst = createCallInterface("a2a", null);
         declaredFirst.setEndpointSourceOrder(
             Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME));
-        assertNotEquals(AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(runtimeFirst)))
+        assertNotEquals(AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(runtimeFirst)))
             .getContentDigest(),
-            AgentVersionContentCodec
-                .encode(new AgentVersionContent(Collections.singletonList(declaredFirst)))
+            AgentVersionContentSerializer
+                .serialize(new AgentVersionContent(Collections.singletonList(declaredFirst)))
                 .getContentDigest());
     }
     
@@ -154,10 +155,10 @@ class AgentVersionContentCodecTest {
         AgentCallInterface empty = createCallInterface("a2a", null);
         empty.setDeclaredEndpoints(Collections.<Endpoint>emptyList());
         
-        AgentVersionContentCodec.EncodedContent first = AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(absent)));
-        AgentVersionContentCodec.EncodedContent second = AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(empty)));
+        AgentVersionContentSerializer.SerializedContent first = AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(absent)));
+        AgentVersionContentSerializer.SerializedContent second = AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(empty)));
         assertArrayEquals(first.getBytes(), second.getBytes());
         assertEquals(first.getContentDigest(), second.getContentDigest());
     }
@@ -168,18 +169,18 @@ class AgentVersionContentCodecTest {
         AgentCallInterface empty = createCallInterface("a2a", "http://example.com/rpc");
         empty.getDeclaredEndpoints().get(0).setMetadata(Collections.<String, String>emptyMap());
         
-        AgentVersionContentCodec.EncodedContent first = AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(absent)));
-        AgentVersionContentCodec.EncodedContent second = AgentVersionContentCodec
-            .encode(new AgentVersionContent(Collections.singletonList(empty)));
+        AgentVersionContentSerializer.SerializedContent first = AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(absent)));
+        AgentVersionContentSerializer.SerializedContent second = AgentVersionContentSerializer
+            .serialize(new AgentVersionContent(Collections.singletonList(empty)));
         assertArrayEquals(first.getBytes(), second.getBytes());
         assertEquals(first.getContentDigest(), second.getContentDigest());
     }
     
     @Test
     void testEncodedBytesAreDefensiveAndSizeUsesUtf8Bytes() {
-        AgentVersionContentCodec.EncodedContent encoded =
-            AgentVersionContentCodec.encode(createGoldenContent());
+        AgentVersionContentSerializer.SerializedContent encoded =
+            AgentVersionContentSerializer.serialize(createGoldenContent());
         byte[] first = encoded.getBytes();
         byte originalFirstByte = first[0];
         first[0] = 0;
@@ -193,7 +194,7 @@ class AgentVersionContentCodecTest {
     @Test
     void testRejectInvalidEnvelopeAndCallInterfaceSets() {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.encode(null));
+            () -> AgentVersionContentSerializer.serialize(null));
         
         AgentVersionContent invalid = createGoldenContent();
         invalid.setKind("Other");
@@ -213,10 +214,10 @@ class AgentVersionContentCodecTest {
         for (int i = 0; i < 17; i++) {
             tooMany.add(createCallInterface("p" + i, null));
         }
-        AgentVersionContentCodec.encode(
+        AgentVersionContentSerializer.serialize(
             new AgentVersionContent(new ArrayList<AgentCallInterface>(tooMany.subList(0, 16))));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.encode(new AgentVersionContent(tooMany)));
+            () -> AgentVersionContentSerializer.serialize(new AgentVersionContent(tooMany)));
         
         AgentCallInterface duplicate = createCallInterface("a2a", null);
         invalid = new AgentVersionContent(
@@ -231,7 +232,7 @@ class AgentVersionContentCodecTest {
         boundedEndpoints.setDeclaredEndpoints(endpoints);
         AgentVersionContent boundedContent =
             new AgentVersionContent(Collections.singletonList(boundedEndpoints));
-        AgentVersionContentCodec.encode(boundedContent);
+        AgentVersionContentSerializer.serialize(boundedContent);
         endpoints.add(createEndpoint("http://overflow.example.com/rpc"));
         assertEncodingRejected(boundedContent);
     }
@@ -244,7 +245,7 @@ class AgentVersionContentCodecTest {
         
         invalid = createGoldenContent();
         invalid.getCallInterfaces().get(0)
-            .setNativeDescriptor(repeat('x', AgentVersionContentCodec.MAX_CONTENT_SIZE));
+            .setNativeDescriptor(repeat('x', AgentVersionContentSerializer.MAX_CONTENT_SIZE));
         assertEncodingRejected(invalid);
     }
     
@@ -254,50 +255,52 @@ class AgentVersionContentCodecTest {
         callInterface.setNativeDescriptor("");
         AgentVersionContent content =
             new AgentVersionContent(Collections.singletonList(callInterface));
-        int envelopeSize = AgentVersionContentCodec.encode(content).getSize();
+        int envelopeSize = AgentVersionContentSerializer.serialize(content).getSize();
         callInterface.setNativeDescriptor(
-            repeat('x', AgentVersionContentCodec.MAX_CONTENT_SIZE - envelopeSize));
-        assertEquals(AgentVersionContentCodec.MAX_CONTENT_SIZE,
-            AgentVersionContentCodec.encode(content).getSize());
+            repeat('x', AgentVersionContentSerializer.MAX_CONTENT_SIZE - envelopeSize));
+        assertEquals(AgentVersionContentSerializer.MAX_CONTENT_SIZE,
+            AgentVersionContentSerializer.serialize(content).getSize());
         
         callInterface.setNativeDescriptor(
-            repeat('x', AgentVersionContentCodec.MAX_CONTENT_SIZE - envelopeSize + 1));
+            repeat('x', AgentVersionContentSerializer.MAX_CONTENT_SIZE - envelopeSize + 1));
         assertEncodingRejected(content);
     }
     
     @Test
     void testDecodeRejectsInvalidStorageBytes() {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.digest(null));
+            () -> AgentVersionContentSerializer.digest(null));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.digest(
-                new byte[AgentVersionContentCodec.MAX_CONTENT_SIZE + 1]));
+            () -> AgentVersionContentSerializer.digest(
+                new byte[AgentVersionContentSerializer.MAX_CONTENT_SIZE + 1]));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.decode(null));
+            () -> AgentVersionContentSerializer.deserialize(null));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.decode(
-                new byte[AgentVersionContentCodec.MAX_CONTENT_SIZE + 1]));
+            () -> AgentVersionContentSerializer.deserialize(
+                new byte[AgentVersionContentSerializer.MAX_CONTENT_SIZE + 1]));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.decode(new byte[] {(byte) 0xC3, 0x28}));
+            () -> AgentVersionContentSerializer.deserialize(new byte[] {(byte) 0xC3, 0x28}));
         
-        byte[] persisted = AgentVersionContentCodec.encode(createGoldenContent()).getBytes();
+        byte[] persisted =
+            AgentVersionContentSerializer.serialize(createGoldenContent()).getBytes();
         byte[] whitespace = new byte[persisted.length + 1];
         whitespace[0] = ' ';
         System.arraycopy(persisted, 0, whitespace, 1, persisted.length);
         assertEquals(AgentVersionContent.KIND,
-            AgentVersionContentCodec.decode(whitespace).getKind());
+            AgentVersionContentSerializer.deserialize(whitespace).getKind());
         
         byte[] invalidModel = ("{\"kind\":\"AgentVersionContent\","
             + "\"schemaVersion\":1,\"callInterfaces\":[]}")
             .getBytes(StandardCharsets.UTF_8);
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.decode(invalidModel));
+            () -> AgentVersionContentSerializer.deserialize(invalidModel));
     }
     
     @Test
     void testDecodeRejectsUnknownOwnedFieldsDuplicateMembersAndTrailingJson() {
-        String valid = new String(AgentVersionContentCodec.encode(createGoldenContent()).getBytes(),
-            StandardCharsets.UTF_8);
+        String valid =
+            new String(AgentVersionContentSerializer.serialize(createGoldenContent()).getBytes(),
+                StandardCharsets.UTF_8);
         assertDecodeRejected(valid.substring(0, valid.length() - 1) + ",\"unknown\":true}");
         assertDecodeRejected(valid.replace("\"protocol\":\"a2a\",",
             "\"protocol\":\"a2a\",\"unknown\":true,"));
@@ -308,7 +311,7 @@ class AgentVersionContentCodecTest {
             "{\"kind\":\"AgentVersionContent\",\"kind\":\"AgentVersionContent\""));
         assertDecodeRejected(valid + "{}");
         
-        AgentVersionContent decoded = AgentVersionContentCodec.decode(
+        AgentVersionContent decoded = AgentVersionContentSerializer.deserialize(
             valid.getBytes(StandardCharsets.UTF_8));
         assertTrue(decoded.getCallInterfaces().get(0).getNativeDescriptor() instanceof Map);
         assertEquals("h", decoded.getCallInterfaces().get(0).getDeclaredEndpoints().get(0)
@@ -363,12 +366,13 @@ class AgentVersionContentCodecTest {
     
     private void assertEncodingRejected(AgentVersionContent content) {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.encode(content));
+            () -> AgentVersionContentSerializer.serialize(content));
     }
     
     private void assertDecodeRejected(String content) {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionContentCodec.decode(content.getBytes(StandardCharsets.UTF_8)));
+            () -> AgentVersionContentSerializer
+                .deserialize(content.getBytes(StandardCharsets.UTF_8)));
     }
     
     private String repeat(char value, int count) {

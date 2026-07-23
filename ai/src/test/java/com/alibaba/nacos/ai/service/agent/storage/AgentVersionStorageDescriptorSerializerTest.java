@@ -25,16 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentVersionStorageDescriptorCodecTest {
+class AgentVersionStorageDescriptorSerializerTest {
     
     @Test
     void testNacosConfigRoundTrip() {
         AgentVersionStorageDescriptor original = createNacosConfigDescriptor();
-        String json = AgentVersionStorageDescriptorCodec.encode(original);
+        String json = AgentVersionStorageDescriptorSerializer.serialize(original);
         
         assertTrue(json.contains("\"provider\":\"nacos_config\""));
         assertTrue(json.contains("\"keyFormat\":\"agent-version-config-v1\""));
-        AgentVersionStorageDescriptor restored = AgentVersionStorageDescriptorCodec.decode(json);
+        AgentVersionStorageDescriptor restored =
+            AgentVersionStorageDescriptorSerializer.deserialize(json);
         assertDescriptorEquals(original, restored);
     }
     
@@ -45,10 +46,11 @@ class AgentVersionStorageDescriptorCodecTest {
         descriptor.setKeyFormat(null);
         descriptor.setAgentNameCodec(null);
         
-        String json = AgentVersionStorageDescriptorCodec.encode(descriptor);
+        String json = AgentVersionStorageDescriptorSerializer.serialize(descriptor);
         assertFalse(json.contains("keyFormat"));
         assertFalse(json.contains("agentNameCodec"));
-        AgentVersionStorageDescriptor restored = AgentVersionStorageDescriptorCodec.decode(json);
+        AgentVersionStorageDescriptor restored =
+            AgentVersionStorageDescriptorSerializer.deserialize(json);
         assertNull(restored.getKeyFormat());
         assertNull(restored.getAgentNameCodec());
     }
@@ -60,107 +62,110 @@ class AgentVersionStorageDescriptorCodecTest {
         descriptor.setKey(repeat('k', 1024));
         descriptor.setKeyFormat(repeat('f', 64));
         descriptor.setAgentNameCodec(repeat('c', 64));
-        descriptor.setSize((long) AgentVersionStorageDescriptorCodec.MAX_CONTENT_SIZE);
-        AgentVersionStorageDescriptorCodec.decode(
-            AgentVersionStorageDescriptorCodec.encode(descriptor));
+        descriptor.setSize((long) AgentVersionStorageDescriptorSerializer.MAX_CONTENT_SIZE);
+        AgentVersionStorageDescriptorSerializer.deserialize(
+            AgentVersionStorageDescriptorSerializer.serialize(descriptor));
         
         descriptor.setProvider("nacos_config");
-        descriptor.setKeyFormat(AgentVersionStorageDescriptorCodec.NACOS_CONFIG_KEY_FORMAT);
+        descriptor.setKeyFormat(AgentVersionStorageDescriptorSerializer.NACOS_CONFIG_KEY_FORMAT);
         descriptor.setAgentNameCodec(
-            AgentVersionStorageDescriptorCodec.RAD_ASCII_AGENT_NAME_CODEC);
+            AgentVersionStorageDescriptorSerializer.RAD_ASCII_AGENT_NAME_CODEC);
         descriptor.setSize(0L);
-        AgentVersionStorageDescriptorCodec.encode(descriptor);
+        AgentVersionStorageDescriptorSerializer.serialize(descriptor);
     }
     
     @Test
     void testRejectUnknownOrInvalidJsonShape() {
-        String valid = AgentVersionStorageDescriptorCodec.encode(createNacosConfigDescriptor());
+        String valid =
+            AgentVersionStorageDescriptorSerializer.serialize(createNacosConfigDescriptor());
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.encode(null));
+            () -> AgentVersionStorageDescriptorSerializer.serialize(null));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(null));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(null));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(""));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(""));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode("not-json"));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("not-json"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode("[]"));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("[]"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode("null"));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("null"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode("1"));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("1"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode("\"descriptor\""));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize("\"descriptor\""));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"provider\":\"nacos_config\",", "")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"provider\":\"nacos_config\"", "\"provider\":1")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.substring(0, valid.length() - 1) + ",\"extra\":true}"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(valid + "{}"));
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(valid + "{}"));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("{\"provider\":\"nacos_config\"",
                     "{\"provider\":\"nacos_config\",\"provider\":\"nacos_config\"")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"size\":128", "\"size\":\"large\"")));
     }
     
     @Test
     void testRejectMissingRequiredJsonFields() {
-        String valid = AgentVersionStorageDescriptorCodec.encode(createNacosConfigDescriptor());
+        String valid =
+            AgentVersionStorageDescriptorSerializer.serialize(createNacosConfigDescriptor());
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"key\":\"namespace:agent-version:agent__Agent__1.0.0.json\",",
                     "")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"contentDigest\":\"sha256:" + repeat('a', 64) + "\",", "")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"mediaType\":\"application/vnd.nacos.agent-version+json\",",
                     "")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"schemaVersion\":1,", "")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace(",\"size\":128", "")));
     }
     
     @Test
     void testRejectWrongJsonFieldTypes() {
-        String valid = AgentVersionStorageDescriptorCodec.encode(createNacosConfigDescriptor());
+        String valid =
+            AgentVersionStorageDescriptorSerializer.serialize(createNacosConfigDescriptor());
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"key\":\"namespace:agent-version:agent__Agent__1.0.0.json\"",
                     "\"key\":1")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"keyFormat\":\"agent-version-config-v1\"",
                     "\"keyFormat\":null")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"agentNameCodec\":\"rad-ascii-v1\"",
                     "\"agentNameCodec\":false")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"contentDigest\":\"sha256:" + repeat('a', 64) + "\"",
                     "\"contentDigest\":{}")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"mediaType\":\"application/vnd.nacos.agent-version+json\"",
                     "\"mediaType\":[]")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"schemaVersion\":1", "\"schemaVersion\":1.0")));
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.decode(
+            () -> AgentVersionStorageDescriptorSerializer.deserialize(
                 valid.replace("\"size\":128", "\"size\":128.5")));
     }
     
@@ -199,7 +204,7 @@ class AgentVersionStorageDescriptorCodecTest {
         assertRejected(null, descriptor -> descriptor.setSize(-1L));
         assertRejected(null,
             descriptor -> descriptor.setSize(
-                (long) AgentVersionStorageDescriptorCodec.MAX_CONTENT_SIZE + 1));
+                (long) AgentVersionStorageDescriptorSerializer.MAX_CONTENT_SIZE + 1));
     }
     
     @Test
@@ -217,7 +222,7 @@ class AgentVersionStorageDescriptorCodecTest {
         }
         mutation.apply(descriptor);
         assertThrows(IllegalArgumentException.class,
-            () -> AgentVersionStorageDescriptorCodec.encode(descriptor));
+            () -> AgentVersionStorageDescriptorSerializer.serialize(descriptor));
     }
     
     private void assertDescriptorEquals(AgentVersionStorageDescriptor expected,
@@ -234,13 +239,14 @@ class AgentVersionStorageDescriptorCodecTest {
     
     private AgentVersionStorageDescriptor createNacosConfigDescriptor() {
         AgentVersionStorageDescriptor result = new AgentVersionStorageDescriptor();
-        result.setProvider(AgentVersionStorageDescriptorCodec.NACOS_CONFIG_PROVIDER);
+        result.setProvider(AgentVersionStorageDescriptorSerializer.NACOS_CONFIG_PROVIDER);
         result.setKey("namespace:agent-version:agent__Agent__1.0.0.json");
-        result.setKeyFormat(AgentVersionStorageDescriptorCodec.NACOS_CONFIG_KEY_FORMAT);
-        result.setAgentNameCodec(AgentVersionStorageDescriptorCodec.RAD_ASCII_AGENT_NAME_CODEC);
+        result.setKeyFormat(AgentVersionStorageDescriptorSerializer.NACOS_CONFIG_KEY_FORMAT);
+        result
+            .setAgentNameCodec(AgentVersionStorageDescriptorSerializer.RAD_ASCII_AGENT_NAME_CODEC);
         result.setContentDigest("sha256:" + repeat('a', 64));
-        result.setMediaType(AgentVersionStorageDescriptorCodec.AGENT_VERSION_MEDIA_TYPE);
-        result.setSchemaVersion(AgentVersionStorageDescriptorCodec.SCHEMA_VERSION);
+        result.setMediaType(AgentVersionStorageDescriptorSerializer.AGENT_VERSION_MEDIA_TYPE);
+        result.setSchemaVersion(AgentVersionStorageDescriptorSerializer.SCHEMA_VERSION);
         result.setSize(128L);
         return result;
     }

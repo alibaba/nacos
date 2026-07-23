@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
-import com.alibaba.nacos.ai.service.agent.fingerprint.AgentVersionContentCodec;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -33,11 +32,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * JSON codec for the storage descriptor persisted in one Agent Version row.
+ * JSON serializer for the storage descriptor persisted in one Agent Version row.
  *
  * @author Nacos
  */
-public final class AgentVersionStorageDescriptorCodec {
+public final class AgentVersionStorageDescriptorSerializer {
     
     public static final String NACOS_CONFIG_PROVIDER = "nacos_config";
     
@@ -52,7 +51,7 @@ public final class AgentVersionStorageDescriptorCodec {
     
     public static final int SCHEMA_VERSION = AgentVersionStorageDescriptor.SCHEMA_VERSION;
     
-    public static final int MAX_CONTENT_SIZE = AgentVersionContentCodec.MAX_CONTENT_SIZE;
+    public static final int MAX_CONTENT_SIZE = AgentVersionContentSerializer.MAX_CONTENT_SIZE;
     
     private static final int MAX_PROVIDER_LENGTH = 64;
     
@@ -72,7 +71,7 @@ public final class AgentVersionStorageDescriptorCodec {
         new HashSet<String>(Arrays.asList("provider", "key", "keyFormat", "agentNameCodec",
             "contentDigest", "mediaType", "schemaVersion", "size")));
     
-    private AgentVersionStorageDescriptorCodec() {
+    private AgentVersionStorageDescriptorSerializer() {
     }
     
     /**
@@ -82,7 +81,7 @@ public final class AgentVersionStorageDescriptorCodec {
      * @return JSON stored in {@code ai_resource_version.storage}
      * @throws IllegalArgumentException when the descriptor is invalid
      */
-    public static String encode(AgentVersionStorageDescriptor descriptor) {
+    public static String serialize(AgentVersionStorageDescriptor descriptor) {
         validate(descriptor);
         try {
             return JacksonUtils.toJson(descriptor);
@@ -100,7 +99,7 @@ public final class AgentVersionStorageDescriptorCodec {
      * @return decoded storage descriptor
      * @throws IllegalArgumentException when JSON or descriptor fields are invalid
      */
-    public static AgentVersionStorageDescriptor decode(String json) {
+    public static AgentVersionStorageDescriptor deserialize(String json) {
         validateJsonShape(json);
         final AgentVersionStorageDescriptor descriptor;
         try {

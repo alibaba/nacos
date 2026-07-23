@@ -65,7 +65,7 @@ follows:
 | `c_desc` | `description`. |
 | `status` | `enable` or `disable`. |
 | `owner`, `scope` | Same-named governance fields. |
-| `biz_tags` | Public tags plus server-derived online-protocol tokens. |
+| `biz_tags` | Public tags supplied by the user. |
 | `ext` | Typed `AgentResourceExt`. |
 | `c_from` | Creation, import, or synchronization source. |
 | `version_info` | Shared editing, reviewing, online-count, and label summary. |
@@ -86,11 +86,14 @@ contains only `version`, `labels[]`, and `protocols[]`. Version status and
 `version_info.labels` remain the facts. Publish, online, offline, delete, label,
 or latest changes rebuild the catalog as one logical Resource update.
 
-Protocol search tokens in `biz_tags` use the reserved prefix
-`__nacos.agent.protocol:`. A user tag must not use `__nacos.agent.`. Read
-projections remove internal tokens. Public tags and internal tokens share the
-canonical persistence limit, and a write that would exceed that limit is
-rejected atomically.
+`biz_tags` does not store server-derived indexes. Write and read projections
+must preserve the values and order of user tags.
+
+RAD protocol filtering uses
+`AgentResourceExt.versionCatalog.onlineVersions[].protocols` as its logical
+source. An implementation may maintain an independent derived protocol index
+for query efficiency, but that index is not encoded into `biz_tags` and must
+not add, remove, or reinterpret public tags.
 
 AgentName and Version identity are compared case-sensitively in DAO queries,
 unique constraints, caches, labels, and authorization keys. Implementations
@@ -611,7 +614,7 @@ set uses the Version `contentDigest` as its opaque source revision.
 | --- | --- | --- |
 | Agent catalog, governance, extensions | `ai_resource`. | `metaVersion` CAS. |
 | Create or update draft | AI Storage fixed key plus Version row. | Pointer, bytes, size, and digest agree. |
-| Publish, online, offline, delete, label/latest | Version row plus Resource summaries. | Rebuild derived catalog and protocol tokens. |
+| Publish, online, offline, delete, label/latest | Version row plus Resource summaries. | Rebuild derived catalog. |
 | Runtime register, heartbeat, deregister | Naming Client runtime state. | Does not write AI Resource or Storage. |
 
 Cache validators follow facts:
@@ -630,14 +633,15 @@ validate the digest.
 
 A successful Storage write followed by a failed metadata write produces an
 observable incomplete operation that is retried or cleaned as orphan content.
-Digest mismatch must never return unverified content. `versionCatalog`,
-protocol tokens, and Resource version summaries are rebuildable derived data;
-their consistency is not delegated to Storage providers.
+Digest mismatch must never return unverified content. `versionCatalog` and
+Resource version summaries are rebuildable derived data; their consistency is
+not delegated to Storage providers.
 
 ## 9. Capacity And Security
 
 | Runtime or physical field | Limit |
 | --- | ---: |
+| Serialized `biz_tags` JSON | 1024 characters; contains only user tags. |
 | `runtimeVersion` | 64 characters. |
 | Canonical `versionRange` | 256 characters; one continuous interval. |
 | Registration batch | 1 to 1000 Endpoints. |

@@ -177,9 +177,14 @@ introducing another page class.
 | `namespaceId` | Yes | Effective namespace |
 | `agentNameContains` | No | Case-sensitive literal substring match on `agentName` |
 | `tagsAll[]` | No | Agent contains every supplied tag |
-| `protocolsAny[]` | No | At least one online version contains any supplied protocol |
+| `protocolsAny[]` | No | At least one online Version exposes any supplied calling protocol |
 | `pageNo` | No | One-based page number; default `1` |
 | `pageSize` | No | Page size; default `20`, maximum `100` |
+
+Protocol filtering is a RAD result-semantic requirement, not a physical-index
+contract. An implementation may evaluate the online Version catalog or use an
+independent derived index. It must not encode protocol values as public Agent
+tags.
 
 Characters such as `%` and `_` that are special to a backing query language
 MUST be treated as literals.

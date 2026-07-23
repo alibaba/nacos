@@ -60,7 +60,7 @@ Watch 对象都是上述事实的读取投影。
 | `c_desc` | `description`。 |
 | `status` | `enable` 或 `disable`。 |
 | `owner`、`scope` | 同名治理字段。 |
-| `biz_tags` | 公开 tag 和服务端派生的 online protocol token。 |
+| `biz_tags` | 用户设置的公开 tag。 |
 | `ext` | 强类型 `AgentResourceExt`。 |
 | `c_from` | 创建、导入或同步来源。 |
 | `version_info` | 共享的 editing、reviewing、online count 和 label 摘要。 |
@@ -81,9 +81,11 @@ Watch 对象都是上述事实的读取投影。
 事实。Publish、online、offline、delete、label 或 latest 变化时，目录作为一次 Resource 逻辑
 更新进行重建。
 
-`biz_tags` 中的 protocol 检索 token 使用保留前缀 `__nacos.agent.protocol:`。用户 tag
-不得使用 `__nacos.agent.`。读取投影移除内部 token。公开 tag 和内部 token 共享 canonical
-持久化上限，超限写入必须原子拒绝。
+`biz_tags` 不保存服务端派生索引；写入和读取投影必须保持用户 tag 的值和顺序。
+
+RAD 按 Protocol 筛选的逻辑来源是
+`AgentResourceExt.versionCatalog.onlineVersions[].protocols`。实现可以为查询性能维护独立的
+派生 Protocol 索引，但该索引不得编码进 `biz_tags`，也不得增加、删除或重新解释公开 tag。
 
 AgentName 和 Version 身份在 DAO 查询、唯一约束、cache、label 和鉴权 key 中按大小写敏感
 比较。实现不得依赖数据库默认的大小写不敏感 collation。
@@ -529,7 +531,7 @@ Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 | --- | --- | --- |
 | Agent 目录、治理、extensions | `ai_resource`。 | `metaVersion` CAS。 |
 | 创建或更新 draft | AI Storage 固定 key 和 Version row。 | Pointer、bytes、size 和 digest 一致。 |
-| Publish、online、offline、delete、label/latest | Version row 和 Resource 摘要。 | 重建派生目录和 protocol token。 |
+| Publish、online、offline、delete、label/latest | Version row 和 Resource 摘要。 | 重建派生目录。 |
 | Runtime register、heartbeat、deregister | Naming Client 运行时状态。 | 不写 AI Resource 或 Storage。 |
 
 缓存校验值跟随事实：
@@ -545,13 +547,14 @@ AI Storage provider 保证单个 StorageKey 的原子 bytes 和它声明的读�
 和失败补偿。Publish 前必须重新读取内容并校验 digest。
 
 Storage 写入成功但元数据写入失败时，形成可观测的不完整操作，并通过重试或孤儿内容清理处理。
-Digest 不一致时不得返回未校验内容。`versionCatalog`、protocol token 和 Resource Version
-摘要是可重建派生数据；其一致性不得下放给 Storage provider。
+Digest 不一致时不得返回未校验内容。`versionCatalog` 和 Resource Version 摘要是可重建
+派生数据；其一致性不得下放给 Storage provider。
 
 ## 9. 容量与安全
 
 | Runtime 或物理字段 | 上限 |
 | --- | ---: |
+| 序列化后的 `biz_tags` JSON | 1024 字符；只包含用户 tag。 |
 | `runtimeVersion` | 64 字符。 |
 | Canonical `versionRange` | 256 字符；一个连续区间。 |
 | 注册批次 | 1～1000 个 Endpoint。 |

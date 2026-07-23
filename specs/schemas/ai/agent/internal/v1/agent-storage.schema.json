@@ -20,7 +20,6 @@
     "configGroup": "agent-version",
     "configMediaType": "application/vnd.nacos.agent-version+json",
     "namingGroup": "agent-endpoints",
-    "protocolSearchTokenPrefix": "__nacos.agent.protocol:",
     "namingMetadata": {
       "path": "__nacos.agent.endpoint.path__",
       "transport": "__nacos.agent.endpoint.transport__",

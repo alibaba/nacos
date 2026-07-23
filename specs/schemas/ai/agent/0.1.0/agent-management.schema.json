@@ -162,10 +162,7 @@
     "Tag": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 64,
-      "not": {
-        "pattern": "^__nacos\\.agent\\."
-      }
+      "maxLength": 64
     },
     "Extensions": {
       "type": "object",
@@ -176,7 +173,7 @@
         "maxLength": 128
       },
       "additionalProperties": true,
-      "description": "Namespaced public extension values. The canonical JSON representation of the whole map is limited to 16 KiB by domain validation."
+      "description": "Namespaced public extension values. The serialized UTF-8 JSON representation of the whole map is limited to 16 KiB by domain validation."
     },
     "AgentResourceStatus": {
       "type": "string",

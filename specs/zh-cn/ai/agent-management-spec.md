@@ -210,9 +210,9 @@ reviewing 后内容冻结。Reviewed、online 和 offline 内容不得原地更�
 - 删除最后一个 online Version 时删除 `latest`；
 - 删除或下线当前 `latest` 之外的 online Version 时，不触发重算。
 
-online 状态或 label 变化时，服务端必须在一次逻辑更新中重建 `versionCatalog` 和派生的
-protocol 检索 token。只要存在 online Version，就必须存在且仅存在一个有效的
-`latestVersion`，并且它必须出现在 `onlineVersions` 中。
+online 状态或 label 变化时，服务端必须在一次逻辑更新中重建 `versionCatalog`。只要存在
+online Version，就必须存在且仅存在一个有效的 `latestVersion`，并且它必须出现在
+`onlineVersions` 中。
 
 Agent 元数据、Agent Version 定义和 Runtime Endpoint 之间不互相拥有生命周期。删除或
 disable Agent 定义会改变读取投影，但不会删除仍然活跃的运行时 publisher 状态。
@@ -312,15 +312,15 @@ Version 定义与允许的 DECLARED 和 RUNTIME Endpoint set 组合，但不作�
 | `description` | 2048 字符。 |
 | Icon、provider 或 declared Endpoint URI | 2048 字符。 |
 | 公开 tag | 32 项，每项 64 字符。 |
-| Agent `extensions` | 32 项；key 128 字符；canonical JSON 合计 16 KiB。 |
+| Agent `extensions` | 32 项；key 128 字符；序列化后的 UTF-8 JSON 合计 16 KiB。 |
 | `protocol`、`protocolVersion` | 32 和 64 字符。 |
 | 每个 Version 的 CallInterface | 16。 |
 | 每个 CallInterface 的 Declared Endpoint | 64。 |
 | Endpoint metadata | 32 项；key 64、value 256 字符。 |
 | `AgentVersionContent` | 1 MiB。 |
 
-公开 tag 和内部 protocol token 共享 `biz_tags` 的持久化容量；服务端在原子接受 tag 或
-online protocol 变化之前，必须校验 canonical 合计长度。
+`biz_tags` 只保存用户设置的公开 tag，不保存服务端派生索引；序列化后的 JSON 不得超过
+1024 字符。
 
 Descriptor、extension 和 Endpoint metadata 不得包含明文 credential。审计记录不得记录
 完整 native descriptor、security scheme 或敏感 Endpoint metadata。Runtime 发布和物理存储

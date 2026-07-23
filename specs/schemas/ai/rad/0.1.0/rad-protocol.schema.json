@@ -314,7 +314,8 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/ProtocolToken"
-          }
+          },
+          "description": "Keep Agents for which at least one online Version exposes at least one requested calling protocol."
         },
         "pageNo": {
           "type": "integer",
