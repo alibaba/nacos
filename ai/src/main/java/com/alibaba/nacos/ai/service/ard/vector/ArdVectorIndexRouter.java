@@ -101,6 +101,14 @@ public class ArdVectorIndexRouter implements AiResourceVectorIndex, DisposableBe
     }
     
     @Override
+    public boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        int expectedDocumentCount) {
+        return delegate().isResourceVersionReady(namespaceId, resourceType, resourceName,
+            resourceVersion, embeddingModel, expectedDocumentCount);
+    }
+    
+    @Override
     public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
         double[] queryVector, List<String> resourceTypes, int limit) {
         return delegate().search(namespaceId, embeddingModel, queryVector, resourceTypes, limit);

@@ -24,10 +24,13 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -63,21 +66,31 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
     
     private final JdbcTemplate injectedJdbcTemplate;
     
+    private final TransactionTemplate injectedTransactionTemplate;
+    
     public JdbcArdIndexRepository() {
         this.injectedJdbcTemplate = null;
+        this.injectedTransactionTemplate = null;
     }
     
     public JdbcArdIndexRepository(JdbcTemplate jdbcTemplate) {
+        this(jdbcTemplate, transactionTemplate(jdbcTemplate));
+    }
+    
+    JdbcArdIndexRepository(JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
         this.injectedJdbcTemplate = jdbcTemplate;
+        this.injectedTransactionTemplate = transactionTemplate;
     }
     
     @Override
     public List<ArdChunk> replaceEntry(ArdEntry entry, List<ArdChunk> chunks) {
-        deleteByResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
-            entry.getResourceName(), entry.getResourceVersion());
-        long entryId = insertEntry(entry);
-        entry.setId(entryId);
-        return appendChunks(entry, chunks);
+        return getTransactionTemplate().execute(status -> {
+            deleteByResourceVersionWithoutTransaction(entry.getNamespaceId(),
+                entry.getResourceType(), entry.getResourceName(), entry.getResourceVersion());
+            long entryId = insertEntry(entry);
+            entry.setId(entryId);
+            return appendChunks(entry, chunks);
+        });
     }
     
     @Override
@@ -99,18 +112,31 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
     }
     
     @Override
+    public void updateEntryStatus(long entryId, String status) {
+        getJdbcTemplate().update("UPDATE ai_resource_ard_entry SET status=?, "
+            + "gmt_modified=CURRENT_TIMESTAMP WHERE id=?", status, entryId);
+    }
+    
+    @Override
     public void deleteByResource(String namespaceId, String resourceType, String resourceName) {
         List<Object> args = new ArrayList<>();
         String where = "namespace_id=? AND resource_type=? AND resource_name=?";
         args.add(namespaceId);
         args.add(resourceType);
         args.add(resourceName);
-        deleteByWhere(where, args);
+        getTransactionTemplate().executeWithoutResult(status -> deleteByWhere(where, args));
     }
     
     @Override
     public void deleteByResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion) {
+        getTransactionTemplate()
+            .executeWithoutResult(status -> deleteByResourceVersionWithoutTransaction(
+                namespaceId, resourceType, resourceName, resourceVersion));
+    }
+    
+    private void deleteByResourceVersionWithoutTransaction(String namespaceId,
+        String resourceType, String resourceName, String resourceVersion) {
         List<Object> args = new ArrayList<>();
         String where = "namespace_id=? AND resource_type=? AND resource_name=? "
             + "AND resource_version=?";
@@ -184,6 +210,27 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
         List<ArdEntry> entries =
             getJdbcTemplate().query(sql.toString(), ENTRY_ROW_MAPPER, args.toArray());
         return limit(entries, limit);
+    }
+    
+    @Override
+    public List<ArdEntry> listEntries(String namespaceId, List<String> resourceTypes, int limit) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql =
+            new StringBuilder("SELECT * FROM ai_resource_ard_entry WHERE namespace_id=?");
+        args.add(namespaceId);
+        appendResourceTypeFilter(sql, args, resourceTypes);
+        sql.append(" ORDER BY gmt_modified DESC");
+        List<ArdEntry> entries =
+            getJdbcTemplate().query(sql.toString(), ENTRY_ROW_MAPPER, args.toArray());
+        return limit(entries, limit);
+    }
+    
+    @Override
+    public int countChunks(long entryId) {
+        Integer count = getJdbcTemplate().queryForObject(
+            "SELECT COUNT(1) FROM ai_resource_ard_chunk WHERE entry_id=?", Integer.class,
+            entryId);
+        return count == null ? 0 : count;
     }
     
     private long insertEntry(ArdEntry entry) {
@@ -291,6 +338,21 @@ public class JdbcArdIndexRepository implements ArdIndexRepository {
             return injectedJdbcTemplate;
         }
         return DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+    }
+    
+    private TransactionTemplate getTransactionTemplate() {
+        if (injectedTransactionTemplate != null) {
+            return injectedTransactionTemplate;
+        }
+        return DynamicDataSource.getInstance().getDataSource().getTransactionTemplate();
+    }
+    
+    private static TransactionTemplate transactionTemplate(JdbcTemplate jdbcTemplate) {
+        DataSource dataSource = jdbcTemplate == null ? null : jdbcTemplate.getDataSource();
+        if (dataSource == null) {
+            return null;
+        }
+        return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
     }
     
     private static class ArdEntryRowMapper implements RowMapper<ArdEntry> {

@@ -78,6 +78,11 @@ Consumer 对瞬时失败执行有界退避重试。周期性 reconciliation 用�
 文档。实现需要暴露 reconciliation 所需的健康状态和已索引 identity 信息，但不能向协议
 适配器泄漏 Provider 专属类型。
 
+`isResourceVersionReady(...)` 用于比较当前 embedding model、期望的关系 chunk 数量和
+Provider 中的已索引文档。该方法是带默认实现的可选兼容方法，已有 Provider 不会因此失去
+二进制兼容；支持精确 reconciliation 的 Provider 应覆盖该方法。默认 PostgreSQL Provider
+在单个本地数据源事务内完成资源版本替换。
+
 ## 6. 安全与运维
 
 - 连接凭据和 Provider secret 属于敏感配置，不得通过插件详情 API 返回或写入日志。
@@ -93,4 +98,3 @@ SPI 变更必须保持插件模块 Java 8 兼容，并遵循 Nacos 插件兼容�
 SPI 契约测试覆盖 Provider 选择、no-op fallback、幂等 replace/delete、限定范围的搜索和
 生命周期清理。默认 PostgreSQL 实现还需要测试 Schema 隔离、关闭向量能力时不依赖
 pgvector、Provider 内部事务替换，以及模拟向量失败后的 reconciliation。
-

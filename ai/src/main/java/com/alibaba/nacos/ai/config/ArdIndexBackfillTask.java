@@ -22,14 +22,15 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
 import com.alibaba.nacos.ai.service.ard.ArdEntryBuilder;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
@@ -43,17 +44,22 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
+import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -63,9 +69,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Component
 @ConditionalOnArdEnabled
-public class ArdIndexBackfillTask implements ApplicationListener<ApplicationReadyEvent> {
+public class ArdIndexBackfillTask
+    implements ApplicationListener<ApplicationReadyEvent>, DisposableBean {
     
     static final String BACKFILL_ENABLED_KEY = "nacos.ai.ard.index.backfill.enabled";
+    
+    static final String RECONCILE_INTERVAL_SECONDS_KEY =
+        "nacos.ai.ard.index.reconcile.interval-seconds";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ArdIndexBackfillTask.class);
     
@@ -77,12 +87,14 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
     
     private static final int SCAN_PAGE_SIZE = 100;
     
+    private static final long DEFAULT_RECONCILE_INTERVAL_SECONDS = 300L;
+    
     private static final String RESOURCE_TYPE_MCP = "mcp";
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
-    private final ExecutorService backfillExecutor =
-        ExecutorFactory.Managed.newSingleExecutorService(
+    private final ScheduledExecutorService backfillExecutor =
+        ExecutorFactory.Managed.newSingleScheduledExecutorService(
             ArdIndexBackfillTask.class.getCanonicalName(),
             new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-ard-backfill-%d").build());
     
@@ -92,7 +104,11 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
     
     private final ArdIndexRepository repository;
     
-    private final ArdIndexBuildService indexBuildService;
+    private final ArdIndexMaintenanceService indexMaintenanceService;
+    
+    private final ArdEmbeddingService embeddingService;
+    
+    private final AiResourceVectorIndex vectorIndex;
     
     private final NamespaceOperationService namespaceOperationService;
     
@@ -104,13 +120,17 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
     
     public ArdIndexBackfillTask(AiResourceManager resourceManager,
         McpServerOperationService mcpServerOperationService, ArdIndexRepository repository,
-        ArdIndexBuildService indexBuildService, NamespaceOperationService namespaceOperationService,
+        ArdIndexMaintenanceService indexMaintenanceService,
+        ArdEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
+        NamespaceOperationService namespaceOperationService,
         ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService) {
         this.resourceManager = resourceManager;
         this.mcpServerOperationService = mcpServerOperationService;
         this.repository = repository;
-        this.indexBuildService = indexBuildService;
+        this.indexMaintenanceService = indexMaintenanceService;
+        this.embeddingService = embeddingService;
+        this.vectorIndex = vectorIndex;
         this.namespaceOperationService = namespaceOperationService;
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
@@ -129,7 +149,10 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
             LOGGER.info("ARD index backfill is disabled via {}", BACKFILL_ENABLED_KEY);
             return;
         }
-        backfillExecutor.execute(this::executeBackfill);
+        long intervalSeconds = positiveLong(RECONCILE_INTERVAL_SECONDS_KEY,
+            DEFAULT_RECONCILE_INTERVAL_SECONDS);
+        backfillExecutor.scheduleWithFixedDelay(this::executeBackfill, 0L, intervalSeconds,
+            TimeUnit.SECONDS);
     }
     
     private void executeBackfill() {
@@ -143,10 +166,10 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
             BackfillStats stats = new BackfillStats();
             for (Namespace namespace : getNamespaces()) {
                 String namespaceId = namespace.getNamespace();
-                backfillAiResources(namespaceId, Constants.Skills.RESOURCE_TYPE_SKILL, stats);
-                backfillAiResources(namespaceId,
+                reconcileAiResources(namespaceId, Constants.Skills.RESOURCE_TYPE_SKILL, stats);
+                reconcileAiResources(namespaceId,
                     NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, stats);
-                backfillMcpServers(namespaceId, stats);
+                reconcileMcpServers(namespaceId, stats);
             }
             LOGGER.info(
                 "ARD index backfill completed: scanned={}, rebuilt={}, skipped={}, failed={}",
@@ -173,24 +196,27 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
             com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID, "public"));
     }
     
-    private void backfillAiResources(String namespaceId, String resourceType,
+    private void reconcileAiResources(String namespaceId, String resourceType,
         BackfillStats stats) {
+        Set<String> canonicalNames = new LinkedHashSet<>();
         int pageNo = 1;
         while (true) {
             Page<AiResource> page = resourceManager.listMetaByType(namespaceId, resourceType, null,
                 null, pageNo, SCAN_PAGE_SIZE);
             List<AiResource> resources = page == null ? null : page.getPageItems();
             if (resources == null || resources.isEmpty()) {
-                return;
+                break;
             }
             for (AiResource resource : resources) {
+                canonicalNames.add(resource.getName());
                 backfillAiResource(namespaceId, resource, stats);
             }
             if (resources.size() < SCAN_PAGE_SIZE) {
-                return;
+                break;
             }
             pageNo++;
         }
+        scheduleOrphanDeletes(namespaceId, resourceType, canonicalNames, stats);
     }
     
     private void backfillAiResource(String namespaceId, AiResource resource,
@@ -201,9 +227,12 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
                 stats.skipped++;
                 return;
             }
-            indexBuildService.rebuildLatestAiResource(namespaceId, resource.getType(),
-                resource.getName());
-            stats.rebuilt++;
+            if (indexMaintenanceService.schedule(namespaceId, resource.getType(),
+                resource.getName())) {
+                stats.rebuilt++;
+            } else {
+                stats.failed++;
+            }
         } catch (Exception e) {
             stats.failed++;
             LOGGER.warn("Failed to backfill ARD index for {}:{} in namespace {}",
@@ -228,23 +257,26 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
         return !isCurrent(current, expected);
     }
     
-    private void backfillMcpServers(String namespaceId, BackfillStats stats) {
+    private void reconcileMcpServers(String namespaceId, BackfillStats stats) {
+        Set<String> canonicalNames = new LinkedHashSet<>();
         int pageNo = 1;
         while (true) {
             Page<McpServerBasicInfo> page = mcpServerOperationService.listMcpServerWithPage(
                 namespaceId, null, Constants.MCP_LIST_SEARCH_ACCURATE, pageNo, SCAN_PAGE_SIZE);
             List<McpServerBasicInfo> servers = page == null ? null : page.getPageItems();
             if (servers == null || servers.isEmpty()) {
-                return;
+                break;
             }
             for (McpServerBasicInfo server : servers) {
+                canonicalNames.add(firstNotBlank(server.getId(), server.getName()));
                 backfillMcpServer(namespaceId, server, stats);
             }
             if (servers.size() < SCAN_PAGE_SIZE) {
-                return;
+                break;
             }
             pageNo++;
         }
+        scheduleOrphanDeletes(namespaceId, RESOURCE_TYPE_MCP, canonicalNames, stats);
     }
     
     private void backfillMcpServer(String namespaceId, McpServerBasicInfo server,
@@ -255,12 +287,12 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
                 stats.skipped++;
                 return;
             }
-            McpServerBasicInfo indexSource = server;
-            if (isIndexable(server)) {
-                indexSource = loadMcpServerDetail(namespaceId, server);
+            String resourceName = firstNotBlank(server.getId(), server.getName());
+            if (indexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_MCP, resourceName)) {
+                stats.rebuilt++;
+            } else {
+                stats.failed++;
             }
-            indexBuildService.rebuildMcpServer(namespaceId, indexSource);
-            stats.rebuilt++;
         } catch (Exception e) {
             stats.failed++;
             LOGGER.warn("Failed to backfill ARD index for mcp:{} in namespace {}",
@@ -279,16 +311,37 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
         return !isCurrent(current, expected);
     }
     
-    private McpServerDetailInfo loadMcpServerDetail(String namespaceId,
-        McpServerBasicInfo server) throws Exception {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, server.getId(), null,
-            resolveMcpVersion(server));
+    private boolean isCurrent(ArdEntry current, ArdEntry expected) {
+        if (current == null
+            || !ArdIndexConstants.STATUS_ENABLED.equals(current.getStatus())) {
+            return false;
+        }
+        if (!Objects.equals(current.getResourceVersion(), expected.getResourceVersion())
+            || !Objects.equals(current.getSourceDigest(), expected.getSourceDigest())) {
+            return false;
+        }
+        return !vectorIndex.available() || vectorIndex.isResourceVersionReady(
+            current.getNamespaceId(), current.getResourceType(), current.getResourceName(),
+            current.getResourceVersion(), embeddingService.model(),
+            repository.countChunks(current.getId()));
     }
     
-    private boolean isCurrent(ArdEntry current, ArdEntry expected) {
-        return current != null
-            && Objects.equals(current.getResourceVersion(), expected.getResourceVersion())
-            && Objects.equals(current.getSourceDigest(), expected.getSourceDigest());
+    private void scheduleOrphanDeletes(String namespaceId, String resourceType,
+        Set<String> canonicalNames, BackfillStats stats) {
+        Set<String> scheduled = new LinkedHashSet<>();
+        for (ArdEntry entry : repository.listEntries(namespaceId,
+            Collections.singletonList(resourceType), Integer.MAX_VALUE)) {
+            if (canonicalNames.contains(entry.getResourceName())
+                || !scheduled.add(entry.getResourceName())) {
+                continue;
+            }
+            if (indexMaintenanceService.schedule(namespaceId, resourceType,
+                entry.getResourceName())) {
+                stats.rebuilt++;
+            } else {
+                stats.failed++;
+            }
+        }
     }
     
     private boolean isIndexable(AiResource resource, AiResourceVersion version) {
@@ -313,6 +366,15 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
     
     private String firstNotBlank(String first, String second) {
         return StringUtils.isNotBlank(first) ? first : second;
+    }
+    
+    private long positiveLong(String key, long defaultValue) {
+        try {
+            long value = Long.parseLong(EnvUtil.getProperty(key, String.valueOf(defaultValue)));
+            return value > 0 ? value : defaultValue;
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
     }
     
     private boolean tryAcquireBackfillMarker() {
@@ -370,6 +432,11 @@ public class ArdIndexBackfillTask implements ApplicationListener<ApplicationRead
         } catch (Exception e) {
             LOGGER.warn("Failed to delete ARD index backfill marker", e);
         }
+    }
+    
+    @Override
+    public void destroy() {
+        backfillExecutor.shutdownNow();
     }
     
     private static final class BackfillStats {

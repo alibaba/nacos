@@ -25,6 +25,8 @@ import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -101,8 +103,13 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     public void replaceResourceVersion(String namespaceId, String resourceType,
         String resourceName, String resourceVersion,
         Collection<AiResourceVectorDocument> documents) {
-        deleteByResourceVersion(namespaceId, resourceType, resourceName, resourceVersion);
-        addDocuments(documents);
+        JdbcTemplate jdbcTemplate = getJdbcTemplate();
+        TransactionTemplate transactionTemplate =
+            new TransactionTemplate(new DataSourceTransactionManager(jdbcTemplate.getDataSource()));
+        transactionTemplate.executeWithoutResult(status -> {
+            deleteByResourceVersion(namespaceId, resourceType, resourceName, resourceVersion);
+            addDocuments(documents);
+        });
     }
     
     @Override
@@ -128,6 +135,19 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
         getJdbcTemplate().update("DELETE FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
             + "AND resource_type=? AND resource_name=? AND resource_version=?",
             namespaceId, resourceType, resourceName, resourceVersion);
+    }
+    
+    @Override
+    public boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        int expectedDocumentCount) {
+        Integer count = getJdbcTemplate().queryForObject(
+            "SELECT COUNT(1) FROM ai_resource_ard_embedding_pg WHERE namespace_id=? "
+                + "AND resource_type=? AND resource_name=? AND resource_version=? "
+                + "AND embedding_model=?",
+            Integer.class, namespaceId, resourceType, resourceName, resourceVersion,
+            embeddingModel);
+        return count != null && count == expectedDocumentCount;
     }
     
     @Override

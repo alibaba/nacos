@@ -25,6 +25,8 @@ public final class ArdIndexConstants {
     
     public static final String STATUS_ENABLED = "enabled";
     
+    public static final String STATUS_PENDING = "pending";
+    
     public static final String GENERATE_MODE_AUTO = "auto";
     
     public static final String CHUNK_TYPE_DESCRIPTION = "description";

@@ -159,6 +159,7 @@ class AiResourceDiscoveryServiceTest {
         entry.setResourceName(name);
         entry.setResourceVersion("1.0.0");
         entry.setDisplayName(name);
+        entry.setStatus("enabled");
         entry.setGmtModified(new Timestamp(id));
         return entry;
     }

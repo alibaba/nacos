@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -1982,8 +1982,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
-        ArdIndexBuildService ardIndexBuildService = mock(ArdIndexBuildService.class);
-        skillOperationService.setArdIndexBuildService(ardIndexBuildService);
+        ArdIndexMaintenanceService indexMaintenanceService =
+            mock(ArdIndexMaintenanceService.class);
+        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
         
         AiResource meta = new AiResource();
         meta.setName(skillName);
@@ -2027,9 +2028,7 @@ class SkillOperationServiceImplTest {
                 Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
                 return ((Number) info.get("onlineCnt")).intValue() == 2;
             }));
-        verify(ardIndexBuildService).rebuildLatestAiResource(namespaceId, "skill", skillName);
-        verify(ardIndexBuildService, never()).rebuildAiResource(anyString(), anyString(),
-            anyString(), anyString());
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
     }
     
     @Test
@@ -2583,8 +2582,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
-        ArdIndexBuildService ardIndexBuildService = mock(ArdIndexBuildService.class);
-        skillOperationService.setArdIndexBuildService(ardIndexBuildService);
+        ArdIndexMaintenanceService indexMaintenanceService =
+            mock(ArdIndexMaintenanceService.class);
+        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
         AiResource meta = new AiResource();
         meta.setName(skillName);
         meta.setType("skill");
@@ -2622,9 +2622,7 @@ class SkillOperationServiceImplTest {
         verify(manifestService).write(eq(namespaceId), eq(skillName), manifestCaptor.capture());
         assertTrue(!manifestCaptor.getValue().getLabels().containsKey("latest"));
         assertTrue(!manifestCaptor.getValue().getVersions().containsKey(version));
-        verify(ardIndexBuildService).rebuildLatestAiResource(namespaceId, "skill", skillName);
-        verify(ardIndexBuildService, never()).deleteResourceVersion(anyString(), anyString(),
-            anyString(), anyString());
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
     }
     
     @Test
@@ -2634,8 +2632,9 @@ class SkillOperationServiceImplTest {
         String skillName = "my-skill";
         final String offlineVersion = "0.0.9";
         final String fallbackVersion = "0.0.8";
-        ArdIndexBuildService ardIndexBuildService = mock(ArdIndexBuildService.class);
-        skillOperationService.setArdIndexBuildService(ardIndexBuildService);
+        ArdIndexMaintenanceService indexMaintenanceService =
+            mock(ArdIndexMaintenanceService.class);
+        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
         AiResource meta = new AiResource();
         meta.setName(skillName);
         meta.setType("skill");
@@ -2680,9 +2679,7 @@ class SkillOperationServiceImplTest {
             manifestCaptor.getValue().getLabels().get(AiResourceConstants.LABEL_LATEST));
         assertTrue(!manifestCaptor.getValue().getVersions().containsKey(offlineVersion));
         assertTrue(manifestCaptor.getValue().getVersions().containsKey(fallbackVersion));
-        verify(ardIndexBuildService).rebuildLatestAiResource(namespaceId, "skill", skillName);
-        verify(ardIndexBuildService, never()).deleteResourceVersion(anyString(), anyString(),
-            anyString(), anyString());
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
     }
     
     @Test

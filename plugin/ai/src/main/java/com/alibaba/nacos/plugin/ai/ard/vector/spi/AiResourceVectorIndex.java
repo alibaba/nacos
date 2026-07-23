@@ -57,6 +57,18 @@ public interface AiResourceVectorIndex extends AutoCloseable {
         String resourceVersion);
     
     /**
+     * Verify that one resource version contains the expected model and document count.
+     *
+     * <p>The default preserves compatibility with providers that do not expose
+     * reconciliation metadata.</p>
+     */
+    default boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        int expectedDocumentCount) {
+        return true;
+    }
+    
+    /**
      * Vector search over ARD chunks.
      */
     List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,

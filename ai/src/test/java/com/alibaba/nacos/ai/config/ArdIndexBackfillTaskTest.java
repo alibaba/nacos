@@ -22,14 +22,14 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.ard.ArdEntry;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
 import com.alibaba.nacos.ai.service.ard.ArdEntryBuilder;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -38,12 +38,12 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
+import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -51,22 +51,17 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -97,7 +92,13 @@ class ArdIndexBackfillTaskTest {
     private ArdIndexRepository repository;
     
     @Mock
-    private ArdIndexBuildService indexBuildService;
+    private ArdIndexMaintenanceService indexMaintenanceService;
+    
+    @Mock
+    private ArdEmbeddingService embeddingService;
+    
+    @Mock
+    private AiResourceVectorIndex vectorIndex;
     
     @Mock
     private NamespaceOperationService namespaceOperationService;
@@ -119,14 +120,18 @@ class ArdIndexBackfillTaskTest {
             anyInt(), eq(100))).thenReturn(emptyPage());
         lenient().when(mcpServerOperationService.listMcpServerWithPage(anyString(), isNull(),
             eq(Constants.MCP_LIST_SEARCH_ACCURATE), anyInt(), eq(100))).thenReturn(emptyPage());
+        lenient().when(indexMaintenanceService.schedule(anyString(), anyString(), anyString()))
+            .thenReturn(true);
         task = new ArdIndexBackfillTask(resourceManager, mcpServerOperationService, repository,
-            indexBuildService, namespaceOperationService, configQueryChainService,
-            configOperationService);
+            indexMaintenanceService, embeddingService, vectorIndex, namespaceOperationService,
+            configQueryChainService, configOperationService);
     }
     
     @AfterEach
     void tearDown() {
-        shutdownBackfillExecutor();
+        if (task != null) {
+            task.destroy();
+        }
         System.clearProperty(ArdIndexBackfillTask.BACKFILL_ENABLED_KEY);
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -181,11 +186,11 @@ class ArdIndexBackfillTaskTest {
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexBuildService, timeout(ASYNC_TIMEOUT)).rebuildLatestAiResource(PUBLIC_NAMESPACE,
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, "stale-skill");
-        verify(indexBuildService, timeout(ASYNC_TIMEOUT)).rebuildLatestAiResource(teamNamespace,
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(teamNamespace,
             NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "missing-prompt");
-        verify(indexBuildService, after(ASYNC_TIMEOUT).never()).rebuildLatestAiResource(
+        verify(indexMaintenanceService, after(ASYNC_TIMEOUT).never()).schedule(
             PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "current-skill");
         verifyMarkerReleased();
     }
@@ -214,7 +219,7 @@ class ArdIndexBackfillTaskTest {
         
         verify(resourceManager, timeout(ASYNC_TIMEOUT)).listMetaByType(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 2, 100);
-        verify(indexBuildService, timeout(ASYNC_TIMEOUT)).rebuildLatestAiResource(PUBLIC_NAMESPACE,
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, "page-two");
         verifyMarkerReleased();
     }
@@ -232,37 +237,72 @@ class ArdIndexBackfillTaskTest {
             eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("1.0.0")))
             .thenAnswer(invocation -> version(
                 "first".equals(invocation.getArgument(1)) ? first : second, "1.0.0"));
-        doThrow(new IllegalStateException("index failure")).when(indexBuildService)
-            .rebuildLatestAiResource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
-                "first");
+        when(indexMaintenanceService.schedule(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "first"))
+            .thenThrow(new IllegalStateException("index failure"));
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexBuildService, timeout(ASYNC_TIMEOUT)).rebuildLatestAiResource(PUBLIC_NAMESPACE,
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, "second");
         verifyMarkerReleased();
     }
     
     @Test
-    void shouldLoadMcpDetailBeforeRebuild() throws Exception {
-        McpServerBasicInfo basic = mcpServer("avatar-mcp", "1.0.0");
-        McpServerDetailInfo detail = new McpServerDetailInfo();
-        detail.setId(basic.getId());
-        detail.setName(basic.getName());
-        detail.setVersion(basic.getVersion());
-        detail.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
-        when(mcpServerOperationService.listMcpServerWithPage(PUBLIC_NAMESPACE, null,
-            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(page(List.of(basic)));
-        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, "avatar-mcp", null,
-            "1.0.0")).thenReturn(detail);
+    void shouldScheduleWhenVectorDocumentsAreIncomplete() throws Exception {
+        AiResource skill = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "vector-stale", "1.0.0");
+        AiResourceVersion version = version(skill, "1.0.0");
+        ArdEntry current = new ArdEntryBuilder().fromAiResource(skill, version);
+        current.setId(10L);
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 1, 100))
+            .thenReturn(page(List.of(skill)));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "vector-stale",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(version);
+        when(repository.findEntry(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "vector-stale")).thenReturn(current);
+        when(vectorIndex.available()).thenReturn(true);
+        when(embeddingService.model()).thenReturn("model-v2");
+        when(repository.countChunks(10L)).thenReturn(3);
+        when(vectorIndex.isResourceVersionReady(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale", "1.0.0", "model-v2", 3))
+            .thenReturn(false);
         
         task.onApplicationEvent(rootContextEvent());
         
-        ArgumentCaptor<McpServerBasicInfo> captor = ArgumentCaptor.forClass(
-            McpServerBasicInfo.class);
-        verify(indexBuildService, timeout(ASYNC_TIMEOUT)).rebuildMcpServer(eq(PUBLIC_NAMESPACE),
-            captor.capture());
-        assertSame(detail, captor.getValue());
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldScheduleOrphanIndexDeletion() throws Exception {
+        ArdEntry orphan = new ArdEntry();
+        orphan.setNamespaceId(PUBLIC_NAMESPACE);
+        orphan.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        orphan.setResourceName("deleted-skill");
+        when(repository.listEntries(PUBLIC_NAMESPACE,
+            List.of(Constants.Skills.RESOURCE_TYPE_SKILL), Integer.MAX_VALUE))
+            .thenReturn(List.of(orphan));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "deleted-skill");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldScheduleMcpReconciliation() throws Exception {
+        McpServerBasicInfo basic = mcpServer("avatar-mcp", "1.0.0");
+        when(mcpServerOperationService.listMcpServerWithPage(PUBLIC_NAMESPACE, null,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(page(List.of(basic)));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE, "mcp",
+            "avatar-mcp");
         verifyMarkerReleased();
     }
     
@@ -278,7 +318,7 @@ class ArdIndexBackfillTaskTest {
         task.onApplicationEvent(rootContextEvent());
         
         verify(namespaceOperationService, after(ASYNC_TIMEOUT).never()).getNamespaceList();
-        verify(indexBuildService, never()).rebuildMcpServer(anyString(), any());
+        verify(indexMaintenanceService, never()).schedule(anyString(), anyString(), anyString());
     }
     
     private void verifyMarkerReleased() throws Exception {
@@ -341,24 +381,4 @@ class ArdIndexBackfillTaskTest {
         return page(Collections.emptyList());
     }
     
-    private void shutdownBackfillExecutor() {
-        if (task == null) {
-            return;
-        }
-        try {
-            Field executorField = ArdIndexBackfillTask.class.getDeclaredField("backfillExecutor");
-            executorField.setAccessible(true);
-            ExecutorService executor = (ExecutorService) executorField.get(task);
-            executor.shutdown();
-            if (!executor.awaitTermination(ASYNC_TIMEOUT, TimeUnit.MILLISECONDS)) {
-                executor.shutdownNow();
-                executor.awaitTermination(ASYNC_TIMEOUT, TimeUnit.MILLISECONDS);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for backfill executor", e);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to access backfill executor", e);
-        }
-    }
 }

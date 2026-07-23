@@ -44,10 +44,14 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -118,6 +122,43 @@ class ArdIndexBuildServiceImplTest {
             eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("api-helper"), eq("1.0.0"),
             vectorCaptor.capture());
         assertFalse(vectorCaptor.getValue().isEmpty());
+        verify(repository).updateEntryStatus(10L, ArdIndexConstants.STATUS_ENABLED);
+        assertEquals(ArdIndexConstants.STATUS_PENDING, entry.getStatus());
+    }
+    
+    @Test
+    void vectorFailureShouldLeaveRelationalEntryPendingForRetry() throws Exception {
+        ArdIndexBuildServiceImpl service = service();
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(vectorIndex.available()).thenReturn(true);
+        when(embeddingService.model()).thenReturn("test-model");
+        when(embeddingService.embed(any())).thenReturn(new double[] {1.0D});
+        when(repository.replaceEntry(any(ArdEntry.class), anyList())).thenAnswer(invocation -> {
+            ArdEntry entry = invocation.getArgument(0);
+            entry.setId(10L);
+            List<ArdChunk> chunks = invocation.getArgument(1);
+            long id = 1L;
+            for (ArdChunk chunk : chunks) {
+                chunk.setId(id++);
+            }
+            return chunks;
+        });
+        doThrow(new IllegalStateException("pgvector unavailable")).when(vectorIndex)
+            .replaceResourceVersion(eq("public"), eq(Constants.Skills.RESOURCE_TYPE_SKILL),
+                eq("api-helper"), eq("1.0.0"), anyList());
+        
+        assertThrows(IllegalStateException.class,
+            () -> service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+                "api-helper", "1.0.0"));
+        
+        ArgumentCaptor<ArdEntry> entryCaptor = ArgumentCaptor.forClass(ArdEntry.class);
+        verify(repository).replaceEntry(entryCaptor.capture(), anyList());
+        assertEquals(ArdIndexConstants.STATUS_PENDING, entryCaptor.getValue().getStatus());
+        verify(repository, never()).updateEntryStatus(anyLong(), anyString());
     }
     
     @Test

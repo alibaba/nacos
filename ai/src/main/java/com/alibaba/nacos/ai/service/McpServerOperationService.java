@@ -17,10 +17,11 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
@@ -103,7 +104,8 @@ public class McpServerOperationService {
     
     private final SyncEffectService syncEffectService;
     
-    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    private ArdIndexMaintenanceService ardIndexMaintenanceService =
+        ArdIndexMaintenanceService.NOOP;
     
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
@@ -120,9 +122,10 @@ public class McpServerOperationService {
     }
     
     @Autowired(required = false)
-    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
-        if (ardIndexBuildService != null) {
-            this.ardIndexBuildService = ardIndexBuildService;
+    public void setArdIndexMaintenanceService(
+        ArdIndexMaintenanceService ardIndexMaintenanceService) {
+        if (ardIndexMaintenanceService != null) {
+            this.ardIndexMaintenanceService = ardIndexMaintenanceService;
         }
     }
     
@@ -675,12 +678,13 @@ public class McpServerOperationService {
     
     private void rebuildArdMcpIndex(String namespaceId, McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification) {
-        try {
-            ardIndexBuildService.rebuildMcpServer(namespaceId, mcpArdIndexSpec(
-                serverSpecification, toolSpecification, resourceSpecification));
-        } catch (Exception e) {
-            LOGGER.warn("Failed to rebuild ARD index for mcp server: {}",
-                serverSpecification == null ? null : serverSpecification.getName(), e);
+        McpServerBasicInfo indexSpec = mcpArdIndexSpec(serverSpecification, toolSpecification,
+            resourceSpecification);
+        if (indexSpec != null) {
+            String resourceName = StringUtils.isNotBlank(indexSpec.getId()) ? indexSpec.getId()
+                : indexSpec.getName();
+            ardIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
+                resourceName);
         }
     }
     
@@ -697,21 +701,14 @@ public class McpServerOperationService {
     }
     
     private void deleteArdMcpIndex(String namespaceId, String mcpServerId) {
-        try {
-            ardIndexBuildService.deleteResource(namespaceId, "mcp", mcpServerId);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for mcp server: {}", mcpServerId, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
+            mcpServerId);
     }
     
     private void deleteArdMcpVersionIndex(String namespaceId, String mcpServerId,
         String version) {
-        try {
-            ardIndexBuildService.deleteResourceVersion(namespaceId, "mcp", mcpServerId, version);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for mcp server: {}@{}", mcpServerId, version,
-                e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
+            mcpServerId);
     }
     
     private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {

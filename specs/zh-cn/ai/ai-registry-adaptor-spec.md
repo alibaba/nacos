@@ -224,6 +224,12 @@ ARD 特有的 facet 名称和值可以在映射标准可见结果集时聚合。
 reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。只记录
 日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
 
+`ai_resource_ard_index_task` 保存合并后的任务 revision 与重试状态。任务完成和重试更新
+都必须带 revision 条件，避免旧租约结束时误删并发产生的新变更。向量替换期间，关系 entry
+保持 `pending`，discovery 只读取 `enabled` entry；Vector Provider 完成替换后，Consumer
+才启用关系 entry。Reconciliation 还需要比较 embedding model、向量文档数量与关系 chunks，
+并调度缺失、部分写入、过期、模型不一致及孤儿索引。
+
 ### 6.5 一致性测试
 
 适配器模块保存固定版本的上游 OpenAPI 和 Schema 测试 fixture，并记录来源和许可证信息。

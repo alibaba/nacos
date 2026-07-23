@@ -321,6 +321,9 @@ public class AiResourceDiscoveryService {
     }
     
     private boolean matches(Query query, ArdEntry entry) {
+        if (!ArdIndexConstants.STATUS_ENABLED.equals(entry.getStatus())) {
+            return false;
+        }
         if (query.getCreatedAfter() != null
             && !isAfter(entry.getGmtCreate(), query.getCreatedAfter())) {
             return false;

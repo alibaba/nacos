@@ -212,15 +212,16 @@ public class ArdIndexBuildServiceImpl implements ArdIndexBuildService {
         List<ArdIndexEnhancementContent> contents) {
         List<ArdChunk> chunks = new ArrayList<>(chunkBuilder.buildChunks(entry));
         chunks.addAll(chunkBuilder.buildSourceContentChunks(entry, contents));
-        if (vectorIndex.available()) {
-            vectorIndex.deleteByResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
-                entry.getResourceName(), entry.getResourceVersion());
+        boolean vectorAvailable = vectorIndex.available();
+        if (vectorAvailable) {
+            entry.setStatus(ArdIndexConstants.STATUS_PENDING);
         }
         List<ArdChunk> persistedChunks = repository.replaceEntry(entry, chunks);
-        if (vectorIndex.available()) {
+        if (vectorAvailable) {
             vectorIndex.replaceResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
                 entry.getResourceName(), entry.getResourceVersion(),
                 vectorDocuments(persistedChunks));
+            repository.updateEntryStatus(entry.getId(), ArdIndexConstants.STATUS_ENABLED);
         }
         submitEnhancement(entry, persistedChunks, contents);
     }

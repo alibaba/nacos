@@ -19,10 +19,13 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.ard.AiResourceArdIndexContentLoader;
 import com.alibaba.nacos.ai.service.ard.ArdIndexBuildServiceImpl;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceServiceImpl;
 import com.alibaba.nacos.ai.service.ard.HashingArdEmbeddingService;
 import com.alibaba.nacos.ai.service.ard.JdbcArdIndexRepository;
+import com.alibaba.nacos.ai.service.ard.JdbcArdIndexTaskRepository;
 import com.alibaba.nacos.ai.service.ard.OpenAiCompatibleArdIndexEnhancementService;
 import com.alibaba.nacos.ai.service.ard.vector.ArdVectorIndexRouter;
+import com.alibaba.nacos.ai.service.discovery.AiResourceDiscoveryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -44,8 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConditionalOnArdEnabledTest {
     
     private static final Class<?>[] ARD_COMPONENTS = {ArdIndexBackfillTask.class,
-        ArdIndexBuildServiceImpl.class, AiResourceArdIndexContentLoader.class,
-        HashingArdEmbeddingService.class, JdbcArdIndexRepository.class,
+        ArdIndexTaskConsumer.class, ArdIndexBuildServiceImpl.class,
+        ArdIndexMaintenanceServiceImpl.class, AiResourceArdIndexContentLoader.class,
+        AiResourceDiscoveryService.class, HashingArdEmbeddingService.class,
+        JdbcArdIndexRepository.class, JdbcArdIndexTaskRepository.class,
         OpenAiCompatibleArdIndexEnhancementService.class, ArdVectorIndexRouter.class};
     
     @Test

@@ -96,6 +96,13 @@ affected documents. An implementation must expose enough health and indexed
 identity information for reconciliation without exposing provider-specific
 types to protocol adaptors.
 
+`isResourceVersionReady(...)` compares the configured embedding model and
+expected relational chunk count with one provider's indexed documents. It is
+an optional compatibility method with a default implementation for existing
+providers. Providers that support precise reconciliation should override it.
+The default PostgreSQL provider performs resource-version replacement in one
+local datasource transaction.
+
 ## 6. Security And Operations
 
 - Connection credentials and provider secrets are sensitive configuration and
@@ -118,4 +125,3 @@ replace/delete, scoped search, and lifecycle cleanup. The default PostgreSQL
 implementation additionally tests schema isolation, operation without
 pgvector when disabled, transactional replacement inside the provider, and
 reconciliation after simulated vector failures.
-

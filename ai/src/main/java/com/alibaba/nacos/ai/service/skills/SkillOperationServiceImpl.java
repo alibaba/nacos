@@ -27,7 +27,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
@@ -142,7 +142,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private final AiResourceManager resourceManager;
     
-    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    private ArdIndexMaintenanceService ardIndexMaintenanceService =
+        ArdIndexMaintenanceService.NOOP;
     
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
         AiResourceVersionPersistService aiResourceVersionPersistService,
@@ -158,9 +159,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     @Autowired(required = false)
-    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
-        if (ardIndexBuildService != null) {
-            this.ardIndexBuildService = ardIndexBuildService;
+    public void setArdIndexMaintenanceService(
+        ArdIndexMaintenanceService ardIndexMaintenanceService) {
+        if (ardIndexMaintenanceService != null) {
+            this.ardIndexMaintenanceService = ardIndexMaintenanceService;
         }
     }
     
@@ -1451,27 +1453,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     private void rebuildArdSkillIndex(String namespaceId, String name, String version) {
-        try {
-            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_SKILL, name);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to rebuild ARD index for skill: {}@{}", name, version, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
     private void rebuildLatestArdSkillIndex(String namespaceId, String name) {
-        try {
-            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_SKILL, name);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to rebuild latest ARD index for skill: {}", name, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
     private void deleteArdSkillIndex(String namespaceId, String name) {
-        try {
-            ardIndexBuildService.deleteResource(namespaceId, RESOURCE_TYPE_SKILL, name);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for skill: {}", name, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
     /**

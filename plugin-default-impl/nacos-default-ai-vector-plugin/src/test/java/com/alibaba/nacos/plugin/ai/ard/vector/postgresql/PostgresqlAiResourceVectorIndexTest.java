@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.ai.ard.vector.postgresql;
 
+import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,11 +27,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -96,6 +101,58 @@ class PostgresqlAiResourceVectorIndexTest {
         assertEquals("test-model", jdbcTemplate.args[2]);
         assertEquals(2, jdbcTemplate.args[3]);
         assertEquals(7, jdbcTemplate.args[jdbcTemplate.args.length - 1]);
+    }
+    
+    @Test
+    void replaceShouldRollbackDeleteWhenDocumentInsertFails() {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:ard_vector_transaction;DB_CLOSE_DELAY=-1");
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS ai_resource_ard_embedding_pg ("
+            + "namespace_id varchar(128), resource_type varchar(32),"
+            + "resource_name varchar(256), resource_version varchar(64),"
+            + "embedding_model varchar(128))");
+        jdbcTemplate.update("DELETE FROM ai_resource_ard_embedding_pg");
+        jdbcTemplate.update("INSERT INTO ai_resource_ard_embedding_pg VALUES (?, ?, ?, ?, ?)",
+            "public", "skill", "avatar", "1.0.0", "old-model");
+        PostgresqlAiResourceVectorIndex failingIndex =
+            new PostgresqlAiResourceVectorIndex(jdbcTemplate) {
+                
+                @Override
+                public void addDocuments(Collection<AiResourceVectorDocument> documents) {
+                    throw new IllegalStateException("insert failed");
+                }
+            };
+        
+        assertThrows(IllegalStateException.class,
+            () -> failingIndex.replaceResourceVersion("public", "skill", "avatar", "1.0.0",
+                Collections.emptyList()));
+        
+        assertEquals(1, jdbcTemplate.queryForObject(
+            "SELECT COUNT(1) FROM ai_resource_ard_embedding_pg", Integer.class));
+    }
+    
+    @Test
+    void readinessShouldCheckModelAndDocumentCount() {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:ard_vector_readiness;DB_CLOSE_DELAY=-1");
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS ai_resource_ard_embedding_pg ("
+            + "namespace_id varchar(128), resource_type varchar(32),"
+            + "resource_name varchar(256), resource_version varchar(64),"
+            + "embedding_model varchar(128))");
+        jdbcTemplate.update("DELETE FROM ai_resource_ard_embedding_pg");
+        jdbcTemplate.update("INSERT INTO ai_resource_ard_embedding_pg VALUES (?, ?, ?, ?, ?)",
+            "public", "skill", "avatar", "1.0.0", "model-a");
+        PostgresqlAiResourceVectorIndex index =
+            new PostgresqlAiResourceVectorIndex(jdbcTemplate);
+        
+        assertTrue(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
+            "model-a", 1));
+        assertFalse(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
+            "model-b", 1));
+        assertFalse(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
+            "model-a", 2));
     }
     
     private static class CapturingJdbcTemplate extends JdbcTemplate {

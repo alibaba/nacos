@@ -29,7 +29,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.ai.service.ard.ArdIndexBuildService;
+import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
@@ -100,7 +100,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final PromptDataMigrationTask promptDataMigrationTask;
     
-    private ArdIndexBuildService ardIndexBuildService = ArdIndexBuildService.NOOP;
+    private ArdIndexMaintenanceService ardIndexMaintenanceService =
+        ArdIndexMaintenanceService.NOOP;
     
     public PromptOperationServiceImpl(PublishPipelineExecutor publishPipelineExecutor,
         ConfigOperationService configOperationService,
@@ -114,9 +115,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     @Autowired(required = false)
-    public void setArdIndexBuildService(ArdIndexBuildService ardIndexBuildService) {
-        if (ardIndexBuildService != null) {
-            this.ardIndexBuildService = ardIndexBuildService;
+    public void setArdIndexMaintenanceService(
+        ArdIndexMaintenanceService ardIndexMaintenanceService) {
+        if (ardIndexMaintenanceService != null) {
+            this.ardIndexMaintenanceService = ardIndexMaintenanceService;
         }
     }
     
@@ -465,39 +467,20 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     private void rebuildArdPromptIndex(String namespaceId, String promptKey, String version) {
-        try {
-            ardIndexBuildService.rebuildAiResource(namespaceId, RESOURCE_TYPE_PROMPT, promptKey,
-                version);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to rebuild ARD index for prompt: {}@{}", promptKey, version, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void rebuildLatestArdPromptIndex(String namespaceId, String promptKey) {
-        try {
-            ardIndexBuildService.rebuildLatestAiResource(namespaceId, RESOURCE_TYPE_PROMPT,
-                promptKey);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to rebuild latest ARD index for prompt: {}", promptKey, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void deleteArdPromptIndex(String namespaceId, String promptKey) {
-        try {
-            ardIndexBuildService.deleteResource(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for prompt: {}", promptKey, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void deleteArdPromptVersionIndex(String namespaceId, String promptKey,
         String version) {
-        try {
-            ardIndexBuildService.deleteResourceVersion(namespaceId, RESOURCE_TYPE_PROMPT,
-                promptKey, version);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete ARD index for prompt: {}@{}", promptKey, version, e);
-        }
+        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {

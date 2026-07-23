@@ -49,6 +49,11 @@ public interface ArdIndexRepository {
     List<ArdChunk> appendChunks(ArdEntry entry, List<ArdChunk> chunks);
     
     /**
+     * Update one persisted entry status.
+     */
+    void updateEntryStatus(long entryId, String status);
+    
+    /**
      * Delete all ARD index rows for a resource.
      */
     void deleteByResource(String namespaceId, String resourceType, String resourceName);
@@ -79,4 +84,14 @@ public interface ArdIndexRepository {
      * List enabled entries for rebuild or tests.
      */
     List<ArdEntry> listEnabledEntries(String namespaceId, List<String> resourceTypes, int limit);
+    
+    /**
+     * List entries of any status for reconciliation.
+     */
+    List<ArdEntry> listEntries(String namespaceId, List<String> resourceTypes, int limit);
+    
+    /**
+     * Count relational chunks for vector completeness checks.
+     */
+    int countChunks(long entryId);
 }

@@ -265,6 +265,15 @@ independently verifies relational and vector state. Logging and swallowing an
 indexing exception is not a consistency mechanism, and startup backfill alone
 is not sufficient.
 
+`ai_resource_ard_index_task` stores the coalesced task revision and retry
+state. Completion and retry updates are revision-conditional so a concurrent
+canonical change cannot be lost when an older lease finishes. While vector
+replacement is in progress, the relational entry remains `pending`; discovery
+only reads `enabled` entries. The consumer enables the entry after the vector
+provider confirms replacement. Reconciliation also compares the embedding
+model and vector document count with the relational chunks, and schedules
+missing, partial, stale, wrong-model, and orphaned indexes.
+
 ### 6.5 Conformance
 
 The adaptor module keeps the pinned upstream OpenAPI and schemas as test

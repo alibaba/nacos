@@ -295,3 +295,24 @@ CREATE TABLE `ai_resource_ard_chunk` (
     KEY `idx_ard_chunk_resource` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
     KEY `idx_ard_chunk_type_status` (`namespace_id`,`resource_type`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引分片表';
+
+/******************************************/
+/*   表名称 = ai_resource_ard_index_task  */
+/******************************************/
+CREATE TABLE `ai_resource_ard_index_task` (
+    `task_key` varchar(64) NOT NULL COMMENT '资源任务键',
+    `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
+    `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
+    `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
+    `status` varchar(32) NOT NULL COMMENT '任务状态',
+    `attempt_count` int NOT NULL DEFAULT 0 COMMENT '重试次数',
+    `revision` bigint(20) NOT NULL DEFAULT 1 COMMENT '任务修订号',
+    `next_retry_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '下次重试时间',
+    `lease_until` datetime DEFAULT NULL COMMENT '租约到期时间',
+    `last_error` varchar(2000) DEFAULT NULL COMMENT '最近错误',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`task_key`),
+    KEY `idx_ard_task_due` (`status`,`next_retry_time`),
+    KEY `idx_ard_task_lease` (`status`,`lease_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引任务表';

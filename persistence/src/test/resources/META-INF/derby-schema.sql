@@ -314,3 +314,21 @@ CREATE INDEX idx_ard_chunk_entry ON ai_resource_ard_chunk(entry_id);
 CREATE INDEX idx_ard_chunk_hash ON ai_resource_ard_chunk(chunk_hash);
 CREATE INDEX idx_ard_chunk_resource ON ai_resource_ard_chunk(namespace_id, resource_type, resource_name, resource_version);
 CREATE INDEX idx_ard_chunk_type_status ON ai_resource_ard_chunk(namespace_id, resource_type, status);
+
+CREATE TABLE ai_resource_ard_index_task (
+    task_key varchar(64) NOT NULL PRIMARY KEY,
+    namespace_id varchar(128) NOT NULL DEFAULT '',
+    resource_type varchar(32) NOT NULL,
+    resource_name varchar(256) NOT NULL,
+    status varchar(32) NOT NULL,
+    attempt_count int NOT NULL DEFAULT 0,
+    revision bigint NOT NULL DEFAULT 1,
+    next_retry_time timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
+    lease_until timestamp DEFAULT NULL,
+    last_error varchar(2000) DEFAULT NULL,
+    gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
+    gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00'
+);
+
+CREATE INDEX idx_ard_task_due ON ai_resource_ard_index_task(status, next_retry_time);
+CREATE INDEX idx_ard_task_lease ON ai_resource_ard_index_task(status, lease_until);

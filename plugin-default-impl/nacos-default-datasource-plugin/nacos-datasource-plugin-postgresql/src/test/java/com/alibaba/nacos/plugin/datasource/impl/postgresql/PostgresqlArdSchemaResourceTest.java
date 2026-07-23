@@ -35,6 +35,7 @@ class PostgresqlArdSchemaResourceTest {
         
         assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_ard_entry\""));
         assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_ard_chunk\""));
+        assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_ard_index_task\""));
         assertFalse(mainSchema.contains("CREATE EXTENSION IF NOT EXISTS vector"));
         assertFalse(mainSchema.contains("\"ai_resource_ard_embedding_pg\""));
         assertFalse(mainSchema.contains("\"embedding\" vector"));
