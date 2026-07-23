@@ -30,10 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
- * Rebuilds the server-derived Agent Version catalog, latest label, and protocol set.
+ * Rebuilds the server-derived Agent Version catalog and latest label.
  *
  * @author Nacos
  */
@@ -54,7 +53,7 @@ public final class AgentVersionCatalogBuilder {
      *
      * @param onlineVersionProtocols online Version to ordered protocol mapping
      * @param labels complete label facts
-     * @return deterministic build result with immutable label and protocol collections
+     * @return deterministic build result with immutable labels
      */
     public static Result build(Map<String, List<String>> onlineVersionProtocols,
         Map<String, String> labels) {
@@ -91,19 +90,17 @@ public final class AgentVersionCatalogBuilder {
         catalog.setLatestVersion(normalizedLabels.get("latest"));
         List<AgentVersionCatalogEntry> entries =
             new ArrayList<AgentVersionCatalogEntry>(versions.size());
-        Set<String> protocols = new TreeSet<String>();
         for (String version : versions) {
             AgentVersionCatalogEntry entry = new AgentVersionCatalogEntry();
             entry.setVersion(version);
             entry.setLabels(labelsForVersion(normalizedLabels, version));
             List<String> versionProtocols = protocolsByVersion.get(version);
             entry.setProtocols(Collections.unmodifiableList(versionProtocols));
-            protocols.addAll(versionProtocols);
             entries.add(entry);
         }
         catalog.setOnlineVersions(Collections.unmodifiableList(entries));
         AgentModelValidator.validateVersionCatalog(catalog);
-        return new Result(catalog, normalizedLabels, new ArrayList<String>(protocols));
+        return new Result(catalog, normalizedLabels);
     }
     
     private static Map<String, List<String>> validateAndCopyProtocols(
@@ -165,14 +162,10 @@ public final class AgentVersionCatalogBuilder {
         
         private final Map<String, String> labels;
         
-        private final List<String> protocols;
-        
-        private Result(AgentVersionCatalog versionCatalog, Map<String, String> labels,
-            List<String> protocols) {
+        private Result(AgentVersionCatalog versionCatalog, Map<String, String> labels) {
             this.versionCatalog = versionCatalog;
             this.labels = Collections.unmodifiableMap(
                 new LinkedHashMap<String, String>(labels));
-            this.protocols = Collections.unmodifiableList(protocols);
         }
         
         public AgentVersionCatalog getVersionCatalog() {
@@ -183,8 +176,5 @@ public final class AgentVersionCatalogBuilder {
             return labels;
         }
         
-        public List<String> getProtocols() {
-            return protocols;
-        }
     }
 }

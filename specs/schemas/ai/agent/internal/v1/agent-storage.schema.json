@@ -36,9 +36,9 @@
   },
   "x-entrypoints": {
     "AgentResourceExt": "#/$defs/AgentResourceExt",
-    "VersionCatalog": "#/$defs/VersionCatalog",
+    "AgentVersionCatalog": "#/$defs/AgentVersionCatalog",
     "AgentVersionContent": "#/$defs/AgentVersionContent",
-    "VersionStorageDescriptor": "#/$defs/VersionStorageDescriptor",
+    "AgentVersionStorageDescriptor": "#/$defs/AgentVersionStorageDescriptor",
     "NamingRuntimePublication": "#/$defs/NamingRuntimePublication",
     "RadAsciiAgentIdCodecContract": "#/$defs/RadAsciiAgentIdCodecContract",
     "AgentVersionDataIdComposerContract": "#/$defs/AgentVersionDataIdComposerContract",
@@ -53,7 +53,7 @@
     "NamespaceId": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 64,
+      "maxLength": 128,
       "pattern": "^[A-Za-z0-9_-]+$"
     },
     "AgentName": {
@@ -213,7 +213,7 @@
       "additionalProperties": true,
       "description": "Canonical JSON size must not exceed 16 KiB; JSON Schema cannot enforce encoded byte size."
     },
-    "VersionCatalogEntry": {
+    "AgentVersionCatalogEntry": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -243,7 +243,7 @@
         }
       }
     },
-    "VersionCatalog": {
+    "AgentVersionCatalog": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -256,7 +256,7 @@
         "onlineVersions": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/VersionCatalogEntry"
+            "$ref": "#/$defs/AgentVersionCatalogEntry"
           }
         }
       },
@@ -310,7 +310,7 @@
           "$ref": "#/$defs/Extensions"
         },
         "versionCatalog": {
-          "$ref": "#/$defs/VersionCatalog"
+          "$ref": "#/$defs/AgentVersionCatalog"
         }
       }
     },
@@ -452,7 +452,7 @@
       },
       "description": "Storage projection serialized once with the common Nacos JSON serializer as UTF-8. The exact emitted bytes are persisted and used for size and SHA-256 contentDigest; no semantic JSON canonicalization is defined. Reject unknown schema properties on the envelope, CallInterface, and Endpoint objects; nativeDescriptor members and metadata map entries remain open within their value constraints. Before serialization, canonicalize declared Endpoint URI, validate and preserve transport, materialize priority and weight, and omit empty metadata and declaredEndpoints. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. Protocol uniqueness, URI canonicalization, and descriptor-to-endpoint consistency require domain validation."
     },
-    "VersionStorageDescriptor": {
+    "AgentVersionStorageDescriptor": {
       "type": "object",
       "additionalProperties": false,
       "required": [

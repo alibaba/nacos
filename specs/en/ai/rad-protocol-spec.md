@@ -75,7 +75,8 @@ Every operation executes in exactly one effective namespace.
 - Cache, watch, authorization, and publisher-contribution keys MUST include the
   effective namespace.
 
-`namespaceId` contains 1 to 64 characters from `[A-Za-z0-9_-]`.
+`namespaceId` follows the Nacos namespace contract and contains 1 to 128
+characters from `[A-Za-z0-9_-]`.
 
 ### 2.2 Agent, Protocol, And Label Identity
 
@@ -93,7 +94,7 @@ The public Agent identity is `(namespaceId, agentName)`.
 matches `[A-Za-z0-9][A-Za-z0-9._-]{0,63}`. Both are case-sensitive.
 
 `latest` is a reserved label that resolves to the Agent's current latest
-version. It MUST NOT appear in `AgentVersionCatalog.labels`.
+version. It MUST NOT appear in `AgentCatalogVersion.labels`.
 
 ### 2.3 Agent Version
 
@@ -189,7 +190,7 @@ tags.
 Characters such as `%` and `_` that are special to a backing query language
 MUST be treated as literals.
 
-### 3.4 `AgentCatalogPage`, `AgentCatalogEntry`, And `AgentVersionCatalog`
+### 3.4 `AgentCatalogPage`, `AgentCatalogEntry`, And `AgentCatalogVersion`
 
 `AgentCatalogPage` contains:
 
@@ -203,7 +204,7 @@ namespace:
 ```text
 agentName / displayName? / description? / iconUrl? / provider?
 tags? / latestVersion
-versions[] AgentVersionCatalog {
+versions[] AgentCatalogVersion {
   version
   labels[]?
   protocols[]

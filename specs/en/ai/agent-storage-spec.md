@@ -82,7 +82,8 @@ follows:
 | `versionCatalog` | Server | Derived online Version catalog. |
 
 `versionCatalog` contains `latestVersion` and `onlineVersions[]`; each entry
-contains only `version`, `labels[]`, and `protocols[]`. Version status and
+contains only `version`, `labels[]`, and `protocols[]`. `onlineVersions` is
+stored in descending Agent Version precedence order. Version status and
 `version_info.labels` remain the facts. Publish, online, offline, delete, label,
 or latest changes rebuild the catalog as one logical Resource update.
 

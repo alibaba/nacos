@@ -122,7 +122,7 @@ Agent 资源包含以下字段：
 
 | 字段 | 必选 | 含义 |
 | --- | :---: | --- |
-| `namespaceId` | 是 | 隔离边界。 |
+| `namespaceId` | 是 | Nacos Namespace 隔离边界；1～128 个 `[A-Za-z0-9_-]` 字符。 |
 | `agentName` | 是 | 稳定公开身份。 |
 | `displayName` | 否 | Unicode 展示名称。 |
 | `description` | 否 | 目录描述。 |
@@ -132,7 +132,7 @@ Agent 资源包含以下字段：
 | `extensions` | 否 | 用于公开 Agent 级扩展的命名空间化 `Map<String, JsonValue>`。 |
 | `status` | 是 | `enable` 或 `disable`。 |
 | `owner` | 是 | 管理 owner。 |
-| `scope` | 是 | 可见性 scope。 |
+| `scope` | 是 | 共享可见性 scope；本版本为 `PUBLIC` 或 `PRIVATE`。 |
 | `versionInfo` | 只读 | 共享的 editing、reviewing、online count 和 label 摘要。 |
 | `versionCatalog` | 只读 | online Version 和 protocol 的紧凑目录。 |
 | `metaVersion` | 只读 | 元数据 CAS 版本。 |

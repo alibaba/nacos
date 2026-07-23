@@ -77,9 +77,9 @@ Watch 对象都是上述事实的读取投影。
 | `versionCatalog` | 服务端 | 派生的 online Version 目录。 |
 
 `versionCatalog` 包含 `latestVersion` 和 `onlineVersions[]`；每个条目只包含
-`version`、`labels[]` 和 `protocols[]`。Version status 和 `version_info.labels` 仍然是
-事实。Publish、online、offline、delete、label 或 latest 变化时，目录作为一次 Resource 逻辑
-更新进行重建。
+`version`、`labels[]` 和 `protocols[]`；`onlineVersions` 按 Agent Version 优先级降序
+存储。Version status 和 `version_info.labels` 仍然是事实。Publish、online、offline、
+delete、label 或 latest 变化时，目录作为一次 Resource 逻辑更新进行重建。
 
 `biz_tags` 不保存服务端派生索引；写入和读取投影必须保持用户 tag 的值和顺序。
 

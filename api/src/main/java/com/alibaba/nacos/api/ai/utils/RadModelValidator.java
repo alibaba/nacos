@@ -411,8 +411,8 @@ public final class RadModelValidator {
             EndpointNaturalKey currentKey =
                 EndpointNaturalKey.of(namespaceId, agentName, protocol, canonical);
             if (previous != null) {
-                int priorityComparison = Integer.compare(previous.getEffectivePriority(),
-                    canonical.getEffectivePriority());
+                int priorityComparison =
+                    Integer.compare(previous.getPriority(), canonical.getPriority());
                 if (priorityComparison > 0
                     || priorityComparison == 0 && previousKey.compareTo(currentKey) > 0) {
                     throw invalid("Discovery endpoints must be sorted by priority and natural key");
