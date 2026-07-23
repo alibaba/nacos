@@ -268,8 +268,8 @@ public class SkillZipParser {
      *
      * @param zipBytes zip file bytes
      * @param namespaceId namespace ID
-     * @return list of parsed skills (at least one element)
-     * @throws NacosApiException if parsing failed, zip exceeds size limit, or no SKILL.md found
+     * @return parsed skills and per-directory failures
+     * @throws NacosApiException if the archive cannot be read or exceeds a size limit
      */
     public static MultiSkillParseResult parseMultipleSkillsFromZip(byte[] zipBytes,
         String namespaceId) throws NacosApiException {
@@ -302,9 +302,10 @@ public class SkillZipParser {
             }
             
             if (allSkillMdEntries.isEmpty()) {
-                throw new NacosApiException(NacosApiException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "SKILL.md file not found in zip");
+                MultiSkillParseResult result = new MultiSkillParseResult();
+                result.addFailure("unknown", "", "SKILL.md file not found in zip",
+                    ParseFailureType.NOT_A_SKILL);
+                return result;
             }
             List<ZipEntryData> skillMdEntries =
                 filterNestedSkillMdEntries(allSkillMdEntries);
@@ -313,7 +314,11 @@ public class SkillZipParser {
             // are regular resources referenced by the root descriptor.
             if (containsRootSkillMdEntry(skillMdEntries)) {
                 MultiSkillParseResult result = new MultiSkillParseResult();
-                result.addSkill(parseSkillFromZip(zipBytes, namespaceId));
+                try {
+                    result.addSkill(parseSkillFromZip(zipBytes, namespaceId), "");
+                } catch (NacosApiException e) {
+                    result.addFailure("unknown", "", e.getErrMsg());
+                }
                 return result;
             }
             
@@ -360,8 +365,9 @@ public class SkillZipParser {
             
             // Record warnings for directories without SKILL.md
             for (String dir : nonSkillDirs) {
-                parseResult.addFailure(extractFolderName(dir),
-                    "SKILL.md not found in this folder, skipped");
+                parseResult.addFailure(extractFolderName(dir), dir,
+                    "SKILL.md not found in this folder, skipped",
+                    ParseFailureType.NOT_A_SKILL);
             }
             for (ZipEntryData skillMdEntry : skillMdEntries) {
                 String skillMdPath = skillMdEntry.name;
@@ -371,7 +377,7 @@ public class SkillZipParser {
                     String skillMdContent =
                         stripBom(new String(skillMdEntry.data, StandardCharsets.UTF_8));
                     if (StringUtils.isBlank(skillMdContent)) {
-                        parseResult.addFailure(extractFolderName(prefix),
+                        parseResult.addFailure(extractFolderName(prefix), prefix,
                             "SKILL.md content is empty");
                         continue;
                     }
@@ -383,20 +389,16 @@ public class SkillZipParser {
                     Map<String, SkillResource> resources =
                         parseResources(scopedEntries, skill.getName(), SKILL_MD_FILE);
                     skill.setResource(resources);
-                    parseResult.addSkill(skill);
+                    parseResult.addSkill(skill, prefix);
                 } catch (Exception e) {
                     LOGGER.warn("Skipping invalid skill folder [{}]: {}", prefix, e.getMessage());
-                    parseResult.addFailure(extractFolderName(prefix), e.getMessage());
+                    parseResult.addFailure(extractFolderName(prefix), prefix, e.getMessage());
                 }
             }
             
-            // Intentionally allow returning when getSkills() is empty: callers handle
-            // the all-failed case as a batch result so users see the per-folder reasons
-            // instead of a generic 400 error. The earlier 'SKILL.md file not found in zip'
-            // throw still covers archives without any SKILL.md.
+            // Intentionally allow returning when getSkills() is empty so callers can expose
+            // per-folder failures instead of replacing them with a generic HTTP 400.
             return parseResult;
-        } catch (NacosApiException e) {
-            throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to parse multi-skill zip file", e);
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
@@ -946,10 +948,13 @@ public class SkillZipParser {
         
         private final List<Skill> skills;
         
+        private final Map<Skill, String> skillEntryPaths;
+        
         private final List<ParseFailure> failures;
         
         public MultiSkillParseResult() {
             this.skills = new ArrayList<>();
+            this.skillEntryPaths = new HashMap<>();
             this.failures = new ArrayList<>();
         }
         
@@ -961,13 +966,41 @@ public class SkillZipParser {
             return failures;
         }
         
+        public String getEntryPath(Skill skill) {
+            return skillEntryPaths.get(skill);
+        }
+        
         public void addSkill(Skill skill) {
+            addSkill(skill, "");
+        }
+        
+        public void addSkill(Skill skill, String entryPath) {
             this.skills.add(skill);
+            this.skillEntryPaths.put(skill, entryPath);
         }
         
         public void addFailure(String folder, String reason) {
-            this.failures.add(new ParseFailure(folder, reason));
+            addFailure(folder, folder, reason);
         }
+        
+        public void addFailure(String folder, String entryPath, String reason) {
+            addFailure(folder, entryPath, reason, ParseFailureType.INVALID_SKILL);
+        }
+        
+        public void addFailure(String folder, String entryPath, String reason,
+            ParseFailureType type) {
+            this.failures.add(new ParseFailure(folder, entryPath, reason, type));
+        }
+    }
+    
+    /**
+     * Type of a ZIP entry that could not be parsed as a Skill.
+     */
+    public enum ParseFailureType {
+        
+        NOT_A_SKILL,
+        
+        INVALID_SKILL
     }
     
     /**
@@ -977,19 +1010,34 @@ public class SkillZipParser {
         
         private final String folder;
         
+        private final String entryPath;
+        
         private final String reason;
         
-        public ParseFailure(String folder, String reason) {
+        private final ParseFailureType type;
+        
+        public ParseFailure(String folder, String entryPath, String reason,
+            ParseFailureType type) {
             this.folder = folder;
+            this.entryPath = entryPath;
             this.reason = reason;
+            this.type = type;
         }
         
         public String getFolder() {
             return folder;
         }
         
+        public String getEntryPath() {
+            return entryPath;
+        }
+        
         public String getReason() {
             return reason;
+        }
+        
+        public ParseFailureType getType() {
+            return type;
         }
     }
 }

@@ -88,44 +88,28 @@ export interface SkillListParams {
   pageSize?: number;
 }
 
-export type SkillUploadAction =
-  | 'CREATE_DRAFT'
-  | 'OVERWRITE_DRAFT';
-
-export interface SkillUploadPrecheckAction {
-  type: SkillUploadAction;
-  resultVersion: string;
-  description?: string;
-}
-
-export interface SkillUploadPrecheckRequest {
-  namespaceId?: string;
-  skillName: string;
-  description?: string;
-  parsedVersion?: string;
-  versionSource?: string;
-  targetVersion?: string;
-}
+export type SkillUploadPrecheckCode =
+  | 'READY'
+  | 'VERSION_ADJUSTED'
+  | 'DRAFT_EXISTS'
+  | 'REVIEWING_EXISTS'
+  | 'NO_PERMISSION'
+  | 'NOT_A_SKILL'
+  | 'INVALID_SKILL';
 
 export interface SkillUploadPrecheckResult {
   namespaceId: string;
-  skillName: string;
-  description?: string;
-  parsedVersion: string;
-  resolvedVersion: string;
-  versionSource: string;
+  entryPath?: string | null;
+  skillName?: string | null;
+  reason?: string | null;
+  owner?: string | null;
+  maxPublishedVersion?: string | null;
+  parsedVersion?: string | null;
+  targetVersion?: string | null;
   exists: boolean;
-  writable: boolean;
-  versionExists: boolean;
-  draftExists: boolean;
-  reviewingExists: boolean;
   editingVersion?: string | null;
   reviewingVersion?: string | null;
-  status: 'VALID' | 'WARNING' | 'CONFLICT' | 'FORBIDDEN';
-  conflictTypes: string[];
-  warnings: string[];
-  errors: string[];
-  actions: SkillUploadPrecheckAction[];
+  precheckCode: SkillUploadPrecheckCode;
 }
 
 // ===== Pipeline Types =====

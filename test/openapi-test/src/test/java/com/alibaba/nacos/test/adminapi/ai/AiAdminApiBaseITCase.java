@@ -486,7 +486,8 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
             throws Exception {
         Map<String, String> entries = new LinkedHashMap<>();
         entries.put(validSkillName + "/SKILL.md", skillMarkdown(validSkillName, "1.0.0", validBody));
-        entries.put("invalid-skill/SKILL.md", "---\nname: {{{invalid yaml\n---\n\nBroken instructions");
+        entries.put("invalid-skill/SKILL.md", "Broken instructions without YAML front matter");
+        entries.put("not-a-skill/readme.md", "This folder does not contain SKILL.md");
         return zipEntries(entries);
     }
 
