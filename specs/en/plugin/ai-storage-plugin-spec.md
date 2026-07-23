@@ -155,12 +155,12 @@ nacos.ai.agent.storage.provider=nacos_config
 They are domain routing policy, not private configuration definitions owned by
 `ai-storage:nacos_config`.
 
-When the AI module is active, all providers selected independently for Prompt, Skill, and AgentSpec
-are required implementations of this critical routed type. The same provider may satisfy multiple
-domains. Before startup succeeds, every distinct selected provider must be discovered and enabled;
-a different available provider is not a valid fallback. When the AI module is disabled by function
-mode or `nacos.extension.ai.enabled=false`, AI storage is inactive and does not impose a startup
-requirement.
+When the AI module is active, all providers selected independently for Prompt, Skill, AgentSpec,
+and Agent are required implementations of this critical routed type. The same provider may satisfy
+multiple domains. Before startup succeeds, every distinct selected provider must be discovered and
+enabled; a different available provider is not a valid fallback. When the AI module is disabled by
+function mode or `nacos.extension.ai.enabled=false`, AI storage is inactive and does not impose a
+startup requirement.
 
 AI storage implementations are built from Spring-managed services during context refresh, so this
 type does not participate in pre-refresh critical validation. The unified plugin manager performs

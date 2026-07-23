@@ -180,7 +180,7 @@ An Agent Version exposes this metadata:
 | `callInterfaces[]` | Yes | Ordered protocol bindings; at least one. |
 | `author` | No | Version author. |
 | `changeDescription` | No | Version change description. |
-| `contentDigest` | Read-only | SHA-256 digest of canonical version content. |
+| `contentDigest` | Read-only | SHA-256 digest of the persisted Version content bytes. |
 | `createTime`, `updateTime` | Read-only | Audit timestamps. |
 
 The complete storage payload is one `AgentVersionContent` object:
@@ -192,9 +192,10 @@ AgentVersionContent
   callInterfaces[]
 ```
 
-Canonical serialization uses RFC 8785 JCS and preserves the business order of
-CallInterfaces and declared Endpoints. `contentDigest` uses
-`sha256:<lowercase hex>` over the canonical UTF-8 bytes. Exact I-JSON and
+The server serializes the validated object once as UTF-8 JSON. The same bytes
+are persisted, counted as `size`, and hashed as
+`sha256:<lowercase hex>`. Reads validate the digest against the bytes returned
+by AI Storage without reserializing the object. Storage normalization and
 validation rules are defined by the [Agent Storage Spec](agent-storage-spec.md).
 
 ### 4.2 Lifecycle Rules
