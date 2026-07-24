@@ -22,11 +22,13 @@ The control plugin type provides runtime traffic and connection control for
 Nacos server nodes. It covers connection admission, TPS checks, rule parsing,
 rule storage, and optional metrics collection.
 
-This is a configured single-service plugin. The configured control manager type
-selects one `ControlManagerBuilder`. If no type is configured or the selected
-plugin cannot be loaded, Nacos uses no-limit default managers. Common lifecycle
-and state rules are defined by the [Nacos Plugin Spec](plugin-spec.md), and the
-bundled implementation is defined by the
+This is a configured single-service plugin. The configured control type selects
+one `ControlManagerBuilder`. A stable adapter exposes the selected builder to
+the unified plugin configuration lifecycle and creates its manager bundle only
+after effective configuration is applied. If no type is configured or the
+selected plugin cannot be loaded, Nacos uses no-limit default managers. Common
+lifecycle and state rules are defined by the
+[Nacos Plugin Spec](plugin-spec.md), and the bundled implementation is defined by the
 [Default Control Plugin Implementation Spec](default-control-plugin-spec.md).
 
 Control is an anti-fragility mechanism. It protects a Nacos node by rejecting or
@@ -55,18 +57,56 @@ no-limit for that dimension.
 
 ## SPI
 
-Control plugins implement `ControlManagerBuilder`.
+Control plugins implement `ControlManagerBuilder`. The builder extends
+`PluginConfigDefinitionSpec`: it declares configuration metadata before manager
+construction but does not own effective configuration.
 
 | Method | Requirement |
 |--------|-------------|
 | `getName()` | Stable plugin name. |
 | `buildConnectionControlManager()` | Build connection control manager. |
 | `buildTpsControlManager()` | Build TPS control manager. |
+| `buildConnectionControlManager(config)` | Build with canonical effective plugin config; the compatibility default delegates to the no-argument method. |
+| `buildTpsControlManager(config)` | Build with canonical effective plugin config; the compatibility default delegates to the no-argument method. |
+
+Every builder definition has `RESTART` effect mode until Control defines a
+controlled manager replacement and close lifecycle. Runtime or local-only
+updates to those fields are rejected by the unified plugin configuration API.
+
+The Control provider wraps each builder in one stable `PluginConfigSpec`
+adapter. The adapter delegates definitions to the builder, owns an immutable
+effective configuration snapshot, and implements `PluginStartupLifecycle`.
+Builder SPI discovery happens once in the Control registry; the provider,
+plugin manager, and manager center must not perform independent loads.
 
 External rule storage plugins implement `ExternalRuleStorageBuilder` and are
 selected independently through control configuration.
 
 The plugin is exposed to the core plugin manager as type `control`.
+
+## Startup Lifecycle
+
+The Control type uses this startup order:
+
+1. capture the static implementation selection;
+2. discover builders once and register stable adapters;
+3. restore unified implementation state;
+4. resolve and apply effective configuration to configurable adapters;
+5. invoke `initialize()` only for the selected, enabled adapter;
+6. build connection and TPS managers from the accepted configuration snapshot;
+7. install both results as one manager bundle before Nacos is marked as started.
+
+An unselected adapter remains visible in plugin inventory but must not build
+managers or start background resources. A zero-config legacy builder still
+receives the startup lifecycle with an empty configuration snapshot.
+
+`ControlManagerCenter` exposes stable connection and TPS facades. Callers may
+retain those facade references; installing the startup bundle changes the
+delegates behind both facades through one bundle reference. TPS points
+registered before installation are replayed to the selected TPS manager.
+Before installation, the facades provide lightweight no-limit behavior without
+creating rule loaders, metrics reporters, or TPS barriers. The manager center
+must not reload `ControlManagerBuilder` through SPI.
 
 ## Managers
 
@@ -150,14 +190,22 @@ algorithms by overriding the barrier creator.
 
 ## Selection And State
 
-The selected manager implementation is named by:
+The selected manager implementation is named by the standard key:
+
+```properties
+nacos.plugin.control.type=${controlPluginName}
+```
+
+The historical key remains a static compatibility alias:
 
 ```properties
 nacos.plugin.control.manager.type=${controlPluginName}
 ```
 
-The selected control plugin must also respect unified plugin state for
-`control:{pluginName}` when integrated through the core plugin manager.
+The standard key wins when both are present, and use of the historical key
+emits a migration warning. Selection has `RESTART` semantics. The selected
+adapter is enabled at startup, other discovered adapters are disabled, and the
+plugin status API rejects runtime selection changes.
 
 Point names are part of the public control contract. New `@TpsControl` points
 must use stable names, document the protected operation, and preserve the name
@@ -165,9 +213,12 @@ when HTTP and gRPC endpoints represent the same semantic operation.
 
 ## Degradation
 
-Control plugins affect request admission. If plugin construction fails, Nacos
-must fall back to no-limit managers and log the failure unless the deployment
-explicitly configures a fail-fast policy.
+Control plugins affect request admission. Connection and TPS construction
+remain independent for compatibility: when construction of one dimension fails
+or returns null, that dimension falls back to its no-limit manager and logs the
+failure. The two final results are installed together as one bundle, so callers
+cannot observe a partially replaced startup state. If the selected builder is
+missing, both dimensions remain no-limit.
 
 Runtime plugin exceptions must not corrupt request state. For monitoring-only
 rules, failures should be logged and skipped. For intercepting rules, the

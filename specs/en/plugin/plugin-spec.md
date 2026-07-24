@@ -124,9 +124,10 @@ Unified domain plugin SPIs extend `PluginConfigSpec`. Its compatibility defaults
 definitions, an empty current map, and a no-op apply callback, so an implementation compiled against
 an older domain SPI and a new zero-config implementation both remain `configurable=false`. A plugin
 that declares at least one `ConfigItemDefinition` is configurable and must implement the current-map
-and apply callbacks. `environment` and `control` remain bootstrap exceptions until their unified
-configuration lifecycle is designed; `ai-resource-import` remains outside unified management until
-its redesign. A plugin category that supports enable or disable checks must use
+and apply callbacks. `environment` remains a bootstrap exception until its unified configuration
+lifecycle is designed. `control` uses a definition-only builder plus a stable `PluginConfigSpec`
+adapter. `ai-resource-import` remains outside unified management until its redesign. A plugin
+category that supports enable or disable checks must use
 `PluginStateCheckerHolder` rather than keeping an independent status source.
 
 `PluginConfigDefinitionSpec` is the definition-only parent contract for a factory
@@ -154,6 +155,16 @@ The loading predicate does not replace implementation state. Its default is `tru
 compatibility and a domain should override it only when it owns a type-wide module or capability
 switch. A deferred type is enabled through that static or domain switch rather than by addressing
 an implementation that has not yet been discovered through the plugin API.
+
+An adapter that must create domain runtime resources after effective configuration has been
+accepted may implement the optional `PluginStartupLifecycle`. Core invokes `initialize()` only for
+an enabled implementation, after persisted state is restored and after `applyConfig`, but before
+Nacos is marked as started. This lifecycle is independent from
+`PluginConfigSpec.isConfigurable()`: a zero-config adapter may still require initialization, while
+a configurable adapter need not implement the lifecycle. The operation must be idempotent and is
+also applied after deferred type loading. It does not by itself permit runtime state switching or
+resource rebuilding; a plugin type must continue to reject those operations until its domain
+defines a controlled replace and close lifecycle.
 
 `ApplicationReadyEvent` is only an idempotent fallback for non-standard embedded startup paths.
 Domain managers may construct their services earlier through SPI, but a type that opts into
@@ -269,16 +280,16 @@ selection keys are aliases:
 |------|--------------|------------------|---------|
 | `auth` | `nacos.plugin.auth.type` | `nacos.core.auth.system.type` | `nacos` |
 | `datasource-dialect` | `nacos.plugin.datasource-dialect.type` | `spring.sql.init.platform` | `derby` |
+| `control` | `nacos.plugin.control.type` | `nacos.plugin.control.manager.type` | empty, meaning no-limit |
 
 The standard key takes precedence when both forms are present, and reading an alias must emit a
 migration warning. Exclusive selection currently affects startup resources such as Spring beans
 and datasources, so the plugin status API must not report a switch as dynamically effective.
 Changing selection requires updating the static key and restarting the server. Runtime selection
 may only be opened after the owning domain provides a controlled reinitialization lifecycle.
-`control` remains a bootstrap exception: its current selector is
-`nacos.plugin.control.manager.type`. The management API reports the selected builder but rejects
-runtime state changes until the control manager has a controlled rebuild lifecycle and its selector
-is migrated to the standard form.
+Control builds its selected manager bundle during `PluginStartupLifecycle`. Its selection remains
+startup-only and the management API rejects runtime state switching. The stable control facade may
+install the startup bundle once; this is not a runtime rebuild lifecycle.
 
 Non-exclusive implementations may provide an initial enabled state with:
 
@@ -402,10 +413,11 @@ definition. Core and Console API adapters must not maintain separate hard-coded 
 critical implementation lists.
 
 Bootstrap or build-time types cannot satisfy this contract with a late runtime
-check. `control` caches managers built before unified persisted state is loaded,
-and `environment` transforms Spring properties before the core plugin manager
-is ready. Their status capability and restart/bootstrap semantics must be
-defined before management APIs can report a state update as effective.
+check. `control` completes unified config apply before building and installing
+its startup manager bundle, and rejects runtime selection changes.
+`environment` still transforms Spring properties before the core plugin manager
+is ready; its status capability and restart/bootstrap semantics must be defined
+before management APIs can report a state update as effective.
 `ai-resource-import` is not currently exposed through `PluginProvider` and is
 outside unified state management.
 

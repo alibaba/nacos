@@ -28,6 +28,7 @@ import com.alibaba.nacos.plugin.control.rule.parser.NacosConnectionControlRulePa
 import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,11 +50,24 @@ public abstract class ConnectionControlManager {
     private ScheduledExecutorService executorService;
     
     public ConnectionControlManager() {
+        this(true);
+    }
+    
+    /**
+     * Construct connection control manager.
+     *
+     * @param initialize whether to load rules, metrics collectors and reporter resources
+     */
+    protected ConnectionControlManager(boolean initialize) {
+        this.connectionControlRuleParser = buildConnectionControlRuleParser();
+        if (!initialize) {
+            metricsCollectorList = Collections.emptyList();
+            return;
+        }
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}",
             metricsCollectorList.size(),
             metricsCollectorList);
-        this.connectionControlRuleParser = buildConnectionControlRuleParser();
         initConnectionRule();
         if (!metricsCollectorList.isEmpty()) {
             initExecuteService();

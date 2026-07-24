@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginProvider;
+import com.alibaba.nacos.api.plugin.PluginStartupLifecycle;
 import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
@@ -100,6 +101,11 @@ public class PluginManager
      * Configurable plugins that have been discovered but not initialized successfully.
      */
     private final Set<String> pendingConfigInitializationPluginIds = new HashSet<>();
+    
+    /**
+     * Startup lifecycle plugins that have been discovered but not initialized successfully.
+     */
+    private final Set<String> pendingStartupInitializationPluginIds = new HashSet<>();
     
     private final PluginConfigService pluginConfigService;
     
@@ -361,6 +367,7 @@ public class PluginManager
         ensureCriticalTypesAvailable();
         refreshAllCriticalFlags();
         initializePluginConfigs(pendingConfigInitializationPluginIds);
+        initializePluginLifecycles(pendingStartupInitializationPluginIds);
     }
     
     /**
@@ -463,6 +470,9 @@ public class PluginManager
                 pendingConfigInitializationPluginIds.add(pluginId);
             }
         }
+        if (instance instanceof PluginStartupLifecycle) {
+            pendingStartupInitializationPluginIds.add(pluginId);
+        }
         
         pluginRegistry.put(pluginId, info);
         pluginInstances.put(pluginId, instance);
@@ -483,6 +493,7 @@ public class PluginManager
         // Load configs
         pluginConfigService.initializeRuntimePersistedConfigs();
         initializePluginConfigs(pluginRegistry.keySet());
+        initializePluginLifecycles(pendingStartupInitializationPluginIds);
     }
     
     private void loadPersistedStates(Collection<String> pluginIds) {
@@ -522,6 +533,26 @@ public class PluginManager
             if (info.isConfigurable()) {
                 pluginConfigService.initializePluginConfig(info, pluginInstances.get(pluginId));
                 pendingConfigInitializationPluginIds.remove(pluginId);
+            }
+        }
+    }
+    
+    private void initializePluginLifecycles(Collection<String> pluginIds) {
+        for (String pluginId : new HashSet<>(pluginIds)) {
+            PluginInfo info = pluginRegistry.get(pluginId);
+            if (!info.isEnabled()) {
+                continue;
+            }
+            PluginStartupLifecycle lifecycle =
+                (PluginStartupLifecycle) pluginInstances.get(pluginId);
+            try {
+                lifecycle.initialize();
+                pendingStartupInitializationPluginIds.remove(pluginId);
+            } catch (RuntimeException e) {
+                LOGGER.error("[PluginManager] Failed to initialize plugin startup lifecycle, "
+                    + "pluginId={}", pluginId, e);
+                throw new IllegalStateException(
+                    "Failed to initialize plugin startup lifecycle: " + pluginId, e);
             }
         }
     }
