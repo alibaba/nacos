@@ -41,11 +41,41 @@ class ControlPluginTypePolicyTest {
     @Test
     void testInitialSelection() {
         MapConfiguration configuration = new MapConfiguration();
+        policy.initialize(configuration);
         assertFalse(policy.isPluginEnabledByDefault("local", configuration));
+        assertFalse(policy.isLoadingEnabled(configuration));
         
         configuration.setProperty(ControlPluginTypePolicy.CONTROL_TYPE_PROPERTY, " local ");
+        policy.initialize(configuration);
         assertTrue(policy.isPluginEnabledByDefault("LOCAL", configuration));
         assertFalse(policy.isPluginEnabledByDefault("remote", configuration));
+        assertTrue(policy.isLoadingEnabled(configuration));
+        
+        configuration.setProperty(ControlPluginTypePolicy.CONTROL_TYPE_PROPERTY, "remote");
+        assertTrue(policy.isPluginEnabledByDefault("local", configuration));
+    }
+    
+    @Test
+    void testLegacySelection() {
+        MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty(ControlPluginTypePolicy.LEGACY_CONTROL_TYPE_PROPERTY, " local ");
+        
+        policy.initialize(configuration);
+        
+        assertTrue(policy.isPluginEnabledByDefault("LOCAL", configuration));
+        assertTrue(policy.isLoadingEnabled(configuration));
+    }
+    
+    @Test
+    void testStandardSelectionTakesPrecedence() {
+        MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty(ControlPluginTypePolicy.CONTROL_TYPE_PROPERTY, " ");
+        configuration.setProperty(ControlPluginTypePolicy.LEGACY_CONTROL_TYPE_PROPERTY, "legacy");
+        
+        policy.initialize(configuration);
+        
+        assertFalse(policy.isPluginEnabledByDefault("legacy", configuration));
+        assertFalse(policy.isLoadingEnabled(configuration));
     }
     
     private static class MapConfiguration implements PluginTypeConfiguration {

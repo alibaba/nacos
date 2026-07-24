@@ -19,10 +19,18 @@ package com.alibaba.nacos.plugin.control;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
+import com.alibaba.nacos.plugin.control.connection.DefaultConnectionControlManager;
+import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import com.alibaba.nacos.plugin.control.utils.EnvUtils;
@@ -35,10 +43,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ControlManagerCenterTest {
     
@@ -86,14 +101,50 @@ class ControlManagerCenterTest {
     }
     
     @Test
-    void testGetInstance() {
-        ControlConfigs.getInstance().setControlManagerType("test");
+    void testInstallKeepsStableFacadesAndReplaysRegisteredPoints() {
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
-        ConnectionControlManager connectionControlManager =
+        ConnectionControlManager connectionFacade =
             controlManagerCenter.getConnectionControlManager();
-        assertEquals("testConnection", connectionControlManager.getName());
-        TpsControlManager tpsControlManager = controlManagerCenter.getTpsControlManager();
-        assertEquals("testTps", tpsControlManager.getName());
+        TpsControlManager tpsFacade = controlManagerCenter.getTpsControlManager();
+        tpsFacade.registerTpsPoint("before-install");
+        assertEquals(Collections.emptyMap(), tpsFacade.getPoints());
+        TestConnectionControlManager connectionTarget =
+            new TestConnectionControlManager("testConnection");
+        TestTpsControlManager tpsTarget = new TestTpsControlManager("testTps");
+        
+        controlManagerCenter.install(
+            new ControlManagerBundle(connectionTarget, tpsTarget));
+        
+        assertSame(connectionFacade, controlManagerCenter.getConnectionControlManager());
+        assertSame(tpsFacade, controlManagerCenter.getTpsControlManager());
+        assertEquals("testConnection", connectionFacade.getName());
+        assertEquals("testTps", tpsFacade.getName());
+        assertEquals(Collections.singletonList("before-install"),
+            tpsTarget.getRegisteredPoints());
+        assertSame(connectionTarget.getConnectionControlRuleParser(),
+            connectionFacade.getConnectionControlRuleParser());
+        assertSame(tpsTarget.getTpsControlRuleParser(), tpsFacade.getTpsControlRuleParser());
+        
+        ConnectionControlRule connectionRule = new ConnectionControlRule();
+        connectionRule.setCountLimit(10);
+        connectionFacade.applyConnectionLimitRule(connectionRule);
+        assertSame(connectionRule, connectionFacade.getConnectionLimitRule());
+        assertEquals(ConnectionCheckCode.CHECK_SKIP,
+            connectionFacade.check(
+                new ConnectionCheckRequest("127.0.0.1", "test", "test")).getCode());
+        
+        tpsFacade.registerTpsPoint("after-install");
+        assertEquals(java.util.Arrays.asList("before-install", "after-install"),
+            tpsTarget.getRegisteredPoints());
+        assertSame(tpsTarget.getPoints(), tpsFacade.getPoints());
+        assertSame(tpsTarget.getRules(), tpsFacade.getRules());
+        tpsFacade.applyTpsRule("point", null);
+        assertEquals(TpsResultCode.CHECK_SKIP,
+            tpsFacade.check(new TpsCheckRequest()).getCode());
+        
+        assertThrows(IllegalStateException.class,
+            () -> controlManagerCenter.install(
+                new ControlManagerBundle(connectionTarget, tpsTarget)));
         assertNotNull(controlManagerCenter.getRuleStorageProxy());
     }
     
@@ -108,13 +159,28 @@ class ControlManagerCenterTest {
     }
     
     @Test
-    void testGetInstanceFallbackWhenBuilderThrows() {
-        ControlConfigs.getInstance().setControlManagerType("throw");
-        
+    void testInstallRejectsNullBundle() {
         ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
         
-        assertEquals("noLimit", controlManagerCenter.getConnectionControlManager().getName());
-        assertEquals("noLimit", controlManagerCenter.getTpsControlManager().getName());
+        assertThrows(NullPointerException.class, () -> controlManagerCenter.install(null));
+    }
+    
+    @Test
+    void testConnectionManagerLoadsExternalRule() throws Exception {
+        String localRuleStorageBaseDir =
+            EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator
+                + "externalStartup" + File.separator;
+        ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
+        ControlConfigs.getInstance().setRuleExternalStorage("test");
+        resetRuleStorageProxy();
+        ConnectionControlRule rule = new ConnectionControlRule();
+        rule.setCountLimit(300);
+        RuleStorageProxy.getInstance().getExternalStorage().saveConnectionRule(
+            JacksonUtils.toJson(rule));
+        
+        ConnectionControlManager manager = new DefaultConnectionControlManager();
+        
+        assertEquals(300, manager.getConnectionLimitRule().getCountLimit());
     }
     
     @Test
@@ -288,5 +354,83 @@ class ControlManagerCenterTest {
         ConnectionControlRule connectionLimitRule3 =
             connectionControlManager.getConnectionLimitRule();
         assertEquals(200, connectionLimitRule3.getCountLimit());
+    }
+    
+    private static final class TestConnectionControlManager extends ConnectionControlManager {
+        
+        private final String name;
+        
+        private TestConnectionControlManager(String name) {
+            super(false);
+            this.name = name;
+        }
+        
+        @Override
+        public String getName() {
+            return name;
+        }
+        
+        @Override
+        public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
+            this.connectionControlRule = connectionControlRule;
+        }
+        
+        @Override
+        public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
+            ConnectionCheckResponse result = new ConnectionCheckResponse();
+            result.setSuccess(true);
+            result.setCode(ConnectionCheckCode.CHECK_SKIP);
+            return result;
+        }
+    }
+    
+    private static final class TestTpsControlManager extends TpsControlManager {
+        
+        private final String name;
+        
+        private final List<String> registeredPoints = new ArrayList<>();
+        
+        private final Map<String, TpsBarrier> points = Collections.emptyMap();
+        
+        private final Map<String, TpsControlRule> rules = Collections.emptyMap();
+        
+        private TestTpsControlManager(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public void registerTpsPoint(String pointName) {
+            registeredPoints.add(pointName);
+        }
+        
+        @Override
+        public Map<String, TpsBarrier> getPoints() {
+            return points;
+        }
+        
+        @Override
+        public Map<String, TpsControlRule> getRules() {
+            return rules;
+        }
+        
+        @Override
+        public void applyTpsRule(String pointName, TpsControlRule rule) {
+            assertEquals("point", pointName);
+            assertNull(rule);
+        }
+        
+        @Override
+        public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
+            return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
+        }
+        
+        @Override
+        public String getName() {
+            return name;
+        }
+        
+        private List<String> getRegisteredPoints() {
+            return registeredPoints;
+        }
     }
 }

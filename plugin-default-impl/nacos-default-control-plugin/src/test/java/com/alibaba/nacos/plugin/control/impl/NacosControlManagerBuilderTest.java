@@ -20,7 +20,10 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosControlManagerBuilderTest {
     
@@ -28,12 +31,14 @@ class NacosControlManagerBuilderTest {
     void test() {
         NacosControlManagerBuilder nacosControlManagerBuilder = new NacosControlManagerBuilder();
         ConnectionControlManager connectionControlManager =
-            nacosControlManagerBuilder.buildConnectionControlManager();
-        TpsControlManager tpsControlManager = nacosControlManagerBuilder.buildTpsControlManager();
+            nacosControlManagerBuilder.buildConnectionControlManager(Collections.emptyMap());
+        TpsControlManager tpsControlManager =
+            nacosControlManagerBuilder.buildTpsControlManager(Collections.emptyMap());
         
         assertEquals("nacos", tpsControlManager.getName());
         assertEquals("nacos", connectionControlManager.getName());
         assertEquals("nacos", nacosControlManagerBuilder.getName());
+        assertTrue(nacosControlManagerBuilder.getConfigDefinitions().isEmpty());
     }
     
 }

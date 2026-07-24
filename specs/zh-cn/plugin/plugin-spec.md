@@ -110,8 +110,9 @@ Nacos 插件包含两个相关的 SPI 层次：
 已接入统一配置的领域插件 SPI 统一继承 `PluginConfigSpec`。该契约的兼容默认实现返回空
 definitions、空 current map，并提供空 apply 回调，因此按旧版领域 SPI 编译的实现和新版
 零配置实现都会保持 `configurable=false`。声明至少一个 `ConfigItemDefinition` 的插件属于
-可配置实现，必须实现 current-map 和 apply 回调。`environment`、`control` 在统一 bootstrap
-配置生命周期完成设计前继续作为例外；`ai-resource-import` 在自身重构前仍不进入统一管理。
+可配置实现，必须实现 current-map 和 apply 回调。`environment` 在统一 bootstrap 配置生命周期
+完成设计前继续作为例外；`control` 使用只声明 definitions 的 builder 和稳定的
+`PluginConfigSpec` adapter。`ai-resource-import` 在自身重构前仍不进入统一管理。
 支持启停状态判断的插件类别，应通过 `PluginStateCheckerHolder` 获取状态，而不是维护一套
 独立状态来源。
 
@@ -134,6 +135,14 @@ definitions、空 current map，并提供空 apply 回调，因此按旧版领�
 加载判据不能替代实现级 state。为保持二进制兼容，其默认值为 true；只有拥有类型级模块或
 能力总开关的领域才应覆盖该判据。尚未发现的实现不能通过插件 API 定向启用，延迟类型应先
 通过其静态或领域总开关开启。
+
+如果 adapter 必须在 effective config 被接受后创建领域运行资源，可以实现可选的
+`PluginStartupLifecycle`。Core 只为 enabled 实现调用 `initialize()`，调用发生在持久化 state
+恢复和 `applyConfig` 完成之后、Nacos 报告启动成功之前。该生命周期与
+`PluginConfigSpec.isConfigurable()` 相互独立：零配置 adapter 仍可能需要初始化，可配置
+adapter 也可以不实现该生命周期。该操作必须幂等，类型延迟加载时遵守同样顺序。它本身不代表
+支持运行时状态切换或资源重建；在领域定义受控的替换和 close 生命周期前，相关类型仍必须拒绝
+这些操作。
 
 `ApplicationReadyEvent` 只作为非标准嵌入启动流程的幂等兜底。领域管理器也可以通过 SPI
 提前构造自身领域服务，但选择延迟加载的类型在加载判据为 false 时不得自行实例化实现。
@@ -231,14 +240,15 @@ nacos.plugin.{pluginType}.type={pluginName}
 |------|----------|------------|--------|
 | `auth` | `nacos.plugin.auth.type` | `nacos.core.auth.system.type` | `nacos` |
 | `datasource-dialect` | `nacos.plugin.datasource-dialect.type` | `spring.sql.init.platform` | `derby` |
+| `control` | `nacos.plugin.control.type` | `nacos.plugin.control.manager.type` | 空，表示 no-limit |
 
 标准 key 与 alias 同时存在时标准 key 优先，读取 alias 时服务端应记录迁移提示日志。当前
 互斥类型的选择会影响 Spring Bean、数据源等启动资源，插件 status API 不得把切换报告为
 运行时已生效；修改选择必须更新上述静态 key 并重启。只有领域实现具备受控重建生命周期后，
 才能进一步开放对应类型的运行时切换。
-`control` 仍属于 bootstrap 特例，当前选择 key 为
-`nacos.plugin.control.manager.type`。在 control manager 具备受控重建生命周期且选择 key
-迁移为标准格式之前，管理 API 只反映启动时选中的 builder，并拒绝运行时状态切换。
+Control 在 `PluginStartupLifecycle` 阶段构建选中的 manager bundle。该选择仍只在启动时
+生效，管理 API 拒绝运行时状态切换。稳定 Control facade 只允许在启动时安装一次 bundle，
+这不代表已经具备运行时重建生命周期。
 
 非互斥插件实现可以通过以下标准静态 key 提供初始启用状态：
 
@@ -341,9 +351,10 @@ core source registry 统一持有已启用 resolver 及其固定顺序。四个�
 插件类型的执行形态和 critical 能力必须由共享的 `PluginType` 定义提供。Core 和 Console
 的 API 适配层不得分别维护硬编码的互斥类型或关键实现列表。
 
-启动期或构建期插件不能通过较晚的运行时检查满足该契约。`control` 会在统一持久化状态加载前
-构建并缓存 manager，`environment` 会在 core 插件管理器就绪前转换 Spring 属性。管理 API
-能够把这两类插件的状态更新报告为已生效之前，必须先定义其状态能力和重启/bootstrap 语义。
+启动期或构建期插件不能通过较晚的运行时检查满足该契约。`control` 会先完成统一配置 apply，
+再构建并安装启动期 manager bundle，同时拒绝运行时切换实现。`environment` 仍会在 core
+插件管理器就绪前转换 Spring 属性；管理 API 能够把它的状态更新报告为已生效之前，必须先
+定义其状态能力和重启/bootstrap 语义。
 `ai-resource-import` 当前没有通过 `PluginProvider` 暴露，不属于统一状态管理范围。
 
 ### 配置更新兼容性

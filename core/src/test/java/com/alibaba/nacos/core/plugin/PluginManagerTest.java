@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginProvider;
+import com.alibaba.nacos.api.plugin.PluginStartupLifecycle;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -119,7 +120,7 @@ class PluginManagerTest {
             .thenReturn(Collections.emptySet());
         lenient().when(policyRegistry.getSelectionProperty(any())).thenAnswer(invocation -> {
             PluginType type = invocation.getArgument(0);
-            return PluginType.CONTROL == type ? "nacos.plugin.control.manager.type"
+            return PluginType.CONTROL == type ? "nacos.plugin.control.type"
                 : "nacos.plugin." + type.getType() + ".type";
         });
         lenient().when(policyRegistry.getActivationDescription(any()))
@@ -561,7 +562,7 @@ class PluginManagerTest {
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> manager.setPluginEnabled("control:remote", true));
         
-        assertTrue(exception.getErrMsg().contains("nacos.plugin.control.manager.type"));
+        assertTrue(exception.getErrMsg().contains("nacos.plugin.control.type"));
     }
     
     @Test
@@ -684,6 +685,62 @@ class PluginManagerTest {
         
         verify(provider).getAllPlugins();
         verify(configService, times(2)).initializePluginConfig(any(), eq(plugin));
+    }
+    
+    @Test
+    void initializeRunsConfigBeforeStartupLifecycleTest() {
+        TestStartupPlugin plugin = new TestStartupPlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("key");
+        definition.setDefaultValue("default");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "lifecycle", plugin);
+        
+        ReflectionTestUtils.invokeMethod(manager, "loadPersistedData");
+        
+        assertEquals(java.util.Arrays.asList("apply", "initialize"), plugin.getOperations());
+        assertEquals("default", plugin.getCurrentConfig().get("key"));
+    }
+    
+    @Test
+    void initializeRunsStartupLifecycleForZeroConfigPluginTest() {
+        TestStartupPlugin plugin = new TestStartupPlugin();
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "lifecycle", plugin);
+        
+        ReflectionTestUtils.invokeMethod(manager, "loadPersistedData");
+        
+        assertEquals(Collections.singletonList("initialize"), plugin.getOperations());
+    }
+    
+    @Test
+    void initializeSkipsStartupLifecycleForDisabledPluginTest() {
+        when(policyRegistry.isPluginEnabledByDefault(PluginType.TRACE, "disabled"))
+            .thenReturn(false);
+        TestStartupPlugin plugin = new TestStartupPlugin();
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "disabled", plugin);
+        
+        ReflectionTestUtils.invokeMethod(manager, "loadPersistedData");
+        
+        assertTrue(plugin.getOperations().isEmpty());
+    }
+    
+    @Test
+    void initializeRetriesFailedStartupLifecycleTest() {
+        TestStartupPlugin plugin = new TestStartupPlugin();
+        plugin.setInitializationFailures(1);
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.TRACE,
+            "retry", plugin);
+        
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(manager, "loadPersistedData"));
+        ReflectionTestUtils.invokeMethod(manager, "loadPersistedData");
+        
+        assertTrue(exception.getMessage().contains("trace:retry"));
+        assertEquals(2, plugin.getInitializationAttempts());
+        assertEquals(Collections.singletonList("initialize"), plugin.getOperations());
     }
     
     @Test
@@ -1445,6 +1502,44 @@ class PluginManagerTest {
         @Override
         public Map<String, String> getCurrentConfig() {
             return new HashMap<>();
+        }
+    }
+    
+    static class TestStartupPlugin extends TestConfigurablePlugin
+        implements PluginStartupLifecycle {
+        
+        private final List<String> operations = new ArrayList<>();
+        
+        private int initializationFailures;
+        
+        private int initializationAttempts;
+        
+        @Override
+        public void applyConfig(Map<String, String> config) {
+            super.applyConfig(config);
+            operations.add("apply");
+        }
+        
+        @Override
+        public void initialize() {
+            initializationAttempts++;
+            if (initializationFailures > 0) {
+                initializationFailures--;
+                throw new IllegalStateException("initialization failed");
+            }
+            operations.add("initialize");
+        }
+        
+        void setInitializationFailures(int initializationFailures) {
+            this.initializationFailures = initializationFailures;
+        }
+        
+        int getInitializationAttempts() {
+            return initializationAttempts;
+        }
+        
+        List<String> getOperations() {
+            return operations;
         }
     }
 }
