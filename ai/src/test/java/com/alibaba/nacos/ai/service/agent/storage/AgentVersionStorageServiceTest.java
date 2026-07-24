@@ -94,6 +94,63 @@ class AgentVersionStorageServiceTest {
     }
     
     @Test
+    void testPrepareReplacementPreservesPersistedPointer() {
+        AgentVersionStorageDescriptor current = service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION,
+            newContent()).getDescriptor();
+        current.setProvider("object-store");
+        current.setKey("opaque-existing-key");
+        current.setKeyFormat(null);
+        current.setAgentNameCodec(null);
+        AgentVersionContent replacement = newContent();
+        replacement.getCallInterfaces().get(0).setProtocolVersion("0.4");
+        AgentVersionContentSerializer.SerializedContent expected =
+            AgentVersionContentSerializer.serialize(replacement);
+        
+        PreparedAgentVersionWrite prepared = service.prepare(current, replacement);
+        
+        AgentVersionStorageDescriptor descriptor = prepared.getDescriptor();
+        assertEquals("object-store", descriptor.getProvider());
+        assertEquals("opaque-existing-key", descriptor.getKey());
+        assertNull(descriptor.getKeyFormat());
+        assertNull(descriptor.getAgentNameCodec());
+        assertEquals(expected.getContentDigest(), descriptor.getContentDigest());
+        assertEquals((long) expected.getSize(), descriptor.getSize());
+        assertArrayEquals(expected.getBytes(), prepared.getBytes());
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
+    void testPrepareReplacementPreservesNacosConfigPointerMetadata() {
+        AgentVersionStorageDescriptor current = service.prepare(NAMESPACE_ID, AGENT_NAME, VERSION,
+            newContent()).getDescriptor();
+        AgentVersionContent replacement = newContent();
+        replacement.getCallInterfaces().get(0).setProtocolVersion("0.4");
+        
+        AgentVersionStorageDescriptor descriptor =
+            service.prepare(current, replacement).getDescriptor();
+        
+        assertEquals(current.getProvider(), descriptor.getProvider());
+        assertEquals(current.getKey(), descriptor.getKey());
+        assertEquals(current.getKeyFormat(), descriptor.getKeyFormat());
+        assertEquals(current.getAgentNameCodec(), descriptor.getAgentNameCodec());
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
+    void testPrepareReplacementRejectsInvalidDescriptorAndContent() {
+        AgentVersionStorageDescriptor descriptor = service.prepare(NAMESPACE_ID, AGENT_NAME,
+            VERSION, newContent()).getDescriptor();
+        descriptor.setKey(null);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> service.prepare(descriptor, newContent()));
+        
+        descriptor.setKey("opaque-key");
+        assertThrows(IllegalArgumentException.class, () -> service.prepare(descriptor, null));
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
     void testSavePreparedUsesProviderAndKeyCapturedDuringPrepare() throws NacosException {
         AtomicReference<String> configuredProvider = new AtomicReference<String>("object-store");
         service = new AgentVersionStorageService(storageRouter, configuredProvider::get);

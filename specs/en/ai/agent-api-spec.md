@@ -69,8 +69,10 @@ must not mutate the caller's object.
 
 ### 1.2 Concurrency, Results, And Errors
 
-Agent metadata updates use `expectedMetaVersion`. Draft content updates use
-`expectedContentDigest`. Lists are paged; a `RuntimeEndpointSnapshot` is a
+Agent metadata updates use `expectedMetaVersion`. Draft content updates are
+allowed only when the target Version is the Resource's current
+`editingVersion` and remains in `draft` status; they follow the existing AI
+Resource update flow. Lists are paged; a `RuntimeEndpointSnapshot` is a
 complete, non-paged snapshot.
 
 | Condition | Required result |
@@ -78,7 +80,7 @@ complete, non-paged snapshot.
 | Missing or invalid field, invalid URI/range, or duplicate endpoint natural key | Standard parameter error |
 | Invisible or absent Discover target | `RESOURCE_NOT_FOUND`; no visibility distinction |
 | Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, quota, and conflict validation |
-| Metadata CAS, content CAS, or publisher-payload conflict | `RESOURCE_CONFLICT` |
+| Metadata CAS or publisher-payload conflict | `RESOURCE_CONFLICT` |
 | Invalid Version lifecycle transition | `ILLEGAL_STATE` |
 | HTTP heartbeat for unknown client | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
@@ -313,7 +315,7 @@ it does not delete independently owned runtime publications.
 | Method | Path | Transition or action | Result |
 |---|---|---|---|
 | POST | `/v3/admin/ai/agents/draft` | Create a new draft, optionally copying one exact Version | `Result<AgentVersionDetail>` |
-| PUT | `/v3/admin/ai/agents/draft` | Update one draft using content-digest CAS | `Result<AgentVersionDetail>` |
+| PUT | `/v3/admin/ai/agents/draft` | Update one draft | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | Delete one draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | `draft -> reviewing`, or the shared no-Pipeline transition | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/publish` | `reviewed -> online` | `Result<AgentVersionSummary>` |

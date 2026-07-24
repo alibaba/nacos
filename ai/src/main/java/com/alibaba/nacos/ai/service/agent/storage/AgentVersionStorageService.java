@@ -84,6 +84,27 @@ public class AgentVersionStorageService {
     }
     
     /**
+     * Serialize updated content while preserving an existing Version's persisted storage pointer.
+     *
+     * <p>Draft updates must continue to use the provider and opaque key selected when the Version
+     * was created, even when the server's current provider configuration has changed.</p>
+     *
+     * @param currentDescriptor persisted descriptor for the Version being updated
+     * @param content complete replacement Agent Version content
+     * @return immutable prepared content with the original provider and key
+     * @throws IllegalArgumentException when the descriptor or content is invalid
+     */
+    public PreparedAgentVersionWrite prepare(AgentVersionStorageDescriptor currentDescriptor,
+        AgentVersionContent content) {
+        AgentVersionStorageDescriptorSerializer.validate(currentDescriptor);
+        AgentVersionContentSerializer.SerializedContent serializedContent =
+            AgentVersionContentSerializer.serialize(content);
+        AgentVersionStorageDescriptor descriptor =
+            buildReplacementDescriptor(currentDescriptor, serializedContent);
+        return new PreparedAgentVersionWrite(descriptor, serializedContent);
+    }
+    
+    /**
      * Prepare and save one Agent Version content object at its stable logical key.
      *
      * @param namespaceId namespace identifier
@@ -185,6 +206,21 @@ public class AgentVersionStorageService {
             result.setKeyFormat(AgentVersionStorageDescriptor.NACOS_CONFIG_KEY_FORMAT);
             result.setAgentNameCodec(AgentVersionStorageDescriptor.RAD_AGENT_NAME_CODEC);
         }
+        result.setContentDigest(serializedContent.getContentDigest());
+        result.setMediaType(AgentVersionStorageDescriptor.MEDIA_TYPE);
+        result.setSchemaVersion(AgentVersionStorageDescriptor.SCHEMA_VERSION);
+        result.setSize((long) serializedContent.getSize());
+        return result;
+    }
+    
+    private AgentVersionStorageDescriptor buildReplacementDescriptor(
+        AgentVersionStorageDescriptor currentDescriptor,
+        AgentVersionContentSerializer.SerializedContent serializedContent) {
+        AgentVersionStorageDescriptor result = new AgentVersionStorageDescriptor();
+        result.setProvider(currentDescriptor.getProvider());
+        result.setKey(currentDescriptor.getKey());
+        result.setKeyFormat(currentDescriptor.getKeyFormat());
+        result.setAgentNameCodec(currentDescriptor.getAgentNameCodec());
         result.setContentDigest(serializedContent.getContentDigest());
         result.setMediaType(AgentVersionStorageDescriptor.MEDIA_TYPE);
         result.setSchemaVersion(AgentVersionStorageDescriptor.SCHEMA_VERSION);

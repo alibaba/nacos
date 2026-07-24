@@ -632,6 +632,15 @@ Version, Storage pointer, digest, and derived catalog. It performs validation,
 idempotent retry, and failure compensation. Publish must reread content and
 validate the digest.
 
+A draft update validates that the target Version equals the Resource's current
+`editingVersion` and is still a draft, overwrites the Version's existing fixed
+StorageKey, and then uses the existing AI Resource `updateStorageAndDesc`
+operation to update its Storage pointer and description. This Agent layer does
+not add a resource-specific compare-and-set mechanism. Conditional updates
+spanning `ai_resource_version` and AI Storage are a common AI Resource
+capability and must be designed and adopted consistently by Agent, Prompt,
+Skill, and AgentSpec.
+
 A successful Storage write followed by a failed metadata write produces an
 observable incomplete operation that is retried or cleaned as orphan content.
 Digest mismatch must never return unverified content. `versionCatalog` and
