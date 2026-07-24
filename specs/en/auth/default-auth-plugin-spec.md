@@ -215,10 +215,10 @@ administrator exists. These APIs are part of the
 [HTTP Authorization Spec](../http-api/authorization-spec.md).
 
 The visibility grant API is plugin-owned, not part of any domain controller
-family. It uses identity-only request authentication and enforces resource
-management authority in the grant service. When auth is enabled, only the
-resource owner or a global administrator may grant, revoke, or list explicit
-visibility access for that resource.
+family. It uses `ApiType.ADMIN_API` with identity-only request authentication
+and enforces resource management authority in the grant service. When auth is
+enabled, only the resource owner or a global administrator may grant, revoke,
+or list explicit visibility access for that resource.
 
 ## Default Visibility Implementation
 

@@ -16,14 +16,22 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantInfo;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -65,5 +73,22 @@ class VisibilityGrantControllerV3Test {
         
         assertEquals(1, result.getData().size());
         assertEquals("bob", result.getData().get(0).getUsername());
+    }
+    
+    @Test
+    void grantAndRevokeShouldUseAdminApiSecuredMetadata() throws Exception {
+        assertWriteAdminApiSecured(VisibilityGrantControllerV3.class.getDeclaredMethod("grant",
+            String.class, String.class, String.class, String.class, String.class));
+        assertWriteAdminApiSecured(VisibilityGrantControllerV3.class.getDeclaredMethod("revoke",
+            String.class, String.class, String.class, String.class, String.class));
+    }
+    
+    private void assertWriteAdminApiSecured(Method method) {
+        Secured secured = method.getAnnotation(Secured.class);
+        assertNotNull(secured);
+        assertEquals(AuthConstants.VISIBILITY_RESOURCE, secured.resource());
+        assertEquals(ActionTypes.WRITE, secured.action());
+        assertEquals(ApiType.ADMIN_API, secured.apiType());
+        assertArrayEquals(new String[] {Constants.Tag.ONLY_IDENTITY}, secured.tags());
     }
 }

@@ -181,8 +181,9 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 并必须遵守 [HTTP 鉴权规范](../http-api/authorization-spec.md)。
 
 可见性授权 API 属于插件自有接口，而不是任何领域 controller 家族的一部分。它使用
-identity-only 请求鉴权，并在授权服务层执行资源管理权限判断。启用鉴权时，只有资源 owner
-或全局管理员可以对该资源执行 grant、revoke 或 list 显式可见性授权。
+`ApiType.ADMIN_API` 与 identity-only 请求鉴权，并在授权服务层执行资源管理权限判断。
+启用鉴权时，只有资源 owner 或全局管理员可以对该资源执行 grant、revoke 或 list
+显式可见性授权。
 
 ## 默认可见性实现
 

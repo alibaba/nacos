@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -63,7 +64,7 @@ public class VisibilityGrantControllerV3 {
     @Since("3.3.0")
     @PostMapping
     @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
-        tags = Constants.Tag.ONLY_IDENTITY)
+        apiType = ApiType.ADMIN_API, tags = Constants.Tag.ONLY_IDENTITY)
     public Result<String> grant(@RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName,
         @RequestParam String username, @RequestParam String action) throws NacosException {
@@ -85,7 +86,7 @@ public class VisibilityGrantControllerV3 {
     @Since("3.3.0")
     @DeleteMapping
     @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.WRITE,
-        tags = Constants.Tag.ONLY_IDENTITY)
+        apiType = ApiType.ADMIN_API, tags = Constants.Tag.ONLY_IDENTITY)
     public Result<String> revoke(@RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName,
         @RequestParam String username, @RequestParam String action) throws NacosException {
@@ -105,7 +106,7 @@ public class VisibilityGrantControllerV3 {
     @Since("3.3.0")
     @GetMapping("/list")
     @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.READ,
-        tags = Constants.Tag.ONLY_IDENTITY)
+        apiType = ApiType.ADMIN_API, tags = Constants.Tag.ONLY_IDENTITY)
     public Result<List<VisibilityGrantInfo>> list(
         @RequestParam(required = false) String namespaceId,
         @RequestParam String resourceType, @RequestParam String resourceName)
