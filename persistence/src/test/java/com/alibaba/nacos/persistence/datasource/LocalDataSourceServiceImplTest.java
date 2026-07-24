@@ -31,6 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -109,6 +110,37 @@ class LocalDataSourceServiceImplTest {
             assertNotNull(service1.getJdbcTemplate());
             assertNotNull(service1.getTransactionTemplate());
             assertEquals("derby", service1.getDataSourceType());
+        } finally {
+            EnvUtil.setEnvironment(null);
+        }
+    }
+    
+    @Test
+    void testAiResourceDescriptionCapacity() throws Exception {
+        try {
+            MockEnvironment environment = DerbyTestUtils.createDerbyTestEnvironment();
+            // Keep one connection available after schema initialization for boundary assertions.
+            environment.setProperty("db.pool.config.maximum-pool-size", "2");
+            EnvUtil.setEnvironment(environment);
+            LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
+            serviceToClose = service1;
+            service1.init();
+            JdbcTemplate jdbcTemplate = service1.getJdbcTemplate();
+            String description = "d".repeat(2048);
+            
+            jdbcTemplate.update(
+                "INSERT INTO ai_resource (name, type, c_desc, namespace_id) VALUES (?, ?, ?, ?)",
+                "agent", "agent", description, "public");
+            jdbcTemplate.update(
+                "INSERT INTO ai_resource_version "
+                    + "(type, name, c_desc, status, version, namespace_id) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)",
+                "agent", "agent", description, "draft", "1.0.0", "public");
+            
+            assertEquals(description, jdbcTemplate.queryForObject(
+                "SELECT c_desc FROM ai_resource WHERE name = ?", String.class, "agent"));
+            assertEquals(description, jdbcTemplate.queryForObject(
+                "SELECT c_desc FROM ai_resource_version WHERE name = ?", String.class, "agent"));
         } finally {
             EnvUtil.setEnvironment(null);
         }
