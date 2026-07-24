@@ -546,6 +546,12 @@ AI Storage provider 保证单个 StorageKey 的原子 bytes 和它声明的读�
 负责跨 Resource、Version、Storage pointer、digest 和派生目录的编排，并执行校验、幂等重试
 和失败补偿。Publish 前必须重新读取内容并校验 digest。
 
+Draft 更新先校验目标 Version 等于 Resource 当前 `editingVersion` 且仍为 draft，再覆盖该
+Version 已有的固定 StorageKey，最后复用 AI Resource 现有的 `updateStorageAndDesc` 更新
+Storage pointer 与说明。Agent 层不增加资源专用的 compare-and-set 机制。跨
+`ai_resource_version` 和 AI Storage 的条件更新属于通用 AI Resource 能力，后续必须由
+Agent、Prompt、Skill 和 AgentSpec 统一采用。
+
 Storage 写入成功但元数据写入失败时，形成可观测的不完整操作，并通过重试或孤儿内容清理处理。
 Digest 不一致时不得返回未校验内容。`versionCatalog` 和 Resource Version 摘要是可重建
 派生数据；其一致性不得下放给 Storage provider。

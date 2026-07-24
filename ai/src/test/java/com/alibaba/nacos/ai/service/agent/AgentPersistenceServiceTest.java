@@ -78,6 +78,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -848,6 +849,202 @@ class AgentPersistenceServiceTest {
     }
     
     @Test
+    void testUpdateDraftOverwritesStableStorageThenUpdatesVersionRowAndReturnsDetail()
+        throws NacosException {
+        AgentVersionContent replacement = replacementContent();
+        PreparedAgentVersionWrite replacementWrite = replacementWrite(replacement);
+        AiResourceVersion updated = updatedVersion(replacementWrite, "Updated draft");
+        stubDraftUpdatePreparation(replacementWrite);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion(), updated);
+        when(versionPersistService.updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft")).thenReturn(1);
+        when(storageService.load(any(AgentVersionStorageDescriptor.class)))
+            .thenReturn(replacement);
+        
+        AgentVersionDetail result = service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+            replacement.getCallInterfaces(), "Updated draft");
+        
+        assertEquals("0.4", result.getCallInterfaces().get(0).getProtocolVersion());
+        assertEquals("Updated draft", result.getChangeDescription());
+        assertEquals(replacementWrite.getDescriptor().getContentDigest(),
+            result.getContentDigest());
+        InOrder order = inOrder(versionPersistService, storageService);
+        order.verify(storageService).prepare(any(AgentVersionStorageDescriptor.class),
+            any(AgentVersionContent.class));
+        order.verify(storageService).save(replacementWrite);
+        order.verify(versionPersistService).updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft");
+        order.verify(storageService).load(any(AgentVersionStorageDescriptor.class));
+    }
+    
+    @Test
+    void testUpdateDraftRejectsNonDraftBeforePreparingOrWritingStorage() throws NacosException {
+        AiResourceVersion reviewing = storedVersion();
+        reviewing.setStatus(AiConstants.Agent.VERSION_STATUS_REVIEWING);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(reviewing);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacementContent().getCallInterfaces(), "Updated draft"));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getCode(), exception.getDetailErrCode());
+        verifyNoInteractions(storageService);
+        verify(versionPersistService, never()).updateStorageAndDesc(anyString(), anyString(),
+            anyString(), anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testUpdateDraftRejectsVersionThatIsNotCurrentDraft() throws NacosException {
+        AiResource resource = storedResource();
+        resource.setVersionInfo(serializeVersionInfo("2.0.0"));
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(resource);
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacementContent().getCallInterfaces(), "Updated draft"));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getCode(), exception.getDetailErrCode());
+        verifyNoInteractions(storageService);
+        verify(versionPersistService, never()).updateStorageAndDesc(anyString(), anyString(),
+            anyString(), anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testUpdateDraftRejectsMissingVersion() throws NacosException {
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(null);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacementContent().getCallInterfaces(), "Updated draft"));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        verifyNoInteractions(storageService);
+    }
+    
+    @Test
+    void testUpdateDraftDoesNotUpdateRowWhenStorageSaveFails() throws NacosException {
+        NacosException storageFailure =
+            new NacosException(NacosException.SERVER_ERROR, "save failed");
+        AgentVersionContent replacement = replacementContent();
+        PreparedAgentVersionWrite replacementWrite = replacementWrite(replacement);
+        stubDraftUpdatePreparation(replacementWrite);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+        doThrow(storageFailure).when(storageService).save(replacementWrite);
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacement.getCallInterfaces(), "Updated draft"));
+        
+        assertSame(storageFailure, exception);
+        verify(versionPersistService, never()).updateStorageAndDesc(anyString(), anyString(),
+            anyString(), anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testUpdateDraftFailsWhenVersionRowIsNotUpdated() throws NacosException {
+        AgentVersionContent replacement = replacementContent();
+        PreparedAgentVersionWrite replacementWrite = replacementWrite(replacement);
+        AiResourceVersion updated = updatedVersion(replacementWrite, "Updated draft");
+        stubDraftUpdatePreparation(replacementWrite);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+        when(versionPersistService.updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft")).thenReturn(0);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacement.getCallInterfaces(), "Updated draft"));
+        
+        assertServerError(exception);
+        verify(storageService).save(replacementWrite);
+        verify(storageService, never()).load(any(AgentVersionStorageDescriptor.class));
+    }
+    
+    @Test
+    void testUpdateDraftRetriesAfterVersionRowUpdateFailure() throws NacosException {
+        AgentVersionContent replacement = replacementContent();
+        PreparedAgentVersionWrite replacementWrite = replacementWrite(replacement);
+        AiResourceVersion updated = updatedVersion(replacementWrite, "Updated draft");
+        stubDraftUpdatePreparation(replacementWrite);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion(),
+                storedVersion(), updated);
+        when(versionPersistService.updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft")).thenReturn(0, 1);
+        when(storageService.load(any(AgentVersionStorageDescriptor.class)))
+            .thenReturn(replacement);
+        
+        assertThrows(NacosApiException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacement.getCallInterfaces(), "Updated draft"));
+        
+        AgentVersionDetail result = service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+            replacement.getCallInterfaces(), "Updated draft");
+        
+        assertEquals("Updated draft", result.getChangeDescription());
+        assertEquals(replacementWrite.getDescriptor().getContentDigest(),
+            result.getContentDigest());
+        verify(storageService, times(2)).save(replacementWrite);
+        verify(versionPersistService, times(2)).updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft");
+    }
+    
+    @Test
+    void testUpdateDraftValidatesCommandBeforePersistence() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.updateDraft("", AGENT_NAME, VERSION,
+                replacementContent().getCallInterfaces(), "Updated draft"));
+        
+        verifyNoInteractions(resourcePersistService, versionPersistService, storageService);
+    }
+    
+    @Test
+    void testUpdateDraftRejectsEmptyCallInterfacesBeforePersistence() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                Collections.<AgentCallInterface>emptyList(), "Updated draft"));
+        
+        verifyNoInteractions(resourcePersistService, versionPersistService, storageService);
+    }
+    
+    @Test
+    void testUpdateDraftRejectsLongDescriptionBeforePersistence() {
+        AgentVersionContent replacement = replacementContent();
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
+                replacement.getCallInterfaces(), repeat('x', 2049)));
+        
+        verifyNoInteractions(resourcePersistService, versionPersistService, storageService);
+    }
+    
+    @Test
     void testGetAgentUsesStrictStoredProjection() throws NacosException {
         AiResource row = storedResource();
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
@@ -1043,6 +1240,31 @@ class AgentPersistenceServiceTest {
     private void stubPrepare() {
         when(storageService.prepare(anyString(), anyString(), anyString(),
             any(AgentVersionContent.class))).thenReturn(prepared);
+    }
+    
+    private void stubDraftUpdatePreparation(PreparedAgentVersionWrite replacementWrite) {
+        when(storageService.prepare(any(AgentVersionStorageDescriptor.class),
+            any(AgentVersionContent.class))).thenReturn(replacementWrite);
+    }
+    
+    private AgentVersionContent replacementContent() {
+        AgentVersionDetail detail = newInitialDraft();
+        detail.getCallInterfaces().get(0).setProtocolVersion("0.4");
+        return new AgentVersionContent(detail.getCallInterfaces());
+    }
+    
+    private PreparedAgentVersionWrite replacementWrite(AgentVersionContent replacement) {
+        return new AgentVersionStorageService().prepare(prepared.getDescriptor(), replacement);
+    }
+    
+    private AiResourceVersion updatedVersion(PreparedAgentVersionWrite replacementWrite,
+        String description) {
+        AiResourceVersion result = storedVersion();
+        AgentVersionStorageDescriptor descriptor = replacementWrite.getDescriptor();
+        result.setStorage(AgentVersionStorageDescriptorSerializer.serialize(descriptor));
+        result.setDesc(description);
+        result.setGmtModified(new Timestamp(5000L));
+        return result;
     }
     
     private void stubUntilVersionInsert() {

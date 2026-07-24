@@ -24,6 +24,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentResourceExtSerializer;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionCatalogBuilder;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageDescriptorSerializer;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageService;
 import com.alibaba.nacos.ai.service.agent.storage.PreparedAgentVersionWrite;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
@@ -60,14 +62,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Insert-only persistence orchestration for Agent definitions and their initial draft.
+ * Persistence orchestration for Agent definitions and Version content.
  *
  * <p>The orchestration claims the Version identity before writing the stable AI Storage key and
  * inserts the Resource row only after content is available. Equivalent Version and Resource state
  * is adopted on retry. Once a Version claim is visible, no synchronous cleanup is safe without an
  * operation generation: another create may already reuse the row and stable Storage key. Therefore
- * failures preserve recoverable state for retry or a later generation-aware orphan cleaner. Draft
- * updates and lifecycle transitions are deliberately outside this component's initial scope.</p>
+ * failures preserve recoverable state for retry or a later generation-aware orphan cleaner.</p>
  *
  * @author Nacos
  */
@@ -77,6 +78,9 @@ public class AgentPersistenceService {
     private static final String RESOURCE_SOURCE_LOCAL = "local";
     
     private static final int MAX_BIZ_TAGS_LENGTH = 1024;
+    
+    private static final String VALIDATION_CONTENT_DIGEST =
+        AgentVersionContentSerializer.digest(new byte[0]);
     
     private final AiResourcePersistService resourcePersistService;
     
@@ -226,13 +230,8 @@ public class AgentPersistenceService {
         if (!matches(row, namespaceId, agentName, version)) {
             throw notFound("Agent Version not found: " + agentName + '@' + version);
         }
-        final AgentVersionStorageDescriptor descriptor;
-        try {
-            descriptor = AgentVersionStorageDescriptorSerializer.deserialize(row.getStorage());
-        } catch (IllegalArgumentException e) {
-            throw serverError("Stored Agent Version descriptor is invalid: " + agentName + '@'
-                + version, e);
-        }
+        AgentVersionStorageDescriptor descriptor =
+            requireStorageDescriptor(row, agentName, version);
         AgentVersionContent content = storageService.load(descriptor);
         try {
             AgentVersionDetail result = toVersionDetail(row, descriptor, content);
@@ -242,6 +241,85 @@ public class AgentPersistenceService {
             throw serverError("Stored Agent Version metadata is invalid: " + agentName + '@'
                 + version, e);
         }
+    }
+    
+    /**
+     * Replace one draft Version.
+     *
+     * <p>The update follows the existing AI Resource draft flow: verify the current Version is a
+     * draft, overwrite its fixed AI Storage key, and then update the Version row's storage pointer
+     * and description. The provider and opaque key selected at Version creation are preserved
+     * instead of being recomputed from current server configuration.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName exact, case-sensitive Agent name
+     * @param version exact, case-sensitive draft Version
+     * @param callInterfaces complete replacement CallInterface list
+     * @param changeDescription replacement change description
+     * @return updated and storage-verified Version detail
+     * @throws NacosException when the Version is absent, no longer a draft, or cannot be persisted
+     */
+    public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
+        List<AgentCallInterface> callInterfaces, String changeDescription) throws NacosException {
+        validateDraftUpdateInputs(namespaceId, agentName, version, callInterfaces,
+            changeDescription);
+        try {
+            Agent currentAgent = getAgent(namespaceId, agentName);
+            AiResourceVersion currentRow = findVersion(namespaceId, agentName, version);
+            requireCurrentDraft(currentAgent, currentRow, agentName, version);
+            AgentVersionStorageDescriptor currentDescriptor =
+                requireStorageDescriptor(currentRow, agentName, version);
+            PreparedAgentVersionWrite prepared = storageService.prepare(currentDescriptor,
+                new AgentVersionContent(callInterfaces));
+            AgentVersionStorageDescriptor targetDescriptor = prepared.getDescriptor();
+            String targetStorage =
+                AgentVersionStorageDescriptorSerializer.serialize(targetDescriptor);
+            
+            validateUpdatedDraft(currentRow, targetDescriptor, callInterfaces,
+                changeDescription);
+            storageService.save(prepared);
+            int updated = versionPersistService.updateStorageAndDesc(namespaceId, agentName,
+                Constants.Agent.RESOURCE_TYPE_AGENT, version, targetStorage, changeDescription);
+            if (updated != 1) {
+                throw serverError("Agent draft Version row was not updated: " + agentName + '@'
+                    + version, null);
+            }
+            return getAgentVersion(namespaceId, agentName, version);
+        } catch (Exception e) {
+            throw asNacosException("Failed to update Agent draft " + agentName + '@' + version, e);
+        }
+    }
+    
+    private void validateDraftUpdateInputs(String namespaceId, String agentName, String version,
+        List<AgentCallInterface> callInterfaces, String changeDescription) {
+        AgentVersionDetail input = new AgentVersionDetail();
+        input.setNamespaceId(namespaceId);
+        input.setAgentName(agentName);
+        input.setVersion(version);
+        input.setStatus(AiConstants.Agent.VERSION_STATUS_DRAFT);
+        input.setCallInterfaces(callInterfaces);
+        input.setChangeDescription(changeDescription);
+        input.setContentDigest(VALIDATION_CONTENT_DIGEST);
+        input.setCreateTime(0L);
+        input.setUpdateTime(0L);
+        AgentModelValidator.validateVersionDetail(input);
+    }
+    
+    private void validateUpdatedDraft(AiResourceVersion currentRow,
+        AgentVersionStorageDescriptor targetDescriptor, List<AgentCallInterface> callInterfaces,
+        String changeDescription) {
+        AgentVersionDetail target = new AgentVersionDetail();
+        target.setNamespaceId(currentRow.getNamespaceId());
+        target.setAgentName(currentRow.getName());
+        target.setVersion(currentRow.getVersion());
+        target.setStatus(AiConstants.Agent.VERSION_STATUS_DRAFT);
+        target.setCallInterfaces(callInterfaces);
+        target.setAuthor(currentRow.getAuthor());
+        target.setChangeDescription(changeDescription);
+        target.setContentDigest(targetDescriptor.getContentDigest());
+        target.setCreateTime(0L);
+        target.setUpdateTime(0L);
+        AgentModelValidator.validateVersionDetail(target);
     }
     
     private void validateCreateInputs(Agent agent, AgentVersionDetail initialDraft) {
@@ -554,6 +632,40 @@ public class AgentPersistenceService {
         }
     }
     
+    private AiResourceVersion findVersion(String namespaceId, String agentName, String version)
+        throws NacosApiException {
+        AiResourceVersion result = versionPersistService.find(namespaceId, agentName,
+            Constants.Agent.RESOURCE_TYPE_AGENT, version);
+        if (!matches(result, namespaceId, agentName, version)) {
+            throw notFound("Agent Version not found: " + agentName + '@' + version);
+        }
+        return result;
+    }
+    
+    private void requireCurrentDraft(Agent agent, AiResourceVersion row, String agentName,
+        String version) throws NacosApiException {
+        if (!AiConstants.Agent.VERSION_STATUS_DRAFT.equals(row.getStatus())) {
+            throw illegalState("Agent Version is not a draft: " + agentName + '@' + version);
+        }
+        AgentVersionInfo versionInfo = agent.getVersionInfo();
+        if (versionInfo == null || !version.equals(versionInfo.getEditingVersion())) {
+            throw illegalState("Agent Version is not the current draft: " + agentName + '@'
+                + version);
+        }
+    }
+    
+    private AgentVersionStorageDescriptor requireStorageDescriptor(AiResourceVersion row,
+        String agentName, String version) throws NacosApiException {
+        final AgentVersionStorageDescriptor descriptor;
+        try {
+            descriptor = AgentVersionStorageDescriptorSerializer.deserialize(row.getStorage());
+        } catch (IllegalArgumentException e) {
+            throw serverError("Stored Agent Version descriptor is invalid: " + agentName + '@'
+                + version, e);
+        }
+        return descriptor;
+    }
+    
     private boolean sameResource(AiResource actual, AiResource expected) {
         if (!matches(actual, expected.getNamespaceId(), expected.getName())
             || !Objects.equals(actual.getDesc(), expected.getDesc())
@@ -679,6 +791,11 @@ public class AgentPersistenceService {
     
     private NacosApiException notFound(String message) {
         return new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+            message);
+    }
+    
+    private NacosApiException illegalState(String message) {
+        return new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.ILLEGAL_STATE,
             message);
     }
     

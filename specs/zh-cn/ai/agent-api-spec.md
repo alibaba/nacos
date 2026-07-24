@@ -65,15 +65,16 @@ HTTP API 遵循 Nacos v3 约定：
 
 ### 1.2 并发、结果与错误
 
-Agent 元数据更新使用 `expectedMetaVersion`；draft 内容更新使用
-`expectedContentDigest`。列表使用分页；`RuntimeEndpointSnapshot` 是完整、不分页的快照。
+Agent 元数据更新使用 `expectedMetaVersion`；draft 内容只允许在目标 Version 等于 Resource
+当前 `editingVersion` 且仍为 `draft` 状态时更新，并复用现有 AI Resource 更新流程。
+列表使用分页；`RuntimeEndpointSnapshot` 是完整、不分页的快照。
 
 | 条件 | 必须返回的结果 |
 |---|---|
 | 字段缺失或非法、URI/range 非法、Endpoint 自然键重复 | 标准参数错误 |
 | Discover 目标不可见或不存在 | `RESOURCE_NOT_FOUND`，不区分可见性 |
 | 不存在 Agent 定义时 Endpoint 预注册 | 完成结构、鉴权、配额和冲突校验后接受 |
-| 元数据 CAS、内容 CAS 或 Publisher payload 冲突 | `RESOURCE_CONFLICT` |
+| 元数据 CAS 或 Publisher payload 冲突 | `RESOURCE_CONFLICT` |
 | Version 生命周期转换非法 | `ILLEGAL_STATE` |
 | HTTP heartbeat 找不到 Client | HTTP 404 和独立应用码 `HTTP_CLIENT_NOT_FOUND` |
 | 协商后的传输不支持能力 | 本地 `FEATURE_NOT_SUPPORTED`，不发送远程请求 |
@@ -276,7 +277,7 @@ enabled 状态、owner 和 scope，但不能修改身份、Version 内容、labe
 | Method | Path | 转换或动作 | 返回 |
 |---|---|---|---|
 | POST | `/v3/admin/ai/agents/draft` | 创建新 draft，可复制一个精确 Version | `Result<AgentVersionDetail>` |
-| PUT | `/v3/admin/ai/agents/draft` | 使用 content-digest CAS 更新 draft | `Result<AgentVersionDetail>` |
+| PUT | `/v3/admin/ai/agents/draft` | 更新 draft | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | 删除 draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | `draft -> reviewing`，或统一的无 Pipeline 转换 | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/publish` | `reviewed -> online` | `Result<AgentVersionSummary>` |
