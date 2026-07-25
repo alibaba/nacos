@@ -22,19 +22,16 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantInfo;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class VisibilityGrantControllerV3Test {
     
@@ -58,21 +55,6 @@ class VisibilityGrantControllerV3Test {
         
         verify(service).revoke("public", "skill", "demo-skill", "bob", "w");
         assertEquals("revoke visibility permission ok!", result.getData());
-    }
-    
-    @Test
-    void listShouldReturnServiceResult() throws Exception {
-        VisibilityGrantService service = mock(VisibilityGrantService.class);
-        VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
-        VisibilityGrantInfo info = new VisibilityGrantInfo();
-        info.setUsername("bob");
-        when(service.list("public", "skill", "demo-skill")).thenReturn(List.of(info));
-        
-        Result<List<VisibilityGrantInfo>> result =
-            controller.list("public", "skill", "demo-skill");
-        
-        assertEquals(1, result.getData().size());
-        assertEquals("bob", result.getData().get(0).getUsername());
     }
     
     @Test

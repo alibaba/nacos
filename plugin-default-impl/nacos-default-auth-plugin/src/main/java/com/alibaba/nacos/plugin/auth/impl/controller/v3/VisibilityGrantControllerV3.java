@@ -24,16 +24,12 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantInfo;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * Plugin-owned visibility grant API.
@@ -92,25 +88,5 @@ public class VisibilityGrantControllerV3 {
         @RequestParam String username, @RequestParam String action) throws NacosException {
         visibilityGrantService.revoke(namespaceId, resourceType, resourceName, username, action);
         return Result.success("revoke visibility permission ok!");
-    }
-    
-    /**
-     * List grants attached to one resource.
-     *
-     * @param namespaceId namespace ID, blank for the default namespace
-     * @param resourceType resource type
-     * @param resourceName resource name
-     * @return current grants
-     * @throws NacosException if validation or grant management fails
-     */
-    @Since("3.3.0")
-    @GetMapping("/list")
-    @Secured(resource = AuthConstants.VISIBILITY_RESOURCE, action = ActionTypes.READ,
-        apiType = ApiType.ADMIN_API, tags = Constants.Tag.ONLY_IDENTITY)
-    public Result<List<VisibilityGrantInfo>> list(
-        @RequestParam(required = false) String namespaceId,
-        @RequestParam String resourceType, @RequestParam String resourceName)
-        throws NacosException {
-        return Result.success(visibilityGrantService.list(namespaceId, resourceType, resourceName));
     }
 }

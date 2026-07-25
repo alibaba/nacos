@@ -381,11 +381,6 @@ CREATE UNIQUE INDEX "uk_role_permission" ON "permissions" USING btree (
   "resource",
   "action"
 );
-CREATE INDEX "idx_permission_resource" ON "permissions" USING btree (
-  "resource",
-  "action",
-  "role"
-);
 
 -- ----------------------------
 -- Indexes structure for table roles
@@ -393,10 +388,6 @@ CREATE INDEX "idx_permission_resource" ON "permissions" USING btree (
 CREATE UNIQUE INDEX "uk_username_role" ON "roles" USING btree (
   "username",
   "role"
-);
-CREATE INDEX "idx_role_user" ON "roles" USING btree (
-  "role",
-  "username"
 );
 
 -- ----------------------------

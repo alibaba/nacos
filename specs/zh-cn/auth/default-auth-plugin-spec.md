@@ -182,7 +182,7 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 
 可见性授权 API 属于插件自有接口，而不是任何领域 controller 家族的一部分。它使用
 `ApiType.ADMIN_API` 与 identity-only 请求鉴权，并在授权服务层执行资源管理权限判断。
-启用鉴权时，只有资源 owner 或全局管理员可以对该资源执行 grant、revoke 或 list
+启用鉴权时，只有资源 owner 或全局管理员可以对该资源执行 grant 或 revoke
 显式可见性授权。
 
 ## 默认可见性实现
@@ -233,9 +233,7 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
   对被授权用户唯一，并受限于现有角色名列长度。资源和动作信息只能存储在绑定到该角色
   的权限行中，不得编码进角色名。
 - 列表/搜索鉴权必须从调用方保留可见性角色绑定的实际权限行推导显式可见资源。只有角色
-  绑定、但没有匹配权限行时，不得授予可见性。资源授权列表查询必须使用精确权限资源匹配，
-  再把匹配到的可见性角色反查回用户。存储 schema 应为该反查路径建立
-  `permissions(resource, action, role)` 和 `roles(role, username)` 索引。
+  绑定、但没有匹配权限行时，不得授予可见性。
 - 资源存在性和 owner 元数据通过领域提供的可见性资源定位桥接解析，而不是让鉴权插件直接
   编译依赖领域持久化类型。
 

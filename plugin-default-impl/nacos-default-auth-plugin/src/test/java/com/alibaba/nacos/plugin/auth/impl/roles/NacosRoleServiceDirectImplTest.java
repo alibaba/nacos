@@ -336,15 +336,11 @@ class NacosRoleServiceDirectImplTest {
             .thenReturn(Collections.singletonList("role-admin"));
         when(permissionPersistService.findPermissionsLike4Page("role", 1, 10))
             .thenReturn(permissionPage);
-        when(permissionPersistService.getPermissionsByResource("resource", 1, 10))
-            .thenReturn(permissionPage);
         
         assertSame(rolePage, nacosRoleService.findRoles("nacos", "role", 1, 10));
         assertEquals(Collections.singletonList("role-admin"),
             nacosRoleService.findRoleNames("role"));
         assertSame(permissionPage, nacosRoleService.findPermissions("role", 1, 10));
-        assertSame(permissionPage, nacosRoleService.getPermissionsByResource("resource", 1,
-            10));
     }
     
     @Test

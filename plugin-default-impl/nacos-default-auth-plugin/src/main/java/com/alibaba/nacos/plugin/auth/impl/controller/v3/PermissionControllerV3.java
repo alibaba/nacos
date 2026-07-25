@@ -97,7 +97,6 @@ public class PermissionControllerV3 {
      * Query permissions of a role.
      *
      * @param role     the role
-     * @param resource the resource
      * @param pageNo   page index
      * @param pageSize page size
      * @param search   the type of search (accurate or blur)
@@ -110,13 +109,9 @@ public class PermissionControllerV3 {
     public Result<Page<PermissionInfo>> getPermissionList(@RequestParam int pageNo,
         @RequestParam int pageSize,
         @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role,
-        @RequestParam(name = "resource", defaultValue = StringUtils.EMPTY) String resource,
         @RequestParam(name = "search", defaultValue = "accurate") String search) {
         Page<PermissionInfo> permissionPage;
-        if (StringUtils.isNotBlank(resource)) {
-            permissionPage = nacosRoleService.getPermissionsByResource(resource, pageNo,
-                pageSize);
-        } else if (SEARCH_TYPE_BLUR.equalsIgnoreCase(search)) {
+        if (SEARCH_TYPE_BLUR.equalsIgnoreCase(search)) {
             permissionPage = nacosRoleService.findPermissions(role, pageNo, pageSize);
         } else {
             permissionPage = nacosRoleService.getPermissions(role, pageNo, pageSize);

@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.auth.impl.visibility;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -35,7 +34,6 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -48,8 +46,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Zhengcy05
  */
 public class DefaultVisibilityGrantService implements VisibilityGrantService {
-    
-    private static final int DEFAULT_PAGE_NO = 1;
     
     private final NacosRoleService roleService;
     
@@ -117,47 +113,6 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
                 resourceName),
             storedAction);
-    }
-    
-    @Override
-    public List<VisibilityGrantInfo> list(String namespaceId, String resourceType,
-        String resourceName) throws NacosException {
-        VisibilityResource resource =
-            requireManagedResource(namespaceId, resourceType, resourceName);
-        checkManageGrantAuthority(resource);
-        List<VisibilityGrantInfo> result = new ArrayList<>();
-        String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
-            resourceType, resourceName);
-        Page<PermissionInfo> permissionPage =
-            roleService.getPermissionsByResource(resourceId, DEFAULT_PAGE_NO,
-                Integer.MAX_VALUE);
-        if (permissionPage == null || CollectionUtils.isEmpty(permissionPage.getPageItems())) {
-            return result;
-        }
-        for (PermissionInfo permissionInfo : permissionPage.getPageItems()) {
-            if (!resourceId.equals(permissionInfo.getResource())
-                || !VisibilityGrantRoleHelper.isUserGrantRole(permissionInfo.getRole())) {
-                continue;
-            }
-            Page<RoleInfo> rolePage =
-                roleService.getRoles(StringUtils.EMPTY, permissionInfo.getRole(),
-                    DEFAULT_PAGE_NO, Integer.MAX_VALUE);
-            if (rolePage == null || CollectionUtils.isEmpty(rolePage.getPageItems())) {
-                continue;
-            }
-            for (RoleInfo roleInfo : rolePage.getPageItems()) {
-                VisibilityGrantInfo item = new VisibilityGrantInfo();
-                item.setNamespaceId(resource.getNamespaceId());
-                item.setResourceType(resource.getResourceType());
-                item.setResourceName(resource.getResourceName());
-                item.setUsername(roleInfo.getUsername());
-                item.setAction(permissionInfo.getAction());
-                result.add(item);
-            }
-        }
-        result.sort(Comparator.comparing(VisibilityGrantInfo::getUsername)
-            .thenComparing(VisibilityGrantInfo::getAction));
-        return result;
     }
     
     // Query the names of all resources that a specified user has visibility permissions for,

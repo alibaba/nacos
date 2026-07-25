@@ -107,15 +107,6 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
     }
     
     @Override
-    public Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo,
-        int pageSize) {
-        Query query = Query.newInstance().addParam("resource", resource)
-            .addParam("pageNo", pageNo).addParam("pageSize", pageSize)
-            .addParam("search", "accurate");
-        return getPermissionInfoPageFromRemote(query);
-    }
-    
-    @Override
     public Page<PermissionInfo> findPermissions(String role, int pageNo, int pageSize) {
         Query query = Query.newInstance().addParam("role", role).addParam("pageNo", pageNo)
             .addParam("pageSize", pageSize).addParam("search", "blur");

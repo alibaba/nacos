@@ -37,16 +37,6 @@ public interface PermissionPersistService {
     Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
     
     /**
-     * get permissions by exact resource.
-     *
-     * @param resource resource
-     * @param pageNo pageNo
-     * @param pageSize pageSize
-     * @return permissions page info
-     */
-    Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo, int pageSize);
-    
-    /**
      * assign permission to role.
      *
      * @param role role

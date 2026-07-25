@@ -121,17 +121,6 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     }
     
     @Override
-    public Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo,
-        int pageSize) {
-        Page<PermissionInfo> pageInfo =
-            permissionPersistService.getPermissionsByResource(resource, pageNo, pageSize);
-        if (pageInfo == null) {
-            return new Page<>();
-        }
-        return pageInfo;
-    }
-    
-    @Override
     public void addRole(String role, String username) {
         if (userDetailsService.getUser(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");

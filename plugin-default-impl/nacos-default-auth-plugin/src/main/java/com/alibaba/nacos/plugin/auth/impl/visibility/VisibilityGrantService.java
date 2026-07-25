@@ -54,18 +54,6 @@ public interface VisibilityGrantService {
         String action) throws NacosException;
     
     /**
-     * List current grants for one resource.
-     *
-     * @param namespaceId namespace ID, blank for the default namespace
-     * @param resourceType resource type
-     * @param resourceName resource name
-     * @return grants currently attached to the resource
-     * @throws NacosException if the resource is invalid or the caller cannot manage grants
-     */
-    List<VisibilityGrantInfo> list(String namespaceId, String resourceType,
-        String resourceName) throws NacosException;
-    
-    /**
      * Find explicitly authorized resource names for one user and query action.
      *
      * @param username grantee username

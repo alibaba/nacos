@@ -84,7 +84,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | 默认鉴权插件中的用户登录和管理。 |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | 默认鉴权插件中的角色管理。 |
 | `/v3/auth/permission` | 4 | GET, POST, DELETE | 默认鉴权插件中的权限管理。 |
-| `/v3/auth/visibility` | 3 | GET, POST, DELETE | 默认鉴权插件中的插件自有资源可见性授权管理。 |
+| `/v3/auth/visibility` | 2 | POST, DELETE | 默认鉴权插件中的插件自有资源可见性授权管理。 |
 
 ## 4. Open API 已实现行为
 
@@ -169,7 +169,7 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 - 用户管理支持创建、删除、密码更新、登录、列表和搜索。
 - 角色管理支持添加、删除、列表和搜索。
 - 权限管理支持添加、删除和列表。
-- 可见性授权管理支持对显式资源可见性访问执行 grant、revoke 和 list。
+- 可见性授权管理支持对显式资源可见性访问执行 grant 和 revoke。
 - 第一个管理员初始化由 `POST /v3/auth/user/admin` 实现。
 
 默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP API 规范和

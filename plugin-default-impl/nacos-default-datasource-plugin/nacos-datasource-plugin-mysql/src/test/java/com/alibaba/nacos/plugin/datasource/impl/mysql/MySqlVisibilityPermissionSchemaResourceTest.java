@@ -32,7 +32,6 @@ class MySqlVisibilityPermissionSchemaResourceTest {
         String schema = readResource("META-INF/mysql-schema.sql");
         assertTrue(schema.contains(
             "`resource` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL"));
-        assertTrue(schema.contains("INDEX `idx_permission_resource` (`resource`,`action`,`role`)"));
         assertTrue(schema.contains("ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC"));
     }
     

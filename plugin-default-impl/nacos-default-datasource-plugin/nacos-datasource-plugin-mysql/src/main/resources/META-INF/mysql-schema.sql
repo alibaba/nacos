@@ -167,16 +167,14 @@ CREATE TABLE `users` (
 CREATE TABLE `roles` (
                          `username` varchar(50) NOT NULL COMMENT 'username',
                          `role` varchar(50) NOT NULL COMMENT 'role',
-                         UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE,
-                         INDEX `idx_role_user` (`role` ASC, `username` ASC) USING BTREE
+                         UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
 );
 
 CREATE TABLE `permissions` (
                                `role` varchar(50) NOT NULL COMMENT 'role',
                                `resource` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'resource',
                                `action` varchar(8) NOT NULL COMMENT 'action',
-                               UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE,
-                               INDEX `idx_permission_resource` (`resource`,`action`,`role`) USING BTREE
+                               UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 

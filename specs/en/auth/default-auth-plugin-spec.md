@@ -218,7 +218,7 @@ The visibility grant API is plugin-owned, not part of any domain controller
 family. It uses `ApiType.ADMIN_API` with identity-only request authentication
 and enforces resource management authority in the grant service. When auth is
 enabled, only the resource owner or a global administrator may grant, revoke,
-or list explicit visibility access for that resource.
+explicit visibility access for that resource.
 
 ## Default Visibility Implementation
 
@@ -277,11 +277,7 @@ Grant behavior:
   into the role name.
 - List/search authorization must derive explicit resources from the actual
   permission rows attached to the caller's reserved visibility role. A role
-  binding without a matching permission row must not grant visibility. Resource
-  grant-list lookup must use exact permission resource matching and then resolve
-  the matched visibility roles back to users. The storage schema should index
-  both `permissions(resource, action, role)` and `roles(role, username)` for
-  this reverse lookup path.
+  binding without a matching permission row must not grant visibility.
 - Resource existence and owner metadata are resolved through a domain-provided
   visibility resource locator instead of a direct compile-time dependency from
   the auth plugin to domain persistence types.

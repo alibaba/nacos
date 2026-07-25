@@ -73,35 +73,6 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         return pageInfo;
     }
     
-    @Override
-    public Page<PermissionInfo> getPermissionsByResource(String resource, int pageNo,
-        int pageSize) {
-        AuthPaginationHelper<PermissionInfo> helper = createPaginationHelper();
-        
-        String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
-        
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
-        
-        String where = " resource= ? ";
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(resource)) {
-            params = Collections.singletonList(resource);
-        } else {
-            where = " 1=1 ";
-        }
-        
-        Page<PermissionInfo> pageInfo =
-            helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
-                pageNo, pageSize, PERMISSION_ROW_MAPPER);
-        
-        if (pageInfo == null) {
-            pageInfo = new Page<>();
-            pageInfo.setTotalCount(0);
-            pageInfo.setPageItems(new ArrayList<>());
-        }
-        return pageInfo;
-    }
-    
     /**
      * Execute ddd user permission operation.
      *

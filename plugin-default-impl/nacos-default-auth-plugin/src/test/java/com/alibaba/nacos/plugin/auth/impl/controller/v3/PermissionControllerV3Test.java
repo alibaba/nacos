@@ -65,7 +65,7 @@ public class PermissionControllerV3Test {
             .thenReturn(permissionInfoPage);
         
         Result<Page<PermissionInfo>> result =
-            permissionController.getPermissionList(1, 10, "admin", "", "accurate");
+            permissionController.getPermissionList(1, 10, "admin", "accurate");
         
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).getPermissions("admin", 1, 10);
@@ -78,25 +78,10 @@ public class PermissionControllerV3Test {
             .thenReturn(permissionInfoPage);
         
         Result<Page<PermissionInfo>> result =
-            permissionController.getPermissionList(1, 10, "admin", "", "blur");
+            permissionController.getPermissionList(1, 10, "admin", "blur");
         
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).findPermissions("admin", 1, 10);
-    }
-    
-    @Test
-    void testGetPermissionListByResource() {
-        Page<PermissionInfo> permissionInfoPage = new Page<>();
-        when(nacosRoleService.getPermissionsByResource(anyString(), anyInt(), anyInt()))
-            .thenReturn(permissionInfoPage);
-        
-        Result<Page<PermissionInfo>> result =
-            permissionController.getPermissionList(1, 10, "", "@@visibility/public/mcp/demo",
-                "accurate");
-        
-        assertEquals(permissionInfoPage, result.getData());
-        verify(nacosRoleService, times(1)).getPermissionsByResource(
-            "@@visibility/public/mcp/demo", 1, 10);
     }
     
     @Test

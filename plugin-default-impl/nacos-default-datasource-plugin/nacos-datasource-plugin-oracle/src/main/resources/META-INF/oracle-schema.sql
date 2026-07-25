@@ -162,16 +162,12 @@ CREATE TABLE roles (
     CONSTRAINT uk_username_role UNIQUE (username, role)
 );
 
-CREATE INDEX idx_role_user ON roles(role, username);
-
 CREATE TABLE permissions (
     role VARCHAR2(50) NOT NULL,
     resource VARCHAR2(512 CHAR) NOT NULL,
     action VARCHAR2(8) NOT NULL,
     CONSTRAINT uk_role_permission UNIQUE (role, resource, action)
 );
-
-CREATE INDEX idx_permission_resource ON permissions(resource, action, role);
 
 
 /******************************************/

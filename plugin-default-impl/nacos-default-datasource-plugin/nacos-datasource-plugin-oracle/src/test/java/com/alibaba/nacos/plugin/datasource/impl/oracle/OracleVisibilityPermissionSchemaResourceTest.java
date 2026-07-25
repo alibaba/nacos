@@ -31,8 +31,6 @@ class OracleVisibilityPermissionSchemaResourceTest {
     void testPermissionResourceColumnSupportsCanonicalVisibilityResource() throws IOException {
         String schema = readResource("META-INF/oracle-schema.sql");
         assertTrue(schema.contains("resource VARCHAR2(512 CHAR) NOT NULL"));
-        assertTrue(schema.contains(
-            "CREATE INDEX idx_permission_resource ON permissions(resource, action, role)"));
     }
     
     @Test

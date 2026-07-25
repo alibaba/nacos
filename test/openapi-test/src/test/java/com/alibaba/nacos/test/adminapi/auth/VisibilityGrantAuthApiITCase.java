@@ -23,15 +23,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for auth visibility grant API {@code /nacos/v3/auth/visibility}.
  *
  * <p>Scenario coverage:
  * <ul>
-     *     <li>Expected capability: grant, list, and revoke explicit visibility access for an existing skill
- *     resource through the auth plugin owned API.</li>
+ *     <li>Expected capability: grant and revoke explicit visibility access for an existing skill resource
+ *     through the auth plugin owned API.</li>
  *     <li>Boundary/validation: write grant requests normalize to stored action {@code rw}; unsupported actions
  *     return a wrapped HTTP 400 validation error.</li>
  *     <li>Exception/error handling: grant requests for a missing AI resource return wrapped HTTP 404
@@ -47,11 +46,10 @@ public class VisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
 
     private static final String AUTH_VISIBILITY_PATH = nacosPath("/v3/auth/visibility");
 
-    private static final String AUTH_VISIBILITY_LIST_PATH = AUTH_VISIBILITY_PATH + "/list";
     private static final String AUTH_USER_PATH = nacosPath("/v3/auth/user");
 
     @Test
-    public void testGrantListAndRevokeVisibilityGrant() throws Exception {
+    public void testGrantAndRevokeVisibilityGrant() throws Exception {
         String skillName = randomAiName("visibility-auth");
         postFormOk(ADMIN_SKILL_PATH + "/draft",
                skillDraftForm(skillName, "1.0.0", "visibility body", "visibility guide"));
@@ -64,22 +62,8 @@ public class VisibilityGrantAuthApiITCase extends AiAdminApiBaseITCase {
                 visibilityGrantQuery(skillName, grantee, "w"));
         assertEquals("grant visibility permission ok!", grant.get("data").asText(), grant.toString());
 
-        JsonNode list = getJsonOk(AUTH_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
-        assertEquals(1, list.size(), list.toString());
-        JsonNode item = list.get(0);
-        assertEquals(DEFAULT_NAMESPACE, item.get("namespaceId").asText(), item.toString());
-        assertEquals("skill", item.get("resourceType").asText(), item.toString());
-        assertEquals(skillName, item.get("resourceName").asText(), item.toString());
-        assertEquals(grantee, item.get("username").asText(), item.toString());
-        assertEquals("rw", item.get("action").asText(), item.toString());
-
         JsonNode revoke = deleteJsonOk(AUTH_VISIBILITY_PATH, visibilityGrantQuery(skillName, grantee, "w"));
         assertEquals("revoke visibility permission ok!", revoke.get("data").asText(), revoke.toString());
-
-        JsonNode afterRevoke =
-                getJsonOk(AUTH_VISIBILITY_LIST_PATH, visibilityResourceQuery(skillName)).get("data");
-        assertTrue(afterRevoke.isArray(), afterRevoke.toString());
-        assertEquals(0, afterRevoke.size(), afterRevoke.toString());
     }
 
     @Test
