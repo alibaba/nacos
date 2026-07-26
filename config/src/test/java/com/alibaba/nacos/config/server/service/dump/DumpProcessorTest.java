@@ -17,8 +17,10 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
@@ -40,9 +42,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -108,6 +112,8 @@ class DumpProcessorTest {
     
     @AfterEach
     void after() throws Exception {
+        ((TaskManager) ReflectionTestUtils.getField(dumpService, "dumpTaskMgr")).close();
+        ((TaskManager) ReflectionTestUtils.getField(dumpService, "dumpAllTaskMgr")).close();
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
@@ -172,5 +178,49 @@ class DumpProcessorTest {
             ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
         assertNull(contentFromDiskAfterRemove);
         
+    }
+    
+    @Test
+    void testStaleRemoveEventReloadsLatestPersistedConfig() throws Exception {
+        String dataId = "staleRemoveDataId";
+        String group = "staleRemoveGroup";
+        String tenant = "staleRemoveTenant";
+        String content = "latestContent";
+        long latestModified = 200L;
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        
+        try {
+            assertTrue(ConfigCacheService.dump(dataId, group, tenant, content, latestModified,
+                "text", "encryptedKey"));
+            ConfigInfoWrapper latestConfig = new ConfigInfoWrapper();
+            latestConfig.setDataId(dataId);
+            latestConfig.setGroup(group);
+            latestConfig.setTenant(tenant);
+            latestConfig.setContent(content);
+            latestConfig.setType("text");
+            latestConfig.setEncryptedDataKey("encryptedKey");
+            latestConfig.setLastModified(latestModified);
+            Mockito.when(configInfoPersistService.findConfigInfo(dataId, group, tenant))
+                .thenReturn(latestConfig);
+            
+            DumpConfigHandler handler = new DumpConfigHandler(dumpService);
+            handler.onEvent(ConfigDumpEvent.builder().dataId(dataId).group(group)
+                .namespaceId(tenant).lastModifiedTs(100L).handleIp("127.0.0.1").remove(true)
+                .build());
+            handler.onEvent(ConfigDumpEvent.builder().dataId(dataId).group(group)
+                .namespaceId(tenant).content(content).lastModifiedTs(latestModified)
+                .handleIp("127.0.0.1").remove(false).build());
+            
+            TaskManager taskManager =
+                (TaskManager) ReflectionTestUtils.getField(dumpService, "dumpTaskMgr");
+            assertEquals(1, taskManager.size());
+            assertTrue(taskManager.await(5, TimeUnit.SECONDS));
+            
+            CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
+            assertEquals(MD5Utils.md5Hex(content, "UTF-8"), cacheItem.getConfigCache().getMd5());
+            assertEquals(latestModified, cacheItem.getConfigCache().getLastModifiedTs());
+        } finally {
+            ConfigCacheService.remove(dataId, group, tenant);
+        }
     }
 }

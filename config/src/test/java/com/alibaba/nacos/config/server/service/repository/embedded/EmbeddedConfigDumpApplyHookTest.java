@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class EmbeddedConfigDumpApplyHookTest {
     @BeforeEach
     void setUp() {
         notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
-        hook = new EmbeddedConfigDumpApplyHook();
+        hook = new EmbeddedConfigDumpApplyHook(Mockito.mock(DumpService.class));
     }
     
     @org.junit.jupiter.api.AfterEach

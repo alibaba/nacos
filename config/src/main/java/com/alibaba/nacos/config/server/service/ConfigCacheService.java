@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.io.IOException;
@@ -87,7 +86,7 @@ public class ConfigCacheService {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         CacheItem ci = makeSure(groupKey, encryptedDataKey);
         ci.setType(type);
-        final int lockResult = tryWriteLock(groupKey);
+        final int lockResult = tryConfigWriteLock(groupKey);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
@@ -200,7 +199,7 @@ public class ConfigCacheService {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         makeSure(groupKey, null);
-        final int lockResult = tryWriteLock(groupKey);
+        final int lockResult = tryConfigWriteLock(groupKey);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-gray-error] write lock failed. {}", groupKey);
@@ -626,43 +625,106 @@ public class ConfigCacheService {
         cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
     }
     
-    private static final int TRY_GET_LOCK_TIMES = 9;
+    /**
+     * Maximum number of attempts used by {@link #tryConfigReadLock(String)} / {@link #tryConfigWriteLock(String)} when
+     * the lock is contended. The implementation performs exactly {@code MAX_LOCK_ATTEMPTS} attempts, sleeping for
+     * {@link #LOCK_RETRY_INTERVAL_MILLIS} between two consecutive attempts.
+     */
+    private static final int MAX_LOCK_ATTEMPTS = 10;
     
     /**
-     * try config read lock with spin of try get lock times.
+     * Sleep interval between two consecutive lock attempts of {@link #tryConfigReadLock(String)} /
+     * {@link #tryConfigWriteLock(String)}.
+     */
+    private static final int LOCK_RETRY_INTERVAL_MILLIS = 1;
+    
+    /**
+     * Try config read lock with retry of {@link #MAX_LOCK_ATTEMPTS} times.
      *
      * @param groupKey group key of config.
      * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed.
      */
     public static int tryConfigReadLock(String groupKey) {
-        
+        return tryLockWithRetry(groupKey, true);
+    }
+    
+    /**
+     * Try config write lock with retry of {@link #MAX_LOCK_ATTEMPTS} times.
+     *
+     * @param groupKey group key of config.
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed.
+     */
+    static int tryConfigWriteLock(String groupKey) {
+        return tryLockWithRetry(groupKey, false);
+    }
+    
+    /**
+     * Acquire the read or write lock with a bounded retry loop.
+     *
+     * <p>Both {@link #tryConfigReadLock(String)} and {@link #tryConfigWriteLock(String)} share this helper so that the
+     * retry count, the delay between attempts, the interruption handling and any future backoff behavior cannot drift
+     * between the two paths.</p>
+     *
+     * <p>The retry loop performs at most {@link #MAX_LOCK_ATTEMPTS} attempts. The underlying {@link #tryReadLock} /
+     * {@link #tryWriteLock} already emits a warning on each failed attempt, so this helper does not log per attempt.
+     * Instead, it logs a single aggregated warning once all attempts are exhausted, including the attempt count and the
+     * elapsed time. If the sleeping thread is interrupted, the interrupt flag is restored and the loop stops
+     * retrying.</p>
+     *
+     * @param groupKey group key of config.
+     * @param readLock {@code true} to acquire the read lock, {@code false} to acquire the write lock.
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed.
+     */
+    private static int tryLockWithRetry(String groupKey, boolean readLock) {
         // Lock failed by default.
         int lockResult = -1;
-        
-        // Try to get lock times, max value: 10;
-        for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
-            lockResult = ConfigCacheService.tryReadLock(groupKey);
-            
-            // The data is non-existent.
-            if (0 == lockResult) {
-                break;
-            }
-            
-            // Success
-            if (lockResult > 0) {
-                break;
-            }
-            
-            // Retry.
-            if (i > 0) {
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                    LogUtil.PULL_CHECK_LOG.error("An Exception occurred while thread sleep", e);
+        long startNanos = System.nanoTime();
+        int attempts = 0;
+        boolean interrupted = false;
+        try {
+            for (int i = 0; i < MAX_LOCK_ATTEMPTS; i++) {
+                attempts++;
+                lockResult = readLock ? ConfigCacheService.tryReadLock(groupKey)
+                    : ConfigCacheService.tryWriteLock(groupKey);
+                
+                // The data is non-existent.
+                if (0 == lockResult) {
+                    return lockResult;
                 }
+                
+                // Success
+                if (lockResult > 0) {
+                    return lockResult;
+                }
+                
+                // No more attempts.
+                if (i == MAX_LOCK_ATTEMPTS - 1) {
+                    break;
+                }
+                
+                try {
+                    Thread.sleep(LOCK_RETRY_INTERVAL_MILLIS);
+                } catch (InterruptedException e) {
+                    // Stop retrying but keep the interrupt status for callers and restore it before returning.
+                    interrupted = true;
+                    DUMP_LOG.warn("[{}-lock] retry interrupted, groupKey={}",
+                        readLock ? "read" : "write",
+                        groupKey);
+                    break;
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
             }
         }
         
+        // All attempts exhausted: log a single aggregated warning including attempt count and elapsed time.
+        if (lockResult < 0) {
+            DUMP_LOG.warn("[{}-lock] failed after {} attempts, cost={}ms, groupKey={}",
+                readLock ? "read" : "write",
+                attempts, (System.nanoTime() - startNanos) / 1000000L, groupKey);
+        }
         return lockResult;
     }
 }
