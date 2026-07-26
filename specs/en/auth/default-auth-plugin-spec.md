@@ -251,11 +251,34 @@ table to keep the existing `(role, resource, action)` indexes valid with
 `utf8mb4`.
 
 Existing MySQL deployments should review the MySQL version, InnoDB page size,
-row format, and current `permissions` table definition before applying
-`META-INF/mysql-upgrade-visibility-permission-resource.sql`. Existing Oracle
-deployments should apply
-`META-INF/oracle-upgrade-visibility-permission-resource.sql` to expand
-`permissions.resource` to `VARCHAR2(512 CHAR)`.
+row format, and current `permissions` table definition before applying the
+upgrade SQL. Operators must configure a compatible InnoDB storage mode before
+running the MySQL migration so the existing `UNIQUE(role, resource, action)`
+index can accept the enlarged `utf8mb4` resource column.
+
+Upgrade scripts for this change are delivered in `distribution/conf`:
+
+| Database | Upgrade script | Exact schema change |
+|----------|----------------|---------------------|
+| MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
+| Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
+| PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+
+The MySQL script documents these preflight checks:
+
+```sql
+SELECT VERSION();
+SHOW VARIABLES LIKE 'innodb_page_size';
+SHOW VARIABLES LIKE 'innodb_default_row_format';
+SHOW CREATE TABLE permissions;
+```
+
+These scripts only expand the raw canonical resource column. They must not add
+grant-list-only reverse indexes such as `permissions(resource, action, role)` or
+`roles(role, username)`.
+The operator-facing upgrade note is
+[`doc/visibility-permission-resource-upgrade.md`](../../../doc/visibility-permission-resource-upgrade.md).
 
 Explicit visibility grants for currently supported resources are managed through:
 

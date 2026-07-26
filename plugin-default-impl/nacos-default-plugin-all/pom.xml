@@ -120,16 +120,24 @@
                                 </delete>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-upgrade-visibility-permission-resource.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/derby-upgrade-visibility-permission-resource.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-upgrade-visibility-permission-resource.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/mysql-upgrade-visibility-permission-resource.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-null-tenant-id.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-upgrade-null-tenant-id.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-visibility-permission-resource.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-upgrade-visibility-permission-resource.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/oracle-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-upgrade-visibility-permission-resource.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/oracle-upgrade-visibility-permission-resource.sql" overwrite="true"/>
                             </target>
                         </configuration>
                     </execution>
@@ -143,35 +151,59 @@
                             <target>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
                                            property="schema.source.derby.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-upgrade-visibility-permission-resource.sql"
+                                           property="schema.source.derby.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
                                            property="schema.source.mysql.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-upgrade-visibility-permission-resource.sql"
+                                           property="schema.source.mysql.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
                                            property="schema.source.pg.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
                                            property="schema.source.pg.grant.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-visibility-permission-resource.sql"
+                                           property="schema.source.pg.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
                                            property="schema.source.oracle.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-upgrade-visibility-permission-resource.sql"
+                                           property="schema.source.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
+                                <fail unless="schema.source.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in datasource plugin."/>
                                 <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
+                                <fail unless="schema.source.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in datasource plugin."/>
                                 <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
                                 <fail unless="schema.source.pg.grant.exists" message="Missing postgresql read/write grant script in datasource plugin."/>
+                                <fail unless="schema.source.pg.visibility.upgrade.exists" message="Missing postgresql visibility permission upgrade script in datasource plugin."/>
                                 <fail unless="schema.source.oracle.exists" message="Missing oracle schema source in datasource plugin."/>
+                                <fail unless="schema.source.oracle.visibility.upgrade.exists" message="Missing oracle visibility permission upgrade script in datasource plugin."/>
 
                                 <available file="${project.basedir}/../../distribution/conf/derby-schema.sql"
                                            property="schema.output.derby.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/derby-upgrade-visibility-permission-resource.sql"
+                                           property="schema.output.derby.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/mysql-schema.sql"
                                            property="schema.output.mysql.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/mysql-upgrade-visibility-permission-resource.sql"
+                                           property="schema.output.mysql.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/pg-schema.sql"
                                            property="schema.output.pg.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql"
                                            property="schema.output.pg.grant.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/pg-upgrade-visibility-permission-resource.sql"
+                                           property="schema.output.pg.visibility.upgrade.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/oracle-schema.sql"
                                            property="schema.output.oracle.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/oracle-upgrade-visibility-permission-resource.sql"
+                                           property="schema.output.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.grant.exists" message="Missing postgresql grant script in distribution/conf after packaging."/>
+                                <fail unless="schema.output.pg.visibility.upgrade.exists" message="Missing postgresql visibility permission upgrade script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.oracle.exists" message="Missing oracle schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.oracle.visibility.upgrade.exists" message="Missing oracle visibility permission upgrade script in distribution/conf after packaging."/>
 
                                 <available file="${project.basedir}/../../distribution/plugins/nacos-ldap-auth-plugin-${project.version}.jar"
                                            property="plugin.output.ldap.exists"/>

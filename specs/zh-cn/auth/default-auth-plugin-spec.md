@@ -212,11 +212,33 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 `permissions` 表使用 `ROW_FORMAT=DYNAMIC`，以保证现有 `(role, resource, action)`
 索引在 `utf8mb4` 下可用。
 
-已有 MySQL 部署在应用 `META-INF/mysql-upgrade-visibility-permission-resource.sql`
-前，应检查 MySQL 版本、InnoDB page size、row format 以及当前 `permissions` 表结构。
-已有 Oracle 部署应应用
-`META-INF/oracle-upgrade-visibility-permission-resource.sql`，将 `permissions.resource`
-扩展为 `VARCHAR2(512 CHAR)`。
+已有 MySQL 部署在应用升级 SQL 前，应检查 MySQL 版本、InnoDB page size、row format
+以及当前 `permissions` 表结构。运维人员必须先配置兼容的 InnoDB 存储模式，再执行
+MySQL 迁移，以确保现有 `UNIQUE(role, resource, action)` 索引能够接受扩展后的
+`utf8mb4` resource 列。
+
+本次变更的升级脚本通过 `distribution/conf` 交付：
+
+| 数据库 | 升级脚本 | 精确 schema 变更 |
+|--------|----------|------------------|
+| MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
+| Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
+| PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+
+MySQL 脚本包含以下预检查：
+
+```sql
+SELECT VERSION();
+SHOW VARIABLES LIKE 'innodb_page_size';
+SHOW VARIABLES LIKE 'innodb_default_row_format';
+SHOW CREATE TABLE permissions;
+```
+
+这些脚本只扩展原始 canonical resource 列，不得添加仅服务于授权列表反查的
+`permissions(resource, action, role)` 或 `roles(role, username)` 索引。
+面向运维人员的升级说明见
+[`doc/visibility-permission-resource-upgrade.md`](../../../doc/visibility-permission-resource-upgrade.md)。
 
 当前支持资源的显式可见性授权通过以下接口管理：
 

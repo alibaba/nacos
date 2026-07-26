@@ -24,7 +24,10 @@
 -- 2. Review the InnoDB index-length capability before applying this script.
 --    The permissions table keeps UNIQUE(role, resource, action), so resource
 --    needs an InnoDB row format that supports long utf8mb4 indexes.
--- 3. utf8mb4_bin keeps resource matching exact and case-sensitive.
+-- 3. Configure a compatible InnoDB mode before applying this migration. For
+--    example, use a row format such as DYNAMIC and verify that the existing
+--    server/page-size combination accepts the enlarged unique index.
+-- 4. utf8mb4_bin keeps resource matching exact and case-sensitive.
 --
 -- Suggested pre-checks:
 -- SELECT VERSION();

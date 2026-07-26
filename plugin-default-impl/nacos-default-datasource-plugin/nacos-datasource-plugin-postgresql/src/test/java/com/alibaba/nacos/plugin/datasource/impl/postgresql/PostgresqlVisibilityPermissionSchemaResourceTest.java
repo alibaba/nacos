@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.oracle;
+package com.alibaba.nacos.plugin.datasource.impl.postgresql;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,21 +26,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class OracleVisibilityPermissionSchemaResourceTest {
+class PostgresqlVisibilityPermissionSchemaResourceTest {
     
     @Test
     void testPermissionResourceColumnSupportsCanonicalVisibilityResource() throws IOException {
-        String schema = readResource("META-INF/oracle-schema.sql");
-        assertTrue(schema.contains("resource VARCHAR2(512 CHAR) NOT NULL"));
+        String schema = readResource("META-INF/pg-schema.sql");
+        assertTrue(schema.contains("\"resource\" varchar(512)  NOT NULL"));
         assertFalse(schema.contains("idx_permission_resource"));
         assertFalse(schema.contains("idx_role_user"));
     }
     
     @Test
     void testPermissionResourceUpgradeScriptExpandsResourceColumn() throws IOException {
-        String sql = readResource("META-INF/oracle-upgrade-visibility-permission-resource.sql");
-        assertTrue(sql.contains(
-            "ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL)"));
+        String sql = readResource("META-INF/pg-upgrade-visibility-permission-resource.sql");
+        assertTrue(sql.contains("ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512)"));
         assertFalse(sql.contains("idx_permission_resource"));
     }
     

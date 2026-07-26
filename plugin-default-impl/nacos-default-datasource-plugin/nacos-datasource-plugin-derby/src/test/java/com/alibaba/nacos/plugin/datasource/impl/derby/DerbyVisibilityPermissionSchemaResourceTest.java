@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.oracle;
+package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,21 +26,21 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class OracleVisibilityPermissionSchemaResourceTest {
+class DerbyVisibilityPermissionSchemaResourceTest {
     
     @Test
     void testPermissionResourceColumnSupportsCanonicalVisibilityResource() throws IOException {
-        String schema = readResource("META-INF/oracle-schema.sql");
-        assertTrue(schema.contains("resource VARCHAR2(512 CHAR) NOT NULL"));
+        String schema = readResource("META-INF/derby-schema.sql");
+        assertTrue(schema.contains("resource varchar(512) NOT NULL"));
         assertFalse(schema.contains("idx_permission_resource"));
         assertFalse(schema.contains("idx_role_user"));
     }
     
     @Test
     void testPermissionResourceUpgradeScriptExpandsResourceColumn() throws IOException {
-        String sql = readResource("META-INF/oracle-upgrade-visibility-permission-resource.sql");
+        String sql = readResource("META-INF/derby-upgrade-visibility-permission-resource.sql");
         assertTrue(sql.contains(
-            "ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL)"));
+            "ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512)"));
         assertFalse(sql.contains("idx_permission_resource"));
     }
     
