@@ -156,6 +156,17 @@ owner metadata, the domain may expose a lightweight lookup bridge such as
 `namespaceId`, `resourceType`, `resourceName`, `owner`, and `scope` without
 taking a direct compile-time dependency on domain persistence classes.
 
+The default built-in grant-management API is:
+
+```text
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
+```
+
+These endpoints are plugin-owned auth APIs and must use `ApiType.ADMIN_API`.
+The default implementation does not expose a management-side grant-list
+endpoint.
+
 ## API Requirements
 
 Any API that returns visibility-aware resources must:

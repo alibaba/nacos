@@ -243,8 +243,11 @@ SHOW CREATE TABLE permissions;
 当前支持资源的显式可见性授权通过以下接口管理：
 
 ```text
-/v3/auth/visibility
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
 ```
+
+两个端点均使用 `ApiType.ADMIN_API` 保护。
 
 授权行为：
 

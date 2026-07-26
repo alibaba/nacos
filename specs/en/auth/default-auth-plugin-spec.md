@@ -217,7 +217,7 @@ administrator exists. These APIs are part of the
 The visibility grant API is plugin-owned, not part of any domain controller
 family. It uses `ApiType.ADMIN_API` with identity-only request authentication
 and enforces resource management authority in the grant service. When auth is
-enabled, only the resource owner or a global administrator may grant, revoke,
+enabled, only the resource owner or a global administrator may grant or revoke
 explicit visibility access for that resource.
 
 ## Default Visibility Implementation
@@ -283,8 +283,11 @@ The operator-facing upgrade note is
 Explicit visibility grants for currently supported resources are managed through:
 
 ```text
-/v3/auth/visibility
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
 ```
+
+Both endpoints are secured with `ApiType.ADMIN_API`.
 
 Grant behavior:
 

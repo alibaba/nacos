@@ -141,6 +141,16 @@ nacos.plugin.visibility.{serviceName}.*
 类型的前提下解析 `namespaceId`、`resourceType`、`resourceName`、`owner` 和
 `scope`。
 
+默认内置的授权管理 API 为：
+
+```text
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
+```
+
+这些端点属于插件自有的 auth API，必须使用 `ApiType.ADMIN_API`。默认实现不暴露管理侧
+授权列表端点。
+
 ## API 要求
 
 任何返回具备可见性语义资源的 API 都必须：
