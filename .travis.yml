@@ -1,0 +1,46 @@
+notifications:
+  email:
+    recipients:
+      - dev-nacos@googlegroups.com
+      - mw_configcenter@list.alibaba-inc.com
+  on_success: change
+  on_failure: always
+
+language: java
+
+matrix:
+  include:
+    # On OSX, run with default JDK only.
+    # - os: osx
+    # On Linux, run with specific JDKs only.
+    - os: linux
+      env: CUSTOM_JDK="oraclejdk8"
+    - name: Linux aarch64
+      dist: focal
+      arch: arm64-graviton2
+      group: edge
+      virt: vm
+
+
+jdk:
+  - openjdk11
+  - openjdk8
+
+before_install:
+  - echo 'MAVEN_OPTS="$MAVEN_OPTS -Xmx1024m -XX:MaxPermSize=512m -XX:+BytecodeVerificationLocal"' >> ~/.mavenrc
+  - cat ~/.mavenrc
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export JAVA_HOME=$(/usr/libexec/java_home); fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then jdk_switcher use "$CUSTOM_JDK"; fi
+
+script:
+  - mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
+  - mvn clean -Premove-test-data
+  - mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
+  - mvn clean -Premove-test-data
+  - mvn clean package -Pcit-test
+  - mvn clean -Premove-test-data
+  - mvn clean package -Pnit-test
+  - mvn clean -Premove-test-data
+after_success:
+  - mvn clean package -Pit-test
+  - mvn sonar:sonar -Psonar-apache

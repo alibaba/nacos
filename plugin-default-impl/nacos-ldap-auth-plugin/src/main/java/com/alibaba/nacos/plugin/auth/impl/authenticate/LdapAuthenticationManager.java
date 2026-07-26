@@ -1,0 +1,144 @@
+/*
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.plugin.auth.impl.authenticate;
+
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfigProvider;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapTemplateProvider;
+import com.alibaba.nacos.plugin.auth.impl.persistence.User;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+/**
+ * LdapAuthenticatoinManager.
+ *
+ * @author Weizhan▪Yun
+ * @date 2023/1/17 13:25
+ */
+public class LdapAuthenticationManager extends AbstractAuthenticationManager {
+    
+    private final String filterPrefix;
+    
+    private final boolean caseSensitive;
+    
+    private final LdapTemplateProvider ldapTemplateProvider;
+    
+    private final LdapAuthPluginConfigProvider configProvider;
+    
+    public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserService userDetailsService,
+        TokenManagerDelegate jwtTokenManager, NacosRoleService roleService, String filterPrefix,
+        boolean caseSensitive) {
+        this(() -> ldapTemplate, userDetailsService, jwtTokenManager, roleService, filterPrefix,
+            caseSensitive);
+    }
+    
+    public LdapAuthenticationManager(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService, String filterPrefix, boolean caseSensitive) {
+        super(userDetailsService, jwtTokenManager, roleService);
+        this.ldapTemplateProvider = ldapTemplateProvider;
+        this.filterPrefix = filterPrefix;
+        this.caseSensitive = caseSensitive;
+        this.configProvider = null;
+    }
+    
+    public LdapAuthenticationManager(LdapTemplateProvider ldapTemplateProvider,
+        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+        NacosRoleService roleService, LdapAuthPluginConfigProvider configProvider) {
+        super(userDetailsService, jwtTokenManager, roleService);
+        this.ldapTemplateProvider = ldapTemplateProvider;
+        this.filterPrefix = null;
+        this.caseSensitive = true;
+        this.configProvider = configProvider;
+    }
+    
+    @Override
+    public NacosUser authenticate(String username, String rawPassword) throws AccessException {
+        if (StringUtils.isBlank(username)) {
+            throw new AccessException("user not found!");
+        }
+        
+        if (!isCaseSensitive()) {
+            username = username.toLowerCase();
+        }
+        
+        if (username.toUpperCase().startsWith(AuthConstants.LDAP_PREFIX)) {
+            throw new AccessException("user not found!");
+        }
+        
+        try {
+            return super.authenticate(username, rawPassword);
+        } catch (AccessException | UsernameNotFoundException ignored) {
+            if (Loggers.AUTH.isWarnEnabled()) {
+                Loggers.AUTH.warn("try login with LDAP, user: {}", username);
+            }
+        }
+        
+        UserDetails userDetails;
+        try {
+            if (!ldapLogin(username, rawPassword)) {
+                throw new AccessException("LDAP login failed.");
+            }
+            userDetails =
+                userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
+        } catch (UsernameNotFoundException exception) {
+            String ldapUsername = AuthConstants.LDAP_PREFIX + username;
+            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD,
+                false);
+            User user = new User();
+            user.setUsername(ldapUsername);
+            user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            userDetails = new NacosUserDetails(user);
+        } catch (Exception e) {
+            Loggers.AUTH.error("[LDAP-LOGIN] failed", e);
+            throw new AccessException("user not found");
+        }
+        
+        return new NacosUser(userDetails.getUsername(),
+            jwtTokenManager.createToken(userDetails.getUsername()));
+    }
+    
+    private boolean ldapLogin(String username, String password) {
+        return ldapTemplateProvider.getLdapTemplate().authenticate("",
+            new EqualsFilter(getFilterPrefix(), username).toString(), password);
+    }
+    
+    private String getFilterPrefix() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? filterPrefix : config.getFilterPrefix();
+    }
+    
+    private boolean isCaseSensitive() {
+        LdapAuthPluginConfig config = getConfig();
+        return config == null ? caseSensitive : config.isCaseSensitive();
+    }
+    
+    private LdapAuthPluginConfig getConfig() {
+        return configProvider == null ? null : configProvider.getConfig();
+    }
+}

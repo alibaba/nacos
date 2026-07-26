@@ -1,0 +1,108 @@
+/*
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.plugin.auth.constant;
+
+/**
+ * All the constants.
+ *
+ * @author onew
+ */
+public class Constants {
+    
+    public static class Auth {
+        
+        public static final String NACOS_CORE_AUTH_ENABLED = "nacos.core.auth.enabled";
+        
+        public static final String NACOS_CORE_AUTH_CONSOLE_ENABLED =
+            "nacos.core.auth.console.enabled";
+        
+        public static final String NACOS_CORE_AUTH_ADMIN_ENABLED = "nacos.core.auth.admin.enabled";
+        
+        public static final String NACOS_PLUGIN_AUTH_TYPE = "nacos.plugin.auth.type";
+        
+        /**
+         * Legacy auth plugin selection property.
+         *
+         * @deprecated use {@link #NACOS_PLUGIN_AUTH_TYPE} instead.
+         */
+        @Deprecated
+        public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
+        
+        public static final String NACOS_CORE_AUTH_CACHING_ENABLED =
+            "nacos.core.auth.caching.enabled";
+        
+        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_KEY =
+            "nacos.core.auth.server.identity.key";
+        
+        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE =
+            "nacos.core.auth.server.identity.value";
+        
+    }
+    
+    public static class Resource {
+        
+        public static final String SPLITTER = ":";
+        
+        public static final String ANY = "*";
+        
+        public static final String ACTION = "action";
+        
+        public static final String REQUEST_CLASS = "requestClass";
+        
+        public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
+        
+        public static final String AI_TYPE = "aiType";
+        
+        public static final String AI_TYPE_MCP = "mcp";
+        
+        public static final String AI_TYPE_AGENT = "agent";
+        
+        public static final String AI_TYPE_SKILL = "skill";
+        
+        public static final String AI_TYPE_PROMPT = "prompt";
+        
+        public static final String AI_TYPE_AGENT_SPEC = "agentSpec";
+    }
+    
+    public static class Identity {
+        
+        public static final String IDENTITY_ID = "identity_id";
+        
+        public static final String X_REAL_IP = "X-Real-IP";
+        
+        public static final String REMOTE_IP = "remote_ip";
+        
+        public static final String IDENTITY_CONTEXT = "identity_context";
+        
+        public static final String SERVER_IDENTITY = "server_identity";
+    }
+    
+    public static class Tag {
+        
+        public static final String ONLY_IDENTITY = "only_identity";
+        
+        /**
+         * Tag value that marks a {@link com.alibaba.nacos.auth.annotation.Secured} API as allowing anonymous access.
+         */
+        public static final String ALLOW_ANONYMOUS = "allowAnonymous";
+        
+        public static final String SECURED_SPECIAL_TAGS =
+            com.alibaba.nacos.api.common.Constants.NAMESPACE_ID
+                + Resource.SPLITTER
+                + com.alibaba.nacos.api.common.Constants.TARGET_NAMESPACE_ID;
+    }
+}

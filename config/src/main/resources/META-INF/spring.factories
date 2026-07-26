@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.config.server.utils.PropertyUtil

@@ -1,0 +1,25 @@
+name: Close inactive issues
+on:
+  schedule:
+    - cron: "0 17 * * *"   # UTC+8 01:00（UTC 17:00）
+
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v10
+        with:
+          operations-per-run: 50
+          days-before-issue-stale: 7
+          days-before-issue-close: 7
+          stale-issue-label: "expired"
+          stale-issue-message: "This issue has been open 7 days with no activity. This will be closed in 7 days."
+          close-issue-message: "This issue was closed because it has been inactive for 7 days since being marked as expired."
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          exempt-all-milestones: true
+          exempt-issue-labels: "kind/bug,kind/code quality,kind/discussion,kind/enhancement,kind/feature,kind/notice,kind/performance,kind/proposal,kind/question,kind/refactor,kind/user experience,good first issue,contribution welcome,dependencies"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

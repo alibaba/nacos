@@ -1,0 +1,268 @@
+.skill-optimize-dialog {
+  .next-dialog {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .next-dialog-body {
+    padding: 20px;
+    max-height: calc(90vh - 120px);
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    flex: 1;
+    -webkit-overflow-scrolling: touch; // 平滑滚动
+    scrollbar-width: thin; // Firefox 滚动条样式
+    scrollbar-color: #c1c1c1 #f1f1f1; // Firefox 滚动条颜色
+
+    // 确保内容区域可以完全展开
+    & > * {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    // Chrome/Safari 滚动条样式
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+
+  .next-form-item {
+    margin-bottom: 16px;
+  }
+
+  .next-form-item-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .next-input-textarea {
+    width: 100% !important;
+  }
+
+  .thinking-section {
+    .thinking-content {
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #333;
+      }
+    }
+  }
+
+  .stream-content {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+
+    .stream-header {
+      margin-bottom: 8px;
+    }
+
+    .stream-text {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  .comparison-view {
+    margin-top: 16px;
+    overflow: visible !important;
+
+    // 确保 Row 和 Col 不限制高度
+    .next-row {
+      overflow: visible !important;
+      height: auto !important;
+    }
+
+    .next-col {
+      overflow: visible !important;
+      height: auto !important;
+    }
+
+    .comparison-card {
+      height: auto !important;
+      min-height: auto !important;
+      max-height: none !important;
+      display: block !important;
+      overflow: visible !important;
+
+      // 强制移除所有可能的高度限制
+      &,
+      & > *,
+      & > * > *,
+      & > * > * > * {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      // Card 头部不限制
+      .next-card-head {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      // Card body 完全展开
+      .next-card-body {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 16px !important;
+        display: block !important;
+        flex: none !important;
+      }
+
+      // Card 内容区域
+      .next-card-content {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      // 移除所有内部元素的高度限制
+      .comparison-item,
+      .comparison-item > *,
+      .comparison-item > * > * {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      &.optimized {
+        border-color: #52c41a;
+      }
+
+      .comparison-item {
+        margin-bottom: 16px;
+
+        // 最后一个 item 不需要 margin-bottom
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 8px;
+          color: #666;
+        }
+
+        div {
+          padding: 8px;
+          background: #fafafa;
+          border-radius: 4px;
+          white-space: pre-wrap;
+          word-break: break-word;
+          min-height: 20px;
+
+          &.changed {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+          }
+        }
+
+        // 资源项特殊处理 - 确保完全展开
+        &.comparison-resources {
+          margin-bottom: 16px !important;
+          overflow: visible !important;
+          height: auto !important;
+          max-height: none !important;
+          min-height: auto !important;
+          display: block !important;
+
+          label {
+            display: block !important;
+            margin-bottom: 8px !important;
+          }
+
+          .resources-tags-wrapper {
+            padding: 8px !important;
+            background: #fafafa !important;
+            border-radius: 4px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            min-height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            height: auto !important;
+            // 确保标签可以完全显示
+            align-items: flex-start !important;
+            align-content: flex-start !important;
+          }
+
+          // 确保标签本身也不被限制
+          .next-tag,
+          span {
+            max-height: none !important;
+            overflow: visible !important;
+            height: auto !important;
+          }
+        }
+
+        // 资源标签容器样式（通过内联样式设置，这里只做备用）
+        .resource-tags-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          min-height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+
+        .comparison-pre {
+          padding: 8px;
+          background: #fafafa;
+          border-radius: 4px;
+          white-space: pre-wrap;
+          word-break: break-word;
+          margin: 0;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 12px;
+          line-height: 1.5;
+          max-height: 200px;
+          overflow-y: auto;
+
+          &.changed {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,133 @@
+/*
+ *  Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package com.alibaba.nacos.naming.remote.rpc.handler;
+
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
+import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static com.alibaba.nacos.consistency.DataOperation.ADD;
+import static com.alibaba.nacos.consistency.DataOperation.CHANGE;
+import static com.alibaba.nacos.consistency.DataOperation.DELETE;
+import static com.alibaba.nacos.consistency.DataOperation.QUERY;
+import static com.alibaba.nacos.consistency.DataOperation.SNAPSHOT;
+import static com.alibaba.nacos.consistency.DataOperation.VERIFY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+/**
+ * {@link DistroDataRequestHandler} unit tests.
+ *
+ * @author chenglu
+ * @date 2021-09-17 20:50
+ */
+@ExtendWith(MockitoExtension.class)
+class DistroDataRequestHandlerTest {
+    
+    @InjectMocks
+    private DistroDataRequestHandler distroDataRequestHandler;
+    
+    @Mock
+    private DistroProtocol distroProtocol;
+    
+    @Test
+    void testHandle() throws NacosException {
+        Mockito.when(distroProtocol.onVerify(Mockito.any(), Mockito.anyString())).thenReturn(false);
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        distroDataRequest.setDataOperation(VERIFY);
+        RequestMeta requestMeta = new RequestMeta();
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        assertEquals(response.getErrorCode(), ResponseCode.FAIL.getCode());
+        
+        DistroData distroData = new DistroData();
+        Mockito.when(distroProtocol.onSnapshot(Mockito.any())).thenReturn(distroData);
+        distroDataRequest.setDataOperation(SNAPSHOT);
+        DistroDataResponse response1 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        assertEquals(response1.getDistroData(), distroData);
+        
+        distroDataRequest.setDataOperation(DELETE);
+        Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(false);
+        DistroDataResponse response2 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        assertEquals(response2.getErrorCode(), ResponseCode.FAIL.getCode());
+        
+        distroDataRequest.setDataOperation(QUERY);
+        Mockito.when(distroProtocol.onQuery(Mockito.any())).thenReturn(distroData);
+        distroDataRequest.setDistroData(new DistroData());
+        DistroDataResponse response3 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        assertEquals(response3.getDistroData(), distroData);
+        
+        distroDataRequest.setDataOperation(ADD);
+        DistroDataResponse response4 =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        assertNull(response4.getDistroData());
+    }
+    
+    @Test
+    void testHandleVerifySuccess() throws NacosException {
+        Mockito.when(distroProtocol.onVerify(Mockito.any(), Mockito.eq("1.1.1.1")))
+            .thenReturn(true);
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        distroDataRequest.setDataOperation(VERIFY);
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("1.1.1.1");
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, requestMeta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+    }
+    
+    @Test
+    void testHandleChangeSuccess() throws NacosException {
+        Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(true);
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        distroDataRequest.setDataOperation(CHANGE);
+        distroDataRequest.setDistroData(new DistroData());
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, new RequestMeta());
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+    }
+    
+    @Test
+    void testHandleException() throws NacosException {
+        DistroDataRequest distroDataRequest = new DistroDataRequest();
+        
+        DistroDataResponse response =
+            distroDataRequestHandler.handle(distroDataRequest, new RequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
+        assertEquals("handle distro request with exception", response.getMessage());
+    }
+}

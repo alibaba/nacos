@@ -1,0 +1,83 @@
+/*
+ *  Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package com.alibaba.nacos.consistency.serialize;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * {@link JacksonSerializer} unit test.
+ *
+ * @author chenglu
+ * @date 2021-07-27 18:32
+ */
+class JacksonSerializerTest {
+    
+    private JacksonSerializer jacksonSerializer;
+    
+    @BeforeEach
+    void setUp() {
+        jacksonSerializer = new JacksonSerializer();
+    }
+    
+    @Test
+    void testSerializerAndDeserialize() {
+        String data = "xxx";
+        byte[] bytes = jacksonSerializer.serialize(data);
+        
+        try {
+            jacksonSerializer.deserialize(bytes);
+        } catch (Exception e) {
+            assertTrue(e instanceof UnsupportedOperationException);
+        }
+        
+        String res1 = jacksonSerializer.deserialize(bytes, String.class);
+        assertEquals(data, res1);
+        
+        String res2 = jacksonSerializer.deserialize(bytes, "java.lang.String");
+        assertEquals(data, res2);
+    }
+    
+    @Test
+    void testName() {
+        assertEquals("JSON", jacksonSerializer.name());
+    }
+    
+    @Test
+    void testDeserializeWithClassAndEmptyData() {
+        assertNull(jacksonSerializer.deserialize(new byte[0], String.class));
+    }
+    
+    @Test
+    void testDeserializeWithTypeAndEmptyData() {
+        assertNull(
+            jacksonSerializer.deserialize(new byte[0], (java.lang.reflect.Type) String.class));
+    }
+    
+    @Test
+    void testDeserializeWithType() {
+        String data = "testType";
+        byte[] bytes = jacksonSerializer.serialize(data);
+        String result = jacksonSerializer.deserialize(bytes, (java.lang.reflect.Type) String.class);
+        assertEquals(data, result);
+    }
+}

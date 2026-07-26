@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.alibaba.nacos</groupId>
+        <artifactId>nacos-all</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    
+    <modelVersion>4.0.0</modelVersion>
+    
+    <artifactId>nacos-client</artifactId>
+    <packaging>jar</packaging>
+    
+    <name>nacos-client ${project.version}</name>
+    <url>https://nacos.io</url>
+    <description>Nacos client pom.xml file</description>
+    
+    <properties>
+        <maven.compiler.source>${client.java.version}</maven.compiler.source>
+        <maven.compiler.target>${client.java.version}</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+    
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client-basic</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-logback-adapter-12</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>logback-adapter</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-log4j2-adapter</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        
+        <!-- issue#12028 upgrade org.apache.httpcomponents:httpasyncclient to org.apache.httpcomponents.client5:httpclient5 -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        
+        <!-- issue#12028 upgrade org.apache.httpcomponents:httpcore to org.apache.httpcomponents.core5:httpcore5 -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.6.0</version>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+                                <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                                <createDependencyReducedPom>false</createDependencyReducedPom>
+                                <minimizeJar>true</minimizeJar>
+                                <createSourcesJar>true</createSourcesJar>
+                                <shadeSourcesContent>true</shadeSourcesContent>
+
+                                <filters>
+                                    <filter>
+                                        <artifact>*:*</artifact>
+                                        <excludes>
+                                            <exclude>META-INF/*.SF</exclude>
+                                            <exclude>META-INF/*.DSA</exclude>
+                                            <exclude>META-INF/*.RSA</exclude>
+                                            <exclude>**/module-info.class</exclude>
+                                        </excludes>
+                                    </filter>
+                                    <!-- <filter> -->
+                                    <!--     <artifact>io.grpc:grpc-netty-shaded</artifact> -->
+                                    <!--     <excludes> -->
+                                    <!--         <exclude> -->
+                                    <!--             META-INF/native/*.* -->
+                                    <!--         </exclude> -->
+                                    <!--     </excludes> -->
+                                    <!-- </filter> -->
+                                    <filter>
+                                        <artifact>com.google.*:*</artifact>
+                                        <excludes>
+                                            <exclude>
+                                                google/**/*.proto
+                                            </exclude>
+                                        </excludes>
+                                    </filter>
+                                    <filter>
+                                        <artifact>com.alibaba.nacos:nacos-api</artifact>
+                                        <includes>
+                                            <include>
+                                                com/alibaba/nacos/api/**/**
+                                            </include>
+                                            <include>
+                                                META-INF/**/*.*
+                                            </include>
+                                        </includes>
+                                    </filter>
+                                </filters>
+
+                                <artifactSet>
+                                    <includes>
+                                        <include>com.alibaba.nacos:nacos-api</include>
+                                        <include>com.alibaba.nacos:nacos-common</include>
+                                        <include>org.conscrypt:conscrypt-openjdk</include>
+                                        <include>org.mortbay.jetty.alpn:alpn-boot</include>
+                                        <include>org.eclipse.jetty.npn:npn-api</include>
+                                        <include>com.google.guava:guava</include>
+                                        <include>io.grpc:*</include>
+                                        <include>io.opencensus:*</include>
+                                        <include>org.javassist:*</include>
+                                        <include>io.perfmark:perfmark-api</include>
+                                        <include>com.google.*:*</include>
+                                        <include>javax.annotation:javax.annotation-api</include>
+                                        <include>org.checkerframework:*</include>
+                                        <include>org.codehaus.mojo:*</include>
+                                    </includes>
+                                </artifactSet>
+
+                                <relocations>
+                                    <relocation>
+                                        <pattern>io.grpc</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
+                                        <excludes>
+                                            <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
+                                        </excludes>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
+                                        </shadedPattern>
+                                        <includes>
+                                            <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
+                                        </includes>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>com.google</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>javax.annotation</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>io.perfmark</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>io.opencensus</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.codehaus</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.checkerframework</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>android.annotation</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.example</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
+                                    </relocation>
+                                </relocations>
+
+                                <transformers>
+                                    <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                    <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${client.java.version}</source>
+                        <target>${client.java.version}</target>
+                        <compilerVersion>${client.java.version}</compilerVersion>
+                        <showDeprecation>true</showDeprecation>
+                        <showWarnings>true</showWarnings>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-shade-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pure-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>pure</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release-nacos</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-shade-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pure-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>pure</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

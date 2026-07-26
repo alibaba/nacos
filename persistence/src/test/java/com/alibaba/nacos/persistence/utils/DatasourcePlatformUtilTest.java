@@ -1,0 +1,70 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.persistence.utils;
+
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class DatasourcePlatformUtilTest {
+    
+    private ConfigurableEnvironment cachedEnvironment;
+    
+    private MockEnvironment environment;
+    
+    @BeforeEach
+    void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
+    }
+    
+    @Test
+    void testGetDatasourcePlatformUsesLegacyAlias() {
+        environment.setProperty("spring.datasource.platform", "mysql");
+        assertEquals("derby", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+        
+        environment.setProperty("spring.sql.init.platform", "postgresql");
+        assertEquals("postgresql", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+    }
+    
+    @Test
+    void testGetDatasourcePlatformPrefersStandardProperty() {
+        environment.setProperty("spring.sql.init.platform", "mysql");
+        environment.setProperty("nacos.plugin.datasource-dialect.type", " postgresql ");
+        
+        assertEquals("postgresql", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+    }
+    
+    @Test
+    void testGetDatasourcePlatformUsesDefaultForBlankProperties() {
+        environment.setProperty("spring.sql.init.platform", " ");
+        environment.setProperty("nacos.plugin.datasource-dialect.type", " ");
+        
+        assertEquals("derby", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+    }
+}

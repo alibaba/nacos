@@ -1,0 +1,166 @@
+/*
+ *
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package com.alibaba.nacos.maintainer.client.utils;
+
+import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ParamUtilTest {
+    
+    private int defaultConnectTimeout;
+    
+    private int defaultReadTimeout;
+    
+    @BeforeEach
+    void before() {
+        defaultConnectTimeout = ParamUtil.getConnectTimeout();
+        defaultReadTimeout = ParamUtil.getReadTimeout();
+    }
+    
+    @AfterEach
+    void after() {
+        ParamUtil.setConnectTimeout(defaultConnectTimeout);
+        ParamUtil.setReadTimeout(defaultReadTimeout);
+        System.clearProperty("MAINTAINER.CLIENT.CONNECT.TIMEOUT");
+        System.clearProperty("MAINTAINER.CLIENT.READ.TIMEOUT");
+        System.clearProperty("MAINTAINER.CLIENT.MAX.RETRY.TIMES");
+        System.clearProperty("MAINTAINER.CLIENT.REFRESH.INTERVAL.MILLS");
+    }
+    
+    @Test
+    void testSetConnectTimeout() {
+        int defaultVal = ParamUtil.getConnectTimeout();
+        assertEquals(defaultConnectTimeout, defaultVal);
+        
+        int expect = 50;
+        ParamUtil.setConnectTimeout(expect);
+        assertEquals(expect, ParamUtil.getConnectTimeout());
+    }
+    
+    @Test
+    void testSetReadTimeout() {
+        int defaultVal = ParamUtil.getReadTimeout();
+        assertEquals(defaultReadTimeout, defaultVal);
+        
+        int expect = 3000;
+        ParamUtil.setReadTimeout(expect);
+        assertEquals(expect, ParamUtil.getReadTimeout());
+    }
+    
+    @Test
+    void testDefaultValues() {
+        assertEquals(3, ParamUtil.getMaxRetryTimes());
+        assertEquals("public", ParamUtil.getDefaultNamespaceId());
+        assertEquals("DEFAULT_GROUP", ParamUtil.getDefaultGroupName());
+        assertEquals(5000, ParamUtil.getRefreshIntervalMills());
+        assertNotNull(new ParamUtil());
+    }
+    
+    @Test
+    void testInitConnectionTimeoutWithException() throws Throwable {
+        String invalidValue = "abc";
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initConnectionTimeout");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.CONNECT.TIMEOUT", invalidValue);
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+        assertTrue(exception.getMessage().contains(invalidValue),
+            "Exception message should contain the invalid input value");
+    }
+    
+    @Test
+    void testInitReadTimeoutWithException() throws Throwable {
+        String invalidValue = "xyz";
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initReadTimeout");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.READ.TIMEOUT", invalidValue);
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+        assertTrue(exception.getMessage().contains(invalidValue),
+            "Exception message should contain the invalid input value");
+    }
+    
+    @Test
+    void testInitMaxRetryTimesWithException() throws Throwable {
+        String invalidValue = "not_a_number";
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initMaxRetryTimes");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.MAX.RETRY.TIMES", invalidValue);
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+        assertTrue(exception.getMessage().contains(invalidValue),
+            "Exception message should contain the invalid input value");
+    }
+    
+    @Test
+    void testInitRefreshIntervalMillsWithException() throws Throwable {
+        String invalidValue = "invalid_mills";
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initRefreshIntervalMills");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.REFRESH.INTERVAL.MILLS", invalidValue);
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+        assertTrue(exception.getMessage().contains(invalidValue),
+            "Exception message should contain the invalid input value");
+    }
+    
+    @Test
+    void testInitSerializationRegistersSelectorSubtypes() {
+        ParamUtil.initSerialization();
+        
+        AbstractSelector selector =
+            JsonUtils.toObj("{\"type\":\"LabelSelector\",\"expression\":\"k=v\"}",
+                AbstractSelector.class);
+        
+        assertEquals(ExpressionSelector.class, selector.getClass());
+        assertEquals("k=v", ((ExpressionSelector) selector).getExpression());
+    }
+}

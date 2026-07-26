@@ -1,0 +1,36 @@
+{
+  "extends": "eslint-config-ali/react",
+  "parser": "babel-eslint",
+  "env": {},
+  "globals": {
+    "window": true
+  },
+  "rules": {
+    "no-shadow": "off",
+    "no-empty": "off",
+    "no-useless-escape": "off",
+    "no-template-curly-in-string": "off",
+    "no-unused-vars": "off",
+    "no-tabs": "off",
+    "no-param-reassign": "off",
+    "react/no-string-refs": "off",
+    "react/no-unused-state": "off",
+    "no-return-assign": "off",
+    "no-plusplus": "off",
+    "no-script-url": "off",
+    "no-mixed-operators": "off",
+    "react/jsx-indent": "off",
+    "react/jsx-no-bind": "off",
+    "react/forbid-prop-types": "off",
+    "react/no-array-index-key": "off",
+    "react/sort-comp": "off",
+    "implicit-arrow-linebreak": "off",
+    "prefer-const": "off",
+    "space-before-function-paren": "off",
+    "generator-star-spacing": "off",
+    "wrap-iife": "off",
+    "arrow-parens": "off",
+    "indent": "off",
+    "comma-dangle": "off"
+  }
+}

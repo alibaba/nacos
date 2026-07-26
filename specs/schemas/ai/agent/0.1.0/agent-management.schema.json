@@ -1,0 +1,871 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nacos.io/schemas/ai/agent/0.1.0/agent-management.schema.json",
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
+  "title": "Nacos Agent Management Model 0.1.0",
+  "description": "Definition bundle for public Agent resources, exact Version definitions, and bounded management read views.",
+  "x-status": "experimental",
+  "x-schema-version": "0.1.0",
+  "x-entrypoints": {
+    "Agent": "#/$defs/Agent",
+    "AgentSummary": "#/$defs/AgentSummary",
+    "AgentOverview": "#/$defs/AgentOverview",
+    "AgentVersionSummary": "#/$defs/AgentVersionSummary",
+    "AgentVersionDetail": "#/$defs/AgentVersionDetail",
+    "AgentCallInterface": "#/$defs/AgentCallInterface",
+    "RuntimeEndpointSnapshot": "#/$defs/RuntimeEndpointSnapshot"
+  },
+  "$defs": {
+    "NamespaceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "AgentName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "allOf": [
+        {
+          "pattern": "^[ -~]+$"
+        },
+        {
+          "pattern": "[!-~]"
+        }
+      ]
+    },
+    "AgentVersion": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$"
+    },
+    "VersionRange": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "anyOf": [
+        {
+          "pattern": "^\\[(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?\\]$"
+        },
+        {
+          "pattern": "^(?:\\[|\\()(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?,(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\]|\\))$"
+        },
+        {
+          "pattern": "^(?:\\[|\\()(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?,\\)$"
+        },
+        {
+          "pattern": "^\\(,(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\]|\\))$"
+        }
+      ],
+      "description": "An exact version or one continuous Maven-style interval using Agent version comparison. Semantic bound checks require domain validation."
+    },
+    "Label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "NonLatestLabel": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Label"
+        },
+        {
+          "not": {
+            "const": "latest"
+          }
+        }
+      ]
+    },
+    "ProtocolToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,31}$"
+    },
+    "ProtocolVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[!-~]+$"
+    },
+    "TransportToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9A-Za-z-]{1,64}$"
+    },
+    "ContentDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "EpochMillis": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "AbsoluteUri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+    },
+    "AbsoluteEndpointUri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri",
+      "allOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*://"
+        },
+        {
+          "pattern": "^[^#]+$"
+        },
+        {
+          "not": {
+            "pattern": "^[A-Za-z][A-Za-z0-9+.-]*://[^/?#]*@"
+          }
+        }
+      ]
+    },
+    "MediaType": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[!-~]+/[!-~]+$"
+    },
+    "NonNullJsonValue": {
+      "not": {
+        "type": "null"
+      }
+    },
+    "AgentProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "url": {
+          "$ref": "#/$defs/AbsoluteUri"
+        }
+      }
+    },
+    "Tag": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "Extensions": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "additionalProperties": true,
+      "description": "Namespaced public extension values. The serialized UTF-8 JSON representation of the whole map is limited to 16 KiB by domain validation."
+    },
+    "AgentResourceStatus": {
+      "type": "string",
+      "enum": [
+        "enable",
+        "disable"
+      ]
+    },
+    "AgentVersionStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "reviewing",
+        "reviewed",
+        "online",
+        "offline"
+      ]
+    },
+    "VersionLabels": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/Label"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/AgentVersion"
+      }
+    },
+    "AgentVersionInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "onlineCnt",
+        "labels"
+      ],
+      "properties": {
+        "editingVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "reviewingVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "onlineCnt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "labels": {
+          "$ref": "#/$defs/VersionLabels"
+        }
+      }
+    },
+    "AgentVersionCatalogEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "labels",
+        "protocols"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "labels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/NonLatestLabel"
+          }
+        },
+        "protocols": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/ProtocolToken"
+          }
+        }
+      }
+    },
+    "AgentVersionCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "onlineVersions"
+      ],
+      "properties": {
+        "latestVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "onlineVersions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AgentVersionCatalogEntry"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "onlineVersions": {
+                "maxItems": 0
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "latestVersion"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "latestVersion"
+            ]
+          }
+        }
+      ],
+      "description": "latestVersion must identify one onlineVersions item; Version and label uniqueness require domain validation."
+    },
+    "Agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespaceId",
+        "agentName",
+        "status",
+        "owner",
+        "scope",
+        "versionInfo",
+        "versionCatalog",
+        "metaVersion",
+        "createTime",
+        "updateTime"
+      ],
+      "properties": {
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "agentName": {
+          "$ref": "#/$defs/AgentName"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "iconUrl": {
+          "$ref": "#/$defs/AbsoluteUri"
+        },
+        "provider": {
+          "$ref": "#/$defs/AgentProvider"
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/Tag"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentResourceStatus"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
+        },
+        "versionInfo": {
+          "$ref": "#/$defs/AgentVersionInfo"
+        },
+        "versionCatalog": {
+          "$ref": "#/$defs/AgentVersionCatalog"
+        },
+        "metaVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "createTime": {
+          "$ref": "#/$defs/EpochMillis"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      }
+    },
+    "AgentSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespaceId",
+        "agentName",
+        "status",
+        "owner",
+        "scope",
+        "versionInfo",
+        "versionCatalog",
+        "metaVersion",
+        "createTime",
+        "updateTime"
+      ],
+      "properties": {
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "agentName": {
+          "$ref": "#/$defs/AgentName"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "iconUrl": {
+          "$ref": "#/$defs/AbsoluteUri"
+        },
+        "provider": {
+          "$ref": "#/$defs/AgentProvider"
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/Tag"
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/AgentResourceStatus"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
+        },
+        "versionInfo": {
+          "$ref": "#/$defs/AgentVersionInfo"
+        },
+        "versionCatalog": {
+          "$ref": "#/$defs/AgentVersionCatalog"
+        },
+        "metaVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "createTime": {
+          "$ref": "#/$defs/EpochMillis"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      }
+    },
+    "AgentVersionSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "contentDigest",
+        "createTime",
+        "updateTime"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentVersionStatus"
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "changeDescription": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "contentDigest": {
+          "$ref": "#/$defs/ContentDigest"
+        },
+        "createTime": {
+          "$ref": "#/$defs/EpochMillis"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      }
+    },
+    "AgentVersionSummaryPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalCount",
+        "pageNumber",
+        "pagesAvailable",
+        "pageItems"
+      ],
+      "properties": {
+        "totalCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "pageNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "pagesAvailable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "pageItems": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/AgentVersionSummary"
+          }
+        }
+      }
+    },
+    "AgentOverview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent",
+        "versionPage"
+      ],
+      "properties": {
+        "agent": {
+          "$ref": "#/$defs/Agent"
+        },
+        "versionPage": {
+          "$ref": "#/$defs/AgentVersionSummaryPage"
+        }
+      }
+    },
+    "MetadataKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "allOf": [
+        {
+          "not": {
+            "enum": [
+              "preserved.heart.beat.interval",
+              "preserved.heart.beat.timeout",
+              "preserved.ip.delete.timeout"
+            ]
+          }
+        },
+        {
+          "not": {
+            "pattern": "^__nacos\\.agent\\.endpoint\\."
+          }
+        }
+      ]
+    },
+    "Metadata": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "$ref": "#/$defs/MetadataKey"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 256
+      }
+    },
+    "DeclaredEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "uri",
+        "transport"
+      ],
+      "properties": {
+        "uri": {
+          "$ref": "#/$defs/AbsoluteEndpointUri"
+        },
+        "transport": {
+          "$ref": "#/$defs/TransportToken"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647,
+          "default": 0
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 1.0
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        }
+      }
+    },
+    "EndpointSource": {
+      "type": "string",
+      "enum": [
+        "RUNTIME",
+        "DECLARED"
+      ]
+    },
+    "AgentCallInterface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "descriptorMediaType",
+        "nativeDescriptor",
+        "endpointSourceOrder"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/ProtocolToken"
+        },
+        "protocolVersion": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "descriptorMediaType": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "nativeDescriptor": {
+          "$ref": "#/$defs/NonNullJsonValue"
+        },
+        "endpointSourceOrder": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/EndpointSource"
+          }
+        },
+        "declaredEndpoints": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/DeclaredEndpoint"
+          }
+        }
+      }
+    },
+    "AgentVersionDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespaceId",
+        "agentName",
+        "version",
+        "status",
+        "callInterfaces",
+        "contentDigest",
+        "createTime",
+        "updateTime"
+      ],
+      "properties": {
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "agentName": {
+          "$ref": "#/$defs/AgentName"
+        },
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentVersionStatus"
+        },
+        "callInterfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/AgentCallInterface"
+          }
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "changeDescription": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "contentDigest": {
+          "$ref": "#/$defs/ContentDigest"
+        },
+        "createTime": {
+          "$ref": "#/$defs/EpochMillis"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      }
+    },
+    "RuntimeVersionBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtimeVersion",
+        "versionRange"
+      ],
+      "properties": {
+        "runtimeVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "versionRange": {
+          "$ref": "#/$defs/VersionRange"
+        }
+      },
+      "description": "runtimeVersion must be contained by versionRange; this semantic relation requires domain validation."
+    },
+    "RuntimeEndpointSnapshotEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "uri",
+        "transport"
+      ],
+      "properties": {
+        "uri": {
+          "$ref": "#/$defs/AbsoluteEndpointUri"
+        },
+        "transport": {
+          "$ref": "#/$defs/TransportToken"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647,
+          "default": 0
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 1.0
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        }
+      }
+    },
+    "RuntimeEndpointState": {
+      "type": "string",
+      "enum": [
+        "AVAILABLE",
+        "DISABLED",
+        "UNHEALTHY"
+      ]
+    },
+    "RuntimeEndpointSnapshotItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoint",
+        "bindings",
+        "state",
+        "enabled",
+        "healthy",
+        "lastUpdatedTime"
+      ],
+      "properties": {
+        "endpoint": {
+          "$ref": "#/$defs/RuntimeEndpointSnapshotEndpoint"
+        },
+        "bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RuntimeVersionBinding"
+          }
+        },
+        "state": {
+          "$ref": "#/$defs/RuntimeEndpointState"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "healthy": {
+          "type": "boolean"
+        },
+        "lastUpdatedTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "DISABLED"
+            },
+            "enabled": {
+              "const": false
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "UNHEALTHY"
+            },
+            "enabled": {
+              "const": true
+            },
+            "healthy": {
+              "const": false
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "AVAILABLE"
+            },
+            "enabled": {
+              "const": true
+            },
+            "healthy": {
+              "const": true
+            }
+          }
+        }
+      ]
+    },
+    "RuntimeEndpointSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespaceId",
+        "agentName",
+        "protocol",
+        "items"
+      ],
+      "properties": {
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "agentName": {
+          "$ref": "#/$defs/AgentName"
+        },
+        "protocol": {
+          "$ref": "#/$defs/ProtocolToken"
+        },
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/RuntimeEndpointSnapshotItem"
+          }
+        }
+      }
+    }
+  }
+}
