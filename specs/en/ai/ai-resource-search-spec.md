@@ -100,7 +100,38 @@ Failures retain retry state. Periodic reconciliation detects missed,
 partial, stale, wrong-model, and orphaned index data. Discovery reads only
 enabled documents whose configured indexes have converged.
 
-## 7. Compatibility And Tests
+## 7. Resource Bounds
+
+List, aggregation, reconciliation, and durable-task polling scan relational
+state in bounded database batches. List pagination retains only the requested
+page and one look-ahead result in memory after visibility and current-version
+validation.
+
+Keyword and vector recall have a configurable per-channel candidate bound.
+When a channel exceeds the bound, discovery fails explicitly instead of
+returning a silently truncated result set. Operators may tune the bound with
+`nacos.ai.resource.search.max-recall-candidates`.
+
+## 8. Upgrade And Initialization
+
+Deployments that created the ARD search schema before durable retry was added
+must initialize all three protocol-neutral relational tables before enabling
+`nacos.ai.ard.enabled`:
+
+- `ai_resource_search_document`;
+- `ai_resource_search_chunk`;
+- `ai_resource_search_index_task`.
+
+Use the matching current datasource schema for MySQL, PostgreSQL, Derby, or
+Oracle. The task table is required even when existing document and chunk
+tables already contain data; it stores retry and lease state and does not
+replace either index table.
+
+PostgreSQL deployments that do not enable the default vector plugin need no
+pgvector objects. Deployments that enable it must separately run the optional
+schema owned by `nacos-default-ai-vector-plugin`.
+
+## 9. Compatibility And Tests
 
 Internal search names, persistence models, tables, configuration, and vector
 SPI packages remain protocol-neutral even while ARD is the only consumer.

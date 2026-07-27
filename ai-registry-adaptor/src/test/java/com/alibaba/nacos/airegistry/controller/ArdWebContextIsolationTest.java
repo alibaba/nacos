@@ -57,16 +57,16 @@ class ArdWebContextIsolationTest {
     @Test
     void skillArtifactShouldBeServedOnlyByAdaptorContext() throws Exception {
         try (AnnotationConfigServletWebServerApplicationContext mainContext =
-            start(MainServerApplication.class);
+            start(MainServerApplication.class, "/nacos");
             AnnotationConfigServletWebServerApplicationContext adaptorContext =
-                start(AdaptorApplication.class)) {
+                start(AdaptorApplication.class, "")) {
             int mainPort = mainContext.getWebServer().getPort();
             int adaptorPort = adaptorContext.getWebServer().getPort();
             
             assertEquals(200, get(mainPort, "/nacos/v3/client/ai/skills").statusCode());
-            assertEquals(404, get(adaptorPort, "/nacos/v3/client/ai/skills").statusCode());
+            assertEquals(404, get(adaptorPort, "/v3/client/ai/skills").statusCode());
             
-            String artifactPath = "/nacos/v3/ai/ard/artifacts?namespaceId=public"
+            String artifactPath = "/v3/ai/ard/artifacts?namespaceId=public"
                 + "&resourceType=skill&resourceName=demo&version=1.0.0";
             HttpResponse<byte[]> artifact = get(adaptorPort, artifactPath);
             assertEquals(200, artifact.statusCode());
@@ -74,18 +74,20 @@ class ArdWebContextIsolationTest {
                 artifact.headers().firstValue("content-type").orElseThrow());
             assertEquals("skill-zip",
                 new String(artifact.body(), StandardCharsets.UTF_8));
-            assertEquals(404, get(mainPort, artifactPath).statusCode());
+            assertEquals(404, get(mainPort, "/nacos" + artifactPath).statusCode());
         }
     }
     
     private AnnotationConfigServletWebServerApplicationContext start(
-        Class<?> application) {
+        Class<?> application, String contextPath) {
         AnnotationConfigServletWebServerApplicationContext context =
             new AnnotationConfigServletWebServerApplicationContext();
         context.getEnvironment().getPropertySources().addFirst(
             new MapPropertySource("test", Map.of("server.port", "0",
-                "server.servlet.context-path", "/nacos",
-                "nacos.ai.ard.enabled", "true")));
+                "server.servlet.context-path", contextPath,
+                "nacos.ai.ard.enabled", "true",
+                "management.elastic.metrics.export.enabled", "false",
+                "management.influx.metrics.export.enabled", "false")));
         context.register(application);
         context.refresh();
         return context;

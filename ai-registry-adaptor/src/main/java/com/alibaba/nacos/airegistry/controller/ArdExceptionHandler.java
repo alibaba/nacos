@@ -82,7 +82,7 @@ public class ArdExceptionHandler {
     @ExceptionHandler(AccessException.class)
     public ResponseEntity<ArdErrorResponse> handleAccessException(AccessException exception) {
         LOGGER.warn("ARD access denied: {}", exception.getErrMsg());
-        return response(HttpStatus.FORBIDDEN, exception.getErrMsg());
+        return response(HttpStatus.UNAUTHORIZED, exception.getErrMsg());
     }
     
     /**

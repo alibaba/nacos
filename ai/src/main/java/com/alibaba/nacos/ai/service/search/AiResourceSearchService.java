@@ -50,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
@@ -75,12 +76,17 @@ public class AiResourceSearchService {
     
     private static final int DOCUMENT_LOOKUP_BATCH_SIZE = 500;
     
-    private static final int ALL_RECALL_CANDIDATES = Integer.MAX_VALUE;
+    private static final int ENTRY_SCAN_BATCH_SIZE = 500;
+    
+    private static final int DEFAULT_MAX_RECALL_CANDIDATES = 10000;
     
     private static final String CURSOR_DOCUMENT_ID = "documentId";
     
     private static final String KEY_RANKING_ENHANCED_ENABLED =
         "nacos.ai.resource.search.ranking.enhanced.enabled";
+    
+    private static final String KEY_MAX_RECALL_CANDIDATES =
+        "nacos.ai.resource.search.max-recall-candidates";
     
     private static final TypeReference<List<String>> STRING_LIST_TYPE =
         new TypeReference<List<String>>() {
@@ -150,20 +156,36 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public Page list(Query query) throws NacosException {
-        return page(listCandidates(query), query);
-    }
-    
-    private List<RankedEntry> listCandidates(Query query) throws NacosException {
-        List<RankedEntry> candidates = new ArrayList<>();
-        for (AiResourceSearchDocument document : repository.listEnabledEntries(
-            query.getNamespaceId(),
-            query.getResourceTypes(), Integer.MAX_VALUE)) {
-            if (matches(query, document) && validateCurrentResource(document)) {
-                candidates.add(new RankedEntry(document, 0D));
+        Comparator<RankedEntry> comparator = listComparator(query);
+        RankedEntry cursor = listCursor(query);
+        PriorityQueue<RankedEntry> selected =
+            new PriorityQueue<>(query.getLimit() + 2, comparator.reversed());
+        long afterId = 0L;
+        while (true) {
+            List<AiResourceSearchDocument> batch = repository.scanEnabledEntries(
+                query.getNamespaceId(), query.getResourceTypes(), afterId, ENTRY_SCAN_BATCH_SIZE);
+            if (batch == null || batch.isEmpty()) {
+                break;
+            }
+            for (AiResourceSearchDocument document : batch) {
+                if (matches(query, document) && validateCurrentResource(document)) {
+                    RankedEntry candidate = new RankedEntry(document, 0D);
+                    if (cursor == null || comparator.compare(candidate, cursor) > 0) {
+                        selected.offer(candidate);
+                        if (selected.size() > query.getLimit() + 1) {
+                            selected.poll();
+                        }
+                    }
+                }
+            }
+            afterId = lastDocumentId(batch, afterId);
+            if (batch.size() < ENTRY_SCAN_BATCH_SIZE) {
+                break;
             }
         }
+        List<RankedEntry> candidates = new ArrayList<>(selected);
         candidates.sort(listComparator(query));
-        return candidates;
+        return boundedPage(candidates, query);
     }
     
     /**
@@ -176,26 +198,81 @@ public class AiResourceSearchService {
      */
     public AggregationResult aggregate(Query query, List<AggregationRequest> requests)
         throws NacosException {
-        List<RankedEntry> candidates = StringUtils.isBlank(query.getText())
-            ? listCandidates(query) : searchCandidates(query);
+        if (StringUtils.isBlank(query.getText())) {
+            return aggregateList(query, requests);
+        }
+        List<RankedEntry> candidates = searchCandidates(query);
         Map<String, Aggregation> aggregations = new LinkedHashMap<>();
         if (requests != null) {
             for (AggregationRequest request : requests) {
-                aggregations.put(request.getName(), aggregate(candidates, request));
+                aggregations.put(request.getName(), aggregateCandidates(candidates, request));
             }
         }
         return new AggregationResult(candidates.size(), aggregations);
     }
     
-    private Aggregation aggregate(List<RankedEntry> candidates, AggregationRequest request) {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (RankedEntry candidate : candidates) {
-            Set<String> values = new LinkedHashSet<>(
-                fieldValues(candidate.getDocument(), request.getField()));
-            for (String value : values) {
-                counts.put(value, counts.getOrDefault(value, 0) + 1);
+    private AggregationResult aggregateList(Query query, List<AggregationRequest> requests)
+        throws NacosException {
+        Map<String, Map<String, Integer>> counts = new LinkedHashMap<>();
+        if (requests != null) {
+            for (AggregationRequest request : requests) {
+                counts.put(request.getName(), new LinkedHashMap<>());
             }
         }
+        int total = 0;
+        long afterId = 0L;
+        while (true) {
+            List<AiResourceSearchDocument> batch = repository.scanEnabledEntries(
+                query.getNamespaceId(), query.getResourceTypes(), afterId, ENTRY_SCAN_BATCH_SIZE);
+            if (batch == null || batch.isEmpty()) {
+                break;
+            }
+            for (AiResourceSearchDocument document : batch) {
+                if (!matches(query, document) || !validateCurrentResource(document)) {
+                    continue;
+                }
+                total++;
+                if (requests != null) {
+                    for (AggregationRequest request : requests) {
+                        recordAggregationValues(counts.get(request.getName()), document,
+                            request.getField());
+                    }
+                }
+            }
+            afterId = lastDocumentId(batch, afterId);
+            if (batch.size() < ENTRY_SCAN_BATCH_SIZE) {
+                break;
+            }
+        }
+        Map<String, Aggregation> aggregations = new LinkedHashMap<>();
+        if (requests != null) {
+            for (AggregationRequest request : requests) {
+                aggregations.put(request.getName(),
+                    buildAggregation(counts.get(request.getName()), request));
+            }
+        }
+        return new AggregationResult(total, aggregations);
+    }
+    
+    private Aggregation aggregateCandidates(List<RankedEntry> candidates,
+        AggregationRequest request) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (RankedEntry candidate : candidates) {
+            recordAggregationValues(counts, candidate.getDocument(), request.getField());
+        }
+        return buildAggregation(counts, request);
+    }
+    
+    private void recordAggregationValues(Map<String, Integer> counts,
+        AiResourceSearchDocument document, String field) {
+        Set<String> values = new LinkedHashSet<>(fieldValues(document, field));
+        for (String value : values) {
+            counts.put(value, counts.getOrDefault(value, 0) + 1);
+        }
+    }
+    
+    private Aggregation buildAggregation(Map<String, Integer> counts,
+        AggregationRequest request) {
         List<Map.Entry<String, Integer>> sorted = new ArrayList<>();
         for (Map.Entry<String, Integer> count : counts.entrySet()) {
             if (count.getValue() >= request.getMinCount()) {
@@ -217,40 +294,57 @@ public class AiResourceSearchService {
         return new Aggregation(buckets, otherCount);
     }
     
-    private Map<Long, SearchScore> recall(Query query) {
+    private Map<Long, SearchScore> recall(Query query) throws NacosException {
+        int maxCandidates = maxRecallCandidates();
         if (!enhancedRankingEnabled()) {
-            return recallWithMaxScore(query);
+            return recallWithMaxScore(query, maxCandidates);
         }
         Map<Long, SearchScore> scores = new LinkedHashMap<>();
         if (vectorIndex.available()) {
             double[] vector = embeddingService.embed(query.getText());
-            recordRrfScores(scores, sortHitsByScore(toSearchHits(vectorIndex.search(
+            List<AiResourceSearchHit> vectorHits = toSearchHits(vectorIndex.search(
                 query.getNamespaceId(), embeddingService.model(), vector,
-                query.getResourceTypes(), ALL_RECALL_CANDIDATES)), false), VECTOR_RRF_WEIGHT,
-                false);
+                query.getResourceTypes(), maxCandidates + 1));
+            ensureWithinRecallLimit(vectorHits, maxCandidates, "vector");
+            recordRrfScores(scores, sortHitsByScore(vectorHits, false), VECTOR_RRF_WEIGHT, false);
         }
-        recordRrfScores(scores, sortHitsByScore(repository.searchChunks(query.getNamespaceId(),
-            query.getText(), query.getResourceTypes(), ALL_RECALL_CANDIDATES), true),
-            KEYWORD_RRF_WEIGHT, true);
+        List<AiResourceSearchHit> keywordHits = repository.searchChunks(query.getNamespaceId(),
+            query.getText(), query.getResourceTypes(), maxCandidates + 1);
+        ensureWithinRecallLimit(keywordHits, maxCandidates, "keyword");
+        recordRrfScores(scores, sortHitsByScore(keywordHits, true), KEYWORD_RRF_WEIGHT, true);
         return scores;
     }
     
-    private Map<Long, SearchScore> recallWithMaxScore(Query query) {
+    private Map<Long, SearchScore> recallWithMaxScore(Query query, int maxCandidates)
+        throws NacosException {
         Map<Long, SearchScore> scores = new LinkedHashMap<>();
         if (vectorIndex.available()) {
             double[] vector = embeddingService.embed(query.getText());
-            for (AiResourceSearchHit hit : toSearchHits(vectorIndex.search(query.getNamespaceId(),
+            List<AiResourceSearchHit> vectorHits = toSearchHits(vectorIndex.search(
+                query.getNamespaceId(),
                 embeddingService.model(), vector, query.getResourceTypes(),
-                ALL_RECALL_CANDIDATES))) {
+                maxCandidates + 1));
+            ensureWithinRecallLimit(vectorHits, maxCandidates, "vector");
+            for (AiResourceSearchHit hit : vectorHits) {
                 recordMaxScore(scores, hit);
             }
         }
-        for (AiResourceSearchHit hit : repository.searchChunks(query.getNamespaceId(),
-            query.getText(),
-            query.getResourceTypes(), ALL_RECALL_CANDIDATES)) {
+        List<AiResourceSearchHit> keywordHits = repository.searchChunks(query.getNamespaceId(),
+            query.getText(), query.getResourceTypes(), maxCandidates + 1);
+        ensureWithinRecallLimit(keywordHits, maxCandidates, "keyword");
+        for (AiResourceSearchHit hit : keywordHits) {
             recordMaxScore(scores, hit);
         }
         return scores;
+    }
+    
+    private void ensureWithinRecallLimit(List<AiResourceSearchHit> hits, int limit, String channel)
+        throws NacosException {
+        if (hits != null && hits.size() > limit) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "AI resource " + channel + " recall exceeded configured candidate limit "
+                    + limit);
+        }
     }
     
     private List<AiResourceSearchDocument> findDocumentsByIds(Collection<Long> documentIds) {
@@ -547,6 +641,45 @@ public class AiResourceSearchService {
         return new Page(items, nextCursor);
     }
     
+    private Page boundedPage(List<RankedEntry> candidates, Query query) {
+        int toIndex = Math.min(query.getLimit(), candidates.size());
+        List<AiResourceSearchResult> items = new ArrayList<>();
+        for (RankedEntry candidate : candidates.subList(0, toIndex)) {
+            items.add(toResult(candidate));
+        }
+        String nextCursor = toIndex < candidates.size()
+            ? encodeCursor(candidates.get(toIndex - 1).getDocument().getId()) : null;
+        return new Page(items, nextCursor);
+    }
+    
+    private RankedEntry listCursor(Query query) throws NacosException {
+        if (StringUtils.isBlank(query.getCursor())) {
+            return null;
+        }
+        Long documentId = decodeCursor(query.getCursor());
+        List<AiResourceSearchDocument> documents =
+            repository.findEntriesByIds(Collections.singletonList(documentId));
+        if (documents == null || documents.size() != 1) {
+            throw invalidCursor();
+        }
+        AiResourceSearchDocument document = documents.get(0);
+        if (!query.getNamespaceId().equals(document.getNamespaceId())
+            || !query.getResourceTypes().isEmpty()
+                && !query.getResourceTypes().contains(document.getResourceType())
+            || !matches(query, document) || !validateCurrentResource(document)) {
+            throw invalidCursor();
+        }
+        return new RankedEntry(document, 0D);
+    }
+    
+    private long lastDocumentId(List<AiResourceSearchDocument> batch, long previousId) {
+        AiResourceSearchDocument last = batch.get(batch.size() - 1);
+        if (last.getId() == null || last.getId() <= previousId) {
+            throw new IllegalStateException("AI resource index scan did not advance");
+        }
+        return last.getId();
+    }
+    
     private AiResourceSearchResult toResult(RankedEntry candidate) {
         AiResourceSearchDocument document = candidate.getDocument();
         AiResourceSearchResult result = new AiResourceSearchResult();
@@ -619,6 +752,25 @@ public class AiResourceSearchService {
             }
         }
         return Boolean.parseBoolean(value);
+    }
+    
+    private int maxRecallCandidates() {
+        String value = System.getProperty(KEY_MAX_RECALL_CANDIDATES);
+        if (StringUtils.isBlank(value)) {
+            try {
+                value = EnvUtil.getProperty(KEY_MAX_RECALL_CANDIDATES,
+                    String.valueOf(DEFAULT_MAX_RECALL_CANDIDATES));
+            } catch (Exception ignored) {
+                value = String.valueOf(DEFAULT_MAX_RECALL_CANDIDATES);
+            }
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            return parsed > 0 && parsed < Integer.MAX_VALUE
+                ? parsed : DEFAULT_MAX_RECALL_CANDIDATES;
+        } catch (NumberFormatException ignored) {
+            return DEFAULT_MAX_RECALL_CANDIDATES;
+        }
     }
     
     private double chunkTypeWeight(String chunkType) {

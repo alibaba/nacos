@@ -70,4 +70,13 @@ class JdbcAiResourceIndexTaskRepositoryTest {
         assertEquals(2L, tasks.get(0).getRevision());
         assertEquals(JdbcAiResourceIndexTaskRepository.STATUS_PENDING, tasks.get(0).getStatus());
     }
+    
+    @Test
+    void findDueTasksShouldApplyRequestedRowBound() {
+        repository.schedule("public", "skill", "one");
+        repository.schedule("public", "skill", "two");
+        repository.schedule("public", "skill", "three");
+        
+        assertEquals(2, repository.findDueTasks(2).size());
+    }
 }

@@ -155,10 +155,10 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
     @Override
     public AiResourceSearchDocument findEntry(String namespaceId, String resourceType,
         String resourceName) {
-        List<AiResourceSearchDocument> entries = getJdbcTemplate().query(
+        List<AiResourceSearchDocument> entries = queryWithMaxRows(
             "SELECT * FROM ai_resource_search_document WHERE namespace_id=? AND resource_type=? "
                 + "AND resource_name=? ORDER BY id DESC",
-            ENTRY_ROW_MAPPER, namespaceId, resourceType, resourceName);
+            List.of(namespaceId, resourceType, resourceName), ENTRY_ROW_MAPPER, 1);
         return entries.isEmpty() ? null : entries.get(0);
     }
     
@@ -197,9 +197,7 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
         args.add(like);
         appendResourceTypeFilter(sql, args, resourceTypes);
         sql.append(" ORDER BY score DESC");
-        List<AiResourceSearchHit> hits =
-            getJdbcTemplate().query(sql.toString(), HIT_ROW_MAPPER, args.toArray());
-        return limit(hits, limit);
+        return queryWithMaxRows(sql.toString(), args, HIT_ROW_MAPPER, limit);
     }
     
     @Override
@@ -214,9 +212,7 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
         args.add(AiResourceSearchConstants.STATUS_ENABLED);
         appendResourceTypeFilter(sql, args, resourceTypes);
         sql.append(" ORDER BY gmt_modified DESC");
-        List<AiResourceSearchDocument> entries =
-            getJdbcTemplate().query(sql.toString(), ENTRY_ROW_MAPPER, args.toArray());
-        return limit(entries, limit);
+        return queryWithMaxRows(sql.toString(), args, ENTRY_ROW_MAPPER, limit);
     }
     
     @Override
@@ -228,9 +224,19 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
         args.add(namespaceId);
         appendResourceTypeFilter(sql, args, resourceTypes);
         sql.append(" ORDER BY gmt_modified DESC");
-        List<AiResourceSearchDocument> entries =
-            getJdbcTemplate().query(sql.toString(), ENTRY_ROW_MAPPER, args.toArray());
-        return limit(entries, limit);
+        return queryWithMaxRows(sql.toString(), args, ENTRY_ROW_MAPPER, limit);
+    }
+    
+    @Override
+    public List<AiResourceSearchDocument> scanEnabledEntries(String namespaceId,
+        List<String> resourceTypes, long afterId, int limit) {
+        return scanEntriesBatch(namespaceId, resourceTypes, afterId, limit, true);
+    }
+    
+    @Override
+    public List<AiResourceSearchDocument> scanEntries(String namespaceId,
+        List<String> resourceTypes, long afterId, int limit) {
+        return scanEntriesBatch(namespaceId, resourceTypes, afterId, limit, false);
     }
     
     @Override
@@ -334,11 +340,36 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
         return result.toString();
     }
     
-    private <T> List<T> limit(List<T> values, int limit) {
-        if (values == null || values.size() <= limit) {
-            return values == null ? Collections.emptyList() : values;
+    private List<AiResourceSearchDocument> scanEntriesBatch(String namespaceId,
+        List<String> resourceTypes, long afterId, int limit, boolean enabledOnly) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql =
+            new StringBuilder("SELECT * FROM ai_resource_search_document WHERE namespace_id=? "
+                + "AND id>?");
+        args.add(namespaceId);
+        args.add(afterId);
+        if (enabledOnly) {
+            sql.append(" AND status=?");
+            args.add(AiResourceSearchConstants.STATUS_ENABLED);
         }
-        return new ArrayList<>(values.subList(0, limit));
+        appendResourceTypeFilter(sql, args, resourceTypes);
+        sql.append(" ORDER BY id");
+        return queryWithMaxRows(sql.toString(), args, ENTRY_ROW_MAPPER, limit);
+    }
+    
+    private <T> List<T> queryWithMaxRows(String sql, List<Object> args, RowMapper<T> rowMapper,
+        int limit) {
+        if (limit <= 0) {
+            return Collections.emptyList();
+        }
+        return getJdbcTemplate().query(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            for (int i = 0; i < args.size(); i++) {
+                statement.setObject(i + 1, args.get(i));
+            }
+            statement.setMaxRows(limit);
+            return statement;
+        }, rowMapper);
     }
     
     private JdbcTemplate getJdbcTemplate() {

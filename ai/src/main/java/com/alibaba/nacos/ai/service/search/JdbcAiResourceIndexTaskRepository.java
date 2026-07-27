@@ -28,9 +28,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -84,17 +85,22 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     
     @Override
     public List<AiResourceIndexTask> findDueTasks(int limit) {
-        List<AiResourceIndexTask> tasks = getJdbcTemplate().query(
-            "SELECT task_key, namespace_id, resource_type, resource_name, status, "
-                + "attempt_count, revision FROM ai_resource_search_index_task WHERE "
-                + "((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP) OR "
-                + "(status=? AND lease_until<CURRENT_TIMESTAMP)) "
-                + "ORDER BY next_retry_time, gmt_modified",
-            ROW_MAPPER, STATUS_PENDING, STATUS_RETRY, STATUS_PROCESSING);
-        if (tasks.size() <= limit) {
-            return tasks;
+        if (limit <= 0) {
+            return Collections.emptyList();
         }
-        return new ArrayList<>(tasks.subList(0, limit));
+        String sql = "SELECT task_key, namespace_id, resource_type, resource_name, status, "
+            + "attempt_count, revision FROM ai_resource_search_index_task WHERE "
+            + "((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP) OR "
+            + "(status=? AND lease_until<CURRENT_TIMESTAMP)) "
+            + "ORDER BY next_retry_time, gmt_modified";
+        return getJdbcTemplate().query(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, STATUS_PENDING);
+            statement.setString(2, STATUS_RETRY);
+            statement.setString(3, STATUS_PROCESSING);
+            statement.setMaxRows(limit);
+            return statement;
+        }, ROW_MAPPER);
     }
     
     @Override

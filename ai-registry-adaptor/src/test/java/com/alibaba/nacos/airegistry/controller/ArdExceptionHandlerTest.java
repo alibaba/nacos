@@ -20,14 +20,18 @@ import com.alibaba.nacos.airegistry.model.ard.ArdErrorResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.auth.annotation.ProtocolAuthError;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests for {@link ArdExceptionHandler}.
@@ -67,5 +71,27 @@ class ArdExceptionHandlerTest {
         assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getErrorCode());
         assertEquals(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
             response.getBody().getMessage());
+    }
+    
+    @Test
+    void shouldMapAccessFailureToPinnedUnauthorizedResponse() {
+        ArdExceptionHandler handler = new ArdExceptionHandler();
+        
+        ResponseEntity<ArdErrorResponse> response =
+            handler.handleAccessException(new AccessException("invalid token"));
+        
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("UNAUTHENTICATED", response.getBody().getErrorCode());
+        assertEquals("invalid token", response.getBody().getMessage());
+    }
+    
+    @Test
+    void ardControllerShouldExposeProtocolAuthErrorMetadata() {
+        ProtocolAuthError error = AnnotatedElementUtils.findMergedAnnotation(
+            ArdSearchController.class, ProtocolAuthError.class);
+        
+        assertNotNull(error);
+        assertEquals(HttpStatus.UNAUTHORIZED.value(), error.status());
+        assertEquals("UNAUTHENTICATED", error.errorCode());
     }
 }

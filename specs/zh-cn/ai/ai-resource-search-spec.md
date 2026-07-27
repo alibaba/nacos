@@ -85,7 +85,31 @@ Schema 和 `ai_resource_search_embedding_pg` 表。主数据源 Schema 不得创
 失败时保留重试状态。周期性 reconciliation 检测遗漏、部分、过期、模型错误和孤儿索引。
 检索只读取所配置索引已经收敛的 enabled document。
 
-## 7. 兼容与测试
+## 7. 资源边界
+
+列表、聚合、reconciliation 和持久化任务轮询必须按有界数据库批次扫描关系状态。完成
+可见性和当前版本校验后，列表分页在内存中只保留请求页及一条用于判断下一页的记录。
+
+关键词和向量召回分别设置可配置的候选上限。任一通道超过上限时，检索必须明确失败，不得
+返回静默截断的结果。运维可通过 `nacos.ai.resource.search.max-recall-candidates`
+调整该上限。
+
+## 8. 升级与初始化
+
+如果部署环境曾在引入持久化重试之前创建 ARD 检索表，则在开启
+`nacos.ai.ard.enabled` 前，必须使用当前数据库对应的 Schema 补齐以下三个协议无关关系表：
+
+- `ai_resource_search_document`；
+- `ai_resource_search_chunk`；
+- `ai_resource_search_index_task`。
+
+MySQL、PostgreSQL、Derby 和 Oracle 应分别使用匹配的当前主数据源 Schema。即使 document
+和 chunk 表中已经存在数据，也必须创建 task 表；该表保存重试与租约状态，不能替代两个索引表。
+
+PostgreSQL 环境如果不开启默认向量插件，无需创建任何 pgvector 对象；如果开启，则必须另外
+执行 `nacos-default-ai-vector-plugin` 自己维护的可选 Schema。
+
+## 9. 兼容与测试
 
 即使当前只有 ARD 消费者，内部检索命名、持久化模型、表、配置和 Vector SPI package 仍须
 保持协议无关。

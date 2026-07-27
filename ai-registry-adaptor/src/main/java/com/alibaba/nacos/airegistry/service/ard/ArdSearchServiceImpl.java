@@ -105,7 +105,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final String KEY_CATALOG_TRUST_IDENTITY_TYPE =
         "nacos.ai.ard.catalog.trust.identity-type";
     
-    private static final String KEY_CATALOG_MAX_ENTRIES = "nacos.ai.ard.catalog.max-entries";
+    private static final Pattern CATALOG_PUBLISHER_IDENTIFIER = Pattern.compile("[A-Za-z0-9.-]+");
     
     private static final Pattern LIST_FILTER_EXPRESSION = Pattern.compile(
         "^\\s*([A-Za-z][A-Za-z0-9.]*)\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
@@ -191,10 +191,16 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         Query query = new Query();
         query.setNamespaceId(resolvedNamespace);
         query.setResourceTypes(allResourceTypes());
-        query.setLimit(positiveInt(KEY_CATALOG_MAX_ENTRIES, 100));
-        for (AiResourceSearchResult item : searchService.list(query).getItems()) {
-            entries.add(toCatalogEntry(item));
-        }
+        query.setLimit(MAX_LIST_PAGE_SIZE);
+        String pageToken = null;
+        do {
+            query.setCursor(pageToken);
+            Page page = searchService.list(query);
+            for (AiResourceSearchResult item : page.getItems()) {
+                entries.add(toCatalogEntry(item));
+            }
+            pageToken = page.getNextCursor();
+        } while (StringUtils.isNotBlank(pageToken));
         catalog.setEntries(entries);
         return catalog;
     }
@@ -245,7 +251,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (!matchesConstantFilter(filters.get("source"), sourceUri())) {
             return false;
         }
-        String catalogPublisher = catalogHostIdentifier();
+        String catalogPublisher = catalogPublisherIdentifier();
         if (!matchesConstantFilter(filters.get("publisher"), catalogPublisher)
             || !matchesConstantFilter(filters.get("publisherId"), catalogPublisher)) {
             return false;
@@ -698,7 +704,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private ArdCatalogEntry registryEntry() {
         ArdCatalogEntry result = new ArdCatalogEntry();
-        result.setIdentifier("urn:air:" + catalogHostIdentifier() + ":registry:nacos");
+        result.setIdentifier("urn:air:" + catalogPublisherIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
         result.setUrl(withBaseUrl(ArdProtocolConstants.CLIENT_PATH));
@@ -746,10 +752,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (StringUtils.isBlank(baseUrl)) {
             return "";
         }
-        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
+        return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1)
             : baseUrl;
-        String contextPath = EnvUtil.getContextPath();
-        return StringUtils.isBlank(contextPath) ? base : base + contextPath;
     }
     
     private String currentRequestBaseUrl() {
@@ -771,7 +775,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             || StringUtils.isBlank(entry.getResourceName())) {
             return null;
         }
-        return "urn:air:" + catalogHostIdentifier() + ":"
+        return "urn:air:" + catalogPublisherIdentifier() + ":"
             + encodeIdentifierSegment(entry.getNamespaceId()) + ":"
             + encodeIdentifierSegment(entry.getResourceType()) + ":"
             + encodeIdentifierSegment(entry.getResourceName());
@@ -846,6 +850,17 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             ArdProtocolConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
     }
     
+    private String catalogPublisherIdentifier() {
+        String identifier = catalogHostIdentifier();
+        return CATALOG_PUBLISHER_IDENTIFIER.matcher(identifier).matches()
+            ? identifier : encodePublisherIdentifier(identifier);
+    }
+    
+    private String encodePublisherIdentifier(String value) {
+        return "n1-" + Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(value.getBytes(StandardCharsets.UTF_8)).replace('_', '.');
+    }
+    
     private List<AggregationRequest> aggregationRequests(List<ArdFacetRequest> facets) {
         List<AggregationRequest> result = new ArrayList<>();
         for (ArdFacetRequest facet : facets) {
@@ -896,7 +911,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private String protocolFacetValue(String field) {
         if ("publisher".equals(field) || "publisherId".equals(field)) {
-            return catalogHostIdentifier();
+            return catalogPublisherIdentifier();
         }
         if ("source".equals(field)) {
             return sourceUri();

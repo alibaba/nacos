@@ -67,6 +67,7 @@ import java.sql.Timestamp;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +140,7 @@ class ArdSearchServiceImplTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -176,10 +177,10 @@ class ArdSearchServiceImplTest {
         when(embeddingService.model()).thenReturn("test-model");
         when(embeddingService.embed("api")).thenReturn(vector);
         when(vectorIndex.search(eq("public"), eq("test-model"), eq(vector), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(vectorHit(100L, 0.9D)));
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of());
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -199,7 +200,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("avatar"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(
                 hit(101L, 1.0D, "generic-video",
                     AiResourceSearchConstants.CHUNK_TYPE_SKILL_CONTENT),
@@ -228,7 +229,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(100L, 0.4D), hit(100L, 0.9D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -248,7 +249,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill", "prompt", "mcp")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -268,7 +269,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -288,7 +289,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(101L, 1.0D, "api-one"), hit(102L, 0.9D, "api-two"),
                 hit(103L, 0.8D, "api-three")));
         when(repository.findEntriesByIds(anyCollection()))
@@ -340,7 +341,7 @@ class ArdSearchServiceImplTest {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
         when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")),
-            eq(Integer.MAX_VALUE)))
+            eq(10001)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(any(Collection.class))).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -398,7 +399,7 @@ class ArdSearchServiceImplTest {
     @Test
     void exploreShouldReturnFacetBuckets() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill"), Integer.MAX_VALUE))
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
             .thenReturn(List.of(entry(101L, "api-one"), entry(102L, "api-two")));
         when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("api-one", "1.0.0"));
@@ -415,12 +416,16 @@ class ArdSearchServiceImplTest {
         assertEquals(1, response.getFacets().size());
         assertEquals("api", response.getFacets().get("tags").getBuckets().get(0).getValue());
         assertEquals(2, response.getFacets().get("tags").getBuckets().get(0).getCount());
+        JsonNode serialized =
+            JacksonUtils.toObj(JacksonUtils.toJson(response), JsonNode.class);
+        assertEquals("facets", serialized.get("resultType").asText());
+        assertTrue(serialized.has("facets"));
     }
     
     @Test
     void listShouldFilterOrderAndPageEntries() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill"), Integer.MAX_VALUE))
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
             .thenReturn(List.of(entry(101L, "api-two"), entry(102L, "api-one")));
         when(resourceManager.findMeta("public", "api-one", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("api-one", "1.0.0"));
@@ -459,8 +464,7 @@ class ArdSearchServiceImplTest {
     @Test
     void catalogShouldExposeRegistryAndLocalEntries() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
-            Integer.MAX_VALUE))
+        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -474,6 +478,36 @@ class ArdSearchServiceImplTest {
         assertEquals("urn:air:nacos:registry:nacos",
             catalog.getEntries().get(0).getIdentifier());
         assertEquals("api-helper", catalog.getEntries().get(1).getDisplayName());
+    }
+    
+    @Test
+    void catalogShouldNotTruncateAfterOneHundredEntries() throws Exception {
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (long id = 1L; id <= 101L; id++) {
+            documents.add(entry(id, "skill-" + id));
+        }
+        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+            .thenReturn(documents);
+        when(repository.findEntriesByIds(anyCollection())).thenAnswer(invocation -> {
+            Collection<Long> ids = invocation.getArgument(0);
+            List<AiResourceSearchDocument> matched = new ArrayList<>();
+            for (AiResourceSearchDocument document : documents) {
+                if (ids.contains(document.getId())) {
+                    matched.add(document);
+                }
+            }
+            return matched;
+        });
+        when(resourceManager.findMeta(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL)))
+            .thenAnswer(invocation -> meta(invocation.getArgument(1), "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("1.0.0")))
+            .thenReturn(onlineVersion("1.0.0"));
+        
+        ArdCatalog catalog = service().catalog("public");
+        
+        assertEquals(102, catalog.getEntries().size());
     }
     
     @Test
@@ -498,8 +532,7 @@ class ArdSearchServiceImplTest {
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
         EnvUtil.setContextPath("/nacos");
         ArdSearchServiceImpl service = service();
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
-            Integer.MAX_VALUE))
+        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -511,14 +544,27 @@ class ArdSearchServiceImplTest {
         assertEquals("nacos.example.com", catalog.getHost().getIdentifier());
         assertEquals("urn:air:nacos.example.com:registry:nacos",
             catalog.getEntries().get(0).getIdentifier());
-        assertEquals("https://nacos.example.com/nacos/v3/ai/ard",
+        assertEquals("https://nacos.example.com/v3/ai/ard",
             catalog.getEntries().get(0).getUrl());
         assertEquals("urn:air:nacos.example.com:n1_cHVibGlj:n1_c2tpbGw:"
             + "n1_YXBpLWhlbHBlcg",
             catalog.getEntries().get(1).getIdentifier());
-        assertEquals("https://nacos.example.com/nacos/v3/ai/ard/artifacts"
+        assertEquals("https://nacos.example.com/v3/ai/ard/artifacts"
             + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
             catalog.getEntries().get(1).getUrl());
+        assertCatalogSchemaValid(catalog);
+    }
+    
+    @Test
+    void catalogShouldEncodePublisherIdentifierWhenHostIdentifierIsNotUrnSafe() throws Exception {
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER,
+            "did:web:nacos.example.com");
+        
+        ArdCatalog catalog = service().hostCatalog();
+        
+        assertEquals("did:web:nacos.example.com", catalog.getHost().getIdentifier());
+        assertEquals("urn:air:n1-ZGlkOndlYjpuYWNvcy5leGFtcGxlLmNvbQ:registry:nacos",
+            catalog.getEntries().get(0).getIdentifier());
         assertCatalogSchemaValid(catalog);
     }
     
@@ -537,8 +583,8 @@ class ArdSearchServiceImplTest {
     
     @Test
     void catalogIdentifiersShouldBeSchemaValidAndCollisionSafe() throws Exception {
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
-            Integer.MAX_VALUE)).thenReturn(List.of(entry(201L, "a/b"), entry(202L, "a?b"),
+        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+            .thenReturn(List.of(entry(201L, "a/b"), entry(202L, "a?b"),
                 entry(203L, "技能 名称")));
         when(
             resourceManager.findMeta(eq("public"), any(), eq(Constants.Skills.RESOURCE_TYPE_SKILL)))
@@ -563,8 +609,7 @@ class ArdSearchServiceImplTest {
         mcp.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         mcp.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "mcp", "mcpName",
             "avatar-server")));
-        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
-            Integer.MAX_VALUE))
+        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(prompt, mcp));
         when(resourceManager.findMeta("public", "avatar prompt",
             AiResourceConstants.RESOURCE_TYPE_PROMPT)).thenReturn(meta("avatar prompt",

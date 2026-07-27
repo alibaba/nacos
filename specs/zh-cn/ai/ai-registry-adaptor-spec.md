@@ -174,6 +174,7 @@ ARD 请求和响应模型属于该适配器，因为它们是外部协议契约�
 - 搜索结果的 `source` 为标识当前 registry 的绝对 URI；
 - ARD 错误严格使用 `{ "errorCode": "...", "message": "..." }`，不得包裹为
   Nacos `Result<T>`；
+- 凭据缺失或被拒绝时使用 HTTP 401 和 `UNAUTHENTICATED` error code；
 - 生成的 `trustManifest` 如果存在，必须包含必填的 `identity`；未配置合法 identity
   时，适配器不返回该 manifest；
 - catalog、list 和 search 使用独立 DTO，避免 search 专属字段出现在 catalog 条目中。
@@ -188,6 +189,9 @@ ARD 响应生成的所有 artifact URL 均指向公开适配器 base URL 下、�
 `/v3/ai/ard/artifacts` 端点。除非契约中引入独立且显式配置的主服务 base URL，否则不得
 指向主服务 Controller。
 
+`nacos.ai.ard.catalog.base-url` 表示完整的公开适配器 base URL，实现不得再向其追加
+Nacos 主服务 context path。
+
 对于 Skill 资源，artifact 端点以 `application/agent-skills+zip` 返回完整 Skill
 压缩包，其中包含 `SKILL.md` 及其打包资源。Prompt 和 MCP artifact 使用各自协议规定的
 表示形式。默认 Nacos 主服务运行在 8848、适配器运行在 9080 时，无需通过网关合并路径
@@ -199,9 +203,9 @@ AI 模块负责 [AI 资源检索规范](ai-resource-search-spec.md)定义的协�
 ARD 使用该能力，因此 `nacos.ai.ard.enabled` 会激活其依赖的检索运行时，但不会增加独立的
 运维检索开关或其他公开 API。
 
-可见性与当前版本校验必须在截取请求结果数量之前执行。内部召回可以分批限制候选数量，
-但必须持续取数，直到填满当前页或符合条件的结果耗尽。Cursor 标识稳定的资源锚点，
-不使用易受结果变化影响的列表 offset。
+可见性与当前版本校验必须在截取请求结果数量之前执行。列表和聚合按有界数据库批次扫描；
+关键词和向量召回使用 AI 资源检索规范定义的边界，任一通道超过配置上限时必须明确失败。
+Cursor 标识稳定的资源锚点，不使用易受结果变化影响的列表 offset。
 
 适配器只负责校验和解析 ARD 请求、调用 AI 资源检索服务，并将标准结果和聚合转换为
 ARD DTO。适配器不得直接访问 search repository，也不得重复实现召回、生命周期、可见性、
@@ -219,6 +223,9 @@ Search 接受固定版本 OpenAPI 定义的全部 federation 值：`auto`、`ref
 Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
 字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，
 并通过固定版本 catalog Schema 校验。
+
+Namespace catalog 必须包含完整的合法资源集，通过标准 list service 连续分页，不能在
+100 条时静默停止。Host 级 well-known catalog 仍只包含 registry 条目。
 
 Explore facet 必须在可见性、当前版本和请求过滤后，对完整的有效结果集进行聚合，不能基于
 单页或固定长度的候选前缀计算。Publisher、source 和 trust identity 等协议常量由适配器

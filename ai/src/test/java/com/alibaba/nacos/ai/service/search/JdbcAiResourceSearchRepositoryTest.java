@@ -98,6 +98,23 @@ class JdbcAiResourceSearchRepositoryTest {
             "SELECT COUNT(1) FROM ai_resource_search_chunk", Integer.class));
     }
     
+    @Test
+    void queriesShouldApplyRowBoundsInJdbc() {
+        for (int i = 1; i <= 5; i++) {
+            jdbcTemplate.update("INSERT INTO ai_resource_search_document "
+                + "(namespace_id, resource_type, resource_name, resource_version, display_name, "
+                + "source_digest, status, generate_mode, gmt_create, gmt_modified) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                "public", "skill", "skill-" + i, "1.0.0", "skill-" + i, "digest-" + i,
+                "enabled", "auto");
+        }
+        
+        assertEquals(2,
+            repository.listEnabledEntries("public", List.of("skill"), 2).size());
+        assertEquals(2,
+            repository.scanEnabledEntries("public", List.of("skill"), 0L, 2).size());
+    }
+    
     private AiResourceSearchDocument entry(String displayName) {
         AiResourceSearchDocument entry = new AiResourceSearchDocument();
         entry.setNamespaceId("public");

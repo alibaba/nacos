@@ -18,11 +18,14 @@
 
 - Upstream repository: <https://github.com/ards-project/ard-spec>
 - Pinned commit: `5fa2f5aef790b478319f6a3b43adf4661b0ed0e0`
-- Source path: `spec/schemas/ai-catalog.schema.json`
-- SHA-256: `c55238483a4738e08b250bdd6af1f4dc05a91afe882c649d224d09c19cd8fe09`
+- Source paths and SHA-256:
+  - `spec/schemas/ai-catalog.schema.json`:
+    `c55238483a4738e08b250bdd6af1f4dc05a91afe882c649d224d09c19cd8fe09`
+  - `spec/schemas/ard.openapi.yaml`:
+    `60b2460da5e8289f2293d72fb2839317f15a554698309ce1e33ac55b9c55fcab`
 - Upstream license: Apache License 2.0
 
-The JSON file is copied without modification so tests validate the exact
-upstream catalog contract. Strict JSON cannot contain a license comment; the
-repository RAT exclusion is limited to that pinned fixture.
-
+Both files are copied without modification so tests validate the exact
+upstream contracts. Strict fixture fidelity does not permit adding a project
+license header; the repository RAT exclusions are limited to these pinned
+fixtures.

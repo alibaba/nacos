@@ -331,17 +331,32 @@ public class AiResourceIndexBackfillTask
     private void scheduleOrphanDeletes(String namespaceId, String resourceType,
         Set<String> canonicalNames, BackfillStats stats) {
         Set<String> scheduled = new LinkedHashSet<>();
-        for (AiResourceSearchDocument entry : repository.listEntries(namespaceId,
-            Collections.singletonList(resourceType), Integer.MAX_VALUE)) {
-            if (canonicalNames.contains(entry.getResourceName())
-                || !scheduled.add(entry.getResourceName())) {
-                continue;
+        long afterId = 0L;
+        while (true) {
+            List<AiResourceSearchDocument> batch = repository.scanEntries(namespaceId,
+                Collections.singletonList(resourceType), afterId, SCAN_PAGE_SIZE);
+            if (batch == null || batch.isEmpty()) {
+                break;
             }
-            if (indexMaintenanceService.schedule(namespaceId, resourceType,
-                entry.getResourceName())) {
-                stats.rebuilt++;
-            } else {
-                stats.failed++;
+            for (AiResourceSearchDocument entry : batch) {
+                if (canonicalNames.contains(entry.getResourceName())
+                    || !scheduled.add(entry.getResourceName())) {
+                    continue;
+                }
+                if (indexMaintenanceService.schedule(namespaceId, resourceType,
+                    entry.getResourceName())) {
+                    stats.rebuilt++;
+                } else {
+                    stats.failed++;
+                }
+            }
+            AiResourceSearchDocument last = batch.get(batch.size() - 1);
+            if (last.getId() == null || last.getId() <= afterId) {
+                throw new IllegalStateException("AI resource index reconciliation did not advance");
+            }
+            afterId = last.getId();
+            if (batch.size() < SCAN_PAGE_SIZE) {
+                break;
             }
         }
     }

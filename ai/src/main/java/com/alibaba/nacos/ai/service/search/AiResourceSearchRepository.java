@@ -97,6 +97,30 @@ public interface AiResourceSearchRepository {
         int limit);
     
     /**
+     * Scan enabled entries by generated id.
+     *
+     * @param namespaceId namespace id
+     * @param resourceTypes resource types
+     * @param afterId exclusive lower document id
+     * @param limit maximum rows returned
+     * @return the next id-ordered batch
+     */
+    List<AiResourceSearchDocument> scanEnabledEntries(String namespaceId,
+        List<String> resourceTypes, long afterId, int limit);
+    
+    /**
+     * Scan entries of any status by generated id.
+     *
+     * @param namespaceId namespace id
+     * @param resourceTypes resource types
+     * @param afterId exclusive lower document id
+     * @param limit maximum rows returned
+     * @return the next id-ordered batch
+     */
+    List<AiResourceSearchDocument> scanEntries(String namespaceId, List<String> resourceTypes,
+        long afterId, int limit);
+    
+    /**
      * Count relational chunks for vector completeness checks.
      */
     int countChunks(long documentId);

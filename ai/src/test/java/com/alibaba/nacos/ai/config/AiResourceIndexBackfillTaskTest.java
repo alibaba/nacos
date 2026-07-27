@@ -283,11 +283,12 @@ class AiResourceIndexBackfillTaskTest {
     @Test
     void shouldScheduleOrphanIndexDeletion() throws Exception {
         AiResourceSearchDocument orphan = new AiResourceSearchDocument();
+        orphan.setId(1L);
         orphan.setNamespaceId(PUBLIC_NAMESPACE);
         orphan.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         orphan.setResourceName("deleted-skill");
-        when(repository.listEntries(PUBLIC_NAMESPACE,
-            List.of(Constants.Skills.RESOURCE_TYPE_SKILL), Integer.MAX_VALUE))
+        when(repository.scanEntries(PUBLIC_NAMESPACE,
+            List.of(Constants.Skills.RESOURCE_TYPE_SKILL), 0L, 100))
             .thenReturn(List.of(orphan));
         
         task.onApplicationEvent(rootContextEvent());

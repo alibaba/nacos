@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.airegistry.annotation;
-
-import com.alibaba.nacos.auth.annotation.ProtocolAuthError;
+package com.alibaba.nacos.auth.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -25,13 +23,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks controllers that expose the external ARD protocol.
+ * Declares the authentication error contract for an external protocol API.
+ *
+ * <p>The auth filter serializes failures as an exact
+ * {@code {"errorCode":"...","message":"..."}} body for annotated APIs.</p>
  *
  * @author nacos
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ProtocolAuthError(status = 401, errorCode = "UNAUTHENTICATED")
-public @interface ArdApi {
+public @interface ProtocolAuthError {
+    
+    /**
+     * HTTP status returned when authentication or authorization fails.
+     *
+     * @return HTTP status
+     */
+    int status();
+    
+    /**
+     * External protocol error code.
+     *
+     * @return protocol error code
+     */
+    String errorCode();
 }
