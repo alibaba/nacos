@@ -94,6 +94,10 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 核心插件管理器记录插件的加载状态和启用状态，本身不定义执行形态。领域管理器负责稳定地
 应用对应执行形态。
 
+对于 `ai-resource-import`，每个 managed Builder 实现表示一个外部来源。请求的
+`sourceId` 等于 managed `pluginName`；领域在从 Builder 已接受配置快照创建请求级 Service
+之前，必须检查插件类型和实现 state。
+
 执行形态和关键能力属于插件类型，而不是某个内置实现。共享 `PluginType` 必须暴露
 `executionMode` 和 `critical`；已有 `exclusive` 信息继续由
 `executionMode == EXCLUSIVE` 推导，以保持 API 兼容。插件实现是否可配置由
@@ -111,8 +115,9 @@ Nacos 插件包含两个相关的 SPI 层次：
 definitions、空 current map，并提供空 apply 回调，因此按旧版领域 SPI 编译的实现和新版
 零配置实现都会保持 `configurable=false`。声明至少一个 `ConfigItemDefinition` 的插件属于
 可配置实现，必须实现 current-map 和 apply 回调。`environment` 在统一 bootstrap 配置生命周期
-完成设计前继续作为例外；`control` 使用只声明 definitions 的 builder 和稳定的
-`PluginConfigSpec` adapter。`ai-resource-import` 在自身重构前仍不进入统一管理。
+完成设计前继续作为例外；`control` 通过稳定的 managed configuration adapter 接入。
+`ai-resource-import` 的稳定请求 Service Builder 本身实现 `PluginConfigSpec`，请求级
+Service 不再注册为第二个插件。
 支持启停状态判断的插件类别，应通过 `PluginStateCheckerHolder` 获取状态，而不是维护一套
 独立状态来源。
 

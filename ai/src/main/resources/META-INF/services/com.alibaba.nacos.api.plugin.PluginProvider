@@ -15,4 +15,5 @@
 #
 
 com.alibaba.nacos.ai.plugin.AiPipelinePluginProvider
+com.alibaba.nacos.ai.plugin.AiResourceImportPluginProvider
 com.alibaba.nacos.ai.plugin.AiStoragePluginProvider

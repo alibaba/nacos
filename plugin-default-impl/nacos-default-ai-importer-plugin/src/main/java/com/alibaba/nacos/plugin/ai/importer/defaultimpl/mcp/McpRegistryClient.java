@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.ImportHttpResponse;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -68,35 +67,39 @@ class McpRegistryClient {
     
     private static final int READ_TIMEOUT_SECONDS = 20;
     
-    private DefaultImportHttpClient httpClient;
+    private final String endpoint;
     
-    McpRegistryClient() {
-        this(new DefaultImportHttpClient());
+    private final DefaultImportHttpClient httpClient;
+    
+    McpRegistryClient(String endpoint, boolean allowHttp, boolean allowPrivateNetwork,
+        long maxArtifactSize) {
+        this(endpoint, new DefaultImportHttpClient(allowHttp, allowPrivateNetwork,
+            maxArtifactSize));
     }
     
-    McpRegistryClient(HttpClient httpClient) {
-        this(new DefaultImportHttpClient(httpClient));
+    McpRegistryClient(String endpoint, HttpClient httpClient) {
+        this(endpoint, new DefaultImportHttpClient(httpClient));
     }
     
-    McpRegistryClient(DefaultImportHttpClient httpClient) {
+    McpRegistryClient(String endpoint, DefaultImportHttpClient httpClient) {
+        if (StringUtils.isBlank(endpoint)) {
+            throw new IllegalArgumentException("URL is blank");
+        }
+        this.endpoint = endpoint.trim();
         this.httpClient = httpClient;
     }
     
-    Page fetchOfficialRegistryPage(AiResourceImportSource source, String cursor, Integer limit,
-        String search) throws Exception {
-        if (source == null || StringUtils.isBlank(source.getEndpoint())) {
-            throw new IllegalArgumentException("URL is blank");
-        }
-        return fetchUrlPage(source, source.getEndpoint().trim(), cursor, limit, search);
+    Page fetchOfficialRegistryPage(String cursor, Integer limit, String search) throws Exception {
+        return fetchUrlPage(endpoint, cursor, limit, search);
     }
     
-    McpServerDetailInfo fetchOfficialRegistryServer(AiResourceImportSource source,
-        String externalId, int limit) throws Exception {
+    McpServerDetailInfo fetchOfficialRegistryServer(String externalId, int limit)
+        throws Exception {
         if (StringUtils.isBlank(externalId)) {
             throw new IllegalArgumentException("MCP server external id is blank");
         }
         int actualLimit = limit > 0 ? limit : 30;
-        Page page = fetchOfficialRegistryPage(source, null, actualLimit, externalId);
+        Page page = fetchOfficialRegistryPage(null, actualLimit, externalId);
         if (CollectionUtils.isNotEmpty(page.getServers())) {
             for (McpServerDetailInfo each : page.getServers()) {
                 if (StringUtils.equals(externalId, each.getName())
@@ -108,11 +111,11 @@ class McpRegistryClient {
         throw new IllegalStateException("MCP server not found in registry: " + externalId);
     }
     
-    private Page fetchUrlPage(AiResourceImportSource source, String urlData, String cursor,
-        Integer limit, String search) throws Exception {
+    private Page fetchUrlPage(String urlData, String cursor, Integer limit, String search)
+        throws Exception {
         String pageUrl = buildPageUrl(urlData.trim(), cursor, limit, search);
-        ImportHttpResponse response = httpClient.get(source, pageUrl, READ_TIMEOUT_SECONDS,
-            HEADER_ACCEPT_JSON);
+        ImportHttpResponse response =
+            httpClient.get(pageUrl, READ_TIMEOUT_SECONDS, HEADER_ACCEPT_JSON);
         int code = response.getStatusCode();
         if (!isSuccessStatus(code)) {
             throw new IllegalStateException("HTTP " + code + " when fetching " + pageUrl);

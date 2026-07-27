@@ -22,8 +22,6 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem;
 
-import java.util.Set;
-
 /**
  * AI resource import service SPI.
  *
@@ -33,21 +31,7 @@ import java.util.Set;
  * @author xiweng.yy
  * @since 3.2.1
  */
-public interface AiResourceImportService {
-    
-    /**
-     * Importer implementation name, for example {@code mcp-registry}.
-     *
-     * @return importer type
-     */
-    String importerType();
-    
-    /**
-     * Resource types supported by this importer, for example {@code mcp} or {@code skill}.
-     *
-     * @return supported resource type set
-     */
-    Set<String> supportedResourceTypes();
+public interface AiResourceImportService extends AutoCloseable {
     
     /**
      * Search external candidates from the resolved source.
@@ -71,4 +55,11 @@ public interface AiResourceImportService {
      */
     AiResourceImportArtifact fetch(AiResourceImportContext context, AiResourceImportItem item)
         throws NacosException;
+    
+    /**
+     * Release request-scoped resources.
+     */
+    @Override
+    default void close() {
+    }
 }

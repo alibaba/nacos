@@ -43,97 +43,109 @@ stage they should be built into the `ai` module and write resources through the
 current Nacos domain services.
 
 Default importer implementations should live in `plugin-default-impl`, not in
-the AI Registry domain module. The `ai` module owns import APIs, source
-resolution, validation, and resource operators; `plugin-default-impl` owns
-default external source adapters and their preset source configuration.
+the AI Registry domain module. The `ai` module owns import APIs, plugin routing,
+validation, and resource operators; `plugin-default-impl` owns default external
+source adapters and their configuration definitions.
 
 ## Concepts
 
 | Concept | Meaning |
 |---------|---------|
-| Import source | Operator-defined source configuration identified by `sourceId`. |
-| Importer | Plugin implementation selected by an import source. |
+| Managed importer | Stable Builder plugin identified by `pluginName`; one implementation represents one external source. |
+| Import service | Request-scoped protocol adapter built from one immutable Builder configuration snapshot. |
 | Candidate | External resource summary returned during search, without full importable content. |
 | Artifact | Fetched payload and metadata that can be applied by a resource operator. |
 | Resource operator | Nacos domain service that validates and writes one resource type. |
 | Dependency | Resource referenced by an imported artifact, such as a Skill requiring MCP tools. |
 
-Import sources are part of Nacos server configuration or plugin configuration.
-End users select a `sourceId`; they must not submit arbitrary endpoint URLs,
-IP addresses, credentials, or registry base paths in import requests.
+The existing API field `sourceId` is the managed `pluginName`. The existing API
+field `pluginName` remains importer/protocol metadata for compatibility with
+the Console. End users select a `sourceId`; they must not submit arbitrary
+endpoint URLs, IP addresses, credentials, or registry base paths in requests.
 
 ## Execution Mode
 
-`ai-resource-import` is a configured single-service plugin type.
+`ai-resource-import` is a routed managed plugin type.
 
-Multiple importer implementations may be loaded at the same time, for example
-`mcp-registry`, `skills-well-known`, or an internal enterprise marketplace
-importer. For each request, the AI import source manager resolves `sourceId` to
-one enabled source, then selects the importer named by that source.
+Multiple Builder implementations may be loaded at the same time, for example
+`mcp-official`, `mcp-registry-protocol`, `skills-well-known`, or an internal
+enterprise marketplace importer. For each request, the domain manager resolves
+`sourceId` directly to one enabled Builder.
 
 The importer returns candidates during search and fetches artifacts for selected
 items during validate and execute. The AI Registry import manager then routes
 each artifact to the resource operator for its `resourceType`.
 
 ```text
-sourceId -> ImportSource(pluginName, resourceTypes, endpoint, limits, authRef)
-         -> AiResourceImportService
-         -> AiResourceOperator(resourceType)
+sourceId(managed pluginName)
+  -> AiResourceImportServiceBuilder(current configuration snapshot)
+  -> request-scoped AiResourceImportService
+  -> AiResourceOperator(resourceType)
 ```
 
-## Source Configuration
+## Managed Configuration
 
-An import source should include:
+The module switch is:
 
-| Field | Requirement |
-|-------|-------------|
-| `sourceId` | Stable user-visible source id. |
-| `pluginName` | Importer implementation name under `ai-resource-import`. |
-| `resourceTypes` | Resource types supported by this source, such as `mcp` or `skill`. |
-| `endpoint` | Operator-configured source endpoint or registry root. |
-| `enabled` | Whether the source may serve import requests. |
-| `authRef` | Optional reference to server-side credentials; secrets are not returned to users. |
-| `connectTimeout` / `readTimeout` | Per-source network timeouts. |
-| `maxPageCount` / `maxItemCount` | Pagination guards. |
-| `maxArtifactSize` | Maximum fetched artifact size. |
-| `properties` | Importer-specific non-secret options. |
+```properties
+nacos.plugin.ai-resource-import.enabled=true
+```
 
-The source manager must reject duplicate `sourceId` values and sources whose
-importer plugin is not loaded or disabled.
+The legacy `nacos.ai.resource.import.enabled` key is an alias. The standard key
+wins when both are present. The default is `false`.
 
-For advanced deployments, explicit import sources may still be configured under
-`nacos.ai.resource.import.sources[...]` and guarded by
-`nacos.ai.resource.import.enabled=true`. Default importer presets are configured
-under the plugin namespace and may be enabled independently through
-operator-owned `nacos.plugin.ai.importer.*` properties.
+Each implementation uses the standard plugin state key:
+
+```properties
+nacos.plugin.ai-resource-import.{pluginName}.enabled=true
+```
+
+Each configurable item uses:
+
+```properties
+nacos.plugin.ai-resource-import.{pluginName}.{itemKey}=value
+```
+
+One `pluginName` represents exactly one source. Nacos does not support cloning
+the same managed implementation into multiple endpoint instances through
+configuration. A deployment that needs another fixed source should provide
+another Builder with a distinct `pluginName`.
+
+The old `nacos.ai.resource.import.sources[N].*` model, old Source model, and old
+Source Provider SPI are removed. There is no automatic migration because one
+indexed importer could previously create multiple source instances.
 
 ## SPI
 
-Import implementations are created by a builder.
+The Builder is the stable managed plugin and implements `PluginConfigSpec`.
 
 | Builder method | Requirement |
 |----------------|-------------|
-| `importerType()` | Stable importer implementation name. |
-| `build(properties)` | Build an import service with importer-owned properties. |
+| `pluginName()` | Stable managed plugin name and API `sourceId`. |
+| `importerType()` | Compatibility importer/protocol metadata returned in the API `pluginName` field. |
+| `displayName()` / `description()` | Current display metadata from the accepted configuration snapshot. |
+| `supportedResourceTypes()` | Resource types produced by this source. |
+| `getConfigDefinitions()` | All configurable items owned by this implementation. |
+| `applyConfig(config)` | Atomically replace the immutable effective configuration snapshot. |
+| `build()` | Build one request-scoped service from one snapshot; it accepts no extra properties. |
 
 The import service implements:
 
 | Service method | Requirement |
 |----------------|-------------|
-| `importerType()` | Runtime importer type. |
-| `supportedResourceTypes()` | Resource types the importer can produce. |
 | `search(context)` | Return a candidate page from the configured source with necessary metadata only. |
 | `fetch(context, item)` | Fetch one selected artifact from the configured source. |
+| `close()` | Release request-scoped resources; the default implementation may be a no-op. |
 
-Source presets may be provided by an optional source provider SPI:
+`context` contains namespace, resource type, query, cursor, limit, and importer
+options. It does not carry source configuration or a user-provided endpoint.
 
-| Provider method | Requirement |
-|-----------------|-------------|
-| `loadSources(properties)` | Return enabled import sources derived from server configuration and trusted defaults. |
-
-`context` contains namespace, resource type, source configuration, query,
-cursor, limit, and importer options. It must not contain a user-provided
-network endpoint.
+A Builder instance is discovered once, registered with the unified
+`PluginManager`, restored to its persisted state, resolved through the standard
+configuration source chain, and applied before it is exposed for import
+requests. Search creates one service for the request. Validate and execute each
+create one service and reuse it for all selected items, then close it in a
+`finally` block.
 
 `search` should be side-effect free and must not return MCP tools, Skill package
 content, secrets, or any other full importable payload. `fetch` may call the
@@ -192,145 +204,73 @@ Skill conflict handling follows the AI resource working-version lifecycle:
 The default built-in importers are delivered by the
 `nacos-default-ai-importer-plugin` module in `plugin-default-impl`.
 
-The `mcp-registry` importer connects to an operator-configured MCP registry
-endpoint. Search returns MCP Server summaries only, and fetch returns an
-`MCP_DETAIL` artifact that can be written by the MCP resource operator.
+| Managed pluginName | API importer type | Resource | Endpoint | Default state |
+|--------------------|-------------------|----------|----------|---------------|
+| `mcp-official` | `mcp-registry` | `mcp` | Fixed official MCP Registry endpoint | enabled |
+| `mcp-registry-protocol` | `mcp-registry` | `mcp` | Required operator configuration | disabled |
+| `skills-sh` | `skills-sh` | `skill` | Fixed `https://skills.sh` | enabled |
+| `skills-well-known` | `skills-well-known` | `skill` | Required operator configuration | disabled |
 
-The official MCP registry preset may be enabled with:
+The fixed built-ins keep their current Console-facing metadata:
 
-```properties
-nacos.plugin.ai.importer.mcp.official.enabled=true
-```
+- `mcp-official`: display name `Official MCP Registry`, description
+  `Import MCP servers from the official MCP registry.`;
+- `skills-sh`: display name `skills.sh`, description
+  `Import Skills from skills.sh.`.
 
-Unless overridden, this creates source id `mcp-official`, importer
-`mcp-registry`, resource type `mcp`, and endpoint
-`https://registry.modelcontextprotocol.io/v0/servers`. Operators may override
-the preset source id, display name, endpoint, auth reference, timeouts, item
-limits, and artifact size by using the same
-`nacos.plugin.ai.importer.mcp.official.*` prefix.
+The common effective configuration is:
 
-All built-in source presets accept the following security opt-ins under their
-own prefix. They default to `false` and should be enabled only by operators for
-controlled private deployments:
+| Item key | Scope | Applies to | Meaning |
+|----------|-------|------------|---------|
+| `endpoint` | `RESTART` | configurable endpoint implementations | Registry or marketplace root. |
+| `allow-http` | `RESTART` | configurable endpoint implementations | Allow non-HTTPS targets. |
+| `allow-private-network` | `RESTART` | configurable endpoint implementations | Allow local or private targets. |
+| `display-name` | `RUNTIME` | all built-ins | API and Console display name. |
+| `description` | `RUNTIME` | all built-ins | API and Console description. |
+| `max-item-count` | `RUNTIME` | all built-ins | Maximum request result/file count, default `500`. |
+| `max-artifact-size` | `RUNTIME` | all built-ins | Maximum response/artifact bytes, default `10485760`. |
 
-| Property suffix | Meaning |
-|-----------------|---------|
-| `allow-http` / `allowHttp` | Allows a non-HTTPS source endpoint. |
-| `allow-private-network` / `allowPrivateNetwork` | Allows localhost, loopback, link-local, multicast, or private-network source endpoints. |
+Fixed endpoint implementations do not expose `endpoint`, `allow-http`, or
+`allow-private-network` definitions and do not accept old endpoint overrides.
+Their source identity and endpoint are part of the implementation contract.
 
-The `skills-well-known` importer connects to an operator-configured Skill
-marketplace or registry root. If the source endpoint is not already a
-well-known path, the importer should first try `/.well-known/agent-skills` and
-then fall back to `/.well-known/skills` for v0.1-compatible sources. If the
-endpoint already ends with `/.well-known/agent-skills` or `/.well-known/skills`,
-the importer should use that path directly.
-
-The Skill well-known preset may be enabled with:
+For example, an operator-configured MCP Registry source uses:
 
 ```properties
-nacos.plugin.ai.importer.skills.well-known.enabled=true
-nacos.plugin.ai.importer.skills.well-known.url=https://developers.cloudflare.com
+nacos.plugin.ai-resource-import.mcp-registry-protocol.enabled=true
+nacos.plugin.ai-resource-import.mcp-registry-protocol.endpoint=https://registry.example.com/v0/servers
 ```
 
-This creates source id `skills-well-known`, importer `skills-well-known`, and
-resource type `skill`. Operators may override the preset source id, display
-name, auth reference, timeouts, item limits, and artifact size by using the same
-`nacos.plugin.ai.importer.skills.well-known.*` prefix. The `url` property is
-required when this preset is enabled.
-
-The importer must support both Skill well-known discovery versions:
-
-- v0.1.0 or legacy sources, identified by an absent `$schema` field or the
-  `https://schemas.agentskills.io/discovery/0.1.0/schema.json` schema URI;
-- v0.2.0 sources, identified by the
-  `https://schemas.agentskills.io/discovery/0.2.0/schema.json` schema URI.
-
-For v0.1.0 or legacy sources, `index.json` uses a file list for each Skill:
-
-```json
-{
-  "skills": [
-    {
-      "name": "demo-skill",
-      "description": "Demo skill",
-      "files": [
-        "SKILL.md",
-        "docs/guide.md"
-      ]
-    }
-  ]
-}
-```
-
-Search may return only `name`, `description`, and non-secret metadata. Fetch
-downloads the selected Skill files from `{wellKnownBase}/{skillName}/{file}`,
-validates path safety, assembles a standard Skill ZIP artifact, and passes it to
-the Skill resource operator so it is applied through the normal Skill upload or
-draft lifecycle.
-
-For v0.2.0 sources, `index.json` uses artifact references:
-
-```json
-{
-  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
-  "skills": [
-    {
-      "name": "demo-skill",
-      "type": "skill-md",
-      "description": "Demo skill",
-      "url": "/.well-known/agent-skills/demo-skill/SKILL.md",
-      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    },
-    {
-      "name": "archive-skill",
-      "type": "archive",
-      "description": "Demo archive skill",
-      "url": "/.well-known/agent-skills/archive-skill.tar.gz",
-      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    }
-  ]
-}
-```
-
-Search must not download artifact content. It may expose only `name`,
-`description`, `type`, `url`, `digest`, schema version, and other non-secret
-metadata needed by the console. Fetch must resolve `url` against the index URL,
-download the selected artifact server-side, verify the `sha256` digest, and
-convert the artifact into the standard Nacos Skill ZIP boundary. The built-in
-importer must support `skill-md` single-file artifacts and `archive` artifacts
-packaged as ZIP, TAR, TAR.GZ, or TGZ. Archive extraction must validate path
-safety, limit file count and decompressed size, and reject unsupported archive
-formats before the artifact is handed to the Skill resource operator.
-
-The `skills-sh` importer connects to the operator-configured skills.sh API root.
-It follows the skills.sh CLI discovery flow: search uses
-`GET {endpoint}/api/search?q={query}&limit={limit}` and returns candidate
-summaries only. If the user query is blank, the importer should use `skill` as
-the default query. If the trimmed user query is one character, the importer
-should reject the request locally because skills.sh requires at least two query
-characters. Fetch resolves the selected candidate's `source` and `skillId` to
-`GET {endpoint}/api/download/{owner}/{repo}/{skillId}`, validates the returned
-file paths, assembles a standard Skill ZIP artifact, and passes that artifact
-to the Skill resource operator.
-
-The skills.sh preset may be enabled with:
+An operator-configured Skill well-known source uses:
 
 ```properties
-nacos.plugin.ai.importer.skills.skills-sh.enabled=true
+nacos.plugin.ai-resource-import.skills-well-known.enabled=true
+nacos.plugin.ai-resource-import.skills-well-known.endpoint=https://skills.example.com
 ```
 
-Unless overridden, this creates source id `skills-sh`, importer `skills-sh`,
-resource type `skill`, and endpoint `https://skills.sh`. Operators may override
-the preset source id, display name, endpoint, auth reference, timeouts, item
-limits, and artifact size by using the same
-`nacos.plugin.ai.importer.skills.skills-sh.*` prefix.
+The MCP Registry implementation returns summaries during search and an
+`MCP_DETAIL` artifact during fetch.
 
-Search metadata may expose only non-secret values such as the skills.sh page
-URL, the GitHub repository URL, repository source, skill id, and install count.
-Fetch source metadata may additionally include the download snapshot hash.
-Fetch must set `sourceMetadata.artifactUrl` to the corresponding skills.sh page
-URL so imported Skill resources record a concrete external source instead of
-`local`.
+The Skill well-known implementation supports discovery schema v0.1.0 and
+v0.2.0. It tries `/.well-known/agent-skills/index.json` and then
+`/.well-known/skills/index.json` when the configured endpoint is a registry
+root. Search does not download artifact content. Fetch validates paths and
+digests and converts `skill-md`, ZIP, TAR, TAR.GZ, or TGZ distributions into a
+standard Skill ZIP artifact.
+
+The skills.sh implementation searches
+`GET /api/search?q={query}&limit={limit}` and downloads
+`GET /api/download/{owner}/{repo}/{skillId}`. A blank query uses `skill`; a
+one-character query is rejected. Returned paths and aggregate size are
+validated before a Skill ZIP artifact is created.
+
+Legacy `nacos.plugin.ai.importer.*` display, description, limits, state, and
+configurable endpoint keys may be consumed as aliases for one migration
+window. The server should emit a migration warning when an alias is used.
+Legacy fixed-source endpoint overrides, `auth-ref`, source/global timeouts,
+`max-page-count`, `block-private-network`, global defaults, and arbitrary
+`properties.*` are removed because they were ineffective or conflict with the
+managed identity model.
 
 ## API Flow
 
@@ -458,10 +398,9 @@ The import flow must treat external sources as untrusted:
 - redirects must be disabled or revalidated against the same safety policy;
 - loopback, link-local, multicast, and private network targets should be blocked
   by default after DNS resolution;
-- source requests must enforce connect timeout, read timeout, response size,
-  page count, and artifact size limits. Built-in importers should cap each HTTP
-  response by the source `max-artifact-size` unless a stricter per-protocol
-  limit applies;
+- built-in requests must enforce fixed connection/read timeouts and the
+  configured `max-item-count` and `max-artifact-size` limits. Each HTTP response
+  must be capped by `max-artifact-size` unless a stricter protocol limit applies;
 - fetched Skill packages must not execute scripts during import, query, or
   download;
 - importer plugins must not leak secrets in API responses, trace events, or
@@ -491,3 +430,9 @@ storage implementation of individual resources evolves. In particular, MCP
 import must continue to work across the migration from Config-backed records to
 the standard AI resource model by changing the MCP resource operator rather
 than each external importer.
+
+The unified managed model is a breaking replacement for the short-lived
+Importer/Source dual SPI introduced in the 3.2.x line. External implementations
+must migrate to one `AiResourceImportServiceBuilder` that implements
+`PluginConfigSpec`; the removed Source model and Source Provider SPI have no
+compatibility adapter.

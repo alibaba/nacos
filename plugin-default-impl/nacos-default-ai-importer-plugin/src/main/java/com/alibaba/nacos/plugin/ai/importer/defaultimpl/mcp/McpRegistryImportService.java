@@ -32,7 +32,6 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 
 import java.util.ArrayList;
@@ -40,7 +39,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Built-in importer for the official MCP registry API.
@@ -64,8 +62,9 @@ public class McpRegistryImportService implements AiResourceImportService {
     
     private final McpRegistryClient client;
     
-    public McpRegistryImportService() {
-        this(new McpRegistryClient());
+    public McpRegistryImportService(String endpoint, boolean allowHttp,
+        boolean allowPrivateNetwork, long maxArtifactSize) {
+        this(new McpRegistryClient(endpoint, allowHttp, allowPrivateNetwork, maxArtifactSize));
     }
     
     McpRegistryImportService(McpRegistryClient client) {
@@ -73,22 +72,11 @@ public class McpRegistryImportService implements AiResourceImportService {
     }
     
     @Override
-    public String importerType() {
-        return McpRegistryImportServiceBuilder.IMPORTER_TYPE;
-    }
-    
-    @Override
-    public Set<String> supportedResourceTypes() {
-        return Collections.singleton(RESOURCE_TYPE_MCP);
-    }
-    
-    @Override
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
-            AiResourceImportSource source = requireSource(context.getSource());
             McpRegistryClient.Page registryPage = client.fetchOfficialRegistryPage(
-                source, context.getCursor(), context.getLimit(), context.getQuery());
+                context.getCursor(), context.getLimit(), context.getQuery());
             AiResourceImportCandidatePage result = new AiResourceImportCandidatePage();
             result.setItems(toCandidates(registryPage.getServers()));
             result.setNextCursor(registryPage.getNextCursor());
@@ -105,24 +93,15 @@ public class McpRegistryImportService implements AiResourceImportService {
     public AiResourceImportArtifact fetch(AiResourceImportContext context,
         AiResourceImportItem item) throws NacosException {
         try {
-            AiResourceImportSource source = requireSource(context.getSource());
             String externalId = resolveExternalId(item);
             McpServerDetailInfo server = client.fetchOfficialRegistryServer(
-                source, externalId, resolveFetchLimit(context));
+                externalId, resolveFetchLimit(context));
             return toArtifact(externalId, server);
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {
             throw dataAccess("Fetch MCP registry artifact failed: " + e.getMessage(), e);
         }
-    }
-    
-    private AiResourceImportSource requireSource(AiResourceImportSource source)
-        throws NacosException {
-        if (source == null || StringUtils.isBlank(source.getEndpoint())) {
-            throw invalid("MCP registry import source endpoint must not be empty.");
-        }
-        return source;
     }
     
     private String resolveExternalId(AiResourceImportItem item) throws NacosException {

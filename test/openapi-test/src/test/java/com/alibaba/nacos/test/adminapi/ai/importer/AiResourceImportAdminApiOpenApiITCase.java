@@ -33,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: configured import sources are listed with sanitized source information and can be
- *     filtered by {@code mcp}, {@code skill}, or an unsupported resource type without exposing runtime endpoint or
- *     secret fields.</li>
+ *     <li>Expected capability: enabled managed importer plugins are listed as sanitized sources and can be filtered
+ *     by {@code mcp}, {@code skill}, or an unsupported resource type without exposing runtime endpoint or secret
+ *     fields.</li>
  *     <li>Boundary/validation: {@code resourceType}, {@code sourceId}, {@code selectedItems}, JSON
  *     {@code selectedItems}, JSON {@code options}, and empty selected item lists are validated for search,
  *     validate, and execute. {@code query}, {@code cursor}, {@code limit}, {@code overwriteExisting},

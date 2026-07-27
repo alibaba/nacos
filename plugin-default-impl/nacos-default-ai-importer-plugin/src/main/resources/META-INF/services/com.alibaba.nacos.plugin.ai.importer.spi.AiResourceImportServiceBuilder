@@ -13,5 +13,6 @@
 # limitations under the License.
 
 com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpRegistryImportServiceBuilder
+com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp.McpOfficialImportServiceBuilder
 com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillWellKnownImportServiceBuilder
 com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill.SkillsShImportServiceBuilder
