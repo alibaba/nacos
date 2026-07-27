@@ -19,9 +19,12 @@ package com.alibaba.nacos.airegistry.config;
 import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.airegistry.controller.ArdSearchController;
 import com.alibaba.nacos.airegistry.controller.ArdWellKnownController;
+import com.alibaba.nacos.core.auth.AuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.context.remote.HttpRequestContextConfig;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import java.util.Set;
 
@@ -32,6 +35,7 @@ import java.util.Set;
  */
 @Configuration
 @ConditionalOnArdEnabled
+@Import({AuthConfig.class, HttpRequestContextConfig.class})
 public class ArdWebConfiguration {
     
     private final ControllerMethodsCache methodsCache;

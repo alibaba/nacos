@@ -87,8 +87,18 @@ For this reason:
   deployment contains non-public data;
 - adaptor endpoints should only expose resources that are suitable for the
   target community protocol;
-- future adaptor-level authentication must be compatible with the external
-  protocol and must not silently change canonical Nacos v3 auth semantics.
+- ARD endpoints participate in Nacos Open API authentication inside the
+  adaptor web context while retaining ARD-specific error responses.
+
+When Nacos authentication is enabled, explicit credentials on an ARD request
+are always validated. A valid identity is propagated to canonical visibility
+checks, so callers can discover private resources only when permitted. Rejected
+credentials return HTTP 401 with `UNAUTHENTICATED`. If anonymous AI access is
+enabled, a request without credentials uses the reserved anonymous identity and
+can discover only public resources; otherwise missing credentials also return
+HTTP 401. The request-context and authentication filters must be registered in
+the independent adaptor web context because filters in the main server web
+context are not inherited across sibling contexts.
 
 ## 4. MCP Registry Compatibility
 
