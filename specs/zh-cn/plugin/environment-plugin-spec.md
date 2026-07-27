@@ -39,7 +39,8 @@
 
 ## SPI
 
-插件实现 `CustomEnvironmentPluginService`。
+插件实现 `CustomEnvironmentPluginService`，该接口通过兼容默认方法继承
+`PluginConfigSpec`。
 
 | 方法 | 要求 |
 |------|------|
@@ -49,6 +50,10 @@
 | `customValue(property)` | 返回声明 key 的转换结果。 |
 
 该插件以 `environment` 类型暴露给核心插件管理器。
+
+该类型使用 `PRE_CONTEXT` 初始化阶段。Core 对每个 SPI 实现只加载一次，解析并应用启动配置，
+随后把同一个实例交给 `CustomEnvironmentPluginManager`。Environment manager 不得再次独立
+加载 SPI。
 
 ## 执行规则
 
@@ -71,8 +76,18 @@
 nacos.custom.environment.enabled=true
 ```
 
-当前 environment manager 直接加载 SPI 服务，并使用上面的部署开关。该插件类型通过核心
-插件管理器路由时，运行时可用性应收敛到 `environment:{pluginName}` 的统一插件状态。
+该开关属于静态模块/能力开关；为 false 时不加载 environment 实现。每个实现还可以使用标准
+启动状态 key：
+
+```properties
+nacos.plugin.environment.{pluginName}.enabled=true
+```
+
+配置 definition 使用标准
+`nacos.plugin.environment.{pluginName}.{itemKey}` key，且只解析
+`STATIC > DEFAULT`。所有配置均为启动期配置；声明为 `RUNTIME` 的 definition 会输出 WARN
+并按 `RESTART` 暴露。运行时状态和配置更新必须拒绝，后续静态刷新不得再次 apply。
+插件 detail 返回已接受的启动快照。
 
 插件应记录：
 

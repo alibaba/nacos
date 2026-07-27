@@ -22,7 +22,6 @@ import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.plugin.model.PluginStateSnapshot;
-import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 import org.junit.jupiter.api.AfterEach;
@@ -62,9 +61,6 @@ import static org.mockito.Mockito.when;
 class PluginStateSnapshotOperationTest {
     
     @Mock
-    private PluginStatePersistenceService persistence;
-    
-    @Mock
     private PluginManager pluginManager;
     
     @Mock
@@ -82,8 +78,8 @@ class PluginStateSnapshotOperationTest {
     
     @BeforeEach
     void setUp() {
-        snapshotOperation = new PluginStateSnapshotOperation(
-            persistence, pluginManager, new ReentrantReadWriteLock());
+        snapshotOperation =
+            new PluginStateSnapshotOperation(pluginManager, new ReentrantReadWriteLock());
         serializer = SerializeFactory.getDefault();
     }
     
@@ -104,7 +100,7 @@ class PluginStateSnapshotOperationTest {
         otelConfig.put("endpoint", "http://localhost:8080");
         configs.put("trace:otel", otelConfig);
         
-        when(persistence.loadAllStates()).thenReturn(states);
+        when(pluginManager.getPersistedPluginStates()).thenReturn(states);
         when(pluginManager.getRuntimePersistedConfigs()).thenReturn(configs);
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(true);
@@ -124,7 +120,7 @@ class PluginStateSnapshotOperationTest {
     
     @Test
     void onSnapshotSaveEmptyDataTest() throws Exception {
-        when(persistence.loadAllStates()).thenReturn(new HashMap<>());
+        when(pluginManager.getPersistedPluginStates()).thenReturn(new HashMap<>());
         when(pluginManager.getRuntimePersistedConfigs()).thenReturn(new HashMap<>());
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(true);
@@ -140,7 +136,7 @@ class PluginStateSnapshotOperationTest {
     
     @Test
     void onSnapshotSaveFailureTest() throws Exception {
-        when(persistence.loadAllStates()).thenReturn(new HashMap<>());
+        when(pluginManager.getPersistedPluginStates()).thenReturn(new HashMap<>());
         when(pluginManager.getRuntimePersistedConfigs()).thenReturn(new HashMap<>());
         when(writer.getPath()).thenReturn(tempDir.toString());
         when(writer.addFile(eq("plugin_state.zip"), any(LocalFileMeta.class))).thenReturn(false);
@@ -157,7 +153,7 @@ class PluginStateSnapshotOperationTest {
     @Test
     void onSnapshotSaveExceptionTest() {
         IllegalStateException failure = new IllegalStateException("load failed");
-        when(persistence.loadAllStates()).thenThrow(failure);
+        when(pluginManager.getPersistedPluginStates()).thenThrow(failure);
         AtomicBoolean callbackSuccess = new AtomicBoolean(true);
         AtomicReference<Throwable> callbackError = new AtomicReference<>();
         

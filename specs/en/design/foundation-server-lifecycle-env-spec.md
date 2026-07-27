@@ -75,7 +75,8 @@ Startup phase rules:
 - `environmentPrepared` creates required work directories, injects the Spring
   environment, loads pre-properties, and initializes system properties.
 - `contextPrepared` starts periodic startup logging.
-- `contextLoaded` may run custom environment processing.
+- During core `contextLoaded`, the pre-context plugin initializer must run
+  before custom environment processing.
 - `started` marks the phase started and logs startup result.
 - `failed` must run started phases in reverse order so resources are closed in
   the opposite order from startup.
@@ -145,6 +146,12 @@ Custom environment rules:
 
 - Custom environment processing belongs to startup/environment preparation,
   not to domain request handling.
+- Before processing begins, the pre-context plugin initializer loads enabled
+  environment implementations, resolves `STATIC > DEFAULT`, applies each
+  configurable implementation, and installs the same initialized instances in
+  `CustomEnvironmentPluginManager`.
+- The immutable initialization result is handed to the standard core plugin
+  manager for inventory and detail queries. The SPI must not be loaded again.
 - A custom environment plugin may transform configured keys into runtime
   values, but must not mutate domain state or perform business writes.
 - Because the custom property source is added first, custom values may override
@@ -152,6 +159,9 @@ Custom environment rules:
   constrain the keys they control.
 - Custom environment processing must happen before components that rely on the
   overridden values start serving requests.
+- Pre-context configuration and implementation state are restart-only. Runtime
+  plugin updates, persisted runtime overrides, local-only overrides, and later
+  static refreshes must not alter the accepted startup result.
 
 ## 7. Application Context And Started State
 
