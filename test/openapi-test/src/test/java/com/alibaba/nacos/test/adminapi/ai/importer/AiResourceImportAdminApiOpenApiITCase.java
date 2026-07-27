@@ -106,7 +106,7 @@ public class AiResourceImportAdminApiOpenApiITCase extends AiAdminApiBaseITCase 
                 UNKNOWN_SOURCE, "nacos", 0, importOptionsJson());
         unknownSource.put("cursor", "next-page");
         assertError(postRaw(ADMIN_IMPORT_SEARCH_PATH, queryFrom(unknownSource)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
 
         assertError(postRaw(ADMIN_IMPORT_SEARCH_PATH,
                 queryFrom(importSearchForm(IMPORT_RESOURCE_TYPE_SKILL, SOURCE_MCP_OFFICIAL,
@@ -142,7 +142,7 @@ public class AiResourceImportAdminApiOpenApiITCase extends AiAdminApiBaseITCase 
         assertError(postRaw(ADMIN_IMPORT_VALIDATE_PATH,
                 queryFrom(importValidateForm(IMPORT_RESOURCE_TYPE_SKILL, UNKNOWN_SOURCE,
                         selectedItems, importOptionsJson(), true))), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
         assertError(postRaw(ADMIN_IMPORT_VALIDATE_PATH,
                 queryFrom(importValidateForm(IMPORT_RESOURCE_TYPE_MCP, SOURCE_SKILLS_SH,
                         selectedItems, importOptionsJson(), false))), 400,
@@ -176,7 +176,7 @@ public class AiResourceImportAdminApiOpenApiITCase extends AiAdminApiBaseITCase 
         assertError(postRaw(ADMIN_IMPORT_EXECUTE_PATH,
                 queryFrom(importExecuteForm(IMPORT_RESOURCE_TYPE_MCP, UNKNOWN_SOURCE,
                         selectedItems, importOptionsJson(), true, false))), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
         assertError(postRaw(ADMIN_IMPORT_EXECUTE_PATH,
                 queryFrom(importExecuteForm(IMPORT_RESOURCE_TYPE_SKILL, SOURCE_MCP_OFFICIAL,
                         selectedItems, importOptionsJson(), false, true))), 400,
