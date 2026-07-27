@@ -251,7 +251,8 @@ code appear to describe different surfaces.
 - AgentSpec version meta: code has `GET /v3/admin/ai/agentspecs/version/meta`;
   it is not documented in the admin API doc.
 - Auth v3: code exposes `/v3/auth/user`, `/role`, `/permission`, and
-  `/ai/visibility`; the three website API files do not cover this API surface.
+  `/v3/auth/visibility`; the three website API files do not cover this API
+  surface.
 - Config Open API exception handling: `ConfigOpenApiController` lacks
   `@NacosApi` while most v3 controllers have it; Open API docs assume unified
   response.

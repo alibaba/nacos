@@ -230,7 +230,7 @@ gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` �
 - AgentSpec version meta：代码中有
   `GET /v3/admin/ai/agentspecs/version/meta`；admin API 文档未记录。
 - Auth v3：代码暴露 `/v3/auth/user`、`/role`、`/permission` 和
-  `/ai/visibility`；三份网站 API 文档未覆盖这个 API 面。
+  `/v3/auth/visibility`；三份网站 API 文档未覆盖这个 API 面。
 - Config Open API 异常处理：`ConfigOpenApiController` 没有 `@NacosApi`，
   而大多数 v3 Controller 都有；Open API 文档假设统一响应。
 - Config 和 Naming ExceptionHandler：Config 和 Naming 仍有历史模块级
