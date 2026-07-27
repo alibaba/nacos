@@ -53,7 +53,8 @@ public enum PluginType {
     /**
      * Environment plugin.
      */
-    ENVIRONMENT("environment", "Environment plugin", PluginExecutionMode.CHAIN, false),
+    ENVIRONMENT("environment", "Environment plugin", PluginExecutionMode.CHAIN, false,
+        PluginInitializationPhase.PRE_CONTEXT),
     
     /**
      * Control plugin.
@@ -89,12 +90,20 @@ public enum PluginType {
     
     private final boolean critical;
     
+    private final PluginInitializationPhase initializationPhase;
+    
     PluginType(String type, String description, PluginExecutionMode executionMode,
         boolean critical) {
+        this(type, description, executionMode, critical, PluginInitializationPhase.STANDARD);
+    }
+    
+    PluginType(String type, String description, PluginExecutionMode executionMode,
+        boolean critical, PluginInitializationPhase initializationPhase) {
         this.type = type;
         this.description = description;
         this.executionMode = executionMode;
         this.critical = critical;
+        this.initializationPhase = initializationPhase;
     }
     
     public String getType() {
@@ -130,6 +139,15 @@ public enum PluginType {
      */
     public boolean isCritical() {
         return critical;
+    }
+    
+    /**
+     * Get the initialization phase shared by implementations of this plugin type.
+     *
+     * @return initialization phase
+     */
+    public PluginInitializationPhase getInitializationPhase() {
+        return initializationPhase;
     }
     
 }

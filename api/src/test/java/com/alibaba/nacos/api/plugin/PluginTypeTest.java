@@ -75,6 +75,8 @@ class PluginTypeTest {
         assertEquals("environment", PluginType.ENVIRONMENT.getType());
         assertEquals("Environment plugin", PluginType.ENVIRONMENT.getDescription());
         assertEquals(PluginExecutionMode.CHAIN, PluginType.ENVIRONMENT.getExecutionMode());
+        assertEquals(PluginInitializationPhase.PRE_CONTEXT,
+            PluginType.ENVIRONMENT.getInitializationPhase());
     }
     
     @Test
@@ -152,5 +154,18 @@ class PluginTypeTest {
         assertEquals(PluginExecutionMode.CHAIN, PluginExecutionMode.valueOf("CHAIN"));
         assertEquals(PluginExecutionMode.ROUTED, PluginExecutionMode.valueOf("ROUTED"));
         assertEquals(PluginExecutionMode.BROADCAST, PluginExecutionMode.valueOf("BROADCAST"));
+    }
+    
+    @Test
+    void testInitializationPhaseValues() {
+        assertEquals(2, PluginInitializationPhase.values().length);
+        assertEquals(PluginInitializationPhase.PRE_CONTEXT,
+            PluginInitializationPhase.valueOf("PRE_CONTEXT"));
+        for (PluginType type : PluginType.values()) {
+            if (PluginType.ENVIRONMENT != type) {
+                assertEquals(PluginInitializationPhase.STANDARD,
+                    type.getInitializationPhase());
+            }
+        }
     }
 }

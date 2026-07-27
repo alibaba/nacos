@@ -61,7 +61,7 @@ Nacos 启动阶段由 `NacosStartUp` 实现表示，并通过 `NacosStartUpManag
 - `starting` 创建阶段级启动跟踪和周期性启动日志。
 - `environmentPrepared` 创建必要工作目录、注入 Spring environment、加载预置属性并初始化系统属性。
 - `contextPrepared` 启动周期性启动日志。
-- `contextLoaded` 可以执行自定义环境处理。
+- Core `contextLoaded` 中必须先执行 pre-context 插件初始化，再执行自定义环境处理。
 - `started` 标记阶段启动完成并记录启动结果。
 - `failed` 必须按已启动阶段的逆序执行，以便资源按启动相反顺序关闭。
 
@@ -114,10 +114,17 @@ Core 启动会从配置好的 application 配置资源加载 `application.proper
 自定义环境规则：
 
 - 自定义环境处理属于启动/环境准备阶段，不属于领域请求处理。
+- 开始处理前，pre-context plugin initializer 会加载 enabled environment 实现，解析
+  `STATIC > DEFAULT`，对可配置实现执行 apply，并把同一批已初始化实例安装到
+  `CustomEnvironmentPluginManager`。
+- 不可变初始化结果会继续交给 standard 核心插件管理器，用于 inventory 和 detail 查询；
+  后续流程不得再次加载 SPI。
 - 自定义环境插件可以把配置 key 转换为运行时值，但不得修改领域状态或执行业务写入。
 - 因为自定义 property source 会被放到第一位，自定义值可以覆盖低优先级 property source。插件
   实现必须文档化并约束自己控制的 key。
 - 自定义环境处理必须发生在依赖被覆盖值的组件开始服务请求之前。
+- Pre-context 配置和实现状态均为 restart-only。运行时插件更新、runtime persisted override、
+  local-only override 和后续静态刷新均不得改变启动时已接受结果。
 
 ## 7. Application Context 与 Started 状态
 

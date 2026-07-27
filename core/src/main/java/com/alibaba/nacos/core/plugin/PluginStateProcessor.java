@@ -166,6 +166,6 @@ public class PluginStateProcessor extends RequestProcessor4CP {
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.singletonList(
-            new PluginStateSnapshotOperation(persistence, pluginManager, lock));
+            new PluginStateSnapshotOperation(pluginManager, lock));
     }
 }

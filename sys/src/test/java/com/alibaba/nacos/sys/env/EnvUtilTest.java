@@ -82,16 +82,14 @@ class EnvUtilTest {
         if (!systemBeanManagerMocked.isClosed()) {
             systemBeanManagerMocked.close();
         }
+        CustomEnvironmentPluginManager.getInstance().initialize(Collections.emptyList());
         EnvUtil.setEnvironment(null);
     }
     
     @Test
     void testCustomEnvironment() {
         environment.setProperty("nacos.custom.environment.enabled", "true");
-        List<CustomEnvironmentPluginService> pluginServices =
-            (List<CustomEnvironmentPluginService>) ReflectionTestUtils.getField(
-                CustomEnvironmentPluginManager.getInstance(), "SERVICE_LIST");
-        pluginServices.add(new CustomEnvironmentPluginService() {
+        CustomEnvironmentPluginService pluginService = new CustomEnvironmentPluginService() {
             
             @Override
             public Map<String, Object> customValue(Map<String, Object> property) {
@@ -110,9 +108,11 @@ class EnvUtilTest {
             
             @Override
             public String pluginName() {
-                return "";
+                return "test";
             }
-        });
+        };
+        CustomEnvironmentPluginManager.getInstance()
+            .initialize(Collections.singletonList(pluginService));
         MutablePropertySources mock = Mockito.mock(MutablePropertySources.class);
         ReflectionTestUtils.setField(environment, "propertySources", mock);
         EnvUtil.customEnvironment();

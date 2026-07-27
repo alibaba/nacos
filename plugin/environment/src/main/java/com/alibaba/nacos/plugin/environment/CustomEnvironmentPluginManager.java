@@ -16,22 +16,21 @@
 
 package com.alibaba.nacos.plugin.environment;
 
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * CustomEnvironment Plugin Management.
@@ -43,35 +42,40 @@ public class CustomEnvironmentPluginManager {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(CustomEnvironmentPluginManager.class);
     
-    private static final List<CustomEnvironmentPluginService> SERVICE_LIST = new LinkedList<>();
-    
     private static final CustomEnvironmentPluginManager INSTANCE =
         new CustomEnvironmentPluginManager();
     
-    public CustomEnvironmentPluginManager() {
-        loadInitial();
-    }
+    private volatile List<CustomEnvironmentPluginService> services = Collections.emptyList();
     
-    private void loadInitial() {
-        Collection<CustomEnvironmentPluginService> customEnvironmentPluginServices =
-            NacosServiceLoader.load(
-                CustomEnvironmentPluginService.class);
-        for (CustomEnvironmentPluginService customEnvironmentPluginService : customEnvironmentPluginServices) {
-            if (StringUtils.isBlank(customEnvironmentPluginService.pluginName())) {
-                LOGGER.warn(
-                    "[customEnvironmentPluginService] Load customEnvironmentPluginService({}) customEnvironmentPluginName(null/empty) fail."
-                        + " Please Add customEnvironmentPluginName to resolve.",
-                    customEnvironmentPluginService.getClass());
-                continue;
+    /**
+     * Replace the services with instances initialized by the pre-context plugin flow.
+     *
+     * @param customEnvironmentPluginServices initialized services
+     */
+    public synchronized void initialize(
+        Collection<CustomEnvironmentPluginService> customEnvironmentPluginServices) {
+        List<CustomEnvironmentPluginService> initializedServices = new ArrayList<>();
+        if (customEnvironmentPluginServices != null) {
+            for (CustomEnvironmentPluginService service : customEnvironmentPluginServices) {
+                if (service == null) {
+                    continue;
+                }
+                if (StringUtils.isBlank(service.pluginName())) {
+                    LOGGER.warn(
+                        "[CustomEnvironmentPluginManager] Ignore environment plugin {} with "
+                            + "blank plugin name.",
+                        service.getClass().getName());
+                    continue;
+                }
+                LOGGER.info(
+                    "[CustomEnvironmentPluginManager] Load environment plugin '{}' ({})",
+                    service.pluginName(), service.getClass().getName());
+                initializedServices.add(service);
             }
-            LOGGER.info(
-                "[CustomEnvironmentPluginManager] Load customEnvironmentPluginService({}) customEnvironmentPluginName({}) successfully.",
-                customEnvironmentPluginService.getClass(),
-                customEnvironmentPluginService.pluginName());
         }
-        SERVICE_LIST.addAll(customEnvironmentPluginServices.stream()
-            .sorted(Comparator.comparingInt(CustomEnvironmentPluginService::order))
-            .collect(Collectors.toList()));
+        initializedServices.sort(
+            Comparator.comparingInt(CustomEnvironmentPluginService::order));
+        services = Collections.unmodifiableList(initializedServices);
     }
     
     public static CustomEnvironmentPluginManager getInstance() {
@@ -80,7 +84,7 @@ public class CustomEnvironmentPluginManager {
     
     public Set<String> getPropertyKeys() {
         Set<String> keys = new HashSet<>();
-        for (CustomEnvironmentPluginService customEnvironmentPluginService : SERVICE_LIST) {
+        for (CustomEnvironmentPluginService customEnvironmentPluginService : services) {
             keys.addAll(customEnvironmentPluginService.propertyKey());
         }
         return keys;
@@ -88,7 +92,7 @@ public class CustomEnvironmentPluginManager {
     
     public Map<String, Object> getCustomValues(Map<String, Object> sourceProperty) {
         Map<String, Object> customValuesMap = new HashMap<>(1);
-        for (CustomEnvironmentPluginService customEnvironmentPluginService : SERVICE_LIST) {
+        for (CustomEnvironmentPluginService customEnvironmentPluginService : services) {
             Set<String> keys = customEnvironmentPluginService.propertyKey();
             Map<String, Object> propertyMap = new HashMap<>(keys.size());
             for (String key : keys) {
@@ -113,13 +117,18 @@ public class CustomEnvironmentPluginManager {
      * Injection realization.
      *
      * @param customEnvironmentPluginService customEnvironmentPluginService implementation
+     * @deprecated environment services are initialized by the pre-context plugin flow
      */
+    @Deprecated
     public static synchronized void join(
         CustomEnvironmentPluginService customEnvironmentPluginService) {
         if (Objects.isNull(customEnvironmentPluginService)) {
             return;
         }
-        SERVICE_LIST.add(customEnvironmentPluginService);
+        List<CustomEnvironmentPluginService> updatedServices =
+            new ArrayList<>(INSTANCE.services);
+        updatedServices.add(customEnvironmentPluginService);
+        INSTANCE.initialize(updatedServices);
         LOGGER.info("[CustomEnvironmentPluginService] join successfully.");
     }
 }

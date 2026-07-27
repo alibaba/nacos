@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.environment.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -24,7 +26,7 @@ import java.util.Set;
  *
  * @author : huangtianhui
  */
-public interface CustomEnvironmentPluginService {
+public interface CustomEnvironmentPluginService extends PluginConfigSpec {
     
     /**
      * customValue interface.

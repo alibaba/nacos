@@ -23,7 +23,6 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.plugin.model.PluginStateSnapshot;
-import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 import org.slf4j.Logger;
@@ -55,18 +54,14 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
     
     private static final String CHECK_SUM_KEY = "checksum";
     
-    private final PluginStatePersistenceService persistence;
-    
     private final PluginManager pluginManager;
     
     private final Serializer serializer;
     
     private final ReentrantReadWriteLock lock;
     
-    public PluginStateSnapshotOperation(PluginStatePersistenceService persistence,
-        PluginManager pluginManager,
+    public PluginStateSnapshotOperation(PluginManager pluginManager,
         ReentrantReadWriteLock lock) {
-        this.persistence = persistence;
         this.pluginManager = pluginManager;
         this.serializer = SerializeFactory.getDefault();
         this.lock = lock;
@@ -77,7 +72,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
         lock.writeLock().lock();
         try {
             // Load all states and configs
-            Map<String, Boolean> states = persistence.loadAllStates();
+            Map<String, Boolean> states = pluginManager.getPersistedPluginStates();
             Map<String, Map<String, String>> configs =
                 pluginManager.getRuntimePersistedConfigs();
             
