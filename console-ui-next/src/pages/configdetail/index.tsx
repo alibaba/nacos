@@ -6,6 +6,7 @@ import { ArrowLeft, Pencil, History, Trash2, Copy, Check, Clock, FileText, Hash,
 
 import { useConfigStore } from '@/stores/config-store';
 import { configApi } from '@/api/config';
+import { buildConfigListPathFromDetail } from '@/lib/list-navigation';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,7 @@ export default function ConfigDetailPage() {
   }, [dataId, group, namespace, fetchConfig, clearCurrentConfig]);
 
   const handleBack = () => {
-    navigate('/configurationManagement');
+    navigate(buildConfigListPathFromDetail(searchParams));
   };
 
   const handleEdit = () => {

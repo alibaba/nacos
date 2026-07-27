@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
@@ -30,12 +31,13 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
  * <p>Multiple pipeline plugins are sorted by {@link #getPreferOrder()} and executed serially.
  * The next plugin is executed only after the previous one passes.</p>
  *
- * <p>Implementations should be created via {@link PublishPipelineServiceBuilder}.</p>
+ * <p>Implementations are loaded directly through Java SPI and must expose their configuration
+ * through the common plugin configuration contract.</p>
  *
  * @author mosong.lp
  * @since 3.2.0
  */
-public interface PublishPipelineService {
+public interface PublishPipelineService extends PluginConfigSpec {
     
     /**
      * Unique identifier for this pipeline plugin, e.g. "ai-review", "manual-confirm".

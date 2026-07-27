@@ -129,6 +129,7 @@ The following items are current compatibility or deprecation examples:
   [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter);
 - pre-spec v3 compatibility endpoints;
 - AI Prompt legacy endpoints and legacy Pipeline REST-style endpoints;
+- legacy A2A AgentCard Java, gRPC, Admin, Maintainer, and Console facades;
 - Naming API-defined service selector fields and request parameters;
 - Config aggregation fields and related database columns;
 - historical plugin configuration keys;
@@ -165,7 +166,27 @@ Rules:
 Domain specs should mention legacy v1/v2 behavior only as migration context or
 when a current compatibility path depends on it.
 
-## 10. Related Specs
+## 10. Legacy A2A Agent Facades
+
+The canonical Agent model uses `type=agent`, protocol-neutral versions, and RAD
+discovery. Historical A2A AgentCard surfaces are compatibility-only and are
+adapted at the server boundary according to the
+[A2A Agent Spec](../ai/a2a-agent-spec.md).
+
+Compatibility windows are intentionally different by audience:
+
+- Java `A2aService` and legacy A2A gRPC payloads have no removal version yet;
+- Admin `/v3/admin/ai/a2a` and `A2aMaintainerService` remain supported through
+  the 4.0.x compatibility window;
+- Console `/v3/console/ai/a2a` remains supported through the 3.4.x
+  compatibility window and may be removed after the bundled UI migrates.
+
+No new capability may be added only to these facades. New development targets
+the Agent Management and RAD contracts. Historical data and mixed-server
+rolling upgrade are a separate migration plan and do not extend the API window
+by themselves.
+
+## 11. Related Specs
 
 - [HTTP API Spec](../http-api/api-spec.md)
 - [V3 API Surface](../http-api/v3-api-surface.md)
@@ -175,3 +196,5 @@ when a current compatibility path depends on it.
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [Integration And Adapter Spec](../integration/integration-adapter-spec.md)
 - [Plugin Specs](../plugin/README.md)
+- [Agent Management Spec](../ai/agent-management-spec.md)
+- [RAD Protocol Spec](../ai/rad-protocol-spec.md)

@@ -26,7 +26,8 @@ OIDC 鉴权插件让 Nacos 将认证和授权委托给 OpenID Connect 1.0 / OAut
 OAuth2 client credentials flow 获取 bearer token，并注入到 SDK 请求中。
 
 OIDC 不属于默认 Nacos 用户名/密码鉴权插件。它是通过
-`nacos.core.auth.system.type=oidc` 选择的另一种鉴权模式。
+`nacos.plugin.auth.type=oidc` 选择的另一种鉴权模式。
+`nacos.core.auth.system.type=oidc` 继续作为历史启动 alias。
 
 ## 服务端 SPI
 
@@ -50,33 +51,52 @@ OIDC 不属于默认 Nacos 用户名/密码鉴权插件。它是通过
 OIDC 模式通过以下配置选择：
 
 ```properties
-nacos.core.auth.system.type=oidc
+nacos.plugin.auth.type=oidc
 nacos.core.auth.enabled=true
 ```
 
 服务端之间身份配置和默认 Nacos token secret 仍可能被运行时用于内部通信和兼容路径。
 
-OIDC 插件配置使用 `nacos.core.auth.plugin.oidc.` 前缀：
+OIDC 插件配置使用标准 full key 前缀 `nacos.plugin.auth.oidc.` 下的 item key。
+对应的 `nacos.core.auth.plugin.oidc.{item-key}` 保留为废弃 alias；两者同时存在时，
+标准 key 优先。
 
-| 配置 | 默认值 | 目的 |
-|------|--------|------|
-| `issuer-uri` | 空 | IdP issuer URI。插件使用它进行 OIDC discovery。 |
-| `client-id` | 空 | 在 IdP 中注册的 OAuth2 client id。 |
-| `client-secret` | 空 | OAuth2 client secret。当前实现也用它签名 state。 |
-| `scope` | `openid profile email` | 浏览器登录时请求的 scope。 |
-| `token-validation-method` | `jwt` | 声明的 token 校验模式。当前服务端代码通过 JWKS 校验 JWT。 |
-| `jwks-cache-ttl-seconds` | `3600` | JWKS 缓存 TTL。 |
-| `username-claim` | `preferred_username` | 作为 Nacos 展示用户名的 claim。 |
-| `roles-claim` | `roles` | 提取角色时优先使用的 claim。 |
-| `admin-role` | `nacos-admin` | 映射为全局管理员的角色。 |
-| `auto-create-user` | `true` | 为用户映射兼容预留；OIDC 仍以 IdP 作为身份事实来源。 |
-| `authorization-endpoint` | 空 | 用于非管理员授权决策的外部端点。 |
-| `authorization-timeout-ms` | `5000` | 外部授权请求超时。 |
-| `strict-nonce-validation` | `true` | 当 ID token 缺少或不匹配 nonce 时拒绝 authorization-code 登录。 |
-| `strict-audience-validation` | `true` | 当 token audience 或 authorized party 与 `client-id` 不匹配时拒绝 token。 |
+| item key | 类型 | 默认值 | 敏感 | 生效方式 | 目的 |
+|----------|------|--------|------|----------|------|
+| `issuer-uri` | string | 空 | 否 | 重启 | 用于 OIDC discovery 的 IdP issuer URI。 |
+| `client-id` | string | 空 | 否 | 重启 | 在 IdP 中注册的 OAuth2 client id。 |
+| `client-secret` | string | 空 | 是 | 重启 | OAuth2 client secret，同时用于签名 state。 |
+| `scope` | string | `openid profile email` | 否 | 重启 | 浏览器登录时请求的 scope。 |
+| `token-validation-method` | string | `jwt` | 否 | 重启 | 预留的校验模式选择项；当前服务端仅支持 JWT/JWKS。 |
+| `jwks-cache-ttl-seconds` | number | `3600` | 否 | 重启 | 正数，单位为秒的 JWKS 缓存 TTL。 |
+| `username-claim` | string | `preferred_username` | 否 | 重启 | 作为 Nacos 展示用户名的 claim。 |
+| `roles-claim` | string | `roles` | 否 | 重启 | 提取角色时优先使用的 claim。 |
+| `admin-role` | string | `nacos-admin` | 否 | 重启 | 映射为全局管理员的角色。 |
+| `auto-create-user` | boolean | `true` | 否 | 重启 | 预留兼容配置，当前不会改变运行时行为。 |
+| `authorization-endpoint` | string | 空 | 否 | 重启 | 用于非管理员授权决策的外部端点。 |
+| `authorization-timeout-ms` | number | `5000` | 否 | 重启 | 外部授权请求的正数毫秒超时。 |
+| `strict-nonce-validation` | boolean | `true` | 否 | 重启 | 当 ID token 缺少或不匹配 nonce 时拒绝 authorization-code 登录。 |
+| `strict-audience-validation` | boolean | `true` | 否 | 重启 | 当 token audience 或 authorized party 与 `client-id` 不匹配时拒绝 token。 |
 
 `issuer-uri` 和 `client-id` 是有效服务端配置的必要条件。浏览器登录还需要 `client-secret`、
 authorization endpoint discovery 和 token endpoint discovery。
+
+## 统一插件配置生命周期
+
+`OidcAuthPluginService` 实现 `PluginConfigSpec`，并通过插件 detail API 暴露全部 14 项定义。
+API 必须对 `client-secret` 脱敏，任何查询响应都不得返回有效明文。
+
+当前生命周期中全部配置均为重启生效。会改变 OIDC 字段的 runtime-persisted 或 local-only API
+更新必须被拒绝。启动时，统一插件管理器解析标准 key、历史 alias 和默认值，再将完整 item-key
+Map 一次性 apply 给插件。
+
+apply 配置只能构造并原子发布不可变的内存运行时对象图，不得执行 discovery、JWKS、token 或
+authorization 网络 I/O。Provider discovery 保持延迟执行，由登录和 JWKS 路径共享，仅缓存成功
+结果，失败后允许后续请求重试。
+
+`issuer-uri` 和 `client-id` 只在 OIDC 被选择时必填，但通用 `ConfigItemDefinition.required` 保持
+false，因为统一管理器也会初始化未被选择的已发现鉴权插件。OIDC 请求和登录路径仍必须识别并
+报告无效的 active 配置，不能将其静默视为可用。
 
 ## 浏览器登录流程
 
@@ -155,7 +175,8 @@ Nacos 资源执行目标动作。
   JWT/JWKS。在实现补齐前，不应将 introspection 文档化为已支持能力。
 - OIDC 浏览器端点当前使用 `/v1/auth/oidc`。未来新增 Nacos 原生 auth API 时，应使用
   `/v3/auth/oidc/*` 并遵守标准响应和错误模型。
-- 文档和代码需要在 strict nonce validation、strict audience validation 的默认值上保持一致。
+- 通用配置模型暂时无法表达“插件被选中时必填”。在该能力完成设计前，OIDC 保留 active mode
+  校验。
 
 ## 关联规范
 

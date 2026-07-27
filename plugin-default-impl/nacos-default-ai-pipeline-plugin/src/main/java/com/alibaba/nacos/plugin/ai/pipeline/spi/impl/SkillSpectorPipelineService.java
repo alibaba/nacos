@@ -16,38 +16,45 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Publish pipeline service that integrates SkillSpector for AI resource security scanning.
  *
  * @author nacos
  */
-public class SkillSpectorPipelineService implements PublishPipelineService {
+public class SkillSpectorPipelineService
+    extends AbstractCommandPipelineService<SkillSpectorScanOptions> {
     
     static final String PIPELINE_ID = "skill-spector";
     
-    static final String DEFAULT_SKILL_SPECTOR_CMD = "skill-spector";
+    static final String DEFAULT_SKILL_SPECTOR_CMD = SkillSpectorPluginConfig.DEFAULT_COMMAND;
+    
+    private static final List<ConfigItemDefinition> CONFIG_DEFINITIONS = buildConfigDefinitions();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillSpectorPipelineService.class);
     
@@ -66,13 +73,78 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             + "默认路径为 ~/ai-infra/ai-pipeline/bin/skill-spector；"
             + "如需自定义路径，请配置 nacos.plugin.ai-pipeline.skill-spector.command。";
     
-    private final String scannerCommand;
+    public SkillSpectorPipelineService() {
+        this(SkillSpectorCommandResolver::resolve);
+    }
     
-    private final SkillSpectorScanOptions scanOptions;
+    SkillSpectorPipelineService(Function<String, String> commandResolver) {
+        super(toPipelineServiceConfig(
+            SkillSpectorPluginConfig.fromMap(Collections.emptyMap())), commandResolver);
+    }
     
     SkillSpectorPipelineService(String scannerCommand, SkillSpectorScanOptions scanOptions) {
-        this.scannerCommand = scannerCommand;
-        this.scanOptions = scanOptions != null ? scanOptions : SkillSpectorScanOptions.none();
+        super(scannerCommand, scanOptions != null ? scanOptions : SkillSpectorScanOptions.none(),
+            SkillSpectorPluginConfig.DEFAULT_ORDER, SkillSpectorCommandResolver::resolve);
+    }
+    
+    SkillSpectorPipelineService(SkillSpectorPluginConfig config,
+        Function<String, String> commandResolver) {
+        super(toPipelineServiceConfig(config), commandResolver);
+        initializeRuntime();
+    }
+    
+    private static PipelineServiceConfig<SkillSpectorScanOptions> toPipelineServiceConfig(
+        SkillSpectorPluginConfig config) {
+        return new PipelineServiceConfig<>(config.toMap(), config.getCommand(),
+            config.getScanOptions(), config.getOrder());
+    }
+    
+    private static List<ConfigItemDefinition> buildConfigDefinitions() {
+        ConfigItemDefinition order = new ConfigItemDefinition.Builder(
+            SkillSpectorPluginConfig.ORDER, "Execution order", ConfigItemType.NUMBER)
+            .description("Pipeline execution order; lower values execute first")
+            .defaultValue(Integer.toString(SkillSpectorPluginConfig.DEFAULT_ORDER))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        ConfigItemDefinition command = restartDefinition(SkillSpectorPluginConfig.COMMAND,
+            "SkillSpector command", ConfigItemType.STRING, DEFAULT_SKILL_SPECTOR_CMD,
+            "CLI command or executable path resolved during server startup",
+            SkillSpectorPluginConfig.COMMAND_ALIAS_EXECUTABLE,
+            SkillSpectorPluginConfig.COMMAND_ALIAS_PATH);
+        ConfigItemDefinition useLlm = restartDefinition(SkillSpectorPluginConfig.USE_LLM,
+            "Use LLM analysis", ConfigItemType.BOOLEAN, Boolean.FALSE.toString(),
+            "Enable SkillSpector LLM analysis", SkillSpectorPluginConfig.USE_LLM_ALIAS);
+        ConfigItemDefinition provider = restartDefinition(SkillSpectorPluginConfig.PROVIDER,
+            "LLM provider", ConfigItemType.STRING, "",
+            "LLM provider passed to the SkillSpector subprocess");
+        ConfigItemDefinition model = restartDefinition(SkillSpectorPluginConfig.MODEL,
+            "LLM model", ConfigItemType.STRING, "",
+            "LLM model passed to the SkillSpector subprocess");
+        ConfigItemDefinition apiKey = restartDefinition(SkillSpectorPluginConfig.API_KEY,
+            "LLM API key", ConfigItemType.STRING, "",
+            "API key passed to the configured SkillSpector LLM provider",
+            SkillSpectorPluginConfig.API_KEY_ALIAS);
+        apiKey.setSensitive(true);
+        ConfigItemDefinition baseUrl = restartDefinition(SkillSpectorPluginConfig.BASE_URL,
+            "LLM base URL", ConfigItemType.STRING, "",
+            "OpenAI-compatible endpoint passed to the SkillSpector subprocess",
+            SkillSpectorPluginConfig.BASE_URL_ALIAS);
+        ConfigItemDefinition logLevel = restartDefinition(SkillSpectorPluginConfig.LOG_LEVEL,
+            "Runtime log level", ConfigItemType.STRING,
+            SkillSpectorPluginConfig.DEFAULT_LOG_LEVEL,
+            "SkillSpector subprocess log level", SkillSpectorPluginConfig.LOG_LEVEL_ALIAS);
+        ConfigItemDefinition riskScoreThreshold = restartDefinition(
+            SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD, "Risk score threshold",
+            ConfigItemType.NUMBER,
+            Integer.toString(SkillSpectorPluginConfig.DEFAULT_RISK_SCORE_THRESHOLD),
+            "Reject reports above this threshold; integer values are clamped to 0..100",
+            SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD_ALIAS);
+        ConfigItemDefinition maxFindings = restartDefinition(
+            SkillSpectorPluginConfig.MAX_FINDINGS, "Maximum findings", ConfigItemType.NUMBER,
+            Integer.toString(SkillSpectorPluginConfig.DEFAULT_MAX_FINDINGS),
+            "Maximum findings in the review message; integer values are capped at 100",
+            SkillSpectorPluginConfig.MAX_FINDINGS_ALIAS);
+        return Collections.unmodifiableList(Arrays.asList(order, command, useLlm, provider,
+            model, apiKey, baseUrl, logLevel, riskScoreThreshold, maxFindings));
     }
     
     @Override
@@ -81,7 +153,31 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
     }
     
     @Override
+    public List<ConfigItemDefinition> getConfigDefinitions() {
+        return CONFIG_DEFINITIONS;
+    }
+    
+    @Override
+    protected PipelineServiceConfig<SkillSpectorScanOptions> parseConfig(
+        Map<String, String> config) {
+        return toPipelineServiceConfig(SkillSpectorPluginConfig.fromMap(config));
+    }
+    
+    @Override
+    protected void logRuntimeStatus(String resolvedCommand, SkillSpectorScanOptions options) {
+        if (StringUtils.isBlank(resolvedCommand)) {
+            LOGGER.warn("[SkillSpectorPipeline] SkillSpector runtime 未安装，插件将拒绝发布。{}",
+                INSTALLATION_HINT);
+        } else {
+            LOGGER.info("[SkillSpectorPipeline] SkillSpector runtime 已就绪，runtime={}",
+                resolvedCommand);
+        }
+    }
+    
+    @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
+        String scannerCommand = getRuntimeCommand();
+        SkillSpectorScanOptions scanOptions = getRuntimeOptions();
         if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT,
                 PublishPipelineMessageType.MARKDOWN,
@@ -103,10 +199,12 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("nacos-skillspector-");
-            writeResourceFiles(tempDir, normalizeFilesForScanner(context, files));
+            writeResourceFiles(tempDir,
+                normalizeFilesForScanner(context, files, "SkillSpector"));
             Path reportPath = tempDir.resolve("skillspector-report.json");
             
-            Process process = startProcess(buildScanCommand(tempDir, reportPath));
+            Process process = startProcess(
+                buildScanCommand(tempDir, reportPath, scannerCommand, scanOptions), scanOptions);
             String scanOutput = readOutput(process);
             int exitCode = waitForProcess(process);
             logScanOutput(context, resourceContext, exitCode, scanOutput);
@@ -124,11 +222,11 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
                 LOGGER.warn("[SkillSpectorPipeline] {} {} risk_score={} 超过阈值 {}",
                     context.getResourceType(), resourceContext.getResourceName(),
                     report.getRiskScore(), scanOptions.getRiskScoreThreshold());
-                return PublishPipelineResult.reject(buildRejectMessage(report),
+                return PublishPipelineResult.reject(buildRejectMessage(report, scanOptions),
                     PublishPipelineMessageType.MARKDOWN,
                     List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, false)));
             }
-            return PublishPipelineResult.pass(buildPassMessage(report),
+            return PublishPipelineResult.pass(buildPassMessage(report, scanOptions),
                 PublishPipelineMessageType.MARKDOWN,
                 List.of(new Checkpoint(CHECKPOINT_RISK_SCORE, true)));
         } catch (InterruptedException e) {
@@ -146,7 +244,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         }
     }
     
-    List<String> buildScanCommand(Path tempDir, Path reportPath) {
+    List<String> buildScanCommand(Path tempDir, Path reportPath, String scannerCommand,
+        SkillSpectorScanOptions scanOptions) {
         List<String> command = new ArrayList<>();
         command.add(scannerCommand);
         command.add("scan");
@@ -161,7 +260,8 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         return command;
     }
     
-    Process startProcess(List<String> command) throws IOException {
+    Process startProcess(List<String> command, SkillSpectorScanOptions scanOptions)
+        throws IOException {
         ProcessBuilder pb = new ProcessBuilder(command);
         Map<String, String> env = pb.environment();
         scanOptions.applyLlmEnvironment(env);
@@ -210,33 +310,32 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
             List.of(new Checkpoint(CHECKPOINT_RUNTIME, false)));
     }
     
-    private String buildPassMessage(SkillSpectorScanReport report) {
+    private String buildPassMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         return "SkillSpector 扫描通过，risk_score=" + report.getRiskScore()
             + "，阈值=" + scanOptions.getRiskScoreThreshold()
             + "，风险等级=" + report.getRiskSeverity()
             + "，问题数=" + report.getIssueCount()
-            + buildFindingsMessage(report);
+            + buildFindingsMessage(report, scanOptions);
     }
     
-    private String buildRejectMessage(SkillSpectorScanReport report) {
+    private String buildRejectMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         return "SkillSpector 检测到安全风险，发布被拒绝。\n\n"
             + "- risk_score: " + report.getRiskScore() + "\n"
             + "- threshold: " + scanOptions.getRiskScoreThreshold() + "\n"
             + "- severity: " + report.getRiskSeverity() + "\n"
             + "- recommendation: " + report.getRiskRecommendation() + "\n"
             + "- issues: " + report.getIssueCount()
-            + buildFindingsMessage(report);
+            + buildFindingsMessage(report, scanOptions);
     }
     
-    private String buildFindingsMessage(SkillSpectorScanReport report) {
+    private String buildFindingsMessage(SkillSpectorScanReport report,
+        SkillSpectorScanOptions scanOptions) {
         if (report.getIssueCount() == 0) {
             return "";
         }
         List<SkillSpectorScanReport.Finding> findings = report.getFindings();
-        if (findings.isEmpty()) {
-            return "\n\n## 扫描结果\n\nSkillSpector 返回了 " + report.getIssueCount()
-                + " 个问题，但报告中没有包含可展示的明细。";
-        }
         StringBuilder builder = new StringBuilder("\n\n## 扫描结果\n\n");
         int limit = Math.min(findings.size(), scanOptions.getMaxFindings());
         for (int i = 0; i < limit; i++) {
@@ -306,104 +405,4 @@ public class SkillSpectorPipelineService implements PublishPipelineService {
         return value != null && !value.isBlank();
     }
     
-    private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files)
-        throws IOException {
-        for (ResourceFileContent file : files) {
-            String filePath = file.getFilePath();
-            if (filePath == null || filePath.isEmpty()) {
-                continue;
-            }
-            Path targetPath = baseDir.resolve(filePath).normalize();
-            if (!targetPath.startsWith(baseDir)) {
-                LOGGER.warn("[SkillSpectorPipeline] 跳过非法路径: {}", filePath);
-                continue;
-            }
-            Files.createDirectories(targetPath.getParent());
-            String content = file.getContent();
-            Files.writeString(targetPath, content != null ? content : "", StandardCharsets.UTF_8);
-        }
-    }
-    
-    private List<ResourceFileContent> normalizeFilesForScanner(PublishPipelineContext context,
-        List<ResourceFileContent> files) {
-        if (containsSkillMarkdown(files)) {
-            return files;
-        }
-        if (context.getResourceType() == PublishPipelineResourceType.AGENTSPEC) {
-            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
-            result.add(new ResourceFileContent("SKILL.md",
-                buildWrappedSkillMarkdown("AgentSpec", context, files)));
-            result.addAll(files);
-            return result;
-        }
-        if (context.getResourceType() == PublishPipelineResourceType.PROMPT) {
-            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
-            result.add(new ResourceFileContent("SKILL.md",
-                buildWrappedSkillMarkdown("Prompt", context, files)));
-            result.addAll(files);
-            return result;
-        }
-        return files;
-    }
-    
-    private boolean containsSkillMarkdown(List<ResourceFileContent> files) {
-        for (ResourceFileContent each : files) {
-            if (each != null && "SKILL.md".equals(each.getFilePath())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private String buildWrappedSkillMarkdown(String type, PublishPipelineContext context,
-        List<ResourceFileContent> files) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("# ").append(type).append(" ").append(context.getResourceName())
-            .append("\n\n");
-        builder.append("Generated from ").append(type)
-            .append(" pipeline context for SkillSpector compatibility.\n");
-        for (ResourceFileContent file : files) {
-            if (file == null || file.getFilePath() == null) {
-                continue;
-            }
-            builder.append("\n## File: ").append(file.getFilePath()).append("\n\n");
-            String content = file.getContent();
-            if (content != null) {
-                builder.append(content);
-            }
-            builder.append("\n");
-        }
-        return builder.toString();
-    }
-    
-    private void deleteRecursively(File file) {
-        if (file == null || !file.exists()) {
-            return;
-        }
-        if (file.isDirectory()) {
-            File[] children = file.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    deleteRecursively(child);
-                }
-            }
-        }
-        if (!file.delete()) {
-            LOGGER.debug("[SkillSpectorPipeline] 无法删除临时文件: {}", file.getAbsolutePath());
-        }
-    }
-    
-    @Override
-    public int getPreferOrder() {
-        return 90;
-    }
-    
-    @Override
-    public PublishPipelineResourceType[] pipelineResourceTypes() {
-        return new PublishPipelineResourceType[] {
-            PublishPipelineResourceType.SKILL,
-            PublishPipelineResourceType.AGENTSPEC,
-            PublishPipelineResourceType.PROMPT
-        };
-    }
 }

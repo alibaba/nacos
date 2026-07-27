@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.plugin;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -26,26 +27,35 @@ import java.util.Map;
  * @author WangzJi
  * @since 3.2.0
  */
-public interface PluginConfigSpec {
+public interface PluginConfigSpec extends PluginConfigDefinitionSpec {
     
     /**
-     * Get configuration item definitions.
+     * Whether this plugin exposes configurable items.
      *
-     * @return list of configuration item definitions
+     * <p>The default keeps legacy and zero-config implementations non-configurable while allowing
+     * domain plugin SPIs to inherit this contract without breaking existing implementations.</p>
+     *
+     * @return {@code true} when at least one configuration item is declared
      */
-    List<ConfigItemDefinition> getConfigDefinitions();
+    default boolean isConfigurable() {
+        List<ConfigItemDefinition> definitions = getConfigDefinitions();
+        return definitions != null && !definitions.isEmpty();
+    }
     
     /**
      * Apply configuration to the plugin.
      *
      * @param config configuration key-value pairs
      */
-    void applyConfig(Map<String, String> config);
+    default void applyConfig(Map<String, String> config) {
+    }
     
     /**
      * Get current configuration.
      *
      * @return current configuration as key-value pairs
      */
-    Map<String, String> getCurrentConfig();
+    default Map<String, String> getCurrentConfig() {
+        return Collections.emptyMap();
+    }
 }

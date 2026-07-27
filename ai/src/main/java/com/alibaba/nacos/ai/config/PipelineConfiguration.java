@@ -18,8 +18,6 @@ package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
-import com.alibaba.nacos.ai.pipeline.config.FilePipelineConfigProvider;
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepositoryImpl;
 import org.springframework.context.annotation.Bean;
@@ -39,15 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PipelineConfiguration {
     
     @Bean
-    public PipelineConfigProvider pipelineConfigProvider() {
-        return FilePipelineConfigProvider.getInstance();
+    public AiPipelineModuleConfig aiPipelineModuleConfig() {
+        return new AiPipelineModuleConfig();
     }
     
     @Bean
-    public PublishPipelineManager publishPipelineManager(PipelineConfigProvider configProvider) {
-        PublishPipelineManager manager = new PublishPipelineManager();
-        manager.init(configProvider.getConfig());
-        return manager;
+    public PublishPipelineManager publishPipelineManager(AiPipelineModuleConfig moduleConfig) {
+        return new PublishPipelineManager(moduleConfig);
     }
     
     @Bean
@@ -72,9 +68,7 @@ public class PipelineConfiguration {
     
     @Bean
     public PublishPipelineExecutor publishPipelineExecutor(PublishPipelineManager pipelineManager,
-        PipelineConfigProvider configProvider, PipelineExecutionRepository executionRepository,
-        ExecutorService pipelineExecutor) {
-        return new PublishPipelineExecutor(pipelineManager, configProvider, executionRepository,
-            pipelineExecutor);
+        PipelineExecutionRepository executionRepository, ExecutorService pipelineExecutor) {
+        return new PublishPipelineExecutor(pipelineManager, executionRepository, pipelineExecutor);
     }
 }

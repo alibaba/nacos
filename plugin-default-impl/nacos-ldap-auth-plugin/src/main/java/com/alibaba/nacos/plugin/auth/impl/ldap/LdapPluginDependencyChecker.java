@@ -49,7 +49,8 @@ public final class LdapPluginDependencyChecker {
     public static String buildMissingDependencyMessage() {
         return "LDAP auth plugin requires org.springframework.ldap:spring-ldap-core in "
             + "plugins/classpath "
-            + "when nacos.core.auth.system.type=ldap. Please add spring-ldap-core jar into "
+            + "when nacos.plugin.auth.type=ldap (legacy alias: "
+            + "nacos.core.auth.system.type=ldap). Please add spring-ldap-core jar into "
             + "the plugins "
             + "directory.";
     }

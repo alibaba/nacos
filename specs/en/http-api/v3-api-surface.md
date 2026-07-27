@@ -190,7 +190,49 @@ The default auth plugin is shipped with Nacos, so its v3 auth endpoints should
 follow the Nacos HTTP API rules and the
 [Auth Plugin Spec](../auth/auth-plugin-spec.md).
 
-## 8. Documentation Gap Notes
+## 8. Approved Agent/RAD Target Surface
+
+The following paths are the approved Experimental target from the
+[Agent API Spec](../ai/agent-api-spec.md). They are not part of the current
+implemented inventory or the controller counts in Section 3 until the
+corresponding controllers, authorization, transport bindings, and tests are
+implemented.
+
+Client target paths:
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/v3/client/ai/agents/search` | Search the Agent catalog. |
+| GET | `/v3/client/ai/agents` | Discover one Agent, with an optional discovery filter. |
+| POST | `/v3/client/ai/agents/endpoints` | Upsert a runtime Endpoint registration batch. |
+| DELETE | `/v3/client/ai/agents/endpoints` | Deregister a runtime Endpoint batch using a JSON body. |
+| PUT | `/v3/client/ai/agents/endpoints/heartbeat` | Refresh one HTTP publisher client's liveness. |
+
+Admin and Console target paths use the prefixes
+`/v3/admin/ai/agents` and `/v3/console/ai/agents`, respectively. Console is a
+UI facade over the same relative management contract.
+
+| Relative path | Methods | Contract |
+| --- | --- | --- |
+| *(base path)* | GET, POST, PUT, DELETE | Read, create, update, or delete an Agent definition. |
+| `/list` | GET | List Agent summaries. |
+| `/versions` | GET | List Version summaries. |
+| `/version` | GET | Read one exact Version definition. |
+| `/runtime-endpoints` | GET | Read one complete, non-paged runtime Endpoint snapshot. |
+| `/draft` | POST, PUT, DELETE | Create, update, or delete a draft. |
+| `/submit` | POST | Submit a draft. |
+| `/publish` | POST | Publish a reviewed Version. |
+| `/force-publish` | POST | Perform an audited Pipeline bypass. |
+| `/redraft` | POST | Return a reviewed Version to draft. |
+| `/online` | POST | Bring an offline Version online. |
+| `/offline` | POST | Take an online Version offline. |
+| `/labels` | PUT | Update custom Version labels. |
+
+The target does not add Client HTTP Watch or Endpoint-list GET APIs. Watch and
+push use the negotiated gRPC binding; runtime inspection uses the Admin or
+Console `/runtime-endpoints` path.
+
+## 9. Documentation Gap Notes
 
 This is not a bug list. It records places where the current documentation and
 code appear to describe different surfaces.
@@ -217,7 +259,7 @@ code appear to describe different surfaces.
   module-level `ControllerAdvice` classes that may return plain text error
   bodies. They should converge to `NacosApiExceptionHandler` for v3 APIs.
 
-## 9. Deprecated Compatibility Notes
+## 10. Deprecated Compatibility Notes
 
 Some v3 AI APIs were released before this spec existed and were later replaced by
 clearer lifecycle or REST-style APIs. These old endpoints should be treated as

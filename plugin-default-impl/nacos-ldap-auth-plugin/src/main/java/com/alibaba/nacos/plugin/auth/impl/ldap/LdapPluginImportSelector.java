@@ -27,7 +27,7 @@ import org.springframework.core.type.AnnotationMetadata;
 public class LdapPluginImportSelector implements ImportSelector {
     
     private static final String LDAP_PLUGIN_CONFIG =
-        "com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig";
+        "com.alibaba.nacos.plugin.auth.impl.ldap.LdapPluginConfiguration";
     
     private static final String LDAP_MISSING_CONFIG =
         "com.alibaba.nacos.plugin.auth.impl.ldap.LdapDependencyMissingConfiguration";

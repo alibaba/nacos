@@ -54,6 +54,11 @@ Domain rules:
 - AI push behavior is versioned by each AI resource spec and must keep the same
   identity rules as the corresponding query API.
 
+The target RAD Watch carries a complete discovery snapshot rather than only a
+change identity. That snapshot is authoritative for replacement of the local
+RAD discovery cache, while the Registry remains the resource authority and a
+Discover re-query can refresh the snapshot.
+
 ## 3. Server-Side Connection State
 
 Runtime listener or subscription state is scoped to a server-side connection id.
@@ -107,7 +112,86 @@ Client recovery is defined in detail by the
 selection and liveness are defined by the
 [Client Connection And Failover Spec](client-connection-failover-spec.md).
 
-## 6. Ordering
+## 6. Agent And RAD Target Watch Contract
+
+This section defines the target gRPC Watch contract for Agent/RAD. It does not
+describe a currently implemented capability. An implementation must not expose
+or advertise this behavior until the Agent/RAD abilities in the
+[Agent API Spec](../ai/agent-api-spec.md) are implemented and negotiated. The
+initial Nacos HTTP binding supports Discover but not Watch.
+
+### 6.1 Identity And Initial Result
+
+The canonical SDK Watch key is:
+
+```text
+(namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
+```
+
+The canonical reference preserves whether the caller selected an exact
+version, a label, or latest. Canonical Filter construction applies defaults and
+sorts and deduplicates set-valued fields. Listener identity is the same
+listener instance supplied to cancellation. An implementation may multiplex
+wire subscriptions, but it must preserve this public identity and callback
+isolation.
+
+The server evaluates Discover before creating a Watch. `NOT_FOUND` creates no
+server or client Watch state. A successful `AgentSubscribeResponse` returns a
+connection-scoped opaque `watchKey` and the current complete
+`AgentDiscoveryResult`. The SDK maps that key to its canonical local Watch
+key and does not parse it.
+
+RAD itself still has exactly six root messages and defines no protocol-level
+event envelope. The Nacos gRPC binding uses
+`AgentDiscoveryNotifyRequest(watchKey, eventType, result?, errorCode?)` to
+multiplex Watch events on the shared Payload connection. This request is a
+binding object, not another RAD root message.
+
+### 6.2 Complete Replacement And Listener Delivery
+
+For `eventType=SNAPSHOT`, `AgentDiscoveryNotifyRequest` requires one complete
+`AgentDiscoveryResult` and has no error. The client atomically replaces the
+previous snapshot for the identified Watch with each accepted result and then
+acknowledges it with `AgentDiscoveryNotifyResponse`. It must not merge calling
+interfaces, Endpoint sets, or Endpoints from different snapshots. A changed resolved version,
+`contentDigest`, or `sourceRevision` identifies a potentially new snapshot;
+these tokens support equality and deduplication, not ordering.
+
+An empty filtered shape is a valid complete result and replaces the previous
+snapshot. Naming push-empty protection does not apply to RAD. Listener
+exceptions are isolated from connection processing and from other listeners;
+they do not turn an already accepted snapshot into an unacknowledged event.
+
+### 6.3 Terminal Disappearance
+
+If a previously discoverable target becomes absent, invisible, disabled, or
+has no discoverable online target version, the server sends
+`AgentDiscoveryNotifyRequest` with `eventType=TERMINATED`, no result, and
+`errorCode=NOT_FOUND`. This event closes only the identified `watchKey`; the
+shared Payload connection and every other Watch remain active. The client
+delivers the terminal status, removes only that local Watch key and cached
+snapshot, acknowledges the terminal event, and does not redo that Watch on
+later reconnects. An existing Agent whose Filter currently matches no
+interface or Endpoint remains a successful empty `SNAPSHOT` and is not
+terminal.
+
+### 6.4 Missed Push And Reconnect
+
+When connection loss, a rejected notification, or binding-specific gap
+detection means a push may have been missed, the client must re-run Discover
+with the same namespace, canonical reference, and canonical Filter, then
+atomically replace its cached snapshot. It must not reconstruct the missing
+state by applying locally inferred deltas.
+
+On gRPC disconnect, the server removes connection-scoped Watch state. The SDK
+marks the corresponding local Watch records unregistered. After reconnect it
+uses the new connection id to restore the same canonical local Watch keys. It
+discards each old wire `watchKey`; every successful resubscription supplies a
+new opaque `watchKey` and initial complete result, which becomes the new
+snapshot before subsequent pushes. A terminal result during recovery follows
+Section 6.3 instead of remaining in redo state.
+
+## 7. Ordering
 
 Push delivery order is scoped to the local event and task paths of a node. It is
 not a global total order across the cluster.
@@ -122,7 +206,7 @@ Domain specs must define when a local serving view is visible:
 - Naming persistent service and metadata visibility are defined by the
   [Naming Persistent CP Consistency Spec](../naming/naming-persistent-cp-consistency-spec.md).
 
-## 7. Failure Rules
+## 8. Failure Rules
 
 - A missing connection should cancel or skip push for that connection.
 - A push timeout does not prove that the client failed to observe the change;
@@ -130,10 +214,8 @@ Domain specs must define when a local serving view is visible:
 - A client must be able to recover from missed push by re-query, resync, or redo.
 - Server push must not hide authorization failures in the underlying query path.
 
-## 8. Pending Issues
+## 9. Pending Issues
 
-- AI runtime push and reconnect behavior should be refined when AI SDK
-  subscription APIs stabilize.
 - Push retry, timeout, and reconnect recovery observations should follow the
   shared field and label guidance in the
   [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).

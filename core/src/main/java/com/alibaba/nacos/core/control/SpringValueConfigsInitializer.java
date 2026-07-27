@@ -32,7 +32,9 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
     
     private static final String CONNECTION_RUNTIME_EJECTOR = PREFIX + "connection.runtime.ejector";
     
-    private static final String CONTROL_MANAGER_TYPE = PREFIX + "manager.type";
+    private static final String CONTROL_MANAGER_TYPE = PREFIX + "type";
+    
+    private static final String LEGACY_CONTROL_MANAGER_TYPE = PREFIX + "manager.type";
     
     private static final String RULE_EXTERNAL_STORAGE = PREFIX + "rule.external.storage";
     
@@ -51,6 +53,9 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
             controlConfigs.setLocalRuleStorageBaseDir(EnvUtil.getNacosHome());
         }
         controlConfigs.setRuleExternalStorage(EnvUtil.getProperty(RULE_EXTERNAL_STORAGE));
-        controlConfigs.setControlManagerType(EnvUtil.getProperty(CONTROL_MANAGER_TYPE));
+        String controlManagerType = EnvUtil.containsProperty(CONTROL_MANAGER_TYPE)
+            ? EnvUtil.getProperty(CONTROL_MANAGER_TYPE)
+            : EnvUtil.getProperty(LEGACY_CONTROL_MANAGER_TYPE);
+        controlConfigs.setControlManagerType(controlManagerType);
     }
 }

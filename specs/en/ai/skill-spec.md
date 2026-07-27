@@ -39,7 +39,52 @@ A Skill is a packaged AI Agent capability. It contains:
   and download count.
 
 Skill upload accepts ZIP archives. Batch upload is best effort and must report
-per-skill success and failure.
+per-skill success and failure. When upload fails because the caller lacks write
+permission on an existing Skill, the failure information must include the
+current owner when available.
+
+Upload precheck must accept the same ZIP archive as the upload API and parse
+single-Skill and multi-Skill archives on the server. It returns one result for
+each valid Skill, one `NOT_A_SKILL` result for each candidate directory without
+`SKILL.md`, and one `INVALID_SKILL` result for each invalid descriptor. The
+compact result contains `namespaceId`, `entryPath`, `skillName`, `reason`, `owner`,
+`maxPublishedVersion`, `parsedVersion`, `targetVersion`, `exists`,
+`editingVersion`, `reviewingVersion`, and one `precheckCode`. `entryPath` is the
+relative archive path of the Skill or invalid directory. `skillName` may be
+null for parse failures, and `reason` explains the parse failure. The code is
+the only field clients need to select the next action:
+
+`maxPublishedVersion` is the highest version that has been published, including
+both online and offline versions, or null when no version has been published.
+Draft, reviewing, and reviewed versions are excluded. `targetVersion` is the
+draft version that will exist after a successful upload.
+
+- `READY`: the upload can create a draft with `targetVersion`;
+- `VERSION_ADJUSTED`: the upload can create a draft, but the parsed version was
+  normalized, replaced, or advanced to `targetVersion`;
+- `DRAFT_EXISTS`: the upload can proceed only by overwriting the editing draft;
+- `REVIEWING_EXISTS`: a reviewing version blocks the upload;
+- `NO_PERMISSION`: the caller cannot modify the existing Skill;
+- `NOT_A_SKILL`: a candidate directory has no `SKILL.md`;
+- `INVALID_SKILL`: a candidate directory has a `SKILL.md`, but its Skill
+  descriptor is invalid.
+
+When several conditions apply, precheck must choose one code in this order:
+`NOT_A_SKILL`, `INVALID_SKILL`, `NO_PERMISSION`, `REVIEWING_EXISTS`,
+`DRAFT_EXISTS`, `VERSION_ADJUSTED`, `READY`. Clients must treat unknown codes
+as blocked.
+
+`targetVersion` is supported only when the ZIP contains at most one valid
+Skill. The server must reject the parameter for a multi-Skill ZIP. Version
+source priority remains `SKILL.md`, sibling `_meta.json`, request
+`targetVersion`, then the server default.
+
+In batch mode, `NOT_A_SKILL` and `INVALID_SKILL` items count as neither Skills
+nor blocked Skills. The client should disable upload only when there is no valid
+Skill or every valid Skill is blocked. If at least one valid Skill can be
+uploaded, the client may call batch upload. Upload must repeat permission,
+version, and working version validation and must not treat precheck as write
+authorization.
 
 ## 3. Agent Skills Standard Compatibility
 

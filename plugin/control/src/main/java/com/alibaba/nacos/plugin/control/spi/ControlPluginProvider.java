@@ -18,11 +18,13 @@ package com.alibaba.nacos.plugin.control.spi;
 
 import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.ControlPluginAdapter;
+import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Control plugin provider implementation.
@@ -30,7 +32,17 @@ import java.util.Map;
  * @author WangzJi
  * @since 3.2.0
  */
-public class ControlPluginProvider implements PluginProvider<ControlManagerBuilder> {
+public class ControlPluginProvider implements PluginProvider<ControlPluginAdapter> {
+    
+    private final Supplier<ControlPluginRegistry> registrySupplier;
+    
+    public ControlPluginProvider() {
+        this(ControlPluginRegistry::getInstance);
+    }
+    
+    ControlPluginProvider(Supplier<ControlPluginRegistry> registrySupplier) {
+        this.registrySupplier = registrySupplier;
+    }
     
     @Override
     public PluginType getPluginType() {
@@ -38,12 +50,14 @@ public class ControlPluginProvider implements PluginProvider<ControlManagerBuild
     }
     
     @Override
-    public Map<String, ControlManagerBuilder> getAllPlugins() {
-        Collection<ControlManagerBuilder> builders =
-            NacosServiceLoader.load(ControlManagerBuilder.class);
-        Map<String, ControlManagerBuilder> result = new HashMap<>(builders.size());
-        for (ControlManagerBuilder builder : builders) {
-            result.put(builder.getName(), builder);
+    public Map<String, ControlPluginAdapter> getAllPlugins() {
+        Map<String, ControlPluginAdapter> result = registrySupplier.get().getPlugins();
+        String selectedPlugin = ControlConfigs.getInstance().getControlManagerType();
+        if (StringUtils.isNotBlank(selectedPlugin)
+            && result.keySet().stream().noneMatch(selectedPlugin::equalsIgnoreCase)) {
+            Loggers.CONTROL.warn(
+                "Selected control plugin '{}' was not found, use no-limit managers.",
+                selectedPlugin);
         }
         return result;
     }

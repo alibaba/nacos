@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.condition;
 
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -53,6 +54,29 @@ class AuthConditionTest {
         
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "ldap");
         assertFalse(new ConditionOnNacosAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        assertTrue(new ConditionOnNacosAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "ldap");
+        assertFalse(new ConditionOnNacosAuth().matches(null, null));
+    }
+    
+    @Test
+    void testConditionOnNonOidcAuth() {
+        MockEnvironment environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+        assertTrue(new ConditionOnNonOidcAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE,
+            OidcProtocolConstants.AUTH_PLUGIN_TYPE);
+        assertFalse(new ConditionOnNonOidcAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, " ");
+        assertFalse(new ConditionOnNonOidcAuth().matches(null, null));
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "ldap");
+        assertTrue(new ConditionOnNonOidcAuth().matches(null, null));
     }
     
     @Test

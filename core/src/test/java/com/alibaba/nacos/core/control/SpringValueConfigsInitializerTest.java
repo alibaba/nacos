@@ -73,7 +73,7 @@ class SpringValueConfigsInitializerTest {
     }
     
     @Test
-    void testInitializeWithRuleExternalStorageAndControlManagerType() {
+    void testInitializeWithRuleExternalStorageAndLegacyControlManagerType() {
         environment.setProperty("nacos.plugin.control.rule.external.storage", "mysql");
         environment.setProperty("nacos.plugin.control.manager.type", "local");
         ControlConfigs configs = new ControlConfigs();
@@ -81,5 +81,26 @@ class SpringValueConfigsInitializerTest {
         initializer.initialize(configs);
         assertEquals("mysql", configs.getRuleExternalStorage());
         assertEquals("local", configs.getControlManagerType());
+    }
+    
+    @Test
+    void testInitializeWithStandardControlManagerType() {
+        environment.setProperty("nacos.plugin.control.type", "standard");
+        ControlConfigs configs = new ControlConfigs();
+        
+        new SpringValueConfigsInitializer().initialize(configs);
+        
+        assertEquals("standard", configs.getControlManagerType());
+    }
+    
+    @Test
+    void testStandardControlManagerTypeTakesPrecedence() {
+        environment.setProperty("nacos.plugin.control.type", "standard");
+        environment.setProperty("nacos.plugin.control.manager.type", "legacy");
+        ControlConfigs configs = new ControlConfigs();
+        
+        new SpringValueConfigsInitializer().initialize(configs);
+        
+        assertEquals("standard", configs.getControlManagerType());
     }
 }

@@ -24,6 +24,8 @@ class PersistenceConstantTest {
     @Test
     void testConstants() {
         assertEquals("UTF-8", PersistenceConstant.DEFAULT_ENCODE);
+        assertEquals("nacos.plugin.datasource-dialect.type",
+            PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
         assertEquals("spring.sql.init.platform", PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
         assertEquals("mysql", PersistenceConstant.MYSQL);
         assertEquals("derby", PersistenceConstant.DERBY);

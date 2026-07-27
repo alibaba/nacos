@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginConfigValueMeta;
+import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +46,10 @@ public class PluginConfigResolver {
         this(new PluginConfigSourceRegistry());
     }
     
+    PluginConfigResolver(PluginStatePersistenceService persistence) {
+        this(new PluginConfigSourceRegistry(persistence));
+    }
+    
     PluginConfigResolver(PluginConfigSourceRegistry sourceRegistry) {
         this.sourceRegistry = sourceRegistry;
     }
@@ -67,6 +72,22 @@ public class PluginConfigResolver {
      */
     public void initializeStaticConfig(PluginInfo pluginInfo) {
         sourceRegistry.initializeConfig(PluginConfigSourceType.STATIC, pluginInfo);
+    }
+    
+    /**
+     * Load all runtime persisted source configs during startup.
+     */
+    public void initializeRuntimePersistedConfigs() {
+        sourceRegistry.initializePersistedConfigs();
+    }
+    
+    /**
+     * Normalize one loaded runtime persisted source config with plugin definitions.
+     *
+     * @param pluginInfo plugin info
+     */
+    public void initializeRuntimePersistedConfig(PluginInfo pluginInfo) {
+        sourceRegistry.initializeConfig(PluginConfigSourceType.RUNTIME_PERSISTED, pluginInfo);
     }
     
     /**
@@ -105,6 +126,24 @@ public class PluginConfigResolver {
     public Map<String, String> getConfig(PluginConfigSourceType sourceType,
         PluginInfo pluginInfo) {
         return sourceRegistry.getSourceResolver(sourceType).getConfig(pluginInfo);
+    }
+    
+    /**
+     * Get all runtime persisted source configs for a snapshot.
+     *
+     * @return complete runtime persisted source snapshot
+     */
+    public Map<String, Map<String, String>> getAllRuntimePersistedConfigs() {
+        return sourceRegistry.getAllPersistedConfigs();
+    }
+    
+    /**
+     * Restore all runtime persisted source configs from a snapshot.
+     *
+     * @param configs complete runtime persisted source snapshot
+     */
+    public void restoreRuntimePersistedConfigs(Map<String, Map<String, String>> configs) {
+        sourceRegistry.restorePersistedConfigs(configs);
     }
     
     /**

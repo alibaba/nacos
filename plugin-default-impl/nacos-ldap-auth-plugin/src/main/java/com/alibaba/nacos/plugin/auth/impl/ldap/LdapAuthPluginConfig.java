@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,97 +16,192 @@
 
 package com.alibaba.nacos.plugin.auth.impl.ldap;
 
-import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnLdapAuth;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
-import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * ldap auth config.
+ * Immutable effective configuration for the LDAP auth plugin.
  *
- * @author onewe
+ * @author Nacos
  */
-@Configuration(proxyBeanMethods = false)
-@Conditional(ConditionOnLdapAuth.class)
-public class LdapAuthPluginConfig {
+public final class LdapAuthPluginConfig {
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}"))
-    private String ldapUrl;
+    public static final String URL = "url";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_BASEDC + ":dc=example,dc=org}"))
-    private String ldapBaseDc;
+    public static final String BASE_DN = "base-dn";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}"))
-    private String ldapTimeOut;
+    public static final String TIMEOUT = "timeout";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_USERDN + ":cn=admin,dc=example,dc=org}"))
-    private String userDn;
+    public static final String USER_DN = "user-dn";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
-    private String password;
+    public static final String PASSWORD = "password";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_FILTER_PREFIX + ":uid}"))
-    private String filterPrefix;
+    public static final String FILTER_PREFIX = "filter-prefix";
     
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_CASE_SENSITIVE + ":true}"))
-    private boolean caseSensitive;
+    public static final String CASE_SENSITIVE = "case-sensitive";
+    
+    public static final String IGNORE_PARTIAL_RESULT_EXCEPTION =
+        "ignore-partial-result-exception";
+    
+    public static final String DEFAULT_URL = "ldap://localhost:389";
+    
+    public static final String DEFAULT_BASE_DN = "dc=example,dc=org";
+    
+    public static final long DEFAULT_TIMEOUT = 3000L;
+    
+    public static final String DEFAULT_USER_DN = "cn=admin,dc=example,dc=org";
+    
+    public static final String DEFAULT_PASSWORD = "password";
+    
+    public static final String DEFAULT_FILTER_PREFIX = "uid";
+    
+    public static final boolean DEFAULT_CASE_SENSITIVE = true;
+    
+    public static final boolean DEFAULT_IGNORE_PARTIAL_RESULT_EXCEPTION = false;
+    
+    private final String url;
+    
+    private final String baseDn;
+    
+    private final long timeout;
+    
+    private final String userDn;
+    
+    private final String password;
+    
+    private final String filterPrefix;
+    
+    private final boolean caseSensitive;
+    
+    private final boolean ignorePartialResultException;
+    
+    private LdapAuthPluginConfig(String url, String baseDn, long timeout, String userDn,
+        String password, String filterPrefix, boolean caseSensitive,
+        boolean ignorePartialResultException) {
+        this.url = url;
+        this.baseDn = baseDn;
+        this.timeout = timeout;
+        this.userDn = userDn;
+        this.password = password;
+        this.filterPrefix = filterPrefix;
+        this.caseSensitive = caseSensitive;
+        this.ignorePartialResultException = ignorePartialResultException;
+    }
     
     /**
-     * LDAP Ignore partial result exception {@link LdapTemplate#setIgnorePartialResultException(boolean)}.
+     * Create the default configuration before unified plugin configuration is applied.
+     *
+     * @return default configuration
      */
-    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION + ":false}"))
-    private boolean ignorePartialResultException;
-    
-    @Bean
-    public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
-        LdapTemplate ldapTemplate = new LdapTemplate(ldapContextSource);
-        ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
-        return ldapTemplate;
+    public static LdapAuthPluginConfig defaults() {
+        return new LdapAuthPluginConfig(DEFAULT_URL, DEFAULT_BASE_DN, DEFAULT_TIMEOUT,
+            DEFAULT_USER_DN, DEFAULT_PASSWORD, DEFAULT_FILTER_PREFIX, DEFAULT_CASE_SENSITIVE,
+            DEFAULT_IGNORE_PARTIAL_RESULT_EXCEPTION);
     }
     
-    @Bean
-    public LdapContextSource ldapContextSource() {
-        return new NacosLdapContextSource(ldapUrl, ldapBaseDc, userDn, password, ldapTimeOut);
+    /**
+     * Parse and validate one effective plugin configuration map.
+     *
+     * @param config effective configuration
+     * @return parsed immutable configuration
+     */
+    public static LdapAuthPluginConfig from(Map<String, String> config) {
+        String url = value(config, URL, DEFAULT_URL);
+        String baseDn = value(config, BASE_DN, DEFAULT_BASE_DN);
+        long timeout = parsePositiveLong(value(config, TIMEOUT,
+            Long.toString(DEFAULT_TIMEOUT)), TIMEOUT);
+        String userDn = value(config, USER_DN, DEFAULT_USER_DN);
+        String password = value(config, PASSWORD, DEFAULT_PASSWORD);
+        String filterPrefix = value(config, FILTER_PREFIX, DEFAULT_FILTER_PREFIX);
+        boolean caseSensitive = parseBoolean(value(config, CASE_SENSITIVE,
+            Boolean.toString(DEFAULT_CASE_SENSITIVE)), CASE_SENSITIVE);
+        boolean ignorePartialResultException = parseBoolean(value(config,
+            IGNORE_PARTIAL_RESULT_EXCEPTION,
+            Boolean.toString(DEFAULT_IGNORE_PARTIAL_RESULT_EXCEPTION)),
+            IGNORE_PARTIAL_RESULT_EXCEPTION);
+        return new LdapAuthPluginConfig(url, baseDn, timeout, userDn, password, filterPrefix,
+            caseSensitive, ignorePartialResultException);
     }
     
-    @Bean
-    public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-        NacosUserService userDetailsService, NacosRoleService nacosRoleService) {
-        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService,
-            filterPrefix,
-            caseSensitive);
+    private static String value(Map<String, String> config, String key, String defaultValue) {
+        if (config == null || !config.containsKey(key)) {
+            return defaultValue;
+        }
+        String result = config.get(key);
+        if (result == null) {
+            throw new IllegalArgumentException("Plugin config value cannot be null: " + key);
+        }
+        return result;
     }
     
-    @Bean
-    public IAuthenticationManager ldapAuthenticatoinManager(LdapTemplate ldapTemplate,
-        NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
-        NacosRoleService roleService) {
-        return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager,
-            roleService,
-            filterPrefix, caseSensitive);
-    }
-    
-    @Bean
-    public GlobalAuthenticationConfigurerAdapter authenticationConfigurer(
-        LdapAuthenticationProvider ldapAuthenticationProvider) {
-        return new GlobalAuthenticationConfigurerAdapter() {
-            
-            @Override
-            public void init(AuthenticationManagerBuilder auth) {
-                auth.authenticationProvider(ldapAuthenticationProvider);
+    private static long parsePositiveLong(String value, String key) {
+        try {
+            long result = Long.parseLong(value);
+            if (result <= 0) {
+                throw new IllegalArgumentException("Plugin config value must be positive: " + key);
             }
-        };
+            return result;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Plugin config value is not a number: " + key, e);
+        }
     }
     
+    private static boolean parseBoolean(String value, String key) {
+        if (!Boolean.TRUE.toString().equalsIgnoreCase(value)
+            && !Boolean.FALSE.toString().equalsIgnoreCase(value)) {
+            throw new IllegalArgumentException("Plugin config value is not a boolean: " + key);
+        }
+        return Boolean.parseBoolean(value);
+    }
+    
+    public String getUrl() {
+        return url;
+    }
+    
+    public String getBaseDn() {
+        return baseDn;
+    }
+    
+    public long getTimeout() {
+        return timeout;
+    }
+    
+    public String getUserDn() {
+        return userDn;
+    }
+    
+    public String getPassword() {
+        return password;
+    }
+    
+    public String getFilterPrefix() {
+        return filterPrefix;
+    }
+    
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+    
+    public boolean isIgnorePartialResultException() {
+        return ignorePartialResultException;
+    }
+    
+    /**
+     * Convert this configuration to the item-key map used by {@code PluginConfigSpec}.
+     *
+     * @return configuration map
+     */
+    public Map<String, String> toMap() {
+        Map<String, String> result = new LinkedHashMap<>(8);
+        result.put(URL, url);
+        result.put(BASE_DN, baseDn);
+        result.put(TIMEOUT, Long.toString(timeout));
+        result.put(USER_DN, userDn);
+        result.put(PASSWORD, password);
+        result.put(FILTER_PREFIX, filterPrefix);
+        result.put(CASE_SENSITIVE, Boolean.toString(caseSensitive));
+        result.put(IGNORE_PARTIAL_RESULT_EXCEPTION,
+            Boolean.toString(ignorePartialResultException));
+        return result;
+    }
 }

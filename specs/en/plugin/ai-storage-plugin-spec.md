@@ -74,6 +74,111 @@ and must not receive content operations.
 
 The default provider is `nacos_config`, which stores AI resource content through
 Nacos config storage.
+When the `nacos_config` provider maps an opaque key to a Nacos config coordinate,
+it must use stable physical mappings for the logical `dataId` and canonical
+resource group:
+
+- For `dataId`, only ASCII letters, ASCII digits, and `_`, `-`, `.`, and `:` are
+  preserved. If the logical value contains any other character, the entire value
+  is encoded as `enc.` followed by the lowercase hexadecimal representation of
+  its UTF-8 bytes. Logical values beginning with the reserved `enc.` prefix,
+  matched case-insensitively, are encoded in the same way so they cannot alias an
+  automatically encoded value. If that encoded candidate exceeds 255 characters,
+  it is replaced with `sha256.` followed by the complete lowercase hexadecimal
+  SHA-256 digest of the candidate.
+- A canonical resource group is preserved when it does not exceed 128
+  characters. If it exceeds that limit, it is replaced with the stable resource
+  prefix followed by `sha256.` and the complete lowercase hexadecimal SHA-256
+  digest of the canonical group. Conditional group segments reserve and escape
+  both the same case-insensitive `enc.` namespace and the exact
+  `sha256.<64-hex>` fallback shape before the canonical group is built.
+- Physical forms matching the reserved SHA-256 fallback shape are hashed again,
+  even when already within the length limit, so a logical key cannot directly
+  alias a generated fallback key.
+
+The SHA-256 fallback is deterministic but not reversible. Logical resource
+identity remains owned by AI resource metadata. `save`, `get`, and `delete` must
+apply exactly the same physical mappings.
+
+### Agent Logical Coordinate
+
+For `type=agent`, the Agent domain constructs this logical Nacos Config
+coordinate before handing the provider an opaque `StorageKey`:
+
+```text
+group  = agent-version
+dataId = agent__<rad-ascii-v1(agentName)>__<version>.json
+```
+
+`rad-ascii-v1` and the complete Agent Version storage contract are defined by
+the [Agent Storage Spec](../ai/agent-storage-spec.md). This coordinate is a
+logical provider input, not a physical Config identity exposed to callers.
+
+The built-in provider must pass both logical segments through the common
+`NacosAiConfigKeyCodec`; it must not bypass that codec because the Agent domain
+already encoded `agentName`. A safe value within the physical limit remains
+identical to the logical value. The common codec owns all length and
+reserved-shape handling: an overlong candidate uses its deterministic SHA-256
+fallback, and that physical result is not reversible.
+
+Upper layers may persist the logical key format and content digest, but must not
+parse a physical Config key, require it to be reversible, or reconstruct Agent
+identity from it. `save`, `get`, and `delete` always recompute the physical
+coordinate through the same codec.
+
+The provider does not dual-read coordinates produced by an earlier physical
+mapping. Existing affected `nacos_config` rows must therefore be migrated in a
+coordinated maintenance window before nodes using only the new mapping start.
+Migration must be limited to AI-owned coordinates, preflight target-key
+uniqueness, and rebuild config caches after the rewrite. The legacy Prompt
+mirror in group `nacos-ai-prompt` is a compatibility coordinate outside this
+mapping and must remain unchanged.
+
+## Plugin State And Configuration
+
+AI storage providers participate in unified plugin state. Disabling a
+non-critical provider keeps the instance loaded and visible to plugin
+management, but the router rejects new operations for that provider. The
+built-in `ai-storage:nacos_config` provider is the default backend and a
+critical plugin required by server AI capabilities, so it cannot be disabled
+through plugin management while the server depends on it.
+
+The following properties select a provider for an AI resource domain:
+
+```properties
+nacos.ai.prompt.storage.provider=nacos_config
+nacos.ai.skill.storage.provider=nacos_config
+nacos.ai.agentspec.storage.provider=nacos_config
+nacos.ai.agent.storage.provider=nacos_config
+```
+
+They are domain routing policy, not private configuration definitions owned by
+`ai-storage:nacos_config`.
+
+When the AI module is active, all providers selected independently for Prompt, Skill, AgentSpec,
+and Agent are required implementations of this critical routed type. The same provider may satisfy
+multiple domains. Before startup succeeds, every distinct selected provider must be discovered and
+enabled; a different available provider is not a valid fallback. When the AI module is disabled by
+function mode or `nacos.extension.ai.enabled=false`, AI storage is inactive and does not impose a
+startup requirement.
+
+AI storage implementations are built from Spring-managed services during context refresh, so this
+type does not participate in pre-refresh critical validation. The unified plugin manager performs
+the same provider-specific validation immediately after the storage builders register their
+instances and before Nacos reports startup success.
+
+`AiResourceStorage` extends `PluginConfigSpec`. The built-in provider has no private configuration,
+declares no definitions, and is exposed as `configurable=false`. A built storage implementation
+that owns private configuration declares definitions and callbacks through the inherited contract,
+using canonical keys under:
+
+```properties
+nacos.plugin.ai-storage.{provider}.{itemKey}
+```
+
+The storage builder is responsible for constructing the service before core
+plugin discovery. Unified configuration metadata and apply behavior belong to
+the built service instance, not to the builder or the domain routing keys.
 
 ## Requirements
 

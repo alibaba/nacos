@@ -65,13 +65,20 @@ default standalone IT profile does not enable.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
-built-in `auth:nacos` configuration contract. The latter verifies its five
-definitions, legacy aliases, effect modes, effective values, source metadata,
-and API-side secret masking. Runtime mutation remains partial to avoid carrying
-persisted plugin state into later SDK suites in the shared standalone process;
-full-map replacement, source fallback, effect mode checks, same-source sensitive
-value preservation, and retained-source apply failure/retry are covered in core
-unit tests.
+built-in `auth:nacos`, `auth:ldap`, and `auth:oidc` configuration contracts. It
+verifies definitions, legacy aliases, effect modes, effective values, source
+metadata, API-side secret masking, plugin-type execution/criticality metadata,
+critical disable rejection, exclusive restart-only selection, and OIDC restart-only update
+rejection. It also verifies local-only runtime mutation and empty-map source
+clear through refreshed detail metadata.
+Persisted runtime mutation remains partial to avoid carrying plugin state into
+later SDK suites in the shared standalone process; persisted full-map
+replacement, source fallback, effect mode checks, same-source sensitive value
+preservation, and retained-source apply failure/retry are covered in core unit
+tests. Anonymous AI access is not exercised in standalone OpenAPI IT; explicit
+credential presence, blank
+credential rejection, and HTTP 403 `ACCESS_DENIED` error mapping are covered
+by auth/core unit tests.
 
 Config scenario rows cover the current 3.3 Config model. Blank or omitted
 namespace inputs are expected to use `public`, and beta/tag gray behavior is
@@ -82,6 +89,11 @@ namespace before writing to the target namespace. Removed pre-3.0 compatibility
 migration paths, including empty-tenant storage migration and legacy
 `config_info_beta` / `config_info_tag` old-table migration, are not counted as
 missing OpenAPI IT coverage.
+
+Skill upload precheck response-shape coverage is maintained by the admin and
+console Skill upload scenario rows, including `maxPublishedVersion` and
+`targetVersion`. Contract-only field changes do not alter the scenario-row
+totals above.
 
 ## Coverage Documents
 

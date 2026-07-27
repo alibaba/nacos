@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -54,6 +55,16 @@ class GrpcSdkClientTest {
         System.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "10000");
         grpcSdkClient = new GrpcSdkClient("test", 8, 8, Collections.emptyMap());
         assertEquals(10000, grpcSdkClient.rpcPortOffset());
+    }
+    
+    @Test
+    void testRpcPortOffsetFromClientConfig() {
+        Properties properties = new Properties();
+        properties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "1002");
+        GrpcClientConfig config =
+            DefaultGrpcClientConfig.newBuilder().buildSdkFromProperties(properties).build();
+        grpcSdkClient = new GrpcSdkClient(config);
+        assertEquals(1002, grpcSdkClient.rpcPortOffset());
     }
     
     @Test

@@ -35,7 +35,7 @@ class SkillSpectorScanOptionsTest {
     
     @Test
     void fromPropertiesEmptyTest() {
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(new Properties());
+        SkillSpectorScanOptions options = options(new Properties());
         
         assertFalse(options.isUseLlm());
         assertEquals(50, options.getRiskScoreThreshold());
@@ -48,17 +48,17 @@ class SkillSpectorScanOptionsTest {
     @Test
     void fromPropertiesWithKebabAliasesTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM_KEBAB, "true");
-        properties.setProperty(SkillSpectorScanOptions.PROP_RISK_SCORE_THRESHOLD_KEBAB, "80");
-        properties.setProperty(SkillSpectorScanOptions.PROP_MAX_FINDINGS_KEBAB, "12");
-        properties.setProperty(SkillSpectorScanOptions.PROP_PROVIDER, "openai");
-        properties.setProperty(SkillSpectorScanOptions.PROP_MODEL, "gpt-test");
-        properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY_KEBAB, "configured-key");
-        properties.setProperty(SkillSpectorScanOptions.PROP_BASE_URL_KEBAB,
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD, "80");
+        properties.setProperty(SkillSpectorPluginConfig.MAX_FINDINGS, "12");
+        properties.setProperty(SkillSpectorPluginConfig.PROVIDER, "openai");
+        properties.setProperty(SkillSpectorPluginConfig.MODEL, "gpt-test");
+        properties.setProperty(SkillSpectorPluginConfig.API_KEY, "configured-key");
+        properties.setProperty(SkillSpectorPluginConfig.BASE_URL,
             "https://example.com/v1");
-        properties.setProperty(SkillSpectorScanOptions.PROP_LOG_LEVEL_KEBAB, "DEBUG");
+        properties.setProperty(SkillSpectorPluginConfig.LOG_LEVEL, "DEBUG");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         
         assertTrue(options.isUseLlm());
         assertEquals(80, options.getRiskScoreThreshold());
@@ -75,9 +75,9 @@ class SkillSpectorScanOptionsTest {
     @Test
     void environmentLogLevelHasPriorityTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_LOG_LEVEL_KEBAB, "DEBUG");
+        properties.setProperty(SkillSpectorPluginConfig.LOG_LEVEL, "DEBUG");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         Map<String, String> env = new HashMap<>();
         env.put("SKILLSPECTOR_LOG_LEVEL", "WARNING");
         
@@ -89,9 +89,9 @@ class SkillSpectorScanOptionsTest {
     @Test
     void maxFindingsShouldBeCappedAtLimitTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_MAX_FINDINGS_KEBAB, "1000");
+        properties.setProperty(SkillSpectorPluginConfig.MAX_FINDINGS, "1000");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         
         assertEquals(100, options.getMaxFindings());
     }
@@ -99,11 +99,11 @@ class SkillSpectorScanOptionsTest {
     @Test
     void environmentApiKeyHasPriorityTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
-        properties.setProperty(SkillSpectorScanOptions.PROP_PROVIDER, "anthropic");
-        properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY, "configured-key");
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.PROVIDER, "anthropic");
+        properties.setProperty(SkillSpectorPluginConfig.API_KEY, "configured-key");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         Map<String, String> env = new HashMap<>();
         env.put("ANTHROPIC_API_KEY", "env-key");
         
@@ -115,10 +115,10 @@ class SkillSpectorScanOptionsTest {
     @Test
     void genericApiKeyMapsToProviderKeyTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
-        properties.setProperty(SkillSpectorScanOptions.PROP_PROVIDER, "nv_inference");
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.PROVIDER, "nv_inference");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         Map<String, String> env = new HashMap<>();
         env.put("SKILLSPECTOR_API_KEY", "generic-key");
         
@@ -130,14 +130,19 @@ class SkillSpectorScanOptionsTest {
     @Test
     void defaultProviderMapsApiKeyToNvidiaTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
-        properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY, "configured-key");
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.API_KEY, "configured-key");
         
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        SkillSpectorScanOptions options = options(properties);
         Map<String, String> env = new HashMap<>();
         
         options.applyLlmEnvironment(env);
         
         assertEquals("configured-key", env.get("NVIDIA_INFERENCE_KEY"));
+    }
+    
+    private SkillSpectorScanOptions options(Properties properties) {
+        return SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties))
+            .getScanOptions();
     }
 }

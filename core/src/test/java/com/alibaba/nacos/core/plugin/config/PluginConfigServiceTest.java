@@ -50,6 +50,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PluginConfigServiceTest {
@@ -99,8 +100,9 @@ class PluginConfigServiceTest {
         definition.setDefaultValue("default");
         PluginInfo pluginInfo = pluginInfo(definition);
         RecordingPlugin plugin = new RecordingPlugin(pluginInfo.getConfigDefinitions());
-        service.loadRuntimePersistedConfig(pluginInfo, PLUGIN_ID,
-            Collections.singletonMap("nacos.plugin.trace.test.endpoint", "persisted"));
+        when(persistence.loadAllConfigs()).thenReturn(Collections.singletonMap(PLUGIN_ID,
+            Collections.singletonMap("nacos.plugin.trace.test.endpoint", "persisted")));
+        service.initializeRuntimePersistedConfigs();
         
         service.initializePluginConfig(pluginInfo, plugin);
         
@@ -174,6 +176,12 @@ class PluginConfigServiceTest {
         assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
         assertEquals("default", pluginInfo.getConfig().get("endpoint"));
         assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
+        
+        service.refreshStaticConfig(pluginInfo, plugin);
+        
+        assertEquals("bad", plugin.getCurrentConfig().get("endpoint"));
+        assertEquals("bad", pluginInfo.getConfig().get("endpoint"));
+        assertEquals(2, plugin.getApplyCount());
     }
     
     @Test
@@ -243,10 +251,6 @@ class PluginConfigServiceTest {
         assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
         verify(persistence).saveConfig(PLUGIN_ID, failedConfig);
         
-        service.refreshStaticConfig(pluginInfo, plugin);
-        
-        assertEquals(1, plugin.getApplyCount());
-        
         service.applyRuntimePersistedConfig(PLUGIN_ID, pluginInfo, plugin, failedConfig);
         
         assertEquals("bad", plugin.getCurrentConfig().get("endpoint"));
@@ -276,8 +280,9 @@ class PluginConfigServiceTest {
         ConfigItemDefinition definition = runtimeDefinition("secret", "secret-value");
         definition.setSensitive(true);
         PluginInfo pluginInfo = pluginInfo(definition);
-        service.loadRuntimePersistedConfig(pluginInfo, PLUGIN_ID,
-            Collections.singletonMap("secret", "runtime-secret"));
+        when(persistence.loadAllConfigs()).thenReturn(Collections.singletonMap(PLUGIN_ID,
+            Collections.singletonMap("secret", "runtime-secret")));
+        service.initializeRuntimePersistedConfigs();
         
         for (String maskedValue : new String[] {"******", "a******z", "ab******yz"}) {
             Map<String, String> prepared = service.prepareRuntimeUpdate(pluginInfo,
@@ -303,7 +308,7 @@ class PluginConfigServiceTest {
     }
     
     @Test
-    void restoreRuntimePersistedConfigAllowsRestartField() {
+    void restoreRuntimePersistedConfigsAllowsRestartField() {
         ConfigItemDefinition definition = new ConfigItemDefinition("endpoint", "endpoint",
             ConfigItemType.STRING);
         definition.setDefaultValue("default");
@@ -312,12 +317,31 @@ class PluginConfigServiceTest {
         RecordingPlugin plugin = new RecordingPlugin(pluginInfo.getConfigDefinitions());
         service.initializePluginConfig(pluginInfo, plugin);
         
-        service.restoreRuntimePersistedConfig(PLUGIN_ID, pluginInfo, plugin,
+        Map<String, Map<String, String>> restored = Collections.singletonMap(PLUGIN_ID,
             Collections.singletonMap("endpoint", "restored"));
+        service.restoreRuntimePersistedConfigs(restored);
+        service.applyRestoredPluginConfig(pluginInfo, plugin);
         
         assertEquals("restored", plugin.getCurrentConfig().get("endpoint"));
-        verify(persistence).saveConfig(PLUGIN_ID,
-            Collections.singletonMap("endpoint", "restored"));
+        assertEquals(restored, service.getAllRuntimePersistedConfigs());
+        verify(persistence).replaceAllConfigs(restored);
+    }
+    
+    @Test
+    void applyRestoredPluginConfigWrapsApplyFailure() {
+        ConfigItemDefinition definition = runtimeDefinition("endpoint", "default");
+        PluginInfo pluginInfo = pluginInfo(definition);
+        FailOncePlugin plugin = new FailOncePlugin(pluginInfo.getConfigDefinitions());
+        service.initializePluginConfig(pluginInfo, plugin);
+        service.restoreRuntimePersistedConfigs(Collections.singletonMap(PLUGIN_ID,
+            Collections.singletonMap("endpoint", "bad")));
+        
+        PluginConfigApplyException exception = assertThrows(PluginConfigApplyException.class,
+            () -> service.applyRestoredPluginConfig(pluginInfo, plugin));
+        
+        assertTrue(exception.getMessage().contains("Failed to apply restored plugin config"));
+        assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
+        assertEquals("bad", service.resolve(pluginInfo, false).getConfig().get("endpoint"));
     }
     
     @Test

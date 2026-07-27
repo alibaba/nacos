@@ -1,62 +1,70 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import { parseSkillUploadEntries } from '../skillUploadParser';
-
-function addSkill(zip: JSZip, prefix: string, name: string, version: string): void {
-  zip.file(`${prefix}/SKILL.md`, `---
-name: ${name}
-description: ${name} description
-version: ${version}
----
-
-${name} instructions`);
-}
+import {
+  buildSkillBatchZipExcludingPrefixes,
+  getSkillEntryDisplayName,
+  isInvalidSkillEntryCode,
+} from '../skillUploadParser';
 
 async function createZipFile(zip: JSZip): Promise<File> {
   const blob = await zip.generateAsync({ type: 'blob' });
   return new File([blob], 'skills.zip', { type: 'application/zip' });
 }
 
-describe('skillUploadParser', () => {
-  it('keeps invalid and non-skill folders out of precheck when valid skills are present', async () => {
+describe('buildSkillBatchZipExcludingPrefixes', () => {
+  it('removes skipped skill folders and keeps the other archive entries', async () => {
     const zip = new JSZip();
-    addSkill(zip, 'ai-avatar-video', 'ai-avatar-video', '0.0.1');
-    addSkill(zip, 'pdf 3', 'pdf', '0.0.1');
-    zip.file('invalid-skill/SKILL.md', 'invalid');
-    zip.file('not-a-skill/bababababab.md', 'not a skill');
+    zip.file('skill-a/SKILL.md', 'skill a');
+    zip.file('skill-a/scripts/run.sh', 'run a');
+    zip.file('skill-b/SKILL.md', 'skill b');
+    zip.file('not-a-skill/readme.md', 'readme');
 
-    const entries = await parseSkillUploadEntries('public', await createZipFile(zip));
-    const skills = entries.filter((entry) => entry.kind === 'SKILL');
+    const result = await buildSkillBatchZipExcludingPrefixes(
+      await createZipFile(zip),
+      ['skill-a/'],
+    );
+    const resultZip = await JSZip.loadAsync(await result.arrayBuffer());
 
-    expect(entries).toHaveLength(4);
-    expect(skills.map((entry) => entry.request?.skillName).sort()).toEqual([
-      'ai-avatar-video',
-      'pdf',
-    ]);
-    expect(entries.find((entry) => entry.entryKey === 'invalid-skill/')?.kind)
-      .toBe('INVALID_SKILL');
-    expect(entries.find((entry) => entry.entryKey === 'not-a-skill/')?.kind)
-      .toBe('NON_SKILL_FOLDER');
+    expect(resultZip.file('skill-a/SKILL.md')).toBeNull();
+    expect(resultZip.file('skill-b/SKILL.md')).not.toBeNull();
+    expect(resultZip.file('not-a-skill/readme.md')).not.toBeNull();
   });
 
-  it('returns parse errors when no valid skills are present', async () => {
+  it('drops macOS metadata while rebuilding the archive', async () => {
     const zip = new JSZip();
-    zip.file('invalid-skill/SKILL.md', 'invalid');
+    zip.file('skill-b/SKILL.md', 'skill b');
+    zip.file('__MACOSX/skill-b/._SKILL.md', 'metadata');
+    zip.file('skill-b/.DS_Store', 'metadata');
 
-    const entries = await parseSkillUploadEntries('public', await createZipFile(zip));
+    const result = await buildSkillBatchZipExcludingPrefixes(
+      await createZipFile(zip),
+      [],
+    );
+    const resultZip = await JSZip.loadAsync(await result.arrayBuffer());
 
-    expect(entries).toHaveLength(1);
-    expect(entries[0].request).toBeUndefined();
-    expect(entries[0].error).toContain('YAML front matter');
+    expect(resultZip.file('skill-b/SKILL.md')).not.toBeNull();
+    expect(resultZip.file('__MACOSX/skill-b/._SKILL.md')).toBeNull();
+    expect(resultZip.file('skill-b/.DS_Store')).toBeNull();
+  });
+});
+
+describe('getSkillEntryDisplayName', () => {
+  it('shows only the last directory without a trailing slash', () => {
+    expect(getSkillEntryDisplayName('multi-skill/not-a-skill/')).toBe('not-a-skill');
+    expect(getSkillEntryDisplayName('multi-skill/invalid-skill/')).toBe('invalid-skill');
   });
 
-  it('keeps raw uploaded version for precheck display', async () => {
-    const zip = new JSZip();
-    addSkill(zip, 'fp-engineering-solver', 'fp-engineering-solver', '0.1');
+  it('handles an empty or single-level entry path', () => {
+    expect(getSkillEntryDisplayName('skill-a/')).toBe('skill-a');
+    expect(getSkillEntryDisplayName('')).toBe('');
+    expect(getSkillEntryDisplayName()).toBe('');
+  });
+});
 
-    const entries = await parseSkillUploadEntries('public', await createZipFile(zip));
-
-    expect(entries[0].request?.parsedVersion).toBe('0.1');
-    expect(entries[0].request?.versionSource).toBe('SKILL.md frontmatter');
+describe('isInvalidSkillEntryCode', () => {
+  it('recognizes non-skill and invalid-skill entries', () => {
+    expect(isInvalidSkillEntryCode('NOT_A_SKILL')).toBe(true);
+    expect(isInvalidSkillEntryCode('INVALID_SKILL')).toBe(true);
+    expect(isInvalidSkillEntryCode('READY')).toBe(false);
   });
 });

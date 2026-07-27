@@ -27,7 +27,9 @@ public enum AuthErrorCode {
      * invalid auth type.
      */
     INVALID_TYPE(50001,
-        "Invalid auth type, Please set `nacos.core.auth.system.type`, detail: https://nacos.io/docs/latest/manual/admin/auth/"),
+        "Invalid auth type, Please set `nacos.plugin.auth.type` (legacy alias: "
+            + "`nacos.core.auth.system.type`), detail: "
+            + "https://nacos.io/docs/latest/manual/admin/auth/"),
     
     EMPTY_IDENTITY(50002,
         "Empty identity, Please set `nacos.core.auth.server.identity.key` and `nacos.core.auth.server.identity.value`, detail: https://nacos.io/docs/latest/manual/admin/auth/");

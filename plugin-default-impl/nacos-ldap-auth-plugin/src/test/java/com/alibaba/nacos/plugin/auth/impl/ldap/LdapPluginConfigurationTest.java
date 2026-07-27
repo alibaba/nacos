@@ -16,30 +16,34 @@
 
 package com.alibaba.nacos.plugin.auth.impl.ldap;
 
+import com.alibaba.nacos.plugin.auth.impl.LdapAuthPluginService;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
-import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("deprecation")
 class LdapPluginConfigurationTest {
@@ -48,7 +52,7 @@ class LdapPluginConfigurationTest {
     void testSelectImportsWithPresentDependency() {
         String[] imports = new LdapPluginImportSelector().selectImports(null);
         
-        assertArrayEquals(new String[] {LdapAuthPluginConfig.class.getName()}, imports);
+        assertArrayEquals(new String[] {LdapPluginConfiguration.class.getName()}, imports);
     }
     
     @Test
@@ -82,54 +86,54 @@ class LdapPluginConfigurationTest {
     
     @Test
     void testAuthPluginConfigCreatesBeans() throws Exception {
-        LdapAuthPluginConfig config = new LdapAuthPluginConfig();
-        configureLdapProperties(config);
-        LdapContextSource contextSource = config.ldapContextSource();
-        LdapTemplate ldapTemplate = config.ldapTemplate(contextSource);
+        LdapAuthPluginService pluginService = new LdapAuthPluginService();
+        AuthPluginManager pluginManager = mock(AuthPluginManager.class);
+        when(pluginManager.getAllPlugins()).thenReturn(Collections.singletonMap(
+            AuthConstants.LDAP_AUTH_PLUGIN_TYPE, pluginService));
         NacosUserService userService = mock(NacosUserService.class);
         NacosRoleService roleService = mock(NacosRoleService.class);
         TokenManagerDelegate tokenManager = mock(TokenManagerDelegate.class);
-        
-        LdapAuthenticationProvider provider =
-            config.ldapAuthenticationProvider(ldapTemplate, userService, roleService);
-        IAuthenticationManager manager =
-            config.ldapAuthenticatoinManager(ldapTemplate, userService, tokenManager, roleService);
-        GlobalAuthenticationConfigurerAdapter adapter = config.authenticationConfigurer(provider);
-        AuthenticationManagerBuilder builder =
-            new AuthenticationManagerBuilder(new ObjectPostProcessor<Object>() {
-                
-                @Override
-                public <O> O postProcess(O object) {
-                    return null;
-                }
-            });
-        
-        adapter.init(builder);
-        
-        assertArrayEquals(new String[] {"ldap://localhost:389"}, contextSource.getUrls());
-        assertEquals(Boolean.TRUE,
-            ReflectionTestUtils.getField(ldapTemplate, "ignorePartialResultException"));
-        assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
-        assertInstanceOf(LdapAuthenticationManager.class, manager);
-        assertTrue(builder.isConfigured());
+        try (MockedStatic<AuthPluginManager> manager = mockStatic(AuthPluginManager.class)) {
+            manager.when(AuthPluginManager::getInstance).thenReturn(pluginManager);
+            LdapAuthPluginConfigProvider configProvider =
+                LdapPluginConfiguration.ldapAuthPluginConfigProvider();
+            LdapPluginConfiguration config = new LdapPluginConfiguration();
+            LdapTemplateProvider templateProvider = config.ldapTemplateProvider(configProvider);
+            LdapAuthenticationProvider provider = config.ldapAuthenticationProvider(
+                templateProvider, userService, roleService, configProvider);
+            IAuthenticationManager authenticationManager = config.ldapAuthenticatoinManager(
+                templateProvider, userService, tokenManager, roleService, configProvider);
+            GlobalAuthenticationConfigurerAdapter adapter =
+                config.authenticationConfigurer(provider);
+            AuthenticationManagerBuilder builder =
+                new AuthenticationManagerBuilder(new ObjectPostProcessor<Object>() {
+                    
+                    @Override
+                    public <O> O postProcess(O object) {
+                        return object;
+                    }
+                });
+            
+            adapter.init(builder);
+            
+            assertSame(pluginService.getConfig(), configProvider.getConfig());
+            assertInstanceOf(DefaultLdapTemplateProvider.class, templateProvider);
+            assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
+            assertInstanceOf(LdapAuthenticationManager.class, authenticationManager);
+            assertTrue(builder.isConfigured());
+        }
     }
     
-    private void configureLdapProperties(LdapAuthPluginConfig config) {
-        ReflectionTestUtils.setField(config, "ldapUrl", "ldap://localhost:389");
-        ReflectionTestUtils.setField(config, "ldapBaseDc", "dc=example,dc=org");
-        ReflectionTestUtils.setField(config, "ldapTimeOut", "1000");
-        ReflectionTestUtils.setField(config, "userDn", "cn=admin,dc=example,dc=org");
-        ReflectionTestUtils.setField(config, "password", "password");
-        ReflectionTestUtils.setField(config, "filterPrefix", "uid");
-        ReflectionTestUtils.setField(config, "caseSensitive", false);
-        ReflectionTestUtils.setField(config, "ignorePartialResultException", true);
-    }
-    
-    private static class NoOpObjectPostProcessor implements ObjectPostProcessor<Object> {
-        
-        @Override
-        public <O> O postProcess(O object) {
-            return object;
+    @Test
+    void testConfigProviderRejectsUnexpectedPlugin() {
+        AuthPluginManager pluginManager = mock(AuthPluginManager.class);
+        AuthPluginService unexpected = mock(AuthPluginService.class);
+        when(pluginManager.getAllPlugins()).thenReturn(Collections.singletonMap(
+            AuthConstants.LDAP_AUTH_PLUGIN_TYPE, unexpected));
+        try (MockedStatic<AuthPluginManager> manager = mockStatic(AuthPluginManager.class)) {
+            manager.when(AuthPluginManager::getInstance).thenReturn(pluginManager);
+            assertThrows(IllegalStateException.class,
+                LdapPluginConfiguration::ldapAuthPluginConfigProvider);
         }
     }
 }

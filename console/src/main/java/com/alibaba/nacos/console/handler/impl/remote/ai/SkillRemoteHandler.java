@@ -32,7 +32,6 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -123,9 +122,10 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
-        List<SkillUploadPrecheckRequest> requests) throws NacosException {
-        return clientHolder.getAiMaintainerService().skill().batchPrecheckUploadSkill(requests);
+    public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
+        byte[] zipBytes, String targetVersion) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill().precheckUploadSkillFromZip(namespaceId,
+            zipBytes, targetVersion);
     }
     
     @Override

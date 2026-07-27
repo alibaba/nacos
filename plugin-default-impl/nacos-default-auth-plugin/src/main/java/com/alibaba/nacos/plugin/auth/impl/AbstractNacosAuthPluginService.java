@@ -76,7 +76,7 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
             NacosUser nacosUser = validateUser(identityContext);
             return AuthResult.successResult(nacosUser);
         } catch (AccessException e) {
-            if (isAnonymousAllowed(resource)) {
+            if (isAnonymousAllowed(resource) && !hasExplicitCredential(identityContext)) {
                 LOGGER.debug("Anonymous access granted for resource: {}", resource);
                 NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
                 identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
@@ -94,6 +94,13 @@ public abstract class AbstractNacosAuthPluginService implements AuthPluginServic
         Properties properties = resource.getProperties();
         return properties.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)
             && isAnonymousAccessEnabled();
+    }
+    
+    private boolean hasExplicitCredential(IdentityContext identityContext) {
+        return identityContext.containsParameter(AuthConstants.AUTHORIZATION_HEADER)
+            || identityContext.containsParameter(Constants.ACCESS_TOKEN)
+            || identityContext.containsParameter(AuthConstants.PARAM_USERNAME)
+            || identityContext.containsParameter(AuthConstants.PARAM_PASSWORD);
     }
     
     /**

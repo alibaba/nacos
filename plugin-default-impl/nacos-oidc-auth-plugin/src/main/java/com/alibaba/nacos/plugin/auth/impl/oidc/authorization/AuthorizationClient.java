@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.authorization;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,33 +40,18 @@ public class AuthorizationClient {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationClient.class);
     
-    private static volatile AuthorizationClient instance;
-    
-    private final OidcAuthConfig config;
+    private final OidcAuthPluginConfig config;
     
     private final HttpClient httpClient;
     
-    private AuthorizationClient() {
-        this.config = OidcAuthConfig.getInstance();
-        this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis(config.getAuthorizationTimeoutMs()))
-            .build();
+    public AuthorizationClient(OidcAuthPluginConfig config) {
+        this(config, HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMillis(config.getAuthorizationTimeoutMs())).build());
     }
     
-    /**
-     * Get singleton instance.
-     *
-     * @return AuthorizationClient instance
-     */
-    public static AuthorizationClient getInstance() {
-        if (instance == null) {
-            synchronized (AuthorizationClient.class) {
-                if (instance == null) {
-                    instance = new AuthorizationClient();
-                }
-            }
-        }
-        return instance;
+    AuthorizationClient(OidcAuthPluginConfig config, HttpClient httpClient) {
+        this.config = config;
+        this.httpClient = httpClient;
     }
     
     /**
@@ -77,11 +62,12 @@ public class AuthorizationClient {
      * @return authorization response from IdP
      */
     public AuthorizationResponse authorize(AuthorizationRequest request) {
-        String authzEndpoint = config.getAuthorizationEvaluateEndpoint();
+        String authzEndpoint = config.getAuthorizationEndpoint();
         
         if (StringUtils.isBlank(authzEndpoint)) {
             LOGGER.warn("Authorization endpoint not configured. DEFAULTING TO ALLOW ALL ACCESS. "
-                + "Configure 'nacos.auth.oidc.authorization.endpoint' for external authorization.");
+                + "Configure 'nacos.plugin.auth.oidc.authorization-endpoint' for external "
+                + "authorization.");
             return AuthorizationResponse.allowed();
         }
         

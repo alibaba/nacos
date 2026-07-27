@@ -32,6 +32,14 @@ public class Constants {
         
         public static final String NACOS_CORE_AUTH_ADMIN_ENABLED = "nacos.core.auth.admin.enabled";
         
+        public static final String NACOS_PLUGIN_AUTH_TYPE = "nacos.plugin.auth.type";
+        
+        /**
+         * Legacy auth plugin selection property.
+         *
+         * @deprecated use {@link #NACOS_PLUGIN_AUTH_TYPE} instead.
+         */
+        @Deprecated
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
         
         public static final String NACOS_CORE_AUTH_CACHING_ENABLED =

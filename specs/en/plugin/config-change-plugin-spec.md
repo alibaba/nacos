@@ -116,28 +116,55 @@ committed config mutation.
 
 ## Configuration
 
-Plugin-owned properties use the prefix:
+### Unified Plugin Configuration
+
+`ConfigChangePluginService` extends `PluginConfigSpec`. A config change plugin that owns
+configurable properties declares them through that inherited contract. Its canonical full keys use
+the standard prefix:
 
 ```properties
-nacos.core.config.plugin.{pluginName}.*
+nacos.plugin.config-change.{pluginName}.{itemKey}
 ```
 
-The legacy enablement key documented for plugin packages is:
+The implementation declares item keys, legacy aliases, sensitivity, and effect
+mode through `ConfigItemDefinition`. The common plugin configuration resolver
+loads and applies the effective configuration. For compatibility with the
+config change SPI request contract, `ConfigChangeConstants.PLUGIN_PROPERTIES`
+contains the implementation's current effective item-key map when the service reports
+`isConfigurable()=true`.
+
+Plugin enablement is unified plugin state for
+`config-change:{pluginName}` and is not a `ConfigItemDefinition`. Pointcut
+candidate lookup is the only runtime enablement gate.
+
+### Legacy Compatibility
+
+Plugins compiled against the older SPI, and implementations that declare no configuration
+definitions, remain supported through the deprecated legacy configuration adapter. Their properties
+continue to use:
+
+```properties
+nacos.core.config.plugin.{pluginName}.{propertyKey}
+```
+
+The adapter refreshes these static properties on server configuration changes,
+strips the plugin prefix, and passes the resulting `Properties` through
+`ConfigChangeConstants.PLUGIN_PROPERTIES`. It logs a migration warning the
+first time it supplies properties to each legacy plugin. Such a plugin remains
+`configurable=false` in the unified plugin API.
+
+The historical enablement property is:
 
 ```properties
 nacos.core.config.plugin.{pluginName}.enabled=true
 ```
 
-Pointcut candidate lookup filters services by the unified plugin state for
-`config-change:{pluginName}`. The legacy `enabled` property remains a
-plugin-specific execution switch, so either the unified state or this property
-may prevent a service from executing.
-
-Plugin custom properties are read using the lowercase service type:
-
-```text
-nacos.core.config.plugin.{serviceType}.{propertyKey}
-```
+It is used only to initialize unified plugin state when no persisted state
+exists. Missing legacy enablement preserves the historical default of `false`.
+Persisted plugin state takes precedence, and subsequent runtime enablement is
+managed only through unified plugin state. The legacy `enabled` entry may still
+be present in the compatibility `Properties` map, but it is no longer a second
+execution gate.
 
 ## Reference Implementations
 

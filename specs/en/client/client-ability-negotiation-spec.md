@@ -43,7 +43,7 @@ The current Java SDK declares support for:
 | `SDK_CLIENT_FUZZY_WATCH` | Client can use fuzzy watch for Config or Naming. |
 | `SDK_CLIENT_DISTRIBUTED_LOCK` | Client can use the distributed lock feature. |
 | `SDK_MCP_REGISTRY` | Client can use MCP registry runtime features. |
-| `SDK_AGENT_REGISTRY` | Client can use Agent and AgentCard runtime features. |
+| `SDK_AGENT_REGISTRY` | Client can use the legacy A2A Agent and AgentCard runtime features. |
 
 The current server declares support for:
 
@@ -53,11 +53,30 @@ The current server declares support for:
 | `SERVER_FUZZY_WATCH` | Config or Naming fuzzy watch is supported. |
 | `SERVER_DISTRIBUTED_LOCK` | Distributed Lock is supported. |
 | `SERVER_MCP_REGISTRY` | MCP registry operations are supported. |
-| `SERVER_AGENT_REGISTRY` | Agent and AgentCard registry operations are supported. |
+| `SERVER_AGENT_REGISTRY` | Legacy A2A Agent and AgentCard registry operations are supported. |
 | `SERVER_AGENT_CARD_V1` | A2A AgentCard 1.0 protocol fields are supported. |
 
 Adding a new ability requires both a named key and a domain rule that explains
 what behavior is gated by the ability.
+
+### 2.1 Experimental Agent/RAD Target Abilities
+
+The [Agent API Spec](../ai/agent-api-spec.md) approves the following target
+abilities for the Nacos 3.3 line. They describe the target contract and are not
+current runtime abilities until the corresponding constants and handlers are
+implemented.
+
+| Mode | Constant | Wire key | Meaning |
+|---|---|---|---|
+| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search, Discover, and Watch payloads. |
+| `SERVER` | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD runtime Endpoint publication payloads. |
+| `SDK_CLIENT` | `SDK_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | SDK accepts RAD discovery push payloads. |
+
+Ability names are scoped by mode, so the same `agentDiscoveryV1` wire key is
+valid in both `SERVER` and `SDK_CLIENT` tables. Legacy
+`SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY`
+continue to gate only the old A2A contract. They are not a fallback for any RAD
+operation.
 
 ## 3. gRPC Negotiation Flow
 
@@ -109,14 +128,28 @@ features:
 - Distributed Lock must require `SERVER_DISTRIBUTED_LOCK` because the feature is
   experimental and not universally available.
 - AI MCP registry operations must require `SERVER_MCP_REGISTRY`.
-- AI Agent and AgentCard operations must require `SERVER_AGENT_REGISTRY`.
+- Legacy A2A Agent and AgentCard operations must require
+  `SERVER_AGENT_REGISTRY`.
 - A2A AgentCard 1.0 fields should require `SERVER_AGENT_CARD_V1` or use an
   explicitly documented compatibility conversion.
+- RAD Search, Discover, and Watch requests must require
+  `SERVER_AGENT_DISCOVERY_V1`.
+- RAD runtime Endpoint registration and deregistration must require
+  `SERVER_AGENT_ENDPOINT_V1`.
+- The server may push either `SNAPSHOT` or `TERMINATED`
+  `AgentDiscoveryNotifyRequest` only when the client advertises
+  `SDK_AGENT_DISCOVERY_V1`. The ability covers acknowledgement and isolated
+  termination of one `watchKey`; it never authorizes closing the shared
+  Payload connection for a terminal Watch.
 
 Feature code should not cache a positive ability result beyond the current
 connection. It should query the runtime connection ability when the operation is
 about to execute or when a cached value is known to belong to the current
 connection.
+
+After reconnect, the client must negotiate the ability again before restoring
+Watch intent. A restored subscription obtains a new connection-scoped opaque
+`watchKey` from `AgentSubscribeResponse`; the prior key must not be reused.
 
 ## 6. Compatibility Rules
 

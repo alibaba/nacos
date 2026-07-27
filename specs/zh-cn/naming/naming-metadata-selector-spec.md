@@ -57,6 +57,37 @@ Naming 同时区分两类元数据来源：
 | `preserved.ip.delete.timeout` | 心跳删除超时覆盖值。 |
 | `preserved.instance.id.generator` | instance id 生成器选择。 |
 
+完整的 `__nacos.agent.endpoint.*__` 命名空间保留给 Agent Runtime Endpoint 投影。
+Version 1 使用以下 key：
+
+| Key | 含义 |
+| --- | --- |
+| `__nacos.agent.endpoint.path__` | URI path。 |
+| `__nacos.agent.endpoint.transport__` | 规范 transport；必须与 Naming cluster 一致。 |
+| `__nacos.agent.endpoint.protocol__` | URI scheme，不是 Agent CallInterface protocol token。 |
+| `__nacos.agent.endpoint.protocolVersion__` | 可选的旧 A2A protocol-version 兼容事实。 |
+| `__nacos.agent.endpoint.supportTls__` | 投影 URI 是否使用 TLS。 |
+| `__nacos.agent.endpoint.query__` | 原始 URI query。 |
+| `__nacos.agent.endpoint.tenant__` | 存在时保存 protocol native tenant。 |
+| `__nacos.agent.endpoint.version__` | 单 binding runtime Version 兼容和诊断镜像。 |
+| `__nacos.agent.endpoint.versionRange__` | 单 binding canonical Version range 兼容和诊断镜像。 |
+| `__nacos.agent.endpoint.bindings__` | Runtime Version 和 Version range binding 的 canonical JSON 数组。 |
+| `__nacos.agent.endpoint.priority__` | Endpoint priority；数值越小优先级越高。 |
+
+只有 Agent Runtime Registry 可以写入该前缀下的 key。公开 runtime 和 operational metadata
+写入必须拒绝这些 key，因此普通 operational-over-runtime 优先级规则不覆盖 Agent 投影事实。
+Endpoint weight、enabled 状态和健康状态继续使用 Naming Instance 原生字段，不使用保留
+metadata key。
+
+只有 A2A 兼容 Adapter 可以写入 `protocolVersion`。公开 RAD Endpoint metadata 和 Runtime
+revision 都排除该值。反向投影旧 A2A 响应时优先使用该值；缺失时回退到目标 Agent
+CallInterface 的 `protocolVersion`。
+
+`bindings` 是 Version 匹配事实。数组恰好包含一项时，Registry 同时写入 `version` 和
+`versionRange` 镜像；数组包含多项时移除两个 singular key。读取方在 `bindings` 存在时以其
+为准，不得合并过期 singular 值。精确 canonical 数组和 Runtime 投影规则由
+[Agent 存储规范](../ai/agent-storage-spec.md)定义。
+
 新的核心行为不得绑定到任意用户元数据 key。如果某个元数据 key 会改变 Naming 行为，必须被保留并
 写入文档。
 
@@ -109,5 +140,6 @@ Service metadata、cluster metadata 和 instance metadata 操作通过 CP metada
 - [Naming 资源规范](naming-resource-spec.md)
 - [Naming 健康检查与保护规范](naming-health-protection-spec.md)
 - [Naming 一致性与客户端状态规范](naming-consistency-client-spec.md)
+- [Agent 存储规范](../ai/agent-storage-spec.md)
 - [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
 - [兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)

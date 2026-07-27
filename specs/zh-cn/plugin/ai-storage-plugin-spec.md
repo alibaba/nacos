@@ -67,6 +67,87 @@ Nacos 资源身份。
 被禁用时路由必须显式失败，且不得调用其内容读写操作。
 
 默认 provider 为 `nacos_config`，它通过 Nacos 配置存储保存 AI 资源内容。
+`nacos_config` provider 将不透明 key 映射为 Nacos 配置坐标时，必须对逻辑 `dataId` 和
+规范资源 group 使用稳定的物理映射：
+
+- 对 `dataId`，仅 ASCII 字母、ASCII 数字和 `_`、`-`、`.`、`:` 原样保留；逻辑值只要
+  包含其他字符，就将整个值编码为 `enc.` 加 UTF-8 字节的小写十六进制。编码候选值超过
+  255 个字符时，改为 `sha256.` 加该候选值完整 SHA-256 摘要的小写十六进制。逻辑值以
+  保留的 `enc.` 前缀开头时（大小写不敏感）也必须进行同样编码，避免与自动编码结果串键。
+- 规范资源 group 不超过 128 个字符时原样保留；超过限制时，改为稳定资源前缀加
+  `sha256.`，再加规范 group 完整 SHA-256 摘要的小写十六进制。构造规范 group 之前，
+  条件编码的 group segment 也必须转义同一个大小写不敏感的 `enc.` 保留命名空间，以及
+  精确匹配 `sha256.<64位十六进制>` 的兜底格式。
+- 即使长度未超限，只要逻辑候选值已经符合保留的 SHA-256 物理格式，也必须再次哈希，避免
+  逻辑 key 直接伪造成自动生成的哈希 key。
+
+SHA-256 兜底具有确定性但不可逆，逻辑资源身份仍由 AI 资源元数据持有；`save`、`get`、
+`delete` 必须使用完全一致的物理映射。
+
+### Agent 逻辑坐标
+
+对于 `type=agent`，Agent 领域在向 provider 传递 opaque `StorageKey` 前构造以下 Nacos
+Config 逻辑坐标：
+
+```text
+group  = agent-version
+dataId = agent__<rad-ascii-v1(agentName)>__<version>.json
+```
+
+`rad-ascii-v1` 和完整 Agent Version 存储契约由
+[Agent 存储规范](../ai/agent-storage-spec.md)定义。该坐标是 provider 的逻辑输入，不是向
+调用方暴露的物理 Config 身份。
+
+内置 provider 必须把两个逻辑段都传给通用 `NacosAiConfigKeyCodec`；不能因为 Agent 领域已经
+编码 `agentName` 就跳过该 codec。物理限制内的安全值与逻辑值相同。长度和保留格式处理完全由
+通用 codec 负责：超长候选值使用其确定性 SHA-256 兜底，得到的物理结果不可逆。
+
+上层可以持久化逻辑 key format 和 content digest，但不得解析物理 Config key、要求物理 key
+可逆，或根据物理 key 重建 Agent 身份。`save`、`get`、`delete` 始终通过同一个 codec 重新
+计算物理坐标。
+
+provider 不会双读旧版物理映射产生的坐标。对已受影响的 `nacos_config` 存量数据，
+必须在只使用新映射的节点启动前，通过协调的维护窗口完成迁移。迁移必须仅限 AI 自有
+坐标，提前校验目标唯一键冲突，并在坐标改写后重建 Config 缓存。`nacos-ai-prompt` group
+下的 Prompt legacy mirror 是不属于该物理映射的兼容坐标，必须保持不变。
+
+## 插件状态与配置
+
+AI 存储 provider 接入统一插件 state。禁用非 critical provider 后，实例仍保持加载并可被
+插件管理查询，但 router 会拒绝该 provider 的新操作。内置 `ai-storage:nacos_config` 是默认
+后端，也是服务端 AI 能力依赖的 critical 插件；服务端仍依赖它时，不能通过插件管理将其禁用。
+
+以下属性为不同 AI 资源领域选择 provider：
+
+```properties
+nacos.ai.prompt.storage.provider=nacos_config
+nacos.ai.skill.storage.provider=nacos_config
+nacos.ai.agentspec.storage.provider=nacos_config
+nacos.ai.agent.storage.provider=nacos_config
+```
+
+它们属于领域路由策略，不是 `ai-storage:nacos_config` 所拥有的私有配置 definitions。
+
+AI 模块 active 时，为 Prompt、Skill、AgentSpec、Agent 分别选择的所有 provider 都是该 critical
+路由类型的必需实现；同一 provider 可以同时满足多个领域。Nacos 启动成功前，每个去重后的
+选中 provider 都必须已被发现且处于 enabled 状态，另一个可用 provider 不能作为 fallback。
+AI 模块因 function mode 或 `nacos.extension.ai.enabled=false` 关闭时，AI storage 为 inactive，
+不产生启动约束。
+
+AI storage 实现需要在 context refresh 期间使用 Spring 管理的服务完成构建，因此该类型不参与
+pre-refresh critical 校验。storage builder 注册完实例后，统一插件管理器必须立即执行相同的
+provider 级校验，并且必须在 Nacos 报告启动成功前完成。
+
+`AiResourceStorage` 统一继承 `PluginConfigSpec`。内置 provider 没有私有配置、不声明
+definitions，并以 `configurable=false` 暴露。拥有私有配置的构建结果通过继承契约声明
+definitions 和配置回调，并使用以下标准 key：
+
+```properties
+nacos.plugin.ai-storage.{provider}.{itemKey}
+```
+
+Storage builder 负责在核心插件发现前构造 service。统一配置元数据和 apply 行为属于构建后的
+service 实例，不属于 builder 或领域路由 key。
 
 ## 要求
 

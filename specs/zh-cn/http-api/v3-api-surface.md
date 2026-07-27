@@ -175,7 +175,45 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP API 规范和
 [鉴权插件规范](../auth/auth-plugin-spec.md)。
 
-## 8. 文档 Gap 记录
+## 8. 已批准的 Agent/RAD 目标 API 面
+
+下列路径是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性目标。在对应
+Controller、鉴权、传输 Binding 和测试完成前，它们不属于当前已实现 API 清单，也不计入
+第 3 节的 Controller 统计。
+
+Client 目标路径：
+
+| Method | Path | 契约 |
+| --- | --- | --- |
+| GET | `/v3/client/ai/agents/search` | 搜索 Agent 目录。 |
+| GET | `/v3/client/ai/agents` | 发现一个 Agent，可附带 Discovery Filter。 |
+| POST | `/v3/client/ai/agents/endpoints` | Upsert 一批 Runtime Endpoint 注册。 |
+| DELETE | `/v3/client/ai/agents/endpoints` | 使用 JSON body 注销一批 Runtime Endpoint。 |
+| PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 刷新一个 HTTP Publisher Client 的活性。 |
+
+Admin 和 Console 目标路径分别使用 `/v3/admin/ai/agents` 和
+`/v3/console/ai/agents` 前缀。Console 是相同相对管理契约的 UI Facade。
+
+| 相对路径 | Method | 契约 |
+| --- | --- | --- |
+| *（Base path）* | GET, POST, PUT, DELETE | 读取、创建、更新或删除 Agent 定义。 |
+| `/list` | GET | 列举 Agent Summary。 |
+| `/versions` | GET | 列举 Version Summary。 |
+| `/version` | GET | 读取一个精确 Version 定义。 |
+| `/runtime-endpoints` | GET | 读取一个完整、不分页的 Runtime Endpoint Snapshot。 |
+| `/draft` | POST, PUT, DELETE | 创建、更新或删除 Draft。 |
+| `/submit` | POST | 提交 Draft。 |
+| `/publish` | POST | 发布 Reviewed Version。 |
+| `/force-publish` | POST | 经审计地绕过 Pipeline。 |
+| `/redraft` | POST | 将 Reviewed Version 退回 Draft。 |
+| `/online` | POST | 将 Offline Version 上线。 |
+| `/offline` | POST | 将 Online Version 下线。 |
+| `/labels` | PUT | 更新自定义 Version Label。 |
+
+目标 API 不增加 Client HTTP Watch 或 Endpoint List GET。Watch 和 Push 使用协商后的
+gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` 路径。
+
+## 9. 文档 Gap 记录
 
 这不是 bug 列表，而是记录当前文档和代码可能描述了不同 API 面的地方。
 
@@ -199,7 +237,7 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
   `ControllerAdvice`，可能返回纯文本错误体。它们应在 v3 API 上收敛到
   `NacosApiExceptionHandler`。
 
-## 9. 废弃兼容说明
+## 10. 废弃兼容说明
 
 部分 v3 AI API 在本规范建立之前已经发布，后续又被更清晰的生命周期 API 或
 REST 风格 API 替代。这些旧端点应视为废弃兼容 API：

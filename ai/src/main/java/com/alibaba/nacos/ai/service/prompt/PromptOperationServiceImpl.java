@@ -84,9 +84,6 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(PromptOperationServiceImpl.class);
     
-    private static final String PROMPT_STORAGE_PROVIDER_CONFIG_KEY =
-        "nacos.ai.prompt.storage.provider";
-    
     private static final String DEFAULT_AUTHOR = "-";
     
     private static final String DEFAULT_INITIAL_VERSION = "0.0.1";
@@ -781,7 +778,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static String resolvePromptStorageProvider() {
         String provider =
-            EnvUtil.getProperty(PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
+            EnvUtil.getProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
                 NacosConfigAiResourceStorage.TYPE);
         return StringUtils.isBlank(provider) ? NacosConfigAiResourceStorage.TYPE : provider.trim();
     }

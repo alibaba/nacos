@@ -45,12 +45,16 @@ reaction to pipeline results is defined by the
 
 ## SPI
 
-Pipeline implementations are created by `PublishPipelineServiceBuilder`.
-
-| Builder method | Requirement |
-|----------------|-------------|
-| `pipelineId()` | Stable pipeline node id. |
-| `build(properties)` | Build a configured `PublishPipelineService`. |
+Pipeline implementations directly implement `PublishPipelineService`, which
+extends `PluginConfigSpec`, and register the service class through Java SPI.
+Implementations must provide a public no-argument constructor. The pipeline
+manager loads and retains lightweight service instances only when the core
+plugin provider is asked to load the `ai-pipeline` type. With
+`nacos.plugin.ai-pipeline.enabled=false`, startup defers this SPI loading. When a
+server configuration refresh enables the framework, the core plugin manager loads the
+services, restores implementation state, resolves effective configuration, and invokes
+`applyConfig` before a node may execute. A service must defer runtime resource initialization
+until this first `applyConfig` invocation.
 
 The service implements:
 
@@ -60,15 +64,21 @@ The service implements:
 | `execute(context)` | Execute review or interception logic. |
 | `getPreferOrder()` | Chain order. Lower values execute earlier. |
 | `pipelineResourceTypes()` | AI resource types supported by this node. |
+| `getConfigDefinitions()` | Declare the node implementation configuration. |
+| `applyConfig(config)` | Apply the effective item-key configuration. |
+| `getCurrentConfig()` | Return the configuration accepted by the service. |
 
 The plugin is exposed to the core plugin manager as type `ai-pipeline`.
+The former `PublishPipelineServiceBuilder` SPI and its arbitrary
+`Properties` construction path are not part of this contract.
 
 ## Execution
 
 The pipeline executor:
 
-1. Reads pipeline configuration.
-2. Selects nodes that are configured and support the target resource type.
+1. Reads pipeline configuration and checks the pipeline framework switch.
+2. Selects implementations whose unified plugin state is enabled and that
+   support the target resource type.
 3. Creates a pipeline execution record with `IN_PROGRESS`.
 4. Executes selected nodes asynchronously and serially.
 5. Persists each node result.
@@ -82,6 +92,95 @@ without pipeline interception. Pipeline output must remain compatible with
 Pipeline nodes should return deterministic results for the same resource
 version and input metadata. Nodes that call external systems must define timeout
 and retry behavior in their implementation documentation.
+
+## Configuration
+
+Pipeline framework configuration and node implementation configuration have
+different owners:
+
+| Configuration | Owner | Unified config definition |
+|---------------|-------|---------------------------|
+| `nacos.plugin.ai-pipeline.enabled` | Dynamic pipeline framework entry switch | Owned by the AI domain module configuration; not part of node definitions and never converted into implementation state. |
+| `nacos.plugin.ai-pipeline.type` | Legacy startup chain composition | Read only by the core plugin manager to supply restart-time initial implementation state; persisted or runtime unified state takes precedence. |
+| `nacos.plugin.ai-pipeline.{pipelineId}.order` | Pipeline chain ordering | Declared as the `order` item by the corresponding implementation through `PluginConfigSpec`. |
+| `nacos.plugin.ai-pipeline.{pipelineId}.{itemKey}` | The corresponding node implementation | Declared by the implementation through `PluginConfigSpec`. |
+
+There is no separate pipeline implementation configuration provider or node
+configuration model. The AI domain reads only the family-wide `enabled` entry
+switch. The core plugin manager consumes legacy `type` solely for initial state
+migration. Canonical implementation keys and aliases, including `order`, are
+resolved by the common plugin configuration source chain and delivered as
+item-key maps through `applyConfig`.
+
+Unified implementation state is the authoritative source for chain membership.
+The legacy `type` list remains only as restart-time compatibility input for the
+core plugin manager. Pipeline execution is available after the core plugin
+manager has initialized state and applied effective configuration.
+
+### Skill Scanner
+
+The built-in `ai-pipeline:skill-scanner` node declares the following
+implementation configuration. Each alias in the table is a historical relative
+key under the same `nacos.plugin.ai-pipeline.skill-scanner.` prefix.
+
+| Item key | Alias | Type | Default | Sensitive | Effect mode | Meaning |
+|----------|-------|------|---------|-----------|-------------|---------|
+| `order` | None | NUMBER | `100` | No | RUNTIME | Execution order in the pipeline chain; lower values execute earlier. |
+| `command` | `executable`, `path` | STRING | `skill-scanner` | No | RESTART | CLI command or executable path. Command names are resolved from the server process `PATH` and the user-local bin directory. |
+| `use-llm` | `useLlm` | BOOLEAN | `false` | No | RESTART | Enables LLM semantic analysis during scanning. |
+| `llm-api-key` | `llmApiKey` | STRING | empty | Yes | RESTART | Passed to the scanner process as `SKILL_SCANNER_LLM_API_KEY`. |
+| `llm-model` | `llmModel` | STRING | empty | No | RESTART | Passed to the scanner process as `SKILL_SCANNER_LLM_MODEL`. |
+| `llm-provider` | `llmProvider` | STRING | empty | No | RESTART | Passed to the CLI as its LLM provider. The current implementation does not restrict this value to an enum. |
+| `enable-meta` | `enableMeta` | BOOLEAN | `false` | No | RESTART | Enables skill-scanner meta checks. |
+
+The canonical full key is
+`nacos.plugin.ai-pipeline.skill-scanner.{itemKey}`. The implementation must
+continue accepting the listed aliases, while queries and runtime persistence
+return or store only canonical item keys. `llm-api-key` must be masked before a
+plugin detail API response and must not be written to logs.
+
+The current Skill Scanner service resolves its command and constructs immutable
+scan options during its first configuration application, so scanner fields are
+`RESTART`. `order` is independent of scanner resources and may be changed at
+runtime. If neither the configured command nor the default command can be
+resolved to an executable, the node remains loaded and queryable, but an
+attempted scan must reject publication with an installation hint.
+
+### SkillSpector
+
+The built-in `ai-pipeline:skill-spector` node declares the following
+implementation configuration. Each alias in the table is a historical relative
+key under the same `nacos.plugin.ai-pipeline.skill-spector.` prefix.
+
+| Item key | Alias | Type | Default | Sensitive | Effect mode | Meaning |
+|----------|-------|------|---------|-----------|-------------|---------|
+| `order` | None | NUMBER | `90` | No | RUNTIME | Execution order in the pipeline chain; lower values execute earlier. |
+| `command` | `executable`, `path` | STRING | `skill-spector` | No | RESTART | CLI command or executable path. Command names are resolved from the server process `PATH`, `~/ai-infra/ai-pipeline/bin`, and `~/.local/bin`. |
+| `use-llm` | `useLlm` | BOOLEAN | `false` | No | RESTART | Enables SkillSpector LLM analysis. Static scanning remains enabled when this is false. |
+| `provider` | None | STRING | empty | No | RESTART | LLM provider passed to the SkillSpector subprocess. |
+| `model` | None | STRING | empty | No | RESTART | LLM model passed to the SkillSpector subprocess. |
+| `api-key` | `apiKey` | STRING | empty | Yes | RESTART | Credential passed to the environment variable corresponding to the effective provider. |
+| `base-url` | `baseUrl` | STRING | empty | No | RESTART | OpenAI-compatible endpoint passed as `OPENAI_BASE_URL`. |
+| `log-level` | `logLevel` | STRING | `WARNING` | No | RESTART | SkillSpector subprocess log level. The current implementation does not restrict this value to an enum. |
+| `risk-score-threshold` | `riskScoreThreshold` | NUMBER | `50` | No | RESTART | Reports whose risk score is greater than the effective threshold are rejected. Integer values are clamped to `0..100`; an absent or non-integer value uses the default. |
+| `max-findings` | `maxFindings` | NUMBER | `20` | No | RESTART | Maximum findings included in the review message. Integer values above `100` are capped at `100`; an absent, non-integer, zero, or negative value uses the default. |
+
+The canonical full key is
+`nacos.plugin.ai-pipeline.skill-spector.{itemKey}`. Canonical keys take
+precedence when both a canonical key and an alias are configured. Queries and
+runtime persistence return or store only canonical item keys. `api-key` must be
+masked before a plugin detail API response and must not be written to logs.
+Explicit non-numeric values for NUMBER items are rejected by the common plugin
+configuration type check before the configuration is applied.
+
+The current SkillSpector service resolves its command and constructs immutable
+scan options during its first configuration application, so scanner fields are
+`RESTART`. `order` is independent of scanner resources and may be changed at
+runtime. Existing subprocess environment variables take precedence over values
+copied from plugin configuration. If neither the configured command nor the
+default command can be resolved to an executable, the node remains loaded and
+queryable, but an attempted scan must reject publication with an installation
+hint.
 
 ## Unified State Integration
 

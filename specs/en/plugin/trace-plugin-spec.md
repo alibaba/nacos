@@ -110,6 +110,12 @@ only matching event classes to each plugin subscriber. If `executor()` returns
 remote systems, files, databases, or other slow sinks should return a dedicated
 executor.
 
+The combined subscriber records the event interests of every loaded trace
+implementation, including implementations that are disabled during startup. It
+checks unified plugin state immediately before dispatching each event. Runtime
+enable or disable changes therefore take effect without rebuilding the combined
+subscriber, and a disabled implementation receives no newly dispatched work.
+
 The trace publisher is allowed to degrade by dropping trace events under queue
 pressure, as defined by the local event degradation rules.
 

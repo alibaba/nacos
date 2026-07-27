@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.plugin.auth.impl.condition;
 
-import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.core.auth.AuthPluginTypeResolver;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * when nacos.core.auth.system.type=ldap
+ * When the selected auth plugin type is ldap.
  *
  * @author karsonto
  */
@@ -34,6 +33,6 @@ public class ConditionOnLdapAuth implements Condition {
     public boolean matches(ConditionContext conditionContext,
         AnnotatedTypeMetadata annotatedTypeMetadata) {
         return AuthSystemTypes.LDAP.name()
-            .equalsIgnoreCase(EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE));
+            .equalsIgnoreCase(AuthPluginTypeResolver.resolve());
     }
 }

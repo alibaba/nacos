@@ -44,6 +44,10 @@ The following SDK surfaces are documented by
 `specs/*/testing/java-sdk-integration-test-spec.md` and should be added in
 later batches:
 
+- `AgentDiscoveryService`: Agent/RAD contract models and local validation are
+  covered by `nacos-api` unit tests, but no public SDK service method or
+  transport binding is exposed yet, so there is no standalone Java SDK IT
+  scenario to execute in this change
 - deprecated `NamingMaintainService`
 - maintainer-client SDK interfaces are tracked separately in
   `test/maintainer-sdk-test`

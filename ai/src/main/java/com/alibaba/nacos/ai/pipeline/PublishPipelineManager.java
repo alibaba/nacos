@@ -16,32 +16,33 @@
 
 package com.alibaba.nacos.ai.pipeline;
 
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
-import com.alibaba.nacos.ai.pipeline.model.PipelineNodeConfig;
+import com.alibaba.nacos.ai.config.AiPipelineModuleConfig;
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 /**
  * Manager for loading, caching and querying publish pipeline SPI plugins.
  *
- * <p>Uses {@link ServiceLoader} to discover all {@link PublishPipelineServiceBuilder} implementations,
- * builds {@link PublishPipelineService} instances with per-node configuration properties, and caches
- * them by pipelineId for runtime lookup.</p>
+ * <p>Uses {@link ServiceLoader} to discover {@link PublishPipelineService} implementations and
+ * caches them by pipelineId for runtime lookup. Service configuration is applied by the common
+ * plugin configuration lifecycle.</p>
  *
  * @author kiro
  * @since 3.2.0
@@ -50,85 +51,81 @@ public class PublishPipelineManager {
     
     private static final Logger LOG = LoggerFactory.getLogger(PublishPipelineManager.class);
     
+    private final AiPipelineModuleConfig moduleConfig;
+    
     /**
      * Cached pipeline services keyed by pipelineId.
      */
     private final Map<String, PublishPipelineService> serviceMap = new HashMap<>();
     
-    /**
-     * Initialize the manager by loading all SPI builders and building pipeline service instances.
-     *
-     * <p>For each builder, looks up the corresponding node configuration from the config. If found,
-     * passes the node's properties to {@code builder.build(properties)}; otherwise passes empty Properties.
-     * If a builder throws an exception, it is logged and skipped.</p>
-     *
-     * @param config the pipeline configuration containing node properties
-     */
-    public void init(PipelineConfig config) {
-        ServiceLoader<PublishPipelineServiceBuilder> builders =
-            ServiceLoader.load(PublishPipelineServiceBuilder.class);
-        initWithBuilders(builders, config);
+    private volatile boolean initialized;
+    
+    public PublishPipelineManager(AiPipelineModuleConfig moduleConfig) {
+        this.moduleConfig = Objects.requireNonNull(moduleConfig,
+            "AI pipeline module config cannot be null");
     }
     
     /**
-     * Initialize the manager with the given builders and config. Package-private for testability.
-     *
-     * @param builders iterable of pipeline service builders
-     * @param config   the pipeline configuration containing node properties
+     * Load direct pipeline service implementations through Java SPI.
      */
-    void initWithBuilders(Iterable<PublishPipelineServiceBuilder> builders, PipelineConfig config) {
-        Map<String, PipelineNodeConfig> nodeConfigMap = new HashMap<>();
-        if (config.getNodes() != null) {
-            for (PipelineNodeConfig node : config.getNodes()) {
-                if (node.getPipelineId() != null) {
-                    nodeConfigMap.put(node.getPipelineId(), node);
-                }
-            }
+    public synchronized void init() {
+        if (initialized) {
+            return;
         }
-        
-        for (PublishPipelineServiceBuilder builder : builders) {
+        ServiceLoader<PublishPipelineService> services =
+            ServiceLoader.load(PublishPipelineService.class);
+        initWithServices(services);
+        initialized = true;
+    }
+    
+    /**
+     * Initialize the manager with the given services. Package-private for testability.
+     *
+     * @param services iterable of pipeline services
+     */
+    void initWithServices(Iterable<PublishPipelineService> services) {
+        for (PublishPipelineService service : services) {
             try {
-                PipelineNodeConfig nodeConfig = nodeConfigMap.get(builder.pipelineId());
-                Properties properties = (nodeConfig != null && nodeConfig.getProperties() != null)
-                    ? nodeConfig.getProperties() : new Properties();
-                PublishPipelineService service = builder.build(properties);
                 if (service != null && service.pipelineId() != null) {
-                    serviceMap.put(service.pipelineId(), service);
-                    LOG.info("Loaded pipeline plugin: {}", service.pipelineId());
+                    PublishPipelineService previous = serviceMap.putIfAbsent(
+                        service.pipelineId(), service);
+                    if (previous == null) {
+                        LOG.info("Loaded pipeline plugin: {}", service.pipelineId());
+                    } else {
+                        LOG.warn("Ignored duplicate pipeline plugin: {}", service.pipelineId());
+                    }
                 }
             } catch (Exception e) {
-                LOG.warn("Failed to load pipeline plugin: {}", builder.pipelineId(), e);
+                LOG.warn("Failed to load pipeline plugin", e);
             }
         }
     }
     
     /**
-     * Get pipeline services matching the given resource type and node configuration list.
+     * Get enabled pipeline services matching the given resource type.
      *
-     * <p>Filters services that support the specified resource type and whose pipelineId is present
-     * in the nodes list. Results are sorted by configured node order first, then
-     * {@link PublishPipelineService#getPreferOrder()} ascending.</p>
+     * <p>The module switch controls whether the pipeline capability is entered. Unified plugin
+     * state selects chain members, and each configured service supplies its applied order.</p>
      *
      * @param resourceType the resource type to filter by
-     * @param nodes        the configured pipeline nodes to match against
      * @return sorted list of matching pipeline services, never null, no null elements
      */
     public List<PublishPipelineService> getPipelineServices(
-        PublishPipelineResourceType resourceType,
-        List<PipelineNodeConfig> nodes) {
-        Map<String, PipelineNodeConfig> nodeConfigMap = new HashMap<>();
-        for (PipelineNodeConfig node : nodes) {
-            if (node.getPipelineId() != null) {
-                nodeConfigMap.put(node.getPipelineId(), node);
-            }
+        PublishPipelineResourceType resourceType) {
+        if (!moduleConfig.isEnabled()) {
+            return Collections.emptyList();
         }
-        
+        Optional<PluginStateChecker> stateChecker = PluginStateCheckerHolder.getInstance();
+        if (stateChecker.isEmpty()) {
+            LOG.debug("Unified plugin state is not initialized; skip publish pipelines");
+            return Collections.emptyList();
+        }
         return serviceMap.values().stream()
-            .filter(service -> nodeConfigMap.containsKey(service.pipelineId()))
-            .filter(service -> PluginStateCheckerHolder.isPluginEnabled(
+            .filter(service -> stateChecker.get().isPluginEnabled(
                 PluginType.AI_PIPELINE.getType(), service.pipelineId()))
             .filter(service -> supportsResourceType(service, resourceType))
-            .sorted(Comparator.comparingInt(service -> getEffectiveOrder(service, nodeConfigMap)))
+            .sorted(Comparator.comparingInt(PublishPipelineService::getPreferOrder)
+                .thenComparing(PublishPipelineService::pipelineId))
             .collect(Collectors.toList());
     }
     
@@ -150,12 +147,4 @@ public class PublishPipelineManager {
         return Arrays.asList(types).contains(resourceType);
     }
     
-    private int getEffectiveOrder(PublishPipelineService service,
-        Map<String, PipelineNodeConfig> nodeConfigMap) {
-        PipelineNodeConfig nodeConfig = nodeConfigMap.get(service.pipelineId());
-        if (nodeConfig != null && nodeConfig.getOrder() != null) {
-            return nodeConfig.getOrder();
-        }
-        return service.getPreferOrder();
-    }
 }

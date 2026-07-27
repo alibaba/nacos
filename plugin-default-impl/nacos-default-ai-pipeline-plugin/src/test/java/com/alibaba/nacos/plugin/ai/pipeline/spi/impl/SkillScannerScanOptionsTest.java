@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -36,7 +37,8 @@ class SkillScannerScanOptionsTest {
     
     @Test
     void fromPropertiesEmptyTest() {
-        SkillScannerScanOptions o = SkillScannerScanOptions.fromProperties(new Properties());
+        SkillScannerScanOptions o =
+            SkillScannerPluginConfig.fromMap(Collections.emptyMap()).getScanOptions();
         assertFalse(o.isUseLlm());
         assertFalse(o.isEnableMeta());
         assertNull(o.getLlmProvider());
@@ -48,13 +50,14 @@ class SkillScannerScanOptionsTest {
     @Test
     void fromPropertiesLlmTest() {
         Properties p = new Properties();
-        p.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
-        p.setProperty(SkillScannerScanOptions.PROP_LLM_API_KEY, "your_api_key");
-        p.setProperty(SkillScannerScanOptions.PROP_LLM_MODEL, "qwen-max");
-        p.setProperty(SkillScannerScanOptions.PROP_LLM_PROVIDER, "openai");
-        p.setProperty(SkillScannerScanOptions.PROP_ENABLE_META, "true");
+        p.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
+        p.setProperty(SkillScannerPluginConfig.LLM_API_KEY, "your_api_key");
+        p.setProperty(SkillScannerPluginConfig.LLM_MODEL, "qwen-max");
+        p.setProperty(SkillScannerPluginConfig.LLM_PROVIDER, "openai");
+        p.setProperty(SkillScannerPluginConfig.ENABLE_META, "true");
         
-        SkillScannerScanOptions o = SkillScannerScanOptions.fromProperties(p);
+        SkillScannerScanOptions o = SkillScannerPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(p)).getScanOptions();
         assertTrue(o.isUseLlm());
         assertTrue(o.isEnableMeta());
         assertEquals("openai", o.getLlmProvider());

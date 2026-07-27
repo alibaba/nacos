@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.datasource.impl.dialect;
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
 import com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgresqlFunctionEnum;
 
+import java.sql.SQLException;
+
 /**
  * PostgreSQL database dialect.
  *
@@ -26,9 +28,32 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgres
  */
 public class PostgresqlDatabaseDialect extends AbstractDatabaseDialect {
     
+    /**
+     * PostgreSQL SQLState for {@code unique_violation}. The driver raises it when an insert breaks
+     * a unique or primary key constraint, even in cases where Spring's exception translation cannot
+     * classify the failure as a {@code DuplicateKeyException}.
+     */
+    private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.POSTGRESQL;
+    }
+    
+    @Override
+    public boolean isDuplicateKeyException(Throwable throwable) {
+        if (super.isDuplicateKeyException(throwable)) {
+            return true;
+        }
+        Throwable cause = throwable;
+        while (cause != null) {
+            if (cause instanceof SQLException
+                && UNIQUE_VIOLATION_SQL_STATE.equals(((SQLException) cause).getSQLState())) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
     
     @Override

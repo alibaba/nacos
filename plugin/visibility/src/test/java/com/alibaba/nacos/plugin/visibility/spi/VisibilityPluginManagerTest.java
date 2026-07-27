@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.visibility.spi;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
@@ -29,6 +30,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -89,10 +92,15 @@ class VisibilityPluginManagerTest {
     }
     
     @Test
-    void testFindVisibilityServiceWhenVisibilityPluginDisabled() {
+    void testFindVisibilityServiceWhenModuleDisabled() throws Exception {
+        Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
+        initialized.setAccessible(true);
+        initialized.set(manager, false);
         System.setProperty(VISIBILITY_ENABLED_KEY, "false");
         Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
+        
         assertFalse(result.isPresent());
+        assertFalse((Boolean) initialized.get(manager));
     }
     
     @Test
@@ -129,6 +137,18 @@ class VisibilityPluginManagerTest {
     }
     
     @Test
+    void testRegisterConfigurableVisibilityServiceSkipsLegacyInit() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("nacos.plugin.visibility.configurable.timeout", "1000");
+        ConfigurableVisibilityService service = new ConfigurableVisibilityService();
+        
+        registerVisibilityService(service, properties);
+        
+        assertEquals(service, serviceMap.get("configurable"));
+        assertFalse(service.legacyInitCalled);
+    }
+    
+    @Test
     void testInitAndPropertyResolutionBranches() throws Exception {
         Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
         initialized.setAccessible(true);
@@ -152,6 +172,20 @@ class VisibilityPluginManagerTest {
     void testResolveInitPropertiesFallsBackWhenEnvUtilThrows() throws Exception {
         System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
         EnvUtil.setThrowException(true);
+        
+        Method propertiesMethod =
+            VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
+        propertiesMethod.setAccessible(true);
+        
+        Properties result = (Properties) propertiesMethod.invoke(manager);
+        
+        assertEquals("5000", result.getProperty("nacos.plugin.visibility.fallback.timeout"));
+    }
+    
+    @Test
+    void testResolveInitPropertiesFallsBackWhenEnvResultIsNotProperties() throws Exception {
+        System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
+        EnvUtil.setProperties("invalid-properties");
         
         Method propertiesMethod =
             VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
@@ -242,6 +276,34 @@ class VisibilityPluginManagerTest {
         @Override
         public void init(Properties properties) {
             throw new IllegalStateException("init failed");
+        }
+    }
+    
+    private static class ConfigurableVisibilityService extends TestVisibilityService {
+        
+        private boolean legacyInitCalled;
+        
+        private ConfigurableVisibilityService() {
+            super("configurable");
+        }
+        
+        @Override
+        public void init(Properties properties) {
+            legacyInitCalled = true;
+        }
+        
+        @Override
+        public List<ConfigItemDefinition> getConfigDefinitions() {
+            return Collections.singletonList(new ConfigItemDefinition());
+        }
+        
+        @Override
+        public void applyConfig(Map<String, String> config) {
+        }
+        
+        @Override
+        public Map<String, String> getCurrentConfig() {
+            return Collections.emptyMap();
         }
     }
 }

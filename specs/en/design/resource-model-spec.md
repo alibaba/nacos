@@ -96,7 +96,7 @@ field, or compatibility field.
 
 resourceType is a type classifier. It is suitable for shared governance models
 that contain multiple resource types, such as AI Registry resource types:
-`mcp`, `a2a`, `prompt`, `skill`, and `agentspec`.
+`mcp`, `agent`, `prompt`, `skill`, and `agentspec`.
 
 resourceType is not a business grouping. AI resources should not introduce a
 Group identity field unless a domain spec explicitly defines additional
@@ -114,7 +114,7 @@ Different domains expose domain-specific names:
 | Config | `dataId` |
 | Naming service | `serviceName` |
 | MCP Server | `name` or `mcpName` |
-| A2A AgentCard | `name` or `agentName` |
+| Agent | `agentName` |
 | Prompt | `promptKey` |
 | Skill | `name` |
 | AgentSpec | `name` |
@@ -210,7 +210,7 @@ NamespaceId -> resourceType -> resourceName
 ```
 
 It covers AI Registry resources such as
-[MCP Server](../ai/mcp-server-spec.md), [A2A AgentCard](../ai/a2a-agent-spec.md),
+[MCP Server](../ai/mcp-server-spec.md), [Agent](../ai/agent-management-spec.md),
 [Prompt](../ai/prompt-spec.md), [Skill](../ai/skill-spec.md), and
 [AgentSpec](../ai/agentspec-spec.md). The shared AI model is defined by the
 [AI Registry Spec](../ai/ai-registry-spec.md) and the
@@ -253,21 +253,25 @@ resourceName. MCP-specific metadata includes protocol, front protocol,
 repository, packages, icons, website URL, local or remote server config,
 endpoint spec, tool spec, status, and discovered capabilities.
 
-### 6.2 A2A AgentCard
+### 6.2 Agent
 
-A2A AgentCard canonical resource identity is:
+Agent canonical resource identity is:
 
 ```text
-namespaceId -> a2a -> agentName
+namespaceId -> agent -> agentName
 ```
 
-AgentCard resources describe agent capabilities, skills, supported interfaces,
-provider information, security schemes, signatures, and endpoint metadata.
+An Agent owns directory and governance metadata. Each Agent version owns an
+ordered set of protocol-neutral call interfaces. A2A is one protocol binding
+whose native descriptor is an AgentCard; it is not a second top-level AI
+resource identity. Runtime endpoints have a client-owned lifecycle and are
+projected into Agent discovery without becoming version content.
 
-`registrationType` participates in AgentCard lookup and compatibility
-semantics, but it is not the top-level second-layer field. Its relation with
-resourceName, version, and endpoint should be defined by a specific A2A domain
-spec.
+The complete model is defined by the
+[Agent Management Spec](../ai/agent-management-spec.md). Remote consumer
+discovery follows the [RAD Protocol Spec](../ai/rad-protocol-spec.md), while
+legacy AgentCard APIs are compatibility facades defined by the
+[A2A Agent Spec](../ai/a2a-agent-spec.md).
 
 ### 6.3 Prompt
 
@@ -312,7 +316,7 @@ namespaceId -> agentspec -> agentSpecName
 ```
 
 AgentSpec assembles agent configuration by referencing prompts, skills, MCP
-servers, A2A agents, or other required resources. AgentSpec should reference
+servers, Agents, or other required resources. AgentSpec should reference
 other resources by stable identity and version or label, not by storage
 implementation details.
 

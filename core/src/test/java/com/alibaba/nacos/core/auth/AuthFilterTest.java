@@ -256,6 +256,33 @@ class AuthFilterTest {
     
     @Test
     @Secured
+    void testDoFilterWithUnauthorizedIdentityResultWritesForbiddenResponse()
+        throws NoSuchMethodException, ServletException, IOException, AccessException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
+        when(methodsCache.getMethod(request)).thenReturn(this.getClass().getDeclaredMethod(
+            "testDoFilterWithUnauthorizedIdentityResultWritesForbiddenResponse"));
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request),
+            any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class)))
+            .thenReturn(AuthResult.failureResult(401, "invalid token"));
+        StringWriter out = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(out));
+        
+        authFilter.doFilter(request, response, filterChain);
+        
+        verify(filterChain, never()).doFilter(request, response);
+        verify(response).setStatus(eq(403));
+        assertTrue(out.toString().contains("\"code\":10001"));
+        assertTrue(out.toString().contains("Code: 401, Message: invalid token."));
+    }
+    
+    @Test
+    @Secured
     void testDoFilterWithNeedAuthSecuredAuthorityFailure()
         throws NoSuchMethodException, ServletException, IOException, AccessException {
         when(authConfig.isAuthEnabled()).thenReturn(true);

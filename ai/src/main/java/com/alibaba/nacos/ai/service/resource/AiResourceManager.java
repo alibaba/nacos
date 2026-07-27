@@ -72,7 +72,7 @@ public class AiResourceManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AiResourceManager.class);
     
-    private static final int LATEST_ONLINE_VERSION_PAGE_SIZE = 500;
+    private static final int VERSION_SCAN_PAGE_SIZE = 500;
     
     private final AiResourcePersistService aiResourcePersistService;
     
@@ -1114,26 +1114,41 @@ public class AiResourceManager {
         }
     }
     
+    /**
+     * Resolve the maximum version that has been published, including online and offline versions.
+     */
+    public String resolveMaxPublishedVersion(String namespaceId, String name, String type) {
+        return resolveMaxVersion(namespaceId, name, type,
+            AiResourceConstants.VERSION_STATUS_ONLINE,
+            AiResourceConstants.VERSION_STATUS_OFFLINE);
+    }
+    
     private String resolveLatestOnlineVersion(String namespaceId, String name, String type) {
+        return resolveMaxVersion(namespaceId, name, type,
+            AiResourceConstants.VERSION_STATUS_ONLINE);
+    }
+    
+    private String resolveMaxVersion(String namespaceId, String name, String type,
+        String... statuses) {
         List<String> versions = new ArrayList<>();
-        int pageNo = 1;
-        while (true) {
-            Page<AiResourceVersion> page =
-                aiResourceVersionPersistService.list(namespaceId, name, type,
-                    AiResourceConstants.VERSION_STATUS_ONLINE, pageNo,
-                    LATEST_ONLINE_VERSION_PAGE_SIZE);
-            if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
-                break;
-            }
-            for (AiResourceVersion v : page.getPageItems()) {
-                if (v != null && StringUtils.isNotBlank(v.getVersion())) {
-                    versions.add(v.getVersion().trim());
+        for (String status : statuses) {
+            int pageNo = 1;
+            while (true) {
+                Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId,
+                    name, type, status, pageNo, VERSION_SCAN_PAGE_SIZE);
+                if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
+                    break;
                 }
+                for (AiResourceVersion v : page.getPageItems()) {
+                    if (v != null && StringUtils.isNotBlank(v.getVersion())) {
+                        versions.add(v.getVersion().trim());
+                    }
+                }
+                if (page.getPageItems().size() < VERSION_SCAN_PAGE_SIZE) {
+                    break;
+                }
+                pageNo++;
             }
-            if (page.getPageItems().size() < LATEST_ONLINE_VERSION_PAGE_SIZE) {
-                break;
-            }
-            pageNo++;
         }
         if (versions.isEmpty()) {
             return null;

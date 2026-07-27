@@ -5,7 +5,6 @@ import type {
   SkillListResponse,
   SkillAdminDetail,
   SkillDocument,
-  SkillUploadPrecheckRequest,
   SkillUploadPrecheckResult,
 } from '@/types/skill';
 
@@ -69,14 +68,23 @@ export const skillApi = {
     }) as ApiResult<string>;
   },
 
-  /** Batch precheck skill metadata before uploading the full ZIP */
-  batchPrecheckUpload: (
-    requests: SkillUploadPrecheckRequest[],
-  ): ApiResult<SkillUploadPrecheckResult[]> =>
-    client.post(`${BASE}/upload/batch/precheck`, requests, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 30000,
-    }) as ApiResult<SkillUploadPrecheckResult[]>,
+  /** Precheck one or more skills from the original ZIP */
+  precheckUpload: (
+    namespaceId: string,
+    file: File,
+    targetVersion?: string,
+  ): ApiResult<SkillUploadPrecheckResult[]> => {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('namespaceId', namespaceId);
+    if (targetVersion) {
+      formData.append('targetVersion', targetVersion);
+    }
+    return client.post(`${BASE}/upload/precheck`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }) as ApiResult<SkillUploadPrecheckResult[]>;
+  },
 
   /** Batch upload skills from a multi-skill ZIP archive */
   batchUpload: (

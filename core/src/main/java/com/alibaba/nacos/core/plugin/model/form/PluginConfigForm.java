@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.plugin.model.form;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,7 +30,7 @@ public class PluginConfigForm {
     
     private String pluginName;
     
-    private Map<String, String> config;
+    private Map<String, String> config = new LinkedHashMap<>();
     
     private boolean localOnly = false;
     

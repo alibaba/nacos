@@ -45,14 +45,11 @@ public class VisibilityPluginManager {
     
     private static final String PROPERTIES_PREFIX = "nacos.plugin.visibility.";
     
-    private static final String ENABLED_PROPERTY = PROPERTIES_PREFIX + "enabled";
-    
     private final Map<String, VisibilityService> visibilityServiceMap = new ConcurrentHashMap<>();
     
     private volatile boolean initialized;
     
     private VisibilityPluginManager() {
-        initVisibilityServices();
     }
     
     private synchronized void initVisibilityServices() {
@@ -97,14 +94,23 @@ public class VisibilityPluginManager {
                 service.getClass());
             return;
         }
-        Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
-        try {
-            service.init(serviceProperties);
-        } catch (Throwable ex) {
-            LOGGER.warn(
-                "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
-                service.getClass(), serviceName, ex);
-            return;
+        if (!service.isConfigurable()) {
+            Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
+            if (!serviceProperties.isEmpty()) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
+                        + "init(Properties) configuration. Declare configuration definitions to use "
+                        + "unified plugin configuration.",
+                    service.getClass(), serviceName);
+            }
+            try {
+                service.init(serviceProperties);
+            } catch (Throwable ex) {
+                LOGGER.warn(
+                    "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
+                    service.getClass(), serviceName, ex);
+                return;
+            }
         }
         visibilityServiceMap.put(serviceName, service);
         LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",
@@ -137,11 +143,12 @@ public class VisibilityPluginManager {
      * @return optional visibility service
      */
     public Optional<VisibilityService> findVisibilityService(String serviceName) {
-        if (!isVisibilityPluginEnabled()) {
+        if (!isVisibilityModuleEnabled()) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY is disabled by {}",
-                ENABLED_PROPERTY);
+                VisibilityPluginTypePolicy.VISIBILITY_ENABLED_PROPERTY);
             return Optional.empty();
         }
+        initVisibilityServices();
         if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.VISIBILITY.getType(),
             serviceName)) {
             LOGGER.debug("[VisibilityPluginManager] Plugin VISIBILITY:{} is disabled", serviceName);
@@ -150,16 +157,15 @@ public class VisibilityPluginManager {
         return Optional.ofNullable(visibilityServiceMap.get(serviceName));
     }
     
-    private boolean isVisibilityPluginEnabled() {
+    private boolean isVisibilityModuleEnabled() {
         Properties allProperties = resolveInitProperties();
-        String enabledValue = allProperties.getProperty(ENABLED_PROPERTY);
-        if (StringUtils.isBlank(enabledValue)) {
-            return true;
-        }
-        return Boolean.parseBoolean(enabledValue);
+        String enabledValue = allProperties.getProperty(
+            VisibilityPluginTypePolicy.VISIBILITY_ENABLED_PROPERTY);
+        return StringUtils.isBlank(enabledValue) || Boolean.parseBoolean(enabledValue);
     }
     
     public Map<String, VisibilityService> getAllPlugins() {
+        initVisibilityServices();
         return Collections.unmodifiableMap(visibilityServiceMap);
     }
     
@@ -176,7 +182,12 @@ public class VisibilityPluginManager {
             LOGGER.debug(
                 "[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.",
                 ex);
+            return copySystemProperties();
         }
+        return copySystemProperties();
+    }
+    
+    private Properties copySystemProperties() {
         Properties fallback = new Properties();
         fallback.putAll(System.getProperties());
         return fallback;

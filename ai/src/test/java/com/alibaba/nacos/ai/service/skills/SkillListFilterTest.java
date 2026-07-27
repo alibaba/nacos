@@ -19,8 +19,7 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
+import com.alibaba.nacos.ai.pipeline.TestAiPipelineSupport;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -74,9 +73,6 @@ class SkillListFilterTest {
     private AiResourceVersionPersistService aiResourceVersionPersistService;
     
     @Mock
-    private PipelineConfigProvider pipelineConfigProvider;
-    
-    @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
     
     @Mock
@@ -97,12 +93,10 @@ class SkillListFilterTest {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
-        PipelineConfig disabledConfig = new PipelineConfig();
-        disabledConfig.setEnabled(false);
-        lenient().when(pipelineConfigProvider.getConfig()).thenReturn(disabledConfig);
+        PublishPipelineManager pipelineManager = TestAiPipelineSupport.newManager(false,
+            List.of(), List.of());
         PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(
-            new PublishPipelineManager(), pipelineConfigProvider, pipelineExecutionRepository,
-            Executors.newSingleThreadExecutor());
+            pipelineManager, pipelineExecutionRepository, Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService,
             aiResourceVersionPersistService, publishPipelineExecutor,
             manifestService,
@@ -122,6 +116,7 @@ class SkillListFilterTest {
             visibilityManagerStatic.close();
         }
         AiResourceStorageRouter.reset();
+        TestAiPipelineSupport.clearStateChecker();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     

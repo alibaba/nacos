@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc.constant;
 
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+
 /**
  * Server-specific OIDC authentication plugin constants.
  *
@@ -38,82 +40,127 @@ public final class OidcConstants {
     // ==================== Configuration Keys ====================
     
     /**
-     * Configuration prefix for OIDC plugin.
+     * Legacy configuration prefix for OIDC plugin.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.} instead.
      */
+    @Deprecated
     public static final String CONFIG_PREFIX = "nacos.core.auth.plugin.oidc.";
     
     /**
-     * OIDC issuer URI (for auto-discovery).
+     * Legacy OIDC issuer URI key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.issuer-uri} instead.
      */
+    @Deprecated
     public static final String CONFIG_ISSUER_URI = CONFIG_PREFIX + "issuer-uri";
     
     /**
-     * OIDC client ID.
+     * Legacy OIDC client ID key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.client-id} instead.
      */
+    @Deprecated
     public static final String CONFIG_CLIENT_ID = CONFIG_PREFIX + "client-id";
     
     /**
-     * OIDC client secret.
+     * Legacy OIDC client secret key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.client-secret} instead.
      */
+    @Deprecated
     public static final String CONFIG_CLIENT_SECRET = CONFIG_PREFIX + "client-secret";
     
     /**
-     * OIDC scopes.
+     * Legacy OIDC scopes key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.scope} instead.
      */
+    @Deprecated
     public static final String CONFIG_SCOPE = CONFIG_PREFIX + "scope";
     
     /**
-     * Token validation method: jwt or introspection.
+     * Legacy token validation method key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.token-validation-method} instead.
      */
+    @Deprecated
     public static final String CONFIG_TOKEN_VALIDATION_METHOD =
         CONFIG_PREFIX + "token-validation-method";
     
     /**
-     * JWKS cache TTL in seconds.
+     * Legacy JWKS cache TTL key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.jwks-cache-ttl-seconds} instead.
      */
+    @Deprecated
     public static final String CONFIG_JWKS_CACHE_TTL = CONFIG_PREFIX + "jwks-cache-ttl-seconds";
     
     /**
-     * Username claim in ID token.
+     * Legacy username claim key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.username-claim} instead.
      */
+    @Deprecated
     public static final String CONFIG_USERNAME_CLAIM = CONFIG_PREFIX + "username-claim";
     
     /**
-     * Roles claim in ID token.
+     * Legacy roles claim key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.roles-claim} instead.
      */
+    @Deprecated
     public static final String CONFIG_ROLES_CLAIM = CONFIG_PREFIX + "roles-claim";
     
     /**
-     * Admin role name in OIDC claims.
+     * Legacy admin role key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.admin-role} instead.
      */
+    @Deprecated
     public static final String CONFIG_ADMIN_ROLE = CONFIG_PREFIX + "admin-role";
     
     /**
-     * Auto create user on first login.
+     * Legacy auto create user key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.auto-create-user} instead.
      */
+    @Deprecated
     public static final String CONFIG_AUTO_CREATE_USER = CONFIG_PREFIX + "auto-create-user";
     
     /**
-     * External authorization endpoint (IdP handles all authorization).
+     * Legacy external authorization endpoint key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-endpoint} instead.
      */
+    @Deprecated
     public static final String CONFIG_AUTHORIZATION_ENDPOINT =
         CONFIG_PREFIX + "authorization-endpoint";
     
     /**
-     * Authorization request timeout in milliseconds.
+     * Legacy authorization request timeout key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-timeout-ms} instead.
      */
+    @Deprecated
     public static final String CONFIG_AUTHORIZATION_TIMEOUT_MS =
         CONFIG_PREFIX + "authorization-timeout-ms";
     
     /**
-     * Whether to enforce strict nonce validation.
+     * Legacy strict nonce validation key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.strict-nonce-validation} instead.
      */
+    @Deprecated
     public static final String CONFIG_STRICT_NONCE_VALIDATION =
         CONFIG_PREFIX + "strict-nonce-validation";
     
     /**
-     * Whether to enforce strict audience validation.
+     * Legacy strict audience validation key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.oidc.strict-audience-validation} instead.
      */
+    @Deprecated
     public static final String CONFIG_STRICT_AUDIENCE_VALIDATION =
         CONFIG_PREFIX + "strict-audience-validation";
     
@@ -122,37 +169,41 @@ public final class OidcConstants {
     /**
      * Default token validation method.
      */
-    public static final String DEFAULT_TOKEN_VALIDATION_METHOD = "jwt";
+    public static final String DEFAULT_TOKEN_VALIDATION_METHOD =
+        OidcAuthPluginConfig.DEFAULT_TOKEN_VALIDATION_METHOD;
     
     /**
      * Default JWKS cache TTL: 1 hour.
      */
-    public static final long DEFAULT_JWKS_CACHE_TTL_SECONDS = 3600L;
+    public static final long DEFAULT_JWKS_CACHE_TTL_SECONDS =
+        OidcAuthPluginConfig.DEFAULT_JWKS_CACHE_TTL_SECONDS;
     
     /**
      * Default username claim.
      */
-    public static final String DEFAULT_USERNAME_CLAIM = "preferred_username";
+    public static final String DEFAULT_USERNAME_CLAIM =
+        OidcAuthPluginConfig.DEFAULT_USERNAME_CLAIM;
     
     /**
      * Default roles claim.
      */
-    public static final String DEFAULT_ROLES_CLAIM = "roles";
+    public static final String DEFAULT_ROLES_CLAIM = OidcAuthPluginConfig.DEFAULT_ROLES_CLAIM;
     
     /**
      * Default admin role.
      */
-    public static final String DEFAULT_ADMIN_ROLE = "nacos-admin";
+    public static final String DEFAULT_ADMIN_ROLE = OidcAuthPluginConfig.DEFAULT_ADMIN_ROLE;
     
     /**
      * Default scope.
      */
-    public static final String DEFAULT_SCOPE = "openid profile email";
+    public static final String DEFAULT_SCOPE = OidcAuthPluginConfig.DEFAULT_SCOPE;
     
     /**
      * Default authorization timeout in milliseconds: 5 seconds.
      */
-    public static final long DEFAULT_AUTHORIZATION_TIMEOUT_MS = 5000L;
+    public static final long DEFAULT_AUTHORIZATION_TIMEOUT_MS =
+        OidcAuthPluginConfig.DEFAULT_AUTHORIZATION_TIMEOUT_MS;
     
     // ==================== HTTP Status Codes (server-specific) ====================
     

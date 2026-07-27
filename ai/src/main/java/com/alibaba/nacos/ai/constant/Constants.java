@@ -135,6 +135,20 @@ public class Constants {
             "__nacos.agent.endpoint.tenant__";
     }
     
+    public static class Agent {
+        
+        /**
+         * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
+         */
+        public static final String RESOURCE_TYPE_AGENT = "agent";
+        
+        /**
+         * Selects the AI Storage provider for Agent Version content.
+         */
+        public static final String AGENT_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.agent.storage.provider";
+    }
+    
     public static class Skills {
         
         public static final String CONSOLE_PATH = "/v3/console/ai/skills";
@@ -152,6 +166,9 @@ public class Constants {
         public static final String SEARCH_ACCURATE = "accurate";
         
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
+        
+        public static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.skill.storage.provider";
         
         /**
          * Resource type constant used in {@code ai_resource_version.type} for skill rows.
@@ -296,6 +313,9 @@ public class Constants {
          * Default namespace for prompt.
          */
         public static final String PROMPT_DEFAULT_NAMESPACE = "public";
+        
+        public static final String PROMPT_STORAGE_PROVIDER_CONFIG_KEY =
+            "nacos.ai.prompt.storage.provider";
         
         /**
          * Config type for prompt.

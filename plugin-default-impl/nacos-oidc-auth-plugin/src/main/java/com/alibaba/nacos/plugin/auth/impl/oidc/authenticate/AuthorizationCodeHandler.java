@@ -18,7 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.authenticate;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadataProvider;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
@@ -60,9 +61,9 @@ public class AuthorizationCodeHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationCodeHandler.class);
     
-    private static volatile AuthorizationCodeHandler instance;
+    private final OidcAuthPluginConfig config;
     
-    private final OidcAuthConfig config;
+    private final OidcProviderMetadataProvider metadataProvider;
     
     private final JwtTokenValidator tokenValidator;
     
@@ -80,27 +81,20 @@ public class AuthorizationCodeHandler {
      */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     
-    private AuthorizationCodeHandler() {
-        this.config = OidcAuthConfig.getInstance();
-        this.tokenValidator = JwtTokenValidator.getInstance();
-        this.userMapper = OidcUserMapper.getInstance();
-        this.secureRandom = new SecureRandom();
+    public AuthorizationCodeHandler(OidcAuthPluginConfig config,
+        OidcProviderMetadataProvider metadataProvider, JwtTokenValidator tokenValidator,
+        OidcUserMapper userMapper) {
+        this(config, metadataProvider, tokenValidator, userMapper, new SecureRandom());
     }
     
-    /**
-     * Get singleton instance.
-     *
-     * @return AuthorizationCodeHandler instance
-     */
-    public static AuthorizationCodeHandler getInstance() {
-        if (instance == null) {
-            synchronized (AuthorizationCodeHandler.class) {
-                if (instance == null) {
-                    instance = new AuthorizationCodeHandler();
-                }
-            }
-        }
-        return instance;
+    AuthorizationCodeHandler(OidcAuthPluginConfig config,
+        OidcProviderMetadataProvider metadataProvider, JwtTokenValidator tokenValidator,
+        OidcUserMapper userMapper, SecureRandom secureRandom) {
+        this.config = config;
+        this.metadataProvider = metadataProvider;
+        this.tokenValidator = tokenValidator;
+        this.userMapper = userMapper;
+        this.secureRandom = secureRandom;
     }
     
     /**
@@ -112,7 +106,7 @@ public class AuthorizationCodeHandler {
      */
     public String buildAuthorizationUrl(String redirectUri) throws AccessException {
         try {
-            String authEndpoint = config.getAuthorizationEndpoint();
+            String authEndpoint = metadataProvider.getMetadata().getAuthorizationEndpoint();
             if (StringUtils.isBlank(authEndpoint)) {
                 throw new AccessException("Authorization endpoint not configured");
             }
@@ -182,7 +176,7 @@ public class AuthorizationCodeHandler {
                     LOGGER.error("{} - Strict validation enabled, rejecting authentication",
                         message);
                     throw new AccessException(message
-                        + ". Set 'nacos.core.auth.plugin.oidc.strict-nonce-validation=false' "
+                        + ". Set 'nacos.plugin.auth.oidc.strict-nonce-validation=false' "
                         + "if your IdP doesn't support nonce.");
                 } else {
                     LOGGER.warn("{} - Strict validation disabled, allowing authentication. "
@@ -219,7 +213,7 @@ public class AuthorizationCodeHandler {
      * @throws Exception if exchange fails
      */
     private OIDCTokens exchangeCodeForTokens(String code, String redirectUri) throws Exception {
-        String tokenEndpoint = config.getTokenEndpoint();
+        String tokenEndpoint = metadataProvider.getMetadata().getTokenEndpoint();
         if (StringUtils.isBlank(tokenEndpoint)) {
             throw new AccessException("Token endpoint not configured");
         }
@@ -379,7 +373,13 @@ public class AuthorizationCodeHandler {
      * @return logout URL or null if not supported
      */
     public String buildLogoutUrl(String idToken, String redirectUri) {
-        String endSessionEndpoint = config.getEndSessionEndpoint();
+        String endSessionEndpoint;
+        try {
+            endSessionEndpoint = metadataProvider.getMetadata().getEndSessionEndpoint();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to discover OIDC logout endpoint: {}", e.getMessage());
+            return null;
+        }
         if (StringUtils.isBlank(endSessionEndpoint)) {
             return null;
         }

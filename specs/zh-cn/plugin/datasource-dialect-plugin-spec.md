@@ -21,8 +21,9 @@
 数据源方言插件用于把数据库相关 SQL 行为从 Nacos 持久化逻辑中隔离出来。它覆盖 SQL 方言
 函数、分页、生成主键，以及 Nacos 表对应的 mapper 实现。
 
-这是互斥选择插件。初始活跃方言由 `spring.sql.init.platform` 选择。通用生命周期和状态
-规则由 [Nacos 插件化规范](plugin-spec.md) 定义，内置数据库族由
+这是互斥选择插件。活跃方言由 `nacos.plugin.datasource-dialect.type` 在启动时选择，
+`spring.sql.init.platform` 继续作为历史 alias。通用生命周期和状态规则由
+[Nacos 插件化规范](plugin-spec.md) 定义，内置数据库族由
 [默认数据源方言插件实现规范](default-datasource-dialect-plugin-spec.md) 定义。
 
 该插件的存在原因是：Nacos 持久化需要保持同一套逻辑 schema 和 repository 契约，同时允许
@@ -95,15 +96,19 @@ legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部�
 
 ## 选择与状态
 
-核心插件管理器以 `datasource-dialect` 类型暴露该插件。只有配置选中的方言默认启用。服务端
-运行所依赖的内置关键方言在使用期间不能被禁用。
+核心插件管理器以 `datasource-dialect` 类型暴露该插件。只有配置选中的方言启用。该插件
+类型属于 critical，加载后必须保留一个被选中的实现。
 
-SQL platform 配置只提供启动初始选择。统一插件持久化状态加载后优先级更高；后续选择变更
-应通过插件管理完成，而不是修改该启动配置。
+方言 selector 只提供启动选择并需要重启生效。该互斥类型的持久化状态不能替代静态选择，
+运行时 status API 必须拒绝选择变更。
 
-如果请求的方言被禁用，启动或持久化操作必须显式失败。如果请求的方言缺失，当前 manager
-会查找其他已启用方言并记录 fallback。该 fallback 属于兼容行为；新部署应明确配置受支持的
-SQL platform。
+标准选择 key 与历史 alias 均未配置时，选择结果沿用服务端存储默认值：单机模式以及
+配置了 `-DembeddedStorage=true` 的集群模式选择 `derby`，普通集群模式选择 `mysql`。
+这一隐式选择同样在启动时形成快照。
+
+持久化子系统始终使该 critical 类型处于 active 状态。如果请求的方言被禁用或缺失，启动
+必须显式失败，并明确记录选中的方言和选择配置。服务端不得 fallback 到另一个已发现方言后
+继续启动。
 
 当前 `DatabaseDialectManager` 在返回 dialect 前，会检查
 `datasource-dialect:{databaseType}` 的统一插件状态。被禁用的 dialect 不得参与持久化
@@ -114,14 +119,57 @@ SQL platform。
 SQL platform 通过以下配置选择：
 
 ```properties
-spring.sql.init.platform=${databaseType}
+nacos.plugin.datasource-dialect.type=${databaseType}
 ```
 
-已移除的 `spring.datasource.platform` 不再读取。仍使用该配置的部署必须在升级前迁移到
-`spring.sql.init.platform`。
+`spring.sql.init.platform` 继续作为历史 alias；二者同时存在时标准 key 优先。已移除的
+`spring.datasource.platform` 不再读取。
 
-数据源连接属性仍由 Nacos 持久化配置和数据库驱动管理。方言插件不得重新解释无关的数据库
-连接配置。
+### Datasource 模块配置
+
+数据源连接属性由 Nacos persistence 模块和数据库驱动持有，并统一使用以下模块前缀：
+
+```text
+nacos.plugin.datasource.db.{item}
+```
+
+该命名空间不会让数据库方言变为可配置插件。`DatabaseDialect` 虽继承统一配置契约，但内置
+`datasource-dialect:{databaseType}` 不声明 definitions，仍以 `configurable=false` 暴露，
+因为连接凭据和连接池参数属于服务端唯一数据源，而不是分别属于每个已加载方言。这些配置均为静态配置，只在重启后
+生效，当前不进入插件 detail/PUT 配置 API。未来若要提供统一管理入口，必须先定义唯一的
+datasource 配置 owner，不能把同一份凭据复制到所有方言。
+
+稳定的 datasource 模块配置如下：
+
+| 标准 key 或 pattern | 历史 alias | 含义 |
+|---------------------|------------|------|
+| `nacos.plugin.datasource.db.num` | `db.num` | 外部数据源节点数量；使用外部存储时必填且必须为正数。 |
+| `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | 从 `0` 到 `num - 1` 每个 index 的 JDBC URL。 |
+| `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | 共享或按 index 配置的用户名；缺少某个 index 时回退共享值或 index `0`。 |
+| `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | 共享或按 index 配置的密码，回退规则与 `user` 相同；该值属于敏感信息。 |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒，默认 `3000`。 |
+| `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` 或对应 kebab-case | Hikari 校验超时，单位毫秒，默认 `10000`。 |
+| `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
+| `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
+| `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` 或对应 kebab-case | Hikari 最小空闲连接数，默认 `2`。 |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用 MySQL 驱动兼容默认值。 |
+| `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` 或对应 kebab-case | 连接测试 SQL；为空时使用 `SELECT 1`。 |
+| `nacos.plugin.datasource.db.query-timeout` | JVM 参数 `QUERYTIMEOUT` | JDBC 查询超时，单位秒，默认 `3`。 |
+
+对每个逻辑配置项，标准 key 的优先级都高于历史 alias，即使二者来自不同 Spring property
+source。索引项按 index 独立解析，因此迁移期间可以同时使用标准 `url.0` 和历史 `url.1`。
+读取历史配置时会输出迁移 WARN，但日志不得包含配置值。点号和方括号 index 写法都继续
+兼容；未携带 index 的单个 `url` 继续兼容 index `0`。
+
+`nacos.plugin.datasource.db.pool.config.{hikari-property}` 会在旧连接池前缀绑定后继续绑定到
+Hikari datasource，从而保留已有 Hikari 属性透传能力，并让标准值覆盖同名旧值。当前实现可
+接受随附 Hikari 版本提供的 JavaBean 配置面，但只有上表明确列出的稳定子集属于 Nacos 长期
+配置契约。
+
+`nacos.plugin.datasource.log.enabled` 仍是独立的数据源日志开关。embedded/external
+persistence 模式同样不属于方言私有配置。负责转换加密数据源凭据的 custom environment
+插件，需要在自身 `propertyKey()` 中声明新的标准 password key；只声明 `db.password.*` 的
+现有实现仍只处理旧格式输入。
 
 ## 兼容性规则
 

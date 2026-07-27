@@ -64,8 +64,9 @@ documented server feature.
 
 ## Selection
 
-Nacos selects the initial database type from `spring.sql.init.platform`.
-`spring.datasource.platform` is no longer supported.
+Nacos selects the database type at startup from
+`nacos.plugin.datasource-dialect.type`. `spring.sql.init.platform` remains a
+legacy alias, while `spring.datasource.platform` is no longer supported.
 
 When the selected type is `mysql`, MySQL mappers and MySQL-compatible default
 dialect behavior are used. When the selected type is `derby`, Derby remains the
@@ -82,5 +83,11 @@ Built-in implementations must:
   [resource model](../design/resource-model-spec.md);
 - add migration notes when a database family requires schema changes.
 
-Built-in database dialect plugins are critical while the server is using them.
-They cannot be disabled through plugin state without breaking persistence.
+The datasource-dialect type is critical while loaded. The selected built-in
+dialect cannot be disabled through runtime plugin state, but another bundled
+dialect is not individually critical merely because it is present.
+
+Built-in dialect implementations do not own datasource connection or pool configuration. They
+inherit `PluginConfigSpec` through `DatabaseDialect` but declare no definitions, so they are exposed
+as `configurable=false`; datasource module configuration is defined by the parent dialect plugin
+spec.

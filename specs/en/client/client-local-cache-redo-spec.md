@@ -32,6 +32,7 @@ Client runtime uses several local data classes:
 | Naming service-info cache | Server push or query response | Last known instances for subscribed or queried services. | Recovery cache only. |
 | Naming failover data | User or extension provided local failover source | Overrides discovery view while failover switch is enabled. | Local discovery override only. |
 | Redo data | SDK register, subscribe, or endpoint operation | Restores runtime intent after reconnect. | Runtime intent only. |
+| RAD discovery and Watch state (target) | Discover result or Watch registration | Last complete Agent discovery snapshot and Watch intent. | Recovery cache and runtime intent only. |
 
 Local data must not be treated as server-side committed state unless a domain
 spec explicitly says so.
@@ -133,21 +134,102 @@ Naming redo covers:
 Persistent Naming service state is server-owned and should not be restored by
 client redo unless the domain explicitly treats the operation as runtime intent.
 
-AI redo covers runtime endpoint and subscription intent, such as MCP or agent
-endpoint registration. AI resource publish/delete semantics remain governed by
-the [AI Registry Spec](../ai/ai-registry-spec.md).
+AI redo covers runtime endpoint and subscription intent, such as MCP or Agent
+Endpoint registration. AI resource publish/delete semantics remain governed by
+the [AI Registry Spec](../ai/ai-registry-spec.md). The target Agent/RAD rules
+are specified in Section 8.
 
 Config listeners are recovered through listener resync and fuzzy watch resync.
 Config publish/delete operations are not automatically redone by the Client SDK.
 
-## 8. Shutdown
+## 8. Agent And RAD Target Recovery Contract
+
+This section defines the target recovery contract for the new Agent/RAD SDK. It
+does not describe a currently implemented capability. It becomes active only
+when the Agent/RAD abilities from the
+[Agent API Spec](../ai/agent-api-spec.md) are implemented and negotiated.
+
+### 8.1 Endpoint Publication Redo Identity
+
+The SDK keeps desired Endpoint publication state per canonical publication
+group and stores the complete Batch payload needed for replay. A materialized
+registration redo key contains:
+
+```text
+(namespaceId, agentName, protocol, runtimeVersion,
+ canonicalVersionRange, sortedCanonicalEndpointNaturalKeys)
+```
+
+The missing `versionRange` value is canonicalized to `[runtimeVersion]` before
+key construction. Every Endpoint key is normalized according to the
+[RAD Protocol Spec](../ai/rad-protocol-spec.md), and the set is deduplicated
+and sorted in stable ASCII order. URI input order, map order, and omitted
+default values therefore cannot create different redo identities.
+
+The SDK maintains one canonical Endpoint map for each
+`(namespaceId, agentName, protocol, runtimeVersion, canonicalVersionRange)`
+group. Register merges the submitted Endpoint upserts into that map and
+atomically replaces the materialized redo record. Deregister removes each
+submitted natural key from every local group for the same namespace, Agent,
+and protocol, matching RAD's cross-binding deregistration semantics. The redo
+payload retains complete URI, priority, weight, and metadata values; these
+non-identity values are not discarded merely because they are absent from the
+redo key.
+
+### 8.2 HTTP And gRPC Publisher Recovery
+
+An HTTP Agent publisher generates one `X-Nacos-Client-Id` for an SDK instance.
+That id remains stable across request retries, server selection changes,
+failover, heartbeat, and redo for the lifetime of the SDK instance. A process
+restart creates a new id.
+
+When any Agent Endpoint request returns `HTTP_CLIENT_NOT_FOUND`, the SDK marks
+all Endpoint redo records owned by that HTTP client as unregistered and redoes
+every complete desired publication group. Retrying only the failed Endpoint is
+insufficient because the server has declared the complete HTTP client state
+absent.
+
+gRPC Endpoint intent is owned by the current connection id. After reconnect,
+the SDK obtains a new connection id, marks all Endpoint redo records from the
+old connection unregistered, and replays complete desired groups under the new
+connection. HTTP and gRPC publisher records stay separate; one transport must
+not deregister contributions owned by the other.
+
+### 8.3 Watch Recovery Identity
+
+The canonical local Watch key contains:
+
+```text
+(namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
+```
+
+Reference canonicalization preserves the distinction between an exact
+version, a label, and latest. Filter canonicalization applies defaults and
+sorts and deduplicates set-valued fields. Listener identity is the same
+listener instance used to cancel the Watch.
+
+The SDK stores the connection-scoped opaque `watchKey` returned by
+`AgentSubscribeResponse` alongside this canonical local identity. Incoming
+`SNAPSHOT` and `TERMINATED` notifications use that wire key only for lookup;
+it is not parsed or used as the redo identity.
+
+On gRPC disconnect, the SDK marks each Watch record unregistered. After a new
+connection is established, it restores the same canonical local Watch keys,
+discards each old wire key, and stores the new `watchKey` returned with the
+initial complete result. A `TERMINATED` notification with
+`errorCode=NOT_FOUND` removes only the identified Watch record and its cached
+snapshot, so it is not retried on later reconnects. Detailed replacement,
+acknowledgement, missed-push, and terminal behavior is defined by the
+[Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md).
+
+## 9. Shutdown
 
 SDK shutdown must clear in-memory redo state, stop background retry tasks, close
 transport clients, and stop local cache/failover refresh tasks. Shutdown should
 not delete user-maintained failover files or server-derived snapshots unless the
 user explicitly calls a cache cleanup operation.
 
-## 9. Pending Issues
+## 10. Pending Issues
 
 - Naming redo currently uses its own implementation while newer AI redo uses
   common redo abstractions. The implementations should converge on the shared

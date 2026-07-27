@@ -16,25 +16,35 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link SkillSpectorPipelineService} unit test.
@@ -59,12 +69,95 @@ class SkillSpectorPipelineServiceTest {
     }
     
     @Test
+    void configDefinitionsTest() {
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService(
+            SkillSpectorPluginConfig.fromMap(null), command -> "/resolved/spector");
+        Map<String, ConfigItemDefinition> definitions = new LinkedHashMap<>();
+        service.getConfigDefinitions()
+            .forEach(definition -> definitions.put(definition.getKey(), definition));
+        
+        assertEquals(10, definitions.size());
+        ConfigItemDefinition order = definitions.get(SkillSpectorPluginConfig.ORDER);
+        assertEquals(ConfigItemType.NUMBER, order.getType());
+        assertEquals("90", order.getDefaultValue());
+        assertEquals(ConfigItemEffectMode.RUNTIME, order.getEffectMode());
+        assertTrue(definitions.entrySet().stream()
+            .filter(entry -> !SkillSpectorPluginConfig.ORDER.equals(entry.getKey()))
+            .allMatch(entry -> ConfigItemEffectMode.RESTART == entry.getValue().getEffectMode()));
+        ConfigItemDefinition command = definitions.get(SkillSpectorPluginConfig.COMMAND);
+        assertEquals(ConfigItemType.STRING, command.getType());
+        assertEquals("skill-spector", command.getDefaultValue());
+        assertEquals(List.of("executable", "path"), command.getAliases());
+        assertEquals(ConfigItemEffectMode.RESTART, command.getEffectMode());
+        ConfigItemDefinition apiKey = definitions.get(SkillSpectorPluginConfig.API_KEY);
+        assertTrue(apiKey.isSensitive());
+        assertEquals(List.of("apiKey"), apiKey.getAliases());
+        assertEquals(ConfigItemType.NUMBER,
+            definitions.get(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD).getType());
+        assertEquals("20",
+            definitions.get(SkillSpectorPluginConfig.MAX_FINDINGS).getDefaultValue());
+    }
+    
+    @Test
+    void applyConfigReplacesRuntimeSnapshotTest() {
+        SkillSpectorPipelineService unavailable = new SkillSpectorPipelineService(
+            SkillSpectorPluginConfig.fromMap(null), command -> null);
+        assertEquals("skill-spector",
+            unavailable.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
+        
+        AtomicInteger resolveCount = new AtomicInteger();
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService(
+            SkillSpectorPluginConfig.fromMap(null), command -> {
+                resolveCount.incrementAndGet();
+                return "/resolved/" + command;
+            });
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put(SkillSpectorPluginConfig.COMMAND, "custom-spector");
+        config.put(SkillSpectorPluginConfig.USE_LLM, "true");
+        config.put(SkillSpectorPluginConfig.API_KEY, "secret");
+        config.put(SkillSpectorPluginConfig.ORDER, "30");
+        service.applyConfig(config);
+        service.applyConfig(config);
+        Map<String, String> reordered = new LinkedHashMap<>(config);
+        reordered.put(SkillSpectorPluginConfig.ORDER, "3");
+        service.applyConfig(reordered);
+        Map<String, String> current = service.getCurrentConfig();
+        
+        assertEquals(2, resolveCount.get());
+        assertEquals(3, service.getPreferOrder());
+        assertEquals("custom-spector", current.get(SkillSpectorPluginConfig.COMMAND));
+        assertEquals("true", current.get(SkillSpectorPluginConfig.USE_LLM));
+        assertEquals("secret", current.get(SkillSpectorPluginConfig.API_KEY));
+        current.put(SkillSpectorPluginConfig.COMMAND, "mutated");
+        assertEquals("custom-spector",
+            service.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
+    }
+    
+    @Test
+    void spiConstructorShouldDeferRuntimeInitializationUntilApplyTest() {
+        AtomicInteger resolveCount = new AtomicInteger();
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService(command -> {
+            resolveCount.incrementAndGet();
+            return "/resolved/" + command;
+        });
+        assertEquals(0, resolveCount.get());
+        assertEquals("skill-spector",
+            service.getCurrentConfig().get(SkillSpectorPluginConfig.COMMAND));
+        assertFalse(service.execute(new PublishPipelineContext()).isPassed());
+        
+        service.applyConfig(service.getCurrentConfig());
+        
+        assertEquals(1, resolveCount.get());
+        assertEquals(SkillSpectorPluginConfig.DEFAULT_ORDER, service.getPreferOrder());
+    }
+    
+    @Test
     void buildScanCommandStaticOnlyTest() {
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("skillspector",
-            SkillSpectorScanOptions.none());
+            null);
         
         List<String> command = service.buildScanCommand(Path.of("/tmp/skill"),
-            Path.of("/tmp/report.json"));
+            Path.of("/tmp/report.json"), "skillspector", SkillSpectorScanOptions.none());
         
         assertEquals(List.of("skillspector", "scan", "/tmp/skill", "--format", "json",
             "--output", "/tmp/report.json", "--no-llm"), command);
@@ -73,14 +166,33 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void buildScanCommandWithLlmTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        SkillSpectorScanOptions options = options(properties);
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("skillspector",
-            SkillSpectorScanOptions.fromProperties(properties));
+            options);
         
         List<String> command = service.buildScanCommand(Path.of("/tmp/skill"),
-            Path.of("/tmp/report.json"));
+            Path.of("/tmp/report.json"), "skillspector", options);
         
         assertFalse(command.contains("--no-llm"));
+    }
+    
+    @Test
+    void executeHandlesUnavailableAndInapplicableInputsTest() {
+        SkillSpectorPipelineService unavailable = new SkillSpectorPipelineService((String) null,
+            null);
+        PublishPipelineResult unavailableResult = unavailable.execute(createSkillContext("skill"));
+        assertFalse(unavailableResult.isPassed());
+        assertTrue(unavailableResult.getMessage().contains("runtime 未安装"));
+        
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService("spector", null);
+        PublishPipelineResult unsupported = service.execute(new PublishPipelineContext());
+        assertTrue(unsupported.isPassed());
+        assertTrue(unsupported.getMessage().contains("不包含可扫描文件"));
+        ResourceFilesPipelineContext empty = new ResourceFilesPipelineContext();
+        PublishPipelineResult emptyResult = service.execute(empty);
+        assertTrue(emptyResult.isPassed());
+        assertTrue(emptyResult.getMessage().contains("无文件内容"));
     }
     
     @Test
@@ -114,9 +226,9 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeUsesConfiguredMaxFindingsTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_MAX_FINDINGS_KEBAB, "2");
+        properties.setProperty(SkillSpectorPluginConfig.MAX_FINDINGS, "2");
         PublishPipelineResult result = createStubService(StubScanMode.REJECT_MANY_FINDINGS,
-            SkillSpectorScanOptions.fromProperties(properties)).execute(createSkillContext("many"));
+            options(properties)).execute(createSkillContext("many"));
         
         assertNotNull(result);
         assertFalse(result.isPassed(), result.getMessage());
@@ -129,9 +241,9 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executePassesWhenThresholdIsRaisedEvenIfCliExitCodeIsOne() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_RISK_SCORE_THRESHOLD_KEBAB, "80");
+        properties.setProperty(SkillSpectorPluginConfig.RISK_SCORE_THRESHOLD, "80");
         PublishPipelineResult result = createStubService(StubScanMode.REJECT_HIGH_RISK,
-            SkillSpectorScanOptions.fromProperties(properties))
+            options(properties))
             .execute(createSkillContext("high-risk"));
         
         assertNotNull(result);
@@ -161,6 +273,39 @@ class SkillSpectorPipelineServiceTest {
     }
     
     @Test
+    void executeRejectsWhenProcessCannotStartTest() {
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService(
+            "/missing/skill-spector", SkillSpectorScanOptions.none());
+        
+        PublishPipelineResult result = service.execute(createSkillContext("missing-runtime"));
+        
+        assertFalse(result.isPassed());
+        assertTrue(result.getMessage().contains("执行 SkillSpector runtime 失败"));
+    }
+    
+    @Test
+    void executeRejectsWhenInterruptedTest() {
+        PublishPipelineResult result = createStubService(StubScanMode.INTERRUPTED,
+            SkillSpectorScanOptions.none()).execute(createSkillContext("interrupted"));
+        
+        assertFalse(result.isPassed());
+        assertTrue(result.getMessage().contains("扫描被中断"));
+        assertTrue(Thread.interrupted());
+    }
+    
+    @Test
+    void executeFormatsSparseFindingsTest() {
+        PublishPipelineResult result = createStubService(StubScanMode.PASS_SPARSE_FINDINGS,
+            SkillSpectorScanOptions.none()).execute(createSkillContext("sparse"));
+        
+        assertTrue(result.isPassed(), result.getMessage());
+        assertTrue(result.getMessage().contains("UNKNOWN / UNKNOWN"));
+        assertTrue(result.getMessage().contains("`README.md`"));
+        assertTrue(result.getMessage().contains("`SKILL.md:3`"));
+        assertTrue(result.getMessage().contains("..."));
+    }
+    
+    @Test
     void executeAgentSpecGeneratesSkillMdTest() {
         PublishPipelineResult result = createStubService(StubScanMode.PASS_AGENTSPEC,
             SkillSpectorScanOptions.none()).execute(createAgentSpecContext("agent"));
@@ -181,11 +326,11 @@ class SkillSpectorPipelineServiceTest {
     @Test
     void executeWithLlmOptionsExposesEnvironmentToSubprocessTest() {
         Properties properties = new Properties();
-        properties.setProperty(SkillSpectorScanOptions.PROP_USE_LLM, "true");
-        properties.setProperty(SkillSpectorScanOptions.PROP_PROVIDER, "openai");
-        properties.setProperty(SkillSpectorScanOptions.PROP_MODEL, "gpt-test");
-        properties.setProperty(SkillSpectorScanOptions.PROP_API_KEY, "test-key");
-        SkillSpectorScanOptions options = SkillSpectorScanOptions.fromProperties(properties);
+        properties.setProperty(SkillSpectorPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillSpectorPluginConfig.PROVIDER, "openai");
+        properties.setProperty(SkillSpectorPluginConfig.MODEL, "gpt-test");
+        properties.setProperty(SkillSpectorPluginConfig.API_KEY, "test-key");
+        SkillSpectorScanOptions options = options(properties);
         
         PublishPipelineResult result =
             createStubService(StubScanMode.VERIFY_LLM_ENV, options)
@@ -210,9 +355,30 @@ class SkillSpectorPipelineServiceTest {
         assertTrue(result.isPassed(), result.getMessage());
     }
     
+    @Test
+    void deleteRecursivelyHandlesMissingAndUndeletableFilesTest() {
+        SkillSpectorPipelineService service = new SkillSpectorPipelineService("spector", null);
+        service.deleteRecursively(null);
+        File missing = mock(File.class);
+        when(missing.exists()).thenReturn(false);
+        service.deleteRecursively(missing);
+        File undeletable = mock(File.class);
+        when(undeletable.exists()).thenReturn(true);
+        when(undeletable.isDirectory()).thenReturn(false);
+        when(undeletable.delete()).thenReturn(false);
+        when(undeletable.getAbsolutePath()).thenReturn("/undeletable");
+        
+        service.deleteRecursively(undeletable);
+    }
+    
     private SkillSpectorPipelineService createStubService(StubScanMode mode,
         SkillSpectorScanOptions options) {
         return new StubSkillSpectorPipelineService(mode, options);
+    }
+    
+    private SkillSpectorScanOptions options(Properties properties) {
+        return SkillSpectorPluginConfig.fromMap(PluginConfigTestUtils.toMap(properties))
+            .getScanOptions();
     }
     
     private SkillPipelineContext createSkillContext(String name) {
@@ -235,7 +401,8 @@ class SkillSpectorPipelineServiceTest {
         context.setResourceName(name);
         context.setNamespaceId("public");
         context.setVersion("v1");
-        context.setFiles(List.of(
+        context.setFiles(Arrays.asList(
+            new ResourceFileContent(null, "ignored"),
             new ResourceFileContent("manifest.json", "{\"name\":\"" + name + "\"}"),
             new ResourceFileContent("config/SOUL.md", "helpful assistant")));
         return context;
@@ -261,7 +428,9 @@ class SkillSpectorPipelineServiceTest {
         PASS_PROMPT,
         VERIFY_LLM_ENV,
         PASS_SKIPPED_FILES,
-        CLI_EXIT_ONE_WITHOUT_REPORT
+        CLI_EXIT_ONE_WITHOUT_REPORT,
+        INTERRUPTED,
+        PASS_SPARSE_FINDINGS
     }
     
     private static class StubSkillSpectorPipelineService extends SkillSpectorPipelineService {
@@ -275,11 +444,20 @@ class SkillSpectorPipelineServiceTest {
         }
         
         @Override
-        List<String> buildScanCommand(Path tempDir, Path reportPath) {
+        List<String> buildScanCommand(Path tempDir, Path reportPath, String scannerCommand,
+            SkillSpectorScanOptions scanOptions) {
             return Arrays.asList(currentJavaBinary(), "-cp",
                 System.getProperty("java.class.path"),
                 FakeSkillSpectorCli.class.getName(), mode.name(),
                 tempDir.toAbsolutePath().toString(), reportPath.toAbsolutePath().toString());
+        }
+        
+        @Override
+        int waitForProcess(Process process) throws InterruptedException {
+            if (mode == StubScanMode.INTERRUPTED) {
+                throw new InterruptedException("test interruption");
+            }
+            return super.waitForProcess(process);
         }
         
         private static String currentJavaBinary() {
@@ -298,6 +476,7 @@ class SkillSpectorPipelineServiceTest {
             switch (mode) {
                 case PASS_LOW_RISK:
                     requireContains(root.resolve("SKILL.md"), "hello");
+                    System.out.println("scan completed");
                     writeReport(reportPath, 20, "LOW", "SAFE", 1);
                     return;
                 case REJECT_HIGH_RISK:
@@ -341,6 +520,12 @@ class SkillSpectorPipelineServiceTest {
                     System.out.println("ModuleNotFoundError: No module named 'skillspector'");
                     System.exit(1);
                     return;
+                case INTERRUPTED:
+                    writeReport(reportPath, 20, "LOW", "SAFE", 0);
+                    return;
+                case PASS_SPARSE_FINDINGS:
+                    writeSparseReport(reportPath);
+                    return;
                 default:
                     throw new IllegalStateException("Unsupported mode: " + mode);
             }
@@ -367,6 +552,17 @@ class SkillSpectorPipelineServiceTest {
                 + ",\"severity\":\"" + severity
                 + "\",\"recommendation\":\"" + recommendation
                 + "\"},\"issues\":" + issues + "}";
+            Files.writeString(reportPath, report, StandardCharsets.UTF_8);
+        }
+        
+        private static void writeSparseReport(Path reportPath) throws Exception {
+            String longExplanation = "x".repeat(260);
+            String report = "{\"risk_assessment\":{\"score\":20,\"severity\":\"LOW\","
+                + "\"recommendation\":\"SAFE\"},\"issues\":[{},"
+                + "{\"location\":{\"file\":\"README.md\"}},"
+                + "{\"id\":\"R2\",\"category\":\"category\","
+                + "\"location\":{\"file\":\"SKILL.md\",\"start_line\":3,"
+                + "\"end_line\":3},\"explanation\":\"" + longExplanation + "\"}]}";
             Files.writeString(reportPath, report, StandardCharsets.UTF_8);
         }
         

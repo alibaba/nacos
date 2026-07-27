@@ -32,7 +32,6 @@ import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -103,8 +102,8 @@ public class SkillNoopHandler implements SkillHandler {
     }
     
     @Override
-    public List<SkillUploadPrecheckResult> batchPrecheckUploadSkill(
-        List<SkillUploadPrecheckRequest> requests) throws NacosException {
+    public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
+        byte[] zipBytes, String targetVersion) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             SKILL_NOT_ENABLED_MESSAGE);

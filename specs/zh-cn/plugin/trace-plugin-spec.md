@@ -98,6 +98,10 @@ Trace 事件携带事件类型、事件时间、命名空间、分组和资源�
 订阅者。如果 `executor()` 返回 `null`，回调会在事件分发路径中执行。写远端系统、文件、
 数据库或其他慢 sink 的插件应返回专用 executor。
 
+Combined subscriber 会记录全部已加载 Trace 实现的事件兴趣，包括启动时处于 disabled 状态的
+实现；每次事件分发前再检查统一 plugin state。因此运行时启停无需重建 combined subscriber，
+disabled 实现也不会收到新分发的任务。
+
 Trace publisher 允许在队列压力下丢弃 trace event 进行降级，具体边界遵循本地事件降级规则。
 
 Trace 订阅者通过 SPI 加载。同一类型内重复名称不适合生产稳定使用，插件包应使用唯一名称。

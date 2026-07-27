@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.plugin.encryption.spi;
 
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+
 /**
  * Encryption and decryption spi.
  *
  * @author lixiaoshuang
  */
-public interface EncryptionPluginService {
+public interface EncryptionPluginService extends PluginConfigSpec {
     
     /**
      * Encrypted interface.

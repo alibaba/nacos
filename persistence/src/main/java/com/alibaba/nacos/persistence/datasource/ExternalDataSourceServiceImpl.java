@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
 import com.alibaba.nacos.persistence.utils.ConnectionCheckUtil;
 import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
@@ -90,11 +90,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private String dataSourceType = "";
     
-    private final String defaultDataSourceType = "";
+    private final String defaultDataSourceType = PersistenceConstant.MYSQL;
     
     @Override
     public void init() {
-        queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
+        queryTimeout = new DatasourceConfigResolver(EnvUtil.getEnvironment())
+            .resolveQueryTimeout(3);
         jt = new JdbcTemplate();
         // Set the maximum number of records to prevent memory expansion
         jt.setMaxRows(50000);

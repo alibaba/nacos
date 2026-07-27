@@ -454,6 +454,10 @@ class SkillZipParserTest {
         assertTrue(result.getSkills().isEmpty());
         assertEquals(1, result.getFailures().size());
         assertEquals("invalid-skill", result.getFailures().get(0).getFolder());
+        assertEquals("multi-skill/invalid-skill/",
+            result.getFailures().get(0).getEntryPath());
+        assertEquals(SkillZipParser.ParseFailureType.INVALID_SKILL,
+            result.getFailures().get(0).getType());
         assertTrue(result.getFailures().get(0).getReason().contains("YAML front matter"));
     }
     
@@ -485,21 +489,30 @@ class SkillZipParserTest {
         assertEquals(2, result.getFailures().size());
         assertTrue(result.getFailures().stream()
             .anyMatch(f -> "invalid-skill".equals(f.getFolder())
+                && "multi-skill/invalid-skill/".equals(f.getEntryPath())
+                && SkillZipParser.ParseFailureType.INVALID_SKILL == f.getType()
                 && f.getReason().contains("YAML front matter")));
         assertTrue(result.getFailures().stream()
             .anyMatch(f -> "not-a-skill".equals(f.getFolder())
+                && "multi-skill/not-a-skill/".equals(f.getEntryPath())
+                && SkillZipParser.ParseFailureType.NOT_A_SKILL == f.getType()
                 && f.getReason().contains("SKILL.md not found")));
     }
     
     @Test
-    void testParseMultipleSkillsFromZipWithNoSkillMd() throws IOException {
+    void testParseMultipleSkillsFromZipWithNoSkillMd() throws Exception {
         // Given: zip with no SKILL.md at all
         byte[] zipBytes = createZipWithoutSkillMd();
         
-        // When & Then
-        NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace"));
-        assertTrue(exception.getMessage().contains("SKILL.md file not found"));
+        SkillZipParser.MultiSkillParseResult result =
+            SkillZipParser.parseMultipleSkillsFromZip(zipBytes, "test-namespace");
+        
+        assertTrue(result.getSkills().isEmpty());
+        assertEquals(1, result.getFailures().size());
+        assertEquals("", result.getFailures().get(0).getEntryPath());
+        assertEquals(SkillZipParser.ParseFailureType.NOT_A_SKILL,
+            result.getFailures().get(0).getType());
+        assertTrue(result.getFailures().get(0).getReason().contains("SKILL.md file not found"));
     }
     
     @Test

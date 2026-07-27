@@ -18,6 +18,7 @@ import {
   updateCloneItemField,
 } from './clone-items';
 import type { CloneItemField } from './clone-items';
+import { buildConfigDetailPath } from '@/lib/list-navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,8 +201,15 @@ export default function ConfigurationManagementPage() {
     }
   };
 
-  const handleDetail = (dataId: string, groupName: string) => {
-    navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(currentNamespace)}`);
+  const handleDetail = (targetDataId: string, targetGroupName: string) => {
+    navigate(buildConfigDetailPath(targetDataId, targetGroupName, currentNamespace, {
+      dataId,
+      groupName,
+      appName,
+      searchMode,
+      pageNo,
+      pageSize,
+    }));
   };
 
   const handleEdit = (dataId: string, groupName: string) => {

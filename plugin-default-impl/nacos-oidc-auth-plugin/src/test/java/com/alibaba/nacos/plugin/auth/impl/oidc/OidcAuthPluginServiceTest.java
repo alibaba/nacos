@@ -16,47 +16,35 @@
 
 package com.alibaba.nacos.plugin.auth.impl.oidc;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
-import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.OidcAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
+import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OidcAuthPluginServiceTest {
-    
-    private ConfigurableEnvironment originalEnvironment;
-    
-    @BeforeEach
-    void setUp() {
-        originalEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new MockEnvironment());
-        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
-    }
-    
-    @AfterEach
-    void tearDown() {
-        EnvUtil.setEnvironment(originalEnvironment);
-        ReflectionTestUtils.setField(OidcAuthConfig.class, "instance", null);
-        ReflectionTestUtils.setField(OidcAuthenticationManager.class, "instance", null);
-    }
     
     @Test
     void testBasicPluginMetadata() {
@@ -68,47 +56,98 @@ class OidcAuthPluginServiceTest {
         assertEquals(OidcProtocolConstants.AUTH_PLUGIN_TYPE, service.getAuthServiceName());
         assertTrue(service.isLoginEnabled());
         assertFalse(service.isAdminRequest());
+        assertFalse(service.isConfigurationValid());
     }
     
     @Test
-    void testValidateIdentityDelegatesToProvider() {
+    void testConfigDefinitionsExposeAllRestartItemsAndLegacyAliases() {
         OidcAuthPluginService service = new OidcAuthPluginService();
-        IdentityProvider identityProvider = mock(IdentityProvider.class);
-        IdentityContext identityContext = new IdentityContext();
-        Resource resource = Resource.EMPTY_RESOURCE;
-        AuthResult<?> expected = AuthResult.successResult("ok");
-        ReflectionTestUtils.setField(service, "identityProvider", identityProvider);
-        ReflectionTestUtils.setField(service, "authorityProvider", mock(AuthorityProvider.class));
-        when(identityProvider.validateIdentity(identityContext, resource)).thenReturn(expected);
+        List<ConfigItemDefinition> definitions = service.getConfigDefinitions();
         
-        AuthResult<?> actual = service.validateIdentity(identityContext, resource);
-        
-        assertSame(expected, actual);
+        assertEquals(14, definitions.size());
+        for (ConfigItemDefinition definition : definitions) {
+            assertEquals(ConfigItemEffectMode.RESTART, definition.getEffectMode());
+            assertEquals(1, definition.getAliases().size());
+            assertTrue(definition.getAliases().get(0)
+                .startsWith(OidcConstants.CONFIG_PREFIX));
+        }
+        ConfigItemDefinition secret = definition(definitions, OidcAuthPluginConfig.CLIENT_SECRET);
+        assertTrue(secret.isSensitive());
+        assertFalse(definition(definitions, OidcAuthPluginConfig.CLIENT_ID).isSensitive());
     }
     
     @Test
-    void testValidateAuthorityDelegatesToProvider() {
+    void testApplyConfigAtomicallyReplacesCurrentConfig() {
         OidcAuthPluginService service = new OidcAuthPluginService();
-        AuthorityProvider authorityProvider = mock(AuthorityProvider.class);
-        IdentityContext identityContext = new IdentityContext();
-        Permission permission = new Permission(Resource.EMPTY_RESOURCE, "read");
-        AuthResult<?> expected = AuthResult.successResult("ok");
-        ReflectionTestUtils.setField(service, "identityProvider", mock(IdentityProvider.class));
-        ReflectionTestUtils.setField(service, "authorityProvider", authorityProvider);
-        when(authorityProvider.validateAuthority(identityContext, permission)).thenReturn(expected);
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put(OidcAuthPluginConfig.ISSUER_URI, "http://issuer");
+        config.put(OidcAuthPluginConfig.CLIENT_ID, "client");
+        config.put(OidcAuthPluginConfig.CLIENT_SECRET, "secret");
+        config.put(OidcAuthPluginConfig.AUTHORIZATION_TIMEOUT_MS, "1234");
         
-        AuthResult<?> actual = service.validateAuthority(identityContext, permission);
+        service.applyConfig(config);
         
-        assertSame(expected, actual);
+        assertTrue(service.isConfigurationValid());
+        assertEquals("client", service.getConfig().getClientId());
+        assertEquals("secret", service.getCurrentConfig()
+            .get(OidcAuthPluginConfig.CLIENT_SECRET));
+        assertEquals("1234", service.getCurrentConfig()
+            .get(OidcAuthPluginConfig.AUTHORIZATION_TIMEOUT_MS));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.applyConfig(Map.of(OidcAuthPluginConfig.AUTHORIZATION_TIMEOUT_MS,
+                "invalid")));
+        assertEquals("client", service.getConfig().getClientId());
     }
     
     @Test
-    void testValidateIdentityInitializesProviders() {
+    void testDefaultRuntimeDelegatesAuthenticationAndAuthorization() {
+        OidcAuthPluginService service = new OidcAuthPluginService();
+        IdentityContext context = new IdentityContext();
+        
+        AuthResult<?> identity = service.validateIdentity(context, Resource.EMPTY_RESOURCE);
+        AuthResult<?> authority = service.validateAuthority(context,
+            new Permission(Resource.EMPTY_RESOURCE, "read"));
+        
+        assertFalse(identity.isSuccess());
+        assertEquals(401, identity.getErrorCode());
+        assertFalse(authority.isSuccess());
+        assertEquals(403, authority.getErrorCode());
+    }
+    
+    @Test
+    void testLoginDelegatesFailWithoutProviderConfiguration() {
         OidcAuthPluginService service = new OidcAuthPluginService();
         
-        AuthResult<?> result = service.validateIdentity(new IdentityContext(),
-            Resource.EMPTY_RESOURCE);
+        assertThrows(AccessException.class,
+            () -> service.buildAuthorizationUrl("http://nacos/callback"));
+        assertThrows(AccessException.class,
+            () -> service.exchangeCodeForUser("code", "bad-state", "http://nacos/callback"));
+        assertNull(service.buildLogoutUrl("id-token", "http://nacos"));
+    }
+    
+    @Test
+    void testLoginMethodsDelegateToCurrentRuntime() throws Exception {
+        OidcAuthPluginService service = new OidcAuthPluginService();
+        AuthorizationCodeHandler handler = mock(AuthorizationCodeHandler.class);
+        Object runtime = ReflectionTestUtils.getField(service, "runtime");
+        ReflectionTestUtils.setField(runtime, "authorizationCodeHandler", handler);
+        OidcUser user = new OidcUser();
+        when(handler.buildAuthorizationUrl("http://nacos/callback"))
+            .thenReturn("http://idp/authorize");
+        when(handler.exchangeCodeForUser("code", "state", "http://nacos/callback"))
+            .thenReturn(user);
+        when(handler.buildLogoutUrl("id-token", "http://nacos"))
+            .thenReturn("http://idp/logout");
         
-        assertFalse(result.isSuccess());
+        assertEquals("http://idp/authorize",
+            service.buildAuthorizationUrl("http://nacos/callback"));
+        assertEquals(user,
+            service.exchangeCodeForUser("code", "state", "http://nacos/callback"));
+        assertEquals("http://idp/logout", service.buildLogoutUrl("id-token", "http://nacos"));
+    }
+    
+    private ConfigItemDefinition definition(List<ConfigItemDefinition> definitions, String key) {
+        return definitions.stream().filter(each -> key.equals(each.getKey())).findFirst()
+            .orElseThrow(IllegalStateException::new);
     }
 }

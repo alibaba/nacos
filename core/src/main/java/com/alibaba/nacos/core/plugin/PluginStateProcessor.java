@@ -146,11 +146,9 @@ public class PluginStateProcessor extends RequestProcessor4CP {
                 "Enabled state cannot be null for CHANGE_STATE operation, pluginId=" + pluginId);
         }
         
-        // Apply to in-memory state
-        pluginManager.applyStateChange(pluginId, enabled);
-        
-        // Persist to local storage
+        pluginManager.validateStateChange(pluginId, enabled);
         persistence.saveState(pluginId, enabled);
+        pluginManager.applyStateChange(pluginId, enabled);
         
         LOGGER.info("[PluginStateProcessor] Applied state change: {}={}", pluginId, enabled);
     }

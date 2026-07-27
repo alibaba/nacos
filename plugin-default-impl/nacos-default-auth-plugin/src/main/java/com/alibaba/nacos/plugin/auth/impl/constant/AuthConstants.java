@@ -97,25 +97,70 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_CACHING_ENABLED =
         "nacos.core.auth.caching.enabled";
     
+    /**
+     * Legacy LDAP URL key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.url} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_URL = "nacos.core.auth.ldap.url";
     
+    /**
+     * Legacy LDAP base DN key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.base-dn} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_BASEDC = "nacos.core.auth.ldap.basedc";
     
+    /**
+     * Legacy LDAP timeout key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.timeout} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_TIMEOUT = "nacos.core.auth.ldap.timeout";
     
+    /**
+     * Legacy LDAP bind user DN key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.user-dn} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_USERDN = "nacos.core.auth.ldap.userDn";
     
+    /**
+     * Legacy LDAP bind password key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.password} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
     
+    /**
+     * Legacy LDAP filter prefix key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.filter-prefix} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX =
         "nacos.core.auth.ldap.filter.prefix";
     
+    /**
+     * Legacy LDAP case sensitivity key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.case-sensitive} instead.
+     */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_CASE_SENSITIVE =
         "nacos.core.auth.ldap.case.sensitive";
     
     /**
-     * LDAP Ignore partial result exception.
+     * Legacy LDAP partial result handling key.
+     *
+     * @deprecated Use {@code nacos.plugin.auth.ldap.ignore-partial-result-exception} instead.
      */
+    @Deprecated
     public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION =
         "nacos.core.auth.ldap.ignore.partial.result.exception";
     

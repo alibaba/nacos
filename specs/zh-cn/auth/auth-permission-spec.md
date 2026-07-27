@@ -168,7 +168,8 @@ NamespaceId -> Group 或 resourceType -> resourceName
 | `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 |
 | `nacos.core.auth.console.enabled` | 启用 Console API 和登录行为鉴权。 |
 
-选中的鉴权插件由 `nacos.core.auth.system.type` 指定。
+选中的鉴权插件由 `nacos.plugin.auth.type` 指定，`nacos.core.auth.system.type` 继续作为
+历史启动 alias。
 
 ## 插件 API
 

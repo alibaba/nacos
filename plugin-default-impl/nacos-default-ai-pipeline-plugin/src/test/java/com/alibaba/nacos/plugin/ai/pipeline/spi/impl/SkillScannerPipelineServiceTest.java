@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
@@ -23,6 +26,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +37,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,7 +58,8 @@ import static org.mockito.Mockito.when;
  * {@link SkillScannerPipelineService} unit test.
  *
  * <p>Uses stub subprocesses to cover scanner pass and reject paths without depending on an installed
- * {@code skill-scanner} executable. Those tests override {@link SkillScannerPipelineService#buildScanCommand}
+ * {@code skill-scanner} executable. Those tests override
+ * {@link SkillScannerPipelineService#buildScanCommand(Path, String, SkillScannerScanOptions)}
  * and therefore do not assert Cisco CLI {@code --format}/{@code --detailed}; the argv contract is covered
  * by {@code buildScanCommand*} tests below.</p>
  *
@@ -68,6 +80,17 @@ class SkillScannerPipelineServiceTest {
     }
     
     @Test
+    void spiShouldLoadPipelineServicesDirectly() {
+        Set<String> pipelineIds = new HashSet<>();
+        for (PublishPipelineService each : ServiceLoader.load(PublishPipelineService.class)) {
+            pipelineIds.add(each.pipelineId());
+        }
+        
+        assertEquals(new HashSet<>(Arrays.asList("skill-scanner", "skill-spector")),
+            pipelineIds);
+    }
+    
+    @Test
     void getPreferOrderTest() {
         assertEquals(100, service.getPreferOrder());
     }
@@ -81,6 +104,148 @@ class SkillScannerPipelineServiceTest {
             .contains(PublishPipelineResourceType.AGENTSPEC));
         assertTrue(Arrays.asList(service.pipelineResourceTypes())
             .contains(PublishPipelineResourceType.PROMPT));
+    }
+    
+    @Test
+    void configDefinitionsTest() {
+        Map<String, ConfigItemDefinition> definitions = service.getConfigDefinitions().stream()
+            .collect(Collectors.toMap(ConfigItemDefinition::getKey, definition -> definition));
+        
+        assertEquals(7, definitions.size());
+        ConfigItemDefinition order = definitions.get(SkillScannerPluginConfig.ORDER);
+        assertEquals(ConfigItemType.NUMBER, order.getType());
+        assertEquals("100", order.getDefaultValue());
+        assertEquals(ConfigItemEffectMode.RUNTIME, order.getEffectMode());
+        assertTrue(definitions.entrySet().stream()
+            .filter(entry -> !SkillScannerPluginConfig.ORDER.equals(entry.getKey()))
+            .allMatch(entry -> ConfigItemEffectMode.RESTART == entry.getValue().getEffectMode()));
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.COMMAND_ALIAS_EXECUTABLE,
+            SkillScannerPluginConfig.COMMAND_ALIAS_PATH),
+            definitions.get(SkillScannerPluginConfig.COMMAND).getAliases());
+        assertEquals(ConfigItemType.STRING,
+            definitions.get(SkillScannerPluginConfig.COMMAND).getType());
+        assertEquals(SkillScannerPluginConfig.DEFAULT_COMMAND,
+            definitions.get(SkillScannerPluginConfig.COMMAND).getDefaultValue());
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.USE_LLM_ALIAS),
+            definitions.get(SkillScannerPluginConfig.USE_LLM).getAliases());
+        assertEquals(ConfigItemType.BOOLEAN,
+            definitions.get(SkillScannerPluginConfig.USE_LLM).getType());
+        assertEquals("false", definitions.get(SkillScannerPluginConfig.USE_LLM).getDefaultValue());
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.LLM_API_KEY_ALIAS),
+            definitions.get(SkillScannerPluginConfig.LLM_API_KEY).getAliases());
+        assertTrue(definitions.get(SkillScannerPluginConfig.LLM_API_KEY).isSensitive());
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.LLM_MODEL_ALIAS),
+            definitions.get(SkillScannerPluginConfig.LLM_MODEL).getAliases());
+        assertFalse(definitions.get(SkillScannerPluginConfig.LLM_MODEL).isSensitive());
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.LLM_PROVIDER_ALIAS),
+            definitions.get(SkillScannerPluginConfig.LLM_PROVIDER).getAliases());
+        assertEquals(Arrays.asList(SkillScannerPluginConfig.ENABLE_META_ALIAS),
+            definitions.get(SkillScannerPluginConfig.ENABLE_META).getAliases());
+        assertEquals(ConfigItemType.BOOLEAN,
+            definitions.get(SkillScannerPluginConfig.ENABLE_META).getType());
+    }
+    
+    @Test
+    void pluginConfigLifecycleTest() {
+        Properties properties = new Properties();
+        properties.setProperty(SkillScannerPluginConfig.COMMAND, "configured-scanner");
+        properties.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
+        properties.setProperty(SkillScannerPluginConfig.LLM_API_KEY, "secret");
+        properties.setProperty(SkillScannerPluginConfig.LLM_MODEL, "model");
+        properties.setProperty(SkillScannerPluginConfig.LLM_PROVIDER, "provider");
+        properties.setProperty(SkillScannerPluginConfig.ENABLE_META, "true");
+        properties.setProperty(SkillScannerPluginConfig.ORDER, "35");
+        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromMap(
+            PluginConfigTestUtils.toMap(properties));
+        AtomicInteger resolveCount = new AtomicInteger();
+        SkillScannerPipelineService configurableService = new SkillScannerPipelineService(config,
+            command -> {
+                resolveCount.incrementAndGet();
+                return "/resolved/skill-scanner";
+            });
+        
+        Map<String, String> current = configurableService.getCurrentConfig();
+        assertEquals("configured-scanner", current.get(SkillScannerPluginConfig.COMMAND));
+        assertEquals("secret", current.get(SkillScannerPluginConfig.LLM_API_KEY));
+        assertEquals(35, configurableService.getPreferOrder());
+        List<String> command = configurableService.buildScanCommand(Path.of("/tmp/skill"));
+        assertEquals("/resolved/skill-scanner", command.get(0));
+        assertTrue(command.contains("--use-llm"));
+        assertTrue(command.contains("--llm-provider"));
+        assertTrue(command.contains("--enable-meta"));
+        
+        current.put(SkillScannerPluginConfig.COMMAND, "changed-copy");
+        assertEquals("configured-scanner",
+            configurableService.getCurrentConfig().get(SkillScannerPluginConfig.COMMAND));
+        configurableService.applyConfig(config.toMap());
+        assertEquals(1, resolveCount.get());
+        Map<String, String> reordered = new LinkedHashMap<>(config.toMap());
+        reordered.put(SkillScannerPluginConfig.ORDER, "5");
+        configurableService.applyConfig(reordered);
+        assertEquals(1, resolveCount.get());
+        assertEquals(5, configurableService.getPreferOrder());
+        
+        Map<String, String> updated = new LinkedHashMap<>(reordered);
+        updated.put(SkillScannerPluginConfig.USE_LLM, "false");
+        updated.put(SkillScannerPluginConfig.ENABLE_META, "false");
+        configurableService.applyConfig(updated);
+        assertEquals(2, resolveCount.get());
+        List<String> updatedCommand =
+            configurableService.buildScanCommand(Path.of("/tmp/skill"));
+        assertFalse(updatedCommand.contains("--use-llm"));
+        assertFalse(updatedCommand.contains("--enable-meta"));
+    }
+    
+    @Test
+    void spiConstructorShouldDeferRuntimeInitializationUntilApplyTest() {
+        AtomicInteger resolveCount = new AtomicInteger();
+        SkillScannerPipelineService configurableService = new SkillScannerPipelineService(
+            command -> {
+                resolveCount.incrementAndGet();
+                return "/resolved/" + command;
+            });
+        assertEquals(0, resolveCount.get());
+        assertEquals("skill-scanner",
+            configurableService.getCurrentConfig().get(SkillScannerPluginConfig.COMMAND));
+        assertFalse(configurableService.execute(new PublishPipelineContext()).isPassed());
+        
+        configurableService.applyConfig(configurableService.getCurrentConfig());
+        
+        assertEquals(1, resolveCount.get());
+        assertEquals("/resolved/skill-scanner",
+            configurableService.buildScanCommand(Path.of("/tmp/skill")).get(0));
+    }
+    
+    @Test
+    void unavailablePluginConfigTest() {
+        SkillScannerPluginConfig config = SkillScannerPluginConfig.fromMap(null);
+        SkillScannerPipelineService unavailableService =
+            new SkillScannerPipelineService(config, command -> null);
+        
+        PublishPipelineResult result = unavailableService.execute(new PublishPipelineContext());
+        
+        assertFalse(result.isPassed());
+        assertTrue(result.getMessage().contains("未安装"));
+    }
+    
+    @Test
+    void applyPythonStdoutEncodingOnWindowsTest() throws Exception {
+        String originalOsName = System.getProperty("os.name");
+        Map<String, String> environment = new LinkedHashMap<>();
+        Method method = SkillScannerPipelineService.class.getDeclaredMethod(
+            "applyPythonStdoutEncoding", Map.class);
+        method.setAccessible(true);
+        try {
+            System.setProperty("os.name", "Windows 11");
+            method.invoke(service, environment);
+            assertEquals("utf-8", environment.get("PYTHONIOENCODING"));
+        } finally {
+            if (originalOsName == null) {
+                System.clearProperty("os.name");
+            } else {
+                System.setProperty("os.name", originalOsName);
+            }
+        }
     }
     
     @Test
@@ -146,10 +311,11 @@ class SkillScannerPipelineServiceTest {
     @Test
     void buildScanCommandWithLlmAndMetaTest() {
         Properties p = new Properties();
-        p.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
-        p.setProperty(SkillScannerScanOptions.PROP_LLM_PROVIDER, "anthropic");
-        p.setProperty(SkillScannerScanOptions.PROP_ENABLE_META, "true");
-        SkillScannerScanOptions opt = SkillScannerScanOptions.fromProperties(p);
+        p.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
+        p.setProperty(SkillScannerPluginConfig.LLM_PROVIDER, "anthropic");
+        p.setProperty(SkillScannerPluginConfig.ENABLE_META, "true");
+        SkillScannerScanOptions opt =
+            SkillScannerPluginConfig.fromMap(PluginConfigTestUtils.toMap(p)).getScanOptions();
         SkillScannerPipelineService svc = new SkillScannerPipelineService(true, opt);
         List<String> cmd = svc.buildScanCommand(Path.of("/work/s"));
         int formatIdx = cmd.indexOf("--format");
@@ -177,11 +343,8 @@ class SkillScannerPipelineServiceTest {
     }
     
     @Test
-    void deleteRecursivelyHandlesMissingAndFailedDeleteTest() throws Exception {
-        Method deleteRecursively =
-            SkillScannerPipelineService.class.getDeclaredMethod("deleteRecursively", File.class);
-        deleteRecursively.setAccessible(true);
-        deleteRecursively.invoke(service, new Object[] {null});
+    void deleteRecursivelyHandlesMissingAndFailedDeleteTest() {
+        service.deleteRecursively(null);
         
         File file = mock(File.class);
         when(file.exists()).thenReturn(true);
@@ -189,7 +352,7 @@ class SkillScannerPipelineServiceTest {
         when(file.delete()).thenReturn(false);
         when(file.getAbsolutePath()).thenReturn("/tmp/not-deleted");
         
-        deleteRecursively.invoke(service, file);
+        service.deleteRecursively(file);
     }
     
     @Test
@@ -354,13 +517,13 @@ class SkillScannerPipelineServiceTest {
     @Test
     void executeWithLlmOptionsShouldExposeEnvironmentToSubprocessTest() {
         Properties props = new Properties();
-        props.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
-        props.setProperty(SkillScannerScanOptions.PROP_LLM_API_KEY, "test-api-key");
-        props.setProperty(SkillScannerScanOptions.PROP_LLM_MODEL, "test-model");
-        props.setProperty(SkillScannerScanOptions.PROP_LLM_PROVIDER, "openai");
+        props.setProperty(SkillScannerPluginConfig.USE_LLM, "true");
+        props.setProperty(SkillScannerPluginConfig.LLM_API_KEY, "test-api-key");
+        props.setProperty(SkillScannerPluginConfig.LLM_MODEL, "test-model");
+        props.setProperty(SkillScannerPluginConfig.LLM_PROVIDER, "openai");
         SkillScannerPipelineService llmService = createStubService(
             StubScanMode.VERIFY_LLM_ENV,
-            SkillScannerScanOptions.fromProperties(props));
+            SkillScannerPluginConfig.fromMap(PluginConfigTestUtils.toMap(props)).getScanOptions());
         
         PublishPipelineResult result =
             llmService.execute(createRiskySkillContext("risky-skill-llm"));
@@ -637,7 +800,8 @@ class SkillScannerPipelineServiceTest {
         }
         
         @Override
-        List<String> buildScanCommand(Path tempDir) {
+        List<String> buildScanCommand(Path tempDir, String scannerCommand,
+            SkillScannerScanOptions scanOptions) {
             return Arrays.asList(
                 currentJavaBinary(),
                 "-cp",

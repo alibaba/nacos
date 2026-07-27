@@ -29,7 +29,8 @@ client also contains `OidcClientAuthServiceImpl`, which obtains bearer tokens
 through the OAuth2 client credentials flow and injects them into SDK requests.
 
 OIDC is not part of the default Nacos username/password auth plugin. It is an
-alternative auth mode selected by `nacos.core.auth.system.type=oidc`.
+alternative auth mode selected by `nacos.plugin.auth.type=oidc`.
+`nacos.core.auth.system.type=oidc` remains a legacy startup alias.
 
 ## Server SPI
 
@@ -54,35 +55,61 @@ surfaces should be hidden or disabled when OIDC is selected.
 OIDC mode is selected with:
 
 ```properties
-nacos.core.auth.system.type=oidc
+nacos.plugin.auth.type=oidc
 nacos.core.auth.enabled=true
 ```
 
 Server-to-server identity and the default Nacos token secret can still be
 required by the runtime for internal communication and compatibility paths.
 
-OIDC plugin configuration uses the `nacos.core.auth.plugin.oidc.` prefix:
+OIDC plugin configuration uses item keys under the canonical full-key prefix
+`nacos.plugin.auth.oidc.`. The corresponding
+`nacos.core.auth.plugin.oidc.{item-key}` key remains a deprecated alias. When
+both forms are present, the canonical key wins.
 
-| Configuration | Default | Purpose |
-|---------------|---------|---------|
-| `issuer-uri` | empty | IdP issuer URI. The plugin uses it for OIDC discovery. |
-| `client-id` | empty | OAuth2 client id registered in the IdP. |
-| `client-secret` | empty | OAuth2 client secret. Also used by the current implementation for signed state. |
-| `scope` | `openid profile email` | Scopes requested during browser login. |
-| `token-validation-method` | `jwt` | Declared validation mode. Current server code validates JWTs through JWKS. |
-| `jwks-cache-ttl-seconds` | `3600` | JWKS cache TTL. |
-| `username-claim` | `preferred_username` | Claim used as the Nacos display username. |
-| `roles-claim` | `roles` | Primary claim used to extract roles. |
-| `admin-role` | `nacos-admin` | Role that maps to global administrator. |
-| `auto-create-user` | `true` | Reserved for user mapping compatibility; OIDC remains the identity source of truth. |
-| `authorization-endpoint` | empty | External endpoint used for non-admin authorization decisions. |
-| `authorization-timeout-ms` | `5000` | Timeout for external authorization requests. |
-| `strict-nonce-validation` | `true` | Reject authorization-code login when the ID token lacks or mismatches nonce. |
-| `strict-audience-validation` | `true` | Reject tokens whose audience or authorized party does not match `client-id`. |
+| Item key | Type | Default | Sensitive | Effect | Purpose |
+|----------|------|---------|-----------|--------|---------|
+| `issuer-uri` | string | empty | no | restart | IdP issuer URI used for OIDC discovery. |
+| `client-id` | string | empty | no | restart | OAuth2 client id registered in the IdP. |
+| `client-secret` | string | empty | yes | restart | OAuth2 client secret, also used for signed state. |
+| `scope` | string | `openid profile email` | no | restart | Scopes requested during browser login. |
+| `token-validation-method` | string | `jwt` | no | restart | Reserved validation mode selector; current server code supports JWT/JWKS only. |
+| `jwks-cache-ttl-seconds` | number | `3600` | no | restart | Positive JWKS cache TTL in seconds. |
+| `username-claim` | string | `preferred_username` | no | restart | Claim used as the Nacos display username. |
+| `roles-claim` | string | `roles` | no | restart | Primary claim used to extract roles. |
+| `admin-role` | string | `nacos-admin` | no | restart | Role that maps to global administrator. |
+| `auto-create-user` | boolean | `true` | no | restart | Reserved compatibility setting; it does not change current runtime behavior. |
+| `authorization-endpoint` | string | empty | no | restart | External endpoint used for non-admin authorization decisions. |
+| `authorization-timeout-ms` | number | `5000` | no | restart | Positive timeout for external authorization requests. |
+| `strict-nonce-validation` | boolean | `true` | no | restart | Reject authorization-code login when the ID token lacks or mismatches nonce. |
+| `strict-audience-validation` | boolean | `true` | no | restart | Reject tokens whose audience or authorized party does not match `client-id`. |
 
 `issuer-uri` and `client-id` are required for a valid server configuration.
 Browser login also requires `client-secret`, authorization endpoint discovery,
 and token endpoint discovery.
+
+## Unified Plugin Configuration Lifecycle
+
+`OidcAuthPluginService` implements `PluginConfigSpec` and exposes all fourteen
+items through plugin detail APIs. The APIs must mask `client-secret`; the
+effective value must never be returned in plaintext.
+
+All items have restart effect in the current lifecycle. Runtime-persisted and
+local-only API updates that change an OIDC item must be rejected. At startup,
+the unified plugin manager resolves canonical keys, legacy aliases, and
+defaults, then applies one complete item-key map to the plugin.
+
+Applying configuration must only construct and atomically publish an immutable
+in-memory runtime graph. It must not perform discovery, JWKS, token, or
+authorization network I/O. Provider discovery remains lazy, is shared by the
+login and JWKS paths, caches only successful metadata, and may retry after a
+failure.
+
+`issuer-uri` and `client-id` are conditionally required when OIDC is selected,
+but their generic `ConfigItemDefinition.required` flag remains false because
+all discovered auth plugins are initialized even when another auth type is
+selected. OIDC request and login paths must still report an invalid active
+configuration rather than silently treating it as usable.
 
 ## Browser Login Flow
 
@@ -173,8 +200,9 @@ must not fail unrelated SDK calls.
   be documented as supported until an implementation exists.
 - OIDC browser endpoints currently use `/v1/auth/oidc`. Any future Nacos-native
   auth APIs should use `/v3/auth/oidc/*` and the standard response/error model.
-- Documentation and code must stay aligned on default values for strict nonce
-  and audience validation.
+- The generic configuration model does not yet express "required when this
+  plugin is selected". OIDC keeps active-mode validation until that capability
+  is designed.
 
 ## Relationships
 

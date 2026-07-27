@@ -31,13 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: plugin list exposes discovered plugin inventory, pluginType filters narrow results, and
- *     plugin detail returns the same identity plus mutable-state fields.</li>
+ *     plugin detail returns the same identity plus type capability and mutable-state fields.</li>
  *     <li>Boundary/validation: unknown pluginType filters return an empty list; status update requires
  *     {@code pluginName}; config update requires {@code config} and rejects non-configurable plugins; missing plugin
  *     detail is reported as not found.</li>
- *     <li>Exception/error handling: plugin state/config mutation success paths are intentionally not executed because
- *     they change runtime extension state; required-parameter and detail not-found failures are verified as controlled
- *     v3 error envelopes.</li>
+ *     <li>Exception/error handling: critical disable and exclusive runtime-switch attempts are rejected without
+ *     mutation; required-parameter and detail not-found failures are verified as controlled v3 error envelopes.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -53,6 +52,9 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertTrue(plugin.get("pluginId").asText().contains(":"), plugin.toString());
         assertTrue(plugin.get("pluginType").asText().length() > 0, plugin.toString());
         assertTrue(plugin.get("pluginName").asText().length() > 0, plugin.toString());
+        assertTrue(plugin.has("typeCritical"), plugin.toString());
+        assertTrue(plugin.get("executionMode").asText().length() > 0, plugin.toString());
+        assertTrue(plugin.has("exclusive"), plugin.toString());
 
         JsonNode filtered = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
                 Query.newInstance().addParam("pluginType", plugin.get("pluginType").asText())).get("data");
@@ -69,6 +71,9 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertEquals(plugin.get("pluginName").asText(), detail.get("pluginName").asText(), detail.toString());
         assertTrue(detail.has("enabled"), detail.toString());
         assertTrue(detail.has("configurable"), detail.toString());
+        assertEquals(plugin.get("typeCritical"), detail.get("typeCritical"), detail.toString());
+        assertEquals(plugin.get("executionMode"), detail.get("executionMode"), detail.toString());
+        assertEquals(plugin.get("exclusive"), detail.get("exclusive"), detail.toString());
         assertTrue(detail.get("configValueMetas").isObject(), detail.toString());
 
         JsonNode unknownType = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
@@ -110,6 +115,102 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
     }
 
     @Test
+    public void testLdapAuthPluginConfigMetadata() throws Exception {
+        JsonNode detail = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/detail",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "ldap"))
+                .get("data");
+        assertTrue(detail.get("configurable").asBoolean(), detail.toString());
+
+        JsonNode definitions = detail.get("configDefinitions");
+        assertEquals(8, definitions.size(), definitions.toString());
+        assertDefinition(definitions, "url", "nacos.core.auth.ldap.url", "STRING", "RESTART",
+                false);
+        assertDefinition(definitions, "base-dn", "nacos.core.auth.ldap.basedc", "STRING",
+                "RESTART", false);
+        assertDefinition(definitions, "timeout", "nacos.core.auth.ldap.timeout", "NUMBER",
+                "RESTART", false);
+        assertDefinition(definitions, "user-dn", "nacos.core.auth.ldap.userDn", "STRING",
+                "RESTART", false);
+        assertDefinition(definitions, "password", "nacos.core.auth.ldap.password", "STRING",
+                "RESTART", true);
+        assertDefinition(definitions, "filter-prefix", "nacos.core.auth.ldap.filter.prefix",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "case-sensitive", "nacos.core.auth.ldap.case.sensitive",
+                "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "ignore-partial-result-exception",
+                "nacos.core.auth.ldap.ignore.partial.result.exception", "BOOLEAN", "RESTART", false);
+
+        JsonNode config = detail.get("config");
+        assertEquals("ldap://localhost:389", config.get("url").asText(), config.toString());
+        assertEquals("3000", config.get("timeout").asText(), config.toString());
+        assertTrue(config.get("password").asText().contains("******"), config.toString());
+
+        JsonNode metas = detail.get("configValueMetas");
+        assertEquals("DEFAULT", metas.get("url").get("source").asText(), metas.toString());
+        assertEquals("DEFAULT", metas.get("password").get("source").asText(), metas.toString());
+    }
+
+    @Test
+    public void testOidcAuthPluginConfigMetadata() throws Exception {
+        JsonNode detail = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/detail",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "oidc"))
+                .get("data");
+        assertTrue(detail.get("configurable").asBoolean(), detail.toString());
+
+        JsonNode definitions = detail.get("configDefinitions");
+        assertEquals(14, definitions.size(), definitions.toString());
+        assertDefinition(definitions, "issuer-uri", "nacos.core.auth.plugin.oidc.issuer-uri",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "client-id", "nacos.core.auth.plugin.oidc.client-id",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "client-secret", "nacos.core.auth.plugin.oidc.client-secret",
+                "STRING", "RESTART", true);
+        assertDefinition(definitions, "scope", "nacos.core.auth.plugin.oidc.scope",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "token-validation-method",
+                "nacos.core.auth.plugin.oidc.token-validation-method", "STRING", "RESTART", false);
+        assertDefinition(definitions, "jwks-cache-ttl-seconds",
+                "nacos.core.auth.plugin.oidc.jwks-cache-ttl-seconds", "NUMBER", "RESTART", false);
+        assertDefinition(definitions, "username-claim", "nacos.core.auth.plugin.oidc.username-claim",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "roles-claim", "nacos.core.auth.plugin.oidc.roles-claim",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "admin-role", "nacos.core.auth.plugin.oidc.admin-role",
+                "STRING", "RESTART", false);
+        assertDefinition(definitions, "auto-create-user",
+                "nacos.core.auth.plugin.oidc.auto-create-user", "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "authorization-endpoint",
+                "nacos.core.auth.plugin.oidc.authorization-endpoint", "STRING", "RESTART", false);
+        assertDefinition(definitions, "authorization-timeout-ms",
+                "nacos.core.auth.plugin.oidc.authorization-timeout-ms", "NUMBER", "RESTART", false);
+        assertDefinition(definitions, "strict-nonce-validation",
+                "nacos.core.auth.plugin.oidc.strict-nonce-validation", "BOOLEAN", "RESTART", false);
+        assertDefinition(definitions, "strict-audience-validation",
+                "nacos.core.auth.plugin.oidc.strict-audience-validation", "BOOLEAN", "RESTART", false);
+
+        JsonNode config = detail.get("config");
+        assertEquals(14, config.size(), config.toString());
+        assertEquals("", config.get("issuer-uri").asText(), config.toString());
+        assertEquals("", config.get("client-secret").asText(), config.toString());
+        assertEquals("openid profile email", config.get("scope").asText(), config.toString());
+        assertEquals("jwt", config.get("token-validation-method").asText(), config.toString());
+        assertEquals("3600", config.get("jwks-cache-ttl-seconds").asText(), config.toString());
+        assertEquals("5000", config.get("authorization-timeout-ms").asText(), config.toString());
+        assertEquals("true", config.get("strict-nonce-validation").asText(), config.toString());
+
+        JsonNode metas = detail.get("configValueMetas");
+        assertEquals(14, metas.size(), metas.toString());
+        for (JsonNode meta : metas) {
+            assertEquals("DEFAULT", meta.get("source").asText(), meta.toString());
+        }
+
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/config",
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "oidc")
+                        .addParam("config", "{\"client-id\":\"updated\"}")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "requires restart");
+    }
+
+    @Test
     public void testPluginDetailNotFoundReturnsControlledError() throws Exception {
         assertError(getRaw(ADMIN_CORE_PLUGIN_PATH + "/detail",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
@@ -124,6 +225,27 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/config",
                 Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
                 400, ErrorCode.PARAMETER_MISSING, "config");
+    }
+
+    @Test
+    public void testCriticalAndExclusiveStateChangesAreRejected() throws Exception {
+        JsonNode authPlugins = getJsonOk(ADMIN_CORE_PLUGIN_PATH + "/list",
+                Query.newInstance().addParam("pluginType", "auth")).get("data");
+        JsonNode enabled = findByEnabled(authPlugins, true);
+        JsonNode disabled = findByEnabled(authPlugins, false);
+        assertNotNull(enabled, authPlugins.toString());
+        assertNotNull(disabled, authPlugins.toString());
+
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", enabled.get("pluginName").asText())
+                        .addParam("enabled", "false")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "critical plugin type");
+        assertError(putRaw(ADMIN_CORE_PLUGIN_PATH + "/status",
+                Query.newInstance().addParam("pluginType", "auth")
+                        .addParam("pluginName", disabled.get("pluginName").asText())
+                        .addParam("enabled", "true")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "requires restart");
     }
 
     @Test
@@ -159,6 +281,15 @@ public class PluginAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         for (JsonNode definition : definitions) {
             if (key.equals(definition.get("key").asText())) {
                 return definition;
+            }
+        }
+        return null;
+    }
+
+    private JsonNode findByEnabled(JsonNode plugins, boolean enabled) {
+        for (JsonNode plugin : plugins) {
+            if (plugin.get("enabled").asBoolean() == enabled) {
+                return plugin;
             }
         }
         return null;

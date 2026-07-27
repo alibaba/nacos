@@ -18,8 +18,11 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
@@ -27,6 +30,7 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,6 +41,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -164,6 +169,84 @@ class SkillIndexManifestServiceTest {
             any());
     }
     
+    @Test
+    void testQueryWriteAndDeleteUseSameHashedGroupForLongSkillName() throws NacosException {
+        String longSkillName = repeat("long-skill-", 14);
+        SkillIndexManifest manifest = new SkillIndexManifest();
+        manifest.setLabels(new HashMap<>());
+        manifest.setVersions(new HashMap<>());
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent(JacksonUtils.toJson(manifest));
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        assertNotNull(manifestService.query(NAMESPACE_ID, longSkillName));
+        manifestService.write(NAMESPACE_ID, longSkillName, manifest);
+        manifestService.delete(NAMESPACE_ID, longSkillName);
+        
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(queryCaptor.capture());
+        ArgumentCaptor<ConfigForm> publishCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(publishCaptor.capture(), any(), any());
+        ArgumentCaptor<String> deleteDataIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> deleteGroupCaptor = ArgumentCaptor.forClass(String.class);
+        verify(configOperationService).deleteConfig(deleteDataIdCaptor.capture(),
+            deleteGroupCaptor.capture(), any(), any(), any(), any(), any());
+        
+        String expectedDataId = SkillUtils.SKILL_INDEX_DATA_ID;
+        String expectedGroup = NacosAiConfigKeyCodec.toPhysicalGroup(
+            SkillUtils.buildSkillGroup(longSkillName), SkillUtils.SKILL_GROUP_PREFIX);
+        assertTrue(expectedGroup.startsWith(
+            SkillUtils.SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.HASHED_PREFIX));
+        assertEquals(expectedDataId, queryCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, queryCaptor.getValue().getGroup());
+        assertEquals(expectedDataId, publishCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, publishCaptor.getValue().getGroup());
+        assertEquals(expectedDataId, deleteDataIdCaptor.getValue());
+        assertEquals(expectedGroup, deleteGroupCaptor.getValue());
+    }
+    
+    @Test
+    void testQueryWriteAndDeleteUseSameEncodedGroupForUnicodeSkillName()
+        throws NacosException {
+        String skillName = "中文技能";
+        SkillIndexManifest manifest = new SkillIndexManifest();
+        manifest.setLabels(new HashMap<>());
+        manifest.setVersions(new HashMap<>());
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent(JacksonUtils.toJson(manifest));
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        assertNotNull(manifestService.query(NAMESPACE_ID, skillName));
+        manifestService.write(NAMESPACE_ID, skillName, manifest);
+        manifestService.delete(NAMESPACE_ID, skillName);
+        
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(queryCaptor.capture());
+        ArgumentCaptor<ConfigForm> publishCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(publishCaptor.capture(), any(), any());
+        ArgumentCaptor<String> deleteDataIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> deleteGroupCaptor = ArgumentCaptor.forClass(String.class);
+        verify(configOperationService).deleteConfig(deleteDataIdCaptor.capture(),
+            deleteGroupCaptor.capture(), any(), any(), any(), any(), any());
+        
+        String expectedGroup = SkillUtils.buildSkillGroup(skillName);
+        assertTrue(expectedGroup.startsWith(
+            SkillUtils.SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.ENCODED_PREFIX));
+        assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(expectedGroup));
+        assertEquals(SkillUtils.SKILL_INDEX_DATA_ID, queryCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, queryCaptor.getValue().getGroup());
+        assertEquals(SkillUtils.SKILL_INDEX_DATA_ID, publishCaptor.getValue().getDataId());
+        assertEquals(expectedGroup, publishCaptor.getValue().getGroup());
+        assertEquals(SkillUtils.SKILL_INDEX_DATA_ID, deleteDataIdCaptor.getValue());
+        assertEquals(expectedGroup, deleteGroupCaptor.getValue());
+    }
+    
     // ========== resolveVersion static method tests ==========
     
     @Test
@@ -238,5 +321,13 @@ class SkillIndexManifestServiceTest {
         manifest.setVersions(versions);
         
         assertNull(SkillIndexManifestService.resolveVersion(manifest, null, null));
+    }
+    
+    private static String repeat(String value, int count) {
+        StringBuilder result = new StringBuilder(value.length() * count);
+        for (int i = 0; i < count; i++) {
+            result.append(value);
+        }
+        return result.toString();
     }
 }

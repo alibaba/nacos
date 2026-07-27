@@ -37,6 +37,13 @@ class AiConstantsStatusMappingTest {
         assertEquals("active", AiConstants.Mcp.MCP_STATUS_ACTIVE);
         assertEquals("deprecated", AiConstants.Mcp.MCP_STATUS_DEPRECATED);
         assertEquals("deleted", AiConstants.Mcp.MCP_STATUS_DELETED);
+        assertEquals("enable", AiConstants.Agent.RESOURCE_STATUS_ENABLE);
+        assertEquals("disable", AiConstants.Agent.RESOURCE_STATUS_DISABLE);
+        assertEquals("draft", AiConstants.Agent.VERSION_STATUS_DRAFT);
+        assertEquals("reviewing", AiConstants.Agent.VERSION_STATUS_REVIEWING);
+        assertEquals("reviewed", AiConstants.Agent.VERSION_STATUS_REVIEWED);
+        assertEquals("online", AiConstants.Agent.VERSION_STATUS_ONLINE);
+        assertEquals("offline", AiConstants.Agent.VERSION_STATUS_OFFLINE);
     }
     
 }

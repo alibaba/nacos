@@ -17,22 +17,24 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.authenticate;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadata;
+import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadataProvider;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import com.alibaba.nacos.plugin.auth.impl.oidc.token.JwtTokenValidator;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,30 +42,23 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class AuthorizationCodeHandlerTest {
     
-    @AfterEach
-    void tearDown() {
-        ReflectionTestUtils.setField(AuthorizationCodeHandler.class, "instance", null);
-    }
-    
     @Test
-    void testBuildAuthorizationUrlRejectsMissingEndpoint() {
-        OidcAuthConfig config = mock(OidcAuthConfig.class);
-        AuthorizationCodeHandler handler = newHandler(config);
+    void testBuildAuthorizationUrlRejectsMissingEndpoint() throws Exception {
+        AuthorizationCodeHandler handler = newHandler(mockConfig(), metadataProvider(null,
+            null, null));
         
         assertThrows(AccessException.class,
             () -> handler.buildAuthorizationUrl("http://nacos/callback"));
     }
     
     @Test
-    void testBuildAuthorizationUrlWrapsInvalidEndpoint() {
-        OidcAuthConfig config = mockConfig();
-        when(config.getAuthorizationEndpoint()).thenReturn("://bad-endpoint");
-        AuthorizationCodeHandler handler = newHandler(config);
+    void testBuildAuthorizationUrlWrapsInvalidEndpoint() throws Exception {
+        AuthorizationCodeHandler handler = newHandler(mockConfig(),
+            metadataProvider("://bad-endpoint", null, null));
         
         assertThrows(AccessException.class,
             () -> handler.buildAuthorizationUrl("http://nacos/callback"));
@@ -71,7 +66,7 @@ class AuthorizationCodeHandlerTest {
     
     @Test
     void testBuildAuthorizationUrlIncludesOidcParameters() throws AccessException {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         AuthorizationCodeHandler handler = newHandler(config);
         
         String url = handler.buildAuthorizationUrl("http://nacos/callback");
@@ -86,16 +81,16 @@ class AuthorizationCodeHandlerTest {
     }
     
     @Test
-    void testBuildLogoutUrlReturnsNullWhenEndpointMissing() {
-        OidcAuthConfig config = mock(OidcAuthConfig.class);
-        AuthorizationCodeHandler handler = newHandler(config);
+    void testBuildLogoutUrlReturnsNullWhenEndpointMissing() throws Exception {
+        AuthorizationCodeHandler handler = newHandler(mockConfig(), metadataProvider(
+            "http://idp/authorize", null, null));
         
         assertNull(handler.buildLogoutUrl("id-token", "http://nacos"));
     }
     
     @Test
     void testBuildLogoutUrlWithOptionalParameters() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         AuthorizationCodeHandler handler = newHandler(config);
         
         String logoutUrl = handler.buildLogoutUrl("id-token", "http://nacos");
@@ -108,7 +103,7 @@ class AuthorizationCodeHandlerTest {
     
     @Test
     void testBuildLogoutUrlWithClientOnly() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         AuthorizationCodeHandler handler = newHandler(config);
         
         String logoutUrl = handler.buildLogoutUrl("", "");
@@ -119,7 +114,7 @@ class AuthorizationCodeHandlerTest {
     
     @Test
     void testBuildLogoutUrlWithRedirectOnly() {
-        OidcAuthConfig config = mockConfig();
+        OidcAuthPluginConfig config = mockConfig();
         AuthorizationCodeHandler handler = newHandler(config);
         
         String logoutUrl = handler.buildLogoutUrl("", "http://nacos");
@@ -157,8 +152,7 @@ class AuthorizationCodeHandlerTest {
     
     @Test
     void testVerifyAndDecodeStateCatchesSigningFailure() {
-        OidcAuthConfig config = mockConfig();
-        when(config.getClientSecret()).thenReturn("");
+        OidcAuthPluginConfig config = configWithSecret("");
         AuthorizationCodeHandler handler = newHandler(config);
         long future = System.currentTimeMillis() + 60_000L;
         
@@ -168,8 +162,7 @@ class AuthorizationCodeHandlerTest {
     
     @Test
     void testBuildSignedStateRequiresClientSecret() {
-        OidcAuthConfig config = mockConfig();
-        when(config.getClientSecret()).thenReturn("");
+        OidcAuthPluginConfig config = configWithSecret("");
         AuthorizationCodeHandler handler = newHandler(config);
         
         assertThrows(RuntimeException.class,
@@ -202,8 +195,7 @@ class AuthorizationCodeHandlerTest {
             user.setUsername("nacos");
             when(validator.validate(idToken)).thenReturn(claims);
             when(mapper.mapToUser(claims)).thenReturn(user);
-            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true), validator,
-                mapper);
+            AuthorizationCodeHandler handler = tokenHandler(server, true, validator, mapper);
             String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
                 System.currentTimeMillis() + 60_000L);
             
@@ -236,7 +228,8 @@ class AuthorizationCodeHandlerTest {
         HttpServer server = startTokenServer(400,
             "{\"error\":\"invalid_grant\",\"error_description\":\"bad code\"}");
         try {
-            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true));
+            AuthorizationCodeHandler handler = tokenHandler(server, true,
+                mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
             String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
                 System.currentTimeMillis() + 60_000L);
             
@@ -254,7 +247,7 @@ class AuthorizationCodeHandlerTest {
         try {
             JwtTokenValidator validator = mock(JwtTokenValidator.class);
             when(validator.validate(idToken)).thenThrow(new IllegalStateException("broken"));
-            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, true), validator,
+            AuthorizationCodeHandler handler = tokenHandler(server, true, validator,
                 mock(OidcUserMapper.class));
             String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
                 System.currentTimeMillis() + 60_000L);
@@ -268,32 +261,47 @@ class AuthorizationCodeHandlerTest {
         }
     }
     
-    private AuthorizationCodeHandler newHandler(OidcAuthConfig config) {
-        return newHandler(config, mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
-    }
-    
-    private AuthorizationCodeHandler newHandler(OidcAuthConfig config,
-        JwtTokenValidator validator, OidcUserMapper mapper) {
-        ReflectionTestUtils.setField(AuthorizationCodeHandler.class, "instance", null);
-        try (MockedStatic<OidcAuthConfig> configStatic = mockStatic(OidcAuthConfig.class);
-            MockedStatic<JwtTokenValidator> validatorStatic =
-                mockStatic(JwtTokenValidator.class);
-            MockedStatic<OidcUserMapper> mapperStatic = mockStatic(OidcUserMapper.class)) {
-            configStatic.when(OidcAuthConfig::getInstance).thenReturn(config);
-            validatorStatic.when(JwtTokenValidator::getInstance).thenReturn(validator);
-            mapperStatic.when(OidcUserMapper::getInstance).thenReturn(mapper);
-            return AuthorizationCodeHandler.getInstance();
+    private AuthorizationCodeHandler newHandler(OidcAuthPluginConfig config) {
+        try {
+            return newHandler(config, metadataProvider("http://idp/authorize", null,
+                "http://idp/logout"));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
     }
     
-    private OidcAuthConfig mockConfig() {
-        OidcAuthConfig config = mock(OidcAuthConfig.class);
-        when(config.getAuthorizationEndpoint()).thenReturn("http://idp/authorize");
-        when(config.getClientId()).thenReturn("client");
-        when(config.getClientSecret()).thenReturn("secret");
-        when(config.getScope()).thenReturn("openid profile");
-        when(config.getEndSessionEndpoint()).thenReturn("http://idp/logout");
-        return config;
+    private AuthorizationCodeHandler newHandler(OidcAuthPluginConfig config,
+        OidcProviderMetadataProvider metadataProvider) {
+        return newHandler(config, metadataProvider, mock(JwtTokenValidator.class),
+            mock(OidcUserMapper.class));
+    }
+    
+    private AuthorizationCodeHandler newHandler(OidcAuthPluginConfig config,
+        JwtTokenValidator validator, OidcUserMapper mapper) {
+        try {
+            return newHandler(config, metadataProvider("http://idp/authorize", null,
+                "http://idp/logout"), validator, mapper);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+    
+    private AuthorizationCodeHandler newHandler(OidcAuthPluginConfig config,
+        OidcProviderMetadataProvider metadataProvider, JwtTokenValidator validator,
+        OidcUserMapper mapper) {
+        return new AuthorizationCodeHandler(config, metadataProvider, validator, mapper);
+    }
+    
+    private OidcAuthPluginConfig mockConfig() {
+        return configWithSecret("secret");
+    }
+    
+    private OidcAuthPluginConfig configWithSecret(String secret) {
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put(OidcAuthPluginConfig.CLIENT_ID, "client");
+        config.put(OidcAuthPluginConfig.CLIENT_SECRET, secret);
+        config.put(OidcAuthPluginConfig.SCOPE, "openid profile");
+        return OidcAuthPluginConfig.from(config);
     }
     
     private String encodeState(String stateContent) {
@@ -311,8 +319,8 @@ class AuthorizationCodeHandlerTest {
             user.setUsername("nacos");
             when(validator.validate(idToken)).thenReturn(claims);
             when(mapper.mapToUser(claims)).thenReturn(user);
-            AuthorizationCodeHandler handler = newHandler(tokenConfig(server, strictNonce),
-                validator, mapper);
+            AuthorizationCodeHandler handler = tokenHandler(server, strictNonce, validator,
+                mapper);
             String state = ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
                 System.currentTimeMillis() + 60_000L);
             return handler.exchangeCodeForUser("code", state, "http://nacos/callback");
@@ -321,12 +329,26 @@ class AuthorizationCodeHandlerTest {
         }
     }
     
-    private OidcAuthConfig tokenConfig(HttpServer server, boolean strictNonce) {
-        OidcAuthConfig config = mockConfig();
-        when(config.getTokenEndpoint())
-            .thenReturn("http://127.0.0.1:" + server.getAddress().getPort() + "/token");
-        when(config.isStrictNonceValidation()).thenReturn(strictNonce);
-        return config;
+    private AuthorizationCodeHandler tokenHandler(HttpServer server, boolean strictNonce,
+        JwtTokenValidator validator, OidcUserMapper mapper) throws Exception {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put(OidcAuthPluginConfig.CLIENT_ID, "client");
+        values.put(OidcAuthPluginConfig.CLIENT_SECRET, "secret");
+        values.put(OidcAuthPluginConfig.SCOPE, "openid profile");
+        values.put(OidcAuthPluginConfig.STRICT_NONCE_VALIDATION,
+            Boolean.toString(strictNonce));
+        OidcAuthPluginConfig config = OidcAuthPluginConfig.from(values);
+        String tokenEndpoint = "http://127.0.0.1:" + server.getAddress().getPort() + "/token";
+        return newHandler(config, metadataProvider("http://idp/authorize", tokenEndpoint,
+            "http://idp/logout"), validator, mapper);
+    }
+    
+    private OidcProviderMetadataProvider metadataProvider(String authorizationEndpoint,
+        String tokenEndpoint, String endSessionEndpoint) throws Exception {
+        OidcProviderMetadataProvider provider = mock(OidcProviderMetadataProvider.class);
+        when(provider.getMetadata()).thenReturn(new OidcProviderMetadata(
+            authorizationEndpoint, tokenEndpoint, null, endSessionEndpoint, null));
+        return provider;
     }
     
     private HttpServer startTokenServer(int status, String body) throws IOException {

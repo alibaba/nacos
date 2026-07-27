@@ -109,6 +109,9 @@ class PluginInnerHandlerTest {
         assertEquals("auth", result.get(0).getPluginType());
         assertEquals("test", result.get(0).getPluginName());
         assertTrue(result.get(0).getEnabled());
+        assertTrue(result.get(0).getTypeCritical());
+        assertEquals("EXCLUSIVE", result.get(0).getExecutionMode());
+        assertTrue(result.get(0).getExclusive());
     }
     
     @Test
@@ -157,6 +160,9 @@ class PluginInnerHandlerTest {
         assertEquals("auth", result.getPluginType());
         assertEquals("test", result.getPluginName());
         assertTrue(result.getConfigurable());
+        assertTrue(result.getTypeCritical());
+        assertEquals("EXCLUSIVE", result.getExecutionMode());
+        assertTrue(result.getExclusive());
         assertNotNull(result.getConfig());
         assertEquals("value1", result.getConfig().get("key1"));
         assertEquals(PluginConfigSourceType.RUNTIME_PERSISTED,

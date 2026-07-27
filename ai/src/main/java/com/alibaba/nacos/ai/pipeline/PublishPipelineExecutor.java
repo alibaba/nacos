@@ -21,9 +21,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
-import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
-import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
@@ -51,17 +49,13 @@ public class PublishPipelineExecutor {
     
     private final PublishPipelineManager pipelineManager;
     
-    private final PipelineConfigProvider configProvider;
-    
     private final PipelineExecutionRepository executionRepository;
     
     private final ExecutorService asyncExecutor;
     
     public PublishPipelineExecutor(PublishPipelineManager pipelineManager,
-        PipelineConfigProvider configProvider,
         PipelineExecutionRepository executionRepository, ExecutorService asyncExecutor) {
         this.pipelineManager = pipelineManager;
-        this.configProvider = configProvider;
         this.executionRepository = executionRepository;
         this.asyncExecutor = asyncExecutor;
     }
@@ -70,8 +64,7 @@ public class PublishPipelineExecutor {
      * Asynchronously execute the pipeline.
      *
      * <ol>
-     *   <li>Check config: if not enabled, return null (no record, no callback)</li>
-     *   <li>Get matching services: if empty, return null (no record, no callback)</li>
+     *   <li>Get matching services: if the framework is disabled or no node matches, return null</li>
      *   <li>Create PipelineExecution with IN_PROGRESS status and persist</li>
      *   <li>Return executionId immediately</li>
      *   <li>Submit async task to execute nodes serially, update state, and invoke callback</li>
@@ -98,21 +91,14 @@ public class PublishPipelineExecutor {
      */
     public String execute(PublishPipelineContext context, PipelineCallback callback,
         String executionId) {
-        // Step 1: Check config
-        PipelineConfig config = configProvider.getConfig();
-        if (!config.isEnabled()) {
-            return null;
-        }
-        
-        // Step 2: Get matching pipeline services
+        // Step 1: Get matching pipeline services
         List<PublishPipelineService> services =
-            pipelineManager.getPipelineServices(context.getResourceType(),
-                config.getNodes());
+            pipelineManager.getPipelineServices(context.getResourceType());
         if (services.isEmpty()) {
             return null;
         }
         
-        // Step 3: Create execution record
+        // Step 2: Create execution record
         long now = System.currentTimeMillis();
         
         PipelineExecution execution = new PipelineExecution();
@@ -133,7 +119,7 @@ public class PublishPipelineExecutor {
                 executionId, e);
         }
         
-        // Step 4: Submit async task
+        // Step 3: Submit async task
         asyncExecutor.submit(() -> {
             try {
                 boolean allPassed = true;
@@ -236,12 +222,8 @@ public class PublishPipelineExecutor {
      * @return true if pipeline is enabled and has matching service nodes
      */
     public boolean isPipelineAvailable(PublishPipelineResourceType resourceType) {
-        PipelineConfig config = configProvider.getConfig();
-        if (!config.isEnabled()) {
-            return false;
-        }
         List<PublishPipelineService> services =
-            pipelineManager.getPipelineServices(resourceType, config.getNodes());
+            pipelineManager.getPipelineServices(resourceType);
         return !services.isEmpty();
     }
 }

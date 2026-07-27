@@ -16,29 +16,32 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
+import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
+import com.alibaba.nacos.api.plugin.ConfigItemType;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Publish pipeline service that integrates Cisco AI Defense skill-scanner for security scanning
@@ -46,7 +49,7 @@ import java.util.Map;
  *
  * <p>Uses <a href="https://github.com/cisco-ai-defense/skill-scanner">skill-scanner</a> to detect prompt
  * injection, data exfiltration, and malicious code patterns. Optional LLM semantic analysis via
- * node property {@code useLlm=true} and {@code llmApiKey}/{@code llmModel} (mapped to
+ * plugin config item {@code use-llm=true} and {@code llm-api-key}/{@code llm-model} (mapped to
  * {@code SKILL_SCANNER_LLM_*} in the subprocess environment). Rejects publishing if HIGH/CRITICAL
  * findings are detected.</p>
  *
@@ -55,14 +58,17 @@ import java.util.Map;
  *
  * @author qiacheng.cxy
  */
-public class SkillScannerPipelineService implements PublishPipelineService {
+public class SkillScannerPipelineService
+    extends AbstractCommandPipelineService<SkillScannerScanOptions> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillScannerPipelineService.class);
     
     /**
      * skill-scanner CLI command name.
      */
-    static final String DEFAULT_SKILL_SCANNER_CMD = "skill-scanner";
+    static final String DEFAULT_SKILL_SCANNER_CMD = SkillScannerPluginConfig.DEFAULT_COMMAND;
+    
+    private static final List<ConfigItemDefinition> CONFIG_DEFINITIONS = buildConfigDefinitions();
     
     /**
      * Report format for subprocess stdout ({@code skill-scanner --format ...}).
@@ -88,9 +94,14 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             + "  # 使用 pip\n"
             + "  pip install cisco-ai-skill-scanner";
     
-    private final String scannerCommand;
+    public SkillScannerPipelineService() {
+        this(SkillScannerCommandResolver::resolve);
+    }
     
-    private final SkillScannerScanOptions scanOptions;
+    SkillScannerPipelineService(Function<String, String> commandResolver) {
+        super(toPipelineServiceConfig(
+            SkillScannerPluginConfig.fromMap(Collections.emptyMap())), commandResolver);
+    }
     
     public SkillScannerPipelineService(boolean installed) {
         this(installed ? DEFAULT_SKILL_SCANNER_CMD : null, SkillScannerScanOptions.none());
@@ -105,8 +116,57 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     }
     
     SkillScannerPipelineService(String scannerCommand, SkillScannerScanOptions scanOptions) {
-        this.scannerCommand = scannerCommand;
-        this.scanOptions = scanOptions != null ? scanOptions : SkillScannerScanOptions.none();
+        super(scannerCommand, scanOptions != null ? scanOptions : SkillScannerScanOptions.none(),
+            SkillScannerPluginConfig.DEFAULT_ORDER, SkillScannerCommandResolver::resolve);
+    }
+    
+    SkillScannerPipelineService(SkillScannerPluginConfig config,
+        Function<String, String> commandResolver) {
+        super(toPipelineServiceConfig(config), commandResolver);
+        initializeRuntime();
+    }
+    
+    private static PipelineServiceConfig<SkillScannerScanOptions> toPipelineServiceConfig(
+        SkillScannerPluginConfig config) {
+        return new PipelineServiceConfig<>(config.toMap(), config.getCommand(),
+            config.getScanOptions(), config.getOrder());
+    }
+    
+    private static List<ConfigItemDefinition> buildConfigDefinitions() {
+        ConfigItemDefinition order = new ConfigItemDefinition.Builder(
+            SkillScannerPluginConfig.ORDER, "Execution order", ConfigItemType.NUMBER)
+            .description("Pipeline execution order; lower values execute first")
+            .defaultValue(Integer.toString(SkillScannerPluginConfig.DEFAULT_ORDER))
+            .effectMode(ConfigItemEffectMode.RUNTIME).build();
+        ConfigItemDefinition command = restartDefinition(SkillScannerPluginConfig.COMMAND,
+            "Skill scanner command", ConfigItemType.STRING,
+            DEFAULT_SKILL_SCANNER_CMD,
+            "CLI command or executable path resolved during server startup",
+            SkillScannerPluginConfig.COMMAND_ALIAS_EXECUTABLE,
+            SkillScannerPluginConfig.COMMAND_ALIAS_PATH);
+        ConfigItemDefinition useLlm = restartDefinition(SkillScannerPluginConfig.USE_LLM,
+            "Use LLM analysis", ConfigItemType.BOOLEAN, Boolean.FALSE.toString(),
+            "Enable LLM semantic analysis during skill scanning",
+            SkillScannerPluginConfig.USE_LLM_ALIAS);
+        ConfigItemDefinition llmApiKey = restartDefinition(
+            SkillScannerPluginConfig.LLM_API_KEY, "LLM API key", ConfigItemType.STRING, "",
+            "API key passed to the skill-scanner subprocess",
+            SkillScannerPluginConfig.LLM_API_KEY_ALIAS);
+        llmApiKey.setSensitive(true);
+        ConfigItemDefinition llmModel = restartDefinition(SkillScannerPluginConfig.LLM_MODEL,
+            "LLM model", ConfigItemType.STRING, "",
+            "LLM model passed to the skill-scanner subprocess",
+            SkillScannerPluginConfig.LLM_MODEL_ALIAS);
+        ConfigItemDefinition llmProvider = restartDefinition(
+            SkillScannerPluginConfig.LLM_PROVIDER, "LLM provider", ConfigItemType.STRING, "",
+            "LLM provider passed to the skill-scanner CLI",
+            SkillScannerPluginConfig.LLM_PROVIDER_ALIAS);
+        ConfigItemDefinition enableMeta = restartDefinition(
+            SkillScannerPluginConfig.ENABLE_META, "Enable meta checks", ConfigItemType.BOOLEAN,
+            Boolean.FALSE.toString(), "Enable skill-scanner meta checks",
+            SkillScannerPluginConfig.ENABLE_META_ALIAS);
+        return Collections.unmodifiableList(Arrays.asList(order, command, useLlm, llmApiKey,
+            llmModel, llmProvider, enableMeta));
     }
     
     @Override
@@ -115,7 +175,36 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     }
     
     @Override
+    public List<ConfigItemDefinition> getConfigDefinitions() {
+        return CONFIG_DEFINITIONS;
+    }
+    
+    @Override
+    protected PipelineServiceConfig<SkillScannerScanOptions> parseConfig(
+        Map<String, String> config) {
+        return toPipelineServiceConfig(SkillScannerPluginConfig.fromMap(config));
+    }
+    
+    @Override
+    protected void logRuntimeStatus(String resolvedCommand, SkillScannerScanOptions options) {
+        if (StringUtils.isBlank(resolvedCommand)) {
+            LOGGER.warn("[SkillScannerPipeline] skill-scanner 未安装，插件将拒绝发布。{}",
+                INSTALLATION_HINT);
+        } else if (options.isUseLlm()) {
+            LOGGER.info(
+                "[SkillScannerPipeline] skill-scanner 已就绪，已启用 LLM 语义分析（--use-llm），command={}",
+                resolvedCommand);
+        } else {
+            LOGGER.info(
+                "[SkillScannerPipeline] skill-scanner 已就绪，插件已加载（静态扫描），command={}",
+                resolvedCommand);
+        }
+    }
+    
+    @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
+        String scannerCommand = getRuntimeCommand();
+        SkillScannerScanOptions scanOptions = getRuntimeOptions();
         if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT,
                 PublishPipelineMessageType.MARKDOWN,
@@ -138,9 +227,10 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("nacos-skill-scanner-");
-            writeResourceFiles(tempDir, normalizeFilesForScanner(context, files));
+            writeResourceFiles(tempDir,
+                normalizeFilesForScanner(context, files, "skill-scanner"));
             
-            List<String> command = buildScanCommand(tempDir);
+            List<String> command = buildScanCommand(tempDir, scannerCommand, scanOptions);
             ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> env = pb.environment();
             applyPythonStdoutEncoding(env);
@@ -197,6 +287,11 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     }
     
     List<String> buildScanCommand(Path tempDir) {
+        return buildScanCommand(tempDir, getRuntimeCommand(), getRuntimeOptions());
+    }
+    
+    List<String> buildScanCommand(Path tempDir, String scannerCommand,
+        SkillScannerScanOptions scanOptions) {
         List<String> command = new ArrayList<>();
         command.add(scannerCommand);
         command.add("scan");
@@ -224,131 +319,10 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         return process.waitFor();
     }
     
-    private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files)
-        throws IOException {
-        for (ResourceFileContent file : files) {
-            String filePath = file.getFilePath();
-            if (filePath == null || filePath.isEmpty()) {
-                continue;
-            }
-            Path targetPath = baseDir.resolve(filePath).normalize();
-            if (!targetPath.startsWith(baseDir)) {
-                LOGGER.warn("[SkillScannerPipeline] 跳过非法路径: {}", filePath);
-                continue;
-            }
-            Files.createDirectories(targetPath.getParent());
-            String content = file.getContent();
-            Files.writeString(targetPath, content != null ? content : "", StandardCharsets.UTF_8);
-        }
-    }
-    
-    private List<ResourceFileContent> normalizeFilesForScanner(PublishPipelineContext context,
-        List<ResourceFileContent> files) {
-        if (containsSkillMarkdown(files)) {
-            return files;
-        }
-        
-        if (context.getResourceType() == PublishPipelineResourceType.AGENTSPEC) {
-            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
-            result.add(
-                new ResourceFileContent("SKILL.md", buildAgentSpecSkillMarkdown(context, files)));
-            result.addAll(files);
-            return result;
-        }
-        
-        if (context.getResourceType() == PublishPipelineResourceType.PROMPT) {
-            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
-            result
-                .add(new ResourceFileContent("SKILL.md", buildPromptSkillMarkdown(context, files)));
-            result.addAll(files);
-            return result;
-        }
-        
-        return files;
-    }
-    
-    private boolean containsSkillMarkdown(List<ResourceFileContent> files) {
-        for (ResourceFileContent each : files) {
-            if (each != null && "SKILL.md".equals(each.getFilePath())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private String buildAgentSpecSkillMarkdown(PublishPipelineContext context,
-        List<ResourceFileContent> files) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("# AgentSpec ").append(context.getResourceName()).append("\n\n");
-        builder
-            .append("Generated from AgentSpec pipeline context for skill-scanner compatibility.\n");
-        for (ResourceFileContent file : files) {
-            if (file == null || file.getFilePath() == null) {
-                continue;
-            }
-            builder.append("\n## File: ").append(file.getFilePath()).append("\n\n");
-            String content = file.getContent();
-            if (content != null) {
-                builder.append(content);
-            }
-            builder.append("\n");
-        }
-        return builder.toString();
-    }
-    
-    private String buildPromptSkillMarkdown(PublishPipelineContext context,
-        List<ResourceFileContent> files) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("# Prompt ").append(context.getResourceName()).append("\n\n");
-        builder.append("Generated from Prompt pipeline context for skill-scanner compatibility.\n");
-        for (ResourceFileContent file : files) {
-            if (file == null || file.getFilePath() == null) {
-                continue;
-            }
-            builder.append("\n## File: ").append(file.getFilePath()).append("\n\n");
-            String content = file.getContent();
-            if (content != null) {
-                builder.append(content);
-            }
-            builder.append("\n");
-        }
-        return builder.toString();
-    }
-    
-    private void deleteRecursively(File file) {
-        if (file == null || !file.exists()) {
-            return;
-        }
-        if (file.isDirectory()) {
-            File[] children = file.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    deleteRecursively(child);
-                }
-            }
-        }
-        if (!file.delete()) {
-            LOGGER.debug("[SkillScannerPipeline] 无法删除临时文件: {}", file.getAbsolutePath());
-        }
-    }
-    
     private void applyPythonStdoutEncoding(Map<String, String> env) {
         if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
             env.put("PYTHONIOENCODING", "utf-8");
         }
     }
     
-    @Override
-    public int getPreferOrder() {
-        return 100;
-    }
-    
-    @Override
-    public PublishPipelineResourceType[] pipelineResourceTypes() {
-        return new PublishPipelineResourceType[] {
-            PublishPipelineResourceType.SKILL,
-            PublishPipelineResourceType.AGENTSPEC,
-            PublishPipelineResourceType.PROMPT
-        };
-    }
 }

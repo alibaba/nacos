@@ -106,27 +106,45 @@ Nacos 还会通过 request arguments 传递 `ConfigChangeConstants.ORIGINAL_ARGS
 
 ## 配置
 
-插件自身属性使用前缀：
+### 统一插件配置
+
+`ConfigChangePluginService` 统一继承 `PluginConfigSpec`。拥有可配置属性的配置变更插件通过
+该继承契约声明配置，标准完整配置 key 使用统一前缀：
 
 ```properties
-nacos.core.config.plugin.{pluginName}.*
+nacos.plugin.config-change.{pluginName}.{itemKey}
 ```
 
-插件包文档中的传统启用配置为：
+插件实现通过 `ConfigItemDefinition` 声明 item key、历史 alias、敏感性和生效模式，通用插件
+配置 resolver 负责加载 effective config 并 apply。为兼容配置变更 SPI 的请求契约，当服务
+返回 `isConfigurable()=true` 时，`ConfigChangeConstants.PLUGIN_PROPERTIES` 中传递
+该实现当前 effective config 的 item-key map。
+
+`config-change:{pluginName}` 的启停属于统一 plugin state，不是 `ConfigItemDefinition`。
+pointcut 候选查询是运行时唯一的启停 gate。
+
+### 历史兼容
+
+按旧版 SPI 编译的插件，以及没有声明配置 definitions 的实现，继续由已废弃的历史配置
+适配器支持，其属性仍使用：
+
+```properties
+nacos.core.config.plugin.{pluginName}.{propertyKey}
+```
+
+适配器在服务端配置变化时刷新这些静态属性，移除插件前缀后通过
+`ConfigChangeConstants.PLUGIN_PROPERTIES` 传入 `Properties`。适配器第一次为每个历史
+插件提供配置时记录迁移 WARN。此类插件在统一插件 API 中仍为 `configurable=false`。
+
+历史启用配置为：
 
 ```properties
 nacos.core.config.plugin.{pluginName}.enabled=true
 ```
 
-Pointcut 候选插件查询会按 `config-change:{pluginName}` 的统一插件状态过滤服务。传统
-`enabled` 属性继续作为插件自身的执行开关，因此统一状态或该属性任一关闭时，插件都不得
-参与执行。
-
-插件自定义属性使用小写 service type 读取：
-
-```text
-nacos.core.config.plugin.{serviceType}.{propertyKey}
-```
+它只在不存在持久化 state 时用于初始化统一 plugin state。未配置历史 enabled 时保持原有
+默认值 `false`；持久化 plugin state 优先，后续运行时启停只由统一 plugin state 管理。
+兼容 `Properties` 中仍可保留历史 `enabled` 项，但它不再作为第二道执行 gate。
 
 ## 参考实现
 

@@ -64,17 +64,21 @@ A visibility plugin implements `VisibilityService`.
 | Method | Requirement |
 |--------|-------------|
 | `getVisibilityServiceName()` | Return the stable plugin name. |
-| `init(properties)` | Initialize plugin-specific properties. |
+| `init(properties)` | Deprecated legacy initialization callback for implementations that do not use unified plugin configuration. |
 | `resolveDefaultScopeForCreate(identity, apiType, resourceType)` | Decide the default scope when a resource is created without an explicit scope. |
 | `validateVisibility(identity, action, apiType, resource)` | Validate visibility for one resource. |
 | `adviseQuery(identity, action, apiType, queryContext)` | Return query predicates and explicit resources for range queries. |
 
 The plugin is discovered by SPI and registered with plugin type `visibility`.
-The configured visibility service name is selected by:
+The visibility service name is selected at startup by:
 
 ```properties
 nacos.plugin.visibility.type=nacos
 ```
+
+The selection is restart-effective. It determines the implementation requested
+by the AI domain and the default enabled state in unified plugin management; it
+is not an implementation-owned `ConfigItemDefinition`.
 
 ## Actions
 
@@ -118,22 +122,55 @@ grants imply read visibility, while read grants only affect read/list queries.
 
 ## Plugin State And Configuration
 
-Visibility plugin enablement is controlled by the visibility plugin manager and
-the core plugin state checker. The global visibility plugin switch is:
+Runtime availability requires both the family-wide switch and unified plugin
+state for `visibility:{serviceName}`. The family-wide switch is:
 
 ```properties
 nacos.plugin.visibility.enabled=true
 ```
 
-Plugin-specific properties use the prefix:
+This switch is the outer runtime gate. When it is `false`, no visibility
+implementation may execute, regardless of its unified plugin state. The core
+plugin manager does not convert this switch into implementation state. Startup also defers
+visibility implementation discovery while this switch is false. A server
+configuration refresh that changes it to true triggers one-time discovery, persisted state
+restoration, and unified configuration application before visibility services become available.
+After discovery, changing the switch back to false keeps instances registered while the outer gate
+prevents their execution.
+
+Initial implementation state comes from the compatibility selector
+`nacos.plugin.visibility.type`, then the standard implementation key
+`nacos.plugin.visibility.{serviceName}.enabled`; persisted state takes
+precedence over both, but cannot override the family-wide gate.
+Implementation-level runtime changes use the plugin management API.
+
+`VisibilityService` extends `PluginConfigSpec`. The built-in `visibility:nacos` implementation has
+no private configuration, declares no definitions, and is exposed as `configurable=false`.
+An external implementation may own properties under:
 
 ```properties
-nacos.plugin.visibility.{serviceName}.*
+nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
 If visibility is disabled, the owning domain must define whether it behaves as
 fully visible or whether it rejects visibility-sensitive operations. The default
 visibility implementation treats disabled auth as allowing visibility.
+Legacy implementations compiled against the older SPI, and implementations that declare no
+definitions, receive their service-local properties once through
+`VisibilityService.init(Properties)`.
+
+Use of non-empty legacy properties emits a migration warning without logging
+configuration values. When an implementation reports `isConfigurable()=true`, the visibility
+manager must not invoke the legacy callback; the core plugin
+manager's unified `applyConfig` lifecycle is its only configuration application
+path. Such implementations declare their own definitions and receive unified
+source, metadata, masking, and update semantics.
+
+If the selected plugin is disabled or unavailable, the current AI domain skips
+visibility filtering and single-resource visibility validation; creation falls
+back to `PRIVATE` scope. This preserves the historical disabled behavior and
+must not be confused with auth being enabled or disabled. The built-in plugin
+also treats disabled auth as allowing visibility.
 
 ## Relationship With Auth
 

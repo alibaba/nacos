@@ -39,6 +39,7 @@ class PluginConfigRefreshSubscriberTest {
             
             assertSame(ServerConfigChangeEvent.class, subscriber.subscribeType());
             assertNotNull(subscriber.executor());
+            verify(pluginManager).refreshPluginTypePolicies();
             verify(pluginManager).refreshStaticPluginConfigs();
         } finally {
             subscriber.destroy();
