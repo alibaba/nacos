@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -163,6 +164,29 @@ class NacosRoleServiceRemoteImplTest {
         service.addRole("developer", "alice");
         service.deleteRole("developer", "alice");
         service.deleteRole("developer");
+    }
+    
+    @Test
+    void testAddAndDeletePermissionInvalidatePermissionCache() throws Exception {
+        prepareRemoteServer();
+        NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
+        Map<String, List<PermissionInfo>> cache = new ConcurrentHashMap<>();
+        cache.put("admin", Collections.singletonList(permissionInfo("admin", "public:*:*", "r")));
+        injectField("permissionInfoMap", service, cache);
+        when(restTemplate.<String>postForm(anyString(), any(Header.class), nullable(Query.class),
+            anyMap(), eq(String.class))).thenReturn(okText());
+        when(restTemplate.<String>delete(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenReturn(okText());
+        
+        service.addPermission("admin", "public:*:*", "rw");
+        
+        assertFalse(cache.containsKey("admin"));
+        
+        cache.put("admin", Collections.singletonList(permissionInfo("admin", "public:*:*", "rw")));
+        
+        service.deletePermission("admin", "public:*:*", "rw");
+        
+        assertFalse(cache.containsKey("admin"));
     }
     
     @Test
@@ -416,6 +440,14 @@ class NacosRoleServiceRemoteImplTest {
         Field field = AbstractCachedRoleService.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(service, map);
+    }
+    
+    private static PermissionInfo permissionInfo(String role, String resource, String action) {
+        PermissionInfo permissionInfo = new PermissionInfo();
+        permissionInfo.setRole(role);
+        permissionInfo.setResource(resource);
+        permissionInfo.setAction(action);
+        return permissionInfo;
     }
     
     private static final class CountingMap<K, V> extends ConcurrentHashMap<K, V> {
