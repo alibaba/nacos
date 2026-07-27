@@ -44,10 +44,10 @@ public final class ExecutorUtils {
         "nacos.ai.agentspec.storage.io.concurrency";
     
     /**
-     * System config key for async ARD index enhancement concurrency.
+     * System config key for async AI resource index enhancement concurrency.
      */
-    public static final String ARD_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY =
-        "nacos.ai.ard.index.enhancement.concurrency";
+    public static final String AI_RESOURCE_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY =
+        "nacos.ai.resource.search.index.enhancement.concurrency";
     
     /**
      * Default concurrency for async skill resource persistence.
@@ -62,9 +62,9 @@ public final class ExecutorUtils {
         PropertyUtils.getProcessorsCount();
     
     /**
-     * Default concurrency for async ARD index enhancement.
+     * Default concurrency for async AI resource index enhancement.
      */
-    private static final int DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY = 1;
+    private static final int DEFAULT_AI_RESOURCE_INDEX_ENHANCEMENT_CONCURRENCY = 1;
     
     private static final ExecutorService SKILL_STORAGE_IO_EXECUTOR =
         ExecutorFactory.Managed.newFixedExecutorService(
@@ -93,10 +93,10 @@ public final class ExecutorUtils {
     }
     
     /**
-     * Executor for async ARD index enhancement.
+     * Executor for async AI resource index enhancement.
      */
-    public static ExecutorService getArdIndexEnhancementExecutor() {
-        return ArdIndexEnhancementExecutorHolder.INSTANCE;
+    public static ExecutorService getAiResourceIndexEnhancementExecutor() {
+        return AiResourceIndexEnhancementExecutorHolder.INSTANCE;
     }
     
     private static int resolveSkillStorageIoConcurrency() {
@@ -119,22 +119,22 @@ public final class ExecutorUtils {
         }
     }
     
-    private static int resolveArdIndexEnhancementConcurrency() {
-        String val = EnvUtil.getProperty(ARD_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY,
-            String.valueOf(DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY));
+    private static int resolveAiResourceIndexEnhancementConcurrency() {
+        String val = EnvUtil.getProperty(AI_RESOURCE_INDEX_ENHANCEMENT_CONCURRENCY_CONFIG_KEY,
+            String.valueOf(DEFAULT_AI_RESOURCE_INDEX_ENHANCEMENT_CONCURRENCY));
         try {
             return Integer.max(1, Integer.parseInt(val));
         } catch (Exception ignored) {
-            return DEFAULT_ARD_INDEX_ENHANCEMENT_CONCURRENCY;
+            return DEFAULT_AI_RESOURCE_INDEX_ENHANCEMENT_CONCURRENCY;
         }
     }
     
-    private static class ArdIndexEnhancementExecutorHolder {
+    private static class AiResourceIndexEnhancementExecutorHolder {
         
         private static final ExecutorService INSTANCE =
             ExecutorFactory.Managed.newFixedExecutorService(
                 ExecutorUtils.class.getCanonicalName(),
-                resolveArdIndexEnhancementConcurrency(),
-                new NameThreadFactory("com.alibaba.nacos.ai.ard-index-enhancement"));
+                resolveAiResourceIndexEnhancementConcurrency(),
+                new NameThreadFactory("com.alibaba.nacos.ai.resource-index-enhancement"));
     }
 }

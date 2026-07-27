@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.plugin;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.ard.vector.ArdVectorIndexRouter;
+import com.alibaba.nacos.ai.service.search.vector.AiResourceVectorIndexRouter;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,8 @@ class AiVectorPluginTypePolicyTest {
         assertFalse(policy.isActive(configuration));
         configuration.setProperty(Constants.ARD_ENABLED_KEY, "true");
         assertTrue(policy.isActive(configuration));
-        assertEquals(ArdVectorIndexRouter.KEY_VECTOR_PROVIDER, policy.getSelectionProperty());
+        assertEquals(AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER,
+            policy.getSelectionProperty());
     }
     
     @Test
@@ -49,19 +50,19 @@ class AiVectorPluginTypePolicyTest {
         MapConfiguration configuration = new MapConfiguration();
         
         assertTrue(policy.isPluginEnabledByDefault(
-            ArdVectorIndexRouter.DEFAULT_VECTOR_PROVIDER, configuration));
+            AiResourceVectorIndexRouter.DEFAULT_VECTOR_PROVIDER, configuration));
         assertFalse(policy.isPluginEnabledByDefault("custom", configuration));
         
-        configuration.setProperty(ArdVectorIndexRouter.KEY_VECTOR_PROVIDER, " custom ");
+        configuration.setProperty(AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER, " custom ");
         assertTrue(policy.isPluginEnabledByDefault("custom", configuration));
         assertFalse(policy.isPluginEnabledByDefault(
-            ArdVectorIndexRouter.DEFAULT_VECTOR_PROVIDER, configuration));
+            AiResourceVectorIndexRouter.DEFAULT_VECTOR_PROVIDER, configuration));
     }
     
     @Test
     void shouldPreferImplementationStateProperty() {
         MapConfiguration configuration = new MapConfiguration();
-        configuration.setProperty(ArdVectorIndexRouter.KEY_VECTOR_PROVIDER, "custom");
+        configuration.setProperty(AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER, "custom");
         configuration.setProperty("nacos.plugin.ai-vector.custom.enabled", "false");
         
         assertFalse(policy.isPluginEnabledByDefault("custom", configuration));

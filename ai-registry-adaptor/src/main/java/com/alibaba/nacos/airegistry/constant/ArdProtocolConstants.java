@@ -29,6 +29,10 @@ public final class ArdProtocolConstants {
     
     public static final String SPEC_VERSION = "1.0";
     
+    public static final String FEDERATION_AUTO = "auto";
+    
+    public static final String FEDERATION_REFERRALS = "referrals";
+    
     public static final String FEDERATION_NONE = "none";
     
     public static final String KEY_CATALOG_HOST_IDENTIFIER =

@@ -18,13 +18,13 @@ package com.alibaba.nacos.ai.plugin;
 
 import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorIndexRegistry;
-import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
+import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorIndexRegistry;
+import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 
 import java.util.Map;
 
 /**
- * Bridges installed ARD vector index plugins to
+ * Bridges installed AI resource vector index plugins to
  * {@link com.alibaba.nacos.core.plugin.PluginManager}.
  *
  * @author nacos

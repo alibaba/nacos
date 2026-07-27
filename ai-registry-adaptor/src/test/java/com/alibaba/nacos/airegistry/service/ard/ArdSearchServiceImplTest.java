@@ -20,13 +20,13 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.model.ard.ArdEntry;
-import com.alibaba.nacos.ai.model.ard.ArdSearchHit;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
-import com.alibaba.nacos.ai.service.ard.ArdEmbeddingService;
-import com.alibaba.nacos.ai.service.ard.ArdIndexConstants;
-import com.alibaba.nacos.ai.service.ard.ArdIndexRepository;
-import com.alibaba.nacos.ai.service.discovery.AiResourceDiscoveryService;
+import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -45,8 +45,8 @@ import com.alibaba.nacos.airegistry.model.ard.ArdSearchQuery;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchResult;
-import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorHit;
-import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
+import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorHit;
+import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -91,7 +91,7 @@ import static org.mockito.Mockito.when;
 class ArdSearchServiceImplTest {
     
     private static final String RANKING_ENABLED_KEY =
-        "nacos.ai.ard.search.ranking.enhanced.enabled";
+        "nacos.ai.resource.search.ranking.enhanced.enabled";
     
     private static final String CATALOG_BASE_URL_KEY = "nacos.ai.ard.catalog.base-url";
     
@@ -108,10 +108,10 @@ class ArdSearchServiceImplTest {
     private McpServerOperationService mcpServerOperationService;
     
     @Mock
-    private ArdIndexRepository repository;
+    private AiResourceSearchRepository repository;
     
     @Mock
-    private ArdEmbeddingService embeddingService;
+    private AiResourceEmbeddingService embeddingService;
     
     @Mock
     private AiResourceVectorIndex vectorIndex;
@@ -157,7 +157,8 @@ class ArdSearchServiceImplTest {
         assertEquals("http://localhost:8850/nacos/v3/ai/ard/artifacts"
             + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
             result.getUrl());
-        assertEquals("urn:air:nacos:public:skill:api-helper", result.getIdentifier());
+        assertEquals("urn:air:nacos:n1_cHVibGlj:n1_c2tpbGw:n1_YXBpLWhlbHBlcg",
+            result.getIdentifier());
         assertTrue(URI.create(result.getSource()).isAbsolute());
         assertEquals("skill", result.getMetadata().get("resourceType"));
         assertEquals("SKILL.md", result.getMetadata().get("entrypoint"));
@@ -200,9 +201,10 @@ class ArdSearchServiceImplTest {
         when(repository.searchChunks(eq("public"), eq("avatar"), eq(List.of("skill")),
             eq(Integer.MAX_VALUE)))
             .thenReturn(List.of(
-                hit(101L, 1.0D, "generic-video", ArdIndexConstants.CHUNK_TYPE_SKILL_CONTENT),
+                hit(101L, 1.0D, "generic-video",
+                    AiResourceSearchConstants.CHUNK_TYPE_SKILL_CONTENT),
                 hit(102L, 0.8D, "avatar-tool",
-                    ArdIndexConstants.CHUNK_TYPE_SEARCH_INTENT)));
+                    AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT)));
         when(repository.findEntriesByIds(anyCollection()))
             .thenReturn(List.of(entry(101L, "generic-video"), entry(102L, "avatar-tool")));
         when(resourceManager.findMeta("public", "generic-video",
@@ -351,11 +353,26 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void searchShouldRejectUnsupportedFederation() {
+    void searchShouldAcceptAllStandardFederationModesWithLocalFallback() throws Exception {
         ArdSearchServiceImpl service = service();
-        ArdSearchRequest request = request("api",
-            Map.of("type", (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE)));
-        request.setFederation("referrals");
+        for (String federation : List.of(ArdProtocolConstants.FEDERATION_AUTO,
+            ArdProtocolConstants.FEDERATION_REFERRALS, ArdProtocolConstants.FEDERATION_NONE)) {
+            ArdSearchRequest request = request("api", Map.of("type", (Object) "unsupported"));
+            request.setFederation(federation);
+            ArdSearchResponse response = service.search(request);
+            assertTrue(response.getResults().isEmpty());
+            assertTrue(response.getReferrals().isEmpty());
+        }
+        ArdSearchRequest omitted = request("api", Map.of("type", (Object) "unsupported"));
+        omitted.setFederation(null);
+        assertTrue(service.search(omitted).getResults().isEmpty());
+    }
+    
+    @Test
+    void searchShouldRejectUnknownFederation() {
+        ArdSearchServiceImpl service = service();
+        ArdSearchRequest request = request("api", Map.of("type", (Object) "unsupported"));
+        request.setFederation("upstream-only");
         
         assertThrows(NacosException.class, () -> service.search(request));
     }
@@ -414,7 +431,8 @@ class ArdSearchServiceImplTest {
             eq("1.0.0"))).thenReturn(onlineVersion("1.0.0"));
         
         ArdListResponse response = service.list("public",
-            "type=" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE + ";displayName=api",
+            "type = '" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE
+                + "' AND createdAfter > '2026-01-01T00:00:00Z' AND displayName = 'api'",
             "displayName ASC", 1, null);
         
         assertEquals(1, response.getItems().size());
@@ -423,6 +441,19 @@ class ArdSearchServiceImplTest {
         JsonNode serialized = JacksonUtils.toObj(JacksonUtils.toJson(response), JsonNode.class);
         assertTrue(serialized.has("items"));
         assertTrue(!serialized.has("results"));
+    }
+    
+    @Test
+    void listShouldRejectMalformedFilterInsteadOfSilentlyMisparsing() {
+        ArdSearchServiceImpl service = service();
+        
+        assertThrows(NacosException.class, () -> service.list("public",
+            "type=" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE + ";displayName=api",
+            null, 10, null));
+        assertThrows(NacosException.class, () -> service.list("public",
+            "displayName > 'api'", null, 10, null));
+        assertThrows(NacosException.class, () -> service.list("public",
+            "createdAfter = '2026-01-01T00:00:00Z'", null, 10, null));
     }
     
     @Test
@@ -482,7 +513,8 @@ class ArdSearchServiceImplTest {
             catalog.getEntries().get(0).getIdentifier());
         assertEquals("https://nacos.example.com/nacos/v3/ai/ard",
             catalog.getEntries().get(0).getUrl());
-        assertEquals("urn:air:nacos.example.com:public:skill:api-helper",
+        assertEquals("urn:air:nacos.example.com:n1_cHVibGlj:n1_c2tpbGw:"
+            + "n1_YXBpLWhlbHBlcg",
             catalog.getEntries().get(1).getIdentifier());
         assertEquals("https://nacos.example.com/nacos/v3/ai/ard/artifacts"
             + "?namespaceId=public&resourceType=skill&resourceName=api-helper&version=1.0.0",
@@ -504,11 +536,30 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void catalogIdentifiersShouldBeSchemaValidAndCollisionSafe() throws Exception {
+        when(repository.listEnabledEntries("public", List.of("skill", "prompt", "mcp"),
+            Integer.MAX_VALUE)).thenReturn(List.of(entry(201L, "a/b"), entry(202L, "a?b"),
+                entry(203L, "技能 名称")));
+        when(
+            resourceManager.findMeta(eq("public"), any(), eq(Constants.Skills.RESOURCE_TYPE_SKILL)))
+            .thenAnswer(invocation -> meta(invocation.getArgument(1), "1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("1.0.0")))
+            .thenReturn(onlineVersion("1.0.0"));
+        
+        ArdCatalog catalog = service().catalog("public");
+        
+        assertEquals(3, catalog.getEntries().subList(1, 4).stream()
+            .map(entry -> entry.getIdentifier()).distinct().count());
+        assertCatalogSchemaValid(catalog);
+    }
+    
+    @Test
     void catalogShouldAssemblePromptAndMcpProtocolFields() throws Exception {
-        ArdEntry prompt = entry(200L, "avatar prompt");
+        AiResourceSearchDocument prompt = entry(200L, "avatar prompt");
         prompt.setResourceType(AiResourceConstants.RESOURCE_TYPE_PROMPT);
         prompt.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "prompt")));
-        ArdEntry mcp = entry(300L, "mcp/avatar server");
+        AiResourceSearchDocument mcp = entry(300L, "mcp/avatar server");
         mcp.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         mcp.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "mcp", "mcpName",
             "avatar-server")));
@@ -542,13 +593,14 @@ class ArdSearchServiceImplTest {
         assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
             + "&resourceName=mcp%2Favatar+server&version=1.0.0&mcpName=avatar-server",
             catalog.getEntries().get(2).getUrl());
+        assertCatalogSchemaValid(catalog);
     }
     
     private ArdSearchServiceImpl service() {
-        AiResourceDiscoveryService discoveryService = new AiResourceDiscoveryService(
+        AiResourceSearchService searchService = new AiResourceSearchService(
             resourceManager, mcpServerOperationService, repository, embeddingService,
             vectorIndex);
-        return new ArdSearchServiceImpl(discoveryService);
+        return new ArdSearchServiceImpl(searchService);
     }
     
     private void assertCatalogSchemaValid(ArdCatalog catalog) throws Exception {
@@ -617,18 +669,18 @@ class ArdSearchServiceImplTest {
         return filter;
     }
     
-    private ArdSearchHit hit(Long entryId, double score) {
-        return hit(entryId, score, "api-helper");
+    private AiResourceSearchHit hit(Long documentId, double score) {
+        return hit(documentId, score, "api-helper");
     }
     
-    private ArdSearchHit hit(Long entryId, double score, String resourceName) {
-        return hit(entryId, score, resourceName, null);
+    private AiResourceSearchHit hit(Long documentId, double score, String resourceName) {
+        return hit(documentId, score, resourceName, null);
     }
     
-    private ArdSearchHit hit(Long entryId, double score, String resourceName,
+    private AiResourceSearchHit hit(Long documentId, double score, String resourceName,
         String chunkType) {
-        ArdSearchHit hit = new ArdSearchHit();
-        hit.setEntryId(entryId);
+        AiResourceSearchHit hit = new AiResourceSearchHit();
+        hit.setDocumentId(documentId);
         hit.setChunkId(200L);
         hit.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         hit.setResourceName(resourceName);
@@ -638,9 +690,9 @@ class ArdSearchServiceImplTest {
         return hit;
     }
     
-    private AiResourceVectorHit vectorHit(Long entryId, double score) {
+    private AiResourceVectorHit vectorHit(Long documentId, double score) {
         AiResourceVectorHit hit = new AiResourceVectorHit();
-        hit.setEntryId(entryId);
+        hit.setDocumentId(documentId);
         hit.setChunkId(200L);
         hit.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
         hit.setResourceName("api-helper");
@@ -649,12 +701,12 @@ class ArdSearchServiceImplTest {
         return hit;
     }
     
-    private ArdEntry entry() {
+    private AiResourceSearchDocument entry() {
         return entry(100L, "api-helper");
     }
     
-    private ArdEntry entry(long id, String resourceName) {
-        ArdEntry entry = new ArdEntry();
+    private AiResourceSearchDocument entry(long id, String resourceName) {
+        AiResourceSearchDocument entry = new AiResourceSearchDocument();
         entry.setId(id);
         entry.setNamespaceId("public");
         entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
@@ -669,7 +721,7 @@ class ArdSearchServiceImplTest {
             "resourceType", "skill", "resourceName", resourceName, "resourceVersion", "1.0.0",
             "entrypoint", "SKILL.md", "inputTypes", List.of("json"), "outputTypes",
             List.of("markdown"), "riskLevel", "low")));
-        entry.setStatus(ArdIndexConstants.STATUS_ENABLED);
+        entry.setStatus(AiResourceSearchConstants.STATUS_ENABLED);
         entry.setGmtCreate(Timestamp.from(Instant.parse("2026-06-28T01:00:00Z")));
         entry.setGmtModified(Timestamp.from(Instant.parse("2026-06-29T01:00:00Z")));
         return entry;

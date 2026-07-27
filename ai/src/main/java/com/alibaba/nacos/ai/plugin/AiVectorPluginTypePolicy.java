@@ -17,14 +17,14 @@
 package com.alibaba.nacos.ai.plugin;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.ard.vector.ArdVectorIndexRouter;
+import com.alibaba.nacos.ai.service.search.vector.AiResourceVectorIndexRouter;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
 import com.alibaba.nacos.api.plugin.PluginTypePolicy;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * ARD vector index plugin type policy.
+ * AI resource vector index plugin type policy.
  *
  * @author nacos
  */
@@ -48,19 +48,19 @@ public class AiVectorPluginTypePolicy implements PluginTypePolicy {
         if (configuration.containsProperty(implementationProperty)) {
             return configuration.getBooleanProperty(implementationProperty, true);
         }
-        String provider = configuration.getProperty(ArdVectorIndexRouter.KEY_VECTOR_PROVIDER,
-            ArdVectorIndexRouter.DEFAULT_VECTOR_PROVIDER);
+        String provider = configuration.getProperty(AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER,
+            AiResourceVectorIndexRouter.DEFAULT_VECTOR_PROVIDER);
         return pluginName.equals(StringUtils.isBlank(provider)
-            ? ArdVectorIndexRouter.DEFAULT_VECTOR_PROVIDER : provider.trim());
+            ? AiResourceVectorIndexRouter.DEFAULT_VECTOR_PROVIDER : provider.trim());
     }
     
     @Override
     public String getSelectionProperty() {
-        return ArdVectorIndexRouter.KEY_VECTOR_PROVIDER;
+        return AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER;
     }
     
     @Override
     public String getActivationDescription() {
-        return "ARD uses the configured vector index provider when vector retrieval is available";
+        return "AI resource search uses the configured vector provider when available";
     }
 }

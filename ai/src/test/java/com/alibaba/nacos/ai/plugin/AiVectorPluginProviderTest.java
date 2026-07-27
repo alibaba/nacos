@@ -17,8 +17,8 @@
 package com.alibaba.nacos.ai.plugin;
 
 import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.plugin.ai.ard.vector.AiResourceVectorIndexRegistry;
-import com.alibaba.nacos.plugin.ai.ard.vector.spi.AiResourceVectorIndex;
+import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorIndexRegistry;
+import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

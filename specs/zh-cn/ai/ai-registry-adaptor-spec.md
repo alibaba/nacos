@@ -50,16 +50,16 @@ AI Registry 适配器负责协议兼容面。它将 Nacos AI Registry 资源转�
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | 开启 MCP Registry 兼容端点。 |
 | `nacos.ai.skill.registry.enabled` | `false` | 开启 Skill registry 兼容端点。 |
-| `nacos.ai.ard.enabled` | `false` | 开启 ARD 端点及其本地索引能力。 |
+| `nacos.ai.ard.enabled` | `false` | 开启 ARD 端点及其依赖的 AI 资源检索运行时。 |
 | `nacos.ai.registry.port` | `9080` | 适配器 Context 使用的 HTTP 端口。 |
 | `nacos.ai.mcp.registry.port` | deprecated | 适配器端口的历史兼容配置。 |
 
 用户必须主动开启该能力，因为适配器会额外占用端口，并暴露面向社区客户端的协议形态，
 而不是面向 Nacos Admin、Console 或 Client API 消费者的标准接口。
 
-关闭 ARD 时不能要求安装 PostgreSQL pgvector。ARD entry 和 chunk 元数据使用主数据源；
-pgvector 扩展及 `ai_resource_ard_embedding_pg` 表只能通过
-`pg-ard-vector-schema.sql` 初始化到用于存储 embedding 的 PostgreSQL 数据源中。
+关闭 ARD 时不能要求安装 PostgreSQL pgvector。AI 资源检索 document 和 chunk 元数据使用
+主数据源；pgvector 扩展及 `ai_resource_search_embedding_pg` 表只能通过
+`pg-ai-vector-schema.sql` 初始化到用于存储 embedding 的 PostgreSQL 数据源中。
 该数据源既可以是 Nacos PostgreSQL 主数据源，也可以是独立数据源；主
 `pg-schema.sql` 必须在未安装 pgvector 时仍可正常执行。
 
@@ -195,26 +195,39 @@ ARD 响应生成的所有 artifact URL 均指向公开适配器 base URL 下、�
 
 ### 6.3 Discovery 边界
 
-AI 模块负责协议无关的 discovery 应用服务。该服务负责：
-
-- 关键词与向量召回；
-- 排序与确定性的同分处理；
-- 可见性 QueryAdvice 和逐资源可见性校验；
-- latest label 与当前 online version 解析；
-- 标准过滤与不透明 cursor 分页。
+AI 模块负责 [AI 资源检索规范](ai-resource-search-spec.md)定义的协议无关能力。当前版本只有
+ARD 使用该能力，因此 `nacos.ai.ard.enabled` 会激活其依赖的检索运行时，但不会增加独立的
+运维检索开关或其他公开 API。
 
 可见性与当前版本校验必须在截取请求结果数量之前执行。内部召回可以分批限制候选数量，
 但必须持续取数，直到填满当前页或符合条件的结果耗尽。Cursor 标识稳定的资源锚点，
 不使用易受结果变化影响的列表 offset。
 
-适配器只负责校验和解析 ARD 请求、调用标准 discovery 服务，并将标准搜索结果转换为
-ARD DTO。适配器不得直接访问 ARD index repository，也不得重复实现生命周期和可见性规则。
-ARD 特有的 facet 名称和值可以在映射标准可见结果集时聚合。
+适配器只负责校验和解析 ARD 请求、调用 AI 资源检索服务，并将标准结果和聚合转换为
+ARD DTO。适配器不得直接访问 search repository，也不得重复实现召回、生命周期、可见性、
+分页或聚合规则。ARD 特有的 facet 名称和值需要与标准聚合字段相互转换。
+
+Search 接受固定版本 OpenAPI 定义的全部 federation 值：`auto`、`referrals` 和 `none`。
+未传值时默认为 `auto`。在尚未配置上游 Registry 时，三种模式都执行本地检索；
+`referrals` 返回空 referrals 数组，而不是拒绝请求。
+
+`GET /agents` filter 支持以 `AND` 连接、值使用单引号包裹的等值表达式，以及
+`createdAfter > '2026-01-01T00:00:00Z'` 这类时间比较。解析必须感知引号边界。
+不支持的操作符、错误的引号、未知字段和旧分隔符语法必须返回 ARD invalid-argument，
+不能只解析其中一部分。
+
+Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
+字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，
+并通过固定版本 catalog Schema 校验。
+
+Explore facet 必须在可见性、当前版本和请求过滤后，对完整的有效结果集进行聚合，不能基于
+单页或固定长度的候选前缀计算。Publisher、source 和 trust identity 等协议常量由适配器
+在标准聚合之后补充。
 
 ### 6.4 索引一致性
 
-标准资源写入是事实来源。单个资源对应的 ARD entry 和 chunks 必须原子替换：删除旧索引行、
-插入新 entry、插入全部 chunks 必须在同一个数据源事务中完成。
+标准资源写入是事实来源。单个资源对应的 search document 和 chunks 必须原子替换：删除旧
+索引行、插入新 document、插入全部 chunks 必须在同一个数据源事务中完成。
 
 关系索引与向量索引之间不要求分布式事务。AI 模块改为记录资源级、幂等、持久化的索引任务，
 任务以 namespace、resource type 和 resource name 为键。Consumer 重新读取标准资源状态，
@@ -224,10 +237,10 @@ ARD 特有的 facet 名称和值可以在映射标准可见结果集时聚合。
 reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。只记录
 日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
 
-`ai_resource_ard_index_task` 保存合并后的任务 revision 与重试状态。任务完成和重试更新
-都必须带 revision 条件，避免旧租约结束时误删并发产生的新变更。向量替换期间，关系 entry
-保持 `pending`，discovery 只读取 `enabled` entry；Vector Provider 完成替换后，Consumer
-才启用关系 entry。Reconciliation 还需要比较 embedding model、向量文档数量与关系 chunks，
+`ai_resource_search_index_task` 保存合并后的任务 revision 与重试状态。任务完成和重试更新
+都必须带 revision 条件，避免旧租约结束时误删并发产生的新变更。向量替换期间，关系
+document 保持 `pending`，检索只读取 `enabled` document；Vector Provider 完成替换后，
+Consumer 才启用关系 document。Reconciliation 还需要比较 embedding model、向量文档数量与关系 chunks，
 并调度缺失、部分写入、过期、模型不一致及孤儿索引。
 
 ### 6.5 一致性测试

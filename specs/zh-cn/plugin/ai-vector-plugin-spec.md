@@ -25,9 +25,10 @@
 AI 模块在 `plugin/ai` 中定义 Vector SPI，具体实现位于标准 AI 领域模块之外。默认
 PostgreSQL 实现由 `nacos-default-ai-vector-plugin` 提供。
 
-向量索引是可选能力。ARD 关闭或者没有可用 Vector Provider 时，不能阻止 Nacos 启动、
-标准 AI 资源写入或关键词 discovery。通过 `nacos.ai.ard.vector.provider` 选择 Provider；
-Provider 专属配置由各实现负责。
+向量索引是可选能力。AI 资源检索运行时未激活或者没有可用 Vector Provider 时，不能阻止
+Nacos 启动、标准 AI 资源写入或关键词检索。通过
+`nacos.ai.resource.search.vector.provider` 选择 Provider，Provider 专属配置由各实现负责。
+当前版本只有 ARD 一个消费者，因此 `nacos.ai.ard.enabled=false` 时该运行时也不激活。
 
 ## 2. Provider 生命周期
 
@@ -51,14 +52,14 @@ SPI 支持按资源版本替换、添加文档、按资源删除、按资源版�
 - 返回 hit 必须标识标准资源与 chunk，并包含 Provider similarity score；
 - 协议专属 DTO、URL、trust manifest、可见性判断和最终排序不属于 Vector SPI。
 
-协议无关的 AI discovery 服务负责合并向量与关键词召回，并执行生命周期、可见性、
+协议无关的 AI 资源检索服务负责合并向量与关键词召回，并执行生命周期、可见性、
 最终排序和分页。
 
 ## 4. Schema 归属
 
 每个实现负责自身可选数据库对象和迁移脚本。默认 PostgreSQL 实现负责
-`pg-ard-vector-schema.sql`，其中包括 pgvector 扩展和
-`ai_resource_ard_embedding_pg` 表。
+`pg-ai-vector-schema.sql`，其中包括 pgvector 扩展和
+`ai_resource_search_embedding_pg` 表。
 
 Nacos PostgreSQL 主数据源 Schema 不得创建 pgvector 扩展或 embedding 表。因此，全新
 部署可以在未安装 pgvector 的 PostgreSQL 上运行；当向量 discovery 未开启时，没有扩展
@@ -69,7 +70,7 @@ Nacos PostgreSQL 主数据源 Schema 不得创建 pgvector 扩展或 embedding �
 
 ## 5. 一致性与失败处理
 
-关系 ARD 索引与所选向量索引之间不使用分布式事务。AI 模块中的持久化幂等 indexing
+关系 AI 资源检索索引与所选向量索引之间不使用分布式事务。AI 模块中的持久化幂等 indexing
 consumer 根据标准资源状态驱动两类索引。向量处理失败时任务保持可重试，且不能回滚已经
 提交的标准资源写入。
 

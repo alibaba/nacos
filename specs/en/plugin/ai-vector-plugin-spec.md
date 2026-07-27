@@ -27,11 +27,13 @@ The AI module owns the vector SPI under `plugin/ai`. Implementations live
 outside the canonical AI domain module. The default PostgreSQL implementation
 is provided by `nacos-default-ai-vector-plugin`.
 
-Vector indexing is optional. Disabling ARD or selecting no available vector
-provider must not prevent Nacos startup, canonical AI resource writes, or
-keyword discovery. The selected provider is configured by
-`nacos.ai.ard.vector.provider`; provider-specific settings remain owned by the
-implementation.
+Vector indexing is optional. An inactive AI resource search runtime or no
+available vector provider must not prevent Nacos startup, canonical AI
+resource writes, or keyword search. The selected provider is configured by
+`nacos.ai.resource.search.vector.provider`; provider-specific settings remain
+owned by the implementation. In the current release, disabling the only
+consumer through `nacos.ai.ard.enabled=false` also leaves this runtime
+inactive.
 
 ## 2. Provider Lifecycle
 
@@ -63,14 +65,14 @@ search. The following rules apply:
 - protocol-specific DTOs, URLs, trust manifests, visibility decisions, and
   final ranking do not belong in the vector SPI.
 
-The protocol-neutral AI discovery service combines vector hits with keyword
+The protocol-neutral AI resource search service combines vector hits with keyword
 recall and applies lifecycle, visibility, final ranking, and pagination.
 
 ## 4. Schema Ownership
 
 Each implementation owns its optional database objects and migration scripts.
-The default PostgreSQL implementation owns `pg-ard-vector-schema.sql`, including
-the pgvector extension and `ai_resource_ard_embedding_pg` table.
+The default PostgreSQL implementation owns `pg-ai-vector-schema.sql`, including
+the pgvector extension and `ai_resource_search_embedding_pg` table.
 
 The main Nacos PostgreSQL datasource schema must not create the pgvector
 extension or an embedding table. Consequently, a fresh deployment can use
@@ -83,7 +85,7 @@ table, dimension, and index compatibility before reporting itself available.
 
 ## 5. Consistency And Failure Handling
 
-The relational ARD index and the selected vector index do not share a
+The relational AI resource search index and the selected vector index do not share a
 distributed transaction. A durable, idempotent indexing consumer in the AI
 module drives both indexes from canonical resource state. Vector failures keep
 the task retryable and must not roll back an already committed canonical

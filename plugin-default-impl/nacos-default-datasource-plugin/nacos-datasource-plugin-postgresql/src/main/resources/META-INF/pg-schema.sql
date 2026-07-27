@@ -17,9 +17,9 @@
 /*
  * Full PostgreSQL schema for Nacos main datasource.
  *
- * This schema does not require pgvector. Before enabling ARD with PostgreSQL
- * vector storage, also load pg-ard-vector-schema.sql into the datasource used
- * for ARD embeddings.
+ * This schema does not require pgvector. Before enabling AI resource search with PostgreSQL
+ * vector storage, also load pg-ai-vector-schema.sql into the datasource used
+ * for AI resource embeddings.
  */
 
 -- ----------------------------
@@ -564,10 +564,10 @@ CREATE INDEX "idx_ai_resource_ver_status" ON "ai_resource_version" USING btree (
 CREATE INDEX "idx_ai_resource_ver_gmt_modified" ON "ai_resource_version" USING btree ("gmt_modified");
 
 -- ----------------------------
--- Table structure for ai_resource_ard_entry
+-- Table structure for ai_resource_search_document
 -- ----------------------------
-DROP TABLE IF EXISTS "ai_resource_ard_entry";
-CREATE TABLE "ai_resource_ard_entry" (
+DROP TABLE IF EXISTS "ai_resource_search_document";
+CREATE TABLE "ai_resource_search_document" (
   "id" bigserial NOT NULL,
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -586,28 +586,28 @@ CREATE TABLE "ai_resource_ard_entry" (
   "generate_mode" varchar(32) NOT NULL
 );
 
-ALTER TABLE "ai_resource_ard_entry" ADD CONSTRAINT "ai_resource_ard_entry_pkey" PRIMARY KEY ("id");
-CREATE UNIQUE INDEX "uk_ard_entry_resource_version" ON "ai_resource_ard_entry" USING btree (
+ALTER TABLE "ai_resource_search_document" ADD CONSTRAINT "ai_resource_search_document_pkey" PRIMARY KEY ("id");
+CREATE UNIQUE INDEX "uk_search_document_resource_version" ON "ai_resource_search_document" USING btree (
   "namespace_id",
   "resource_type",
   "resource_name",
   "resource_version"
 );
-CREATE INDEX "idx_ard_entry_type_status" ON "ai_resource_ard_entry" USING btree (
+CREATE INDEX "idx_search_document_type_status" ON "ai_resource_search_document" USING btree (
   "namespace_id",
   "resource_type",
   "status"
 );
 
 -- ----------------------------
--- Table structure for ai_resource_ard_chunk
+-- Table structure for ai_resource_search_chunk
 -- ----------------------------
-DROP TABLE IF EXISTS "ai_resource_ard_chunk";
-CREATE TABLE "ai_resource_ard_chunk" (
+DROP TABLE IF EXISTS "ai_resource_search_chunk";
+CREATE TABLE "ai_resource_search_chunk" (
   "id" bigserial NOT NULL,
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "entry_id" bigint NOT NULL,
+  "document_id" bigint NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
@@ -621,26 +621,26 @@ CREATE TABLE "ai_resource_ard_chunk" (
   "status" varchar(32) NOT NULL
 );
 
-ALTER TABLE "ai_resource_ard_chunk" ADD CONSTRAINT "ai_resource_ard_chunk_pkey" PRIMARY KEY ("id");
-CREATE INDEX "idx_ard_chunk_entry" ON "ai_resource_ard_chunk" USING btree ("entry_id");
-CREATE INDEX "idx_ard_chunk_hash" ON "ai_resource_ard_chunk" USING btree ("chunk_hash");
-CREATE INDEX "idx_ard_chunk_resource" ON "ai_resource_ard_chunk" USING btree (
+ALTER TABLE "ai_resource_search_chunk" ADD CONSTRAINT "ai_resource_search_chunk_pkey" PRIMARY KEY ("id");
+CREATE INDEX "idx_search_chunk_document" ON "ai_resource_search_chunk" USING btree ("document_id");
+CREATE INDEX "idx_search_chunk_hash" ON "ai_resource_search_chunk" USING btree ("chunk_hash");
+CREATE INDEX "idx_search_chunk_resource" ON "ai_resource_search_chunk" USING btree (
   "namespace_id",
   "resource_type",
   "resource_name",
   "resource_version"
 );
-CREATE INDEX "idx_ard_chunk_type_status" ON "ai_resource_ard_chunk" USING btree (
+CREATE INDEX "idx_search_chunk_type_status" ON "ai_resource_search_chunk" USING btree (
   "namespace_id",
   "resource_type",
   "status"
 );
 
 -- ----------------------------
--- Table structure for ai_resource_ard_index_task
+-- Table structure for ai_resource_search_index_task
 -- ----------------------------
-DROP TABLE IF EXISTS "ai_resource_ard_index_task";
-CREATE TABLE "ai_resource_ard_index_task" (
+DROP TABLE IF EXISTS "ai_resource_search_index_task";
+CREATE TABLE "ai_resource_search_index_task" (
   "task_key" varchar(64) NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "resource_type" varchar(32) NOT NULL,
@@ -655,6 +655,6 @@ CREATE TABLE "ai_resource_ard_index_task" (
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE "ai_resource_ard_index_task" ADD CONSTRAINT "ai_resource_ard_index_task_pkey" PRIMARY KEY ("task_key");
-CREATE INDEX "idx_ard_task_due" ON "ai_resource_ard_index_task" USING btree ("status", "next_retry_time");
-CREATE INDEX "idx_ard_task_lease" ON "ai_resource_ard_index_task" USING btree ("status", "lease_until");
+ALTER TABLE "ai_resource_search_index_task" ADD CONSTRAINT "ai_resource_search_index_task_pkey" PRIMARY KEY ("task_key");
+CREATE INDEX "idx_search_task_due" ON "ai_resource_search_index_task" USING btree ("status", "next_retry_time");
+CREATE INDEX "idx_search_task_lease" ON "ai_resource_search_index_task" USING btree ("status", "lease_until");

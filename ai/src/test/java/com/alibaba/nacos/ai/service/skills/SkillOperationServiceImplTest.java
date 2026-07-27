@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
-import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -1982,9 +1982,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
-        ArdIndexMaintenanceService indexMaintenanceService =
-            mock(ArdIndexMaintenanceService.class);
-        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         
         AiResource meta = new AiResource();
         meta.setName(skillName);
@@ -2582,9 +2582,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
-        ArdIndexMaintenanceService indexMaintenanceService =
-            mock(ArdIndexMaintenanceService.class);
-        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         AiResource meta = new AiResource();
         meta.setName(skillName);
         meta.setType("skill");
@@ -2626,15 +2626,15 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testVersionOfflineShouldRebuildLatestArdIndexForFallbackVersion()
+    void testVersionOfflineShouldRebuildLatestSearchIndexForFallbackVersion()
         throws NacosException {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         final String offlineVersion = "0.0.9";
         final String fallbackVersion = "0.0.8";
-        ArdIndexMaintenanceService indexMaintenanceService =
-            mock(ArdIndexMaintenanceService.class);
-        skillOperationService.setArdIndexMaintenanceService(indexMaintenanceService);
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         AiResource meta = new AiResource();
         meta.setName(skillName);
         meta.setType("skill");

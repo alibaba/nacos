@@ -57,7 +57,7 @@ registry surface is explicitly enabled:
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | Enables MCP Registry-compatible endpoints. |
 | `nacos.ai.skill.registry.enabled` | `false` | Enables Skill registry-compatible endpoints. |
-| `nacos.ai.ard.enabled` | `false` | Enables ARD endpoints and the supporting local indexes. |
+| `nacos.ai.ard.enabled` | `false` | Enables ARD endpoints and their required AI resource search runtime. |
 | `nacos.ai.registry.port` | `9080` | HTTP port used by the adaptor context. |
 | `nacos.ai.mcp.registry.port` | deprecated | Legacy fallback for the adaptor port. |
 
@@ -65,10 +65,10 @@ Users must opt in because the adaptor consumes an additional port and exposes
 protocol shapes that are designed for community clients rather than Nacos
 Admin, Console, or Client API consumers.
 
-Disabling ARD must not require PostgreSQL pgvector. ARD entry and chunk
-metadata use the main datasource, while the pgvector extension and
-`ai_resource_ard_embedding_pg` table are initialized exclusively through
-`pg-ard-vector-schema.sql` in the PostgreSQL datasource used for embeddings.
+Disabling ARD must not require PostgreSQL pgvector. AI resource search document
+and chunk metadata use the main datasource, while the pgvector extension and
+`ai_resource_search_embedding_pg` table are initialized exclusively through
+`pg-ai-vector-schema.sql` in the PostgreSQL datasource used for embeddings.
 This datasource may be the Nacos main datasource or a dedicated datasource;
 the main `pg-schema.sql` must remain usable without pgvector.
 
@@ -224,14 +224,11 @@ co-location.
 
 ### 6.3 Discovery Boundary
 
-The AI module owns a protocol-neutral discovery application service. That
-service owns:
-
-- keyword and vector recall;
-- ranking and deterministic tie-breaking;
-- visibility query advice and per-resource visibility enforcement;
-- latest-label and current online-version resolution;
-- canonical filters and opaque cursor pagination.
+The AI module owns the protocol-neutral capability defined by the
+[AI Resource Search Spec](ai-resource-search-spec.md). ARD is its only consumer
+in this version, so `nacos.ai.ard.enabled` activates the required search
+runtime without creating a separate operator-facing search switch or another
+public API.
 
 Visibility and current-version validation occur before the requested result
 limit is applied. Candidate recall may use bounded batches internally, but it
@@ -239,18 +236,40 @@ must continue until the page is full or the eligible result set is exhausted.
 The cursor identifies a stable resource anchor rather than a mutable list
 offset.
 
-The adaptor validates and parses ARD requests, invokes the canonical discovery
-service, and maps canonical discovery results to ARD DTOs. It must not directly
-query ARD index repositories or reimplement lifecycle and visibility rules.
-ARD-specific facet names and values may be aggregated while mapping the
-canonical eligible result set.
+The adaptor validates and parses ARD requests, invokes the AI resource search
+service, and maps canonical results and aggregations to ARD DTOs. It must not
+directly query search repositories or reimplement recall, lifecycle,
+visibility, pagination, or aggregation rules. ARD-specific facet names and
+values are translated to and from canonical aggregation fields.
+
+Search accepts all federation values defined by the pinned OpenAPI: `auto`,
+`referrals`, and `none`. An omitted value defaults to `auto`. Until an upstream
+registry is configured, all three modes execute local search; `referrals`
+returns an empty referrals array rather than rejecting the request.
+
+The `GET /agents` filter parser supports single-quoted equality expressions
+joined by `AND` and timestamp comparisons such as
+`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Unsupported
+operators, malformed quoting, unknown fields, and legacy delimiter syntax fail
+with the ARD invalid-argument response instead of being partially interpreted.
+
+Catalog identifiers use deterministic, injective, schema-safe encoding for
+every Nacos-derived URN segment. Namespaces and resource names containing
+spaces, slashes, Unicode, or punctuation must remain distinct and validate
+against the pinned catalog schema.
+
+Explore facets aggregate the complete eligible result set after visibility,
+current-version, and request filtering. They must not be computed from one
+page or a fixed candidate prefix. Protocol constants such as publisher,
+source, and trust identity are added by the adaptor after canonical
+aggregation.
 
 ### 6.4 Index Consistency
 
 Canonical resource writes remain authoritative. Relational replacement of one
-resource's ARD entry and chunks is atomic: deleting the previous index rows,
-inserting the new entry, and inserting all chunks occur in one datasource
-transaction.
+resource's search document and chunks is atomic: deleting the previous index
+rows, inserting the new document, and inserting all chunks occur in one
+datasource transaction.
 
 Relational and vector indexes do not require a distributed transaction.
 Instead, the AI module records an idempotent, durable resource-level indexing
@@ -265,11 +284,11 @@ independently verifies relational and vector state. Logging and swallowing an
 indexing exception is not a consistency mechanism, and startup backfill alone
 is not sufficient.
 
-`ai_resource_ard_index_task` stores the coalesced task revision and retry
+`ai_resource_search_index_task` stores the coalesced task revision and retry
 state. Completion and retry updates are revision-conditional so a concurrent
 canonical change cannot be lost when an older lease finishes. While vector
-replacement is in progress, the relational entry remains `pending`; discovery
-only reads `enabled` entries. The consumer enables the entry after the vector
+replacement is in progress, the relational document remains `pending`; search
+only reads `enabled` documents. The consumer enables the document after the vector
 provider confirms replacement. Reconciliation also compares the embedding
 model and vector document count with the relational chunks, and schedules
 missing, partial, stale, wrong-model, and orphaned indexes.

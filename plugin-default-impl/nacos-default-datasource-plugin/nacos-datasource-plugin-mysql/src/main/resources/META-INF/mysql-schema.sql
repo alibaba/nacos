@@ -246,9 +246,9 @@ CREATE TABLE `ai_resource_version` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源版本表';
 
 /******************************************/
-/*   表名称 = ai_resource_ard_entry       */
+/*   表名称 = ai_resource_search_document       */
 /******************************************/
-CREATE TABLE `ai_resource_ard_entry` (
+CREATE TABLE `ai_resource_search_document` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
@@ -266,18 +266,18 @@ CREATE TABLE `ai_resource_ard_entry` (
     `status` varchar(32) NOT NULL COMMENT '状态',
     `generate_mode` varchar(32) NOT NULL COMMENT '生成模式',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ard_entry_resource_version` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
-    KEY `idx_ard_entry_type_status` (`namespace_id`,`resource_type`,`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引条目表';
+    UNIQUE KEY `uk_search_document_resource_version` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
+    KEY `idx_search_document_type_status` (`namespace_id`,`resource_type`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索文档表';
 
 /******************************************/
-/*   表名称 = ai_resource_ard_chunk       */
+/*   表名称 = ai_resource_search_chunk       */
 /******************************************/
-CREATE TABLE `ai_resource_ard_chunk` (
+CREATE TABLE `ai_resource_search_chunk` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
-    `entry_id` bigint(20) NOT NULL COMMENT 'ARD索引条目ID',
+    `document_id` bigint(20) NOT NULL COMMENT '检索文档ID',
     `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
     `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
     `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
@@ -290,16 +290,16 @@ CREATE TABLE `ai_resource_ard_chunk` (
     `metadata` longtext DEFAULT NULL COMMENT '元数据(JSON)',
     `status` varchar(32) NOT NULL COMMENT '状态',
     PRIMARY KEY (`id`),
-    KEY `idx_ard_chunk_entry` (`entry_id`),
-    KEY `idx_ard_chunk_hash` (`chunk_hash`),
-    KEY `idx_ard_chunk_resource` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
-    KEY `idx_ard_chunk_type_status` (`namespace_id`,`resource_type`,`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引分片表';
+    KEY `idx_search_chunk_document` (`document_id`),
+    KEY `idx_search_chunk_hash` (`chunk_hash`),
+    KEY `idx_search_chunk_resource` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
+    KEY `idx_search_chunk_type_status` (`namespace_id`,`resource_type`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索分片表';
 
 /******************************************/
-/*   表名称 = ai_resource_ard_index_task  */
+/*   表名称 = ai_resource_search_index_task  */
 /******************************************/
-CREATE TABLE `ai_resource_ard_index_task` (
+CREATE TABLE `ai_resource_search_index_task` (
     `task_key` varchar(64) NOT NULL COMMENT '资源任务键',
     `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
     `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
@@ -313,6 +313,6 @@ CREATE TABLE `ai_resource_ard_index_task` (
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`task_key`),
-    KEY `idx_ard_task_due` (`status`,`next_retry_time`),
-    KEY `idx_ard_task_lease` (`status`,`lease_until`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源ARD索引任务表';
+    KEY `idx_search_task_due` (`status`,`next_retry_time`),
+    KEY `idx_search_task_lease` (`status`,`lease_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索索引任务表';

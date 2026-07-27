@@ -29,7 +29,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineNodeResult;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
@@ -100,8 +100,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final PromptDataMigrationTask promptDataMigrationTask;
     
-    private ArdIndexMaintenanceService ardIndexMaintenanceService =
-        ArdIndexMaintenanceService.NOOP;
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
+        AiResourceIndexMaintenanceService.NOOP;
     
     public PromptOperationServiceImpl(PublishPipelineExecutor publishPipelineExecutor,
         ConfigOperationService configOperationService,
@@ -115,10 +115,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     @Autowired(required = false)
-    public void setArdIndexMaintenanceService(
-        ArdIndexMaintenanceService ardIndexMaintenanceService) {
-        if (ardIndexMaintenanceService != null) {
-            this.ardIndexMaintenanceService = ardIndexMaintenanceService;
+    public void setAiResourceIndexMaintenanceService(
+        AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
+        if (resourceIndexMaintenanceService != null) {
+            this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
         }
     }
     
@@ -342,7 +342,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
-        rebuildArdPromptIndex(namespaceId, promptKey, version);
+        schedulePromptIndexRebuild(namespaceId, promptKey, version);
     }
     
     @Override
@@ -356,7 +356,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
-        rebuildArdPromptIndex(namespaceId, promptKey, version);
+        schedulePromptIndexRebuild(namespaceId, promptKey, version);
     }
     
     @Override
@@ -385,9 +385,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             resourceInfo.getLabels() == null ? null : resourceInfo.getLabels().get(LABEL_LATEST);
         syncLatestMirrorIfChanged(namespaceId, promptKey, oldLatest, newLatest);
         if (online) {
-            rebuildArdPromptIndex(namespaceId, promptKey, version);
+            schedulePromptIndexRebuild(namespaceId, promptKey, version);
         } else {
-            deleteArdPromptVersionIndex(namespaceId, promptKey, version);
+            schedulePromptVersionIndexDeletion(namespaceId, promptKey, version);
         }
     }
     
@@ -463,24 +463,24 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Delete DB rows
         resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         resourceManager.deleteMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-        deleteArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexDeletion(namespaceId, promptKey);
     }
     
-    private void rebuildArdPromptIndex(String namespaceId, String promptKey, String version) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
+    private void schedulePromptIndexRebuild(String namespaceId, String promptKey, String version) {
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void rebuildLatestArdPromptIndex(String namespaceId, String promptKey) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
-    private void deleteArdPromptIndex(String namespaceId, String promptKey) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
+    private void schedulePromptIndexDeletion(String namespaceId, String promptKey) {
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
-    private void deleteArdPromptVersionIndex(String namespaceId, String promptKey,
+    private void schedulePromptVersionIndexDeletion(String namespaceId, String promptKey,
         String version) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
     private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {

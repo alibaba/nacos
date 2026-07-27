@@ -27,7 +27,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.ai.service.ard.ArdIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
@@ -142,8 +142,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private final AiResourceManager resourceManager;
     
-    private ArdIndexMaintenanceService ardIndexMaintenanceService =
-        ArdIndexMaintenanceService.NOOP;
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
+        AiResourceIndexMaintenanceService.NOOP;
     
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
         AiResourceVersionPersistService aiResourceVersionPersistService,
@@ -159,10 +159,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     @Autowired(required = false)
-    public void setArdIndexMaintenanceService(
-        ArdIndexMaintenanceService ardIndexMaintenanceService) {
-        if (ardIndexMaintenanceService != null) {
-            this.ardIndexMaintenanceService = ardIndexMaintenanceService;
+    public void setAiResourceIndexMaintenanceService(
+        AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
+        if (resourceIndexMaintenanceService != null) {
+            this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
         }
     }
     
@@ -447,7 +447,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         versions.put(version, files);
         manifest.setVersions(versions);
         manifestService.write(namespaceId, skillName, manifest);
-        rebuildArdSkillIndex(namespaceId, skillName, version);
+        scheduleSkillIndexRebuild(namespaceId, skillName, version);
     }
     
     private String createUploadedSkillDraft(String namespaceId, Skill skill, String uploadVersion,
@@ -979,7 +979,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.deleteResourceWithVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(),
                 v.getStorage()));
-        deleteArdSkillIndex(namespaceId, skillName);
+        scheduleSkillIndexDeletion(namespaceId, skillName);
     }
     
     @Override
@@ -1307,7 +1307,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
-        rebuildArdSkillIndex(namespaceId, name, version);
+        scheduleSkillIndexRebuild(namespaceId, name, version);
     }
     
     /**
@@ -1325,7 +1325,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
-        rebuildArdSkillIndex(namespaceId, name, version);
+        scheduleSkillIndexRebuild(namespaceId, name, version);
     }
     
     /**
@@ -1341,7 +1341,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
-        rebuildArdSkillIndex(namespaceId, name, version);
+        scheduleSkillIndexRebuild(namespaceId, name, version);
     }
     
     @Override
@@ -1409,7 +1409,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             } else {
                 // On disable: delete index manifest so clients can no longer discover it
                 manifestService.delete(namespaceId, name);
-                deleteArdSkillIndex(namespaceId, name);
+                scheduleSkillIndexDeletion(namespaceId, name);
             }
             return;
         }
@@ -1429,7 +1429,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 manifest.getVersions().put(version, files);
                 manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
-                rebuildArdSkillIndex(namespaceId, name, version);
+                scheduleSkillIndexRebuild(namespaceId, name, version);
             }
         } else {
             // Going offline: remove this version from manifest
@@ -1452,16 +1452,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         rebuildLatestArdSkillIndex(namespaceId, name);
     }
     
-    private void rebuildArdSkillIndex(String namespaceId, String name, String version) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
+    private void scheduleSkillIndexRebuild(String namespaceId, String name, String version) {
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
     private void rebuildLatestArdSkillIndex(String namespaceId, String name) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
-    private void deleteArdSkillIndex(String namespaceId, String name) {
-        ardIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
+    private void scheduleSkillIndexDeletion(String namespaceId, String name) {
+        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
     /**
