@@ -324,8 +324,12 @@ state = AVAILABLE | DISABLED | UNHEALTHY
 
 State evaluation is ordered: `enabled=false` is `DISABLED`; otherwise
 `healthy=false` is `UNHEALTHY`; all other items are `AVAILABLE`.
-`lastUpdatedTime` changes only when public Endpoint content, enabled state, or
-aggregate health changes. A heartbeat alone does not change it.
+`lastUpdatedTime` is the `lastRefTime` of the Naming `ServiceInfo` projection
+from which the snapshot was built. All items from one snapshot therefore share
+the same projection observation time. It is not a per-Endpoint distributed
+fact or a cache validator and may change whenever Naming rebuilds that Service
+projection. Cross-node equality and watch deduplication use the content-derived
+`sourceRevision` instead.
 
 `protocol` is required. Without `version`, the snapshot contains one effective
 item per natural Endpoint key for that protocol and all of its Version

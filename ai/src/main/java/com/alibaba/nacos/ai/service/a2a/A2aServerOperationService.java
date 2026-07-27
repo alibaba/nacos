@@ -417,7 +417,7 @@ public class A2aServerOperationService {
         String serviceName =
             agentIdCodecHolder.encode(agentCard.getName()) + "::" + agentCard.getVersion();
         Service service =
-            Service.newService(namespaceId, Constants.A2A.AGENT_ENDPOINT_GROUP, serviceName);
+            Service.newService(namespaceId, Constants.Agent.AGENT_ENDPOINT_GROUP, serviceName);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         if (serviceInfo.getHosts().isEmpty()) {
             return;

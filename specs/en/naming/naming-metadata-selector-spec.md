@@ -75,27 +75,41 @@ Runtime Endpoint projection. Its version-1 keys are:
 | `__nacos.agent.endpoint.supportTls__` | Whether the projected URI uses TLS. |
 | `__nacos.agent.endpoint.query__` | Raw URI query. |
 | `__nacos.agent.endpoint.tenant__` | Protocol-native tenant when present. |
-| `__nacos.agent.endpoint.version__` | Single-binding runtime Version compatibility and diagnostic mirror. |
-| `__nacos.agent.endpoint.versionRange__` | Single-binding canonical Version range compatibility and diagnostic mirror. |
-| `__nacos.agent.endpoint.bindings__` | Canonical JSON array of runtime Version and Version-range bindings. |
+| `__nacos.agent.endpoint.version__` | Runtime Version of this Instance contribution. |
+| `__nacos.agent.endpoint.versionRange__` | Canonical Version range of this Instance contribution. |
 | `__nacos.agent.endpoint.priority__` | Endpoint priority; a lower number has higher priority. |
 
-Only the Agent Runtime Registry may write keys under this prefix. Public
-runtime and operational metadata writes must reject them, so the ordinary
-operational-over-runtime priority rule does not override Agent projection
-facts. Endpoint weight, enabled state, and health continue to use their native
-Naming Instance fields rather than reserved metadata keys.
+Only the Agent Endpoint Naming adapter may write keys under this prefix.
+Public runtime and operational metadata writes must reject them, so the
+ordinary operational-over-runtime priority rule does not override Agent
+projection facts. Endpoint weight, enabled state, and health continue to use
+their native Naming Instance fields rather than reserved metadata keys.
 
-Only the A2A compatibility adapter writes `protocolVersion`. Public RAD
-Endpoint metadata and Runtime revision exclude it. The old A2A response
-projection prefers this value and falls back to the target Agent CallInterface
-`protocolVersion` when it is absent.
+The current Version-specific A2A compatibility layout may write
+`protocolVersion`; new RAD registration does not. Public RAD Endpoint metadata
+and Runtime revision exclude it. The old A2A response projection prefers this
+value and falls back to the target Agent CallInterface `protocolVersion` when
+it is absent.
 
-`bindings` is the Version-matching fact. When it has exactly one item, the
-Registry also writes `version` and `versionRange` as mirrors. When it has more
-than one item, the Registry removes both singular keys. Readers use `bindings`
-when present and must not merge stale singular values. The exact canonical
-array and Runtime projection rules are defined by the
+Every new Version-neutral RAD Runtime Naming Instance carries exactly one
+`version` and `versionRange` pair. The range must be canonical and contain the
+runtime Version. Naming metadata does not store a serialized bindings array.
+The current Version-specific A2A Naming layout is outside this requirement.
+
+Registration follows Naming complete-batch replacement semantics. The client
+maintains the complete Endpoint batch published by one connection for one
+Agent protocol service, removes or replaces entries locally, and submits the
+remaining complete batch through Naming batch registration. If the resulting
+desired batch is empty, the client invokes whole-publication deregistration
+instead of submitting an empty batch. The server-side Agent adapter maps the
+submitted batch to Naming Instances and must not read and merge the publisher's
+previous batch.
+
+On a new RAD Runtime query, readers construct one `RuntimeVersionBinding` from
+each Instance's singular pair, apply Version-range matching, and aggregate the
+resulting `bindings[]` by natural Endpoint key. `RuntimeVersionBinding` and
+`bindings[]` are query projections rather than Naming registration metadata.
+The exact Runtime projection rules are defined by the
 [Agent Storage Spec](../ai/agent-storage-spec.md).
 
 New core behavior must not be bound to arbitrary user metadata keys. If a

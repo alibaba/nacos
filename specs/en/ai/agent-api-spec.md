@@ -79,8 +79,9 @@ complete, non-paged snapshot.
 |---|---|
 | Missing or invalid field, invalid URI/range, or duplicate endpoint natural key | Standard parameter error |
 | Invisible or absent Discover target | `RESOURCE_NOT_FOUND`; no visibility distinction |
-| Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, quota, and conflict validation |
-| Metadata CAS or publisher-payload conflict | `RESOURCE_CONFLICT` |
+| Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, and per-batch quota validation |
+| Metadata CAS conflict | `RESOURCE_CONFLICT` |
+| Converged runtime projection contains conflicting publisher payloads | `RESOURCE_CONFLICT` |
 | Invalid Version lifecycle transition | `ILLEGAL_STATE` |
 | HTTP heartbeat for unknown client | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
@@ -119,8 +120,15 @@ complete replacement results. `getAll`, `selectOneHealthy`, protocol choice,
 priority/weight selection, and actual Agent calling are local SDK helpers, not
 additional remote operations.
 
-Register is a natural-key upsert and does not replace omitted endpoints. The
-SDK stores registration batches as redo intent. The initial implementation may
+One registration batch is the complete desired state for the SDK publisher and
+`(namespaceId, agentName, protocol)`. Register replaces the previous batch,
+including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
+removed. The SDK stores that complete batch as redo intent.
+
+`deregisterAgentEndpoints` remains a convenience method over natural keys. The
+SDK removes those keys from its expected batch and sends the complete remaining
+batch through Register. When no Endpoint remains, it sends a whole-publication
+deregistration. The initial implementation may
 omit a new generic Agent-definition publish method, but existing
 `A2aService.releaseAgentCard` remains functional through the compatibility
 adapter. A later Client SDK revision will provide an optional code-first Agent
@@ -149,8 +157,8 @@ blindly repeated through HTTP.
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
-| POST | `/v3/client/ai/agents/endpoints` | `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | JSON `AgentEndpointDeregistrationBatch` | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | Complete `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | JSON `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
 
 Search query names equal RAD field names. Repeated `tagsAll` values use AND;
@@ -162,11 +170,18 @@ parameters are `protocol`, `transport`, and `endpointSource`.
 `protocolVersion` is singular. `metadataSelector` is one URL-encoded JSON
 object rather than dynamic `metadata.<key>` parameter names.
 
-The Endpoint path deliberately uses only POST and DELETE. POST already upserts
-complete endpoint values, so a general PUT would introduce ambiguous partial
-update semantics. GET is unnecessary because consumers use Discover and
-maintainers use `RuntimeEndpointSnapshot`. DELETE with a JSON body is the only
-0.1 binding and requires clients and gateways that preserve that body.
+The Endpoint path deliberately uses only POST and DELETE. POST replaces the
+current publisher's complete batch for one Agent and protocol, so a general
+PUT would duplicate the same replacement operation. GET is unnecessary because
+consumers use Discover and maintainers use `RuntimeEndpointSnapshot`.
+
+DELETE removes the current HTTP publisher's whole publication for the supplied
+Agent and protocol. It does not accept endpoint keys. The official SDK
+implements partial deregistration by updating its local expected batch and
+POSTing the complete remainder; it uses DELETE only when that remainder is
+empty. A direct HTTP caller likewise owns its complete desired batch. The
+three-field DELETE body is a binding object, not a replacement for the
+application-facing `AgentEndpointDeregistrationBatch` RAD model.
 
 ### 2.4 HTTP Publisher Identity And Liveness
 
@@ -207,7 +222,8 @@ The server routes HTTP publisher state by `clientId` through Distro type
 `lastActiveTime`, and timeout task. Peers receive complete client state needed
 to rebuild the Naming/RAD projection. A new owner starts its failover grace
 period only after receiving a complete snapshot; otherwise it returns
-`HTTP_CLIENT_NOT_FOUND`, and the client redoes every expected endpoint group.
+`HTTP_CLIENT_NOT_FOUND`, and the client redoes every expected complete service
+batch.
 The first accepted write binds the client id to authenticated identity and
 namespace. Later mismatches are rejected. The same string in another module
 does not share liveness or cleanup state.
@@ -220,13 +236,26 @@ does not share liveness or cleanup state.
 | `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | One Discover |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | Subscribe or unsubscribe; a successful subscription returns an opaque `watchKey` and the current complete result |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | Push a `SNAPSHOT` or `TERMINATED` event for one `watchKey` and receive an acknowledgement |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | Register one RAD batch |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | Deregister one RAD batch |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
 
 All requests report module `ai`. gRPC endpoint contributions belong to
 `RequestMeta.connectionId`; no client id or heartbeat payload is added.
 Disconnect removes that connection's contributions. Reconnect obtains a new
 connection id and redoes endpoints and subscriptions.
+
+The endpoint handlers are Naming adapters. Register validates and converts the
+submitted complete Endpoint batch to Naming Instances, then invokes Naming
+batch registration. Deregister invokes Naming whole-publication deregistration.
+They do not read or merge the previous publisher batch, add an Agent service
+lock, directly query Naming's client index, or scan other publishers during a
+write.
+
+Runtime Snapshot, Discover, and Watch read the complete internal Naming
+`ServiceStorage` projection. They construct one binding from each Instance's
+singular runtime Version and Version-range metadata, retain ranges matching the
+requested Version, and aggregate the resulting `bindings[]` and health by
+public Endpoint natural key.
 
 `AgentSubscribeResponse.watchKey` is the binding-defined opaque identity for
 the accepted wire subscription. The SDK maps it to the canonical local Watch
@@ -265,18 +294,21 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Event | Required behavior |
 |---|---|
 | Repeat identical Register | Success without semantic change |
-| Register changed non-identity fields | Upsert that publisher contribution |
+| Register changed content, runtime Version, or range | Replace that publisher's complete service batch |
 | Duplicate natural key in one batch | Reject the complete batch |
-| Repeat Deregister | Success without change |
+| Partial SDK Deregister | Remove keys from local expected state and Register the complete remainder |
+| Last SDK Deregister or direct remote Deregister | Remove the publisher's whole service publication |
+| Repeat whole-publication Deregister | Success without change |
 | Repeat heartbeat | Refresh only client liveness |
 | HTTP timeout | Retry with the same client id and identical payload using backoff |
-| `HTTP_CLIENT_NOT_FOUND` | Mark all local endpoint intent unregistered and redo by complete group |
-| gRPC reconnect | Redo endpoints and subscriptions under the new connection id |
+| `HTTP_CLIENT_NOT_FOUND` | Mark local endpoint intent unregistered and redo each complete service batch |
+| gRPC reconnect | Redo complete endpoint batches and subscriptions under the new connection id |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
-The SDK records expected state before the first write. Shutdown performs a
-best-effort deregistration; expiry remains the cleanup fallback. Parameter,
-authorization, and publisher-conflict errors do not enter infinite redo.
+The SDK records expected state before the first write and serializes desired
+batch changes per Agent and protocol. Shutdown performs a best-effort
+whole-publication deregistration; expiry remains the cleanup fallback.
+Parameter and authorization errors do not enter infinite redo.
 
 ## 3. Admin API And Maintainer SDK
 
@@ -382,5 +414,9 @@ RAD ability:
 
 Legacy Console A2A APIs are supported through the Nacos 3.4 line. Legacy Admin
 and Maintainer A2A APIs remain through the Nacos 4.0 compatibility boundary.
+During this compatibility window, legacy A2A Endpoint APIs keep their existing
+version-qualified Naming layout and replacement scopes. They are not rewritten
+onto the new version-neutral Agent Naming service, because an old client cannot
+construct the complete cross-Version publisher batch required by that service.
 Historical data migration and mixed-version rolling-upgrade behavior are a
 separate specification and must not be inferred from this API-only contract.

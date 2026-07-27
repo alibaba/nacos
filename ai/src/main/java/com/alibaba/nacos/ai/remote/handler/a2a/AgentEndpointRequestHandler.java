@@ -86,7 +86,7 @@ public class AgentEndpointRequestHandler
                 agentIdCodecHolder.encode(request.getAgentName()) + "::"
                     + request.getEndpoint().getVersion();
             Service service =
-                Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
+                Service.newService(request.getNamespaceId(), Constants.Agent.AGENT_ENDPOINT_GROUP,
                     serviceName);
             switch (request.getType()) {
                 case AiRemoteConstants.REGISTER_ENDPOINT:

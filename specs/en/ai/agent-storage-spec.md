@@ -45,7 +45,7 @@ RUNTIME publisher contributions ------> Naming Client runtime state
 | `ai_resource` | Agent identity, catalog, governance, version summary, and derived online catalog. | Version payload or runtime health. |
 | `ai_resource_version` | Exact Version identity, lifecycle status, author, storage pointer, and pipeline state. | CallInterface payload or runtime endpoint. |
 | AI Storage | Canonical `AgentVersionContent` bytes for one Version. | Resource identity, lifecycle, labels, or visibility. |
-| Naming Client state | Live publisher contributions, health, enabled state, and version bindings. | Agent definition or Version lifecycle. |
+| Naming Client state | Live publisher contributions, health, enabled state, and singular runtime Version/range facts. | Agent definition or Version lifecycle. |
 
 The service must not persist a merged `AgentDiscoveryResult`. Summary,
 management detail, catalog, discovery, and watch objects are read projections
@@ -293,91 +293,83 @@ namespaceId / agentName / runtimeVersion / versionRange? / protocol
 endpoints[1..1000]
 ```
 
-All Endpoints in a batch share the Version binding and protocol. A one-item
-array is the generic single-Endpoint form. The command itself is not persisted.
-The server validates the complete batch before applying it atomically. A
-duplicate natural key rejects the batch. Registration upserts only listed
-contributions and does not remove omitted Endpoints; repeating identical
-content succeeds without a semantic change.
+All Endpoints in a batch share one `runtimeVersion`/`versionRange` pair and
+protocol. A one-item array is the generic single-Endpoint form. The command
+itself is not persisted.
+The batch is the publisher's complete desired state for the composed Naming
+Service. The server validates the complete batch and delegates it to Naming
+`batchRegisterInstance`. Naming atomically replaces the previous batch for the
+same Client and Service; omitted Endpoints are removed. A duplicate natural key
+rejects the batch. Repeating identical content is idempotent.
 
 `AgentEndpointDeregistrationBatch` contains only `namespaceId`, `agentName`,
-`protocol`, and `endpoints[] {uri, transport}`. For the current publisher, each
-natural Endpoint key removes all of that publisher's Version-binding groups.
-The caller does not submit or cache endpoint ids, runtime Versions, ranges,
-metadata, priority, or weight.
+`protocol`, and `endpoints[] {uri, transport}`. It is an SDK-side intent model,
+not a server-side partial-delete command. The SDK removes the listed natural
+keys from its redo state and submits the retained complete batch through the
+same registration path. When no Endpoint remains, it deregisters the complete
+Client and Service publication. The server never reads and merges the previous
+batch for a partial deregistration.
 
 ### 4.3 Internal Publisher Contributions
 
-The internal publication-group identity is:
+The Naming publication identity is:
 
 ```text
 publisherIdentity
 + namespaceId + agentName + protocol
-+ runtimeVersion + canonicalVersionRange
 ```
 
-An Endpoint contribution identity appends the public Endpoint natural key.
-This distinction is mandatory:
+Naming stores exactly one `BatchInstancePublishInfo` for that Client and
+Service. Its Instances carry one shared `runtimeVersion` and canonical
+`versionRange`. A later registration replaces that complete record, including
+the shared Version fields. The first release therefore allows one singular
+`runtimeVersion` and `versionRange` pair per publisher, Agent, and protocol.
+Supporting multiple pairs requires a future complete-snapshot wire model, not
+a server-side read-merge-write loop.
 
-- one publisher may bind the same host, port, and transport through multiple
-  runtime-Version/range groups;
-- Version bindings do not create version-specific Naming services or duplicate
-  the public Endpoint in a target discovery result;
-- registering the same contribution identity is an upsert; and
-- the new generic deregistration command removes every matching group for that
-  publisher and natural Endpoint.
+The Agent layer does not inspect the previous publisher record, depend directly
+on `ClientServiceIndexesManager`, add a service lock, or scan other publishers
+before a write. Naming owns replacement, connection cleanup, indexes, events,
+and Distro AP convergence. The Agent layer only validates and converts the
+complete batch.
 
-The compatibility adapter may use an internal group-delete operation. It
-deletes only one exact publication group and is not part of the public RAD
-command set. The old A2A exact-Version deregistration uses this operation so it
-does not remove the same publisher's contributions for another Version.
-
-Across all live contributions, the same public natural Endpoint key must have
-one canonical public Endpoint payload, regardless of publisher identity or
-whether their Version ranges overlap. A registration whose URI scheme, path,
-query, priority, weight, or public metadata differs from the existing payload is
-rejected as a contribution conflict. Contributions may add distinct Version
-bindings only when their canonical Endpoint payload is identical.
+Different publishers may contribute Instances that converge to the same public
+natural Endpoint key. The read projection aggregates identical canonical
+payloads. If converged Naming state contains different URI payload fields,
+priority, weight, or public metadata for the same natural key, the read fails
+with `RESOURCE_CONFLICT` instead of selecting an arbitrary value. This is a
+projection-safety check, not a write-time reservation or CP constraint.
 
 ### 4.4 Bindings Aggregation
 
-Naming publisher contributions are aggregated into an Endpoint projection
-with a canonical `bindings[]` array:
-
-```json
-[
-  {"runtimeVersion":"1.0.6","versionRange":"[1.0.0,2.0.0)"}
-]
-```
-
-The array is deduplicated and sorted in ascending Agent SemVer order by
-`runtimeVersion`, then in ascending case-sensitive string order by
-`versionRange`. This exact array is the Version-matching fact.
-
-Each effective publisher record stores it under
-`__nacos.agent.endpoint.bindings__`. When the array contains exactly one item,
-the record also writes these diagnostic and initial-release compatibility
-mirrors:
+Each Naming Instance stores one canonical binding in the singular metadata
+keys:
 
 ```text
 __nacos.agent.endpoint.version__       = runtimeVersion
-__nacos.agent.endpoint.versionRange__  = versionRange
+__nacos.agent.endpoint.versionRange__  = canonicalVersionRange
 ```
 
-When the array contains more than one item, both singular keys are removed.
-Readers always use `bindings` when present and must not merge stale singular
-keys into it.
+There is no serialized `bindings` metadata value. `RuntimeVersionBinding`
+objects and public `bindings[]` arrays are created only while reading the
+Naming Service projection. Bindings are deduplicated and sorted in ascending
+Agent SemVer order by `runtimeVersion`, then in ascending case-sensitive string
+order by `versionRange`.
 
-`RuntimeEndpointSnapshot` aggregates publisher contributions without exposing
+`RuntimeEndpointSnapshot` reads the complete internal Naming Service projection
+from `ServiceStorage`, then aggregates projected Instances without exposing
 publisher identity. It contains exactly one item per public natural Endpoint
 key, with the canonical Endpoint payload and all effective `bindings[]`. A
 Version-filtered snapshot retains only matching bindings and omits an item when
-none remain.
+none remain. `ServiceStorage` may deduplicate completely identical Instances;
+this does not alter the public projection because identical Instance payload,
+bindings, enabled state, and health would aggregate into the same public item.
 
 RAD discovery first filters bindings for the target Version, then aggregates
-equal natural keys into one public Endpoint. Because every inconsistent payload
-is rejected at write time, one target Version never produces two
-different public payloads for the same natural key.
+equal natural keys into one public Endpoint. A projection rebuild rejects
+inconsistent payloads visible after AP convergence. Therefore one successful
+target-Version projection never contains two different public payloads for the
+same natural key.
 
 ### 4.5 Pre-registration And Lifecycle
 
@@ -387,8 +379,8 @@ Version, or CallInterface does not exist. Registration success means runtime
 intent was accepted; it does not imply current discoverability.
 
 Registration validates AgentName, runtime Version, range, protocol, Endpoint,
-authorization, capacity, and contribution conflicts. It does not validate
-definition existence or Version lifecycle status.
+authorization, and batch capacity. It does not validate definition existence,
+Version lifecycle status, or other publishers' current values.
 
 Publisher identity is internal:
 
@@ -475,8 +467,8 @@ metadata and must agree on read.
 | HTTPS state | `__nacos.agent.endpoint.supportTls__`. |
 | raw URI query | `__nacos.agent.endpoint.query__`. |
 | native tenant, when present | `__nacos.agent.endpoint.tenant__`. |
-| canonical bindings | `__nacos.agent.endpoint.bindings__`. |
-| single-binding diagnostic mirrors | `__nacos.agent.endpoint.version__`, `__nacos.agent.endpoint.versionRange__`. |
+| runtime Version | `__nacos.agent.endpoint.version__`. |
+| canonical Version range | `__nacos.agent.endpoint.versionRange__`. |
 | priority | `__nacos.agent.endpoint.priority__`. |
 | weight | `Instance.weight`. |
 | public Endpoint metadata | Remaining `Instance.metadata`. |
@@ -484,17 +476,14 @@ metadata and must agree on read.
 
 User metadata must not override any `__nacos.agent.endpoint.*__` key. The server
 constructs and validates the complete Naming metadata before accepting a
-publication. Missing range input is canonicalized before writing `bindings`.
+publication. Missing range input is canonicalized before writing
+`versionRange`.
 
 `__nacos.agent.endpoint.protocolVersion__` is a legacy-only compatibility fact.
-Only the A2A compatibility adapter writes it. It is excluded from public RAD
-Endpoint metadata and Runtime revision input. When projecting an old A2A
-response, the adapter prefers this value and falls back to the target
-CallInterface `protocolVersion` when it is absent. The aggregate writes this
-singular key only while every represented A2A contribution reports the same
-value; if values differ, it removes the key and each exact-Version projection
-uses its target CallInterface fallback. A disagreement is not a public Endpoint
-payload conflict.
+It is excluded from public RAD Endpoint metadata and Runtime revision input.
+When projecting an old A2A response, the compatibility adapter prefers this
+value and falls back to the target CallInterface `protocolVersion` when it is
+absent.
 
 The public natural key maps to service, cluster, IP, and port. Path and query
 remain payload metadata. No Version appears in serviceName or clusterName, so
@@ -502,14 +491,28 @@ the service count does not grow with compatible Agent Versions.
 
 ### 5.3 Naming Fact Boundary
 
-Naming Client publisher contributions, including their canonical bindings, are
-the RUNTIME fact source. Ordinary Naming `ServiceInfo` may collapse equal IP and
-port entries, apply selector or health-protection behavior, and cannot preserve
-all Agent publication groups. It is not a RAD fact source.
+Naming Client state remains the RUNTIME write fact and owns publisher identity,
+connection or heartbeat liveness, cleanup, complete-batch replacement, indexes,
+events, and AP convergence. Registration converts a complete Agent Endpoint
+batch to Naming Instances and invokes Naming once. Complete deregistration
+removes the Client and Service publication. The Agent server does not read or
+merge the old publisher record.
 
-Agent runtime reads aggregate raw publisher contributions from the Naming
-Client/index path, then apply binding and enabled filters. They must not forward
-a standard Naming Java SDK subscription result as a RAD watch snapshot.
+Runtime Snapshot and Discover reads use the complete internal Service
+projection cached by Naming `ServiceStorage`. That projection is built from the
+service-scoped Client index and includes operational Instance metadata. The
+Agent layer parses each Instance's singular binding, applies an optional
+target-Version filter, validates payload consistency, and aggregates by the
+public natural Endpoint key.
+Deduplication of completely identical Instances inside `ServiceStorage` is safe
+because redundant identical publications do not change any public aggregate
+field.
+
+The internal `ServiceInfo` container returned by `ServiceStorage` is not the
+same contract as a Naming result exposed through an SDK, HTTP API, selector, or
+health-protection path. An external or post-processed Naming `ServiceInfo` must
+not be treated as the Runtime fact source or forwarded directly as a RAD Watch
+snapshot.
 
 Operational Naming metadata for `enabled` and `weight` has its normal
 precedence over runtime publication values. The Agent projection still retains
@@ -542,7 +545,7 @@ For each
 `(namespaceId, agentName, targetVersion, protocol, source=RUNTIME)`, the server
 generates an opaque `sourceRevision` after it:
 
-1. aggregates live publisher contributions;
+1. reads the complete internal Naming Service projection from `ServiceStorage`;
 2. selects bindings that contain the target Version;
 3. canonicalizes each Endpoint URI, validates and preserves transport,
    materializes effective `priority=0` and `weight=1`, and requires `healthy`;
@@ -595,8 +598,9 @@ by `h2`, each as an unsigned eight-byte big-endian value, and then lowercase
 hexadecimal. These rules are also machine-readable in internal storage schema
 version 1.
 
-Implementations mark semantic projections dirty, coalesce bursts, and cache
-the result. They must not hash every heartbeat or every discovery read.
+Naming `ServiceStorage` supplies the current cached Service projection. The
+Agent read path derives the public Endpoint set and its revision from that
+result without maintaining another projection cache.
 
 Persistent AgentVersion content continues to use SHA-256. A DECLARED endpoint
 set uses the Version `contentDigest` as its opaque source revision.
@@ -608,7 +612,7 @@ set uses the Version `contentDigest` as its opaque source revision.
 | Management Agent list or RAD Search | `ai_resource` page. | No |
 | Agent overview | Resource plus bounded Version-row page. | No |
 | Exact Version detail | One Version row. | One |
-| Runtime Endpoint snapshot | Raw Naming publisher contributions for one protocol; optional binding filter. | No |
+| Runtime Endpoint snapshot | Complete internal `ServiceStorage` projection for one protocol; optional binding filter. | No |
 | RAD Discover | Resource, online Version, cached content, and eligible runtime projection. | Once on digest miss |
 
 | Change | Write target | Consistency rule |
@@ -625,6 +629,11 @@ Cache validators follow facts:
 | Agent metadata | `metaVersion`. |
 | Agent Version content | `contentDigest`. |
 | Target runtime projection | `sourceRevision`. |
+
+Naming `ServiceStorage` owns the complete per-Service projection cache. The
+Agent layer does not maintain another Runtime registry or projection cache; it
+derives the requested Agent projection from the current `ServiceStorage`
+result. `sourceRevision` is computed from the resulting public Endpoint set.
 
 An AI Storage provider guarantees atomic bytes for one StorageKey and the read
 consistency it declares. Agent Registry owns orchestration across Resource,
@@ -682,20 +691,12 @@ The A2A adapter is the first consumer of this storage contract:
 | Runtime calling protocol | Canonical Agent protocol token `a2a`. |
 | Legacy endpoint transport and URI parts | Common Endpoint and reserved Naming metadata. |
 
-Old single and batch registrations keep an exact-Version replacement scope:
+During the initial compatibility phase, old A2A runtime registration keeps its
+existing version-specific Naming layout. It must not be redirected to the new
+version-neutral Service until the A2A client or adapter can maintain and submit
+the complete desired batch for that Service. This prevents one legacy Version
+registration from overwriting another.
 
-```text
-(publisherIdentity, namespaceId, agentName, protocol=a2a,
- runtimeVersion=version, versionRange=[version])
-```
-
-The compatibility adapter replaces that internal group. Old deregistration
-deletes only that exact group, even when the same publisher and physical
-Endpoint have bindings for other Versions. New RAD deregistration instead
-deletes all bindings for the supplied natural Endpoint under the current
-publisher.
-
-After cutover, compatibility writes use the new AI Resource, AI Storage, and
-Naming layouts. Historical Config rows, historical Naming services, mixed
-cluster dual-read or dual-write, cutover, rollback, and malformed historical
+The later cutover to the common Naming layout, historical Naming services,
+mixed-cluster dual-read or dual-write, rollback, and malformed historical
 identity handling belong to a separate rolling-upgrade and migration contract.

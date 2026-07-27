@@ -289,8 +289,10 @@ state = AVAILABLE | DISABLED | UNHEALTHY
 ```
 
 状态按顺序判定：`enabled=false` 为 `DISABLED`；否则 `healthy=false` 为 `UNHEALTHY`；
-其他项为 `AVAILABLE`。只有公开 Endpoint 内容、enabled 或聚合健康状态变化时，
-`lastUpdatedTime` 才变化；单纯 heartbeat 不改变它。
+其他项为 `AVAILABLE`。`lastUpdatedTime` 使用本次构建 Snapshot 的 Naming `ServiceInfo.lastRefTime`，
+因此同一 Snapshot 的全部 item 共享同一个 Service 投影观察时间。它不是单个 Endpoint 的分布式事实或
+缓存校验器；Naming 每次重建该 Service 投影时都可能改变它。跨节点相等性和 Watch 去重使用由内容
+派生的 `sourceRevision`。
 
 `protocol` 必填。没有 `version` 时，Snapshot 对该 protocol 下每个 Endpoint 自然键返回一个有效项
 及其全部 Version binding；指定 `version` 时，只保留命中该 Version 的 binding，并在没有

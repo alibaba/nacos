@@ -200,8 +200,8 @@ Client target paths:
 | --- | --- | --- |
 | GET | `/v3/client/ai/agents/search` | Search the Agent catalog. |
 | GET | `/v3/client/ai/agents` | Discover one Agent, with an optional discovery filter. |
-| POST | `/v3/client/ai/agents/endpoints` | Upsert a runtime Endpoint registration batch. |
-| DELETE | `/v3/client/ai/agents/endpoints` | Deregister a runtime Endpoint batch using a JSON body. |
+| POST | `/v3/client/ai/agents/endpoints` | Replace the current publisher's complete runtime Endpoint batch. |
+| DELETE | `/v3/client/ai/agents/endpoints` | Remove the current publisher's whole runtime Endpoint publication identified by a JSON body. |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | Refresh one HTTP publisher client's liveness. |
 
 Admin and Console target paths use the prefixes

@@ -209,10 +209,10 @@ class BatchAgentEndpointRequestHandlerTest {
     
     private void validateInstanceMetadata(Instance instance) {
         Map<String, String> metadata = instance.getMetadata();
-        assertTrue(metadata.containsKey(Constants.A2A.AGENT_ENDPOINT_PATH_KEY));
-        assertTrue(metadata.containsKey(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
-        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
-        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
-        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
+        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
+        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
+        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
+        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
+        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
     }
 }

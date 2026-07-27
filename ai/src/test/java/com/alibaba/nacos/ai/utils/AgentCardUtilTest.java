@@ -143,9 +143,9 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "true");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "true");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "/agent");
         instance.setMetadata(metadata);
         
         // When
@@ -166,9 +166,9 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "/agent");
         instance.setMetadata(metadata);
         
         // When
@@ -189,8 +189,8 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
         instance.setMetadata(metadata);
         
         // When
@@ -211,9 +211,9 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "agent");
         instance.setMetadata(metadata);
         
         // When
@@ -234,10 +234,10 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "GRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY, "grpc");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "GRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY, "grpc");
         instance.setMetadata(metadata);
         
         // When
@@ -258,10 +258,10 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY, "param1=value1&param2=value2");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY, "param1=value1&param2=value2");
         instance.setMetadata(metadata);
         
         // When
@@ -282,11 +282,11 @@ class AgentCardUtilTest {
         instance.setPort(8080);
         
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "true");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY, "https");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY, "token=abc123");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "true");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY, "https");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY, "token=abc123");
         instance.setMetadata(metadata);
         
         // When
@@ -322,10 +322,10 @@ class AgentCardUtilTest {
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
-        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "1.0");
-        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY, "public");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY, "false");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "1.0");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, "public");
         instance.setMetadata(metadata);
         AgentInterface result = AgentCardUtil.buildAgentInterface(instance);
         assertEquals("1.0", result.getProtocolVersion());

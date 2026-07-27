@@ -112,27 +112,6 @@ public class Constants {
         
         public static final String SEARCH_ACCURATE = "accurate";
         
-        public static final String AGENT_ENDPOINT_GROUP = "agent-endpoints";
-        
-        public static final String AGENT_ENDPOINT_PATH_KEY = "__nacos.agent.endpoint.path__";
-        
-        public static final String AGENT_ENDPOINT_TRANSPORT_KEY =
-            "__nacos.agent.endpoint.transport__";
-        
-        public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS =
-            "__nacos.agent.endpoint.supportTls__";
-        
-        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY =
-            "__nacos.agent.endpoint.protocol__";
-        
-        public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY =
-            "__nacos.agent.endpoint.query__";
-        
-        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY =
-            "__nacos.agent.endpoint.protocolVersion__";
-        
-        public static final String NACOS_AGENT_ENDPOINT_TENANT_KEY =
-            "__nacos.agent.endpoint.tenant__";
     }
     
     public static class Agent {
@@ -147,6 +126,40 @@ public class Constants {
          */
         public static final String AGENT_STORAGE_PROVIDER_CONFIG_KEY =
             "nacos.ai.agent.storage.provider";
+        
+        public static final String AGENT_ENDPOINT_GROUP = "agent-endpoints";
+        
+        public static final String AGENT_ENDPOINT_METADATA_PREFIX = "__nacos.agent.endpoint.";
+        
+        public static final String AGENT_ENDPOINT_PATH_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "path__";
+        
+        public static final String AGENT_ENDPOINT_TRANSPORT_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "transport__";
+        
+        public static final String AGENT_ENDPOINT_PROTOCOL_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "protocol__";
+        
+        public static final String AGENT_ENDPOINT_PROTOCOL_VERSION_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "protocolVersion__";
+        
+        public static final String AGENT_ENDPOINT_SUPPORT_TLS_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "supportTls__";
+        
+        public static final String AGENT_ENDPOINT_QUERY_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "query__";
+        
+        public static final String AGENT_ENDPOINT_TENANT_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "tenant__";
+        
+        public static final String AGENT_ENDPOINT_VERSION_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "version__";
+        
+        public static final String AGENT_ENDPOINT_VERSION_RANGE_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "versionRange__";
+        
+        public static final String AGENT_ENDPOINT_PRIORITY_KEY =
+            AGENT_ENDPOINT_METADATA_PREFIX + "priority__";
     }
     
     public static class Skills {
