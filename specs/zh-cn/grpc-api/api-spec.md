@@ -229,8 +229,8 @@ Payload 清单。
 | `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | 订阅或取消订阅 Agent Reference 和可选 Filter；订阅时返回不透明 `watchKey` 和当前完整结果。 |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK。 |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | Upsert 归当前 Connection 所有的一批 Runtime Endpoint 注册。 |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | 幂等删除归当前 Connection 所有的一批 Runtime Endpoint 注册。 |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | 完整替换当前 Connection 对一个 Agent 和 Protocol 的 Runtime Endpoint Batch。 |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | 幂等移除当前 Connection 对一个 Agent 和 Protocol 的整份 Runtime Endpoint Publication。 |
 
 在该目标 Binding 中，`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和
 `eventType`。`SNAPSHOT` 必须携带完整 `AgentDiscoveryResult` 且不携带错误；

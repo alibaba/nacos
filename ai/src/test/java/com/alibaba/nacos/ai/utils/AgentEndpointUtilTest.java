@@ -50,19 +50,19 @@ class AgentEndpointUtilTest {
         
         Map<String, String> metadata = instance.getMetadata();
         assertNotNull(metadata);
-        assertEquals(endpoint.getPath(), metadata.get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY));
+        assertEquals(endpoint.getPath(), metadata.get(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
         assertEquals(endpoint.getTransport(),
-            metadata.get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
         assertEquals(String.valueOf(endpoint.isSupportTls()),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
         assertEquals(endpoint.getProtocol(),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
         assertEquals(endpoint.getQuery(),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
         assertEquals(endpoint.getProtocolVersion(),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
         assertEquals(endpoint.getTenant(),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
         
         assertDoesNotThrow(instance::validate);
     }
@@ -86,11 +86,11 @@ class AgentEndpointUtilTest {
         
         Map<String, String> metadata = instance.getMetadata();
         assertNotNull(metadata);
-        assertEquals("", metadata.get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY));
-        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
-        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
-        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
-        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
+        assertEquals("", metadata.get(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
+        assertEquals("", metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
+        assertEquals("", metadata.get(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
+        assertEquals("", metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        assertEquals("", metadata.get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
         
         assertDoesNotThrow(instance::validate);
     }
@@ -115,9 +115,9 @@ class AgentEndpointUtilTest {
         Map<String, String> metadata = instance.getMetadata();
         assertNotNull(metadata);
         assertEquals(endpoint.getProtocol(),
-            metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
         assertEquals(endpoint.getTransport(),
-            metadata.get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
+            metadata.get(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
         
         assertDoesNotThrow(instance::validate);
     }

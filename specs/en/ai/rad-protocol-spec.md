@@ -48,8 +48,8 @@ RAD 0.1.0 defines five operations:
 | `Search` | `AgentSearchRequest` | `AgentCatalogPage` | Search candidate Agents with pagination |
 | `Discover` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` | Return one complete calling snapshot for an Agent version |
 | `Watch` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` stream | Return the initial and subsequent complete replacement snapshots |
-| `Register` | `AgentEndpointRegistrationBatch` | Success or error | Register or update runtime endpoints |
-| `Deregister` | `AgentEndpointDeregistrationBatch` | Success or error | Deregister runtime endpoints |
+| `Register` | `AgentEndpointRegistrationBatch` | Success or error | Replace the current publisher's complete runtime endpoint batch |
+| `Deregister` | `AgentEndpointDeregistrationBatch` | Success or error | Remove endpoint keys from the publisher's desired batch |
 
 `Watch` reuses the `Discover` request and result. RAD does not add an event
 envelope around watched snapshots.
@@ -152,8 +152,8 @@ The schema exposes exactly six root messages:
 | `AgentCatalogPage` | `Search` result |
 | `AgentDiscoveryRequest` | `Discover` and `Watch` request |
 | `AgentDiscoveryResult` | `Discover` and `Watch` complete snapshot |
-| `AgentEndpointRegistrationBatch` | `Register` request |
-| `AgentEndpointDeregistrationBatch` | `Deregister` request |
+| `AgentEndpointRegistrationBatch` | Complete desired batch for `Register` |
+| `AgentEndpointDeregistrationBatch` | Publisher-client desired-state command for `Deregister` |
 
 A language binding may reuse an exactly equivalent native type. For example,
 Java may implement `AgentCatalogPage` as `Page<AgentCatalogEntry>` rather than
@@ -271,7 +271,9 @@ Context rules:
 - A `DECLARED` endpoint MUST NOT contain `healthy`.
 - A `RUNTIME` discovery endpoint MUST contain `healthy`.
 - Deregister submits only `uri` and `transport`, the endpoint natural-key
-  fields represented by the public object.
+  fields represented by the public object. It is a publisher-client convenience
+  command; a Nacos binding applies it to local desired state before sending a
+  complete replacement batch.
 
 Runtime endpoints do not use `endpointId`.
 
@@ -391,6 +393,12 @@ describes Agent versions that the deployment can serve. When absent, the
 server canonicalizes it to `[runtimeVersion]`. `runtimeVersion` MUST be
 contained in the effective range.
 
+For one publisher and `(namespaceId, agentName, protocol)`, this array is the
+complete desired Endpoint batch. Register replaces the previous batch in full;
+an omitted Endpoint is removed. One publisher therefore has one effective
+`runtimeVersion` and `versionRange` for this scope at a time. Changing either
+value is a complete replacement, not an internal group update.
+
 `AgentEndpointDeregistrationBatch` contains:
 
 ```text
@@ -398,9 +406,12 @@ namespaceId / agentName / protocol
 endpoints[] { uri, transport }
 ```
 
-For every supplied natural key, Deregister removes all bindings contributed by
-the current publisher, including bindings from different internal
-`runtimeVersion` and `versionRange` groups.
+`AgentEndpointDeregistrationBatch` is retained as an application-facing
+convenience object. The publisher client removes the supplied natural keys
+from its locally cached registration batch and registers the complete
+remaining batch. When no Endpoint remains, it deregisters the whole publisher
+publication for `(namespaceId, agentName, protocol)`. A Nacos server does not
+perform a partial read-merge-write for this object.
 
 ## 4. Search
 
@@ -491,9 +502,11 @@ Register verifies:
 - request structure, endpoint constraints, authorization, and capacity;
 - valid `runtimeVersion` and `versionRange`, with the runtime version contained
   in the range;
-- no duplicate natural key in one batch and no publication conflict described
-  in Section 7.3;
+- no duplicate natural key in one batch;
 - the request does not submit or overwrite `protocolVersion`.
+
+Register validation is limited to the submitted complete batch. It does not
+scan other publishers or reserve a natural Endpoint key before writing.
 
 Register does not require the Agent, the runtime version, a range boundary, a
 version within the range, or a corresponding calling interface to exist. It
@@ -512,44 +525,64 @@ publication itself.
 
 ### 7.2 Batch, Idempotency, And Atomicity
 
-One registration batch belongs to one:
+One registration batch is the complete desired publication for one publisher
+and:
 
 ```text
-(namespaceId, agentName, protocol, runtimeVersion, versionRange)
+(namespaceId, agentName, protocol)
 ```
+
+`runtimeVersion` and `versionRange` are shared content of that batch, not an
+additional publication identity or a server-managed binding group.
 
 Rules:
 
-- The Registry validates all endpoints before atomically applying one batch.
-- Register adds or updates only listed natural keys and does not replace
-  omitted endpoints.
+- The binding validates all endpoints before atomically applying one complete
+  batch for the current publisher and publication identity.
+- Register replaces the previous batch; omitted endpoints are removed.
 - Repeating identical content for the same publisher succeeds without a
   change.
-- A changed non-identity field performs an upsert.
+- A changed Endpoint field, runtime Version, or range is expressed by replacing
+  the complete batch.
 - A duplicate natural key within one batch rejects the whole batch.
-- Deregister removes only the current publisher's contributions.
-- Deregistering a missing contribution succeeds without a change.
-- Transactions across batches are not guaranteed.
+- The publisher client serializes changes to its local desired batch. Partial
+  Deregister and Version replacement calculate the new batch locally and use
+  Register for the replacement.
+- When the desired batch becomes empty, the binding removes the current
+  publisher's whole publication for the service.
+- Deregistering a missing local contribution succeeds without a remote change.
 
 A single-endpoint operation uses an `endpoints[]` of length one; RAD does not
 define separate single-item commands.
 
-### 7.3 Publication Groups And Multiple Publishers
+The Nacos server path is a data-structure adapter over Naming. It transforms
+the complete Endpoint batch into Naming Instances and invokes Naming batch
+registration or whole-publication deregistration. It does not read the prior
+publisher batch, incrementally merge it, add an Agent service lock, directly
+query the Naming client index, or scan other publishers during a write.
 
-A binding supplies an opaque publisher identity and liveness semantics. The
-identity does not enter discovery results.
+### 7.3 Naming Publication And Multiple Publishers
 
-The Registry may keep multiple internal publication groups for one public
-endpoint natural key, distinguished by `runtimeVersion` and canonical
-`versionRange`. A publisher may therefore contribute the same public endpoint
-through more than one compatible-version declaration. Discover first retains
-groups matching its target version and then aggregates them to one public
-endpoint.
+The publisher transport supplies an opaque identity and liveness semantics.
+The identity does not enter discovery results.
 
-Contributions that can project to the same public endpoint MUST agree on the
-canonical URI, transport, priority, weight, and metadata. A conflicting
-registration returns `CONFLICT`. Health is aggregated across matching active
-contributions:
+Each publisher contributes at most one complete batch, with one singular
+`runtimeVersion` and `versionRange` pair, to one
+`(namespaceId, agentName, protocol)` Naming service. Different publishers may
+contribute different pairs. The Nacos read path loads the complete internal
+Service projection from Naming `ServiceStorage`, retains contributions whose
+range matches the target Version, and aggregates query-time bindings by public
+Endpoint natural key. Agent code does not directly walk the Naming client
+index.
+
+Contributions visible after AP convergence that project to the same public
+Endpoint MUST agree on canonical URI, transport, priority, weight, and
+metadata. Registration does not perform a cross-publisher write-time scan.
+When a converged `ServiceStorage` projection contains conflicting payloads, the
+affected read or Watch reports `CONFLICT` rather than selecting an
+arbitrary value. Removing either conflicting publication restores the
+projection after normal Naming convergence. Health is aggregated across
+matching active contributions:
 
 - at least one healthy contribution produces `healthy=true`;
 - all contributions unhealthy produces `healthy=false`;
@@ -594,9 +627,9 @@ A binding maps these abstract categories to its concrete response model:
 | `NOT_FOUND` | Discover target is absent, invisible, disabled, or not online; watched target later disappears |
 | `PERMISSION_DENIED` | Caller cannot operate in the target namespace |
 | `RESOURCE_EXHAUSTED` | Endpoint or publication capacity is full, or a complete response exceeds a binding limit |
-| `CONFLICT` | Publication contents conflict or a concurrent state conflicts |
+| `CONFLICT` | Converged runtime contributions contain incompatible payloads for one natural Endpoint key |
 | `UNSUPPORTED_CAPABILITY` | Binding does not support the requested operation |
-| `UNAVAILABLE` | Registry cannot currently form a trustworthy snapshot or apply a write |
+| `UNAVAILABLE` | Registry cannot currently read Naming state or apply a write |
 
 An invisible resource and a nonexistent resource both appear as `NOT_FOUND`
 to prevent visibility side channels. An empty filter result is not an error and
@@ -709,3 +742,8 @@ coarse syntax of a version-range string and does not replace domain validation.
   }]
 }
 ```
+
+This is the application-facing SDK command. The SDK removes the natural key
+from its cached batch and sends the complete remaining Register request. If
+the remaining batch is empty, the Nacos binding sends a whole-publication
+deregistration for `namespaceId`, `agentName`, and `protocol`.

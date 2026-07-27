@@ -184,8 +184,8 @@ Client 目标路径：
 | --- | --- | --- |
 | GET | `/v3/client/ai/agents/search` | 搜索 Agent 目录。 |
 | GET | `/v3/client/ai/agents` | 发现一个 Agent，可附带 Discovery Filter。 |
-| POST | `/v3/client/ai/agents/endpoints` | Upsert 一批 Runtime Endpoint 注册。 |
-| DELETE | `/v3/client/ai/agents/endpoints` | 使用 JSON body 注销一批 Runtime Endpoint。 |
+| POST | `/v3/client/ai/agents/endpoints` | 完整替换当前 Publisher 的 Runtime Endpoint Batch。 |
+| DELETE | `/v3/client/ai/agents/endpoints` | 使用 JSON body 标识并移除当前 Publisher 的整份 Runtime Endpoint Publication。 |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 刷新一个 HTTP Publisher Client 的活性。 |
 
 Admin 和 Console 目标路径分别使用 `/v3/admin/ai/agents` 和
