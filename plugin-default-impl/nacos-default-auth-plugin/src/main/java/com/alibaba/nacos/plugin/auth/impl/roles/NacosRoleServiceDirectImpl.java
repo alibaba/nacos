@@ -172,7 +172,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     public void deleteRole(String role) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role);
-        reload();
+        getCachedRoleInfoMap().remove(role);
     }
     
     @Override

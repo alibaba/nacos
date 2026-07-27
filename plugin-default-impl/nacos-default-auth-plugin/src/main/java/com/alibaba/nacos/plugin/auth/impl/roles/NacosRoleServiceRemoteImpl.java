@@ -218,7 +218,6 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                     RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
             getCachedRoleSet().remove(role);
-            reload();
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
