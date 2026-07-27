@@ -16,28 +16,39 @@
 
 package com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill;
 
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.AbstractAiResourceImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
-import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 
-import java.util.Properties;
+import java.util.Collections;
 
 /**
- * Builder for the built-in well-known Skill import service.
+ * Configurable Skill well-known discovery import plugin.
  *
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class SkillWellKnownImportServiceBuilder implements AiResourceImportServiceBuilder {
+public class SkillWellKnownImportServiceBuilder
+    extends AbstractAiResourceImportServiceBuilder {
+    
+    public static final String PLUGIN_NAME = "skills-well-known";
     
     public static final String IMPORTER_TYPE = "skills-well-known";
     
-    @Override
-    public String importerType() {
-        return IMPORTER_TYPE;
+    private static final String LEGACY_PREFIX =
+        "nacos.plugin.ai.importer.skills.well-known.";
+    
+    public SkillWellKnownImportServiceBuilder() {
+        super(PLUGIN_NAME, IMPORTER_TYPE, "Skill Well-known Registry",
+            "Import Skills from a well-known Skill discovery endpoint.",
+            Collections.singleton(AiResourceImportConstants.RESOURCE_TYPE_SKILL), null,
+            LEGACY_PREFIX, LEGACY_PREFIX + "url", LEGACY_PREFIX + "endpoint");
     }
     
     @Override
-    public AiResourceImportService build(Properties properties) {
-        return new SkillWellKnownImportService();
+    protected AiResourceImportService createService(ConfigSnapshot config) {
+        return new SkillWellKnownImportService(config.getEndpoint(), config.isAllowHttp(),
+            config.isAllowPrivateNetwork(), config.getMaxItemCount(),
+            config.getMaxArtifactSize());
     }
 }

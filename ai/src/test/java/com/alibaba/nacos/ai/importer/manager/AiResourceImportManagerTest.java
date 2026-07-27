@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.importer.manager;
 
 import com.alibaba.nacos.ai.importer.config.AiResourceImportProperties;
-import com.alibaba.nacos.ai.importer.config.AiResourceImportSourceConfig;
 import com.alibaba.nacos.ai.importer.operator.AiResourceOperator;
 import com.alibaba.nacos.ai.importer.operator.AiResourceOperatorRegistry;
 import com.alibaba.nacos.ai.importer.security.AiResourceImportSecurityGuard;
@@ -28,24 +27,23 @@ import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportResultStatus;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSearchResponse;
-import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSourceInfo;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateRequest;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidateResponse;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidationItem;
 import com.alibaba.nacos.api.ai.model.importer.AiResourceImportValidationStatus;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
-import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportSourceProvider;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
@@ -53,51 +51,42 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiResourceImportManagerTest {
     
-    @Test
-    void testListSourcesFiltersResourceTypeAndMasksEndpoint() throws NacosException {
-        AiResourceImportSourceManager sourceManager = newSourceManager(enabledProperties());
-        
-        List<AiResourceImportSourceInfo> result = sourceManager.listSourceInfos("mcp");
-        
-        assertEquals(1, result.size());
-        assertEquals("source-1", result.get(0).getSourceId());
-        assertEquals("Fake Source", result.get(0).getDisplayName());
-        assertEquals("fake-importer", result.get(0).getPluginName());
-        assertEquals(Collections.singletonList("mcp"), result.get(0).getResourceTypes());
-        assertEquals(Arrays.asList("search", "validate", "execute"),
-            result.get(0).getCapabilities());
-        try (
-            AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-            context.register(AiResourceImportPluginManager.class,
-                AiResourceImportSourceManager.class,
-                AiResourceOperatorRegistry.class, AiResourceImportSecurityGuard.class,
-                AiResourceImportManager.class);
-            context.refresh();
-            assertNotNull(context.getBean(AiResourceImportManager.class));
-        }
+    @AfterEach
+    void tearDown() {
+        PluginStateCheckerHolder.setInstance(null);
     }
     
     @Test
-    void testSearchRoutesToResolvedImporter() throws NacosException {
+    void testListSourcesDelegatesToManagedPluginMetadata() throws Exception {
         FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
-        AiResourceImportManager manager = newManager(enabledProperties(), builder,
-            Collections.singletonList(new FakeOperator()));
-        AiResourceImportSearchRequest request = new AiResourceImportSearchRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
-        request.setQuery("database");
+        AiResourceImportManager manager = newManager(builder,
+            Collections.singletonList(new FakeOperator(false)));
+        
+        assertEquals("source-1", manager.listSources("mcp").get(0).getSourceId());
+        assertTrue(manager.listSources("skill").isEmpty());
+    }
+    
+    @Test
+    void testSearchBuildsClosesAndUsesBuilderLimits() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        builder.currentConfig.put(AiResourceImportConstants.CONFIG_MAX_ITEM_COUNT, "10");
+        AiResourceImportManager manager = newManager(builder,
+            Collections.singletonList(new FakeOperator(false)));
+        AiResourceImportSearchRequest request = searchRequest();
         request.setLimit(50);
+        request.setCursor("cursor");
+        request.setOptions(Collections.singletonMap("option", "value"));
         
         AiResourceImportSearchResponse response = manager.search(request);
         
@@ -105,252 +94,233 @@ class AiResourceImportManagerTest {
         assertEquals("mcp", response.getResourceType());
         assertEquals(1, response.getItems().size());
         assertEquals("server-1", response.getItems().get(0).getExternalId());
-        assertEquals(10, builder.service.lastContext.getLimit());
-        assertEquals("database", builder.service.lastContext.getQuery());
+        assertFalse(response.isHasMore());
+        assertEquals("next", response.getNextCursor());
+        FakeImportService service = builder.lastService;
+        assertEquals(1, builder.buildCount);
+        assertTrue(service.closed);
+        assertEquals(10, service.lastContext.getLimit());
+        assertEquals("database", service.lastContext.getQuery());
+        assertEquals("cursor", service.lastContext.getCursor());
+        assertEquals("value", service.lastContext.getOptions().get("option"));
+        assertEquals("public", service.lastContext.getNamespaceId());
     }
     
     @Test
-    void testSearchRejectsHttpEndpointByDefault() {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.getSources().get(0).setEndpoint("http://example.com/registry");
-        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
-            Collections.singletonList(new FakeOperator()));
+    void testSearchDefaultsLimitAndHandlesNullPage() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        builder.currentConfig.clear();
+        builder.nullSearchPage = true;
+        AiResourceImportManager manager = newManager(builder, Collections.emptyList());
         AiResourceImportSearchRequest request = searchRequest();
+        request.setLimit(null);
+        request.setNamespaceId("custom");
         
-        NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> manager.search(request));
+        AiResourceImportSearchResponse response = manager.search(request);
         
-        assertTrue(exception.getErrMsg().contains("must use https"));
+        assertTrue(response.getItems().isEmpty());
+        assertEquals(500, builder.lastService.lastContext.getLimit());
+        assertEquals("custom", builder.lastService.lastContext.getNamespaceId());
+        assertTrue(builder.lastService.closed);
     }
     
     @Test
-    void testSearchAllowsHttpEndpointWhenConfigured() throws NacosException {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.getSources().get(0).setEndpoint("http://example.com/registry");
-        properties.getSources().get(0).setProperties(
-            Collections.singletonMap("allow-http", "true"));
-        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
-            Collections.singletonList(new FakeOperator()));
+    void testSearchFailuresStillCloseRequestScopedService() {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        builder.searchFailure = true;
+        AiResourceImportManager manager = newManager(builder, Collections.emptyList());
         
-        AiResourceImportSearchResponse response = manager.search(searchRequest());
+        assertThrows(NacosException.class, () -> manager.search(searchRequest()));
+        assertTrue(builder.lastService.closed);
         
-        assertEquals(1, response.getItems().size());
-    }
-    
-    @Test
-    void testSearchRejectsPrivateEndpointByDefault() {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.getSources().get(0).setEndpoint("https://127.0.0.1/registry");
-        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
-            Collections.singletonList(new FakeOperator()));
+        builder.searchFailure = false;
+        builder.closeFailure = true;
+        assertNotNull(assertDoesNotThrowSearch(manager));
+        assertTrue(builder.lastService.closed);
         
-        NacosApiException exception = assertThrows(NacosApiException.class,
+        builder.returnNullService = true;
+        NacosApiException nullService = assertThrows(NacosApiException.class,
             () -> manager.search(searchRequest()));
-        
-        assertTrue(exception.getErrMsg().contains("private or local target"));
+        assertEquals(NacosException.SERVER_ERROR, nullService.getErrCode());
     }
     
     @Test
-    void testSearchAllowsPrivateEndpointWhenConfigured() throws NacosException {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.getSources().get(0).setEndpoint("http://127.0.0.1/registry");
-        Map<String, String> sourceProperties = new HashMap<>(2);
-        sourceProperties.put("allow-http", "true");
-        sourceProperties.put("allow-private-network", "true");
-        properties.getSources().get(0).setProperties(sourceProperties);
-        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
-            Collections.singletonList(new FakeOperator()));
+    void testOperationRoutingFailures() {
+        AiResourceImportManager manager =
+            newManager(new FakeImportServiceBuilder(), Collections.emptyList());
+        AiResourceImportSearchRequest searchRequest = searchRequest();
+        searchRequest.setSourceId("missing");
+        AiResourceImportValidateRequest validateRequest = validateRequest("server-1");
+        validateRequest.setSourceId("missing");
+        AiResourceImportExecuteRequest executeRequest = executeRequest("server-1");
+        executeRequest.setSourceId("missing");
         
-        AiResourceImportSearchResponse response = manager.search(searchRequest());
-        
-        assertEquals(1, response.getItems().size());
+        assertThrows(NacosException.class, () -> manager.search(searchRequest));
+        assertThrows(NacosException.class, () -> manager.validate(validateRequest));
+        assertThrows(NacosException.class, () -> manager.execute(executeRequest));
     }
     
     @Test
-    void testValidateFetchesArtifactAndUsesOperator() throws NacosException {
-        AiResourceImportManager manager = newManager(enabledProperties(),
-            new FakeImportServiceBuilder(), Collections.singletonList(new FakeOperator()));
-        AiResourceImportValidateRequest request = new AiResourceImportValidateRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
-        request.setSelectedItems(Collections.singletonList(selectedItem("server-1")));
+    void testValidateUsesSingleServiceAndOperator() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        FakeOperator operator = new FakeOperator(false);
+        AiResourceImportManager manager =
+            newManager(builder, Collections.singletonList(operator));
+        AiResourceImportValidateRequest request = validateRequest("server-1");
+        request.setOverwriteExisting(true);
         
         AiResourceImportValidateResponse response = manager.validate(request);
         
         assertEquals("source-1", response.getSourceId());
-        assertEquals(1, response.getItems().size());
         assertEquals(AiResourceImportValidationStatus.VALID,
             response.getItems().get(0).getStatus());
-        assertEquals("server-1", response.getItems().get(0).getExternalId());
+        assertTrue(operator.lastOverwriteExisting);
+        assertTrue(builder.lastService.closed);
+        assertEquals(1, builder.buildCount);
     }
     
     @Test
-    void testValidateReturnsInvalidItemWhenOperatorMissing() throws NacosException {
-        AiResourceImportManager manager = newManager(enabledProperties(),
-            new FakeImportServiceBuilder(), Collections.emptyList());
-        AiResourceImportValidateRequest request = new AiResourceImportValidateRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
-        request.setSelectedItems(Collections.singletonList(selectedItem("server-1")));
+    void testValidateDefaultsAndConvertsFailuresToInvalidItems() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        AiResourceImportManager defaultManager =
+            newManager(builder, Collections.singletonList(new FakeOperator(true)));
         
-        AiResourceImportValidateResponse response = manager.validate(request);
+        AiResourceImportValidateResponse defaultResponse =
+            defaultManager.validate(validateRequest("server-1"));
+        assertEquals(AiResourceImportValidationStatus.VALID,
+            defaultResponse.getItems().get(0).getStatus());
         
+        AiResourceImportValidateResponse fetchFailure =
+            defaultManager.validate(validateRequest("bad"));
         assertEquals(AiResourceImportValidationStatus.INVALID,
-            response.getItems().get(0).getStatus());
-        assertTrue(response.getItems().get(0).getErrors().get(0)
-            .contains("AI resource import operator not found"));
+            fetchFailure.getItems().get(0).getStatus());
+        
+        AiResourceImportManager noOperator = newManager(new FakeImportServiceBuilder(),
+            Collections.emptyList());
+        AiResourceImportValidateResponse missingOperator =
+            noOperator.validate(validateRequest("server-1"));
+        assertTrue(missingOperator.getItems().get(0).getErrors().get(0)
+            .contains("operator not found"));
+        
+        FakeImportServiceBuilder smallLimit = new FakeImportServiceBuilder();
+        smallLimit.currentConfig.put(AiResourceImportConstants.CONFIG_MAX_ARTIFACT_SIZE, "1");
+        AiResourceImportManager guarded = newManager(smallLimit,
+            Collections.singletonList(new FakeOperator(false)));
+        AiResourceImportValidateResponse oversized =
+            guarded.validate(validateRequest("large"));
+        assertTrue(oversized.getItems().get(0).getErrors().get(0).contains("size exceeds"));
     }
     
     @Test
-    void testExecuteCountsSkippedWhenSkipInvalid() throws NacosException {
-        AiResourceImportManager manager = newManager(enabledProperties(),
-            new FakeImportServiceBuilder(), Collections.singletonList(new FakeOperator()));
-        AiResourceImportExecuteRequest request = new AiResourceImportExecuteRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
-        request.setSelectedItems(Collections.singletonList(selectedItem("bad")));
-        request.setSkipInvalid(true);
+    void testExecuteReturnsDefaultSuccessAndCountsFailures() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        AiResourceImportManager manager =
+            newManager(builder, Collections.singletonList(new FakeOperator(true)));
+        AiResourceImportExecuteRequest successRequest = executeRequest("server-1");
+        
+        AiResourceImportExecuteResponse success = manager.execute(successRequest);
+        
+        assertTrue(success.isSuccess());
+        assertEquals(1, success.getSuccessCount());
+        assertEquals(AiResourceImportResultStatus.SUCCESS,
+            success.getResults().get(0).getStatus());
+        assertTrue(builder.lastService.closed);
+        
+        AiResourceImportExecuteRequest failedRequest = executeRequest("bad");
+        AiResourceImportExecuteResponse failed = manager.execute(failedRequest);
+        assertFalse(failed.isSuccess());
+        assertEquals(1, failed.getFailedCount());
+        assertEquals(AiResourceImportResultStatus.FAILED,
+            failed.getResults().get(0).getStatus());
+        
+        failedRequest.setSkipInvalid(true);
+        AiResourceImportExecuteResponse skipped = manager.execute(failedRequest);
+        assertTrue(skipped.isSuccess());
+        assertEquals(1, skipped.getSkippedCount());
+        assertEquals(AiResourceImportResultStatus.SKIPPED,
+            skipped.getResults().get(0).getStatus());
+    }
+    
+    @Test
+    void testExecuteUsesOperatorResultAndRequestFlags() throws Exception {
+        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
+        FakeOperator operator = new FakeOperator(false);
+        AiResourceImportManager manager =
+            newManager(builder, Collections.singletonList(operator));
+        AiResourceImportExecuteRequest request = executeRequest("server-1");
+        request.setOverwriteExisting(true);
         
         AiResourceImportExecuteResponse response = manager.execute(request);
         
-        assertTrue(response.isSuccess());
-        assertEquals(1, response.getTotalCount());
-        assertEquals(0, response.getSuccessCount());
-        assertEquals(1, response.getSkippedCount());
-        assertEquals(AiResourceImportResultStatus.SKIPPED,
-            response.getResults().get(0).getStatus());
+        assertEquals("imported", response.getResults().get(0).getResourceName());
+        assertTrue(operator.lastOverwriteExisting);
     }
     
     @Test
-    void testDisabledSourceManagerRejectsResolve() {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.setEnabled(false);
-        AiResourceImportSourceManager sourceManager = newSourceManager(properties);
+    void testRequestValidation() {
+        AiResourceImportManager manager =
+            newManager(new FakeImportServiceBuilder(), Collections.emptyList());
         
-        NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> sourceManager.resolveSource("source-1", "mcp"));
+        assertThrows(NacosException.class, () -> manager.search(null));
+        AiResourceImportSearchRequest search = new AiResourceImportSearchRequest();
+        assertThrows(NacosException.class, () -> manager.search(search));
+        search.setResourceType("mcp");
+        assertThrows(NacosException.class, () -> manager.search(search));
         
-        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+        assertThrows(NacosException.class, () -> manager.validate(null));
+        AiResourceImportValidateRequest validate = new AiResourceImportValidateRequest();
+        assertThrows(NacosException.class, () -> manager.validate(validate));
+        validate.setResourceType("mcp");
+        assertThrows(NacosException.class, () -> manager.validate(validate));
+        validate.setSourceId("source-1");
+        assertThrows(NacosException.class, () -> manager.validate(validate));
+        
+        assertThrows(NacosException.class, () -> manager.execute(null));
+        AiResourceImportExecuteRequest execute = new AiResourceImportExecuteRequest();
+        assertThrows(NacosException.class, () -> manager.execute(execute));
+        execute.setResourceType("mcp");
+        assertThrows(NacosException.class, () -> manager.execute(execute));
+        execute.setSourceId("source-1");
+        assertThrows(NacosException.class, () -> manager.execute(execute));
     }
     
     @Test
-    void testProviderSourceWorksWhenExplicitImportDisabled() throws NacosException {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.setEnabled(false);
-        AiResourceImportSourceManager sourceManager = newProviderSourceManager(properties);
-        
-        List<AiResourceImportSourceInfo> result = sourceManager.listSourceInfos("mcp");
-        
-        assertEquals(1, result.size());
-        assertEquals("provider-source", result.get(0).getSourceId());
-        assertEquals("Provider Source", result.get(0).getDisplayName());
-        assertEquals("provider source", result.get(0).getDescription());
-        assertEquals("fake-importer", result.get(0).getPluginName());
-        assertEquals(Collections.singletonList("mcp"), result.get(0).getResourceTypes());
-    }
-    
-    @Test
-    void testDuplicateSourceIdRejected() {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.setSources(Arrays.asList(sourceConfig(), sourceConfig()));
-        AiResourceImportSourceManager sourceManager = newSourceManager(properties);
-        
-        NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> sourceManager.listSourceInfos(null));
-        
-        assertTrue(exception.getErrMsg().contains("Duplicate AI resource import source id"));
-    }
-    
-    @Test
-    void testDuplicateImporterRejected() {
-        FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
-        
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-            () -> new AiResourceImportPluginManager(Arrays.asList(builder, builder)));
-        
-        assertTrue(exception.getMessage().contains("Duplicate AI resource importer type"));
-    }
-    
-    @Test
-    void testDuplicateOperatorRejected() {
-        FakeOperator operator = new FakeOperator();
-        
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
+    void testDuplicateAndBlankOperatorsRejected() {
+        FakeOperator operator = new FakeOperator(false);
+        assertThrows(IllegalStateException.class,
             () -> new AiResourceOperatorRegistry(Arrays.asList(operator, operator)));
-        
-        assertTrue(exception.getMessage().contains("Duplicate AI resource import operator type"));
+        assertThrows(IllegalStateException.class,
+            () -> new AiResourceOperatorRegistry(Collections.singletonList(
+                new FakeOperator(false) {
+                    
+                    @Override
+                    public String resourceType() {
+                        return " ";
+                    }
+                })));
     }
     
-    @Test
-    void testArtifactSizeLimitReturnsInvalidValidation() throws NacosException {
-        AiResourceImportProperties properties = enabledProperties();
-        properties.getSources().get(0).setMaxArtifactSize(1);
-        AiResourceImportManager manager = newManager(properties, new FakeImportServiceBuilder(),
-            Collections.singletonList(new FakeOperator()));
-        AiResourceImportValidateRequest request = new AiResourceImportValidateRequest();
-        request.setResourceType("mcp");
-        request.setSourceId("source-1");
-        request.setSelectedItems(Collections.singletonList(selectedItem("server-1")));
-        
-        AiResourceImportValidateResponse response = manager.validate(request);
-        
-        assertEquals(AiResourceImportValidationStatus.INVALID,
-            response.getItems().get(0).getStatus());
-        assertTrue(response.getItems().get(0).getErrors().get(0).contains("size exceeds"));
+    private AiResourceImportSearchResponse assertDoesNotThrowSearch(
+        AiResourceImportManager manager) {
+        try {
+            return manager.search(searchRequest());
+        } catch (NacosException e) {
+            throw new AssertionError(e);
+        }
     }
     
-    private AiResourceImportManager newManager(AiResourceImportProperties properties,
-        FakeImportServiceBuilder builder, List<AiResourceOperator> operators) {
+    private AiResourceImportManager newManager(FakeImportServiceBuilder builder,
+        List<AiResourceOperator> operators) {
         AiResourceImportPluginManager pluginManager =
-            new AiResourceImportPluginManager(Collections.singletonList(builder));
-        AiResourceImportSourceManager sourceManager =
-            new AiResourceImportSourceManager(pluginManager);
-        ReflectionTestUtils.setField(sourceManager, "propertiesSupplier",
-            (Supplier<AiResourceImportProperties>) () -> properties);
-        return new AiResourceImportManager(sourceManager, pluginManager,
-            new AiResourceOperatorRegistry(operators), new AiResourceImportSecurityGuard());
-    }
-    
-    private AiResourceImportSourceManager newSourceManager(AiResourceImportProperties properties) {
-        AiResourceImportPluginManager pluginManager =
-            new AiResourceImportPluginManager(Collections.singletonList(
-                new FakeImportServiceBuilder()));
-        AiResourceImportSourceManager result =
-            new AiResourceImportSourceManager(pluginManager);
-        ReflectionTestUtils.setField(result, "propertiesSupplier",
-            (Supplier<AiResourceImportProperties>) () -> properties);
-        return result;
-    }
-    
-    private AiResourceImportSourceManager newProviderSourceManager(
-        AiResourceImportProperties properties) {
-        AiResourceImportSourceManager result = newSourceManager(properties);
-        ReflectionTestUtils.setField(result, "rawPropertiesSupplier",
-            (Supplier<Properties>) Properties::new);
-        ReflectionTestUtils.setField(result, "sourceProvidersSupplier",
-            (Supplier<List<AiResourceImportSourceProvider>>) () -> Collections.singletonList(
-                new FakeSourceProvider()));
-        return result;
-    }
-    
-    private AiResourceImportProperties enabledProperties() {
+            new AiResourceImportPluginManager(() -> Collections.singletonList(builder));
+        pluginManager.loadPlugins();
         AiResourceImportProperties properties = new AiResourceImportProperties();
         properties.setEnabled(true);
-        properties.setSources(Collections.singletonList(sourceConfig()));
-        return properties;
-    }
-    
-    private AiResourceImportSourceConfig sourceConfig() {
-        AiResourceImportSourceConfig source = new AiResourceImportSourceConfig();
-        source.setSourceId("source-1");
-        source.setDisplayName("Fake Source");
-        source.setPluginName("fake-importer");
-        source.setResourceTypes(Collections.singletonList("mcp"));
-        source.setEndpoint("https://example.com/registry");
-        source.setEnabled(true);
-        source.setMaxItemCount(10);
-        source.setMaxArtifactSize(1024);
-        return source;
+        ReflectionTestUtils.setField(pluginManager, "propertiesSupplier",
+            (Supplier<AiResourceImportProperties>) () -> properties);
+        PluginStateCheckerHolder.setInstance((type, name) -> true);
+        return new AiResourceImportManager(pluginManager,
+            new AiResourceOperatorRegistry(operators), new AiResourceImportSecurityGuard());
     }
     
     private AiResourceImportSearchRequest searchRequest() {
@@ -358,22 +328,23 @@ class AiResourceImportManagerTest {
         request.setResourceType("mcp");
         request.setSourceId("source-1");
         request.setQuery("database");
-        request.setLimit(50);
         return request;
     }
     
-    private AiResourceImportSource providerSource() {
-        AiResourceImportSource source = new AiResourceImportSource();
-        source.setSourceId("provider-source");
-        source.setDisplayName("Provider Source");
-        source.setDescription("provider source");
-        source.setPluginName("fake-importer");
-        source.setResourceTypes(Collections.singletonList("mcp"));
-        source.setEndpoint("https://example.com/provider");
-        source.setEnabled(true);
-        source.setMaxItemCount(10);
-        source.setMaxArtifactSize(1024);
-        return source;
+    private AiResourceImportValidateRequest validateRequest(String externalId) {
+        AiResourceImportValidateRequest request = new AiResourceImportValidateRequest();
+        request.setResourceType("mcp");
+        request.setSourceId("source-1");
+        request.setSelectedItems(Collections.singletonList(selectedItem(externalId)));
+        return request;
+    }
+    
+    private AiResourceImportExecuteRequest executeRequest(String externalId) {
+        AiResourceImportExecuteRequest request = new AiResourceImportExecuteRequest();
+        request.setResourceType("mcp");
+        request.setSourceId("source-1");
+        request.setSelectedItems(Collections.singletonList(selectedItem(externalId)));
+        return request;
     }
     
     private AiResourceImportItem selectedItem(String externalId) {
@@ -381,12 +352,35 @@ class AiResourceImportManagerTest {
         item.setExternalId(externalId);
         item.setName("server");
         item.setVersion("1.0.0");
+        item.setMetadata(Collections.singletonMap("key", "value"));
         return item;
     }
     
     private static class FakeImportServiceBuilder implements AiResourceImportServiceBuilder {
         
-        private final FakeImportService service = new FakeImportService();
+        private final Map<String, String> currentConfig = new HashMap<>();
+        
+        private int buildCount;
+        
+        private FakeImportService lastService;
+        
+        private boolean nullSearchPage;
+        
+        private boolean searchFailure;
+        
+        private boolean closeFailure;
+        
+        private boolean returnNullService;
+        
+        FakeImportServiceBuilder() {
+            currentConfig.put(AiResourceImportConstants.CONFIG_MAX_ITEM_COUNT, "10");
+            currentConfig.put(AiResourceImportConstants.CONFIG_MAX_ARTIFACT_SIZE, "1024");
+        }
+        
+        @Override
+        public String pluginName() {
+            return "source-1";
+        }
         
         @Override
         public String importerType() {
@@ -394,26 +388,13 @@ class AiResourceImportManagerTest {
         }
         
         @Override
-        public AiResourceImportService build(Properties properties) {
-            return service;
+        public String displayName() {
+            return "Fake source";
         }
-    }
-    
-    private class FakeSourceProvider implements AiResourceImportSourceProvider {
         
         @Override
-        public List<AiResourceImportSource> loadSources(Properties properties) {
-            return Collections.singletonList(providerSource());
-        }
-    }
-    
-    private static class FakeImportService implements AiResourceImportService {
-        
-        private AiResourceImportContext lastContext;
-        
-        @Override
-        public String importerType() {
-            return "fake-importer";
+        public String description() {
+            return "Fake source description";
         }
         
         @Override
@@ -422,16 +403,56 @@ class AiResourceImportManagerTest {
         }
         
         @Override
-        public AiResourceImportCandidatePage search(AiResourceImportContext context) {
+        public Map<String, String> getCurrentConfig() {
+            return new HashMap<>(currentConfig);
+        }
+        
+        @Override
+        public AiResourceImportService build() {
+            buildCount++;
+            if (returnNullService) {
+                return null;
+            }
+            lastService = new FakeImportService();
+            lastService.nullSearchPage = nullSearchPage;
+            lastService.searchFailure = searchFailure;
+            lastService.closeFailure = closeFailure;
+            return lastService;
+        }
+    }
+    
+    private static class FakeImportService implements AiResourceImportService {
+        
+        private AiResourceImportContext lastContext;
+        
+        private boolean nullSearchPage;
+        
+        private boolean searchFailure;
+        
+        private boolean closeFailure;
+        
+        private boolean closed;
+        
+        @Override
+        public AiResourceImportCandidatePage search(AiResourceImportContext context)
+            throws NacosException {
             lastContext = context;
+            if (searchFailure) {
+                throw new NacosException(NacosException.SERVER_ERROR, "search failed");
+            }
+            if (nullSearchPage) {
+                return null;
+            }
             AiResourceImportCandidate candidate = new AiResourceImportCandidate();
             candidate.setResourceType("mcp");
             candidate.setExternalId("server-1");
             candidate.setName("server");
             candidate.setVersion("1.0.0");
             candidate.setDescription("fake server");
+            candidate.setMetadata(Collections.singletonMap("key", "value"));
             AiResourceImportCandidatePage page = new AiResourceImportCandidatePage();
             page.setItems(Collections.singletonList(candidate));
+            page.setNextCursor("next");
             page.setHasMore(false);
             return page;
         }
@@ -440,6 +461,7 @@ class AiResourceImportManagerTest {
         public AiResourceImportArtifact fetch(AiResourceImportContext context,
             com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem item)
             throws NacosException {
+            lastContext = context;
             if ("bad".equals(item.getExternalId())) {
                 throw new NacosException(NacosException.SERVER_ERROR, "fetch failed");
             }
@@ -449,12 +471,28 @@ class AiResourceImportManagerTest {
             artifact.setName(item.getName());
             artifact.setVersion(item.getVersion());
             artifact.setPayloadKind(AiResourceImportPayloadKind.JSON);
-            artifact.setPayloadJson("{}");
+            artifact.setPayloadJson("large".equals(item.getExternalId()) ? "too-large" : "{}");
             return artifact;
+        }
+        
+        @Override
+        public void close() {
+            closed = true;
+            if (closeFailure) {
+                throw new IllegalStateException("close failed");
+            }
         }
     }
     
     private static class FakeOperator implements AiResourceOperator {
+        
+        private final boolean returnNull;
+        
+        private boolean lastOverwriteExisting;
+        
+        FakeOperator(boolean returnNull) {
+            this.returnNull = returnNull;
+        }
         
         @Override
         public String resourceType() {
@@ -464,6 +502,10 @@ class AiResourceImportManagerTest {
         @Override
         public AiResourceImportValidationItem validate(String namespaceId,
             AiResourceImportArtifact artifact, boolean overwriteExisting) {
+            lastOverwriteExisting = overwriteExisting;
+            if (returnNull) {
+                return null;
+            }
             AiResourceImportValidationItem result = new AiResourceImportValidationItem();
             result.setExternalId(artifact.getExternalId());
             result.setName(artifact.getName());
@@ -475,9 +517,13 @@ class AiResourceImportManagerTest {
         @Override
         public AiResourceImportResultItem importResource(String namespaceId,
             AiResourceImportArtifact artifact, boolean overwriteExisting) {
+            lastOverwriteExisting = overwriteExisting;
+            if (returnNull) {
+                return null;
+            }
             AiResourceImportResultItem result = new AiResourceImportResultItem();
             result.setExternalId(artifact.getExternalId());
-            result.setResourceName(artifact.getName());
+            result.setResourceName("imported");
             result.setVersion(artifact.getVersion());
             result.setStatus(AiResourceImportResultStatus.SUCCESS);
             return result;

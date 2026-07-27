@@ -21,8 +21,8 @@ import java.util.Map;
 /**
  * Context passed from Nacos import manager to an import plugin.
  *
- * <p>The context intentionally contains a resolved source instead of user-provided endpoint data.
- * Import plugins must use the source selected by Nacos.</p>
+ * <p>Source configuration belongs to the managed builder snapshot and is intentionally excluded
+ * from this request context.</p>
  *
  * @author xiweng.yy
  * @since 3.2.1
@@ -32,8 +32,6 @@ public class AiResourceImportContext {
     private String namespaceId;
     
     private String resourceType;
-    
-    private AiResourceImportSource source;
     
     private String query;
     
@@ -63,14 +61,6 @@ public class AiResourceImportContext {
     
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
-    }
-    
-    public AiResourceImportSource getSource() {
-        return source;
-    }
-    
-    public void setSource(AiResourceImportSource source) {
-        this.source = source;
     }
     
     public String getQuery() {

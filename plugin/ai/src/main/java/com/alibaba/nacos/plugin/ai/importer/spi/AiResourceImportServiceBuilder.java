@@ -16,32 +16,63 @@
 
 package com.alibaba.nacos.plugin.ai.importer.spi;
 
-import java.util.Properties;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+
+import java.util.Set;
 
 /**
- * Builder SPI for creating {@link AiResourceImportService} instances.
+ * Managed plugin SPI for creating request-scoped {@link AiResourceImportService} instances.
  *
- * <p>Since SPI-loaded classes are instantiated via no-arg constructors, this builder pattern allows
- * importers to be initialized with plugin-owned configuration.</p>
+ * <p>One builder represents one external source. The builder is a stable process-level plugin
+ * instance managed by the unified plugin manager, while each built service is scoped to one import
+ * API request.</p>
  *
  * @author xiweng.yy
  * @since 3.2.1
  */
-public interface AiResourceImportServiceBuilder {
+public interface AiResourceImportServiceBuilder extends PluginConfigSpec {
     
     /**
-     * Importer implementation name.
+     * Managed plugin name and import source identifier.
      *
-     * @return importer type, e.g. "mcp-registry"; corresponds to
-     *         {@link AiResourceImportService#importerType()}
+     * @return unique plugin name
+     */
+    String pluginName();
+    
+    /**
+     * Importer protocol name retained for API metadata compatibility.
+     *
+     * @return importer type, for example {@code mcp-registry}
      */
     String importerType();
     
     /**
-     * Build an {@link AiResourceImportService} instance with the given properties.
+     * Current display name from the applied configuration snapshot.
      *
-     * @param properties importer configuration properties, never null
-     * @return initialized import service
+     * @return display name
      */
-    AiResourceImportService build(Properties properties);
+    String displayName();
+    
+    /**
+     * Current description from the applied configuration snapshot.
+     *
+     * @return description
+     */
+    String description();
+    
+    /**
+     * Resource types supported by this source.
+     *
+     * @return supported resource type set
+     */
+    Set<String> supportedResourceTypes();
+    
+    /**
+     * Build an import service from the current immutable configuration snapshot.
+     *
+     * @return request-scoped import service
+     * @throws NacosException if the current configuration cannot create a service
+     */
+    AiResourceImportService build() throws NacosException;
 }

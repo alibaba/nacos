@@ -16,28 +16,40 @@
 
 package com.alibaba.nacos.plugin.ai.importer.defaultimpl.mcp;
 
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.AbstractAiResourceImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
-import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 
-import java.util.Properties;
+import java.util.Collections;
 
 /**
- * Builder for the built-in official MCP registry import service.
+ * Configurable MCP Registry protocol import plugin.
  *
  * @author xiweng.yy
- * @since 3.2.1
+ * @since 3.3.0
  */
-public class McpRegistryImportServiceBuilder implements AiResourceImportServiceBuilder {
+public class McpRegistryImportServiceBuilder
+    extends AbstractAiResourceImportServiceBuilder {
+    
+    public static final String PLUGIN_NAME = "mcp-registry-protocol";
     
     public static final String IMPORTER_TYPE = "mcp-registry";
     
-    @Override
-    public String importerType() {
-        return IMPORTER_TYPE;
+    public McpRegistryImportServiceBuilder() {
+        this(PLUGIN_NAME, "MCP Registry Protocol",
+            "Import MCP servers from an MCP Registry protocol endpoint.", null, null);
+    }
+    
+    protected McpRegistryImportServiceBuilder(String pluginName, String displayName,
+        String description, String fixedEndpoint, String legacyPrefix) {
+        super(pluginName, IMPORTER_TYPE, displayName, description,
+            Collections.singleton(AiResourceImportConstants.RESOURCE_TYPE_MCP),
+            fixedEndpoint, legacyPrefix);
     }
     
     @Override
-    public AiResourceImportService build(Properties properties) {
-        return new McpRegistryImportService();
+    protected AiResourceImportService createService(ConfigSnapshot config) {
+        return new McpRegistryImportService(config.getEndpoint(), config.isAllowHttp(),
+            config.isAllowPrivateNetwork(), config.getMaxArtifactSize());
     }
 }

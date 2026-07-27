@@ -103,6 +103,11 @@ The core plugin manager records loaded and enabled plugins; it does not by
 itself define the execution mode. Domain managers are responsible for applying
 the mode consistently.
 
+For `ai-resource-import`, each managed Builder implementation represents one
+external source. The request `sourceId` equals the managed `pluginName`; the
+domain checks type and implementation state before building one request-scoped
+service from the Builder's accepted configuration snapshot.
+
 Execution mode and criticality are plugin-type capabilities rather than properties of a particular
 built-in implementation. The shared `PluginType` must expose `executionMode` and `critical`.
 The existing `exclusive` information remains derived from `executionMode == EXCLUSIVE` for API
@@ -125,8 +130,9 @@ definitions, an empty current map, and a no-op apply callback, so an implementat
 an older domain SPI and a new zero-config implementation both remain `configurable=false`. A plugin
 that declares at least one `ConfigItemDefinition` is configurable and must implement the current-map
 and apply callbacks. `environment` remains a bootstrap exception until its unified configuration
-lifecycle is designed. `control` uses a definition-only builder plus a stable `PluginConfigSpec`
-adapter. `ai-resource-import` remains outside unified management until its redesign. A plugin
+lifecycle is designed. `control` participates through its stable managed configuration adapter.
+For `ai-resource-import`, the stable request-service Builder itself implements
+`PluginConfigSpec`; the request-scoped service does not register as a second plugin. A plugin
 category that supports enable or disable checks must use
 `PluginStateCheckerHolder` rather than keeping an independent status source.
 

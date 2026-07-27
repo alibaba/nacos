@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +34,6 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -47,14 +45,6 @@ import java.util.concurrent.Flow;
  * @since 3.2.1
  */
 public class DefaultImportHttpClient {
-    
-    public static final String PROPERTY_ALLOW_HTTP = "allow-http";
-    
-    public static final String PROPERTY_ALLOW_HTTP_CAMEL = "allowHttp";
-    
-    public static final String PROPERTY_ALLOW_PRIVATE_NETWORK = "allow-private-network";
-    
-    public static final String PROPERTY_ALLOW_PRIVATE_NETWORK_CAMEL = "allowPrivateNetwork";
     
     private static final String HTTPS_SCHEME = "https";
     
@@ -74,15 +64,25 @@ public class DefaultImportHttpClient {
     
     private final DnsResolver dnsResolver;
     
+    private final boolean allowHttp;
+    
+    private final boolean allowPrivateNetwork;
+    
+    private final long maxResponseBytes;
+    
     public DefaultImportHttpClient() {
-        this(HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
-            .build());
+        this(false, false, DEFAULT_MAX_RESPONSE_BYTES);
+    }
+    
+    public DefaultImportHttpClient(boolean allowHttp, boolean allowPrivateNetwork,
+        long maxResponseBytes) {
+        this(newHttpClient(), InetAddress::getAllByName, allowHttp, allowPrivateNetwork,
+            maxResponseBytes);
     }
     
     public DefaultImportHttpClient(HttpClient httpClient) {
-        this(httpClient, InetAddress::getAllByName);
+        this(httpClient, InetAddress::getAllByName, false, false,
+            DEFAULT_MAX_RESPONSE_BYTES);
     }
     
     /**
@@ -92,39 +92,53 @@ public class DefaultImportHttpClient {
      * @param dnsResolver DNS resolver
      */
     public DefaultImportHttpClient(HttpClient httpClient, DnsResolver dnsResolver) {
+        this(httpClient, dnsResolver, false, false, DEFAULT_MAX_RESPONSE_BYTES);
+    }
+    
+    /**
+     * Create an importer HTTP client with a fixed network policy snapshot.
+     *
+     * @param httpClient HTTP client
+     * @param dnsResolver DNS resolver
+     * @param allowHttp whether HTTP is allowed
+     * @param allowPrivateNetwork whether private network targets are allowed
+     * @param maxResponseBytes maximum response bytes
+     */
+    public DefaultImportHttpClient(HttpClient httpClient, DnsResolver dnsResolver,
+        boolean allowHttp, boolean allowPrivateNetwork, long maxResponseBytes) {
         this.httpClient = httpClient;
         this.dnsResolver = dnsResolver;
+        this.allowHttp = allowHttp;
+        this.allowPrivateNetwork = allowPrivateNetwork;
+        this.maxResponseBytes =
+            maxResponseBytes > 0 ? maxResponseBytes : DEFAULT_MAX_RESPONSE_BYTES;
     }
     
     /**
      * Send a GET request with the default read timeout.
      *
-     * @param source import source
      * @param url request URL
      * @param accept optional Accept header
      * @return HTTP response
      * @throws Exception if validation or request fails
      */
-    public ImportHttpResponse get(AiResourceImportSource source, String url, String accept)
-        throws Exception {
-        return get(source, url, DEFAULT_READ_TIMEOUT_SECONDS, accept);
+    public ImportHttpResponse get(String url, String accept) throws Exception {
+        return get(url, DEFAULT_READ_TIMEOUT_SECONDS, accept);
     }
     
     /**
      * Send a GET request after applying importer network policy.
      *
-     * @param source import source
      * @param url request URL
      * @param readTimeoutSeconds request read timeout in seconds
      * @param accept optional Accept header
      * @return HTTP response
      * @throws Exception if validation or request fails
      */
-    public ImportHttpResponse get(AiResourceImportSource source, String url,
-        int readTimeoutSeconds, String accept) throws Exception {
+    public ImportHttpResponse get(String url, int readTimeoutSeconds, String accept)
+        throws Exception {
         URI uri = parseUrl(url);
-        checkRequestTarget(source, uri);
-        long maxResponseBytes = resolveMaxResponseBytes(source);
+        checkRequestTarget(uri);
         HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
             .timeout(Duration.ofSeconds(readTimeoutSeconds))
             .GET();
@@ -154,23 +168,20 @@ public class DefaultImportHttpClient {
         }
     }
     
-    private void checkRequestTarget(AiResourceImportSource source, URI uri)
-        throws NacosException {
+    private void checkRequestTarget(URI uri) throws NacosException {
         String scheme =
             uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ENGLISH);
         if (!HTTPS_SCHEME.equals(scheme) && !HTTP_SCHEME.equals(scheme)) {
             throw invalid("AI resource import request URL must use http or https.");
         }
-        if (HTTP_SCHEME.equals(scheme) && !isSourcePropertyEnabled(source, PROPERTY_ALLOW_HTTP,
-            PROPERTY_ALLOW_HTTP_CAMEL)) {
+        if (HTTP_SCHEME.equals(scheme) && !allowHttp) {
             throw invalid(
                 "AI resource import request URL must use https unless allow-http is enabled.");
         }
         if (StringUtils.isBlank(uri.getHost())) {
             throw invalid("AI resource import request URL host must not be empty.");
         }
-        if (isUnsafeHost(uri.getHost()) && !isSourcePropertyEnabled(source,
-            PROPERTY_ALLOW_PRIVATE_NETWORK, PROPERTY_ALLOW_PRIVATE_NETWORK_CAMEL)) {
+        if (isUnsafeHost(uri.getHost()) && !allowPrivateNetwork) {
             throw invalid(
                 "AI resource import request URL resolves to a private or local target.");
         }
@@ -213,24 +224,11 @@ public class DefaultImportHttpClient {
         return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
     }
     
-    private boolean isSourcePropertyEnabled(AiResourceImportSource source, String kebabKey,
-        String camelKey) {
-        if (source == null) {
-            return false;
-        }
-        Map<String, String> properties = source.getProperties();
-        if (properties == null || properties.isEmpty()) {
-            return false;
-        }
-        return Boolean.parseBoolean(properties.get(kebabKey))
-            || Boolean.parseBoolean(properties.get(camelKey));
-    }
-    
-    private long resolveMaxResponseBytes(AiResourceImportSource source) {
-        if (source != null && source.getMaxArtifactSize() > 0) {
-            return source.getMaxArtifactSize();
-        }
-        return DEFAULT_MAX_RESPONSE_BYTES;
+    private static HttpClient newHttpClient() {
+        return HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .connectTimeout(Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_SECONDS))
+            .build();
     }
     
     private void checkResponseSize(byte[] body, long maxResponseBytes) throws NacosException {

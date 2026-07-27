@@ -32,7 +32,6 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportItem;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 
 import java.io.ByteArrayOutputStream;
@@ -90,38 +89,40 @@ public class SkillsShImportService implements AiResourceImportService {
     
     private static final int DEFAULT_MAX_FILE_COUNT = 500;
     
+    private final String endpoint;
+    
     private final DefaultImportHttpClient httpClient;
     
-    public SkillsShImportService() {
-        this(new DefaultImportHttpClient());
+    private final int maxItemCount;
+    
+    private final long maxArtifactSize;
+    
+    public SkillsShImportService(String endpoint, boolean allowHttp,
+        boolean allowPrivateNetwork, int maxItemCount, long maxArtifactSize) {
+        this(endpoint, maxItemCount, maxArtifactSize,
+            new DefaultImportHttpClient(allowHttp, allowPrivateNetwork, maxArtifactSize));
     }
     
-    SkillsShImportService(HttpClient httpClient) {
-        this(new DefaultImportHttpClient(httpClient));
+    SkillsShImportService(String endpoint, int maxItemCount, long maxArtifactSize,
+        HttpClient httpClient) {
+        this(endpoint, maxItemCount, maxArtifactSize, new DefaultImportHttpClient(httpClient));
     }
     
-    SkillsShImportService(DefaultImportHttpClient httpClient) {
+    SkillsShImportService(String endpoint, int maxItemCount, long maxArtifactSize,
+        DefaultImportHttpClient httpClient) {
+        this.endpoint = endpoint;
+        this.maxItemCount = maxItemCount > 0 ? maxItemCount : DEFAULT_MAX_FILE_COUNT;
+        this.maxArtifactSize = maxArtifactSize;
         this.httpClient = httpClient;
-    }
-    
-    @Override
-    public String importerType() {
-        return SkillsShImportServiceBuilder.IMPORTER_TYPE;
-    }
-    
-    @Override
-    public Set<String> supportedResourceTypes() {
-        return Collections.singleton(RESOURCE_TYPE_SKILL);
     }
     
     @Override
     public AiResourceImportCandidatePage search(AiResourceImportContext context)
         throws NacosException {
         try {
-            AiResourceImportSource source = requireSource(context);
-            String apiRoot = resolveApiRoot(source);
+            String apiRoot = resolveApiRoot();
             int resultLimit = resolveLimit(context.getLimit());
-            ImportHttpResponse response = fetchUrl(source, searchUrl(apiRoot,
+            ImportHttpResponse response = fetchUrl(searchUrl(apiRoot,
                 resolveQuery(context.getQuery()), resolveSearchFetchLimit(resultLimit)));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
@@ -145,17 +146,16 @@ public class SkillsShImportService implements AiResourceImportService {
     public AiResourceImportArtifact fetch(AiResourceImportContext context,
         AiResourceImportItem item) throws NacosException {
         try {
-            AiResourceImportSource source = requireSource(context);
-            String apiRoot = resolveApiRoot(source);
+            String apiRoot = resolveApiRoot();
             SkillsShSkillRef skillRef = resolveSkillRef(item);
-            ImportHttpResponse response = fetchUrl(source, downloadUrl(apiRoot, skillRef));
+            ImportHttpResponse response = fetchUrl(downloadUrl(apiRoot, skillRef));
             if (!response.isSuccess()) {
                 throw new IllegalStateException(
                     "HTTP " + response.getStatusCode() + " when fetching " + response.getUrl());
             }
             SkillsShDownloadResponse downloadResponse =
                 JacksonUtils.toObj(response.getBody(), SkillsShDownloadResponse.class);
-            byte[] zipBytes = toSkillZip(source, skillRef, downloadResponse);
+            byte[] zipBytes = toSkillZip(skillRef, downloadResponse);
             AiResourceImportArtifact result = new AiResourceImportArtifact();
             result.setResourceType(RESOURCE_TYPE_SKILL);
             result.setExternalId(skillRef.getExternalId());
@@ -169,15 +169,6 @@ public class SkillsShImportService implements AiResourceImportService {
         } catch (Exception e) {
             throw dataAccess("Fetch skills.sh artifact failed: " + e.getMessage(), e);
         }
-    }
-    
-    private AiResourceImportSource requireSource(AiResourceImportContext context)
-        throws NacosException {
-        if (context == null || context.getSource() == null
-            || StringUtils.isBlank(context.getSource().getEndpoint())) {
-            throw invalid("skills.sh import source endpoint must not be empty.");
-        }
-        return context.getSource();
     }
     
     private int resolveLimit(int limit) {
@@ -309,7 +300,7 @@ public class SkillsShImportService implements AiResourceImportService {
         return result.toString();
     }
     
-    private byte[] toSkillZip(AiResourceImportSource source, SkillsShSkillRef skillRef,
+    private byte[] toSkillZip(SkillsShSkillRef skillRef,
         SkillsShDownloadResponse downloadResponse) throws Exception {
         if (downloadResponse == null || CollectionUtils.isEmpty(downloadResponse.getFiles())) {
             throw invalid("skills.sh download response does not contain skill files.");
@@ -325,13 +316,13 @@ public class SkillsShImportService implements AiResourceImportService {
                 if (StringUtils.isBlank(path)) {
                     continue;
                 }
-                if (++fileCount > resolveMaxFileCount(source)) {
+                if (++fileCount > maxItemCount) {
                     throw invalid("skills.sh download response contains too many files.");
                 }
                 SkillUtils.validatePathSafety(path);
                 byte[] bytes =
                     nullToEmpty(each.getContents()).getBytes(StandardCharsets.UTF_8);
-                checkDownloadedSize(source, totalSize + bytes.length);
+                checkDownloadedSize(totalSize + bytes.length);
                 totalSize += bytes.length;
                 String entryName = skillRef.getSkillId() + "/" + path;
                 SkillUtils.validatePathSafety(entryName);
@@ -351,10 +342,6 @@ public class SkillsShImportService implements AiResourceImportService {
         return output.toByteArray();
     }
     
-    private int resolveMaxFileCount(AiResourceImportSource source) {
-        return source.getMaxItemCount() > 0 ? source.getMaxItemCount() : DEFAULT_MAX_FILE_COUNT;
-    }
-    
     private String normalizeFilePath(String path) {
         if (StringUtils.isBlank(path)) {
             return null;
@@ -366,9 +353,8 @@ public class SkillsShImportService implements AiResourceImportService {
         return result;
     }
     
-    private void checkDownloadedSize(AiResourceImportSource source, long totalSize)
-        throws NacosException {
-        if (source.getMaxArtifactSize() > 0 && totalSize > source.getMaxArtifactSize()) {
+    private void checkDownloadedSize(long totalSize) throws NacosException {
+        if (maxArtifactSize > 0 && totalSize > maxArtifactSize) {
             throw invalid("skills.sh artifact size exceeds source limit.");
         }
     }
@@ -401,15 +387,17 @@ public class SkillsShImportService implements AiResourceImportService {
         return metadata;
     }
     
-    private String resolveApiRoot(AiResourceImportSource source) throws NacosException {
-        String endpoint = trimTrailingSlash(source.getEndpoint());
-        if (endpoint.endsWith(API_SEARCH)) {
-            return endpoint.substring(0, endpoint.length() - API_SEARCH.length());
+    private String resolveApiRoot() throws NacosException {
+        String normalizedEndpoint = trimTrailingSlash(endpoint);
+        if (normalizedEndpoint.endsWith(API_SEARCH)) {
+            return normalizedEndpoint.substring(0,
+                normalizedEndpoint.length() - API_SEARCH.length());
         }
-        if (endpoint.endsWith(API_DOWNLOAD)) {
-            return endpoint.substring(0, endpoint.length() - API_DOWNLOAD.length());
+        if (normalizedEndpoint.endsWith(API_DOWNLOAD)) {
+            return normalizedEndpoint.substring(0,
+                normalizedEndpoint.length() - API_DOWNLOAD.length());
         }
-        return endpoint;
+        return normalizedEndpoint;
     }
     
     private String searchUrl(String apiRoot, String query, int limit) {
@@ -467,9 +455,8 @@ public class SkillsShImportService implements AiResourceImportService {
         return value == null ? "" : value;
     }
     
-    private ImportHttpResponse fetchUrl(AiResourceImportSource source, String url)
-        throws Exception {
-        return httpClient.get(source, url, DEFAULT_READ_TIMEOUT_SECONDS, "application/json");
+    private ImportHttpResponse fetchUrl(String url) throws Exception {
+        return httpClient.get(url, DEFAULT_READ_TIMEOUT_SECONDS, "application/json");
     }
     
     private NacosException invalid(String message) {

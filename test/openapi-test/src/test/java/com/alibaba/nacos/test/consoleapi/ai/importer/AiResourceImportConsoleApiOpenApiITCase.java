@@ -33,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: configured import sources are listed with sanitized source information and can be
- *     filtered by {@code mcp}, {@code skill}, or an unsupported resource type without exposing runtime endpoint or
- *     secret fields.</li>
+ *     <li>Expected capability: enabled managed importer plugins are listed as sanitized sources and can be filtered
+ *     by {@code mcp}, {@code skill}, or an unsupported resource type without exposing runtime endpoint or secret
+ *     fields.</li>
  *     <li>Boundary/validation: {@code resourceType}, {@code sourceId}, {@code selectedItems}, JSON
  *     {@code selectedItems}, JSON {@code options}, and empty selected item lists are validated for search,
  *     validate, and execute. {@code query}, {@code cursor}, {@code limit}, {@code overwriteExisting},
@@ -106,7 +106,7 @@ public class AiResourceImportConsoleApiOpenApiITCase extends AiConsoleApiBaseITC
                 UNKNOWN_SOURCE, "nacos", 0, importOptionsJson());
         unknownSource.put("cursor", "next-page");
         assertError(postRaw(CONSOLE_IMPORT_SEARCH_PATH, queryFrom(unknownSource)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
 
         assertError(postRaw(CONSOLE_IMPORT_SEARCH_PATH,
                 queryFrom(importSearchForm(IMPORT_RESOURCE_TYPE_SKILL, SOURCE_MCP_OFFICIAL,
@@ -142,7 +142,7 @@ public class AiResourceImportConsoleApiOpenApiITCase extends AiConsoleApiBaseITC
         assertError(postRaw(CONSOLE_IMPORT_VALIDATE_PATH,
                 queryFrom(importValidateForm(IMPORT_RESOURCE_TYPE_SKILL, UNKNOWN_SOURCE,
                         selectedItems, importOptionsJson(), true))), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
         assertError(postRaw(CONSOLE_IMPORT_VALIDATE_PATH,
                 queryFrom(importValidateForm(IMPORT_RESOURCE_TYPE_MCP, SOURCE_SKILLS_SH,
                         selectedItems, importOptionsJson(), false))), 400,
@@ -176,7 +176,7 @@ public class AiResourceImportConsoleApiOpenApiITCase extends AiConsoleApiBaseITC
         assertError(postRaw(CONSOLE_IMPORT_EXECUTE_PATH,
                 queryFrom(importExecuteForm(IMPORT_RESOURCE_TYPE_MCP, UNKNOWN_SOURCE,
                         selectedItems, importOptionsJson(), true, false))), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "source not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "plugin not found");
         assertError(postRaw(CONSOLE_IMPORT_EXECUTE_PATH,
                 queryFrom(importExecuteForm(IMPORT_RESOURCE_TYPE_SKILL, SOURCE_MCP_OFFICIAL,
                         selectedItems, importOptionsJson(), false, true))), 400,
