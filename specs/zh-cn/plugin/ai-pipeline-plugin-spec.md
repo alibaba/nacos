@@ -19,7 +19,7 @@
 ## 范围
 
 AI 发布 Pipeline 插件用于在 AI 资源发布前提供审核或拦截逻辑。它面向 Skill、Prompt、
-MCP、AgentSpec 以及未来的通用 AI 资源类型。
+MCP、AgentSpec、Agent 以及未来的通用 AI 资源类型。
 
 这是有序链式插件。匹配节点按 `PublishPipelineService.getPreferOrder()` 升序串行执行。
 某个节点失败会停止后续 pipeline，并将本次执行标记为 rejected。通用生命周期和状态规则由

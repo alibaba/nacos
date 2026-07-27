@@ -43,5 +43,10 @@ public enum PublishPipelineResourceType {
     /**
      * AgentSpec resource type.
      */
-    AGENTSPEC
+    AGENTSPEC,
+    
+    /**
+     * Agent resource type.
+     */
+    AGENT
 }

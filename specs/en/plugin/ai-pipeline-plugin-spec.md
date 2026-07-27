@@ -20,7 +20,7 @@
 
 The AI publish pipeline plugin type provides review or interception logic before
 AI resources are published. It is designed for generic AI resources such as
-Skill, Prompt, MCP, AgentSpec, and future AI resource types.
+Skill, Prompt, MCP, AgentSpec, Agent, and future AI resource types.
 
 This is an ordered chain plugin. Matching nodes execute serially by
 `PublishPipelineService.getPreferOrder()` in ascending order. A failed node
