@@ -80,8 +80,8 @@ sourceId(managed pluginName)
 nacos.plugin.ai-resource-import.enabled=true
 ```
 
-旧 `nacos.ai.resource.import.enabled` 作为 alias。同时存在时标准 key 优先；默认值为
-`false`。
+旧 `nacos.ai.resource.import.enabled` 作为 alias。标准 key 只要存在就优先；默认值为
+`true`，只有显式配置 `false` 才关闭 AI Resource Import。
 
 每个实现使用标准插件 state key：
 

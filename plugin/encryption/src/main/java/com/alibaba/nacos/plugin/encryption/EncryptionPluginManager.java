@@ -95,7 +95,7 @@ public class EncryptionPluginManager {
     }
     
     /**
-     * Injection realization.
+     * Register one encryption implementation with first-wins semantics.
      *
      * @param encryptionPluginService Encryption implementation
      */
@@ -103,8 +103,11 @@ public class EncryptionPluginManager {
         if (Objects.isNull(encryptionPluginService)) {
             return;
         }
-        ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);
-        LOGGER.info("[EncryptionPluginManager] join successfully.");
+        String algorithmName = encryptionPluginService.algorithmName();
+        if (PluginRegistryUtils.registerFirst(ENCRYPTION_SPI_MAP,
+            PluginType.ENCRYPTION.getType(), algorithmName, encryptionPluginService, LOGGER)) {
+            LOGGER.info("[EncryptionPluginManager] join successfully.");
+        }
     }
     
     /**

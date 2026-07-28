@@ -38,9 +38,12 @@ class AiResourceImportPluginTypePolicyTest {
     void testTypeAndLoadingSwitches() {
         MapConfiguration configuration = new MapConfiguration();
         assertEquals(PluginType.AI_RESOURCE_IMPORT, policy.getPluginType());
+        assertTrue(policy.isLoadingEnabled(configuration));
+        
+        configuration.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "false");
         assertFalse(policy.isLoadingEnabled(configuration));
         
-        configuration.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "true");
+        configuration.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, " ");
         assertTrue(policy.isLoadingEnabled(configuration));
         
         configuration.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, "false");

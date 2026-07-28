@@ -33,6 +33,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 
 class DatabaseDialectManagerTest {
@@ -77,18 +78,16 @@ class DatabaseDialectManagerTest {
     }
     
     @Test
-    void testGetDialectFallbackAndNoEnabledFallback() {
+    void testGetDialectDoesNotFallbackToAnotherEnabledDialect() {
         DatabaseDialect mysql = new TestDatabaseDialect("mysql");
         dialectMap.put("mysql", mysql);
         PluginStateCheckerHolder.setInstance(
             (pluginType, pluginName) -> "mysql".equals(pluginName) || "unknown".equals(pluginName));
         
-        assertSame(mysql, DatabaseDialectManager.getInstance().getDialect("unknown"));
-        
-        PluginStateCheckerHolder
-            .setInstance((pluginType, pluginName) -> "unknown".equals(pluginName));
-        assertThrows(IllegalStateException.class,
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> DatabaseDialectManager.getInstance().getDialect("unknown"));
+        
+        assertTrue(exception.getMessage().contains("unknown"));
     }
     
     @Test

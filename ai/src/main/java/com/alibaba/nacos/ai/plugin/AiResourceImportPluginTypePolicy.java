@@ -94,17 +94,21 @@ public class AiResourceImportPluginTypePolicy implements PluginTypePolicy {
                     AiResourceImportProperties.ENABLED_PROPERTY,
                     AiResourceImportProperties.LEGACY_ENABLED_PROPERTY);
             }
-            return configuration.getBooleanProperty(
-                AiResourceImportProperties.ENABLED_PROPERTY, false);
+            return !isExplicitlyFalse(
+                configuration.getProperty(AiResourceImportProperties.ENABLED_PROPERTY));
         }
         if (hasLegacy) {
             LOGGER.warn("Legacy AI resource import switch '{}' is deprecated; migrate to '{}'.",
                 AiResourceImportProperties.LEGACY_ENABLED_PROPERTY,
                 AiResourceImportProperties.ENABLED_PROPERTY);
-            return configuration.getBooleanProperty(
-                AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, false);
+            return !isExplicitlyFalse(
+                configuration.getProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY));
         }
-        return false;
+        return true;
+    }
+    
+    private static boolean isExplicitlyFalse(String value) {
+        return value != null && Boolean.FALSE.toString().equalsIgnoreCase(value.trim());
     }
     
     private void warnIgnoredLegacyState(String pluginName,

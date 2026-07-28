@@ -55,11 +55,28 @@ class AiResourceImportPropertiesTest {
         assertTrue(AiResourceImportProperties.resolveEnabled(raw));
         assertTrue(AiResourceImportProperties.load(raw).isEnabled());
         
-        assertFalse(AiResourceImportProperties.resolveEnabled(null));
+        assertTrue(AiResourceImportProperties.resolveEnabled(null));
         AiResourceImportProperties defaults = AiResourceImportProperties.load(null);
-        assertFalse(defaults.isEnabled());
+        assertTrue(defaults.isEnabled());
+        assertTrue(new AiResourceImportProperties().isEnabled());
         assertFalse(defaults.isLegacyMcpImportApiEnabled());
         assertFalse(defaults.isAllowUserUrl());
+    }
+    
+    @Test
+    void testOnlyExplicitFalseDisablesImport() {
+        Properties raw = new Properties();
+        raw.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "false");
+        assertFalse(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, " ");
+        assertTrue(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, "invalid");
+        assertTrue(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, "false");
+        assertFalse(AiResourceImportProperties.resolveEnabled(raw));
     }
     
     @Test

@@ -199,6 +199,9 @@ before the server becomes available.
 Plugin startup must be deterministic:
 
 - A plugin type and name pair must map to one runtime plugin instance.
+- Providers of the same type are processed in ascending `PluginProvider.getOrder()` order.
+  Providers with the same order retain their service-discovery order. The resulting order is
+  applied before first-wins registration.
 - Discovery uses first-wins registration. A blank plugin name or null implementation is ignored
   with a warning. If a later implementation has the same `type:name`, the first implementation
   remains registered and the later implementation is ignored with a warning that identifies both
@@ -289,7 +292,7 @@ Built-in switches audited during the unified-state migration are classified as f
 | `nacos.plugin.visibility.type` | Historical visibility selector; accepted only to derive the initial state of the named implementation. Runtime routing uses enabled implementations and domain input. |
 | `nacos.plugin.ai-pipeline.type` | Historical pipeline-chain membership input. Core uses it only to derive initial implementation states with `RESTART`; implementation configuration and ordering use each node's `PluginConfigSpec`. |
 | `nacos.plugin.datasource.log.enabled` | Datasource behavior/logging configuration, not implementation state. |
-| `nacos.ai.resource.import.enabled` | Historical AI import path; its removal or migration is deferred with the AI importer redesign. |
+| `nacos.ai.resource.import.enabled` | Historical alias for `nacos.plugin.ai-resource-import.enabled`. The standard key wins when present. AI Resource Import defaults to enabled and only an explicit `false` disables it. |
 
 New family-wide switches must not duplicate per-implementation state. A core-module or
 domain-capability entry switch may gate an entire capability, but it cannot select or enable a
@@ -372,7 +375,8 @@ Config definitions may declare the following metadata:
 
 `aliases` are used when reading compatible static configuration and may also be
 accepted as migration-compatible API input. Alias use is logged as a migration
-hint. After normalization, aliases must
+hint. If the normalized standard key exists, its value is authoritative even when it is an empty
+string; aliases are considered only when the standard key is absent. After normalization, aliases must
 not be written into runtime persistence files or local-only memory maps. If an
 input contains multiple aliases for the same item, the first alias declared in
 the definition takes effect and the server logs the ignored aliases.

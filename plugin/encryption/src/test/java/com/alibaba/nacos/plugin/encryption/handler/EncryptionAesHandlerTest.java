@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
 import org.apache.hc.client5.http.utils.Base64;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +29,11 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,8 +49,10 @@ class EncryptionAesHandlerTest {
     
     private EncryptionPluginService mockEncryptionPluginService;
     
+    private EncryptionPluginService previousEncryptionPluginService;
+    
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockEncryptionPluginService = new EncryptionPluginService() {
             
             private static final String ALGORITHM = "AES";
@@ -137,7 +142,19 @@ class EncryptionAesHandlerTest {
                 return new String(bytes, StandardCharsets.UTF_8);
             }
         };
+        previousEncryptionPluginService =
+            getPlugins().remove(mockEncryptionPluginService.algorithmName());
         EncryptionPluginManager.join(mockEncryptionPluginService);
+    }
+    
+    @AfterEach
+    void tearDown() throws Exception {
+        Map<String, EncryptionPluginService> plugins = getPlugins();
+        plugins.remove(mockEncryptionPluginService.algorithmName());
+        if (previousEncryptionPluginService != null) {
+            plugins.put(previousEncryptionPluginService.algorithmName(),
+                previousEncryptionPluginService);
+        }
     }
     
     @Test
@@ -241,5 +258,12 @@ class EncryptionAesHandlerTest {
         assertEquals("", pair.getFirst());
         assertEquals(content, pair.getSecond(),
             "should return original content if algorithm is not defined.");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, EncryptionPluginService> getPlugins() throws Exception {
+        Field field = EncryptionPluginManager.class.getDeclaredField("ENCRYPTION_SPI_MAP");
+        field.setAccessible(true);
+        return (Map<String, EncryptionPluginService>) field.get(null);
     }
 }

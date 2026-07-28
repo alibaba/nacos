@@ -171,6 +171,8 @@ adapter 也可以不实现该生命周期。该操作必须幂等，类型延迟
 插件启动必须具备确定性：
 
 - 一个插件类型和插件名称组合只能对应一个运行时插件实例。
+- 同类型 provider 按 `PluginProvider.getOrder()` 升序处理；order 相同时保持 SPI 发现
+  顺序。该顺序在 first-wins 注册前生效。
 - 插件发现采用 first-wins 注册。名称为空或实例为 null 的实现记录 WARN 后忽略；
   后发现实现与已有 `type:name` 重复时，保留先发现实现，记录包含两个实现类的 WARN
   并忽略后来实现。这类发现冲突本身不阻塞 Nacos 启动。
@@ -246,7 +248,7 @@ critical 实现缺失。统一启动流程随后发现 provider、合并暂存�
 | `nacos.plugin.visibility.type` | 历史 visibility 选择 key，仅用于推导对应实现的初始状态；运行时路由从 enabled 实现中按领域输入选择。 |
 | `nacos.plugin.ai-pipeline.type` | 历史 Pipeline 链成员输入，仅由 Core 按 `RESTART` 推导实现初始状态；实现配置和顺序统一使用各节点的 `PluginConfigSpec`。 |
 | `nacos.plugin.datasource.log.enabled` | 数据源行为和日志配置，不是实现启停状态。 |
-| `nacos.ai.resource.import.enabled` | 历史 AI import 链路，随 AI importer 重构另行移除或迁移。 |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` 的历史 alias；标准 key 存在时优先。AI Resource Import 默认开启，只有显式 `false` 才关闭。 |
 
 后续不得新增与逐实现 state 含义重复的插件族开关。核心模块或领域能力入口开关可以决定是否
 进入整项能力，但不能选择或启停某个具体实现；具体实现是否参与执行只能由逐实现 plugin
@@ -319,7 +321,8 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 | `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
 
 `aliases` 用于静态配置兼容读取，也可以作为迁移兼容的 API 输入。使用 alias 时应记录
-迁移提示日志。完成归一化后，alias
+迁移提示日志。normalized 标准 key 只要存在就以其值为准，即使值为空字符串也不再回退
+alias；只有标准 key 不存在时才读取 alias。完成归一化后，alias
 不应写入运行时持久化文件或 local-only 内存表。如果输入同时包含同一配置项的多个
 alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
 `enabled` 是插件实现统一状态的保留 item key，插件不得在 `ConfigItemDefinition` 中将其

@@ -92,7 +92,8 @@ nacos.plugin.ai-resource-import.enabled=true
 ```
 
 The legacy `nacos.ai.resource.import.enabled` key is an alias. The standard key
-wins when both are present. The default is `false`.
+wins whenever it is present. The default is `true`; only an explicit `false`
+disables AI Resource Import.
 
 Each implementation uses the standard plugin state key:
 

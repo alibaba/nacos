@@ -126,12 +126,8 @@ class StaticPluginConfigSourceResolver implements PluginConfigSourceResolver {
     
     private String getEnvironmentValue(PluginInfo pluginInfo,
         PluginConfigKeyCandidate candidate) {
-        String standardValue = null;
         if (EnvUtil.containsProperty(candidate.getStandardKey())) {
-            standardValue = EnvUtil.getProperty(candidate.getStandardKey());
-            if (StringUtils.isNotEmpty(standardValue)) {
-                return standardValue;
-            }
+            return EnvUtil.getProperty(candidate.getStandardKey());
         }
         String selectedAlias = null;
         String selectedValue = null;
@@ -151,7 +147,7 @@ class StaticPluginConfigSourceResolver implements PluginConfigSourceResolver {
                     pluginInfo.getPluginId(), candidate.getItemKey(), selectedAlias, aliasKey);
             }
         }
-        return selectedAlias == null ? standardValue : selectedValue;
+        return selectedAlias == null ? null : selectedValue;
     }
     
     @Override

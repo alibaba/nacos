@@ -19,9 +19,12 @@ package com.alibaba.nacos.plugin.ai.storage;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Map;
@@ -41,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 3.2.0
  */
 public class AiResourceStorageRouter {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(AiResourceStorageRouter.class);
     
     private static final AiResourceStorageRouter INSTANCE = new AiResourceStorageRouter();
     
@@ -88,19 +93,17 @@ public class AiResourceStorageRouter {
     }
     
     /**
-     * Add/override a storage implementation at runtime.
+     * Register a storage implementation at runtime using first-wins semantics.
      *
-     * <p>Mainly for tests or embedding scenarios. If the same type already exists, it will be overridden.</p>
+     * <p>Mainly for tests or embedding scenarios. A duplicate type is ignored with a warning.</p>
      *
      * @param storage storage implementation
      * @return true if storage is joined
      */
     public static synchronized boolean join(AiResourceStorage storage) {
-        if (storage == null || StringUtils.isBlank(storage.type())) {
-            return false;
-        }
-        STORAGES_BY_TYPE.put(storage.type(), storage);
-        return true;
+        String type = storage == null ? null : storage.type();
+        return PluginRegistryUtils.registerFirst(STORAGES_BY_TYPE,
+            PluginType.AI_STORAGE.getType(), type, storage, LOGGER);
     }
     
     @JustForTest

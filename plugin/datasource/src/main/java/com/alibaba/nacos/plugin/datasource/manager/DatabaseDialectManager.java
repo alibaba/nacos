@@ -77,23 +77,9 @@ public class DatabaseDialectManager {
         
         DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(databaseType);
         if (databaseDialect == null) {
-            LOGGER.warn(
-                "[DatabaseDialectManager] No dialect found for type: {}, checking for enabled fallback dialects",
-                databaseType);
-            // Find first enabled dialect as fallback
-            for (Map.Entry<String, DatabaseDialect> entry : SUPPORT_DIALECT_MAP.entrySet()) {
-                String dialectType = entry.getKey();
-                if (PluginStateCheckerHolder
-                    .isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), dialectType)) {
-                    LOGGER.warn(
-                        "[DatabaseDialectManager] Using enabled dialect {} as fallback for {}",
-                        dialectType, databaseType);
-                    return entry.getValue();
-                }
-            }
             throw new IllegalStateException(
-                "No enabled DatabaseDialect implementation found. "
-                    + "Please ensure datasource plugin is properly loaded and enabled.");
+                "No DatabaseDialect implementation found for selected type: " + databaseType
+                    + ". Please ensure the selected datasource plugin is loaded.");
         }
         return databaseDialect;
     }
