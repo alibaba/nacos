@@ -17,8 +17,12 @@
 package com.alibaba.nacos.plugin.visibility.spi;
 
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.util.Map;
 
@@ -29,9 +33,18 @@ class VisibilityPluginProviderTest {
     
     private VisibilityPluginProvider provider;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     @BeforeEach
     void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new StandardEnvironment());
         provider = new VisibilityPluginProvider();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

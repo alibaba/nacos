@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.plugin;
 
-import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
-import com.alibaba.nacos.api.plugin.ConfigItemEffectMode;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginInitializationPhase;
 import com.alibaba.nacos.api.plugin.PluginProvider;
@@ -27,6 +25,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplier;
 import com.alibaba.nacos.core.plugin.config.PluginConfigBasicChecker;
+import com.alibaba.nacos.core.plugin.config.PluginConfigDefinitionNormalizer;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolver;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
@@ -39,7 +38,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,8 +146,12 @@ public class PreContextPluginInitializer implements PluginInitializer {
             return;
         }
         String pluginId = pluginType.getType() + ":" + pluginName;
-        if (pluginInfos.containsKey(pluginId)) {
-            throw new IllegalStateException("Duplicate pre-context plugin: " + pluginId);
+        PluginInfo existing = pluginInfos.get(pluginId);
+        if (existing != null) {
+            LOGGER.warn("[PreContextPluginInitializer] Ignore duplicate plugin, pluginId={}, "
+                + "existingClass={}, ignoredClass={}.", pluginId, existing.getClassName(),
+                instance.getClass().getName());
+            return;
         }
         PluginInfo pluginInfo = createPluginInfo(pluginType, pluginName, pluginId, instance);
         PluginConfigResolution resolution = initializePluginConfig(pluginInfo, instance);
@@ -173,8 +175,8 @@ public class PreContextPluginInitializer implements PluginInitializer {
             PluginConfigSpec configSpec = (PluginConfigSpec) instance;
             result.setConfigurable(configSpec.isConfigurable());
             if (result.isConfigurable()) {
-                result.setConfigDefinitions(
-                    normalizeDefinitions(pluginId, configSpec.getConfigDefinitions()));
+                result.setConfigDefinitions(PluginConfigDefinitionNormalizer.normalize(pluginId,
+                    configSpec.getConfigDefinitions(), pluginType.getInitializationPhase()));
                 result.setConfig(copyConfig(configSpec.getCurrentConfig()));
             }
         }
@@ -211,41 +213,6 @@ public class PreContextPluginInitializer implements PluginInitializer {
                     + pluginInfo.getPluginId(),
                 e);
         }
-    }
-    
-    private List<ConfigItemDefinition> normalizeDefinitions(String pluginId,
-        List<ConfigItemDefinition> definitions) {
-        if (definitions == null || definitions.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<ConfigItemDefinition> result = new ArrayList<>(definitions.size());
-        for (ConfigItemDefinition definition : definitions) {
-            ConfigItemDefinition copy = copyDefinition(definition);
-            if (ConfigItemEffectMode.RUNTIME == copy.getEffectMode()) {
-                LOGGER.warn("[PreContextPluginInitializer] Treat runtime config as restart-only, "
-                    + "pluginId={}, key={}", pluginId, copy.getKey());
-                copy.setEffectMode(ConfigItemEffectMode.RESTART);
-            }
-            result.add(copy);
-        }
-        return Collections.unmodifiableList(result);
-    }
-    
-    private ConfigItemDefinition copyDefinition(ConfigItemDefinition source) {
-        ConfigItemDefinition result =
-            new ConfigItemDefinition(source.getKey(), source.getName(), source.getType());
-        result.setDescription(source.getDescription());
-        result.setDefaultValue(source.getDefaultValue());
-        result.setRequired(source.isRequired());
-        result.setEnumValues(copyList(source.getEnumValues()));
-        result.setAliases(copyList(source.getAliases()));
-        result.setSensitive(source.isSensitive());
-        result.setEffectMode(source.getEffectMode());
-        return result;
-    }
-    
-    private List<String> copyList(List<String> source) {
-        return source == null ? null : new ArrayList<>(source);
     }
     
     private Map<String, String> copyConfig(Map<String, String> config) {

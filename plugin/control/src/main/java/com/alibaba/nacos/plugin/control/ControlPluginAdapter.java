@@ -63,7 +63,7 @@ public final class ControlPluginAdapter implements PluginConfigSpec, PluginStart
         this.builder = Objects.requireNonNull(builder, "Control manager builder cannot be null");
         this.managerCenter =
             Objects.requireNonNull(managerCenter, "Control manager center cannot be null");
-        this.configDefinitions = validateConfigDefinitions(builder);
+        this.configDefinitions = filterConfigDefinitions(builder);
     }
     
     /**
@@ -142,7 +142,7 @@ public final class ControlPluginAdapter implements PluginConfigSpec, PluginStart
         return new DefaultTpsControlManager();
     }
     
-    private static List<ConfigItemDefinition> validateConfigDefinitions(
+    private static List<ConfigItemDefinition> filterConfigDefinitions(
         ControlManagerBuilder builder) {
         List<ConfigItemDefinition> definitions = builder.getConfigDefinitions();
         if (definitions == null || definitions.isEmpty()) {
@@ -151,13 +151,14 @@ public final class ControlPluginAdapter implements PluginConfigSpec, PluginStart
         List<ConfigItemDefinition> result = new ArrayList<>(definitions.size());
         for (ConfigItemDefinition definition : definitions) {
             if (definition == null) {
-                throw new IllegalStateException(
-                    "Control plugin config definition cannot be null: " + builder.getName());
+                Loggers.CONTROL.warn("Ignore null config definition from control plugin '{}'.",
+                    builder.getName());
+                continue;
             }
             if (ConfigItemEffectMode.RESTART != definition.getEffectMode()) {
-                throw new IllegalStateException(
-                    "Control plugin config must use RESTART effect mode: " + builder.getName()
-                        + ":" + definition.getKey());
+                Loggers.CONTROL.warn("Ignore non-RESTART config definition from control plugin "
+                    + "'{}', key={}.", builder.getName(), definition.getKey());
+                continue;
             }
             result.add(definition);
         }

@@ -50,6 +50,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +60,7 @@ import java.util.function.Supplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -779,8 +781,33 @@ class PluginManagerTest {
         
         PluginInfo info = manager.getPlugin("trace:configurable").get();
         assertTrue(info.isConfigurable());
-        assertEquals(plugin.getConfigDefinitions(), info.getConfigDefinitions());
+        assertEquals(1, info.getConfigDefinitions().size());
+        assertEquals("endpoint", info.getConfigDefinitions().get(0).getKey());
+        assertNotSame(definition, info.getConfigDefinitions().get(0));
         assertEquals(plugin.getCurrentConfig(), info.getConfig());
+    }
+    
+    @Test
+    void registerPluginKeepsFirstValidIdentityTest() {
+        Object first = new Object();
+        Object duplicate = new Object();
+        
+        String pluginId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "same", first);
+        String duplicateId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "same", duplicate);
+        String blankId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, " ", new Object());
+        String nullInstanceId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "null", null);
+        
+        assertEquals("trace:same", pluginId);
+        assertNull(duplicateId);
+        assertNull(blankId);
+        assertNull(nullInstanceId);
+        assertSame(first, getPluginInstances().get(pluginId));
+        assertEquals(first.getClass().getName(), manager.getPlugin(pluginId).get().getClassName());
+        assertEquals(1, manager.listAllPlugins().size());
     }
     
     @Test
@@ -1376,16 +1403,36 @@ class PluginManagerTest {
     }
     
     @Test
-    void initializeRejectsDuplicatePreContextPluginTest() {
+    void initializeKeepsExistingPluginWhenPreContextIdentityConflictsTest() {
         PluginInfo info = createPreContextPluginInfo(true);
         manager = managerWithPreContextPlugin(info);
+        Object existingInstance = new Object();
         ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.ENVIRONMENT,
-            info.getPluginName(), new Object());
+            info.getPluginName(), existingInstance);
         
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-            () -> ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins"));
+        ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins");
         
-        assertTrue(exception.getMessage().contains(info.getPluginId()));
+        assertSame(existingInstance, getPluginInstances().get(info.getPluginId()));
+        assertNotSame(info, manager.getPlugin(info.getPluginId()).get());
+        assertFalse(getPreContextConfigResolutions().containsKey(info.getPluginId()));
+    }
+    
+    @Test
+    void initializeIgnoresIncompletePreContextPluginsTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        Map<String, PluginInfo> pluginInfos = new LinkedHashMap<>();
+        pluginInfos.put("environment:missing-info", null);
+        pluginInfos.put(info.getPluginId(), info);
+        Map<String, Object> pluginInstances = Collections.singletonMap(
+            "environment:missing-info", new Object());
+        PreContextPluginInitializationResult result = new PreContextPluginInitializationResult(
+            pluginInfos, pluginInstances, Collections.emptyMap());
+        manager = new PluginManager(persistence, synchronizer, policyRegistry, result);
+        
+        ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins");
+        
+        assertTrue(getPluginRegistry().isEmpty());
+        assertTrue(getPluginInstances().isEmpty());
     }
     
     @Test
@@ -1635,6 +1682,12 @@ class PluginManagerTest {
     @SuppressWarnings("unchecked")
     private Map<String, Object> getPluginInstances() {
         return (Map<String, Object>) ReflectionTestUtils.getField(manager, "pluginInstances");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, PluginConfigResolution> getPreContextConfigResolutions() {
+        return (Map<String, PluginConfigResolution>) ReflectionTestUtils.getField(manager,
+            "preContextConfigResolutions");
     }
     
     @SuppressWarnings("unchecked")

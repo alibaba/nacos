@@ -199,7 +199,12 @@ before the server becomes available.
 Plugin startup must be deterministic:
 
 - A plugin type and name pair must map to one runtime plugin instance.
-- Duplicate plugin names in the same type are invalid for stable operation.
+- Discovery uses first-wins registration. A blank plugin name or null implementation is ignored
+  with a warning. If a later implementation has the same `type:name`, the first implementation
+  remains registered and the later implementation is ignored with a warning that identifies both
+  implementation classes. These discovery conflicts do not by themselves block Nacos startup.
+- A provider that builds its result from multiple SPI implementations must apply the same
+  first-wins rule before returning its map; it must not silently replace an earlier implementation.
 - Plugin implementations must not change the meaning of shared Nacos resource
   identifiers, response envelopes, or error conventions.
 
@@ -373,6 +378,14 @@ input contains multiple aliases for the same item, the first alias declared in
 the definition takes effect and the server logs the ignored aliases.
 `enabled` is reserved for the unified implementation state and must not be declared as a regular
 item key in `ConfigItemDefinition`.
+
+Definition discovery also uses first-wins normalization. Null definitions, blank item keys, and
+the reserved `enabled` key are ignored with warnings. If a later item key or alias conflicts with
+an input key already claimed by an earlier definition, the earlier definition remains effective
+and the later definition or alias is ignored with a warning. This includes normalized full-key
+collisions. Definition metadata is copied before normalization so the manager does not mutate
+plugin-owned objects. For `PRE_CONTEXT` plugins, any declared `RUNTIME` effect mode is copied as
+`RESTART`; the original plugin definition is not modified.
 
 ### Config Sources And Value Metadata
 

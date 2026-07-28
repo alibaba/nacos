@@ -78,15 +78,17 @@ class AiResourceImportPluginManagerTest {
     }
     
     @Test
-    void testRejectBlankAndDuplicatePluginNames() {
-        AiResourceImportPluginManager blank = managerWith(
-            new FakeBuilder(" ", "fake", "blank", Collections.singleton("mcp")));
-        assertThrows(IllegalStateException.class, blank::loadPlugins);
-        
-        AiResourceImportPluginManager duplicate = managerWith(
-            new FakeBuilder("same", "fake", "first", Collections.singleton("mcp")),
+    void testIgnoreInvalidAndDuplicatePluginNames() {
+        FakeBuilder first =
+            new FakeBuilder("same", "fake", "first", Collections.singleton("mcp"));
+        AiResourceImportPluginManager manager = managerWith(null,
+            new FakeBuilder(" ", "fake", "blank", Collections.singleton("mcp")), first,
             new FakeBuilder("same", "fake", "second", Collections.singleton("skill")));
-        assertThrows(IllegalStateException.class, duplicate::loadPlugins);
+        
+        Map<String, AiResourceImportServiceBuilder> plugins = manager.loadPlugins();
+        
+        assertEquals(1, plugins.size());
+        assertSame(first, plugins.get("same"));
     }
     
     @Test

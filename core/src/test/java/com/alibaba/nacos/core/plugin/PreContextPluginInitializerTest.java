@@ -203,13 +203,18 @@ class PreContextPluginInitializerTest {
     }
     
     @Test
-    void testDuplicatePluginStopsInitialization() {
+    void testDuplicatePluginKeepsFirstDiscoveredInstance() {
         TestEnvironmentPlugin first = new TestEnvironmentPlugin();
         TestEnvironmentPlugin second = new TestEnvironmentPlugin();
         
-        assertThrows(IllegalStateException.class,
-            () -> newInitializer(Arrays.asList(provider("test", first),
-                provider("test", second))).initialize());
+        newInitializer(Arrays.asList(provider("test", first),
+            provider("test", second))).initialize();
+        
+        assertSame(first, getResult().getPluginInstances().get("environment:test"));
+        assertEquals(1, first.applyCount);
+        assertEquals(1, first.initializeCount);
+        assertEquals(0, second.applyCount);
+        assertEquals(0, second.initializeCount);
     }
     
     @Test

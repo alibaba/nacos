@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.spi.server;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,16 +55,12 @@ public class AuthPluginManager {
         Collection<AuthPluginService> authPluginServices =
             NacosServiceLoader.load(AuthPluginService.class);
         for (AuthPluginService each : authPluginServices) {
-            if (StringUtils.isEmpty(each.getAuthServiceName())) {
-                LOGGER.warn(
-                    "[AuthPluginManager] Load AuthPluginService({}) AuthServiceName(null/empty) fail. Please Add AuthServiceName to resolve.",
-                    each.getClass());
-                continue;
+            String authServiceName = each == null ? null : each.getAuthServiceName();
+            if (PluginRegistryUtils.registerFirst(authServiceMap, PluginType.AUTH.getType(),
+                authServiceName, each, LOGGER)) {
+                LOGGER.info("[AuthPluginManager] Load AuthPluginService({}) "
+                    + "AuthServiceName({}) successfully.", each.getClass(), authServiceName);
             }
-            authServiceMap.put(each.getAuthServiceName(), each);
-            LOGGER.info(
-                "[AuthPluginManager] Load AuthPluginService({}) AuthServiceName({}) successfully.",
-                each.getClass(), each.getAuthServiceName());
         }
     }
     

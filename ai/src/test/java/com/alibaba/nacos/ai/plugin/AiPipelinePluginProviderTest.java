@@ -52,9 +52,12 @@ class AiPipelinePluginProviderTest {
         ApplicationContext applicationContext = mock(ApplicationContext.class);
         PublishPipelineManager manager = mock(PublishPipelineManager.class);
         PublishPipelineService service = mock(PublishPipelineService.class);
+        PublishPipelineService duplicateService = mock(PublishPipelineService.class);
         PublishPipelineService noIdService = mock(PublishPipelineService.class);
         when(service.pipelineId()).thenReturn("scanner");
-        when(manager.getAllServices()).thenReturn(Arrays.asList(service, null, noIdService));
+        when(duplicateService.pipelineId()).thenReturn("scanner");
+        when(manager.getAllServices())
+            .thenReturn(Arrays.asList(service, duplicateService, null, noIdService));
         try (MockedStatic<ApplicationUtils> applicationUtils =
             Mockito.mockStatic(ApplicationUtils.class)) {
             applicationUtils.when(ApplicationUtils::getApplicationContext)

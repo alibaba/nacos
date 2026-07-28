@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,18 +57,14 @@ public class EncryptionPluginManager {
         Collection<EncryptionPluginService> encryptionPluginServices = NacosServiceLoader.load(
             EncryptionPluginService.class);
         for (EncryptionPluginService encryptionPluginService : encryptionPluginServices) {
-            if (StringUtils.isBlank(encryptionPluginService.algorithmName())) {
-                LOGGER.warn(
-                    "[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName(null/empty) fail."
-                        + " Please Add algorithmName to resolve.",
-                    encryptionPluginService.getClass());
-                continue;
+            String algorithmName =
+                encryptionPluginService == null ? null : encryptionPluginService.algorithmName();
+            if (PluginRegistryUtils.registerFirst(ENCRYPTION_SPI_MAP,
+                PluginType.ENCRYPTION.getType(), algorithmName, encryptionPluginService, LOGGER)) {
+                LOGGER.info("[EncryptionPluginManager] Load EncryptionPluginService({}) "
+                    + "algorithmName({}) successfully.", encryptionPluginService.getClass(),
+                    algorithmName);
             }
-            ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(),
-                encryptionPluginService);
-            LOGGER.info(
-                "[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName({}) successfully.",
-                encryptionPluginService.getClass(), encryptionPluginService.algorithmName());
         }
     }
     
