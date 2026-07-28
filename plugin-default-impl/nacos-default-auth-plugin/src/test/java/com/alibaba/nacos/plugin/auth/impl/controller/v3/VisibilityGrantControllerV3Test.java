@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -63,6 +64,11 @@ class VisibilityGrantControllerV3Test {
             String.class, String.class, String.class, String.class, String.class));
         assertWriteAdminApiSecured(VisibilityGrantControllerV3.class.getDeclaredMethod("revoke",
             String.class, String.class, String.class, String.class, String.class));
+    }
+    
+    @Test
+    void visibilityGrantControllerShouldUseNacosApiExceptionHandling() {
+        assertNotNull(VisibilityGrantControllerV3.class.getAnnotation(NacosApi.class));
     }
     
     private void assertWriteAdminApiSecured(Method method) {

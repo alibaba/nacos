@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Zhengcy05
  */
 @RestController
+@NacosApi
 @RequestMapping(AuthConstants.VISIBILITY_PATH)
 public class VisibilityGrantControllerV3 {
     
