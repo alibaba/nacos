@@ -19,10 +19,10 @@ package com.alibaba.nacos.plugin.visibility.spi;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,7 +56,7 @@ public class VisibilityPluginManager {
         if (initialized) {
             return;
         }
-        Properties allProperties = resolveInitProperties();
+        Properties allProperties = EnvUtil.getProperties();
         ServiceLoader<VisibilityService> serviceLoader =
             ServiceLoader.load(VisibilityService.class);
         Iterator<VisibilityService> iterator = serviceLoader.iterator();
@@ -158,7 +158,7 @@ public class VisibilityPluginManager {
     }
     
     private boolean isVisibilityModuleEnabled() {
-        Properties allProperties = resolveInitProperties();
+        Properties allProperties = EnvUtil.getProperties();
         String enabledValue = allProperties.getProperty(
             VisibilityPluginTypePolicy.VISIBILITY_ENABLED_PROPERTY);
         return StringUtils.isBlank(enabledValue) || Boolean.parseBoolean(enabledValue);
@@ -167,29 +167,5 @@ public class VisibilityPluginManager {
     public Map<String, VisibilityService> getAllPlugins() {
         initVisibilityServices();
         return Collections.unmodifiableMap(visibilityServiceMap);
-    }
-    
-    private Properties resolveInitProperties() {
-        // TODO: Replace reflection with direct EnvUtil.getProperties() after plugin/visibility can depend on nacos-sys.
-        try {
-            Class<?> envUtilClass = Class.forName("com.alibaba.nacos.sys.env.EnvUtil");
-            Method method = envUtilClass.getMethod("getProperties");
-            Object result = method.invoke(null);
-            if (result instanceof Properties) {
-                return (Properties) result;
-            }
-        } catch (Throwable ex) {
-            LOGGER.debug(
-                "[VisibilityPluginManager] Cannot load EnvUtil properties, fallback to system properties.",
-                ex);
-            return copySystemProperties();
-        }
-        return copySystemProperties();
-    }
-    
-    private Properties copySystemProperties() {
-        Properties fallback = new Properties();
-        fallback.putAll(System.getProperties());
-        return fallback;
     }
 }
