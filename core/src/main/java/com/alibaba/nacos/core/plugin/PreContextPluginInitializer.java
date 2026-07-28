@@ -38,6 +38,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,9 @@ public class PreContextPluginInitializer implements PluginInitializer {
         Map<String, PluginInfo> pluginInfos = new LinkedHashMap<>();
         Map<String, Object> pluginInstances = new LinkedHashMap<>();
         Map<String, PluginConfigResolution> configResolutions = new LinkedHashMap<>();
-        for (PluginProvider<?> provider : providers) {
+        List<PluginProvider<?>> orderedProviders = new ArrayList<>(providers);
+        orderedProviders.sort(Comparator.comparingInt(PluginProvider::getOrder));
+        for (PluginProvider<?> provider : orderedProviders) {
             initializeProvider(provider, pluginInfos, pluginInstances, configResolutions);
         }
         initializeEnvironmentManager(pluginInfos, pluginInstances);

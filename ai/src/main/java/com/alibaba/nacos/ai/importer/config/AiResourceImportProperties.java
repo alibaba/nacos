@@ -39,7 +39,7 @@ public class AiResourceImportProperties {
     public static final String ALLOW_USER_URL_PROPERTY =
         "nacos.ai.resource.import.allow-user-url";
     
-    private boolean enabled;
+    private boolean enabled = true;
     
     private boolean legacyMcpImportApiEnabled;
     
@@ -78,13 +78,16 @@ public class AiResourceImportProperties {
      */
     public static boolean resolveEnabled(Properties properties) {
         if (properties == null) {
-            return false;
+            return true;
         }
-        String standardValue = properties.getProperty(ENABLED_PROPERTY);
-        if (StringUtils.isNotBlank(standardValue)) {
-            return Boolean.parseBoolean(standardValue.trim());
+        if (properties.containsKey(ENABLED_PROPERTY)) {
+            return !isExplicitlyFalse(properties.getProperty(ENABLED_PROPERTY));
         }
-        return getBoolean(properties, LEGACY_ENABLED_PROPERTY, false);
+        return !isExplicitlyFalse(properties.getProperty(LEGACY_ENABLED_PROPERTY));
+    }
+    
+    private static boolean isExplicitlyFalse(String value) {
+        return value != null && Boolean.FALSE.toString().equalsIgnoreCase(value.trim());
     }
     
     private static boolean getBoolean(Properties properties, String key, boolean defaultValue) {

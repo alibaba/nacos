@@ -19,8 +19,12 @@ package com.alibaba.nacos.plugin.encryption.handler;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,8 +38,10 @@ class EncryptionHandlerTest {
     
     private EncryptionPluginService mockEncryptionPluginService;
     
+    private EncryptionPluginService previousEncryptionPluginService;
+    
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockEncryptionPluginService = new EncryptionPluginService() {
             
             @Override
@@ -68,7 +74,19 @@ class EncryptionHandlerTest {
                 return generateSecretKey();
             }
         };
+        previousEncryptionPluginService =
+            getPlugins().remove(mockEncryptionPluginService.algorithmName());
         EncryptionPluginManager.join(mockEncryptionPluginService);
+    }
+    
+    @AfterEach
+    void tearDown() throws Exception {
+        Map<String, EncryptionPluginService> plugins = getPlugins();
+        plugins.remove(mockEncryptionPluginService.algorithmName());
+        if (previousEncryptionPluginService != null) {
+            plugins.put(previousEncryptionPluginService.algorithmName(),
+                previousEncryptionPluginService);
+        }
     }
     
     @Test
@@ -136,5 +154,12 @@ class EncryptionHandlerTest {
         assertNotNull(pair);
         assertEquals(oContent, pair.getSecond(), "should return original content.");
         assertEquals(oSec, pair.getFirst(), "should return original secret key.");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, EncryptionPluginService> getPlugins() throws Exception {
+        Field field = EncryptionPluginManager.class.getDeclaredField("ENCRYPTION_SPI_MAP");
+        field.setAccessible(true);
+        return (Map<String, EncryptionPluginService>) field.get(null);
     }
 }

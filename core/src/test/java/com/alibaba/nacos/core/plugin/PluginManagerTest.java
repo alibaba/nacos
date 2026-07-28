@@ -48,6 +48,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -601,6 +602,32 @@ class PluginManagerTest {
         
         verify(provider, never()).getAllPlugins();
         assertTrue(manager.listAllPlugins().isEmpty());
+    }
+    
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void discoverPluginProvidersUsesOrderBeforeFirstWinsTest() {
+        Object lowerPriorityPlugin = new Object();
+        Object higherPriorityPlugin = new Object();
+        PluginProvider lowerPriorityProvider = mock(PluginProvider.class);
+        PluginProvider higherPriorityProvider = mock(PluginProvider.class);
+        when(lowerPriorityProvider.getPluginType()).thenReturn(PluginType.TRACE);
+        when(lowerPriorityProvider.getOrder()).thenReturn(10);
+        when(lowerPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("ordered", lowerPriorityPlugin));
+        when(higherPriorityProvider.getPluginType()).thenReturn(PluginType.TRACE);
+        when(higherPriorityProvider.getOrder()).thenReturn(-10);
+        when(higherPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("ordered", higherPriorityPlugin));
+        
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Arrays.asList(lowerPriorityProvider, higherPriorityProvider));
+            
+            manager.initialize();
+        }
+        
+        assertSame(higherPriorityPlugin, getPluginInstances().get("trace:ordered"));
     }
     
     @Test

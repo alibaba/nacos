@@ -218,6 +218,19 @@ class PreContextPluginInitializerTest {
     }
     
     @Test
+    void testDuplicatePluginUsesProviderOrderBeforeFirstWins() {
+        TestEnvironmentPlugin lowerPriority = new TestEnvironmentPlugin();
+        TestEnvironmentPlugin higherPriority = new TestEnvironmentPlugin();
+        
+        newInitializer(Arrays.asList(provider("test", lowerPriority, 10),
+            provider("test", higherPriority, -10))).initialize();
+        
+        assertSame(higherPriority, getResult().getPluginInstances().get("environment:test"));
+        assertEquals(0, lowerPriority.applyCount);
+        assertEquals(1, higherPriority.applyCount);
+    }
+    
+    @Test
     void testConfigApplyFailureStopsInitialization() {
         TestEnvironmentPlugin plugin = new TestEnvironmentPlugin();
         plugin.failApply = true;
@@ -292,6 +305,26 @@ class PreContextPluginInitializerTest {
     
     private PluginProvider<?> provider(String name, Object plugin) {
         return provider(PluginType.ENVIRONMENT, Collections.singletonMap(name, plugin));
+    }
+    
+    private PluginProvider<?> provider(String name, Object plugin, int order) {
+        return new PluginProvider<>() {
+            
+            @Override
+            public PluginType getPluginType() {
+                return PluginType.ENVIRONMENT;
+            }
+            
+            @Override
+            public Map<String, Object> getAllPlugins() {
+                return Collections.singletonMap(name, plugin);
+            }
+            
+            @Override
+            public int getOrder() {
+                return order;
+            }
+        };
     }
     
     private <T> PluginProvider<T> provider(PluginType type, Map<String, T> plugins) {

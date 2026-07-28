@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypePolicy;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Constructor;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,6 +86,37 @@ class PluginCriticalBootstrapValidatorTest {
         verify(authProvider).getAllPlugins();
         verify(traceProvider, never()).getAllPlugins();
         verify(policyRegistry).isPluginEnabledByDefault(PluginType.AUTH, "nacos");
+    }
+    
+    @Test
+    @SuppressWarnings("rawtypes")
+    void testActiveCriticalProvidersAreDiscoveredInOrder() {
+        PluginTypePolicyRegistry policyRegistry = mock(PluginTypePolicyRegistry.class);
+        PluginProvider lowerPriorityProvider = mock(PluginProvider.class);
+        PluginProvider higherPriorityProvider = mock(PluginProvider.class);
+        when(lowerPriorityProvider.getPluginType()).thenReturn(PluginType.AUTH);
+        when(lowerPriorityProvider.getOrder()).thenReturn(10);
+        when(lowerPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("other", new Object()));
+        when(higherPriorityProvider.getPluginType()).thenReturn(PluginType.AUTH);
+        when(higherPriorityProvider.getOrder()).thenReturn(-10);
+        when(higherPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("nacos", new Object()));
+        when(policyRegistry.isActive(PluginType.AUTH)).thenReturn(true);
+        when(policyRegistry.supportsPreRefreshValidation(PluginType.AUTH)).thenReturn(true);
+        when(policyRegistry.getRequiredPluginNames(PluginType.AUTH))
+            .thenReturn(Collections.singleton("nacos"));
+        when(policyRegistry.isPluginEnabledByDefault(PluginType.AUTH, "nacos"))
+            .thenReturn(true);
+        when(policyRegistry.isPluginEnabledByDefault(PluginType.AUTH, "other"))
+            .thenReturn(true);
+        
+        PluginCriticalBootstrapValidator.validate(policyRegistry,
+            Arrays.asList(lowerPriorityProvider, higherPriorityProvider));
+        
+        InOrder providerOrder = inOrder(higherPriorityProvider, lowerPriorityProvider);
+        providerOrder.verify(higherPriorityProvider).getAllPlugins();
+        providerOrder.verify(lowerPriorityProvider).getAllPlugins();
     }
     
     @Test

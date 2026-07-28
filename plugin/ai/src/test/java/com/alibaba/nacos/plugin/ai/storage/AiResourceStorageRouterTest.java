@@ -44,11 +44,13 @@ class AiResourceStorageRouterTest {
     @Test
     void testJoinAndRouteStorage() throws NacosException {
         FakeStorage storage = new FakeStorage("fake");
+        FakeStorage duplicate = new FakeStorage("fake");
         StorageKey emptyStorageKey = new StorageKey();
         emptyStorageKey.setProvider("fake");
         emptyStorageKey.setKey("resource");
         
         assertTrue(AiResourceStorageRouter.join(storage));
+        assertFalse(AiResourceStorageRouter.join(duplicate));
         
         AiResourceStorage routed = AiResourceStorageRouter.getInstance().route(emptyStorageKey);
         routed.save(emptyStorageKey, "content".getBytes(StandardCharsets.UTF_8));

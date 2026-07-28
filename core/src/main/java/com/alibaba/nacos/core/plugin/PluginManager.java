@@ -46,6 +46,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -448,8 +449,10 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
     @SuppressWarnings("rawtypes")
     private void discoverPluginProviders() {
         Collection<PluginProvider> providers = NacosServiceLoader.load(PluginProvider.class);
+        List<PluginProvider> orderedProviders = new ArrayList<>(providers);
+        orderedProviders.sort(Comparator.comparingInt(PluginProvider::getOrder));
         
-        for (PluginProvider provider : providers) {
+        for (PluginProvider provider : orderedProviders) {
             try {
                 PluginType pluginType = provider.getPluginType();
                 if (pluginType == null) {
