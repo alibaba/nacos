@@ -27,7 +27,9 @@ import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
+import com.alibaba.nacos.core.plugin.config.PluginConfigDefinitionNormalizer;
 import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigService;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
@@ -414,18 +416,30 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
     
     private void importPreContextPlugins() {
         preContextInitializationResult.getPluginInfos().forEach((pluginId, pluginInfo) -> {
-            if (pluginRegistry.putIfAbsent(pluginId, pluginInfo) != null) {
-                throw new IllegalStateException("Duplicate plugin imported from pre-context: "
-                    + pluginId);
-            }
             Object instance =
                 preContextInitializationResult.getPluginInstances().get(pluginId);
+            if (pluginInfo == null || instance == null) {
+                LOGGER.warn("[PluginManager] Ignore invalid pre-context plugin, pluginId={}, "
+                    + "infoPresent={}, instancePresent={}.", pluginId, pluginInfo != null,
+                    instance != null);
+                return;
+            }
+            PluginInfo existing = pluginRegistry.putIfAbsent(pluginId, pluginInfo);
+            if (existing != null) {
+                LOGGER.warn("[PluginManager] Ignore duplicate pre-context plugin, pluginId={}, "
+                    + "existingClass={}, ignoredClass={}.", pluginId, existing.getClassName(),
+                    instance.getClass().getName());
+                return;
+            }
             pluginInstances.put(pluginId, instance);
             pluginDefaultStates.put(pluginId, pluginInfo.isEnabled());
             pluginStates.put(pluginId, pluginInfo.isEnabled());
+            PluginConfigResolution resolution =
+                preContextInitializationResult.getConfigResolutions().get(pluginId);
+            if (resolution != null) {
+                preContextConfigResolutions.put(pluginId, resolution);
+            }
         });
-        preContextConfigResolutions.putAll(
-            preContextInitializationResult.getConfigResolutions());
     }
     
     /**
@@ -492,15 +506,31 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
         }
         
         Set<String> result = new HashSet<>();
-        plugins.forEach((name, instance) -> result.add(
-            registerPlugin(pluginType, name, instance)));
-        LOGGER.info("[PluginManager] Discovered {} {} plugins", plugins.size(),
+        plugins.forEach((name, instance) -> {
+            String pluginId = registerPlugin(pluginType, name, instance);
+            if (pluginId != null) {
+                result.add(pluginId);
+            }
+        });
+        LOGGER.info("[PluginManager] Discovered {} {} plugins", result.size(),
             pluginType.getType());
         return result;
     }
     
     private String registerPlugin(PluginType type, String name, Object instance) {
+        if (StringUtils.isBlank(name) || instance == null) {
+            LOGGER.warn("[PluginManager] Ignore invalid {} plugin, name={}, instancePresent={}.",
+                type.getType(), name, instance != null);
+            return null;
+        }
         String pluginId = buildPluginId(type.getType(), name);
+        PluginInfo existing = pluginRegistry.get(pluginId);
+        if (existing != null) {
+            LOGGER.warn("[PluginManager] Ignore duplicate plugin, pluginId={}, existingClass={}, "
+                + "ignoredClass={}.", pluginId, existing.getClassName(),
+                instance.getClass().getName());
+            return null;
+        }
         
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
@@ -517,19 +547,22 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
             PluginConfigSpec configSpec = (PluginConfigSpec) instance;
             info.setConfigurable(configSpec.isConfigurable());
             if (info.isConfigurable()) {
-                info.setConfigDefinitions(configSpec.getConfigDefinitions());
+                info.setConfigDefinitions(PluginConfigDefinitionNormalizer.normalize(pluginId,
+                    configSpec.getConfigDefinitions(), type.getInitializationPhase()));
                 info.setConfig(configSpec.getCurrentConfig());
-                pendingConfigInitializationPluginIds.add(pluginId);
             }
-        }
-        if (instance instanceof PluginStartupLifecycle) {
-            pendingStartupInitializationPluginIds.add(pluginId);
         }
         
         pluginRegistry.put(pluginId, info);
         pluginInstances.put(pluginId, instance);
         pluginDefaultStates.put(pluginId, defaultEnabled);
         pluginStates.put(pluginId, defaultEnabled);
+        if (info.isConfigurable()) {
+            pendingConfigInitializationPluginIds.add(pluginId);
+        }
+        if (instance instanceof PluginStartupLifecycle) {
+            pendingStartupInitializationPluginIds.add(pluginId);
+        }
         refreshCriticalFlags(type);
         
         LOGGER.debug("[PluginManager] Registered plugin {} with default enabled={}", pluginId,

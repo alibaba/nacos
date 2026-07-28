@@ -38,10 +38,10 @@ public final class ControlPluginRegistry {
     
     ControlPluginRegistry(Collection<ControlManagerBuilder> builders) {
         Map<String, ControlPluginAdapter> result = new LinkedHashMap<>();
-        Map<String, String> normalizedNames = new LinkedHashMap<>();
+        Map<String, ControlManagerBuilder> normalizedBuilders = new LinkedHashMap<>();
         if (builders != null) {
             for (ControlManagerBuilder builder : builders) {
-                registerBuilder(result, normalizedNames, builder);
+                registerBuilder(result, normalizedBuilders, builder);
             }
         }
         plugins = Collections.unmodifiableMap(result);
@@ -61,20 +61,25 @@ public final class ControlPluginRegistry {
     }
     
     private void registerBuilder(Map<String, ControlPluginAdapter> result,
-        Map<String, String> normalizedNames, ControlManagerBuilder builder) {
+        Map<String, ControlManagerBuilder> normalizedBuilders, ControlManagerBuilder builder) {
         if (builder == null) {
-            throw new IllegalStateException("Control manager builder cannot be null");
+            Loggers.CONTROL.warn("Ignore null control manager builder.");
+            return;
         }
         String pluginName = builder.getName();
         if (StringUtils.isBlank(pluginName)) {
-            throw new IllegalStateException(
-                "Control manager builder name cannot be blank: " + builder.getClass().getName());
+            Loggers.CONTROL.warn("Ignore control manager builder with blank name, class={}.",
+                builder.getClass().getName());
+            return;
         }
         String normalizedName = pluginName.toLowerCase(Locale.ROOT);
-        String existingName = normalizedNames.putIfAbsent(normalizedName, pluginName);
-        if (existingName != null) {
-            throw new IllegalStateException(
-                "Duplicate control plugin name: " + existingName + ", " + pluginName);
+        ControlManagerBuilder existingBuilder =
+            normalizedBuilders.putIfAbsent(normalizedName, builder);
+        if (existingBuilder != null) {
+            Loggers.CONTROL.warn("Ignore duplicate control plugin, name={}, existingClass={}, "
+                + "ignoredClass={}.", pluginName, existingBuilder.getClass().getName(),
+                builder.getClass().getName());
+            return;
         }
         result.put(pluginName, new ControlPluginAdapter(builder));
         Loggers.CONTROL.info("Found control manager plugin, name={}, class={}", pluginName,

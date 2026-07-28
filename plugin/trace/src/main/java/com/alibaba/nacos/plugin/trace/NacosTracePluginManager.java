@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +51,13 @@ public class NacosTracePluginManager {
         Collection<NacosTraceSubscriber> plugins =
             NacosServiceLoader.load(NacosTraceSubscriber.class);
         for (NacosTraceSubscriber each : plugins) {
-            this.traceSubscribers.put(each.getName(), each);
-            LOGGER.info("[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.",
-                each.getClass(),
-                each.getName());
+            String name = each == null ? null : each.getName();
+            if (PluginRegistryUtils.registerFirst(traceSubscribers, PluginType.TRACE.getType(),
+                name, each, LOGGER)) {
+                LOGGER.info(
+                    "[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.",
+                    each.getClass(), name);
+            }
         }
     }
     

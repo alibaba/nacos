@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.datasource.manager;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +46,17 @@ public class DatabaseDialectManager {
     }
     
     static {
+        loadInitial();
+    }
+    
+    private static void loadInitial() {
         //加载多种数据库方言为映射信息
         Collection<DatabaseDialect> dialectList = NacosServiceLoader.load(DatabaseDialect.class);
         
         for (DatabaseDialect dialect : dialectList) {
-            SUPPORT_DIALECT_MAP.put(dialect.getType(), dialect);
+            String dialectType = dialect == null ? null : dialect.getType();
+            PluginRegistryUtils.registerFirst(SUPPORT_DIALECT_MAP,
+                PluginType.DATASOURCE_DIALECT.getType(), dialectType, dialect, LOGGER);
         }
         if (SUPPORT_DIALECT_MAP.isEmpty()) {
             LOGGER.warn(

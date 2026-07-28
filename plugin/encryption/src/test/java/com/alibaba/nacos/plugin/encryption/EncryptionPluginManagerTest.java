@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,12 +54,19 @@ class EncryptionPluginManagerTest {
     
     @Test
     void testJoin() {
-        EncryptionPluginManager.join(new TestEncryptionPluginService("aes"));
-        assertNotNull(EncryptionPluginManager.instance().findEncryptionService("aes"));
+        EncryptionPluginService first = new TestEncryptionPluginService("test-replace");
+        EncryptionPluginService replacement = new TestEncryptionPluginService("test-replace");
+        
+        EncryptionPluginManager.join(first);
+        EncryptionPluginManager.join(replacement);
+        
+        assertSame(replacement,
+            EncryptionPluginManager.instance().findEncryptionService("test-replace").get());
     }
     
     @Test
     void testFindEncryptionService() {
+        EncryptionPluginManager.join(new TestEncryptionPluginService("aes"));
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
         Optional<EncryptionPluginService> optional = instance.findEncryptionService("aes");
         assertTrue(optional.isPresent());

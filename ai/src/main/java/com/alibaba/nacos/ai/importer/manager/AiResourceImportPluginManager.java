@@ -24,9 +24,12 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -45,6 +48,9 @@ import java.util.function.Supplier;
  */
 @Service
 public class AiResourceImportPluginManager {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AiResourceImportPluginManager.class);
     
     private static final List<String> DEFAULT_CAPABILITIES =
         List.of("search", "validate", "execute");
@@ -78,15 +84,9 @@ public class AiResourceImportPluginManager {
         Map<String, AiResourceImportServiceBuilder> result = new LinkedHashMap<>();
         if (CollectionUtils.isNotEmpty(discovered)) {
             for (AiResourceImportServiceBuilder each : discovered) {
-                String pluginName = each.pluginName();
-                if (StringUtils.isBlank(pluginName)) {
-                    throw new IllegalStateException(
-                        "AI resource import plugin name must not be empty.");
-                }
-                if (result.putIfAbsent(pluginName, each) != null) {
-                    throw new IllegalStateException(
-                        "Duplicate AI resource import plugin name: " + pluginName);
-                }
+                String pluginName = each == null ? null : each.pluginName();
+                PluginRegistryUtils.registerFirst(result,
+                    PluginType.AI_RESOURCE_IMPORT.getType(), pluginName, each, LOGGER);
             }
         }
         builders = Collections.unmodifiableMap(result);

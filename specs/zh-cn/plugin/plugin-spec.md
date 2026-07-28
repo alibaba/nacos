@@ -171,7 +171,11 @@ adapter 也可以不实现该生命周期。该操作必须幂等，类型延迟
 插件启动必须具备确定性：
 
 - 一个插件类型和插件名称组合只能对应一个运行时插件实例。
-- 同一插件类型下重复的插件名称不适合稳定运行。
+- 插件发现采用 first-wins 注册。名称为空或实例为 null 的实现记录 WARN 后忽略；
+  后发现实现与已有 `type:name` 重复时，保留先发现实现，记录包含两个实现类的 WARN
+  并忽略后来实现。这类发现冲突本身不阻塞 Nacos 启动。
+- provider 从多个 SPI 实现构造返回 Map 时也必须使用相同的 first-wins 规则，不得在
+  返回 Core 前静默覆盖先发现实现。
 - 插件实现不得改变 Nacos 共享资源标识、响应封装或错误约定的含义。
 
 ## 状态与配置
@@ -320,6 +324,13 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
 `enabled` 是插件实现统一状态的保留 item key，插件不得在 `ConfigItemDefinition` 中将其
 声明为普通配置项。
+
+definition 发现同样采用 first-wins 归一化。null definition、空 item key 和保留的
+`enabled` key 记录 WARN 后忽略；后来 item key 或 alias 与先前 definition 已占用的输入
+key 冲突时，保留先发现 definition，记录 WARN 并忽略后来 definition 或 alias，其中包括
+normalized full key 冲突。管理器在归一化前复制 definition 元数据，不修改插件持有对象。
+`PRE_CONTEXT` 插件声明的 `RUNTIME` 生效模式在副本中按 `RESTART` 处理，原始 definition
+保持不变。
 
 ### 配置来源与值元数据
 

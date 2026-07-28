@@ -43,6 +43,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -134,14 +135,18 @@ class VisibilityPluginManagerTest {
         properties.setProperty("nacos.plugin.visibility.custom.timeout", "1000");
         properties.setProperty("nacos.plugin.visibility.other.timeout", "2000");
         TestVisibilityService service = new TestVisibilityService("custom");
+        TestVisibilityService duplicate = new TestVisibilityService("custom");
         
+        registerVisibilityService(null, properties);
         registerVisibilityService(service, properties);
+        registerVisibilityService(duplicate, properties);
         registerVisibilityService(new TestVisibilityService(""), properties);
         registerVisibilityService(new ThrowNameVisibilityService(), properties);
         registerVisibilityService(new ThrowInitVisibilityService("throw-init"), properties);
         
         assertEquals(service, serviceMap.get("custom"));
         assertEquals("1000", service.initProperties.getProperty("timeout"));
+        assertNull(duplicate.initProperties);
         assertFalse(service.initProperties.containsKey("nacos.plugin.visibility.custom.timeout"));
         assertFalse(serviceMap.containsKey(""));
         assertFalse(serviceMap.containsKey("throw-init"));

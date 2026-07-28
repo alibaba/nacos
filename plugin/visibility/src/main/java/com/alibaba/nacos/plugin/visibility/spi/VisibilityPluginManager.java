@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.visibility.spi;
 
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -79,6 +80,11 @@ public class VisibilityPluginManager {
     }
     
     private void registerVisibilityService(VisibilityService service, Properties allProperties) {
+        if (service == null) {
+            PluginRegistryUtils.registerFirst(visibilityServiceMap,
+                PluginType.VISIBILITY.getType(), null, null, LOGGER);
+            return;
+        }
         String serviceName;
         try {
             serviceName = service.getVisibilityServiceName();
@@ -92,6 +98,11 @@ public class VisibilityPluginManager {
             LOGGER.warn(
                 "[VisibilityPluginManager] VisibilityService({}) has empty serviceName, skip.",
                 service.getClass());
+            return;
+        }
+        if (visibilityServiceMap.containsKey(serviceName)) {
+            PluginRegistryUtils.registerFirst(visibilityServiceMap,
+                PluginType.VISIBILITY.getType(), serviceName, service, LOGGER);
             return;
         }
         if (!service.isConfigurable()) {
@@ -112,9 +123,11 @@ public class VisibilityPluginManager {
                 return;
             }
         }
-        visibilityServiceMap.put(serviceName, service);
-        LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",
-            service.getClass(), serviceName);
+        if (PluginRegistryUtils.registerFirst(visibilityServiceMap,
+            PluginType.VISIBILITY.getType(), serviceName, service, LOGGER)) {
+            LOGGER.info("[VisibilityPluginManager] Loaded VisibilityService({}:{}) successfully.",
+                service.getClass(), serviceName);
+        }
     }
     
     private Properties resolveServiceProperties(Properties allProperties, String serviceName) {

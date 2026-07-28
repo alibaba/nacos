@@ -17,11 +17,14 @@
 package com.alibaba.nacos.plugin.environment;
 
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import com.alibaba.nacos.plugin.environment.spi.EnvironmentPluginProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +35,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -124,6 +128,25 @@ class CustomEnvironmentPluginManagerTest {
         assertEquals(PluginType.ENVIRONMENT, provider.getPluginType());
         assertTrue(provider.getAllPlugins().containsKey("spi-environment"));
         assertFalse(provider.getAllPlugins().containsKey(""));
+    }
+    
+    @Test
+    void testEnvironmentPluginProviderKeepsFirstValidIdentity() {
+        TestEnvironmentPlugin first = new TestEnvironmentPlugin("same", 1, "-first");
+        TestEnvironmentPlugin duplicate = new TestEnvironmentPlugin("same", 2, "-duplicate");
+        TestEnvironmentPlugin blank = new TestEnvironmentPlugin(" ", 3, "-blank");
+        try (MockedStatic<NacosServiceLoader> serviceLoader =
+            Mockito.mockStatic(NacosServiceLoader.class)) {
+            serviceLoader.when(
+                () -> NacosServiceLoader.load(CustomEnvironmentPluginService.class))
+                .thenReturn(Arrays.asList(null, blank, first, duplicate));
+            
+            Map<String, CustomEnvironmentPluginService> plugins =
+                new EnvironmentPluginProvider().getAllPlugins();
+            
+            assertEquals(1, plugins.size());
+            assertSame(first, plugins.get("same"));
+        }
     }
     
     private static class TestEnvironmentPlugin implements CustomEnvironmentPluginService {
