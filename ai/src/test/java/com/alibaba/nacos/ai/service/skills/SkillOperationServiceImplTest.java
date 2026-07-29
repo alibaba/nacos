@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -1482,18 +1483,23 @@ class SkillOperationServiceImplTest {
             .thenReturn(Optional.of(mockFilter));
         
         setupRequestContext("attackerUser");
-        List<BatchUploadResult> results =
-            skillOperationService.batchUploadSkillsFromZip(namespaceId,
-                createMultiSkillZipBytes(), false);
+        BatchUploadResult batchResult = skillOperationService.batchUploadSkillsFromZip(
+            namespaceId, createMultiSkillZipBytes(), false);
         
+        List<BatchUploadItemResult> results = batchResult.getResults();
         assertEquals(1, results.size());
-        BatchUploadResult result = results.get(0);
+        BatchUploadItemResult result = results.get(0);
         assertFalse(result.isSuccess());
         assertEquals("test-skill", result.getName());
         assertEquals(SkillUploadPrecheckResult.PRECHECK_CODE_NO_PERMISSION,
             result.getErrorCode());
         assertEquals("ownerUser", result.getOwner());
         assertTrue(result.getErrorMessage().contains("No permission"));
+        assertTrue(batchResult.getSucceeded().isEmpty());
+        assertEquals(1, batchResult.getFailed().size());
+        assertEquals("test-skill", batchResult.getFailed().get(0).getName());
+        assertEquals("ownerUser", batchResult.getFailed().get(0).getOwner());
+        assertTrue(batchResult.getFailed().get(0).getReason().contains("No permission"));
     }
     
     @Test

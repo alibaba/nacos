@@ -110,7 +110,7 @@ public class SkillNoopHandler implements SkillHandler {
     }
     
     @Override
-    public List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,

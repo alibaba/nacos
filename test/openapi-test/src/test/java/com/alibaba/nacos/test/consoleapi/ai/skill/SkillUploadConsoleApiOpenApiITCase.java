@@ -129,9 +129,12 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 uploadQuery(false, null, null), "file", "skills.zip", "application/zip",
                 buildMultiSkillZip(skills));
         JsonNode data = assertUploadResult(batch).get("data");
-        assertEquals(2, data.size(), data.toString());
-        assertBatchSuccess(data, firstSkill);
-        assertBatchSuccess(data, secondSkill);
+        assertArrayContains(data.get("succeeded"), firstSkill);
+        assertArrayContains(data.get("succeeded"), secondSkill);
+        assertEquals(0, data.get("failed").size(), data.toString());
+        assertEquals(2, data.get("results").size(), data.toString());
+        assertBatchSuccess(data.get("results"), firstSkill);
+        assertBatchSuccess(data.get("results"), secondSkill);
         addCleanup(() -> deleteSkillQuietly(firstSkill));
         addCleanup(() -> deleteSkillQuietly(secondSkill));
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.0"))
@@ -145,8 +148,10 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 uploadQuery(false, null, null), "file", "short-version-skills.zip",
                 "application/zip", buildMultiSkillZip(shortVersionSkills, "1.0"));
         JsonNode shortVersionData = assertUploadResult(shortVersionBatch).get("data");
-        assertEquals(1, shortVersionData.size(), shortVersionData.toString());
-        assertBatchSuccess(shortVersionData, firstSkill);
+        assertArrayContains(shortVersionData.get("succeeded"), firstSkill);
+        assertEquals(0, shortVersionData.get("failed").size(), shortVersionData.toString());
+        assertEquals(1, shortVersionData.get("results").size(), shortVersionData.toString());
+        assertBatchSuccess(shortVersionData.get("results"), firstSkill);
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.1"))
                 .get("data"), firstSkill, "1.0.1", "Batch body A v2.", "guide for " + firstSkill);
 
@@ -164,10 +169,14 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 uploadQuery(false, null, null), "file", "partial.zip", "application/zip",
                 partialZip);
         JsonNode partialData = assertUploadResult(partial).get("data");
-        assertEquals(3, partialData.size(), partialData.toString());
-        assertBatchSuccess(partialData, validSkill);
-        assertBatchFailure(partialData, "invalid-skill", "INVALID_SKILL");
-        assertBatchFailure(partialData, "not-a-skill", "NOT_A_SKILL");
+        assertArrayContains(partialData.get("succeeded"), validSkill);
+        assertEquals(2, partialData.get("failed").size(), partialData.toString());
+        assertLegacyBatchFailure(partialData.get("failed"), "invalid-skill");
+        assertLegacyBatchFailure(partialData.get("failed"), "not-a-skill");
+        assertEquals(3, partialData.get("results").size(), partialData.toString());
+        assertBatchSuccess(partialData.get("results"), validSkill);
+        assertBatchFailure(partialData.get("results"), "invalid-skill", "INVALID_SKILL");
+        assertBatchFailure(partialData.get("results"), "not-a-skill", "NOT_A_SKILL");
         addCleanup(() -> deleteSkillQuietly(validSkill));
     }
 
@@ -217,6 +226,15 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         return root;
     }
 
+    private void assertArrayContains(JsonNode array, String expected) {
+        for (JsonNode item : array) {
+            if (expected.equals(item.asText())) {
+                return;
+            }
+        }
+        throw new AssertionError("Expected " + expected + " in " + array);
+    }
+
     private void assertBatchSuccess(JsonNode array, String expected) {
         for (JsonNode item : array) {
             if (expected.equals(item.get("name").asText())) {
@@ -251,6 +269,16 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
             }
         }
         throw new AssertionError("Expected batch failure " + name + " in " + array);
+    }
+
+    private void assertLegacyBatchFailure(JsonNode array, String name) {
+        for (JsonNode item : array) {
+            if (name.equals(item.get("name").asText())) {
+                assertFalse(item.get("reason").asText().isBlank(), item.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Expected legacy batch failure " + name + " in " + array);
     }
 
     private void assertCompactPrecheckResult(JsonNode precheck) {

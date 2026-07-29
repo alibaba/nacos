@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -371,7 +372,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, secondSkillName));
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, firstSkillName));
         
-        List<BatchUploadResult> results = maintainerService.skill()
+        BatchUploadResult batchResult = maintainerService.skill()
                 .batchUploadSkillsFromZip(NAMESPACE_ID,
                         buildMultiSkillZip(
                                 buildSkill(firstSkillName, "Maintainer SDK IT batch skill one",
@@ -380,11 +381,15 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                                         VERSION)),
                         false);
         
-        assertNotNull(results);
+        assertNotNull(batchResult);
+        List<BatchUploadItemResult> results = batchResult.getResults();
         assertEquals(2, results.size());
-        assertTrue(results.stream().allMatch(BatchUploadResult::isSuccess), results::toString);
+        assertEquals(2, batchResult.getSucceeded().size());
+        assertTrue(batchResult.getFailed().isEmpty());
+        assertTrue(results.stream().allMatch(BatchUploadItemResult::isSuccess),
+                results::toString);
         assertTrue(results.stream().allMatch(
-                result -> BatchUploadResult.ERROR_CODE_SUCCESS.equals(result.getErrorCode())));
+                result -> BatchUploadItemResult.ERROR_CODE_SUCCESS.equals(result.getErrorCode())));
         assertTrue(results.stream().anyMatch(result -> firstSkillName.equals(result.getName())));
         assertTrue(results.stream().anyMatch(result -> secondSkillName.equals(result.getName())));
         assertEquals(firstSkillName, maintainerService.skill()

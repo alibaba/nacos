@@ -129,7 +129,7 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
         return clientHolder.getAiMaintainerService().skill().batchUploadSkillsFromZip(namespaceId,

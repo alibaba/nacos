@@ -64,10 +64,10 @@ public interface SkillOperationService {
      * @param namespaceId namespace ID
      * @param zipBytes zip file bytes containing multiple skill subdirectories
      * @param overwrite whether to overwrite existing drafts
-     * @return one result for each skill
+     * @return batch upload result with per-skill results
      * @throws NacosException if zip parsing fails entirely (e.g. invalid format, no SKILL.md found)
      */
-    List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException;
     
