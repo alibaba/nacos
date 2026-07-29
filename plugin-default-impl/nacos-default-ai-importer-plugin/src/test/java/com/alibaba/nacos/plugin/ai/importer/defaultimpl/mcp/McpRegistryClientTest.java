@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.DefaultImportHttpClient;
 import com.alibaba.nacos.plugin.ai.importer.defaultimpl.http.ImportHttpResponse;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +41,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -58,16 +56,16 @@ class McpRegistryClientTest {
     
     @BeforeEach
     void setUp() {
-        client = new McpRegistryClient(httpClient);
+        client = new McpRegistryClient(ENDPOINT, httpClient);
     }
     
     @Test
     void testFetchOfficialRegistryPageBuildsQueryAndAdaptsServers() throws Exception {
-        when(httpClient.get(any(AiResourceImportSource.class),
+        when(httpClient.get(
             eq(ENDPOINT + "?cursor=cursor-1&limit=3&search=redis+cache"), eq(20),
             eq("application/json"))).thenReturn(response(200, registryPageJson()));
         
-        McpRegistryClient.Page page = client.fetchOfficialRegistryPage(source(), "cursor-1", 3,
+        McpRegistryClient.Page page = client.fetchOfficialRegistryPage("cursor-1", 3,
             "redis cache");
         
         assertEquals("next-1", page.getNextCursor());
@@ -93,13 +91,12 @@ class McpRegistryClientTest {
     @Test
     void testFetchOfficialRegistryPageSupportsExistingQueryAndEmptyList() throws Exception {
         String endpoint = ENDPOINT + "?sort=name";
-        AiResourceImportSource source = source();
-        source.setEndpoint(endpoint);
-        when(httpClient.get(any(AiResourceImportSource.class), eq(endpoint + "&limit=30"),
-            eq(20), eq("application/json"))).thenReturn(response(200, "{}"));
+        McpRegistryClient queryClient = new McpRegistryClient(endpoint, httpClient);
+        when(httpClient.get(eq(endpoint + "&limit=30"), eq(20), eq("application/json")))
+            .thenReturn(response(200, "{}"));
         
         McpRegistryClient.Page page =
-            client.fetchOfficialRegistryPage(source, null, 30, null);
+            queryClient.fetchOfficialRegistryPage(null, 30, null);
         
         assertEquals(0, page.getServers().size());
         assertNull(page.getNextCursor());
@@ -107,67 +104,62 @@ class McpRegistryClientTest {
     
     @Test
     void testFetchOfficialRegistryPageRejectsMissingEndpoint() {
-        AiResourceImportSource source = source();
-        source.setEndpoint(" ");
-        
         assertThrows(IllegalArgumentException.class,
-            () -> client.fetchOfficialRegistryPage(source, null, null, null));
-        assertThrows(IllegalArgumentException.class,
-            () -> client.fetchOfficialRegistryPage(null, null, null, null));
+            () -> new McpRegistryClient(" ", httpClient));
     }
     
     @Test
     void testFetchOfficialRegistryPageRejectsHttpError() throws Exception {
-        when(httpClient.get(any(AiResourceImportSource.class), eq(ENDPOINT), eq(20),
+        when(httpClient.get(eq(ENDPOINT), eq(20),
             eq("application/json"))).thenReturn(response(500, "{}"));
         
         assertThrows(IllegalStateException.class,
-            () -> client.fetchOfficialRegistryPage(source(), null, null, null));
+            () -> client.fetchOfficialRegistryPage(null, null, null));
     }
     
     @Test
     void testFetchOfficialRegistryPageRejectsInvalidJson() throws Exception {
-        when(httpClient.get(any(AiResourceImportSource.class), eq(ENDPOINT), eq(20),
+        when(httpClient.get(eq(ENDPOINT), eq(20),
             eq("application/json"))).thenReturn(response(200, "{"));
         
         assertThrows(IllegalStateException.class,
-            () -> client.fetchOfficialRegistryPage(source(), null, null, null));
+            () -> client.fetchOfficialRegistryPage(null, null, null));
     }
     
     @Test
     void testFetchOfficialRegistryServerFindsByName() throws Exception {
-        when(httpClient.get(any(AiResourceImportSource.class),
+        when(httpClient.get(
             eq(ENDPOINT + "?limit=30&search=io.nacos%2Fstdio"), eq(20),
             eq("application/json"))).thenReturn(response(200, registryPageJson()));
         
         assertEquals("io.nacos/stdio",
-            client.fetchOfficialRegistryServer(source(), "io.nacos/stdio", 0).getName());
+            client.fetchOfficialRegistryServer("io.nacos/stdio", 0).getName());
     }
     
     @Test
     void testFetchOfficialRegistryServerRejectsBlankOrMissingServer() throws Exception {
         assertThrows(IllegalArgumentException.class,
-            () -> client.fetchOfficialRegistryServer(source(), " ", 30));
-        when(httpClient.get(any(AiResourceImportSource.class), eq(ENDPOINT + "?limit=1&search=x"),
+            () -> client.fetchOfficialRegistryServer(" ", 30));
+        when(httpClient.get(eq(ENDPOINT + "?limit=1&search=x"),
             eq(20), eq("application/json"))).thenReturn(response(200, registryPageJson()));
         
         assertThrows(IllegalStateException.class,
-            () -> client.fetchOfficialRegistryServer(source(), "x", 1));
+            () -> client.fetchOfficialRegistryServer("x", 1));
     }
     
     @Test
     void testFetchOfficialRegistryPageRejectsMissingRemoteUrl() throws Exception {
-        when(httpClient.get(any(AiResourceImportSource.class), eq(ENDPOINT), eq(20),
+        when(httpClient.get(eq(ENDPOINT), eq(20),
             eq("application/json"))).thenReturn(response(200, invalidRemotePageJson()));
         
         assertThrows(IllegalStateException.class,
-            () -> client.fetchOfficialRegistryPage(source(), null, null, null));
+            () -> client.fetchOfficialRegistryPage(null, null, null));
     }
     
     @Test
     void testConstructorWithHttpClientAndNullServerEntry() throws Exception {
         assertThrows(Exception.class,
-            () -> new McpRegistryClient(new HttpClient() {
+            () -> new McpRegistryClient(ENDPOINT, new HttpClient() {
                 
                 @Override
                 public java.util.Optional<java.net.CookieHandler> cookieHandler() {
@@ -236,12 +228,12 @@ class McpRegistryClientTest {
                     return java.util.concurrent.CompletableFuture.failedFuture(
                         new UnsupportedOperationException());
                 }
-            }).fetchOfficialRegistryPage(source(), null, null, null));
+            }).fetchOfficialRegistryPage(null, null, null));
         
-        when(httpClient.get(any(AiResourceImportSource.class), eq(ENDPOINT), eq(20),
+        when(httpClient.get(eq(ENDPOINT), eq(20),
             eq("application/json"))).thenReturn(response(200, "{\"servers\":[{\"server\":null}]}"));
         assertThrows(IllegalStateException.class,
-            () -> client.fetchOfficialRegistryPage(source(), null, null, null));
+            () -> client.fetchOfficialRegistryPage(null, null, null));
     }
     
     @Test
@@ -261,10 +253,28 @@ class McpRegistryClientTest {
         assertThrows(Exception.class, () -> method.invoke(client, detail));
     }
     
-    private AiResourceImportSource source() {
-        AiResourceImportSource source = new AiResourceImportSource();
-        source.setEndpoint(ENDPOINT);
-        return source;
+    @Test
+    void testAdaptsUnknownProtocolAndMalformedPort() throws Exception {
+        Map<String, Object> noTransport = new HashMap<>();
+        noTransport.put("name", "io.nacos/no-transport");
+        Map<String, Object> malformedPortRemote = new HashMap<>();
+        malformedPortRemote.put("type", "custom");
+        malformedPortRemote.put("url", "https://example.com:not-a-port/path");
+        Map<String, Object> malformedPort = new HashMap<>();
+        malformedPort.put("name", "io.nacos/malformed-port");
+        malformedPort.put("remotes", Collections.singletonList(malformedPortRemote));
+        String body = JacksonUtils.toJson(Collections.singletonMap("servers", Arrays.asList(
+            serverResponse(noTransport, null, null),
+            serverResponse(malformedPort, null, null))));
+        when(httpClient.get(eq(ENDPOINT), eq(20), eq("application/json")))
+            .thenReturn(response(200, body));
+        
+        McpRegistryClient.Page page =
+            client.fetchOfficialRegistryPage(null, null, null);
+        
+        assertNull(page.getServers().get(0).getProtocol());
+        assertEquals("example.com:not-a-port:443", page.getServers().get(1)
+            .getRemoteServerConfig().getFrontEndpointConfigList().get(0).getEndpointData());
     }
     
     private ImportHttpResponse response(int status, String body) {

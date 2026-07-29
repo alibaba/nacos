@@ -132,6 +132,9 @@ Rules:
   scope mutation;
 - query operations should use visibility query advice instead of post-filtering
   large result sets whenever possible.
+- caller-supplied business filters such as owner and scope must be intersected
+  with visibility query advice before count and pagination; type implementations
+  must not overwrite visibility conditions after conversion.
 
 The extension contract is defined by the
 [Visibility Plugin Spec](../auth/visibility-plugin-spec.md).

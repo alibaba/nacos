@@ -94,10 +94,27 @@ Nacos 资源身份、鉴权和 payload 语义，因为它们会影响 SDK 发出
 核心插件管理器记录插件的加载状态和启用状态，本身不定义执行形态。领域管理器负责稳定地
 应用对应执行形态。
 
+对于 `ai-resource-import`，每个 managed Builder 实现表示一个外部来源。请求的
+`sourceId` 等于 managed `pluginName`；领域在从 Builder 已接受配置快照创建请求级 Service
+之前，必须检查插件类型和实现 state。
+
 执行形态和关键能力属于插件类型，而不是某个内置实现。共享 `PluginType` 必须暴露
 `executionMode` 和 `critical`；已有 `exclusive` 信息继续由
 `executionMode == EXCLUSIVE` 推导，以保持 API 兼容。插件实现是否可配置由
 `PluginConfigSpec.isConfigurable()` 决定，同一插件类型下允许同时存在可配置和零配置实现。
+
+## 初始化阶段
+
+初始化阶段是由 `PluginType` 声明的插件类型能力，不允许插件实现自行选择。
+
+| 阶段 | 含义 |
+|------|------|
+| `PRE_CONTEXT` | 在自定义环境值写入 Spring environment 之前完成发现、配置解析和 apply。 |
+| `STANDARD` | Spring context refresh 后，通过常规核心插件管理器完成初始化。 |
+
+`environment` 是内置的 `PRE_CONTEXT` 类型，其余内置类型均为 `STANDARD`。两个阶段共享
+`PluginInitializer` 编排契约。pre-context initializer 必须把已初始化的原始实例及其已接受
+配置快照交给后续核心管理器，后续流程不得再次加载 provider。
 
 ## SPI 层次
 
@@ -110,9 +127,10 @@ Nacos 插件包含两个相关的 SPI 层次：
 已接入统一配置的领域插件 SPI 统一继承 `PluginConfigSpec`。该契约的兼容默认实现返回空
 definitions、空 current map，并提供空 apply 回调，因此按旧版领域 SPI 编译的实现和新版
 零配置实现都会保持 `configurable=false`。声明至少一个 `ConfigItemDefinition` 的插件属于
-可配置实现，必须实现 current-map 和 apply 回调。`environment` 在统一 bootstrap 配置生命周期
-完成设计前继续作为例外；`control` 使用只声明 definitions 的 builder 和稳定的
-`PluginConfigSpec` adapter。`ai-resource-import` 在自身重构前仍不进入统一管理。
+可配置实现，必须实现 current-map 和 apply 回调。environment SPI 继承该契约，并通过
+pre-context 阶段初始化；`control` 通过稳定的 managed configuration adapter 接入。
+`ai-resource-import` 的稳定请求 Service Builder 本身实现 `PluginConfigSpec`，请求级
+Service 不再注册为第二个插件。
 支持启停状态判断的插件类别，应通过 `PluginStateCheckerHolder` 获取状态，而不是维护一套
 独立状态来源。
 
@@ -125,9 +143,11 @@ definitions、空 current map，并提供空 apply 回调，因此按旧版领�
 插件实现通过 Nacos SPI 加载。部署时可以从 classpath 或服务端插件目录提供插件。
 插件实现必须能在不修改 Nacos 服务端代码的情况下被加载。
 
-核心 `PluginManager` 会在 Spring 上下文刷新完成后先发现轻量 `PluginProvider` 实现。
-只有领域 policy 当前允许加载的插件类型才会立即调用 `getAllPlugins`；active critical 类型
-不受可选加载判据影响，必须加载。对于被延迟的非 critical 类型，后续服务配置刷新使加载
+pre-context initializer 会在自定义环境处理前发现 policy 允许加载的 `PRE_CONTEXT`
+provider，只解析 `STATIC > DEFAULT`，对可配置实现执行 apply，并把实例交给领域 manager。
+Spring context refresh 后，standard initializer 再发现轻量 `STANDARD` `PluginProvider`
+实现。只有领域 policy 当前允许加载的插件类型才会立即调用 `getAllPlugins`；active critical
+类型不受可选加载判据影响，必须加载。对于被延迟的非 critical 类型，后续服务配置刷新使加载
 判据变为 true 时，必须先发现实现、恢复持久化实现 state、解析 effective config 并调用
 `applyConfig`，然后才能让这些实现参与执行。类型一旦加载，加载判据再次变为 false 时不卸载
 实例，仍由所属领域入口总开关阻止执行。
@@ -151,7 +171,13 @@ adapter 也可以不实现该生命周期。该操作必须幂等，类型延迟
 插件启动必须具备确定性：
 
 - 一个插件类型和插件名称组合只能对应一个运行时插件实例。
-- 同一插件类型下重复的插件名称不适合稳定运行。
+- 同类型 provider 按 `PluginProvider.getOrder()` 升序处理；order 相同时保持 SPI 发现
+  顺序。该顺序在 first-wins 注册前生效。
+- 插件发现采用 first-wins 注册。名称为空或实例为 null 的实现记录 WARN 后忽略；
+  后发现实现与已有 `type:name` 重复时，保留先发现实现，记录包含两个实现类的 WARN
+  并忽略后来实现。这类发现冲突本身不阻塞 Nacos 启动。
+- provider 从多个 SPI 实现构造返回 Map 时也必须使用相同的 first-wins 规则，不得在
+  返回 Core 前静默覆盖先发现实现。
 - 插件实现不得改变 Nacos 共享资源标识、响应封装或错误约定的含义。
 
 ## 状态与配置
@@ -222,7 +248,7 @@ critical 实现缺失。统一启动流程随后发现 provider、合并暂存�
 | `nacos.plugin.visibility.type` | 历史 visibility 选择 key，仅用于推导对应实现的初始状态；运行时路由从 enabled 实现中按领域输入选择。 |
 | `nacos.plugin.ai-pipeline.type` | 历史 Pipeline 链成员输入，仅由 Core 按 `RESTART` 推导实现初始状态；实现配置和顺序统一使用各节点的 `PluginConfigSpec`。 |
 | `nacos.plugin.datasource.log.enabled` | 数据源行为和日志配置，不是实现启停状态。 |
-| `nacos.ai.resource.import.enabled` | 历史 AI import 链路，随 AI importer 重构另行移除或迁移。 |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` 的历史 alias；标准 key 存在时优先。AI Resource Import 默认开启，只有显式 `false` 才关闭。 |
 
 后续不得新增与逐实现 state 含义重复的插件族开关。核心模块或领域能力入口开关可以决定是否
 进入整项能力，但不能选择或启停某个具体实现；具体实现是否参与执行只能由逐实现 plugin
@@ -295,11 +321,19 @@ nacos.plugin.{pluginType}.{pluginName}.{itemKey}
 | `effectMode` | 生效模式，`RUNTIME` 表示可运行时生效，`RESTART` 表示需要重启。 |
 
 `aliases` 用于静态配置兼容读取，也可以作为迁移兼容的 API 输入。使用 alias 时应记录
-迁移提示日志。完成归一化后，alias
+迁移提示日志。normalized 标准 key 只要存在就以其值为准，即使值为空字符串也不再回退
+alias；只有标准 key 不存在时才读取 alias。完成归一化后，alias
 不应写入运行时持久化文件或 local-only 内存表。如果输入同时包含同一配置项的多个
 alias，则按定义中的声明顺序取第一个生效，并由服务端记录其余 alias 被忽略的日志。
 `enabled` 是插件实现统一状态的保留 item key，插件不得在 `ConfigItemDefinition` 中将其
 声明为普通配置项。
+
+definition 发现同样采用 first-wins 归一化。null definition、空 item key 和保留的
+`enabled` key 记录 WARN 后忽略；后来 item key 或 alias 与先前 definition 已占用的输入
+key 冲突时，保留先发现 definition，记录 WARN 并忽略后来 definition 或 alias，其中包括
+normalized full key 冲突。管理器在归一化前复制 definition 元数据，不修改插件持有对象。
+`PRE_CONTEXT` 插件声明的 `RUNTIME` 生效模式在副本中按 `RESTART` 处理，原始 definition
+保持不变。
 
 ### 配置来源与值元数据
 
@@ -308,6 +342,9 @@ alias，则按定义中的声明顺序取第一个生效，并由服务端记录
 ```text
 LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
 ```
+
+完整优先级只适用于 `STANDARD` 插件。`PRE_CONTEXT` 插件只解析 `STATIC > DEFAULT`，
+不加载也不接受 runtime persisted 或 local-only source。
 
 | 来源 | 含义 |
 |------|------|
@@ -352,10 +389,9 @@ core source registry 统一持有已启用 resolver 及其固定顺序。四个�
 的 API 适配层不得分别维护硬编码的互斥类型或关键实现列表。
 
 启动期或构建期插件不能通过较晚的运行时检查满足该契约。`control` 会先完成统一配置 apply，
-再构建并安装启动期 manager bundle，同时拒绝运行时切换实现。`environment` 仍会在 core
-插件管理器就绪前转换 Spring 属性；管理 API 能够把它的状态更新报告为已生效之前，必须先
-定义其状态能力和重启/bootstrap 语义。
-`ai-resource-import` 当前没有通过 `PluginProvider` 暴露，不属于统一状态管理范围。
+再构建并安装启动期 manager bundle，同时拒绝运行时切换实现。`environment` 在 pre-context
+阶段初始化，只有启动时接受的状态可以参与属性转换，运行时状态修改必须拒绝。
+`ai-resource-import` 通过稳定的 Builder 纳入统一管理。
 
 ### 配置更新兼容性
 
@@ -392,6 +428,13 @@ source 的 effective value 复制成 runtime override。服务端应记录 WARN 
 3. 运行时请求完整替换一个 `RUNTIME_PERSISTED` 或 `LOCAL_ONLY` source map，随后
    重新解析全部来源；每次接受的请求都调用插件实现，包括使用相同完整 map 发起的
    手动重试。
+
+`PRE_CONTEXT` 插件是该流程显式定义的启动期变体。Core 在自定义环境处理前捕获其静态
+source，解析 `STATIC > DEFAULT`，校验并应用结果，同时保存已接受快照供后续插件 detail
+查询。若 pre-context 实现声明 `RUNTIME` definition，Core 必须复制该 definition 并按
+`RESTART` 暴露，同时输出只包含 plugin ID 和 item key 的 WARN，不得修改插件持有的原对象。
+运行时配置 API、持久化或 local-only 恢复及 `ServerConfigChangeEvent` 刷新均不得更新
+pre-context 插件。
 
 `STATIC` resolver 应维护每个插件的已接受快照，而不是让每次 detail 查询独立读取实时
 环境值。启动时捕获全部已定义静态字段，并允许应用两种 effect mode。启动完成后，

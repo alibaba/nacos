@@ -44,8 +44,9 @@ HTTP APIs follow the Nacos v3 conventions:
 - Responses use `Result<T>`. New controllers use `@NacosApi`,
   `@Since(version = "3.3.0")`, the matching `ApiType`, `SignType.AI`, and
   `READ` or `WRITE` authorization.
-- GET inputs are query parameters. Write inputs are JSON bodies. `agentName`
-  is compared verbatim and is not a path variable.
+- GET inputs use query parameters. Other HTTP input encodings are defined by
+  the corresponding Client, Admin, or Console binding. `agentName` is compared
+  verbatim and is not a path variable.
 - gRPC continues to use the common Nacos `Payload` stream and
   `metadata.type`; it does not add a protobuf service method.
 
@@ -61,7 +62,7 @@ part of the RAD Schema.
 |---|---|
 | Ordinary Client SDK | The SDK instance is bound to one namespace. Public methods do not accept a namespace argument. The proxy copies the request and injects the bound value before transport. |
 | Client HTTP caller | `namespaceId` may be supplied explicitly. When omitted, the binding inserts the normalized default namespace `public` before invoking RAD. |
-| Maintainer SDK and Admin API | A Maintainer SDK instance is not namespace-bound. Every request explicitly supplies `namespaceId`; no default-namespace overload is provided. |
+| Maintainer SDK and Admin API | A Maintainer SDK instance is not namespace-bound. Admin HTTP Forms retain `namespaceId` and normalize an omitted or blank value to `public`. Maintainer Request and Command payloads do not contain `namespaceId`: an explicit method argument is the sole custom-namespace source, while convenience overloads always use `public`. |
 
 If an ordinary Client SDK accepts a model that already contains a nonempty
 `namespaceId`, it must reject a value different from the SDK namespace and
@@ -69,18 +70,20 @@ must not mutate the caller's object.
 
 ### 1.2 Concurrency, Results, And Errors
 
-Agent metadata updates use `expectedMetaVersion`. Draft content updates are
-allowed only when the target Version is the Resource's current
-`editingVersion` and remains in `draft` status; they follow the existing AI
-Resource update flow. Lists are paged; a `RuntimeEndpointSnapshot` is a
-complete, non-paged snapshot.
+Agent metadata updates reuse the current shared AI Resource update flow. The
+initial Agent Admin contract does not expose an Agent-specific
+`expectedMetaVersion`; conditional metadata updates will be defined together
+with the common `ai_resource` and `ai_resource_version` CAS capability. Draft
+content updates are allowed only when the target Version is the Resource's
+current `editingVersion` and remains in `draft` status. Lists are paged; a
+`RuntimeEndpointSnapshot` is a complete, non-paged snapshot.
 
 | Condition | Required result |
 |---|---|
 | Missing or invalid field, invalid URI/range, or duplicate endpoint natural key | Standard parameter error |
 | Invisible or absent Discover target | `RESOURCE_NOT_FOUND`; no visibility distinction |
-| Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, quota, and conflict validation |
-| Metadata CAS or publisher-payload conflict | `RESOURCE_CONFLICT` |
+| Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, and per-batch quota validation |
+| Converged runtime projection contains conflicting publisher payloads | `RESOURCE_CONFLICT` |
 | Invalid Version lifecycle transition | `ILLEGAL_STATE` |
 | HTTP heartbeat for unknown client | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
@@ -119,8 +122,15 @@ complete replacement results. `getAll`, `selectOneHealthy`, protocol choice,
 priority/weight selection, and actual Agent calling are local SDK helpers, not
 additional remote operations.
 
-Register is a natural-key upsert and does not replace omitted endpoints. The
-SDK stores registration batches as redo intent. The initial implementation may
+One registration batch is the complete desired state for the SDK publisher and
+`(namespaceId, agentName, protocol)`. Register replaces the previous batch,
+including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
+removed. The SDK stores that complete batch as redo intent.
+
+`deregisterAgentEndpoints` remains a convenience method over natural keys. The
+SDK removes those keys from its expected batch and sends the complete remaining
+batch through Register. When no Endpoint remains, it sends a whole-publication
+deregistration. The initial implementation may
 omit a new generic Agent-definition publish method, but existing
 `A2aService.releaseAgentCard` remains functional through the compatibility
 adapter. A later Client SDK revision will provide an optional code-first Agent
@@ -149,8 +159,8 @@ blindly repeated through HTTP.
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
-| POST | `/v3/client/ai/agents/endpoints` | `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | JSON `AgentEndpointDeregistrationBatch` | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | Complete `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | JSON `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
 
 Search query names equal RAD field names. Repeated `tagsAll` values use AND;
@@ -162,11 +172,18 @@ parameters are `protocol`, `transport`, and `endpointSource`.
 `protocolVersion` is singular. `metadataSelector` is one URL-encoded JSON
 object rather than dynamic `metadata.<key>` parameter names.
 
-The Endpoint path deliberately uses only POST and DELETE. POST already upserts
-complete endpoint values, so a general PUT would introduce ambiguous partial
-update semantics. GET is unnecessary because consumers use Discover and
-maintainers use `RuntimeEndpointSnapshot`. DELETE with a JSON body is the only
-0.1 binding and requires clients and gateways that preserve that body.
+The Endpoint path deliberately uses only POST and DELETE. POST replaces the
+current publisher's complete batch for one Agent and protocol, so a general
+PUT would duplicate the same replacement operation. GET is unnecessary because
+consumers use Discover and maintainers use `RuntimeEndpointSnapshot`.
+
+DELETE removes the current HTTP publisher's whole publication for the supplied
+Agent and protocol. It does not accept endpoint keys. The official SDK
+implements partial deregistration by updating its local expected batch and
+POSTing the complete remainder; it uses DELETE only when that remainder is
+empty. A direct HTTP caller likewise owns its complete desired batch. The
+three-field DELETE body is a binding object, not a replacement for the
+application-facing `AgentEndpointDeregistrationBatch` RAD model.
 
 ### 2.4 HTTP Publisher Identity And Liveness
 
@@ -207,7 +224,8 @@ The server routes HTTP publisher state by `clientId` through Distro type
 `lastActiveTime`, and timeout task. Peers receive complete client state needed
 to rebuild the Naming/RAD projection. A new owner starts its failover grace
 period only after receiving a complete snapshot; otherwise it returns
-`HTTP_CLIENT_NOT_FOUND`, and the client redoes every expected endpoint group.
+`HTTP_CLIENT_NOT_FOUND`, and the client redoes every expected complete service
+batch.
 The first accepted write binds the client id to authenticated identity and
 namespace. Later mismatches are rejected. The same string in another module
 does not share liveness or cleanup state.
@@ -220,13 +238,26 @@ does not share liveness or cleanup state.
 | `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | One Discover |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | Subscribe or unsubscribe; a successful subscription returns an opaque `watchKey` and the current complete result |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | Push a `SNAPSHOT` or `TERMINATED` event for one `watchKey` and receive an acknowledgement |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | Register one RAD batch |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | Deregister one RAD batch |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
 
 All requests report module `ai`. gRPC endpoint contributions belong to
 `RequestMeta.connectionId`; no client id or heartbeat payload is added.
 Disconnect removes that connection's contributions. Reconnect obtains a new
 connection id and redoes endpoints and subscriptions.
+
+The endpoint handlers are Naming adapters. Register validates and converts the
+submitted complete Endpoint batch to Naming Instances, then invokes Naming
+batch registration. Deregister invokes Naming whole-publication deregistration.
+They do not read or merge the previous publisher batch, add an Agent service
+lock, directly query Naming's client index, or scan other publishers during a
+write.
+
+Runtime Snapshot, Discover, and Watch read the complete internal Naming
+`ServiceStorage` projection. They construct one binding from each Instance's
+singular runtime Version and Version-range metadata, retain ranges matching the
+requested Version, and aggregate the resulting `bindings[]` and health by
+public Endpoint natural key.
 
 `AgentSubscribeResponse.watchKey` is the binding-defined opaque identity for
 the accepted wire subscription. The SDK maps it to the canonical local Watch
@@ -265,18 +296,21 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Event | Required behavior |
 |---|---|
 | Repeat identical Register | Success without semantic change |
-| Register changed non-identity fields | Upsert that publisher contribution |
+| Register changed content, runtime Version, or range | Replace that publisher's complete service batch |
 | Duplicate natural key in one batch | Reject the complete batch |
-| Repeat Deregister | Success without change |
+| Partial SDK Deregister | Remove keys from local expected state and Register the complete remainder |
+| Last SDK Deregister or direct remote Deregister | Remove the publisher's whole service publication |
+| Repeat whole-publication Deregister | Success without change |
 | Repeat heartbeat | Refresh only client liveness |
 | HTTP timeout | Retry with the same client id and identical payload using backoff |
-| `HTTP_CLIENT_NOT_FOUND` | Mark all local endpoint intent unregistered and redo by complete group |
-| gRPC reconnect | Redo endpoints and subscriptions under the new connection id |
+| `HTTP_CLIENT_NOT_FOUND` | Mark local endpoint intent unregistered and redo each complete service batch |
+| gRPC reconnect | Redo complete endpoint batches and subscriptions under the new connection id |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
-The SDK records expected state before the first write. Shutdown performs a
-best-effort deregistration; expiry remains the cleanup fallback. Parameter,
-authorization, and publisher-conflict errors do not enter infinite redo.
+The SDK records expected state before the first write and serializes desired
+batch changes per Agent and protocol. Shutdown performs a best-effort
+whole-publication deregistration; expiry remains the cleanup fallback.
+Parameter and authorization errors do not enter infinite redo.
 
 ## 3. Admin API And Maintainer SDK
 
@@ -287,14 +321,34 @@ runtime endpoints into a Version descriptor.
 
 | Method | Path | Action | Result |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents` | Create Agent and initial draft atomically | `Result<AgentOverview>` |
 | GET | `/v3/admin/ai/agents` | Read Agent and first bounded Version-summary page | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | Update writable Agent fields using metadata CAS | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | Update writable Agent fields through the shared AI Resource update flow | `Result<Agent>` |
 | DELETE | `/v3/admin/ai/agents` | Delete Agent definition and Version content | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | Filter and page Agent summaries | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | Page Version summaries | `Result<Page<AgentVersionSummary>>` |
 | GET | `/v3/admin/ai/agents/version` | Read one exact Version definition | `Result<AgentVersionDetail>` |
 | GET | `/v3/admin/ai/agents/runtime-endpoints` | Read one protocol's complete runtime snapshot, optionally filtered by Version | `Result<RuntimeEndpointSnapshot>` |
+
+The initial Admin list reuses the shared AI Resource query contract.
+`agentName` is a fuzzy name filter, and the optional `bizTag` is one fuzzy
+business-tag filter. Multi-tag AND matching and Agent-specific collation rules
+are not introduced by this binding. `scope` and `owner` are business filters
+intersected with Visibility Plugin constraints before stable pagination. The
+initial binding does not provide an `ai_resource.status` list filter.
+
+Admin write inputs use `application/x-www-form-urlencoded`. Scalar identity
+and resource-status fields are ordinary form parameters. HTTP Forms
+contain `namespaceId`; the Request and Command objects produced from those
+Forms do not. The following complex fields are JSON strings:
+
+- Agent update: `provider`, `tags`, and `extensions`;
+- draft create: `provider`, `tags`, `extensions`, and `callInterfaces`;
+- draft update: `callInterfaces`; and
+- label update: `labels`.
+
+Form size uses the shared Nacos HTTP form-size policy. The serialized
+AgentVersion content is still independently limited by the Agent Management
+contract.
 
 Runtime query input is `namespaceId + agentName + protocol + version?`.
 `protocol` is required. Omitting `version` returns one item per natural
@@ -303,19 +357,36 @@ matching bindings. The query does
 not apply `endpointSourceOrder`, does not require a definition to exist, and
 returns an empty item array when no instance exists.
 
-Create contains writable Agent fields and a required `initialDraft`. Agent,
-Version row, and Storage writes have one logical atomic outcome and compensate
-partial failures. Update may change presentation, tags, extensions, enabled
-state, owner, and scope, but not identity, Version content, labels, or the
-derived catalog. Definition deletion immediately prevents ordinary discovery;
-it does not delete independently owned runtime publications.
+There is no separate `createAgent` operation. `POST /draft` is the single
+creation entry:
+
+- when the Agent does not exist, it creates the Agent metadata, first Version
+  row, and Storage content as one logical operation. The request must contain
+  direct `callInterfaces` and must not contain `basedOnVersion`. Presentation
+  metadata (`displayName`, `description`, `iconUrl`, `provider`, `tags`, and
+  `extensions`) is optional. The server initializes `status=enable`, owner to
+  the current caller identity, and scope through the shared default-visibility
+  rule;
+- when the Agent exists, it creates a subsequent draft from either direct
+  `callInterfaces` or one exact `basedOnVersion`. First-create presentation
+  metadata is rejected instead of being silently ignored.
+
+The first-create Agent, Version row, and Storage writes have one logical atomic
+outcome and compensate partial failures. Agent update may change presentation,
+tags, extensions, and enabled state, but not identity, owner, scope, Version
+content, labels, or the derived catalog. The server initializes owner on first
+creation and the initial release exposes no owner-transfer operation. Scope
+changes are a dedicated public/private visibility operation, are not part of
+the shared metadata CAS, and are not exposed by the initial Agent API binding.
+Definition deletion immediately prevents ordinary discovery; it does not
+delete independently owned runtime publications.
 
 ### 3.2 Version Lifecycle Paths
 
 | Method | Path | Transition or action | Result |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents/draft` | Create a new draft, optionally copying one exact Version | `Result<AgentVersionDetail>` |
-| PUT | `/v3/admin/ai/agents/draft` | Update one draft | `Result<AgentVersionDetail>` |
+| POST | `/v3/admin/ai/agents/draft` | Create the Agent and first direct-content draft when absent, or create a subsequent direct/copy-based draft | `Result<AgentVersionDetail>` |
+| PUT | `/v3/admin/ai/agents/draft` | Replace the current exact draft content; never create a missing Agent or Version or update Agent metadata | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | Delete one draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | `draft -> reviewing`, or the shared no-Pipeline transition | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/publish` | `reviewed -> online` | `Result<AgentVersionSummary>` |
@@ -332,13 +403,22 @@ failure records caller, resource identity, prior and target state, result,
 request id, and time. Audit records omit descriptor and sensitive metadata.
 The initial release does not expose a same-Version forced content replacement.
 
+Agent metadata update and draft-content update are separate operations.
+`PUT /agents` changes only presentation, catalog, and resource-status fields in
+`ai_resource`, preserves the existing owner and scope, and advances
+`metaVersion`. `PUT /agents/draft` changes only the current exact draft's
+CallInterface content, change description, and `contentDigest`.
+
 ### 3.3 Maintainer SDK
 
 `AiMaintainerService.agent()` returns `AgentMaintainerService`.
 `AiMaintainerService.a2a()` remains during its compatibility window. The Agent
 maintainer interface maps one-to-one to Admin HTTP and uses Request/Command
-objects for compound writes. It is not namespace-bound, requires
-`namespaceId` on every call, and does not add a Maintainer gRPC transport.
+objects for compound writes. It is not namespace-bound. Each operation has an
+explicit-namespace form and a convenience form whose omitted namespace is
+normalized to `public`. Request and Command objects do not contain
+`namespaceId`; the method argument is the only custom-namespace source. It
+does not add a Maintainer gRPC transport.
 
 ## 4. Console API
 
@@ -382,5 +462,9 @@ RAD ability:
 
 Legacy Console A2A APIs are supported through the Nacos 3.4 line. Legacy Admin
 and Maintainer A2A APIs remain through the Nacos 4.0 compatibility boundary.
+During this compatibility window, legacy A2A Endpoint APIs keep their existing
+version-qualified Naming layout and replacement scopes. They are not rewritten
+onto the new version-neutral Agent Naming service, because an old client cannot
+construct the complete cross-Version publisher batch required by that service.
 Historical data migration and mixed-version rolling-upgrade behavior are a
 separate specification and must not be inferred from this API-only contract.

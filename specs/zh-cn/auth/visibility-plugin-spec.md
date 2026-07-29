@@ -106,6 +106,10 @@ nacos.plugin.visibility.type=nacos
 | `OWNER` | 限制为 `owner=identity`；如果身份为空或 owner 冲突，则返回空集。 |
 | `PUBLIC_AND_OWNER` | 限制为 `scope=PUBLIC OR owner=identity`；匿名调用方退化为仅公开资源。 |
 
+调用方提交的 owner、scope 等业务筛选必须先进入基础 `QueryCondition`，再应用
+`QueryAdvisor`。转换器负责生成两者的交集或判定空集；资源类型不得在转换后重新设置这些
+字段并覆盖插件生成的可见性约束。
+
 如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认
 可见性实现会从当前鉴权插件管理的显式授权中填充该列表。存储态写授权会隐式包含读权限，
 而只读授权仅影响读/列表查询。

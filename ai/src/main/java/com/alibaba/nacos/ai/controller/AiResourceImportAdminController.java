@@ -59,7 +59,7 @@ public class AiResourceImportAdminController {
     }
     
     /**
-     * List configured import sources.
+     * List enabled managed importer plugins as import sources.
      *
      * @param form source list form
      * @return source list

@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.ai.importer.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -33,48 +32,11 @@ class AiResourceImportModelTest {
     private static final Map<String, String> METADATA = Collections.singletonMap("key", "value");
     
     @Test
-    void testImportSourceAccessors() {
-        AiResourceImportSource source = new AiResourceImportSource();
-        
-        source.setSourceId("source");
-        source.setDisplayName("Source");
-        source.setDescription("Source description");
-        source.setPluginName("plugin");
-        source.setResourceTypes(Arrays.asList("mcp", "skill"));
-        source.setEndpoint("https://example.com");
-        source.setEnabled(true);
-        source.setAuthRef("secret");
-        source.setConnectTimeoutMillis(1000);
-        source.setReadTimeoutMillis(2000);
-        source.setMaxPageCount(3);
-        source.setMaxItemCount(100);
-        source.setMaxArtifactSize(1024L);
-        source.setProperties(METADATA);
-        
-        assertEquals("source", source.getSourceId());
-        assertEquals("Source", source.getDisplayName());
-        assertEquals("Source description", source.getDescription());
-        assertEquals("plugin", source.getPluginName());
-        assertEquals(Arrays.asList("mcp", "skill"), source.getResourceTypes());
-        assertEquals("https://example.com", source.getEndpoint());
-        assertTrue(source.isEnabled());
-        assertEquals("secret", source.getAuthRef());
-        assertEquals(1000, source.getConnectTimeoutMillis());
-        assertEquals(2000, source.getReadTimeoutMillis());
-        assertEquals(3, source.getMaxPageCount());
-        assertEquals(100, source.getMaxItemCount());
-        assertEquals(1024L, source.getMaxArtifactSize());
-        assertSame(METADATA, source.getProperties());
-    }
-    
-    @Test
     void testImportContextAccessors() {
-        AiResourceImportSource source = new AiResourceImportSource();
         AiResourceImportContext context = new AiResourceImportContext();
         
         context.setNamespaceId("namespace");
         context.setResourceType("mcp");
-        context.setSource(source);
         context.setQuery("nacos");
         context.setCursor("cursor");
         context.setLimit(10);
@@ -85,7 +47,6 @@ class AiResourceImportModelTest {
         
         assertEquals("namespace", context.getNamespaceId());
         assertEquals("mcp", context.getResourceType());
-        assertSame(source, context.getSource());
         assertEquals("nacos", context.getQuery());
         assertEquals("cursor", context.getCursor());
         assertEquals(10, context.getLimit());

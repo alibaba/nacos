@@ -28,6 +28,24 @@ public final class AiResourceImportConstants {
     
     public static final String RESOURCE_TYPE_SKILL = "skill";
     
+    public static final String CONFIG_ENDPOINT = "endpoint";
+    
+    public static final String CONFIG_ALLOW_HTTP = "allow-http";
+    
+    public static final String CONFIG_ALLOW_PRIVATE_NETWORK = "allow-private-network";
+    
+    public static final String CONFIG_DISPLAY_NAME = "display-name";
+    
+    public static final String CONFIG_DESCRIPTION = "description";
+    
+    public static final String CONFIG_MAX_ITEM_COUNT = "max-item-count";
+    
+    public static final String CONFIG_MAX_ARTIFACT_SIZE = "max-artifact-size";
+    
+    public static final int DEFAULT_MAX_ITEM_COUNT = 500;
+    
+    public static final long DEFAULT_MAX_ARTIFACT_SIZE = 10L * 1024L * 1024L;
+    
     private AiResourceImportConstants() {
     }
 }

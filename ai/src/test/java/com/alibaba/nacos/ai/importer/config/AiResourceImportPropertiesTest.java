@@ -16,51 +16,84 @@
 
 package com.alibaba.nacos.ai.importer.config;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Arrays;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiResourceImportPropertiesTest {
     
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
+    }
+    
     @Test
-    void testLoadSourcesFromProperties() {
+    void testStandardSwitchTakesPrecedenceAndLoadsOtherModuleFlags() {
         Properties raw = new Properties();
-        raw.setProperty("nacos.ai.resource.import.enabled", "true");
-        raw.setProperty("nacos.ai.resource.import.legacy-mcp-api-enabled", "true");
-        raw.setProperty("nacos.ai.resource.import.default-connect-timeout-ms", "2000");
-        raw.setProperty("nacos.ai.resource.import.default-max-artifact-size", "2048");
-        raw.setProperty("nacos.ai.resource.import.sources[0].source-id", "mcp-official");
-        raw.setProperty("nacos.ai.resource.import.sources[0].display-name", "MCP Official");
-        raw.setProperty("nacos.ai.resource.import.sources[0].description", "official source");
-        raw.setProperty("nacos.ai.resource.import.sources[0].plugin-name", "mcp-registry");
-        raw.setProperty("nacos.ai.resource.import.sources[0].resource-types", "mcp, skill");
-        raw.setProperty("nacos.ai.resource.import.sources[0].endpoint", "https://example.com");
-        raw.setProperty("nacos.ai.resource.import.sources[0].auth-ref", "token-ref");
-        raw.setProperty("nacos.ai.resource.import.sources[0].properties.protocol-version", "v0");
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, " true ");
+        raw.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "false");
+        raw.setProperty(AiResourceImportProperties.LEGACY_MCP_API_ENABLED_PROPERTY, "true");
+        raw.setProperty(AiResourceImportProperties.ALLOW_USER_URL_PROPERTY, " true ");
         
         AiResourceImportProperties properties = AiResourceImportProperties.load(raw);
         
         assertTrue(properties.isEnabled());
         assertTrue(properties.isLegacyMcpImportApiEnabled());
-        assertFalse(properties.isAllowUserUrl());
-        assertEquals(2000, properties.getDefaultConnectTimeoutMillis());
-        assertEquals(2048, properties.getDefaultMaxArtifactSize());
-        assertEquals(1, properties.getSources().size());
-        AiResourceImportSourceConfig source = properties.getSources().get(0);
-        assertEquals("mcp-official", source.getSourceId());
-        assertEquals("MCP Official", source.getDisplayName());
-        assertEquals("official source", source.getDescription());
-        assertEquals("mcp-registry", source.getPluginName());
-        assertEquals(Arrays.asList("mcp", "skill"), source.getResourceTypes());
-        assertEquals("https://example.com", source.getEndpoint());
-        assertEquals("token-ref", source.getAuthRef());
-        assertEquals(2000, source.getConnectTimeoutMillis());
-        assertEquals(2048, source.getMaxArtifactSize());
-        assertEquals("v0", source.getProperties().get("protocol-version"));
+        assertTrue(properties.isAllowUserUrl());
+    }
+    
+    @Test
+    void testLegacySwitchAndDefaults() {
+        Properties raw = new Properties();
+        raw.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "true");
+        assertTrue(AiResourceImportProperties.resolveEnabled(raw));
+        assertTrue(AiResourceImportProperties.load(raw).isEnabled());
+        
+        assertTrue(AiResourceImportProperties.resolveEnabled(null));
+        AiResourceImportProperties defaults = AiResourceImportProperties.load(null);
+        assertTrue(defaults.isEnabled());
+        assertTrue(new AiResourceImportProperties().isEnabled());
+        assertFalse(defaults.isLegacyMcpImportApiEnabled());
+        assertFalse(defaults.isAllowUserUrl());
+    }
+    
+    @Test
+    void testOnlyExplicitFalseDisablesImport() {
+        Properties raw = new Properties();
+        raw.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "false");
+        assertFalse(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, " ");
+        assertTrue(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, "invalid");
+        assertTrue(AiResourceImportProperties.resolveEnabled(raw));
+        
+        raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, "false");
+        assertFalse(AiResourceImportProperties.resolveEnabled(raw));
+    }
+    
+    @Test
+    void testLoadFromEnvironmentAndAccessors() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty(AiResourceImportProperties.ENABLED_PROPERTY, "true");
+        EnvUtil.setEnvironment(environment);
+        
+        AiResourceImportProperties properties =
+            AiResourceImportProperties.loadFromEnvironment();
+        assertTrue(properties.isEnabled());
+        
+        properties.setEnabled(false);
+        properties.setLegacyMcpImportApiEnabled(true);
+        properties.setAllowUserUrl(true);
+        assertFalse(properties.isEnabled());
+        assertTrue(properties.isLegacyMcpImportApiEnabled());
+        assertTrue(properties.isAllowUserUrl());
     }
 }

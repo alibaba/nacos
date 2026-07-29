@@ -98,24 +98,28 @@ records without logging the complete descriptor or sensitive endpoint metadata.
 
 ## 4. Legacy Runtime Endpoint Writes
 
-Legacy single and batch endpoint operations retain replacement semantics under
-this compatibility scope:
+Legacy single and batch endpoint operations remain on the existing
+Version-specific Naming layout during the first compatibility phase:
 
 ```text
 publisher + namespaceId + agentName + exactVersion + protocol=a2a
+
+group=agent-endpoints
+serviceName=<legacyEncodedAgentName>::<exactVersion>
 ```
 
-Single register replaces the scope with one endpoint; batch register replaces
-it with the submitted set. The adapter maps the exact version to
-`runtimeVersion=version` and `versionRange=[version]` and writes through the
-canonical Runtime Endpoint Registry.
+Single register delegates to the existing Naming single-instance operation and
+replaces the publication with one endpoint. Batch register delegates to Naming
+batch registration and replaces the complete submitted batch. Legacy
+deregister removes the complete publication for the exact-Version service.
 
-The Registry stores separate publisher contribution groups for different exact
-versions even when they use the same public endpoint natural key. Legacy
-deregister removes only the requested exact-version contribution group. This
-internal compatibility operation is intentionally narrower than RAD
-`Deregister`, which removes the current publisher's bindings for the submitted
-natural endpoint keys.
+The compatibility handler does not redirect these writes to the new
+Version-neutral RAD Runtime Service, does not write `runtimeVersion` or
+`versionRange` metadata, and does not enter the new RAD Runtime write path. An
+old A2A client cannot submit the complete cross-Version publisher batch
+required by that Service; redirecting it would allow one Version registration
+to overwrite another. Migration, dual read or write, cutover, rollback, and
+old-service cleanup require a separate rolling-upgrade contract.
 
 Endpoint publication may precede Agent or Version creation. It never creates an
 Agent definition implicitly.

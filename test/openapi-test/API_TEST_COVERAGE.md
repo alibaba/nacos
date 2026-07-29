@@ -52,16 +52,21 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
-| Admin API | 35 | 30 | 5 | 0 | 85.71% | 92.86% |
-| Console API | 27 | 25 | 2 | 0 | 92.59% | 96.30% |
+| Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
+| Console API | 27 | 25 | 3 | 0 | 88.89% | 94.44% |
 | Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 74 | 63 | 8 | 3 | 85.14% | 90.54% |
+| Total | 77 | 64 | 11 | 3 | 86.30% | 93.15% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
-shared runtime/storage state, require publish-pipeline plugin data, require an
-external LLM provider, or depend on auth-enabled bootstrap state that the
-default standalone IT profile does not enable.
+shared runtime/storage state, require publish-pipeline plugin data, require a
+data-plane publisher binding not yet present in standalone IT, or require an
+external LLM provider.
+
+External protocol adaptors are tracked separately from the Nacos API coverage
+totals because they run in independent web contexts. The ARD adaptor currently
+has three covered scenario rows and one partial row; the remaining gap is a
+live standalone-adaptor conformance suite.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
@@ -95,6 +100,14 @@ console Skill upload scenario rows, including `maxPublishedVersion` and
 `targetVersion`. Contract-only field changes do not alter the scenario-row
 totals above.
 
+Agent Admin definition creation is counted in the existing Agent Admin and
+Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
+creates missing Agent metadata together with the first draft; the removed root
+`POST /v3/admin/ai/agents` operation is no longer a coverage surface. This
+contract consolidation does not change the scenario-row totals. POST retry and
+conflict scenarios prove that creation does not replace current draft content;
+replacement remains the distinct `PUT /v3/admin/ai/agents/draft` operation.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |
@@ -103,3 +116,4 @@ totals above.
 | Admin API | [ADMIN_API_TEST_SCENARIOS.md](ADMIN_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi` |
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
 | Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth` |
+| AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry` |

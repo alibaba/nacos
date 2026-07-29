@@ -43,8 +43,8 @@ HTTP API 遵循 Nacos v3 约定：
 - 响应使用 `Result<T>`；新 Controller 使用 `@NacosApi`、
   `@Since(version = "3.3.0")`、对应 `ApiType`、`SignType.AI` 以及 `READ` 或
   `WRITE` 鉴权；
-- GET 输入使用 query，写入使用 JSON body；`agentName` 按原值比较，不作为
-  PathVariable；
+- GET 输入使用 query；其他 HTTP 输入编码由对应 Client、Admin 或 Console Binding
+  分别定义；`agentName` 按原值比较，不作为 PathVariable；
 - gRPC 继续使用统一 Nacos `Payload` stream 和 `metadata.type`，不增加 proto
   service method。
 
@@ -58,23 +58,25 @@ HTTP API 遵循 Nacos v3 约定：
 |---|---|
 | 普通 Client SDK | SDK 实例绑定一个 namespace。公开方法不接受 namespace 参数；Proxy 复制请求并在传输前注入绑定值。 |
 | Client HTTP 调用方 | 可以显式提交 `namespaceId`；省略时 Binding 在进入 RAD 前注入规范化默认值 `public`。 |
-| Maintainer SDK 和 Admin API | Maintainer SDK 实例不绑定 namespace；每个请求都显式提交 `namespaceId`，不提供默认 namespace 重载。 |
+| Maintainer SDK 和 Admin API | Maintainer SDK 实例不绑定 namespace。Admin HTTP Form 保留 `namespaceId`，省略或空白值统一规范化为 `public`。Maintainer Request 和 Command Payload 不包含 `namespaceId`：显式方法参数是自定义 namespace 的唯一来源，便利重载始终使用 `public`。 |
 
 如果普通 Client SDK 接受的模型中已带非空 `namespaceId`，它必须拒绝与 SDK namespace
 不同的值，并且不得修改调用方原对象。
 
 ### 1.2 并发、结果与错误
 
-Agent 元数据更新使用 `expectedMetaVersion`；draft 内容只允许在目标 Version 等于 Resource
-当前 `editingVersion` 且仍为 `draft` 状态时更新，并复用现有 AI Resource 更新流程。
-列表使用分页；`RuntimeEndpointSnapshot` 是完整、不分页的快照。
+Agent 元数据更新复用当前共享的 AI Resource 更新流程。首版 Agent Admin 契约不暴露
+Agent 专属的 `expectedMetaVersion`；条件更新能力后续随 `ai_resource` 和
+`ai_resource_version` 的统一 CAS 能力定义。draft 内容只允许在目标 Version 等于
+Resource 当前 `editingVersion` 且仍为 `draft` 状态时更新。列表使用分页；
+`RuntimeEndpointSnapshot` 是完整、不分页的快照。
 
 | 条件 | 必须返回的结果 |
 |---|---|
 | 字段缺失或非法、URI/range 非法、Endpoint 自然键重复 | 标准参数错误 |
 | Discover 目标不可见或不存在 | `RESOURCE_NOT_FOUND`，不区分可见性 |
-| 不存在 Agent 定义时 Endpoint 预注册 | 完成结构、鉴权、配额和冲突校验后接受 |
-| 元数据 CAS 或 Publisher payload 冲突 | `RESOURCE_CONFLICT` |
+| 不存在 Agent 定义时 Endpoint 预注册 | 完成结构、鉴权和单 Batch 配额校验后接受 |
+| 收敛后的 Runtime 投影包含 Publisher Payload 冲突 | `RESOURCE_CONFLICT` |
 | Version 生命周期转换非法 | `ILLEGAL_STATE` |
 | HTTP heartbeat 找不到 Client | HTTP 404 和独立应用码 `HTTP_CLIENT_NOT_FOUND` |
 | 协商后的传输不支持能力 | 本地 `FEATURE_NOT_SUPPORTED`，不发送远程请求 |
@@ -110,8 +112,15 @@ AiService extends AgentDiscoveryService, A2aService
 `selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent Calling 是 SDK 本地
 helper，不增加远程操作。
 
-注册是按自然键 upsert，不替换未提交 Endpoint。SDK 将注册 Batch 保存为 redo 意图。
-首个实现可以不增加通用 Agent 定义发布方法，但现有 `A2aService.releaseAgentCard`
+一个 Registration Batch 是该 SDK Publisher 在
+`(namespaceId, agentName, protocol)` 下的完整期望状态。Register 完整替换此前
+Batch 及其唯一的 `runtimeVersion` 和 `versionRange`，未提交的 Endpoint 会被删除。
+SDK 将该完整 Batch 保存为 redo 意图。
+
+`deregisterAgentEndpoints` 保留为按自然键操作的便利方法。SDK 从期望 Batch 中删除
+这些自然键，再通过 Register 发送完整的剩余 Batch；没有 Endpoint 剩余时发送整份
+Publication 注销。首个实现可以不增加通用 Agent 定义发布方法，但现有
+`A2aService.releaseAgentCard`
 必须通过兼容 Adapter 保持可用。后续 Client SDK 提供可选的代码式 Agent 发布：
 `autoSubmit=false` 创建 draft，`autoSubmit=true` 执行普通 submit Pipeline；它不是
 force-publish，注册 Endpoint 也不会隐式创建定义。
@@ -135,8 +144,8 @@ HTTP-only SDK 在本地拒绝 Watch，不得通过轮询伪装 Watch。写入超
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD Search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD Reference 和可选 Filter query | `Result<AgentDiscoveryResult>` |
-| POST | `/v3/client/ai/agents/endpoints` | `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | JSON `AgentEndpointDeregistrationBatch` | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | 完整 `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | JSON `namespaceId + agentName + protocol` Publication Identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 无 body | `Result<ClientLivenessInfo>` |
 
 Search query 名称与 RAD 字段相同。重复 `tagsAll` 取 AND，重复 `protocolsAny` 取 OR；
@@ -146,10 +155,15 @@ Discover 直接映射 `agentName`、`version` 和 `label`。重复 Filter 参数
 `transport` 和 `endpointSource`，`protocolVersion` 为单值。`metadataSelector` 使用一个
 URL encoded JSON object，而不是动态 `metadata.<key>` 参数名。
 
-Endpoint 路径只使用 POST 和 DELETE。POST 已经 upsert 完整 Endpoint 值，通用 PUT 会
-引入不明确的局部更新语义。GET 也没有必要：消费者使用 Discover，管理员使用
-`RuntimeEndpointSnapshot`。0.1 Binding 只定义带 JSON body 的 DELETE，并要求 Client
-和 Gateway 保留该 body。
+Endpoint 路径只使用 POST 和 DELETE。POST 完整替换当前 Publisher 对一个 Agent 和
+Protocol 的 Batch，因此通用 PUT 只会重复相同替换操作。GET 也没有必要：消费者使用
+Discover，管理员使用 `RuntimeEndpointSnapshot`。
+
+DELETE 删除当前 HTTP Publisher 对给定 Agent 和 Protocol 的整份 Publication，不接受
+Endpoint 自然键。官方 SDK 的部分注销先更新本地期望 Batch，再通过 POST 提交完整
+剩余内容；只有剩余 Batch 为空时才调用 DELETE。直接 HTTP 调用方同样自行维护完整
+期望 Batch。该三字段 DELETE Body 是 Binding 对象，不替代面向应用的
+`AgentEndpointDeregistrationBatch` RAD 模型。
 
 ### 2.4 HTTP Publisher Identity 与活性
 
@@ -183,8 +197,9 @@ heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 服务端根据 `clientId`，使用 Distro type `AI_AGENT_HTTP_CLIENT` 路由 HTTP Publisher
 状态。只有责任节点持有 native Client、`lastActiveTime` 和超时任务；Peer 接收重建
 Naming/RAD 投影所需的完整 Client state。新 Owner 只有在收到完整 Snapshot 后才启动
-故障转移宽限，否则返回 `HTTP_CLIENT_NOT_FOUND`，Client 随后 redo 全部期望 Endpoint
-分组。首次写入把 Client id 绑定到鉴权主体和 namespace；后续不匹配时拒绝。同一字符串
+故障转移宽限，否则返回 `HTTP_CLIENT_NOT_FOUND`，Client 随后 redo 每个完整的
+Endpoint Service Batch。首次写入把 Client id 绑定到鉴权主体和 namespace；后续
+不匹配时拒绝。同一字符串
 在其他模块不共享活性和清理状态。
 
 ### 2.5 gRPC Payload 与能力位
@@ -195,12 +210,21 @@ Naming/RAD 投影所需的完整 Client state。新 Owner 只有在收到完整 
 | `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | 一次 Discover |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | 订阅或取消；订阅成功时返回不透明 `watchKey` 和当前完整结果 |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | 为一个 `watchKey` Push `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | 注册一个 RAD Batch |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | 注销一个 RAD Batch |
+| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | 完整替换该 Connection 对一个 Agent 和 Protocol 的 RAD Batch |
+| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | 删除该 Connection 对一个 Agent 和 Protocol 的整份 Publication |
 
 所有 Request 的 module 为 `ai`。gRPC Endpoint Contribution 归属于
 `RequestMeta.connectionId`，不增加 Client id 或 heartbeat Payload。连接断开后删除该
 Connection 的 Contribution；重连取得新 connection id，并 redo Endpoint 和订阅。
+
+Endpoint Handler 是 Naming Adapter。Register 校验完整 Endpoint Batch，将其转换为
+Naming Instance，再调用 Naming Batch Register；Deregister 调用 Naming 的整份
+Publication 注销。写入时不读取或合并此前 Publisher Batch、不增加 Agent Service
+Lock、不直接查询 Naming Client Index，也不扫描其他 Publisher。
+
+Runtime Snapshot、Discover 和 Watch 从 Naming `ServiceStorage` 读取完整内部投影，
+根据每个 Instance 的 singular runtime Version 和 Version-range metadata 构造一个 Binding，
+保留 Range 命中目标 Version 的项，再按公开 Endpoint 自然键聚合 `bindings[]` 和健康状态。
 
 `AgentSubscribeResponse.watchKey` 是 Binding 为已接受 Wire Subscription 定义的不透明
 身份。SDK 将它映射到规范化本地 Watch 身份，不解析其内容。
@@ -234,17 +258,20 @@ Watch 及其 Redo State，再发送 ACK。Reconnect 后，SDK 丢弃旧 Connecti
 | 事件 | 必须行为 |
 |---|---|
 | 重复相同 Register | 成功且语义不变 |
-| Register 修改非身份字段 | Upsert 当前 Publisher Contribution |
+| Register 修改内容、Runtime Version 或 Range | 替换该 Publisher 的完整 Service Batch |
 | 同一 Batch 出现重复自然键 | 拒绝整个 Batch |
-| 重复 Deregister | 成功且语义不变 |
+| SDK 部分 Deregister | 从本地期望状态删除自然键，再 Register 完整剩余 Batch |
+| SDK 注销最后一项或直接远程 Deregister | 删除该 Publisher 的整份 Service Publication |
+| 重复整份 Publication Deregister | 成功且语义不变 |
 | 重复 heartbeat | 只刷新 Client 活性 |
 | HTTP timeout | 保持 Client id 和 payload，退避重试 |
-| `HTTP_CLIENT_NOT_FOUND` | 将全部本地 Endpoint 意图标记为未注册，并按完整分组 redo |
-| gRPC reconnect | 使用新 connection id redo Endpoint 和订阅 |
+| `HTTP_CLIENT_NOT_FOUND` | 将本地 Endpoint 意图标记为未注册，并 redo 每个完整 Service Batch |
+| gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch 和订阅 |
 | 跨传输注销 | 禁止；一个 Publisher identity 不能删除另一传输的 Contribution |
 
-SDK 在第一次写入前记录期望状态。Shutdown 执行 best-effort 注销，expire 作为清理兜底。
-参数、鉴权和 Publisher 冲突错误不进入无限 redo。
+SDK 在第一次写入前记录期望状态，并按 Agent 和 Protocol 串行修改期望 Batch。
+Shutdown 执行 best-effort 整份 Publication 注销，expire 作为清理兜底。参数和鉴权
+错误不进入无限 redo。
 
 ## 3. Admin API 与 Maintainer SDK
 
@@ -254,30 +281,59 @@ Admin 读取不隐式执行数据面 Discover，也不把 Runtime Endpoint 注�
 
 | Method | Path | 动作 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents` | 原子创建 Agent 和 initial draft | `Result<AgentOverview>` |
 | GET | `/v3/admin/ai/agents` | 读取 Agent 和首个有界 Version Summary page | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | 使用 metadata CAS 更新 Agent 可写字段 | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | 通过共享 AI Resource 更新流程修改 Agent 可写字段 | `Result<Agent>` |
 | DELETE | `/v3/admin/ai/agents` | 删除 Agent 定义及 Version 内容 | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | 筛选和分页 Agent Summary | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | 分页读取 Version Summary | `Result<Page<AgentVersionSummary>>` |
 | GET | `/v3/admin/ai/agents/version` | 读取一个精确 Version 定义 | `Result<AgentVersionDetail>` |
 | GET | `/v3/admin/ai/agents/runtime-endpoints` | 读取一个 Protocol 的完整 Runtime Snapshot，可按 Version 过滤 | `Result<RuntimeEndpointSnapshot>` |
 
+首版 Admin 列表复用共享 AI Resource 查询契约。`agentName` 是名称模糊过滤条件，
+可选的 `bizTag` 是单个业务标签模糊过滤条件；该 Binding 不引入多标签 AND 匹配或
+Agent 专用 collation 规则。`scope` 和 `owner` 是业务筛选条件，并与 Visibility Plugin
+返回的可见性约束取交集后再执行稳定分页。首版不提供 `ai_resource.status` 列表过滤。
+
+Admin 写入使用 `application/x-www-form-urlencoded`。身份、治理和生命周期字段使用
+普通 form 参数。HTTP Form 包含 `namespaceId`，由 Form 生成的 Request 和 Command
+对象不包含该字段。以下复杂字段使用 JSON 字符串：
+
+- Agent 更新：`provider`、`tags` 和 `extensions`；
+- draft 创建：`provider`、`tags`、`extensions` 和 `callInterfaces`；
+- draft 更新：`callInterfaces`；
+- label 更新：`labels`。
+
+Form 大小复用 Nacos 统一 HTTP form-size 策略；序列化后的 AgentVersion 内容仍独立遵循
+Agent 管理契约的容量限制。
+
 Runtime 查询输入为 `namespaceId + agentName + protocol + version?`；`protocol` 必填。
-省略 `version` 时，对该 Protocol 的每个 Endpoint 自然键返回一项及其全部 Binding；提交时只保留匹配 Binding。
+省略 `version` 时，对该 Protocol 的每个 Endpoint 自然键返回一项及其全部 Binding；指定
+`version` 时只保留匹配 Binding。
 查询不应用 `endpointSourceOrder`，不要求定义存在，没有 Instance 时返回空 items。
 
-Create 包含 Agent 可写字段和必填 `initialDraft`。Agent、Version row 与 Storage 写入
-具有一个逻辑原子结果，并补偿局部失败。Update 可以修改展示信息、tags、extensions、
-enabled 状态、owner 和 scope，但不能修改身份、Version 内容、label 或派生 Catalog。
-删除定义后，普通 Discover 立即不可见，但不会删除生命周期独立的 Runtime Publication。
+不再提供独立的 `createAgent` 操作。`POST /draft` 是唯一创建入口：
+
+- Agent 不存在时，在一个逻辑操作中创建 Agent metadata、首个 Version row 和 Storage
+  内容。请求必须直接提交 `callInterfaces`，不得使用 `basedOnVersion`；可以提交
+  `displayName`、`description`、`iconUrl`、`provider`、`tags` 和 `extensions`
+  等可选展示 metadata。服务端初始化 `status=enable`，将 owner 初始化为当前调用者身份，
+  并通过共享默认可见性规则初始化 scope；
+- Agent 已存在时，从直接 `callInterfaces` 或一个精确 `basedOnVersion` 创建后续 draft。
+  首建专用展示 metadata 必须被拒绝，不能静默忽略。
+
+首建 Agent、Version row 与 Storage 写入具有一个逻辑原子结果，并补偿局部失败。
+Agent Update 可以修改展示字段、tags、extensions 和 enabled 状态，但不能修改身份、
+owner、scope、Version 内容、labels 或派生 catalog。owner 在首建时由服务端初始化，
+首版不提供 owner 转移能力；scope 变更属于独立的公开/私有可见性操作，不进入通用
+metadata CAS，首版 Agent API 暂不暴露该操作。删除定义会立即阻止普通发现，但不会
+删除由独立 Publisher 拥有的 Runtime Publication。
 
 ### 3.2 Version 生命周期路径
 
 | Method | Path | 转换或动作 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents/draft` | 创建新 draft，可复制一个精确 Version | `Result<AgentVersionDetail>` |
-| PUT | `/v3/admin/ai/agents/draft` | 更新 draft | `Result<AgentVersionDetail>` |
+| POST | `/v3/admin/ai/agents/draft` | Agent 不存在时创建 Agent 和首个直接内容 draft；存在时创建后续直接内容或复制 draft | `Result<AgentVersionDetail>` |
+| PUT | `/v3/admin/ai/agents/draft` | 覆盖当前精确 draft 的内容；不得创建缺失的 Agent 或 Version，也不修改 Agent metadata | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | 删除 draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | `draft -> reviewing`，或统一的无 Pipeline 转换 | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/publish` | `reviewed -> online` | `Result<AgentVersionSummary>` |
@@ -292,12 +348,18 @@ enabled 状态、owner 和 scope，但不能修改身份、Version 内容、labe
 失败都记录调用主体、资源身份、原状态、目标状态、结果、request id 和时间。审计不记录
 descriptor 或敏感 metadata。首版不提供同 Version 强制替换内容的 API。
 
+Agent metadata 更新与 Draft 内容更新是两类不同操作：`PUT /agents` 只更新
+`ai_resource` 中的展示、目录和资源启停字段并推进 `metaVersion`，保留已有 owner 和
+scope；`PUT /agents/draft` 只更新当前精确 Draft 的 CallInterface 内容、change
+description 和 `contentDigest`。
+
 ### 3.3 Maintainer SDK
 
 `AiMaintainerService.agent()` 返回 `AgentMaintainerService`；兼容期内继续保留
 `AiMaintainerService.a2a()`。Agent Maintainer 接口一一映射 Admin HTTP，复杂写入使用
-Request/Command 对象。它不绑定 namespace，每次调用都要求 `namespaceId`，不增加
-Maintainer gRPC 传输。
+Request/Command 对象。它不绑定 namespace；每个操作同时提供显式 namespace 形式，以及
+将省略 namespace 规范化为 `public` 的便利形式。Request 和 Command 对象不包含
+`namespaceId`，方法参数是自定义 namespace 的唯一来源；不增加 Maintainer gRPC 传输。
 
 ## 4. Console API
 
@@ -333,5 +395,7 @@ Console 不提供 RAD Search、Discover、Watch、Endpoint Publication 或远程
 7. OpenAPI、Java SDK 和 Maintainer SDK 集成测试场景矩阵与 coverage registry。
 
 旧 Console A2A API 支持到 Nacos 3.4 版本线；旧 Admin 和 Maintainer A2A API 保留到
-Nacos 4.0 兼容边界。历史数据迁移和混合版本滚动升级属于独立规范，不得从本 API-only
-契约推断。
+Nacos 4.0 兼容边界。兼容期内，旧 A2A Endpoint API 保持当前带 Version 的 Naming
+Layout 和替换范围，不改写到新的无 Version Agent Naming Service；旧 Client 无法构造
+该 Service 要求的完整跨 Version Publisher Batch。历史数据迁移和混合版本滚动升级
+属于独立规范，不得从本 API-only 契约推断。

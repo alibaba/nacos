@@ -312,15 +312,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         }
         
         QueryCondition queryCondition = resourceManager.buildQueryCondition(namespaceId,
-            RESOURCE_TYPE_AGENTSPEC, nameLike, null,
+            RESOURCE_TYPE_AGENTSPEC, nameLike, null, scope, owner,
             VisibilityConstants.ACTION_READ);
         queryCondition.setOrderBy(orderBy);
-        if (StringUtils.isNotBlank(owner)) {
-            queryCondition.setOwner(owner);
-        }
-        if (StringUtils.isNotBlank(scope)) {
-            queryCondition.setScope(scope);
-        }
         if (queryCondition.isAlwaysEmpty()) {
             return AiResourceManager.buildEmptyPage(pageNo);
         }

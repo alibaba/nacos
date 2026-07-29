@@ -92,7 +92,7 @@ public class BatchAgentEndpointRequestHandler
             String version = request.getEndpoints().stream().findFirst().get().getVersion();
             String serviceName = agentIdCodecHolder.encode(request.getAgentName()) + "::" + version;
             Service service =
-                Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
+                Service.newService(request.getNamespaceId(), Constants.Agent.AGENT_ENDPOINT_GROUP,
                     serviceName);
             clientOperationService.batchRegisterInstance(service, instances,
                 meta.getConnectionId());

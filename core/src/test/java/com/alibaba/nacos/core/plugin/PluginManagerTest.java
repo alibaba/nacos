@@ -42,23 +42,28 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,9 +97,6 @@ class PluginManagerTest {
     
     @Mock
     private PluginTypePolicyRegistry policyRegistry;
-    
-    @Mock
-    private ApplicationReadyEvent applicationReadyEvent;
     
     private PluginManager manager;
     
@@ -144,6 +146,12 @@ class PluginManagerTest {
     @Test
     void publicConstructorCreatesManagerWithServiceLoadedPoliciesTest() {
         assertNotNull(new PluginManager(persistence, synchronizer));
+        @SuppressWarnings("unchecked")
+        ObjectProvider<PreContextPluginInitializationResult> resultProvider =
+            mock(ObjectProvider.class);
+        when(resultProvider.getIfAvailable(any(Supplier.class)))
+            .thenReturn(PreContextPluginInitializationResult.empty());
+        assertNotNull(new PluginManager(persistence, synchronizer, resultProvider));
     }
     
     @Test
@@ -405,9 +413,9 @@ class PluginManagerTest {
     }
     
     @Test
-    void onApplicationEventTest() {
+    void initializeTest() {
         registerSelectedAuthPlugin();
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         verify(persistence, times(1)).loadAllStates();
         verify(persistence, times(1)).loadAllConfigs();
@@ -418,7 +426,7 @@ class PluginManagerTest {
         registerSelectedAuthPlugin();
         
         manager.initialize();
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         verify(persistence).loadAllStates();
         verify(persistence).loadAllConfigs();
@@ -433,7 +441,7 @@ class PluginManagerTest {
         states.put("trace:test", false);
         when(persistence.loadAllStates()).thenReturn(states);
         
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         assertFalse(manager.isPluginEnabled("trace", "test"));
     }
@@ -549,7 +557,7 @@ class PluginManagerTest {
         when(persistence.loadAllStates()).thenReturn(
             Collections.singletonMap("visibility:nacos", true));
         
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         assertTrue(manager.isPluginEnabled("visibility", "nacos"));
     }
@@ -594,6 +602,32 @@ class PluginManagerTest {
         
         verify(provider, never()).getAllPlugins();
         assertTrue(manager.listAllPlugins().isEmpty());
+    }
+    
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void discoverPluginProvidersUsesOrderBeforeFirstWinsTest() {
+        Object lowerPriorityPlugin = new Object();
+        Object higherPriorityPlugin = new Object();
+        PluginProvider lowerPriorityProvider = mock(PluginProvider.class);
+        PluginProvider higherPriorityProvider = mock(PluginProvider.class);
+        when(lowerPriorityProvider.getPluginType()).thenReturn(PluginType.TRACE);
+        when(lowerPriorityProvider.getOrder()).thenReturn(10);
+        when(lowerPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("ordered", lowerPriorityPlugin));
+        when(higherPriorityProvider.getPluginType()).thenReturn(PluginType.TRACE);
+        when(higherPriorityProvider.getOrder()).thenReturn(-10);
+        when(higherPriorityProvider.getAllPlugins())
+            .thenReturn(Collections.singletonMap("ordered", higherPriorityPlugin));
+        
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Arrays.asList(lowerPriorityProvider, higherPriorityProvider));
+            
+            manager.initialize();
+        }
+        
+        assertSame(higherPriorityPlugin, getPluginInstances().get("trace:ordered"));
     }
     
     @Test
@@ -774,8 +808,33 @@ class PluginManagerTest {
         
         PluginInfo info = manager.getPlugin("trace:configurable").get();
         assertTrue(info.isConfigurable());
-        assertEquals(plugin.getConfigDefinitions(), info.getConfigDefinitions());
+        assertEquals(1, info.getConfigDefinitions().size());
+        assertEquals("endpoint", info.getConfigDefinitions().get(0).getKey());
+        assertNotSame(definition, info.getConfigDefinitions().get(0));
         assertEquals(plugin.getCurrentConfig(), info.getConfig());
+    }
+    
+    @Test
+    void registerPluginKeepsFirstValidIdentityTest() {
+        Object first = new Object();
+        Object duplicate = new Object();
+        
+        String pluginId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "same", first);
+        String duplicateId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "same", duplicate);
+        String blankId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, " ", new Object());
+        String nullInstanceId = ReflectionTestUtils.invokeMethod(manager, "registerPlugin",
+            PluginType.TRACE, "null", null);
+        
+        assertEquals("trace:same", pluginId);
+        assertNull(duplicateId);
+        assertNull(blankId);
+        assertNull(nullInstanceId);
+        assertSame(first, getPluginInstances().get(pluginId));
+        assertEquals(first.getClass().getName(), manager.getPlugin(pluginId).get().getClassName());
+        assertEquals(1, manager.listAllPlugins().size());
     }
     
     @Test
@@ -818,7 +877,7 @@ class PluginManagerTest {
         configs.put("trace:test", config);
         when(persistence.loadAllConfigs()).thenReturn(configs);
         
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         assertEquals("value", plugin.getCurrentConfig().get("key"));
         verify(persistence, never()).saveConfig(any(), anyMap());
@@ -834,7 +893,7 @@ class PluginManagerTest {
         registerConfigurablePlugin("trace", "test", plugin);
         registerSelectedAuthPlugin();
         
-        manager.onApplicationEvent(applicationReadyEvent);
+        manager.initialize();
         
         assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
     }
@@ -1343,9 +1402,212 @@ class PluginManagerTest {
     }
     
     @Test
+    void initializeImportsPreContextPluginWithoutReloadingProviderTest() {
+        Object instance = new Object();
+        PluginInfo info = createPreContextPluginInfo(true);
+        PluginConfigResolution resolution = new PluginConfigResolution(
+            Collections.singletonMap("key", "ma******ue"), Collections.emptyMap());
+        PreContextPluginInitializationResult result = new PreContextPluginInitializationResult(
+            Collections.singletonMap(info.getPluginId(), info),
+            Collections.singletonMap(info.getPluginId(), instance),
+            Collections.singletonMap(info.getPluginId(), resolution));
+        manager = new PluginManager(persistence, synchronizer, policyRegistry, result);
+        PluginProvider<Object> provider = mock(PluginProvider.class);
+        when(provider.getPluginType()).thenReturn(PluginType.ENVIRONMENT);
+        
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Collections.singletonList(provider));
+            
+            manager.initialize();
+        }
+        
+        assertSame(info, manager.getPlugin("environment:test").get());
+        assertSame(instance, getPluginInstances().get("environment:test"));
+        assertSame(resolution, manager.resolvePluginConfig(info));
+        assertTrue(manager.isPluginEnabled("environment", "test"));
+        verify(provider, never()).getAllPlugins();
+    }
+    
+    @Test
+    void initializeKeepsExistingPluginWhenPreContextIdentityConflictsTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        manager = managerWithPreContextPlugin(info);
+        Object existingInstance = new Object();
+        ReflectionTestUtils.invokeMethod(manager, "registerPlugin", PluginType.ENVIRONMENT,
+            info.getPluginName(), existingInstance);
+        
+        ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins");
+        
+        assertSame(existingInstance, getPluginInstances().get(info.getPluginId()));
+        assertNotSame(info, manager.getPlugin(info.getPluginId()).get());
+        assertFalse(getPreContextConfigResolutions().containsKey(info.getPluginId()));
+    }
+    
+    @Test
+    void initializeIgnoresIncompletePreContextPluginsTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        Map<String, PluginInfo> pluginInfos = new LinkedHashMap<>();
+        pluginInfos.put("environment:missing-info", null);
+        pluginInfos.put(info.getPluginId(), info);
+        Map<String, Object> pluginInstances = Collections.singletonMap(
+            "environment:missing-info", new Object());
+        PreContextPluginInitializationResult result = new PreContextPluginInitializationResult(
+            pluginInfos, pluginInstances, Collections.emptyMap());
+        manager = new PluginManager(persistence, synchronizer, policyRegistry, result);
+        
+        ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins");
+        
+        assertTrue(getPluginRegistry().isEmpty());
+        assertTrue(getPluginInstances().isEmpty());
+    }
+    
+    @Test
+    void initializeSkipsPreContextStartupLifecycleTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        TestStartupPlugin instance = new TestStartupPlugin();
+        PreContextPluginInitializationResult result = new PreContextPluginInitializationResult(
+            Collections.singletonMap(info.getPluginId(), info),
+            Collections.singletonMap(info.getPluginId(), instance),
+            Collections.emptyMap());
+        manager = new PluginManager(persistence, synchronizer, policyRegistry, result);
+        ReflectionTestUtils.invokeMethod(manager, "importPreContextPlugins");
+        
+        ReflectionTestUtils.invokeMethod(manager, "initializePluginLifecycles",
+            Collections.singleton(info.getPluginId()));
+        
+        assertTrue(instance.getOperations().isEmpty());
+    }
+    
+    @Test
+    void preContextPluginRejectsRuntimeStateAndConfigChangesTest() throws NacosApiException {
+        PluginInfo info = createPreContextPluginInfo(true);
+        manager = managerWithPreContextPlugin(info);
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Collections.emptyList());
+            manager.initialize();
+        }
+        
+        NacosApiException stateException = assertThrows(NacosApiException.class,
+            () -> manager.setPluginEnabled(info.getPluginId(), info.isEnabled()));
+        NacosApiException configException = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig(info.getPluginId(),
+                Collections.singletonMap("key", "value")));
+        
+        assertTrue(stateException.getErrMsg().contains("requires restart"),
+            stateException::getErrMsg);
+        assertTrue(configException.getErrMsg().contains("requires restart"),
+            configException::getErrMsg);
+        assertThrows(IllegalArgumentException.class,
+            () -> manager.validateStateChange("environment:missing", false));
+        assertThrows(IllegalArgumentException.class,
+            () -> manager.applyStateChange(info.getPluginId(), false));
+        assertThrows(IllegalArgumentException.class,
+            () -> manager.applyConfigChange(info.getPluginId(),
+                Collections.singletonMap("key", "value")));
+        verify(synchronizer, never()).syncStateChange(any(), anyBoolean());
+        verify(synchronizer, never()).syncConfigChange(any(), anyMap());
+    }
+    
+    @Test
+    void preContextPluginIsSkippedByRefreshAndSnapshotRestoreTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        manager = managerWithPreContextPlugin(info);
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(PluginProvider.class))
+                .thenReturn(Collections.emptyList());
+            manager.initialize();
+        }
+        PluginConfigService configService = mock(PluginConfigService.class);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        
+        manager.refreshStaticPluginConfigs();
+        Map<String, Boolean> states = new HashMap<>();
+        states.put(info.getPluginId(), false);
+        states.put("trace:test", false);
+        manager.restorePluginStates(states);
+        
+        Map<String, Map<String, String>> configs = new HashMap<>();
+        configs.put(info.getPluginId(), Collections.singletonMap("key", "ignored"));
+        configs.put("trace:test", Collections.singletonMap("key", "restored"));
+        manager.restorePluginConfigs(configs);
+        
+        verify(configService, never()).refreshStaticConfig(any(), any());
+        verify(configService).restoreRuntimePersistedConfigs(Collections.singletonMap(
+            "trace:test", Collections.singletonMap("key", "restored")));
+        verify(configService, never()).applyRestoredPluginConfig(eq(info), any());
+        verify(persistence).replaceAllStates(
+            Collections.singletonMap("trace:test", false));
+        assertTrue(manager.isPluginEnabled("environment", "test"));
+    }
+    
+    @Test
+    void persistedSnapshotsExcludePreContextEntriesTest() {
+        PluginInfo info = createPreContextPluginInfo(true);
+        manager = managerWithPreContextPlugin(info);
+        Map<String, Boolean> persistedStates = new HashMap<>();
+        persistedStates.put(info.getPluginId(), false);
+        persistedStates.put("trace:test", true);
+        persistedStates.put("unknown", false);
+        persistedStates.put(null, true);
+        when(persistence.loadAllStates()).thenReturn(persistedStates);
+        PluginConfigService configService = mock(PluginConfigService.class);
+        Map<String, Map<String, String>> persistedConfigs = new HashMap<>();
+        persistedConfigs.put(info.getPluginId(), Collections.singletonMap("key", "ignored"));
+        persistedConfigs.put("trace:test", Collections.singletonMap("key", "value"));
+        when(configService.getAllRuntimePersistedConfigs()).thenReturn(persistedConfigs);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        
+        Map<String, Boolean> filteredStates = manager.getPersistedPluginStates();
+        Map<String, Map<String, String>> filteredConfigs =
+            manager.getRuntimePersistedConfigs();
+        
+        assertFalse(filteredStates.containsKey(info.getPluginId()));
+        assertTrue(filteredStates.containsKey("trace:test"));
+        assertTrue(filteredStates.containsKey("unknown"));
+        assertTrue(filteredStates.containsKey(null));
+        assertFalse(filteredConfigs.containsKey(info.getPluginId()));
+        assertTrue(filteredConfigs.containsKey("trace:test"));
+    }
+    
+    @Test
+    void restoreNullPluginConfigSnapshotUsesEmptyMapTest() {
+        manager.restorePluginConfigs(null);
+        
+        verify(persistence).replaceAllConfigs(Collections.emptyMap());
+    }
+    
+    @Test
     void applyStateChangeWithUnknownPluginIdTest() {
         manager.applyStateChange("unknown:plugin", true);
         assertTrue(manager.isPluginEnabled("unknown", "plugin"));
+    }
+    
+    private PluginManager managerWithPreContextPlugin(PluginInfo info) {
+        Object instance = new TestConfigurablePlugin();
+        PluginConfigResolution resolution = new PluginConfigResolution(
+            info.getConfig(), Collections.emptyMap());
+        PreContextPluginInitializationResult result = new PreContextPluginInitializationResult(
+            Collections.singletonMap(info.getPluginId(), info),
+            Collections.singletonMap(info.getPluginId(), instance),
+            Collections.singletonMap(info.getPluginId(), resolution));
+        return new PluginManager(persistence, synchronizer, policyRegistry, result);
+    }
+    
+    private PluginInfo createPreContextPluginInfo(boolean configurable) {
+        ConfigItemDefinition definition =
+            new ConfigItemDefinition("key", "Key", null);
+        PluginInfo result = new PluginInfo();
+        result.setPluginId("environment:test");
+        result.setPluginName("test");
+        result.setPluginType(PluginType.ENVIRONMENT);
+        result.setClassName(Object.class.getName());
+        result.setEnabled(true);
+        result.setConfigurable(configurable);
+        result.setConfigDefinitions(Collections.singletonList(definition));
+        result.setConfig(Collections.singletonMap("key", "masked-value"));
+        return result;
     }
     
     private void registerTestPlugin(String type, String name, boolean configurable,
@@ -1447,6 +1709,12 @@ class PluginManagerTest {
     @SuppressWarnings("unchecked")
     private Map<String, Object> getPluginInstances() {
         return (Map<String, Object>) ReflectionTestUtils.getField(manager, "pluginInstances");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, PluginConfigResolution> getPreContextConfigResolutions() {
+        return (Map<String, PluginConfigResolution>) ReflectionTestUtils.getField(manager,
+            "preContextConfigResolutions");
     }
     
     @SuppressWarnings("unchecked")

@@ -107,7 +107,7 @@
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
         <clirr-maven-plugin.version>2.7</clirr-maven-plugin.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-        <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
@@ -137,7 +137,7 @@
         <log4j.version>2.25.4</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
-        <postgresql.version>42.7.11</postgresql.version>
+        <postgresql.version>42.7.12</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.78.0</grpc-java.version>
@@ -372,6 +372,9 @@
                         <exclude>**/filter-config.json</exclude>
                         <!-- Strict JSON Schema cannot carry a source-code comment header. -->
                         <exclude>specs/schemas/**/*.schema.json</exclude>
+                        <!-- Pinned upstream ARD schema; license and provenance are stored beside it. -->
+                        <exclude>**/ard-spec/**/ai-catalog.schema.json</exclude>
+                        <exclude>**/ard-spec/**/ard.openapi.yaml</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>

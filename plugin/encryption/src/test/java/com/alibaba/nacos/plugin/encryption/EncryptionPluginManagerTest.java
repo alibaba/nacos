@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.encryption;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,9 +42,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class EncryptionPluginManagerTest {
     
+    private Map<String, EncryptionPluginService> pluginSnapshot;
+    
+    @BeforeEach
+    void setUp() throws Exception {
+        Map<String, EncryptionPluginService> plugins = getPlugins();
+        pluginSnapshot = new HashMap<>(plugins);
+        plugins.clear();
+    }
+    
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         PluginStateCheckerHolder.setInstance(null);
+        Map<String, EncryptionPluginService> plugins = getPlugins();
+        plugins.clear();
+        plugins.putAll(pluginSnapshot);
     }
     
     @Test
@@ -53,12 +67,19 @@ class EncryptionPluginManagerTest {
     
     @Test
     void testJoin() {
-        EncryptionPluginManager.join(new TestEncryptionPluginService("aes"));
-        assertNotNull(EncryptionPluginManager.instance().findEncryptionService("aes"));
+        EncryptionPluginService first = new TestEncryptionPluginService("test-replace");
+        EncryptionPluginService replacement = new TestEncryptionPluginService("test-replace");
+        
+        EncryptionPluginManager.join(first);
+        EncryptionPluginManager.join(replacement);
+        
+        assertSame(first,
+            EncryptionPluginManager.instance().findEncryptionService("test-replace").get());
     }
     
     @Test
     void testFindEncryptionService() {
+        EncryptionPluginManager.join(new TestEncryptionPluginService("aes"));
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
         Optional<EncryptionPluginService> optional = instance.findEncryptionService("aes");
         assertTrue(optional.isPresent());
@@ -92,21 +113,14 @@ class EncryptionPluginManagerTest {
     @Test
     void testLoadInitialFromSpiSkipsBlankAlgorithmName() throws Exception {
         Map<String, EncryptionPluginService> plugins = getPlugins();
-        Map<String, EncryptionPluginService> snapshot = new HashMap<>(plugins);
-        plugins.clear();
         Method method = EncryptionPluginManager.class.getDeclaredMethod("loadInitial");
         method.setAccessible(true);
         
-        try {
-            method.invoke(EncryptionPluginManager.instance());
-            
-            assertTrue(EncryptionPluginManager.instance().findEncryptionService("spi-aes")
-                .isPresent());
-            assertFalse(EncryptionPluginManager.instance().findEncryptionService("").isPresent());
-        } finally {
-            plugins.clear();
-            plugins.putAll(snapshot);
-        }
+        method.invoke(EncryptionPluginManager.instance());
+        
+        assertTrue(EncryptionPluginManager.instance().findEncryptionService("spi-aes")
+            .isPresent());
+        assertFalse(EncryptionPluginManager.instance().findEncryptionService("").isPresent());
     }
     
     @SuppressWarnings("unchecked")

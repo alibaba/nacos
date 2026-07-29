@@ -83,18 +83,24 @@ A2A Binding 是一个 `AgentCallInterface`：
 
 ## 4. 旧 Runtime Endpoint 写入
 
-旧单条和批量 Endpoint 操作在以下兼容 scope 内保持全量替换语义：
+首个兼容阶段中，旧单条和批量 Endpoint 操作继续使用现有的按 Version 划分 Naming layout：
 
 ```text
 publisher + namespaceId + agentName + exactVersion + protocol=a2a
+
+group=agent-endpoints
+serviceName=<legacyEncodedAgentName>::<exactVersion>
 ```
 
-单条注册将 scope 替换为一个 Endpoint，批量注册替换为提交的集合。Adapter 将精确版本映射为
-`runtimeVersion=version` 和 `versionRange=[version]`，并写入标准 Runtime Endpoint Registry。
+单条注册委托 Naming 现有的单实例操作，将该 publication 替换为一个 Endpoint；批量注册委托
+Naming Batch 注册，以提交的完整 Batch 覆盖旧 Batch。旧 deregister 删除该精确 Version
+Service 对应的完整 publication。
 
-即使不同精确版本使用相同的公开 Endpoint 自然键，Registry 也会保存不同的 publisher contribution
-分组。旧 deregister 只删除请求精确版本的 contribution group。该内部兼容操作有意窄于 RAD
-`Deregister`；后者会删除当前 publisher 对所提交自然键的全部 bindings。
+兼容 Handler 不把这些写入重定向到新的无 Version RAD Runtime Service，不写入
+`runtimeVersion` 或 `versionRange` metadata，也不进入新的 RAD Runtime 写入路径。旧 A2A
+Client 无法提交该 Service 要求的完整跨 Version Publisher Batch；直接重定向会导致一个
+Version 注册覆盖另一个 Version。历史 Service 的迁移、双读或双写、切流、回滚和清理必须由
+独立的滚动升级契约定义。
 
 Endpoint 可以先于 Agent 或 Version 定义发布，但不得隐式创建 Agent 定义。
 

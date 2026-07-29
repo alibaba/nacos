@@ -27,10 +27,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +43,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +56,10 @@ class VisibilityPluginManagerTest {
     
     private VisibilityPluginManager manager;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
+    private Map<String, Object> testProperties;
+    
     @Mock
     private VisibilityService mockVisibilityService;
     
@@ -58,8 +67,12 @@ class VisibilityPluginManagerTest {
     
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
-        EnvUtil.reset();
-        System.clearProperty(VISIBILITY_ENABLED_KEY);
+        cachedEnvironment = EnvUtil.getEnvironment();
+        ConfigurableEnvironment environment = new StandardEnvironment();
+        testProperties = new HashMap<>();
+        environment.getPropertySources().addFirst(
+            new MapPropertySource("visibilityTest", testProperties));
+        EnvUtil.setEnvironment(environment);
         PluginStateCheckerHolder.setInstance(null);
         manager = VisibilityPluginManager.getInstance();
         Field field = VisibilityPluginManager.class.getDeclaredField("visibilityServiceMap");
@@ -73,8 +86,7 @@ class VisibilityPluginManagerTest {
     
     @AfterEach
     void tearDown() {
-        EnvUtil.reset();
-        System.clearProperty(VISIBILITY_ENABLED_KEY);
+        EnvUtil.setEnvironment(cachedEnvironment);
         PluginStateCheckerHolder.setInstance(null);
         serviceMap.clear();
     }
@@ -96,7 +108,7 @@ class VisibilityPluginManagerTest {
         Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
         initialized.setAccessible(true);
         initialized.set(manager, false);
-        System.setProperty(VISIBILITY_ENABLED_KEY, "false");
+        testProperties.put(VISIBILITY_ENABLED_KEY, "false");
         Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
         
         assertFalse(result.isPresent());
@@ -123,14 +135,18 @@ class VisibilityPluginManagerTest {
         properties.setProperty("nacos.plugin.visibility.custom.timeout", "1000");
         properties.setProperty("nacos.plugin.visibility.other.timeout", "2000");
         TestVisibilityService service = new TestVisibilityService("custom");
+        TestVisibilityService duplicate = new TestVisibilityService("custom");
         
+        registerVisibilityService(null, properties);
         registerVisibilityService(service, properties);
+        registerVisibilityService(duplicate, properties);
         registerVisibilityService(new TestVisibilityService(""), properties);
         registerVisibilityService(new ThrowNameVisibilityService(), properties);
         registerVisibilityService(new ThrowInitVisibilityService("throw-init"), properties);
         
         assertEquals(service, serviceMap.get("custom"));
         assertEquals("1000", service.initProperties.getProperty("timeout"));
+        assertNull(duplicate.initProperties);
         assertFalse(service.initProperties.containsKey("nacos.plugin.visibility.custom.timeout"));
         assertFalse(serviceMap.containsKey(""));
         assertFalse(serviceMap.containsKey("throw-init"));
@@ -169,36 +185,8 @@ class VisibilityPluginManagerTest {
     }
     
     @Test
-    void testResolveInitPropertiesFallsBackWhenEnvUtilThrows() throws Exception {
-        System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
-        EnvUtil.setThrowException(true);
-        
-        Method propertiesMethod =
-            VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
-        propertiesMethod.setAccessible(true);
-        
-        Properties result = (Properties) propertiesMethod.invoke(manager);
-        
-        assertEquals("5000", result.getProperty("nacos.plugin.visibility.fallback.timeout"));
-    }
-    
-    @Test
-    void testResolveInitPropertiesFallsBackWhenEnvResultIsNotProperties() throws Exception {
-        System.setProperty("nacos.plugin.visibility.fallback.timeout", "5000");
-        EnvUtil.setProperties("invalid-properties");
-        
-        Method propertiesMethod =
-            VisibilityPluginManager.class.getDeclaredMethod("resolveInitProperties");
-        propertiesMethod.setAccessible(true);
-        
-        Properties result = (Properties) propertiesMethod.invoke(manager);
-        
-        assertEquals("5000", result.getProperty("nacos.plugin.visibility.fallback.timeout"));
-    }
-    
-    @Test
     void testInitVisibilityServicesLoadsSpiAndSkipsBrokenProvider() throws Exception {
-        System.setProperty("nacos.plugin.visibility.spi-loaded.timeout", "3000");
+        testProperties.put("nacos.plugin.visibility.spi-loaded.timeout", "3000");
         Field initialized = VisibilityPluginManager.class.getDeclaredField("initialized");
         initialized.setAccessible(true);
         initialized.set(manager, false);

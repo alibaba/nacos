@@ -51,7 +51,7 @@ Plugins implement `NacosTraceSubscriber`.
 
 | Method | Requirement |
 |--------|-------------|
-| `getName()` | Stable subscriber name. Later duplicate names replace earlier ones. |
+| `getName()` | Stable subscriber name. The first subscriber keeps a duplicate name; later duplicates are ignored with a warning. |
 | `subscribeTypes()` | Trace event classes this subscriber wants to receive. |
 | `onEvent(event)` | Subscriber callback. |
 | `executor()` | Optional executor for asynchronous callback execution. |
@@ -119,8 +119,8 @@ subscriber, and a disabled implementation receives no newly dispatched work.
 The trace publisher is allowed to degrade by dropping trace events under queue
 pressure, as defined by the local event degradation rules.
 
-Trace subscribers are loaded by SPI. Duplicate names in the same type are not
-stable for production use; plugin packages should use unique names.
+Trace subscribers are loaded by SPI. Duplicate names use first-wins registration with a warning,
+but plugin packages should still use unique names.
 
 ## Degradation
 

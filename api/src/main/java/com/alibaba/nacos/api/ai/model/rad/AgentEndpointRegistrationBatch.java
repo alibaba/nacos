@@ -23,7 +23,9 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Batch command that registers or updates runtime Agent endpoints.
+ * Complete Runtime Endpoint batch for one publisher, Agent, protocol, and Version binding.
+ *
+ * <p>A later batch replaces the previous batch for the same publisher and Naming service.</p>
  *
  * @author Nacos
  */

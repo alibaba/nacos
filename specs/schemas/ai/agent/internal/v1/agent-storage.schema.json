@@ -30,7 +30,6 @@
       "tenant": "__nacos.agent.endpoint.tenant__",
       "version": "__nacos.agent.endpoint.version__",
       "versionRange": "__nacos.agent.endpoint.versionRange__",
-      "bindings": "__nacos.agent.endpoint.bindings__",
       "priority": "__nacos.agent.endpoint.priority__"
     }
   },
@@ -638,41 +637,16 @@
       },
       "$comment": "Version 1 favors a concise readable value and accepts the low-probability tuple collision caused by hyphens in both components; for example, (A, B-C) and (A-B, C) both compose to rad-A-B-C. A collision-free rule requires a new composer id and explicit migration. The value contains only [A-Za-z0-9-], starts with a letter or digit, may end with a letter, digit, or hyphen, and does not claim to be a DNS name."
     },
-    "RuntimeVersionBinding": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "runtimeVersion",
-        "versionRange"
-      ],
-      "properties": {
-        "runtimeVersion": {
-          "$ref": "#/$defs/AgentVersion"
-        },
-        "versionRange": {
-          "$ref": "#/$defs/VersionRange"
-        }
-      },
-      "description": "runtimeVersion must be contained by versionRange."
-    },
-    "RuntimeVersionBindings": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/RuntimeVersionBinding"
-      },
-      "description": "Canonical order and semantic deduplication use runtimeVersion then canonical versionRange with case-sensitive Agent version ordering; JSON Schema only enforces exact JSON-value uniqueness."
-    },
     "NamingRuntimeMetadata": {
       "type": "object",
-      "maxProperties": 43,
+      "maxProperties": 42,
       "required": [
         "__nacos.agent.endpoint.path__",
         "__nacos.agent.endpoint.transport__",
         "__nacos.agent.endpoint.protocol__",
         "__nacos.agent.endpoint.supportTls__",
-        "__nacos.agent.endpoint.bindings__",
+        "__nacos.agent.endpoint.version__",
+        "__nacos.agent.endpoint.versionRange__",
         "__nacos.agent.endpoint.priority__"
       ],
       "properties": {
@@ -691,7 +665,7 @@
         },
         "__nacos.agent.endpoint.protocolVersion__": {
           "$ref": "#/$defs/ProtocolVersion",
-          "description": "Optional legacy A2A compatibility fact. Only the compatibility adapter writes it, and only while all represented A2A contributions agree on one value. Public RAD projection and Runtime revision exclude it; differing values remove this singular key and use the target CallInterface fallback."
+          "description": "Optional compatibility fact reserved for a future A2A migration adapter that writes the new RAD layout. The current version-specific legacy A2A publication is outside this definition. Public RAD projection and Runtime revision exclude this value."
         },
         "__nacos.agent.endpoint.supportTls__": {
           "type": "string",
@@ -710,17 +684,12 @@
           "maxLength": 256
         },
         "__nacos.agent.endpoint.version__": {
-          "$ref": "#/$defs/AgentVersion"
+          "$ref": "#/$defs/AgentVersion",
+          "description": "Runtime Version for this single Naming Instance contribution."
         },
         "__nacos.agent.endpoint.versionRange__": {
-          "$ref": "#/$defs/VersionRange"
-        },
-        "__nacos.agent.endpoint.bindings__": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 1024,
-          "pattern": "^\\[.*\\]$",
-          "description": "Canonical JSON array of RuntimeVersionBinding objects, sorted and deduplicated. Parsing and equality to NamingRuntimePublication.bindings require domain validation."
+          "$ref": "#/$defs/VersionRange",
+          "description": "Canonical Version range for this single Naming Instance contribution. It must contain the singular runtime Version."
         },
         "__nacos.agent.endpoint.priority__": {
           "type": "string",
@@ -741,7 +710,6 @@
               "__nacos.agent.endpoint.tenant__",
               "__nacos.agent.endpoint.version__",
               "__nacos.agent.endpoint.versionRange__",
-              "__nacos.agent.endpoint.bindings__",
               "__nacos.agent.endpoint.priority__"
             ]
           },
@@ -754,7 +722,7 @@
         "type": "string",
         "maxLength": 256
       },
-      "description": "The sum of Java String.length() for all keys and values must not exceed 1024. At most 32 properties may be public Endpoint metadata; these encoded-size and category-count constraints require domain validation."
+      "description": "Each Naming Instance stores exactly one singular runtime Version and canonical Version range pair; no serialized bindings array is stored. The range must contain the runtime Version. The sum of Java String.length() for all keys and values must not exceed 1024. At most 32 properties may be public Endpoint metadata; these semantic, encoded-size, and category-count constraints require domain validation."
     },
     "NamingRuntimePublication": {
       "type": "object",
@@ -772,7 +740,6 @@
         "ephemeral",
         "enabled",
         "healthy",
-        "bindings",
         "metadata"
       ],
       "properties": {
@@ -822,54 +789,11 @@
         "healthy": {
           "type": "boolean"
         },
-        "bindings": {
-          "$ref": "#/$defs/RuntimeVersionBindings"
-        },
         "metadata": {
           "$ref": "#/$defs/NamingRuntimeMetadata"
         }
       },
-      "oneOf": [
-        {
-          "properties": {
-            "bindings": {
-              "maxItems": 1
-            },
-            "metadata": {
-              "required": [
-                "__nacos.agent.endpoint.version__",
-                "__nacos.agent.endpoint.versionRange__"
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "bindings": {
-              "minItems": 2
-            },
-            "metadata": {
-              "allOf": [
-                {
-                  "not": {
-                    "required": [
-                      "__nacos.agent.endpoint.version__"
-                    ]
-                  }
-                },
-                {
-                  "not": {
-                    "required": [
-                      "__nacos.agent.endpoint.versionRange__"
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$comment": "clusterName must equal the reserved transport metadata. One binding mirrors its runtimeVersion and versionRange into the singular keys. Two or more bindings remove both singular keys. The bindings metadata string must be the canonical JSON serialization of bindings. Across all live contributions, one natural Endpoint key must have one canonical public payload; identical payloads aggregate all bindings into this Naming instance. IP, port, path, query, scheme, and TLS metadata must reconstruct that canonical Endpoint. The optional reserved protocolVersion is written only by the legacy A2A adapter and is excluded from public RAD Endpoint metadata and Runtime revision."
+      "$comment": "This definition covers only the new Version-neutral RAD Naming layout. Current legacy A2A services named <legacyEncodedAgentName>::<exactVersion> and their Instance metadata are outside its scope. clusterName must equal the reserved transport metadata. Each Naming Runtime publication carries exactly one runtime Version and canonical Version range pair in metadata, and the range must contain the runtime Version. A publisher submits the complete Instance batch for one Agent protocol service; a new batch replaces that publisher's previous batch. If the client's desired batch becomes empty, it invokes whole-publication deregistration instead of submitting an empty batch. The server adapter maps the submitted batch without reading and merging old publisher state. Query projections construct one RuntimeVersionBinding per Instance, apply range matching, and aggregate bindings by natural Endpoint key. IP, port, path, query, scheme, and TLS metadata must reconstruct the canonical Endpoint. The optional reserved protocolVersion is excluded from public RAD Endpoint metadata and Runtime revision."
     },
     "RuntimeRevisionContract": {
       "type": "object",
@@ -1080,7 +1004,7 @@
           "const": "murmur3-x64-128-v1:"
         }
       },
-      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, aggregate publishers by natural Endpoint key, retain bindings matching targetVersion, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, and healthy as one byte 0 or 1. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by bindings or enabled state change the input set; those control fields are not serialized into an included Endpoint."
+      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, construct a RuntimeVersionBinding from each Naming Instance's singular runtime Version and Version range metadata, retain contributions whose range matches targetVersion, aggregate publishers and query-time bindings by natural Endpoint key, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, and healthy as one byte 0 or 1. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by Version-range matching or enabled state change the input set; those query control fields are not serialized into an included Endpoint."
     }
   }
 }

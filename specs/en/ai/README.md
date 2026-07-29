@@ -28,6 +28,7 @@ behavior through the [HTTP API](../http-api/api-spec.md),
 - [AI Registry Spec](ai-registry-spec.md)
 - [AI Resource Model Spec](ai-resource-model-spec.md)
 - [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md)
+- [AI Resource Search Spec](ai-resource-search-spec.md)
 - [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
 
 ## Agent Registry

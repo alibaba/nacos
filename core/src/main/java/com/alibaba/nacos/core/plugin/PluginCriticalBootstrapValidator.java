@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +87,8 @@ public final class PluginCriticalBootstrapValidator {
                     provider.getClass().getName(), e);
             }
         }
+        result.values().forEach(
+            typeProviders -> typeProviders.sort(Comparator.comparingInt(PluginProvider::getOrder)));
         return result;
     }
     
@@ -107,7 +110,7 @@ public final class PluginCriticalBootstrapValidator {
             }
             plugins.forEach((name, instance) -> {
                 if (instance != null) {
-                    result.put(name,
+                    result.putIfAbsent(name,
                         policyRegistry.isPluginEnabledByDefault(type, name));
                 }
             });

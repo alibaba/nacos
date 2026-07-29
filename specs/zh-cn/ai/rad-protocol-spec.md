@@ -46,8 +46,8 @@ RAD 0.1.0 定义五个操作：
 | `Search` | `AgentSearchRequest` | `AgentCatalogPage` | 分页搜索候选 Agent |
 | `Discover` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` | 返回一个 Agent 版本的完整调用快照 |
 | `Watch` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` 流 | 返回初始和后续的完整替换快照 |
-| `Register` | `AgentEndpointRegistrationBatch` | 成功或错误 | 注册或更新运行时端点 |
-| `Deregister` | `AgentEndpointDeregistrationBatch` | 成功或错误 | 注销运行时端点 |
+| `Register` | `AgentEndpointRegistrationBatch` | 成功或错误 | 完整替换当前发布者的运行时 Endpoint Batch |
+| `Deregister` | `AgentEndpointDeregistrationBatch` | 成功或错误 | 从发布者期望 Batch 中移除 Endpoint 自然键 |
 
 `Watch` 复用 `Discover` 的请求和结果。RAD 不在订阅快照外增加事件信封对象。
 
@@ -137,8 +137,8 @@ Schema 只暴露以下六个根消息：
 | `AgentCatalogPage` | `Search` 结果 |
 | `AgentDiscoveryRequest` | `Discover` 和 `Watch` 请求 |
 | `AgentDiscoveryResult` | `Discover` 和 `Watch` 完整快照 |
-| `AgentEndpointRegistrationBatch` | `Register` 请求 |
-| `AgentEndpointDeregistrationBatch` | `Deregister` 请求 |
+| `AgentEndpointRegistrationBatch` | `Register` 的完整期望 Batch |
+| `AgentEndpointDeregistrationBatch` | `Deregister` 的 Publisher Client 期望状态命令 |
 
 语言 Binding 可以复用字段完全等价的本地类型。例如 Java 可以使用
 `Page<AgentCatalogEntry>` 实现 `AgentCatalogPage`，不必再引入一个分页类。
@@ -245,7 +245,8 @@ Filter 的全部字段都是可选字段：
 - `DECLARED` Endpoint 不得包含 `healthy`。
 - `RUNTIME` 发现结果中的 Endpoint 必须包含 `healthy`。
 - Deregister 只提交 `uri` 和 `transport`，它们是公开对象中代表 Endpoint
-  自然键的字段。
+  自然键的字段。它是 Publisher Client 的便利命令；Nacos Binding 先将其应用到
+  本地期望状态，再发送完整替换 Batch。
 
 运行时 Endpoint 不使用 `endpointId`。
 
@@ -353,6 +354,11 @@ endpoints[]              # 1..1000
 版本。字段缺失时，服务端将其规范化为 `[runtimeVersion]`。`runtimeVersion` 必须包含
 在生效范围内。
 
+对于同一 Publisher 和 `(namespaceId, agentName, protocol)`，该数组是完整的期望
+Endpoint Batch。Register 完整替换此前 Batch，未提交的 Endpoint 会被删除。因此同一
+Publisher 在该范围内同时只有一个有效 `runtimeVersion` 和 `versionRange`；修改其中
+任一值都是完整替换，不是内部 Group 更新。
+
 `AgentEndpointDeregistrationBatch` 包含：
 
 ```text
@@ -360,8 +366,10 @@ namespaceId / agentName / protocol
 endpoints[] { uri, transport }
 ```
 
-对于每个给定自然键，Deregister 删除当前发布者贡献的全部 Binding，包括不同内部
-`runtimeVersion` 和 `versionRange` 分组中的 Binding。
+`AgentEndpointDeregistrationBatch` 继续作为面向应用的便利对象。Publisher Client
+从本地缓存的 Registration Batch 中删除给定自然键，再注册完整的剩余 Batch。没有
+Endpoint 剩余时，注销 `(namespaceId, agentName, protocol)` 下该 Publisher 的整份
+Publication。Nacos Server 不针对该对象执行局部 read-merge-write。
 
 ## 4. Search
 
@@ -438,8 +446,11 @@ Register 校验：
 
 - 请求结构、Endpoint 约束、权限和容量；
 - `runtimeVersion` 和 `versionRange` 合法，并且范围包含 Runtime Version；
-- 同一 Batch 不存在重复自然键，也不存在第 7.3 节的 Publication 冲突；
+- 同一 Batch 不存在重复自然键；
 - 请求不提交或覆盖 `protocolVersion`。
+
+Register 校验只面向本次提交的完整 Batch，不扫描其他 Publisher，也不在写入前为
+Endpoint 自然键建立 Reservation。
 
 Register 不要求 Agent、Runtime Version、范围边界、范围内 Version 或对应调用接口
 已经存在，因此支持 Endpoint 预注册。
@@ -453,37 +464,49 @@ Agent 和 Version 定义不拥有 Publication 生命周期。定义的创建、�
 
 ### 7.2 Batch、幂等与原子性
 
-一个注册 Batch 属于同一个：
+一个注册 Batch 是当前 Publisher 对以下身份提交的完整期望 Publication：
 
 ```text
-(namespaceId, agentName, protocol, runtimeVersion, versionRange)
+(namespaceId, agentName, protocol)
 ```
+
+`runtimeVersion` 和 `versionRange` 是整份 Batch 共享的内容，不属于额外的 Publication
+身份，也不形成服务端管理的 Binding Group。
 
 规则：
 
-- Registry 先校验全部 Endpoint，再原子应用一个 Batch。
-- Register 只新增或更新列出的自然键，不替换未提交的 Endpoint。
+- Binding 先校验全部 Endpoint，再为当前 Publisher 和 Publication 身份原子应用一个完整 Batch。
+- Register 替换此前 Batch，未提交的 Endpoint 会被删除。
 - 同一发布者重复提交相同内容时成功但不产生变化。
-- 非身份字段变化时执行 Upsert。
+- Endpoint 字段、Runtime Version 或 Range 的变化通过完整 Batch 替换表达。
 - 同一 Batch 出现重复自然键时整体拒绝。
-- Deregister 只删除当前发布者的贡献。
-- Deregister 不存在的贡献时成功但不产生变化。
-- 跨 Batch 不承诺事务。
+- Publisher Client 串行修改本地期望 Batch。部分 Deregister 和 Version 替换都在
+  本地计算新 Batch，再使用 Register 完整覆盖。
+- 期望 Batch 变空时，Binding 删除当前 Publisher 在该 Service 下的整份 Publication。
+- 注销本地不存在的 Contribution 成功且不发起远程变更。
 
 单 Endpoint 操作使用长度为 1 的 `endpoints[]`；RAD 不定义单独的单条命令。
 
-### 7.3 Publication 分组与多发布者
+Nacos Server 路径只是 Naming 上的数据结构 Adapter：它把完整 Endpoint Batch
+转换成 Naming Instance，再调用 Naming Batch Register 或整份 Publication
+Deregister。它不读取此前 Publisher Batch、不做增量 Merge、不增加 Agent Service
+Lock、不直接查询 Naming Client Index，也不在写入时扫描其他 Publisher。
 
-Binding 提供不透明的发布者身份和存活语义，发布者身份不进入发现结果。
+### 7.3 Naming Publication 与多发布者
 
-Registry 可以为一个公开 Endpoint 自然键保存多个内部 Publication 分组，并使用
-`runtimeVersion` 和规范化后的 `versionRange` 区分分组。因此，一个发布者可以通过
-多个兼容版本声明贡献同一个公开 Endpoint。Discover 先保留与目标版本匹配的分组，
-再将其聚合为一个公开 Endpoint。
+Publisher Transport 提供不透明的发布者身份和存活语义，发布者身份不进入发现结果。
 
-能够投影为同一个公开 Endpoint 的贡献必须具有相同的规范化 URI、Transport、
-Priority、Weight 和 Metadata；冲突注册返回 `CONFLICT`。健康状态在匹配的有效贡献间
-聚合：
+每个 Publisher 对一个 `(namespaceId, agentName, protocol)` Naming Service 最多
+贡献一份完整 Batch，并且该 Batch 只有一组 singular `runtimeVersion` 和 `versionRange`。
+不同 Publisher 可以贡献不同 pair。Nacos 读取路径从 Naming `ServiceStorage` 加载完整内部
+Service 投影，保留 Range 命中目标 Version 的 Contribution，再按公开 Endpoint 自然键聚合
+查询时 Binding。Agent 代码不直接遍历 Naming Client Index。
+
+AP 收敛后能够投影为同一个公开 Endpoint 的 Contribution 必须具有相同的规范化 URI、
+Transport、Priority、Weight 和 Metadata。Register 不执行跨 Publisher 的写前扫描。
+当收敛后的 `ServiceStorage` 投影包含冲突 Payload 时，受影响的读取或 Watch 返回
+`CONFLICT`，不得任意选择一个值。移除任一冲突 Publication 后，投影随 Naming
+正常收敛恢复。健康状态在匹配的有效 Contribution 间聚合：
 
 - 至少一个健康贡献时得到 `healthy=true`；
 - 全部贡献都不健康时得到 `healthy=false`；
@@ -523,9 +546,9 @@ Binding 将以下抽象类别映射到具体响应模型：
 | `NOT_FOUND` | Discover 目标不存在、不可见、禁用或未上线；已订阅目标之后消失 |
 | `PERMISSION_DENIED` | 调用方无权操作目标命名空间 |
 | `RESOURCE_EXHAUSTED` | Endpoint 或 Publication 容量已满，或完整响应超过 Binding 限制 |
-| `CONFLICT` | Publication 内容冲突或并发状态冲突 |
+| `CONFLICT` | 收敛后的 Runtime Contribution 对同一 Endpoint 自然键包含不兼容 Payload |
 | `UNSUPPORTED_CAPABILITY` | Binding 不支持请求的操作 |
-| `UNAVAILABLE` | Registry 当前无法形成可信快照或应用写入 |
+| `UNAVAILABLE` | Registry 当前无法读取 Naming 状态或应用写入 |
 
 不可见资源与不存在资源都表现为 `NOT_FOUND`，避免可见性侧信道。Filter 无匹配不是
 错误，必须使用第 5 节规定的空结果形态。
@@ -632,3 +655,7 @@ JSON Schema 只校验 Version Range 字符串的粗略语法，不能替代领�
   }]
 }
 ```
+
+这是面向应用的 SDK 命令。SDK 从缓存 Batch 中删除该自然键，并发送完整的剩余
+Register 请求；剩余 Batch 为空时，Nacos Binding 按 `namespaceId`、`agentName` 和
+`protocol` 发送整份 Publication 注销。

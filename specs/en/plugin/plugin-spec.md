@@ -103,12 +103,32 @@ The core plugin manager records loaded and enabled plugins; it does not by
 itself define the execution mode. Domain managers are responsible for applying
 the mode consistently.
 
+For `ai-resource-import`, each managed Builder implementation represents one
+external source. The request `sourceId` equals the managed `pluginName`; the
+domain checks type and implementation state before building one request-scoped
+service from the Builder's accepted configuration snapshot.
+
 Execution mode and criticality are plugin-type capabilities rather than properties of a particular
 built-in implementation. The shared `PluginType` must expose `executionMode` and `critical`.
 The existing `exclusive` information remains derived from `executionMode == EXCLUSIVE` for API
 compatibility. Whether an implementation is configurable is derived from
 `PluginConfigSpec.isConfigurable()`; configurable and zero-config implementations may coexist under
 the same plugin type.
+
+## Initialization Phases
+
+Initialization phase is a plugin-type capability declared by `PluginType`, not a choice made by an
+individual implementation.
+
+| Phase | Meaning |
+|-------|---------|
+| `PRE_CONTEXT` | Discover, resolve, and apply the plugin before custom environment values are added to the Spring environment. |
+| `STANDARD` | Initialize the plugin through the regular core plugin manager after the Spring context is refreshed. |
+
+`environment` is the built-in `PRE_CONTEXT` type. All other built-in types use `STANDARD`.
+Both phases use the common `PluginInitializer` orchestration contract. A pre-context initializer
+must hand the exact initialized instances and their accepted configuration snapshots to the later
+core manager; the provider must not be loaded a second time.
 
 ## SPI Layers
 
@@ -124,9 +144,10 @@ Unified domain plugin SPIs extend `PluginConfigSpec`. Its compatibility defaults
 definitions, an empty current map, and a no-op apply callback, so an implementation compiled against
 an older domain SPI and a new zero-config implementation both remain `configurable=false`. A plugin
 that declares at least one `ConfigItemDefinition` is configurable and must implement the current-map
-and apply callbacks. `environment` remains a bootstrap exception until its unified configuration
-lifecycle is designed. `control` uses a definition-only builder plus a stable `PluginConfigSpec`
-adapter. `ai-resource-import` remains outside unified management until its redesign. A plugin
+and apply callbacks. The environment SPI inherits this contract and is initialized through the
+pre-context phase. `control` participates through its stable managed configuration adapter.
+For `ai-resource-import`, the stable request-service Builder itself implements
+`PluginConfigSpec`; the request-scoped service does not register as a second plugin. A plugin
 category that supports enable or disable checks must use
 `PluginStateCheckerHolder` rather than keeping an independent status source.
 
@@ -142,14 +163,17 @@ Plugin implementations are discovered with the Nacos SPI loader. Deployments may
 provide plugins from the classpath or from the server plugin directory. The
 plugin implementation must be loadable without changing Nacos server code.
 
-After the Spring context is refreshed, the core `PluginManager` discovers lightweight
-`PluginProvider` implementations. It invokes `getAllPlugins` immediately only for plugin types
-whose domain policy enables loading. Active critical types always load regardless of the optional
-loading predicate. For a deferred non-critical type, a later server configuration refresh that
-enables loading must discover its implementations, restore persisted implementation state,
-resolve effective configuration, and invoke `applyConfig` before those implementations are
-exposed for execution. A loaded type is retained when its loading predicate later becomes false;
-the owning domain entry switch continues to gate execution.
+The pre-context initializer discovers enabled `PRE_CONTEXT` providers before custom environment
+processing. It resolves only `STATIC > DEFAULT`, applies configurable implementations, and makes
+the resulting instances available to the owning domain manager. After the Spring context is
+refreshed, the standard initializer discovers lightweight `STANDARD` `PluginProvider`
+implementations. It invokes `getAllPlugins` immediately only for plugin types whose domain policy
+enables loading. Active critical types always load regardless of the optional loading predicate.
+For a deferred non-critical type, a later server configuration refresh that enables loading must
+discover its implementations, restore persisted implementation state, resolve effective
+configuration, and invoke `applyConfig` before those implementations are exposed for execution.
+A loaded type is retained when its loading predicate later becomes false; the owning domain entry
+switch continues to gate execution.
 
 The loading predicate does not replace implementation state. Its default is `true` for binary
 compatibility and a domain should override it only when it owns a type-wide module or capability
@@ -175,7 +199,15 @@ before the server becomes available.
 Plugin startup must be deterministic:
 
 - A plugin type and name pair must map to one runtime plugin instance.
-- Duplicate plugin names in the same type are invalid for stable operation.
+- Providers of the same type are processed in ascending `PluginProvider.getOrder()` order.
+  Providers with the same order retain their service-discovery order. The resulting order is
+  applied before first-wins registration.
+- Discovery uses first-wins registration. A blank plugin name or null implementation is ignored
+  with a warning. If a later implementation has the same `type:name`, the first implementation
+  remains registered and the later implementation is ignored with a warning that identifies both
+  implementation classes. These discovery conflicts do not by themselves block Nacos startup.
+- A provider that builds its result from multiple SPI implementations must apply the same
+  first-wins rule before returning its map; it must not silently replace an earlier implementation.
 - Plugin implementations must not change the meaning of shared Nacos resource
   identifiers, response envelopes, or error conventions.
 
@@ -260,7 +292,7 @@ Built-in switches audited during the unified-state migration are classified as f
 | `nacos.plugin.visibility.type` | Historical visibility selector; accepted only to derive the initial state of the named implementation. Runtime routing uses enabled implementations and domain input. |
 | `nacos.plugin.ai-pipeline.type` | Historical pipeline-chain membership input. Core uses it only to derive initial implementation states with `RESTART`; implementation configuration and ordering use each node's `PluginConfigSpec`. |
 | `nacos.plugin.datasource.log.enabled` | Datasource behavior/logging configuration, not implementation state. |
-| `nacos.ai.resource.import.enabled` | Historical AI import path; its removal or migration is deferred with the AI importer redesign. |
+| `nacos.ai.resource.import.enabled` | Historical alias for `nacos.plugin.ai-resource-import.enabled`. The standard key wins when present. AI Resource Import defaults to enabled and only an explicit `false` disables it. |
 
 New family-wide switches must not duplicate per-implementation state. A core-module or
 domain-capability entry switch may gate an entire capability, but it cannot select or enable a
@@ -343,12 +375,21 @@ Config definitions may declare the following metadata:
 
 `aliases` are used when reading compatible static configuration and may also be
 accepted as migration-compatible API input. Alias use is logged as a migration
-hint. After normalization, aliases must
+hint. If the normalized standard key exists, its value is authoritative even when it is an empty
+string; aliases are considered only when the standard key is absent. After normalization, aliases must
 not be written into runtime persistence files or local-only memory maps. If an
 input contains multiple aliases for the same item, the first alias declared in
 the definition takes effect and the server logs the ignored aliases.
 `enabled` is reserved for the unified implementation state and must not be declared as a regular
 item key in `ConfigItemDefinition`.
+
+Definition discovery also uses first-wins normalization. Null definitions, blank item keys, and
+the reserved `enabled` key are ignored with warnings. If a later item key or alias conflicts with
+an input key already claimed by an earlier definition, the earlier definition remains effective
+and the later definition or alias is ignored with a warning. This includes normalized full-key
+collisions. Definition metadata is copied before normalization so the manager does not mutate
+plugin-owned objects. For `PRE_CONTEXT` plugins, any declared `RUNTIME` effect mode is copied as
+`RESTART`; the original plugin definition is not modified.
 
 ### Config Sources And Value Metadata
 
@@ -358,6 +399,10 @@ priority is:
 ```text
 LOCAL_ONLY > RUNTIME_PERSISTED > STATIC > DEFAULT
 ```
+
+This full priority applies to `STANDARD` plugins. `PRE_CONTEXT` plugins resolve
+only `STATIC > DEFAULT`; runtime persisted and local-only sources are not loaded
+or accepted for them.
 
 | Source | Meaning |
 |--------|---------|
@@ -415,11 +460,9 @@ critical implementation lists.
 Bootstrap or build-time types cannot satisfy this contract with a late runtime
 check. `control` completes unified config apply before building and installing
 its startup manager bundle, and rejects runtime selection changes.
-`environment` still transforms Spring properties before the core plugin manager
-is ready; its status capability and restart/bootstrap semantics must be defined
-before management APIs can report a state update as effective.
-`ai-resource-import` is not currently exposed through `PluginProvider` and is
-outside unified state management.
+`environment` is initialized in the pre-context phase and only its startup
+state may participate in property transformation. Runtime state changes are
+rejected. `ai-resource-import` is managed through its stable Builder.
 
 ### Config Update Compatibility
 
@@ -465,6 +508,15 @@ calculation:
 3. A runtime request replaces one complete `RUNTIME_PERSISTED` or `LOCAL_ONLY`
    source map. The server resolves all sources again and invokes the plugin for
    each accepted request, including a same-map request used as a manual retry.
+
+`PRE_CONTEXT` plugins are an explicit startup-only variant of this flow. Before
+custom environment processing, core captures their static source, resolves
+`STATIC > DEFAULT`, validates and applies the result, and records that accepted
+snapshot for later plugin detail queries. A `RUNTIME` definition declared by a
+pre-context implementation is defensively copied and exposed as `RESTART`, with
+a warning containing only the plugin ID and item key. Runtime config APIs,
+persisted or local-only restoration, and `ServerConfigChangeEvent` refresh must
+not update pre-context plugins.
 
 The `STATIC` resolver keeps an accepted per-plugin snapshot instead of reading
 live environment values independently for every detail query. Startup captures

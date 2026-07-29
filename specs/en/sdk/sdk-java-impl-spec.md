@@ -62,7 +62,10 @@ multiple namespaces should create separate Client SDK instances and close them
 when no longer used. Public runtime interfaces do not expose a namespace
 argument; their implementations use the namespace bound at construction.
 This rule does not apply to the Maintainer SDK: its Agent management interface
-is not namespace-bound and requires an explicit namespace on every call.
+is not namespace-bound, accepts an explicit namespace, and provides
+default-namespace overloads that use `public`. Agent management Request and
+Command objects do not contain a namespace; the explicit method argument is
+the sole custom-namespace source.
 
 ## 3. Java Client SDK Configuration
 
@@ -336,12 +339,15 @@ maintenance belong to the Maintainer SDK.
 - `agentSpec()` for AgentSpec management;
 - `pipeline()` for Pipeline management.
 
-The target Agent management addition is `agent()`, which returns
-`AgentMaintainerService`. This is a target contract and must not be documented
-as currently implemented until the new Agent Admin API is available.
-`AgentMaintainerService` maps one-to-one to that Admin HTTP API. Its instance is
-not namespace-bound, and every method explicitly carries `namespaceId`.
-`a2a()` remains available for its compatibility window.
+The Agent management delegate is `agent()`, which returns
+`AgentMaintainerService` and maps one-to-one to the Agent Admin HTTP API. Its
+instance is not namespace-bound. Operations provide explicit-namespace forms
+and convenience overloads that use the default namespace `public`. Agent
+Request and Command objects do not contain `namespaceId`; explicit overloads
+take it as a separate method argument. Agent definition creation uses
+`createDraft`: the first draft creates missing Agent metadata, while later
+drafts reuse that metadata. `a2a()` remains available for its compatibility
+window.
 
 Runtime AI registration and subscription can remain in `AiService`; broad AI
 resource management belongs to `AiMaintainerService`.

@@ -83,7 +83,7 @@ class StaticPluginConfigSourceResolverTest {
     }
     
     @Test
-    void testGetConfigUsesAliasWhenStandardValueIsEmpty() {
+    void testGetConfigUsesEmptyStandardValueInsteadOfAlias() {
         ConfigItemDefinition definition = new ConfigItemDefinition();
         definition.setKey("token");
         definition.setAliases(Collections.singletonList("nacos.legacy.token"));
@@ -93,7 +93,7 @@ class StaticPluginConfigSourceResolverTest {
         Map<String, String> config =
             resolver.getConfig(createPluginInfo(Collections.singletonList(definition)));
         
-        assertEquals(Collections.singletonMap("token", "legacy-value"), config);
+        assertEquals(Collections.singletonMap("token", ""), config);
     }
     
     @Test

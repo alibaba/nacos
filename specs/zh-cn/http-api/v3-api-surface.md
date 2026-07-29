@@ -75,7 +75,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
-| `/v3/admin/ai/*` | 71 | GET, POST, PUT, DELETE | MCP、A2A、Prompt、Skill、AgentSpec、Pipeline。 |
+| `/v3/admin/ai/*` | 89 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | 控制台集群和命名空间操作。 |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | 控制台配置和历史操作。 |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | 控制台服务和实例操作。 |
@@ -118,7 +118,7 @@ Admin API 兼容开关。
   服务端状态。
 - `cs`：配置 CRUD、元数据、批量操作、历史、监听者、容量、指标和 ops。
 - `ns`：服务、实例、集群、健康状态、客户端和注册中心 ops。
-- `ai`：MCP、A2A、Prompt、Skill、AgentSpec 和 Pipeline 管理。
+- `ai`：MCP、A2A、Agent、Prompt、Skill、AgentSpec 和 Pipeline 管理。
 
 需要更明确文档化的已实现行为：
 
@@ -128,6 +128,9 @@ Admin API 兼容开关。
 - Config 查询在返回 Admin API 详情前会解密加密内容。
 - Config 发布在未提供 encrypted data key 且适用加密处理器时会加密内容。
 - AI Prompt 在同一个 Controller 中同时包含已废弃兼容端点和新的生命周期端点。
+- Agent 管理在 `/v3/admin/ai/agents` 下提供定义 CRUD、受限 Agent 与 Version
+  读取、Draft 与 Version 生命周期、自定义 Label 以及只读 Runtime Endpoint
+  Snapshot；省略或传入空白 `namespaceId` 时统一规范化为 `public`。
 - Plugin detail 在已有 `config` 字段中返回当前 effective plugin config，并可以
   追加来源、overridden 等值元数据，不改变已有字段。
 - Plugin config 更新保持完整 override map 替换语义。运行时更新必须拒绝
@@ -175,11 +178,11 @@ V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：
 默认鉴权插件随 Nacos 一起发布，因此它的 v3 auth 端点应遵循 Nacos HTTP API 规范和
 [鉴权插件规范](../auth/auth-plugin-spec.md)。
 
-## 8. 已批准的 Agent/RAD 目标 API 面
+## 8. 已批准的 Agent/RAD API 面
 
-下列路径是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性目标。在对应
-Controller、鉴权、传输 Binding 和测试完成前，它们不属于当前已实现 API 清单，也不计入
-第 3 节的 Controller 统计。
+下列路径是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性 API 面。Admin
+管理路径已经计入第 3 节的已实现 API 清单和 Controller 统计；Client 传输 Binding 与
+Console Facade 在对应 Controller、鉴权、传输 Binding 和测试完成前仍属于目标 API 面。
 
 Client 目标路径：
 
@@ -187,21 +190,21 @@ Client 目标路径：
 | --- | --- | --- |
 | GET | `/v3/client/ai/agents/search` | 搜索 Agent 目录。 |
 | GET | `/v3/client/ai/agents` | 发现一个 Agent，可附带 Discovery Filter。 |
-| POST | `/v3/client/ai/agents/endpoints` | Upsert 一批 Runtime Endpoint 注册。 |
-| DELETE | `/v3/client/ai/agents/endpoints` | 使用 JSON body 注销一批 Runtime Endpoint。 |
+| POST | `/v3/client/ai/agents/endpoints` | 完整替换当前 Publisher 的 Runtime Endpoint Batch。 |
+| DELETE | `/v3/client/ai/agents/endpoints` | 使用 JSON body 标识并移除当前 Publisher 的整份 Runtime Endpoint Publication。 |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 刷新一个 HTTP Publisher Client 的活性。 |
 
-Admin 和 Console 目标路径分别使用 `/v3/admin/ai/agents` 和
-`/v3/console/ai/agents` 前缀。Console 是相同相对管理契约的 UI Facade。
+Admin 路径使用已实现的 `/v3/admin/ai/agents` 前缀；Console 目标路径使用
+`/v3/console/ai/agents` 前缀，Console 是相同相对管理契约的 UI Facade。
 
 | 相对路径 | Method | 契约 |
 | --- | --- | --- |
-| *（Base path）* | GET, POST, PUT, DELETE | 读取、创建、更新或删除 Agent 定义。 |
+| *（Base path）* | GET, PUT, DELETE | 读取、更新 Agent metadata 或删除 Agent 定义。 |
 | `/list` | GET | 列举 Agent Summary。 |
 | `/versions` | GET | 列举 Version Summary。 |
 | `/version` | GET | 读取一个精确 Version 定义。 |
 | `/runtime-endpoints` | GET | 读取一个完整、不分页的 Runtime Endpoint Snapshot。 |
-| `/draft` | POST, PUT, DELETE | 创建、更新或删除 Draft。 |
+| `/draft` | POST, PUT, DELETE | 创建新 Draft（Agent 缺失时同时首建 metadata）、更新当前 Draft 内容或删除 Draft。 |
 | `/submit` | POST | 提交 Draft。 |
 | `/publish` | POST | 发布 Reviewed Version。 |
 | `/force-publish` | POST | 经审计地绕过 Pipeline。 |

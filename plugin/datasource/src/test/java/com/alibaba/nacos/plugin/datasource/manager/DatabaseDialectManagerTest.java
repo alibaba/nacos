@@ -17,17 +17,24 @@
 package com.alibaba.nacos.plugin.datasource.manager;
 
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 
 class DatabaseDialectManagerTest {
     
@@ -71,18 +78,34 @@ class DatabaseDialectManagerTest {
     }
     
     @Test
-    void testGetDialectFallbackAndNoEnabledFallback() {
+    void testGetDialectDoesNotFallbackToAnotherEnabledDialect() {
         DatabaseDialect mysql = new TestDatabaseDialect("mysql");
         dialectMap.put("mysql", mysql);
         PluginStateCheckerHolder.setInstance(
             (pluginType, pluginName) -> "mysql".equals(pluginName) || "unknown".equals(pluginName));
         
-        assertSame(mysql, DatabaseDialectManager.getInstance().getDialect("unknown"));
-        
-        PluginStateCheckerHolder
-            .setInstance((pluginType, pluginName) -> "unknown".equals(pluginName));
-        assertThrows(IllegalStateException.class,
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> DatabaseDialectManager.getInstance().getDialect("unknown"));
+        
+        assertTrue(exception.getMessage().contains("unknown"));
+    }
+    
+    @Test
+    void testLoadInitialUsesFirstDiscoveredDialect() throws Exception {
+        DatabaseDialect first = new TestDatabaseDialect("test");
+        DatabaseDialect duplicate = new TestDatabaseDialect("test");
+        DatabaseDialect invalid = new TestDatabaseDialect(" ");
+        Method method = DatabaseDialectManager.class.getDeclaredMethod("loadInitial");
+        method.setAccessible(true);
+        
+        try (MockedStatic<NacosServiceLoader> loader = mockStatic(NacosServiceLoader.class)) {
+            loader.when(() -> NacosServiceLoader.load(DatabaseDialect.class))
+                .thenReturn(Arrays.asList(first, duplicate, invalid, null));
+            method.invoke(null);
+        }
+        
+        assertSame(first, dialectMap.get("test"));
+        assertFalse(dialectMap.containsKey(" "));
     }
     
     private Map<String, DatabaseDialect> getDialectMap() throws Exception {

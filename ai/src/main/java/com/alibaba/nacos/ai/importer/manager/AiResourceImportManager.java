@@ -40,12 +40,15 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidate;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportCandidatePage;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportContext;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
+import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -63,7 +66,7 @@ import java.util.Map;
 @Service
 public class AiResourceImportManager {
     
-    private final AiResourceImportSourceManager sourceManager;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AiResourceImportManager.class);
     
     private final AiResourceImportPluginManager pluginManager;
     
@@ -71,10 +74,9 @@ public class AiResourceImportManager {
     
     private final AiResourceImportSecurityGuard securityGuard;
     
-    public AiResourceImportManager(AiResourceImportSourceManager sourceManager,
-        AiResourceImportPluginManager pluginManager, AiResourceOperatorRegistry operatorRegistry,
+    public AiResourceImportManager(AiResourceImportPluginManager pluginManager,
+        AiResourceOperatorRegistry operatorRegistry,
         AiResourceImportSecurityGuard securityGuard) {
-        this.sourceManager = sourceManager;
         this.pluginManager = pluginManager;
         this.operatorRegistry = operatorRegistry;
         this.securityGuard = securityGuard;
@@ -89,7 +91,7 @@ public class AiResourceImportManager {
      */
     public List<AiResourceImportSourceInfo> listSources(String resourceType)
         throws NacosException {
-        return sourceManager.listSourceInfos(resourceType);
+        return pluginManager.listSourceInfos(resourceType);
     }
     
     /**
@@ -102,31 +104,33 @@ public class AiResourceImportManager {
     public AiResourceImportSearchResponse search(AiResourceImportSearchRequest request)
         throws NacosException {
         requireRequest(request);
-        AiResourceImportSource source = null;
+        AiResourceImportServiceBuilder builder = null;
+        AiResourceImportService importer = null;
         try {
-            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-            securityGuard.checkSourceEndpoint(source);
-            AiResourceImportService importer =
-                pluginManager.resolveImporter(source, request.getResourceType());
+            builder =
+                pluginManager.resolveBuilder(request.getSourceId(), request.getResourceType());
+            importer = buildImporter(builder);
             AiResourceImportCandidatePage page =
-                importer.search(buildSearchContext(source, request));
+                importer.search(buildSearchContext(builder, request));
             AiResourceImportSearchResponse response = new AiResourceImportSearchResponse();
-            response.setSourceId(source.getSourceId());
+            response.setSourceId(builder.pluginName());
             response.setResourceType(request.getResourceType());
             response.setItems(toCandidateItems(page == null ? null : page.getItems()));
             if (page != null) {
                 response.setNextCursor(page.getNextCursor());
                 response.setHasMore(page.isHasMore());
             }
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_SEARCH, AiResourceTraceService.STATUS_SUCCESS,
-                searchTraceExt(source, response));
+                searchTraceExt(builder, response));
             return response;
         } catch (NacosException e) {
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_SEARCH, AiResourceTraceService.STATUS_FAILURE,
-                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+                failureTraceExt(builder, request.getSourceId(), e.getErrMsg()));
             throw e;
+        } finally {
+            closeImporter(builder, importer, AiResourceTraceService.OP_IMPORT_SEARCH);
         }
     }
     
@@ -141,32 +145,34 @@ public class AiResourceImportManager {
         throws NacosException {
         requireRequest(request);
         requireSelectedItems(request.getSelectedItems());
-        AiResourceImportSource source = null;
+        AiResourceImportServiceBuilder builder = null;
+        AiResourceImportService importer = null;
         try {
-            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-            securityGuard.checkSourceEndpoint(source);
-            AiResourceImportService importer =
-                pluginManager.resolveImporter(source, request.getResourceType());
-            AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
+            builder =
+                pluginManager.resolveBuilder(request.getSourceId(), request.getResourceType());
+            importer = buildImporter(builder);
+            AiResourceImportContext context = buildItemContext(request.getNamespaceId(),
                 request.getResourceType(), request.getOptions());
             List<AiResourceImportValidationItem> items = new ArrayList<>();
             for (AiResourceImportItem each : request.getSelectedItems()) {
-                items.add(validateItem(source, importer, context, each,
+                items.add(validateItem(builder, importer, context, each,
                     request.isOverwriteExisting()));
             }
             AiResourceImportValidateResponse response = new AiResourceImportValidateResponse();
-            response.setSourceId(source.getSourceId());
+            response.setSourceId(builder.pluginName());
             response.setResourceType(request.getResourceType());
             response.setItems(items);
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_VALIDATE,
-                validationTraceStatus(items), validationTraceExt(source, request, items));
+                validationTraceStatus(items), validationTraceExt(builder, request, items));
             return response;
         } catch (NacosException e) {
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_VALIDATE, AiResourceTraceService.STATUS_FAILURE,
-                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+                failureTraceExt(builder, request.getSourceId(), e.getErrMsg()));
             throw e;
+        } finally {
+            closeImporter(builder, importer, AiResourceTraceService.OP_IMPORT_VALIDATE);
         }
     }
     
@@ -181,31 +187,33 @@ public class AiResourceImportManager {
         throws NacosException {
         requireRequest(request);
         requireSelectedItems(request.getSelectedItems());
-        AiResourceImportSource source = null;
+        AiResourceImportServiceBuilder builder = null;
+        AiResourceImportService importer = null;
         try {
-            source = sourceManager.resolveSource(request.getSourceId(), request.getResourceType());
-            securityGuard.checkSourceEndpoint(source);
-            AiResourceImportService importer =
-                pluginManager.resolveImporter(source, request.getResourceType());
-            AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
+            builder =
+                pluginManager.resolveBuilder(request.getSourceId(), request.getResourceType());
+            importer = buildImporter(builder);
+            AiResourceImportContext context = buildItemContext(request.getNamespaceId(),
                 request.getResourceType(), request.getOptions());
             List<AiResourceImportResultItem> results = new ArrayList<>();
             for (AiResourceImportItem each : request.getSelectedItems()) {
-                AiResourceImportResultItem result = executeItem(source, importer, context, each,
+                AiResourceImportResultItem result = executeItem(builder, importer, context, each,
                     request.isOverwriteExisting(), request.isSkipInvalid());
-                traceExecuteResult(source, context.getResourceType(), each, result);
+                traceExecuteResult(builder, context.getResourceType(), each, result);
                 results.add(result);
             }
             AiResourceImportExecuteResponse response = buildExecuteResponse(results);
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_EXECUTE, executeTraceStatus(response),
-                executeTraceExt(source, request, response));
+                executeTraceExt(builder, request, response));
             return response;
         } catch (NacosException e) {
-            traceSourceOperation(source, request.getResourceType(),
+            traceSourceOperation(builder, request.getResourceType(),
                 AiResourceTraceService.OP_IMPORT_EXECUTE, AiResourceTraceService.STATUS_FAILURE,
-                failureTraceExt(source, request.getSourceId(), e.getErrMsg()));
+                failureTraceExt(builder, request.getSourceId(), e.getErrMsg()));
             throw e;
+        } finally {
+            closeImporter(builder, importer, AiResourceTraceService.OP_IMPORT_EXECUTE);
         }
     }
     
@@ -252,35 +260,72 @@ public class AiResourceImportManager {
         }
     }
     
-    private AiResourceImportContext buildSearchContext(AiResourceImportSource source,
+    private AiResourceImportContext buildSearchContext(AiResourceImportServiceBuilder builder,
         AiResourceImportSearchRequest request) {
-        AiResourceImportContext context = buildItemContext(source, request.getNamespaceId(),
+        AiResourceImportContext context = buildItemContext(request.getNamespaceId(),
             request.getResourceType(), request.getOptions());
         context.setQuery(request.getQuery());
         context.setCursor(request.getCursor());
-        context.setLimit(resolveLimit(source, request.getLimit()));
+        context.setLimit(resolveLimit(builder, request.getLimit()));
         return context;
     }
     
-    private AiResourceImportContext buildItemContext(AiResourceImportSource source,
-        String namespaceId, String resourceType, java.util.Map<String, String> options) {
+    private AiResourceImportContext buildItemContext(String namespaceId, String resourceType,
+        java.util.Map<String, String> options) {
         AiResourceImportContext context = new AiResourceImportContext();
         context.setNamespaceId(StringUtils.isBlank(namespaceId)
             ? com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID : namespaceId);
         context.setResourceType(resourceType);
-        context.setSource(source);
         context.setOptions(options);
         context.setOperator(VisibilityHelper.resolveCurrentIdentity());
         context.setClientIp(VisibilityHelper.resolveClientIp());
         return context;
     }
     
-    private int resolveLimit(AiResourceImportSource source, Integer requestedLimit) {
-        int defaultLimit = source.getMaxItemCount() > 0 ? source.getMaxItemCount() : 100;
+    private int resolveLimit(AiResourceImportServiceBuilder builder, Integer requestedLimit) {
+        int defaultLimit = resolveMaxItemCount(builder);
         if (requestedLimit == null || requestedLimit <= 0) {
             return defaultLimit;
         }
         return Math.min(requestedLimit, defaultLimit);
+    }
+    
+    private int resolveMaxItemCount(AiResourceImportServiceBuilder builder) {
+        String value =
+            builder.getCurrentConfig().get(AiResourceImportConstants.CONFIG_MAX_ITEM_COUNT);
+        return StringUtils.isBlank(value) ? AiResourceImportConstants.DEFAULT_MAX_ITEM_COUNT
+            : Integer.parseInt(value);
+    }
+    
+    private long resolveMaxArtifactSize(AiResourceImportServiceBuilder builder) {
+        String value =
+            builder.getCurrentConfig().get(AiResourceImportConstants.CONFIG_MAX_ARTIFACT_SIZE);
+        return StringUtils.isBlank(value) ? AiResourceImportConstants.DEFAULT_MAX_ARTIFACT_SIZE
+            : Long.parseLong(value);
+    }
+    
+    private AiResourceImportService buildImporter(AiResourceImportServiceBuilder builder)
+        throws NacosException {
+        AiResourceImportService result = builder.build();
+        if (result == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.DATA_ACCESS_ERROR,
+                "AI resource import plugin returned null service: " + builder.pluginName());
+        }
+        return result;
+    }
+    
+    private void closeImporter(AiResourceImportServiceBuilder builder,
+        AiResourceImportService importer, String operation) {
+        if (importer == null) {
+            return;
+        }
+        try {
+            importer.close();
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to close AI resource import service, pluginName={}, operation={}",
+                builder == null ? null : builder.pluginName(), operation, e);
+        }
     }
     
     private List<AiResourceImportCandidateItem> toCandidateItems(
@@ -301,13 +346,14 @@ public class AiResourceImportManager {
         return result;
     }
     
-    private AiResourceImportValidationItem validateItem(AiResourceImportSource source,
+    private AiResourceImportValidationItem validateItem(AiResourceImportServiceBuilder builder,
         AiResourceImportService importer, AiResourceImportContext context,
         AiResourceImportItem item,
         boolean overwriteExisting) {
         try {
             AiResourceImportArtifact artifact = importer.fetch(context, toPluginItem(item));
-            securityGuard.checkArtifact(source, context.getResourceType(), artifact);
+            securityGuard.checkArtifact(resolveMaxArtifactSize(builder),
+                context.getResourceType(), artifact);
             AiResourceOperator operator = operatorRegistry.getOperator(artifact.getResourceType());
             AiResourceImportValidationItem result =
                 operator.validate(context.getNamespaceId(), artifact, overwriteExisting);
@@ -317,13 +363,14 @@ public class AiResourceImportManager {
         }
     }
     
-    private AiResourceImportResultItem executeItem(AiResourceImportSource source,
+    private AiResourceImportResultItem executeItem(AiResourceImportServiceBuilder builder,
         AiResourceImportService importer, AiResourceImportContext context,
         AiResourceImportItem item,
         boolean overwriteExisting, boolean skipInvalid) {
         try {
             AiResourceImportArtifact artifact = importer.fetch(context, toPluginItem(item));
-            securityGuard.checkArtifact(source, context.getResourceType(), artifact);
+            securityGuard.checkArtifact(resolveMaxArtifactSize(builder),
+                context.getResourceType(), artifact);
             AiResourceOperator operator = operatorRegistry.getOperator(artifact.getResourceType());
             AiResourceImportResultItem result =
                 operator.importResource(context.getNamespaceId(), artifact, overwriteExisting);
@@ -410,9 +457,9 @@ public class AiResourceImportManager {
         return response;
     }
     
-    private void traceExecuteResult(AiResourceImportSource source, String resourceType,
+    private void traceExecuteResult(AiResourceImportServiceBuilder builder, String resourceType,
         AiResourceImportItem item, AiResourceImportResultItem result) {
-        Map<String, Object> ext = baseTraceExt(source);
+        Map<String, Object> ext = baseTraceExt(builder);
         ext.put("external_id", item.getExternalId());
         ext.put("result_status", result.getStatus());
         if (StringUtils.isNotBlank(result.getErrorMessage())) {
@@ -425,24 +472,24 @@ public class AiResourceImportManager {
             VisibilityHelper.resolveClientIp(), JacksonUtils.toJson(ext));
     }
     
-    private void traceSourceOperation(AiResourceImportSource source, String resourceType,
+    private void traceSourceOperation(AiResourceImportServiceBuilder builder, String resourceType,
         String operation, String status, Map<String, Object> ext) {
-        AiResourceTraceService.log(resourceType, resolveTraceSourceId(source, ext), null,
+        AiResourceTraceService.log(resourceType, resolveTraceSourceId(builder, ext), null,
             operation, status, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp(), JacksonUtils.toJson(ext));
     }
     
-    private Map<String, Object> searchTraceExt(AiResourceImportSource source,
+    private Map<String, Object> searchTraceExt(AiResourceImportServiceBuilder builder,
         AiResourceImportSearchResponse response) {
-        Map<String, Object> ext = baseTraceExt(source);
+        Map<String, Object> ext = baseTraceExt(builder);
         ext.put("candidate_count", response.getItems() == null ? 0 : response.getItems().size());
         ext.put("has_more", response.isHasMore());
         return ext;
     }
     
-    private Map<String, Object> validationTraceExt(AiResourceImportSource source,
+    private Map<String, Object> validationTraceExt(AiResourceImportServiceBuilder builder,
         AiResourceImportValidateRequest request, List<AiResourceImportValidationItem> items) {
-        Map<String, Object> ext = baseTraceExt(source);
+        Map<String, Object> ext = baseTraceExt(builder);
         ext.put("selected_count", request.getSelectedItems().size());
         ext.put("valid_count", countValidationStatus(items,
             AiResourceImportValidationStatus.VALID));
@@ -456,9 +503,9 @@ public class AiResourceImportManager {
         return ext;
     }
     
-    private Map<String, Object> executeTraceExt(AiResourceImportSource source,
+    private Map<String, Object> executeTraceExt(AiResourceImportServiceBuilder builder,
         AiResourceImportExecuteRequest request, AiResourceImportExecuteResponse response) {
-        Map<String, Object> ext = baseTraceExt(source);
+        Map<String, Object> ext = baseTraceExt(builder);
         ext.put("selected_count", request.getSelectedItems().size());
         ext.put("success_count", response.getSuccessCount());
         ext.put("failed_count", response.getFailedCount());
@@ -468,25 +515,25 @@ public class AiResourceImportManager {
         return ext;
     }
     
-    private Map<String, Object> failureTraceExt(AiResourceImportSource source, String sourceId,
+    private Map<String, Object> failureTraceExt(AiResourceImportServiceBuilder builder,
+        String sourceId,
         String errorMessage) {
-        Map<String, Object> ext = baseTraceExt(source);
-        if (source == null && StringUtils.isNotBlank(sourceId)) {
+        Map<String, Object> ext = baseTraceExt(builder);
+        if (builder == null && StringUtils.isNotBlank(sourceId)) {
             ext.put("source_id", sourceId);
         }
         ext.put("error", errorMessage);
         return ext;
     }
     
-    private Map<String, Object> baseTraceExt(AiResourceImportSource source) {
+    private Map<String, Object> baseTraceExt(AiResourceImportServiceBuilder builder) {
         Map<String, Object> ext = new LinkedHashMap<>(6);
-        if (source == null) {
+        if (builder == null) {
             return ext;
         }
-        ext.put("source_id", source.getSourceId());
-        ext.put("importer", source.getPluginName());
-        ext.put("endpoint", source.getEndpoint());
-        ext.put("resource_types", source.getResourceTypes());
+        ext.put("source_id", builder.pluginName());
+        ext.put("importer", builder.importerType());
+        ext.put("resource_types", builder.supportedResourceTypes());
         return ext;
     }
     
@@ -526,9 +573,10 @@ public class AiResourceImportManager {
         return AiResourceTraceService.STATUS_SUCCESS;
     }
     
-    private String resolveTraceSourceId(AiResourceImportSource source, Map<String, Object> ext) {
-        if (source != null && StringUtils.isNotBlank(source.getSourceId())) {
-            return source.getSourceId();
+    private String resolveTraceSourceId(AiResourceImportServiceBuilder builder,
+        Map<String, Object> ext) {
+        if (builder != null && StringUtils.isNotBlank(builder.pluginName())) {
+            return builder.pluginName();
         }
         Object sourceId = ext.get("source_id");
         return sourceId == null ? null : sourceId.toString();

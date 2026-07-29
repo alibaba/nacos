@@ -111,31 +111,32 @@ public class AgentCardUtil {
     public static AgentInterface buildAgentInterface(Instance instance) {
         AgentInterface agentInterface = new AgentInterface();
         String protocol =
-            instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY);
+            instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY);
         if (StringUtils.isEmpty(protocol)) {
             protocol = AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL;
         }
         boolean isSupportTls = Boolean.parseBoolean(
-            instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
+            instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
         protocol = handlerTlsIfNeeded(protocol, isSupportTls);
         String url = String.format(AGENT_INTERFACE_URL_PATTERN, protocol, instance.getIp(),
             instance.getPort());
-        String path = instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY);
+        String path = instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_PATH_KEY);
         if (StringUtils.isNotBlank(path)) {
             url += path.startsWith("/") ? path : "/" + path;
         }
-        String query = instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY);
+        String query = instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY);
         if (StringUtils.isNotBlank(query)) {
             url += "?" + query;
         }
         agentInterface.setUrl(url);
-        String transport = instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY);
+        String transport =
+            instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY);
         agentInterface.setTransport(transport);
         agentInterface.setProtocolBinding(transport);
         agentInterface.setProtocolVersion(
-            instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+            instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
         agentInterface
-            .setTenant(instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
+            .setTenant(instance.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
         return agentInterface;
     }
     

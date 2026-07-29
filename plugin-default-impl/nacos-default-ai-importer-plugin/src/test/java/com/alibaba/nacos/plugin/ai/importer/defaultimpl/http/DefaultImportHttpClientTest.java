@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.ai.importer.defaultimpl.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,7 +78,7 @@ class DefaultImportHttpClientTest {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "http://registry.example.com/index.json", "*/*"));
+            () -> client.get("http://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -88,19 +87,16 @@ class DefaultImportHttpClientTest {
         DefaultImportHttpClient client = newClient("127.0.0.1");
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
     @Test
     void testAllowsPrivateAddressWhenSourceOptIn() throws Exception {
-        DefaultImportHttpClient client = newClient("127.0.0.1");
-        AiResourceImportSource source = source(1024);
-        source.setProperties(Collections.singletonMap(
-            DefaultImportHttpClient.PROPERTY_ALLOW_PRIVATE_NETWORK, "true"));
+        DefaultImportHttpClient client = newClient("127.0.0.1", false, true, 1024);
         
         ImportHttpResponse response =
-            client.get(source, "https://registry.example.com/index.json", "*/*");
+            client.get("https://registry.example.com/index.json", "*/*");
         
         assertEquals(200, response.getStatusCode());
         assertEquals("ok", new String(response.getBody(), StandardCharsets.UTF_8));
@@ -108,13 +104,10 @@ class DefaultImportHttpClientTest {
     
     @Test
     void testAllowsHttpWhenCamelPropertyOptIn() throws Exception {
-        DefaultImportHttpClient client = newClient("93.184.216.34");
-        AiResourceImportSource source = source(1024);
-        source.setProperties(Collections.singletonMap(
-            DefaultImportHttpClient.PROPERTY_ALLOW_HTTP_CAMEL, "true"));
+        DefaultImportHttpClient client = newClient("93.184.216.34", true, false, 1024);
         
         ImportHttpResponse response =
-            client.get(source, "http://registry.example.com/index.json", 3, "application/json");
+            client.get("http://registry.example.com/index.json", 3, "application/json");
         
         assertEquals(200, response.getStatusCode());
         assertEquals("ok", new String(response.getBody(), StandardCharsets.UTF_8));
@@ -128,17 +121,17 @@ class DefaultImportHttpClientTest {
     void testRejectsOversizedResponse() throws Exception {
         lenient().when(httpClient.send(any(HttpRequest.class),
             anyBodyHandler())).thenReturn(response(200, "toolong"));
-        DefaultImportHttpClient client = newClient("93.184.216.34");
+        DefaultImportHttpClient client = newClient("93.184.216.34", false, false, 2);
         
         assertThrows(NacosException.class,
-            () -> client.get(source(2), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
     }
     
     @Test
     void testRejectsBlankUrl() {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
-        assertThrows(NacosException.class, () -> client.get(source(1024), " ", "*/*"));
+        assertThrows(NacosException.class, () -> client.get(" ", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -146,7 +139,7 @@ class DefaultImportHttpClientTest {
     void testRejectsRelativeUrl() {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
-        assertThrows(NacosException.class, () -> client.get(source(1024), "/index.json", "*/*"));
+        assertThrows(NacosException.class, () -> client.get("/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -155,7 +148,7 @@ class DefaultImportHttpClientTest {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https://[bad", "*/*"));
+            () -> client.get("https://[bad", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -164,17 +157,24 @@ class DefaultImportHttpClientTest {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "ftp://registry.example.com/index.json", "*/*"));
+            () -> client.get("ftp://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
     @Test
-    void testRejectsHttpWhenSourceIsNull() {
-        DefaultImportHttpClient client = newClient("93.184.216.34");
+    void testHttpClientConstructorUsesDefaultPolicy() {
+        DefaultImportHttpClient client = new DefaultImportHttpClient(httpClient);
         
         assertThrows(NacosException.class,
-            () -> client.get(null, "http://registry.example.com/index.json", "*/*"));
+            () -> client.get("http://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
+    }
+    
+    @Test
+    void testDefaultConstructorUsesDefaultPolicy() {
+        DefaultImportHttpClient client = new DefaultImportHttpClient();
+        
+        assertThrows(NacosException.class, () -> client.get(" ", "*/*"));
     }
     
     @Test
@@ -182,7 +182,7 @@ class DefaultImportHttpClientTest {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https:///index.json", "*/*"));
+            () -> client.get("https:///index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -193,7 +193,7 @@ class DefaultImportHttpClientTest {
         });
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https://api.localhost/index.json", "*/*"));
+            () -> client.get("https://api.localhost/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -204,7 +204,7 @@ class DefaultImportHttpClientTest {
         });
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
@@ -214,16 +214,16 @@ class DefaultImportHttpClientTest {
             new DefaultImportHttpClient(httpClient, host -> new InetAddress[0]);
         
         assertThrows(NacosException.class,
-            () -> client.get(source(1024), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
         verifyNoInteractions(httpClient);
     }
     
     @Test
-    void testUsesDefaultMaxResponseBytesWhenSourceNull() throws Exception {
+    void testUsesDefaultMaxResponseBytes() throws Exception {
         DefaultImportHttpClient client = newClient("93.184.216.34");
         
         ImportHttpResponse response =
-            client.get(null, "https://registry.example.com/index.json", null);
+            client.get("https://registry.example.com/index.json", null);
         
         assertEquals(200, response.getStatusCode());
         assertEquals("ok", new String(response.getBody(), StandardCharsets.UTF_8));
@@ -236,7 +236,7 @@ class DefaultImportHttpClientTest {
                 host -> new InetAddress[] {InetAddress.getByName("93.184.216.34")});
         
         ImportHttpResponse response =
-            client.get(source(1024), "https://registry.example.com/index.json", "*/*");
+            client.get("https://registry.example.com/index.json", "*/*");
         
         assertEquals(200, response.getStatusCode());
         assertEquals("ok", new String(response.getBody(), StandardCharsets.UTF_8));
@@ -246,10 +246,11 @@ class DefaultImportHttpClientTest {
     void testLimitedBodyHandlerRejectsOversizedChunks() {
         DefaultImportHttpClient client =
             new DefaultImportHttpClient(new BodyHandlerHttpClient("toolong", false),
-                host -> new InetAddress[] {InetAddress.getByName("93.184.216.34")});
+                host -> new InetAddress[] {InetAddress.getByName("93.184.216.34")},
+                false, false, 2);
         
         assertThrows(Exception.class,
-            () -> client.get(source(2), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
     }
     
     @Test
@@ -259,18 +260,18 @@ class DefaultImportHttpClientTest {
                 host -> new InetAddress[] {InetAddress.getByName("93.184.216.34")});
         
         assertThrows(Exception.class,
-            () -> client.get(source(1024), "https://registry.example.com/index.json", "*/*"));
+            () -> client.get("https://registry.example.com/index.json", "*/*"));
     }
     
     private DefaultImportHttpClient newClient(String address) {
-        return new DefaultImportHttpClient(httpClient,
-            host -> new InetAddress[] {InetAddress.getByName(address)});
+        return newClient(address, false, false, 10L * 1024L * 1024L);
     }
     
-    private AiResourceImportSource source(long maxResponseSize) {
-        AiResourceImportSource source = new AiResourceImportSource();
-        source.setMaxArtifactSize(maxResponseSize);
-        return source;
+    private DefaultImportHttpClient newClient(String address, boolean allowHttp,
+        boolean allowPrivateNetwork, long maxResponseBytes) {
+        return new DefaultImportHttpClient(httpClient,
+            host -> new InetAddress[] {InetAddress.getByName(address)}, allowHttp,
+            allowPrivateNetwork, maxResponseBytes);
     }
     
     private HttpResponse.BodyHandler<byte[]> anyBodyHandler() {

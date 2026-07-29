@@ -16,25 +16,32 @@
 
 package com.alibaba.nacos.ai.importer.manager;
 
+import com.alibaba.nacos.ai.importer.config.AiResourceImportProperties;
+import com.alibaba.nacos.api.ai.model.importer.AiResourceImportSourceInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportSource;
-import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
- * Loads and routes AI resource import plugins.
+ * Stable registry and request router for managed AI resource import builders.
  *
  * @author xiweng.yy
  * @since 3.2.1
@@ -42,75 +49,133 @@ import java.util.Properties;
 @Service
 public class AiResourceImportPluginManager {
     
-    private final Map<String, AiResourceImportServiceBuilder> builders;
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AiResourceImportPluginManager.class);
+    
+    private static final List<String> DEFAULT_CAPABILITIES =
+        List.of("search", "validate", "execute");
+    
+    private final Supplier<Collection<AiResourceImportServiceBuilder>> buildersSupplier;
+    
+    private Supplier<AiResourceImportProperties> propertiesSupplier;
+    
+    private volatile Map<String, AiResourceImportServiceBuilder> builders;
     
     public AiResourceImportPluginManager() {
-        this(NacosServiceLoader.load(AiResourceImportServiceBuilder.class));
+        this(() -> NacosServiceLoader.load(AiResourceImportServiceBuilder.class));
     }
     
-    AiResourceImportPluginManager(Collection<AiResourceImportServiceBuilder> builders) {
-        Map<String, AiResourceImportServiceBuilder> loadedBuilders = new LinkedHashMap<>();
-        for (AiResourceImportServiceBuilder each : builders) {
-            if (StringUtils.isBlank(each.importerType())) {
-                throw new IllegalStateException("AI resource importer type must not be empty.");
-            }
-            if (loadedBuilders.containsKey(each.importerType())) {
-                throw new IllegalStateException(
-                    "Duplicate AI resource importer type: " + each.importerType());
-            }
-            loadedBuilders.put(each.importerType(), each);
-        }
-        this.builders = Collections.unmodifiableMap(loadedBuilders);
+    AiResourceImportPluginManager(
+        Supplier<Collection<AiResourceImportServiceBuilder>> buildersSupplier) {
+        this.buildersSupplier = buildersSupplier;
+        this.propertiesSupplier = AiResourceImportProperties::loadFromEnvironment;
     }
     
     /**
-     * Whether the importer builder exists.
+     * Load stable builder instances when the unified plugin provider is activated.
      *
-     * @param importerType importer type
-     * @return true if the importer exists
+     * @return immutable plugin map
      */
-    public boolean hasImporter(String importerType) {
-        return builders.containsKey(importerType);
+    public synchronized Map<String, AiResourceImportServiceBuilder> loadPlugins() {
+        if (builders != null) {
+            return builders;
+        }
+        Collection<AiResourceImportServiceBuilder> discovered = buildersSupplier.get();
+        Map<String, AiResourceImportServiceBuilder> result = new LinkedHashMap<>();
+        if (CollectionUtils.isNotEmpty(discovered)) {
+            for (AiResourceImportServiceBuilder each : discovered) {
+                String pluginName = each == null ? null : each.pluginName();
+                PluginRegistryUtils.registerFirst(result,
+                    PluginType.AI_RESOURCE_IMPORT.getType(), pluginName, each, LOGGER);
+            }
+        }
+        builders = Collections.unmodifiableMap(result);
+        return builders;
     }
     
     /**
-     * Resolve an importer for a source and resource type.
+     * List enabled import sources from managed builder metadata.
      *
-     * @param source resolved source
+     * @param resourceType optional resource type filter
+     * @return source information
+     * @throws NacosException if the module is disabled
+     */
+    public List<AiResourceImportSourceInfo> listSourceInfos(String resourceType)
+        throws NacosException {
+        requireModuleEnabled();
+        List<AiResourceImportSourceInfo> result = new ArrayList<>();
+        for (AiResourceImportServiceBuilder each : getLoadedPlugins().values()) {
+            if (!isPluginEnabled(each.pluginName())
+                || !supportsResourceType(each, resourceType)) {
+                continue;
+            }
+            result.add(toSourceInfo(each));
+        }
+        return result;
+    }
+    
+    /**
+     * Resolve an enabled managed builder.
+     *
+     * @param pluginName managed plugin name and source id
      * @param resourceType expected resource type
-     * @return importer service
-     * @throws NacosException if importer is missing or cannot support the resource type
+     * @return resolved builder
+     * @throws NacosException if routing fails
      */
-    public AiResourceImportService resolveImporter(AiResourceImportSource source,
-        String resourceType) throws NacosException {
-        AiResourceImportServiceBuilder builder = builders.get(source.getPluginName());
-        if (builder == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "AI resource import plugin not found: " + source.getPluginName());
+    public AiResourceImportServiceBuilder resolveBuilder(String pluginName, String resourceType)
+        throws NacosException {
+        requireModuleEnabled();
+        AiResourceImportServiceBuilder result = getLoadedPlugins().get(pluginName);
+        if (result == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND,
+                ErrorCode.RESOURCE_NOT_FOUND,
+                "AI resource import plugin not found: " + pluginName);
         }
-        AiResourceImportService service = builder.build(toProperties(source));
-        if (service == null) {
-            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.DATA_ACCESS_ERROR,
-                "AI resource import plugin returned null service: " + source.getPluginName());
+        if (!isPluginEnabled(pluginName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "AI resource import plugin is disabled: " + pluginName);
         }
-        if (!StringUtils.equals(source.getPluginName(), service.importerType())) {
-            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.DATA_ACCESS_ERROR,
-                "AI resource import plugin type mismatch: " + source.getPluginName());
-        }
-        if (CollectionUtils.isEmpty(service.supportedResourceTypes())
-            || !service.supportedResourceTypes().contains(resourceType)) {
+        if (!supportsResourceType(result, resourceType)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "AI resource import plugin does not support resource type: " + resourceType);
         }
-        return service;
+        return result;
     }
     
-    private Properties toProperties(AiResourceImportSource source) {
-        Properties properties = new Properties();
-        if (source.getProperties() != null) {
-            properties.putAll(source.getProperties());
+    private Map<String, AiResourceImportServiceBuilder> getLoadedPlugins() {
+        Map<String, AiResourceImportServiceBuilder> result = builders;
+        return result == null ? Collections.emptyMap() : result;
+    }
+    
+    private void requireModuleEnabled() throws NacosException {
+        if (!propertiesSupplier.get().isEnabled()) {
+            throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+                ErrorCode.API_FUNCTION_DISABLED, "AI resource import is disabled.");
         }
-        return properties;
+    }
+    
+    private boolean isPluginEnabled(String pluginName) {
+        return PluginStateCheckerHolder.isPluginEnabled(
+            PluginType.AI_RESOURCE_IMPORT.getType(), pluginName);
+    }
+    
+    private boolean supportsResourceType(AiResourceImportServiceBuilder builder,
+        String resourceType) {
+        return StringUtils.isBlank(resourceType)
+            || builder.supportedResourceTypes().contains(resourceType);
+    }
+    
+    private AiResourceImportSourceInfo toSourceInfo(AiResourceImportServiceBuilder builder) {
+        AiResourceImportSourceInfo result = new AiResourceImportSourceInfo();
+        result.setSourceId(builder.pluginName());
+        result.setPluginName(builder.importerType());
+        result.setDisplayName(builder.displayName());
+        result.setDescription(builder.description());
+        result.setResourceTypes(new ArrayList<>(builder.supportedResourceTypes()));
+        result.setEnabled(true);
+        result.setCapabilities(DEFAULT_CAPABILITIES);
+        return result;
     }
 }

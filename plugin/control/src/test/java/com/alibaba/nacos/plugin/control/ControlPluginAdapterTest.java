@@ -106,7 +106,7 @@ class ControlPluginAdapterTest {
     }
     
     @Test
-    void testRejectInvalidDependenciesAndDefinitions() {
+    void testRejectInvalidDependenciesAndIgnoreInvalidDefinitions() {
         RecordingBuilder validBuilder =
             new RecordingBuilder(Collections.emptyList());
         assertThrows(NullPointerException.class, () -> new ControlPluginAdapter(null));
@@ -115,17 +115,18 @@ class ControlPluginAdapterTest {
         
         List<ConfigItemDefinition> nullItemDefinitions = new ArrayList<>();
         nullItemDefinitions.add(null);
-        assertThrows(IllegalStateException.class,
-            () -> new ControlPluginAdapter(new RecordingBuilder(nullItemDefinitions),
-                new ControlManagerCenter()));
+        ControlPluginAdapter nullItemAdapter = new ControlPluginAdapter(
+            new RecordingBuilder(nullItemDefinitions), new ControlManagerCenter());
         
         ConfigItemDefinition runtimeDefinition =
             new ConfigItemDefinition("runtime", "Runtime", ConfigItemType.STRING);
         runtimeDefinition.setEffectMode(ConfigItemEffectMode.RUNTIME);
-        assertThrows(IllegalStateException.class,
-            () -> new ControlPluginAdapter(
-                new RecordingBuilder(Collections.singletonList(runtimeDefinition)),
-                new ControlManagerCenter()));
+        ControlPluginAdapter runtimeAdapter = new ControlPluginAdapter(
+            new RecordingBuilder(Collections.singletonList(runtimeDefinition)),
+            new ControlManagerCenter());
+        
+        assertTrue(nullItemAdapter.getConfigDefinitions().isEmpty());
+        assertTrue(runtimeAdapter.getConfigDefinitions().isEmpty());
     }
     
     @Test

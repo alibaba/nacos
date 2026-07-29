@@ -16,28 +16,40 @@
 
 package com.alibaba.nacos.plugin.ai.importer.defaultimpl.skill;
 
+import com.alibaba.nacos.plugin.ai.importer.AiResourceImportConstants;
+import com.alibaba.nacos.plugin.ai.importer.defaultimpl.AbstractAiResourceImportServiceBuilder;
 import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportService;
-import com.alibaba.nacos.plugin.ai.importer.spi.AiResourceImportServiceBuilder;
 
-import java.util.Properties;
+import java.util.Collections;
 
 /**
- * Builder for the built-in skills.sh Skill import service.
+ * Built-in skills.sh Skill import plugin.
  *
  * @author xiweng.yy
  * @since 3.2.1
  */
-public class SkillsShImportServiceBuilder implements AiResourceImportServiceBuilder {
+public class SkillsShImportServiceBuilder
+    extends AbstractAiResourceImportServiceBuilder {
+    
+    public static final String PLUGIN_NAME = "skills-sh";
     
     public static final String IMPORTER_TYPE = "skills-sh";
     
-    @Override
-    public String importerType() {
-        return IMPORTER_TYPE;
+    public static final String SKILLS_SH_ENDPOINT = "https://skills.sh";
+    
+    private static final String LEGACY_PREFIX =
+        "nacos.plugin.ai.importer.skills.skills-sh.";
+    
+    public SkillsShImportServiceBuilder() {
+        super(PLUGIN_NAME, IMPORTER_TYPE, "skills.sh", "Import Skills from skills.sh.",
+            Collections.singleton(AiResourceImportConstants.RESOURCE_TYPE_SKILL),
+            SKILLS_SH_ENDPOINT, LEGACY_PREFIX);
     }
     
     @Override
-    public AiResourceImportService build(Properties properties) {
-        return new SkillsShImportService();
+    protected AiResourceImportService createService(ConfigSnapshot config) {
+        return new SkillsShImportService(config.getEndpoint(), config.isAllowHttp(),
+            config.isAllowPrivateNetwork(), config.getMaxItemCount(),
+            config.getMaxArtifactSize());
     }
 }

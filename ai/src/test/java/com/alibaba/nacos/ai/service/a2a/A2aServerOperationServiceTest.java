@@ -754,14 +754,14 @@ public class A2aServerOperationServiceTest {
             .thenReturn(detailResponse);
         
         final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
                 ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         final ServiceInfo serviceInfo = new ServiceInfo();
         com.alibaba.nacos.api.naming.pojo.Instance instance =
             new com.alibaba.nacos.api.naming.pojo.Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
-        instance.getMetadata().put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY,
+        instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY,
             detailInfo.getPreferredTransport());
         serviceInfo.addHost(instance);
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
@@ -817,8 +817,9 @@ public class A2aServerOperationServiceTest {
             .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         
-        Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
-            ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        Service service =
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.emptyList());
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
@@ -854,7 +855,7 @@ public class A2aServerOperationServiceTest {
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         
         final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
                 ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         
         // Create a service info with hosts
@@ -863,7 +864,7 @@ public class A2aServerOperationServiceTest {
             new com.alibaba.nacos.api.naming.pojo.Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
-        instance.getMetadata().put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY,
+        instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY,
             detailInfo.getPreferredTransport());
         serviceInfo.addHost(instance);
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
@@ -910,8 +911,9 @@ public class A2aServerOperationServiceTest {
             .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         
-        Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
-            ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        Service service =
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.emptyList());
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
@@ -946,14 +948,14 @@ public class A2aServerOperationServiceTest {
             .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
                 ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         final ServiceInfo serviceInfo = new ServiceInfo();
         com.alibaba.nacos.api.naming.pojo.Instance instance =
             new com.alibaba.nacos.api.naming.pojo.Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
-        instance.setMetadata(Map.of(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
+        instance.setMetadata(Map.of(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
         serviceInfo.addHost(instance);
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
@@ -983,14 +985,14 @@ public class A2aServerOperationServiceTest {
             .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
                 ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         final ServiceInfo serviceInfo = new ServiceInfo();
         com.alibaba.nacos.api.naming.pojo.Instance instance =
             new com.alibaba.nacos.api.naming.pojo.Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
-        instance.setMetadata(Map.of(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
+        instance.setMetadata(Map.of(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
         serviceInfo.addHost(instance);
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
@@ -1017,8 +1019,9 @@ public class A2aServerOperationServiceTest {
             .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         
-        Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
-            ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        Service service =
+            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.emptyList());
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);

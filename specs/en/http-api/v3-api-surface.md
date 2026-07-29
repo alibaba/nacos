@@ -77,7 +77,7 @@ guide, not as a final OpenAPI export.
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 71 | GET, POST, PUT, DELETE | MCP, A2A, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 89 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
@@ -123,7 +123,7 @@ Current modules:
 - `cs`: config CRUD, metadata, batch operations, history, listener, capacity,
   metrics, and ops.
 - `ns`: service, instance, cluster, health, client, and naming ops.
-- `ai`: MCP, A2A, Prompt, Skill, AgentSpec, and Pipeline management.
+- `ai`: MCP, A2A, Agent, Prompt, Skill, AgentSpec, and Pipeline management.
 
 Implemented behavior to document more explicitly:
 
@@ -135,6 +135,10 @@ Implemented behavior to document more explicitly:
   configured encryption handler applies.
 - AI Prompt contains deprecated compatibility endpoints and newer lifecycle
   endpoints in the same controller.
+- Agent management exposes definition CRUD, bounded Agent and Version reads,
+  draft and Version lifecycle operations, custom labels, and read-only Runtime
+  Endpoint snapshots under `/v3/admin/ai/agents`. Omitted or blank
+  `namespaceId` is normalized to `public`.
 - Plugin detail returns the current effective plugin config in its existing
   `config` field and may add value metadata such as source and overridden state
   without changing existing fields.
@@ -190,13 +194,13 @@ The default auth plugin is shipped with Nacos, so its v3 auth endpoints should
 follow the Nacos HTTP API rules and the
 [Auth Plugin Spec](../auth/auth-plugin-spec.md).
 
-## 8. Approved Agent/RAD Target Surface
+## 8. Approved Agent/RAD Surface
 
-The following paths are the approved Experimental target from the
-[Agent API Spec](../ai/agent-api-spec.md). They are not part of the current
-implemented inventory or the controller counts in Section 3 until the
-corresponding controllers, authorization, transport bindings, and tests are
-implemented.
+The following paths are the approved Experimental surface from the
+[Agent API Spec](../ai/agent-api-spec.md). The Admin management paths are part
+of the implemented inventory and controller counts in Section 3. Client
+transport bindings and the Console facade remain target surfaces until their
+controllers, authorization, transport bindings, and tests are implemented.
 
 Client target paths:
 
@@ -204,22 +208,22 @@ Client target paths:
 | --- | --- | --- |
 | GET | `/v3/client/ai/agents/search` | Search the Agent catalog. |
 | GET | `/v3/client/ai/agents` | Discover one Agent, with an optional discovery filter. |
-| POST | `/v3/client/ai/agents/endpoints` | Upsert a runtime Endpoint registration batch. |
-| DELETE | `/v3/client/ai/agents/endpoints` | Deregister a runtime Endpoint batch using a JSON body. |
+| POST | `/v3/client/ai/agents/endpoints` | Replace the current publisher's complete runtime Endpoint batch. |
+| DELETE | `/v3/client/ai/agents/endpoints` | Remove the current publisher's whole runtime Endpoint publication identified by a JSON body. |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | Refresh one HTTP publisher client's liveness. |
 
-Admin and Console target paths use the prefixes
-`/v3/admin/ai/agents` and `/v3/console/ai/agents`, respectively. Console is a
-UI facade over the same relative management contract.
+Admin paths use the implemented `/v3/admin/ai/agents` prefix. Console target
+paths use `/v3/console/ai/agents`; Console is a UI facade over the same relative
+management contract.
 
 | Relative path | Methods | Contract |
 | --- | --- | --- |
-| *(base path)* | GET, POST, PUT, DELETE | Read, create, update, or delete an Agent definition. |
+| *(base path)* | GET, PUT, DELETE | Read or update Agent metadata, or delete an Agent definition. |
 | `/list` | GET | List Agent summaries. |
 | `/versions` | GET | List Version summaries. |
 | `/version` | GET | Read one exact Version definition. |
 | `/runtime-endpoints` | GET | Read one complete, non-paged runtime Endpoint snapshot. |
-| `/draft` | POST, PUT, DELETE | Create, update, or delete a draft. |
+| `/draft` | POST, PUT, DELETE | Create a new draft (and metadata when absent), update current draft content, or delete a draft. |
 | `/submit` | POST | Submit a draft. |
 | `/publish` | POST | Publish a reviewed Version. |
 | `/force-publish` | POST | Perform an audited Pipeline bypass. |

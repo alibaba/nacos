@@ -230,6 +230,20 @@ class ConfigChangePluginManagerTests {
     }
     
     @Test
+    void testJoinIgnoresInvalidAndDuplicatePlugin() {
+        ConfigChangePluginService existing =
+            ConfigChangePluginManager.getInstance().getAllPlugins().get("test1");
+        int beforeCount = ConfigChangePluginManager.findPluginServicesByPointcut(
+            ConfigChangePointCutTypes.PUBLISH_BY_HTTP).size();
+        
+        assertFalse(ConfigChangePluginManager.join(null));
+        assertFalse(ConfigChangePluginManager.join(existing));
+        
+        assertEquals(beforeCount, ConfigChangePluginManager.findPluginServicesByPointcut(
+            ConfigChangePointCutTypes.PUBLISH_BY_HTTP).size());
+    }
+    
+    @Test
     void testFindPluginServicesFiltersDisabledPlugin() {
         PluginStateCheckerHolder.setInstance(
             (pluginType, pluginName) -> !PluginType.CONFIG_CHANGE.getType().equals(pluginType)

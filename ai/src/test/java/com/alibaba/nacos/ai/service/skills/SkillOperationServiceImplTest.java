@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -1856,6 +1857,25 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testListSkillsShouldIntersectOwnerFilterWithVisibility() throws NacosException {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.OWNER);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(eq("userA"), eq(VisibilityConstants.ACTION_READ),
+            eq("ADMIN_API"), any())).thenReturn(advisor);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        setupRequestContext("userA");
+        
+        Page<SkillSummary> result =
+            skillOperationService.listSkills("test-namespace", null, null, null, "userB", null,
+                null, 1, 10);
+        
+        assertTrue(result.getPageItems().isEmpty());
+        verify(aiResourcePersistService, never()).list(any(), eq(1), eq(10));
+    }
+    
+    @Test
     void testUpdateBizTagsSuccess() throws NacosException {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
@@ -1981,6 +2001,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         
         AiResource meta = new AiResource();
         meta.setName(skillName);
@@ -2024,6 +2047,7 @@ class SkillOperationServiceImplTest {
                 Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
                 return ((Number) info.get("onlineCnt")).intValue() == 2;
             }));
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
     }
     
     @Test
@@ -2577,6 +2601,9 @@ class SkillOperationServiceImplTest {
         String namespaceId = "test-ns";
         String skillName = "my-skill";
         String version = "v1";
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         AiResource meta = new AiResource();
         meta.setName(skillName);
         meta.setType("skill");
@@ -2614,6 +2641,64 @@ class SkillOperationServiceImplTest {
         verify(manifestService).write(eq(namespaceId), eq(skillName), manifestCaptor.capture());
         assertTrue(!manifestCaptor.getValue().getLabels().containsKey("latest"));
         assertTrue(!manifestCaptor.getValue().getVersions().containsKey(version));
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
+    }
+    
+    @Test
+    void testVersionOfflineShouldRebuildLatestSearchIndexForFallbackVersion()
+        throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        final String offlineVersion = "0.0.9";
+        final String fallbackVersion = "0.0.8";
+        AiResourceIndexMaintenanceService indexMaintenanceService =
+            mock(AiResourceIndexMaintenanceService.class);
+        skillOperationService.setAiResourceIndexMaintenanceService(indexMaintenanceService);
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"0.0.9\"},\"onlineCnt\":2}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        com.alibaba.nacos.ai.model.AiResourceVersion offline =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        offline.setVersion(offlineVersion);
+        offline.setStatus("online");
+        offline.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:0.0.9\","
+            + "\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq(offlineVersion))).thenReturn(offline);
+        com.alibaba.nacos.ai.model.AiResourceVersion fallback =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        fallback.setVersion(fallbackVersion);
+        fallback.setStatus("online");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> onlinePage = new Page<>();
+        onlinePage.setPageItems(List.of(fallback));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(),
+            eq("online"), eq(1), eq(500))).thenReturn(onlinePage);
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+            new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setLabels(new HashMap<>(Map.of("latest", offlineVersion)));
+        manifest.setVersions(new HashMap<>(Map.of(offlineVersion, List.of("SKILL.md"),
+            fallbackVersion, List.of("SKILL.md"))));
+        when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "version",
+            offlineVersion, false);
+        
+        ArgumentCaptor<com.alibaba.nacos.ai.model.skills.SkillIndexManifest> manifestCaptor =
+            ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.skills.SkillIndexManifest.class);
+        verify(manifestService).write(eq(namespaceId), eq(skillName), manifestCaptor.capture());
+        assertEquals(fallbackVersion,
+            manifestCaptor.getValue().getLabels().get(AiResourceConstants.LABEL_LATEST));
+        assertTrue(!manifestCaptor.getValue().getVersions().containsKey(offlineVersion));
+        assertTrue(manifestCaptor.getValue().getVersions().containsKey(fallbackVersion));
+        verify(indexMaintenanceService).schedule(namespaceId, "skill", skillName);
     }
     
     @Test

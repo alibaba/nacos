@@ -119,6 +119,8 @@ AI 资源通过共享的可见性插件模型实现可见性。
 - 读操作中，如果资源存在但调用者不可见，应返回 not found；
 - 写操作在修改元数据、版本或 scope 之前必须检查写权限；
 - 查询操作应尽量使用 visibility query advice，而不是先读取大结果集再过滤。
+- 查询请求中的 owner、scope 等业务筛选条件必须与 visibility query advice 取交集后再
+  执行 count 和分页；类型实现不得在转换完成后覆盖可见性条件。
 
 扩展契约由 [可见性插件规范](../auth/visibility-plugin-spec.md)定义。
 

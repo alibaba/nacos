@@ -19,10 +19,12 @@ package com.alibaba.nacos.plugin.environment.spi;
 import com.alibaba.nacos.api.plugin.PluginProvider;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.spi.PluginRegistryUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -33,6 +35,8 @@ import java.util.Map;
  */
 public class EnvironmentPluginProvider implements PluginProvider<CustomEnvironmentPluginService> {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(EnvironmentPluginProvider.class);
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.ENVIRONMENT;
@@ -42,12 +46,12 @@ public class EnvironmentPluginProvider implements PluginProvider<CustomEnvironme
     public Map<String, CustomEnvironmentPluginService> getAllPlugins() {
         Collection<CustomEnvironmentPluginService> services = NacosServiceLoader.load(
             CustomEnvironmentPluginService.class);
-        Map<String, CustomEnvironmentPluginService> result = new HashMap<>(services.size());
+        Map<String, CustomEnvironmentPluginService> result =
+            new LinkedHashMap<>(services.size());
         for (CustomEnvironmentPluginService service : services) {
-            String name = service.pluginName();
-            if (StringUtils.isNotBlank(name)) {
-                result.put(name, service);
-            }
+            String name = service == null ? null : service.pluginName();
+            PluginRegistryUtils.registerFirst(result, PluginType.ENVIRONMENT.getType(), name,
+                service, LOGGER);
         }
         return result;
     }

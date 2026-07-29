@@ -137,6 +137,8 @@ public class NacosBootstrap {
             .getProperty("nacos.ai.mcp.registry.enabled", Boolean.class, false);
         boolean skillRegistryEnabled = coreContext.getEnvironment()
             .getProperty("nacos.ai.skill.registry.enabled", Boolean.class, false);
-        return mcpRegistryEnabled || skillRegistryEnabled;
+        boolean ardEnabled = coreContext.getEnvironment()
+            .getProperty("nacos.ai.ard.enabled", Boolean.class, false);
+        return mcpRegistryEnabled || skillRegistryEnabled || ardEnabled;
     }
 }

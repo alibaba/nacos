@@ -36,6 +36,7 @@
         <module>nacos-default-ai-pipeline-plugin</module>
         <module>nacos-default-ai-importer-plugin</module>
         <module>nacos-default-ai-trace-plugin</module>
+        <module>nacos-default-ai-vector-plugin</module>
         <module>nacos-default-datasource-plugin</module>
         <module>nacos-default-plugin-all</module>
         <module>nacos-oidc-auth-plugin</module>

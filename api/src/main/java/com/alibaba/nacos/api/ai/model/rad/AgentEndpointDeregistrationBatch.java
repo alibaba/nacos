@@ -23,7 +23,10 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Batch command that deregisters runtime Agent endpoints by natural key.
+ * Client-side intent that deregisters Runtime Endpoints by natural key.
+ *
+ * <p>The SDK applies this intent to its complete publisher batch and registers the retained
+ * replacement. When no Endpoint remains, it deregisters the complete publisher service.</p>
  *
  * @author Nacos
  */

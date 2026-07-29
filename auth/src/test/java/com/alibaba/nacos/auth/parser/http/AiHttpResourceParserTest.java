@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -223,6 +224,38 @@ class AiHttpResourceParserTest {
     
     @Test
     @Secured(signType = "ai")
+    void testParseWithArdPath() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/ai/ard/search");
+        when(request.getParameter(eq("resourceName"))).thenReturn(null);
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getName());
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testParseWithArdArtifactPath() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/ai/ard/artifacts");
+        when(request.getParameter(eq("resourceName"))).thenReturn("demo-skill");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals("demo-skill", actual.getName());
+    }
+    
+    @Test
+    @Secured(signType = "ai")
     void testParseWithUnknownPath() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
@@ -271,6 +304,56 @@ class AiHttpResourceParserTest {
     
     @Test
     @Secured(signType = "ai")
+    void testAgentAdminPathUsesAgentResource() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agents/versions");
+        when(request.getParameter(eq("agentName"))).thenReturn("testAgent");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals("testAgent", actual.getName());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT,
+            actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testAgentAdminPathIgnoresLegacyAgentCardParameter() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Map<String, String[]> paramMap = new HashMap<>();
+        paramMap.put("agentCard", new String[] {"{\"name\":\"legacyAgent\"}"});
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agents");
+        when(request.getParameter(eq("agentName"))).thenReturn("testAgent");
+        when(request.getParameter(eq("agentCard")))
+            .thenReturn("{\"name\":\"legacyAgent\"}");
+        when(request.getParameterMap()).thenReturn(paramMap);
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals("testAgent", actual.getName());
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testAgentPathRequiresSegmentBoundary() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agents-extra");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertNull(actual.getProperties().getProperty(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
     void testGetPropertiesForSkill() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
@@ -313,6 +396,22 @@ class AiHttpResourceParserTest {
         Resource actual = resourceParser.parse(request, secured);
         
         assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT_SPEC,
+            actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testGetPropertiesForArd() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/ai/ard/search");
+        when(request.getParameter(eq("resourceName"))).thenReturn(null);
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_ARD,
             actual.getProperties().getProperty(
                 com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
     }

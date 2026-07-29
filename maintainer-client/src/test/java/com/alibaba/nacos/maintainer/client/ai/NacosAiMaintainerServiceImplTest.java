@@ -92,6 +92,12 @@ public class NacosAiMaintainerServiceImplTest {
     }
     
     @Test
+    void testAgentAndA2aDelegatesRemainAvailable() {
+        assertNotNull(aiMaintainerService.agent());
+        assertNotNull(aiMaintainerService.a2a());
+    }
+    
+    @Test
     void listMcpServer() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         Page<McpServerBasicInfo> page = new Page<>();

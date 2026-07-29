@@ -59,7 +59,7 @@ public class ConsoleAiResourceImportController {
     }
     
     /**
-     * List configured import sources for Console.
+     * List enabled managed importer plugins as import sources for Console.
      *
      * @param form source list form
      * @return source list

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -49,6 +50,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -159,6 +161,26 @@ class AiResourcePersistServiceImplTest {
         assertEquals(1, service.delete("public", "skill-a", "skill"));
         assertTrue(service.updateScope("public", "skill-a", "skill", "PUBLIC"));
         assertTrue(service.incrementDownloadCount("public", "skill-a", "skill", 3L));
+    }
+    
+    @Test
+    void updateMetaCasShouldNotReplaceGovernanceFields() {
+        doReturn(1).when(jdbcTemplate).update(anyString(), any(Object[].class));
+        AiResource newValue = newResource();
+        
+        assertTrue(service.updateMetaCas("public", "skill-a", "skill", 1L, newValue));
+        
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object[]> argsCaptor = ArgumentCaptor.forClass(Object[].class);
+        Mockito.verify(jdbcTemplate).update(sqlCaptor.capture(), argsCaptor.capture());
+        assertFalse(sqlCaptor.getValue().contains("owner=?"));
+        assertFalse(sqlCaptor.getValue().contains("scope=?"));
+        assertFalse(sqlCaptor.getValue().contains("COALESCE"));
+        assertEquals(9, argsCaptor.getValue().length);
+        assertEquals("public", argsCaptor.getValue()[5]);
+        assertEquals("skill-a", argsCaptor.getValue()[6]);
+        assertEquals("skill", argsCaptor.getValue()[7]);
+        assertEquals(1L, argsCaptor.getValue()[8]);
     }
     
     private void stubGeneratedKey(long id) throws Exception {

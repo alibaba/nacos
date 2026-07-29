@@ -36,89 +36,99 @@ registry 或 Git 索引。资源 Operator 不属于用户扩展插件，第一�
 Nacos 当前领域服务写入资源。
 
 默认 importer 实现应放在 `plugin-default-impl`，而不是 AI Registry 领域模块。`ai` 模块负责导入
-API、source 解析、校验和资源 Operator；`plugin-default-impl` 负责默认外部来源适配器以及对应的
-预置 source 配置。
+API、插件路由、校验和资源 Operator；`plugin-default-impl` 负责默认外部来源适配器以及对应的
+配置 definitions。
 
 ## 概念
 
 | 概念 | 含义 |
 |------|------|
-| Import source | 由运维定义、通过 `sourceId` 标识的导入来源配置。 |
-| Importer | 导入来源选择的插件实现。 |
+| Managed importer | 通过 `pluginName` 标识的稳定 Builder 插件；一个实现表示一个外部来源。 |
+| Import service | 从 Builder 的一份不可变配置快照创建的请求级协议适配器。 |
 | Candidate | search 阶段返回的外部资源摘要，不包含可导入完整内容。 |
 | Artifact | 可被资源 Operator 应用的 payload 和元数据。 |
 | Resource operator | 校验并写入某一资源类型的 Nacos 领域服务。 |
 | Dependency | 被导入 artifact 引用的其他资源，例如 Skill 依赖 MCP tools。 |
 
-Import source 属于 Nacos 服务端配置或插件配置。终端用户选择 `sourceId`；导入请求不得提交任意
-endpoint URL、IP 地址、凭证或 registry base path。
+API 现有 `sourceId` 字段等于 managed `pluginName`。API 现有 `pluginName` 字段继续作为
+importer/protocol metadata 返回，以兼容 Console。终端用户选择 `sourceId`；导入请求不得提交
+任意 endpoint URL、IP 地址、凭证或 registry base path。
 
 ## 执行形态
 
-`ai-resource-import` 是配置选择的单服务插件类型。
+`ai-resource-import` 是路由型统一管理插件。
 
-同一进程可以加载多个 importer 实现，例如 `mcp-registry`、`skills-well-known` 或企业内部
-市场 importer。每次请求中，AI 导入来源管理器先把 `sourceId` 解析为一个已启用 source，再选择
-该 source 指定的 importer。
+同一进程可以加载多个 Builder 实现，例如 `mcp-official`、`mcp-registry-protocol`、
+`skills-well-known` 或企业内部市场 importer。每次请求中，领域管理器直接把 `sourceId`
+解析为一个已启用 Builder。
 
 Importer 在 search 阶段返回 candidate，在 validate 和 execute 阶段按选中项拉取 artifact。
 随后 AI Registry 导入管理器根据 artifact 的 `resourceType` 路由到对应资源 Operator。
 
 ```text
-sourceId -> ImportSource(pluginName, resourceTypes, endpoint, limits, authRef)
-         -> AiResourceImportService
-         -> AiResourceOperator(resourceType)
+sourceId(managed pluginName)
+  -> AiResourceImportServiceBuilder(当前配置快照)
+  -> 请求级 AiResourceImportService
+  -> AiResourceOperator(resourceType)
 ```
 
-## Source 配置
+## 统一配置
 
-一个导入来源应包含：
+模块总开关为：
 
-| 字段 | 要求 |
-|------|------|
-| `sourceId` | 稳定、面向用户展示的来源标识。 |
-| `pluginName` | `ai-resource-import` 类型下的 importer 实现名。 |
-| `resourceTypes` | 该来源支持的资源类型，例如 `mcp` 或 `skill`。 |
-| `endpoint` | 运维配置的来源 endpoint 或 registry root。 |
-| `enabled` | 该来源是否可以服务导入请求。 |
-| `authRef` | 可选的服务端凭证引用；secret 不返回给用户。 |
-| `connectTimeout` / `readTimeout` | 来源级网络超时。 |
-| `maxPageCount` / `maxItemCount` | 分页保护限制。 |
-| `maxArtifactSize` | 单个 artifact 最大大小。 |
-| `properties` | importer 专属非 secret 配置。 |
+```properties
+nacos.plugin.ai-resource-import.enabled=true
+```
 
-来源管理器必须拒绝重复 `sourceId`，并拒绝 importer 插件未加载或已禁用的 source。
+旧 `nacos.ai.resource.import.enabled` 作为 alias。标准 key 只要存在就优先；默认值为
+`true`，只有显式配置 `false` 才关闭 AI Resource Import。
 
-高级部署仍可以通过 `nacos.ai.resource.import.sources[...]` 配置显式 source，并由
-`nacos.ai.resource.import.enabled=true` 开启。默认 importer 的预置来源使用插件命名空间配置，
-可以通过运维配置的 `nacos.plugin.ai.importer.*` 属性单独启用。
+每个实现使用标准插件 state key：
+
+```properties
+nacos.plugin.ai-resource-import.{pluginName}.enabled=true
+```
+
+每个配置项使用：
+
+```properties
+nacos.plugin.ai-resource-import.{pluginName}.{itemKey}=value
+```
+
+一份 `pluginName` 只表示一个来源。不支持通过配置把同一个 managed 实现复制为多个 endpoint
+实例。需要另一个固定来源时，应提供具有不同 `pluginName` 的 Builder。
+
+旧 `nacos.ai.resource.import.sources[N].*`、Source 模型和 Source Provider SPI 被移除。
+由于旧模型允许一个 importer 创建多个 source 实例，因此不提供自动迁移。
 
 ## SPI
 
-导入实现由 builder 创建。
+Builder 是稳定的 managed plugin，并实现 `PluginConfigSpec`。
 
 | Builder 方法 | 要求 |
 |--------------|------|
-| `importerType()` | 稳定 importer 实现名。 |
-| `build(properties)` | 使用 importer 自有配置构造导入服务。 |
+| `pluginName()` | 稳定 managed pluginName，也是 API `sourceId`。 |
+| `importerType()` | 兼容 importer/protocol metadata，返回到 API `pluginName`。 |
+| `displayName()` / `description()` | 从当前已接受配置快照返回展示 metadata。 |
+| `supportedResourceTypes()` | 该来源可以产出的资源类型。 |
+| `getConfigDefinitions()` | 该实现拥有的全部配置定义。 |
+| `applyConfig(config)` | 原子替换不可变 effective configuration 快照。 |
+| `build()` | 从一份快照创建一个请求级 Service，不再接收额外 Properties。 |
 
 导入服务实现：
 
 | Service 方法 | 要求 |
 |--------------|------|
-| `importerType()` | 运行时 importer 类型。 |
-| `supportedResourceTypes()` | importer 可以产出的资源类型。 |
 | `search(context)` | 从配置来源返回 candidate 分页，结果只包含必要元数据。 |
 | `fetch(context, item)` | 从配置来源拉取一个被选择的 artifact。 |
+| `close()` | 释放请求级资源；默认实现可以为空操作。 |
 
-预置 source 可以通过可选的 source provider SPI 提供：
+`context` 包含 namespace、resource type、query、cursor、limit 和 importer 选项，不再携带
+source 配置或用户传入的 endpoint。
 
-| Provider 方法 | 要求 |
-|---------------|------|
-| `loadSources(properties)` | 返回从服务端配置和可信默认值派生出的已启用导入来源。 |
-
-`context` 包含 namespace、resource type、source 配置、query、cursor、limit 和 importer
-选项。它不得包含用户传入的网络 endpoint。
+Builder 实例只发现一次，由统一 `PluginManager` 注册、恢复持久化 state、通过标准配置来源链
+解析并 apply，之后才暴露给导入请求。search 每次创建一个 Service；validate 和 execute
+各自创建一个 Service 并在请求内复用全部选中项，最终在 `finally` 中关闭。
 
 `search` 应无副作用，并且不得返回 MCP tools、Skill 包内容、secret 或其他完整可导入 payload。
 `fetch` 可以访问外部来源并返回字节或结构化 payload，但不得写入 Nacos
@@ -166,43 +176,54 @@ Skill 冲突处理遵循 AI 资源 working-version 生命周期：
 
 默认内置 importer 由 `plugin-default-impl` 下的 `nacos-default-ai-importer-plugin` 模块提供。
 
-`mcp-registry` importer 对接运维配置的 MCP registry endpoint，search 阶段只返回 MCP Server
-摘要，fetch 阶段返回可由 MCP Resource Operator 写入的 `MCP_DETAIL` artifact。
+| Managed pluginName | API importer type | 资源 | Endpoint | 默认 state |
+|--------------------|-------------------|------|----------|------------|
+| `mcp-official` | `mcp-registry` | `mcp` | 固定官方 MCP Registry endpoint | enabled |
+| `mcp-registry-protocol` | `mcp-registry` | `mcp` | 必须由运维配置 | disabled |
+| `skills-sh` | `skills-sh` | `skill` | 固定 `https://skills.sh` | enabled |
+| `skills-well-known` | `skills-well-known` | `skill` | 必须由运维配置 | disabled |
 
-官方 MCP registry 预置来源可以通过如下配置启用：
+固定内置实现保持当前 Console 展示 metadata：
+
+- `mcp-official`：display name 为 `Official MCP Registry`，description 为
+  `Import MCP servers from the official MCP registry.`；
+- `skills-sh`：display name 为 `skills.sh`，description 为
+  `Import Skills from skills.sh.`。
+
+公共 effective configuration 为：
+
+| Item key | 生效范围 | 适用实现 | 含义 |
+|----------|----------|----------|------|
+| `endpoint` | `RESTART` | 可配置 endpoint 实现 | Registry 或 marketplace root。 |
+| `allow-http` | `RESTART` | 可配置 endpoint 实现 | 允许非 HTTPS 目标。 |
+| `allow-private-network` | `RESTART` | 可配置 endpoint 实现 | 允许本地或私网目标。 |
+| `display-name` | `RUNTIME` | 全部内置实现 | API 和 Console 展示名称。 |
+| `description` | `RUNTIME` | 全部内置实现 | API 和 Console 描述。 |
+| `max-item-count` | `RUNTIME` | 全部内置实现 | 单请求结果或文件数上限，默认 `500`。 |
+| `max-artifact-size` | `RUNTIME` | 全部内置实现 | 响应或 artifact 字节上限，默认 `10485760`。 |
+
+固定 endpoint 实现不暴露 `endpoint`、`allow-http` 或 `allow-private-network`
+definitions，也不接受旧 endpoint override。其来源身份和 endpoint 属于实现契约。
+
+运维配置的 MCP Registry 来源示例：
 
 ```properties
-nacos.plugin.ai.importer.mcp.official.enabled=true
+nacos.plugin.ai-resource-import.mcp-registry-protocol.enabled=true
+nacos.plugin.ai-resource-import.mcp-registry-protocol.endpoint=https://registry.example.com/v0/servers
 ```
 
-未覆盖时，该配置创建 source id `mcp-official`、importer `mcp-registry`、资源类型 `mcp`，endpoint
-为 `https://registry.modelcontextprotocol.io/v0/servers`。运维可以使用同一
-`nacos.plugin.ai.importer.mcp.official.*` 前缀覆盖 source id、展示名、endpoint、auth 引用、
-超时、条目限制和 artifact 大小。
-
-所有内置 source 预置都支持在自身前缀下配置如下安全 opt-in。默认值均为 `false`，只应由运维在受控私网
-部署中显式开启：
-
-| 配置后缀 | 含义 |
-|----------|------|
-| `allow-http` / `allowHttp` | 允许非 HTTPS source endpoint。 |
-| `allow-private-network` / `allowPrivateNetwork` | 允许 localhost、loopback、link-local、multicast 或私网 source endpoint。 |
-
-`skills-well-known` importer 对接运维配置的 Skill 市场或 registry root。若 source endpoint
-不是 well-known 路径，importer 应先尝试 `/.well-known/agent-skills`，再 fallback 到
-`/.well-known/skills` 以兼容 v0.1 来源；若 endpoint 已以 `/.well-known/agent-skills` 或
-`/.well-known/skills` 结尾，则直接使用该路径。
-
-Skill well-known 预置来源可以通过如下配置启用：
+运维配置的 Skill well-known 来源示例：
 
 ```properties
-nacos.plugin.ai.importer.skills.well-known.enabled=true
-nacos.plugin.ai.importer.skills.well-known.url=https://developers.cloudflare.com
+nacos.plugin.ai-resource-import.skills-well-known.enabled=true
+nacos.plugin.ai-resource-import.skills-well-known.endpoint=https://skills.example.com
 ```
 
-该配置创建 source id `skills-well-known`、importer `skills-well-known`、资源类型 `skill`。运维可以使用同一
-`nacos.plugin.ai.importer.skills.well-known.*` 前缀覆盖 source id、展示名、auth 引用、超时、
-条目限制和 artifact 大小。启用该预置时必须配置 `url`。
+MCP Registry 实现在 search 阶段返回摘要，在 fetch 阶段返回 `MCP_DETAIL` artifact。
+
+Skill well-known 实现连接运维配置的 Skill marketplace 或 registry root。endpoint 不是
+well-known 路径时，它先尝试 `/.well-known/agent-skills`，再尝试
+`/.well-known/skills`；endpoint 已是 well-known 路径时直接使用。
 
 Importer 必须同时支持两类 Skill well-known discovery 版本：
 
@@ -263,28 +284,22 @@ Skill ZIP 边界。内置 importer 必须支持 `skill-md` 单文件 artifact，
 TGZ 形式的 `archive` artifact。Archive 解包必须校验路径安全性，限制文件数量和解压后总大小，
 并在交给 Skill Resource Operator 前拒绝不支持的 archive 格式。
 
-`skills-sh` importer 对接运维配置的 skills.sh API root。它遵循 skills.sh CLI 的发现流程：
+`skills-sh` importer 使用内置固定的 `https://skills.sh` API root。它遵循 skills.sh CLI 的发现流程：
 Search 阶段调用 `GET {endpoint}/api/search?q={query}&limit={limit}`，并且只返回候选摘要；
 如果用户 query 为空，importer 应默认使用 `skill` 作为查询词；如果 trim 后的用户 query 只有 1
 个字符，importer 应在本地拒绝请求，因为 skills.sh 要求 query 至少 2 个字符。Fetch 阶段根据被选择候选的
 `source` 和 `skillId` 调用 `GET {endpoint}/api/download/{owner}/{repo}/{skillId}`，校验返回文件路径，
 组装标准 Skill ZIP artifact，并交给 Skill Resource Operator 写入。
 
-skills.sh 预置来源可以通过如下配置启用：
-
-```properties
-nacos.plugin.ai.importer.skills.skills-sh.enabled=true
-```
-
-未覆盖时，该配置创建 source id `skills-sh`、importer `skills-sh`、资源类型 `skill`，endpoint
-为 `https://skills.sh`。运维可以使用同一
-`nacos.plugin.ai.importer.skills.skills-sh.*` 前缀覆盖 source id、展示名、endpoint、auth 引用、
-超时、条目限制和 artifact 大小。
-
 Search metadata 只能暴露 skills.sh 页面 URL、GitHub repository URL、repository source、skill id、
 安装次数等非 secret 信息；Fetch source metadata 可以额外包含 download snapshot hash。Fetch 必须将
 `sourceMetadata.artifactUrl` 设置为对应的 skills.sh 页面 URL，使导入后的 Skill 资源记录具体外部来源，
 而不是 `local`。
+
+旧 `nacos.plugin.ai.importer.*` 中 display、description、limits、state 和可配置 endpoint
+等价 key 可以作为一个迁移周期的 alias；使用 alias 时应输出迁移 WARN。旧固定来源 endpoint
+override、`auth-ref`、source/global timeout、`max-page-count`、`block-private-network`、
+全局 defaults 和任意 `properties.*` 被移除，因为它们未生效或与 managed identity 冲突。
 
 ## API 流程
 
@@ -348,7 +363,8 @@ AI 资源市场或 registry 导入流程。
 
 对于旧的 `importType=url`，请求默认不得把用户传入 URL 作为网络目标。当 `data` 匹配已启用
 source 时，可以按 `sourceId` 解释；否则应失败并提示迁移到
-`nacos.ai.resource.import.sources` 配置。旧的直接 URL 导入只能由运维同时开启
+`nacos.plugin.ai-resource-import.{pluginName}.*` 受管插件配置并启用对应 `sourceId`。旧的直接
+URL 导入只能由运维同时开启
 `nacos.ai.resource.import.legacy-mcp-api-enabled=true` 和
 `nacos.ai.resource.import.allow-user-url=true` 后用于受控部署。
 
@@ -389,9 +405,9 @@ importer 可以保持 `dependencies` 为空，导入管理器也不应要求请�
   multicast 或私网地址时默认拒绝，除非 source 显式开启 `allow-private-network`；
 - redirect 必须禁用或按同一安全策略重新校验；
 - DNS 解析后默认阻断 loopback、link-local、multicast 和私网目标；
-- 来源请求必须强制连接超时、读超时、响应大小、页数和 artifact 大小限制；
-  内置 importer 应默认使用 source `max-artifact-size` 限制单次 HTTP 响应大小，除非具体协议定义了
-  更严格的限制；
+- 内置请求必须强制固定的连接/读取超时，并执行已配置的 `max-item-count` 和
+  `max-artifact-size` 限制；除非具体协议有更严格限制，每个 HTTP response 都必须由
+  `max-artifact-size` 限制；
 - 导入、查询或下载 Skill 包时不得执行包内脚本；
 - importer 插件不得在 API 响应、Trace 事件或日志中泄露 secret。
 
@@ -416,3 +432,7 @@ Trace 行为必须遵循 [Trace 插件规范](trace-plugin-spec.md)。
 该插件类型是转换边界。单个资源的存储实现演进时，它应保持稳定。特别是 MCP 从 Config-backed
 记录迁移到标准 AI 资源模型时，应通过替换 MCP Resource Operator 保持导入兼容，而不是修改每个
 外部 importer。
+
+统一 managed 模型是对 3.2.x 中短期存在的 Importer/Source 双 SPI 的 breaking replacement。
+外部实现必须迁移为一个实现 `PluginConfigSpec` 的 `AiResourceImportServiceBuilder`；已移除的
+Source 模型和 Source Provider SPI 不提供兼容 adapter。

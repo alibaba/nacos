@@ -26,7 +26,6 @@ import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportPayloadKind;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,22 +34,23 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 class AiResourceImportServiceTest {
     
     @Test
-    void testBuilderCreatesImporterWithProperties() {
-        Properties properties = new Properties();
-        properties.setProperty("endpoint", "https://example.com");
+    void testBuilderCreatesRequestScopedImporter() throws Exception {
         FakeImportServiceBuilder builder = new FakeImportServiceBuilder();
         
-        AiResourceImportService service = builder.build(properties);
+        AiResourceImportService service = builder.build();
         
+        assertEquals("fake-source", builder.pluginName());
         assertEquals("fake-importer", builder.importerType());
-        assertEquals("fake-importer", service.importerType());
-        assertEquals(Collections.singleton("mcp"), service.supportedResourceTypes());
-        assertSame(properties, ((FakeImportService) service).properties);
+        assertEquals("Fake source", builder.displayName());
+        assertEquals("Fake description", builder.description());
+        assertEquals(Collections.singleton("mcp"), builder.supportedResourceTypes());
+        assertSame(builder.service, service);
+        service.close();
     }
     
     @Test
     void testSearchAndFetchContract() throws NacosException {
-        AiResourceImportService service = new FakeImportService(new Properties());
+        AiResourceImportService service = new FakeImportService();
         AiResourceImportContext context = new AiResourceImportContext();
         context.setResourceType("mcp");
         AiResourceImportItem item = new AiResourceImportItem();
@@ -67,34 +67,40 @@ class AiResourceImportServiceTest {
     
     private static class FakeImportServiceBuilder implements AiResourceImportServiceBuilder {
         
-        @Override
-        public String importerType() {
-            return "fake-importer";
-        }
+        private final FakeImportService service = new FakeImportService();
         
         @Override
-        public AiResourceImportService build(Properties properties) {
-            return new FakeImportService(properties);
-        }
-    }
-    
-    private static class FakeImportService implements AiResourceImportService {
-        
-        private final Properties properties;
-        
-        private FakeImportService(Properties properties) {
-            this.properties = properties;
+        public String pluginName() {
+            return "fake-source";
         }
         
         @Override
         public String importerType() {
             return "fake-importer";
+        }
+        
+        @Override
+        public String displayName() {
+            return "Fake source";
+        }
+        
+        @Override
+        public String description() {
+            return "Fake description";
         }
         
         @Override
         public Set<String> supportedResourceTypes() {
             return Collections.singleton("mcp");
         }
+        
+        @Override
+        public AiResourceImportService build() {
+            return service;
+        }
+    }
+    
+    private static class FakeImportService implements AiResourceImportService {
         
         @Override
         public AiResourceImportCandidatePage search(AiResourceImportContext context) {

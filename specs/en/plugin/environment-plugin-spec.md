@@ -44,7 +44,8 @@ general runtime configuration mutation mechanism.
 
 ## SPI
 
-Plugins implement `CustomEnvironmentPluginService`.
+Plugins implement `CustomEnvironmentPluginService`, which inherits
+`PluginConfigSpec` with compatibility defaults.
 
 | Method | Requirement |
 |--------|-------------|
@@ -54,6 +55,11 @@ Plugins implement `CustomEnvironmentPluginService`.
 | `customValue(property)` | Return transformed values for the declared keys. |
 
 The plugin is exposed to the core plugin manager as type `environment`.
+
+The type uses the `PRE_CONTEXT` initialization phase. Core loads each SPI
+implementation once, resolves and applies its startup configuration, and then
+hands the same instance to `CustomEnvironmentPluginManager`. The environment
+manager must not independently load the SPI.
 
 ## Execution Rules
 
@@ -80,10 +86,20 @@ The deployment switch documented for environment plugins is:
 nacos.custom.environment.enabled=true
 ```
 
-The current environment manager loads SPI services directly and uses the
-deployment switch above. When this plugin type is routed through the core plugin
-manager, runtime availability should converge on unified plugin state for
-`environment:{pluginName}`.
+The switch is a static module/ability switch. When false, environment
+implementations are not loaded. Each implementation may additionally use its
+standard startup-state key:
+
+```properties
+nacos.plugin.environment.{pluginName}.enabled=true
+```
+
+Configuration definitions use the standard
+`nacos.plugin.environment.{pluginName}.{itemKey}` key and only
+`STATIC > DEFAULT` is resolved. All values are startup-only. A definition
+declared as `RUNTIME` is exposed as `RESTART` with a warning. Runtime state and
+configuration updates are rejected, and later static refreshes do not reapply
+the plugin. Plugin detail reports the accepted startup snapshot.
 
 Plugins should document:
 

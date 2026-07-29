@@ -64,15 +64,12 @@ class ControlPluginRegistryTest {
     }
     
     @Test
-    void testRejectInvalidBuilders() {
-        assertThrows(IllegalStateException.class,
-            () -> new ControlPluginRegistry(Collections.singletonList(null)));
-        assertThrows(IllegalStateException.class,
-            () -> new ControlPluginRegistry(
-                Collections.singletonList(new NamedBuilder(" "))));
-        assertThrows(IllegalStateException.class,
-            () -> new ControlPluginRegistry(
-                Arrays.asList(new NamedBuilder("same"), new NamedBuilder("SAME"))));
+    void testIgnoreInvalidAndDuplicateBuilders() {
+        ControlPluginRegistry registry = new ControlPluginRegistry(Arrays.asList(null,
+            new NamedBuilder(" "), new NamedBuilder("same"), new NamedBuilder("SAME")));
+        
+        assertEquals(1, registry.getPlugins().size());
+        assertTrue(registry.getPlugins().containsKey("same"));
     }
     
     @Test

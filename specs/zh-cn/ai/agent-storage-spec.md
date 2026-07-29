@@ -42,7 +42,7 @@ RUNTIME publisher contributions ------> Naming Client runtime state
 | `ai_resource` | Agent 身份、目录、治理、Version 摘要和派生的 online 目录。 | Version payload 或运行时健康状态。 |
 | `ai_resource_version` | 精确 Version 身份、生命周期状态、作者、Storage pointer 和 Pipeline 状态。 | CallInterface payload 或 Runtime Endpoint。 |
 | AI Storage | 一个 Version 的 canonical `AgentVersionContent` bytes。 | 资源身份、生命周期、label 或可见性。 |
-| Naming Client 状态 | 活跃 publisher contribution、健康、enabled 状态和 Version binding。 | Agent 定义或 Version 生命周期。 |
+| Naming Client 状态 | 活跃 publisher contribution、健康、enabled 状态和 singular runtime Version/range 事实。 | Agent 定义或 Version 生命周期。 |
 
 服务端不得持久化合并后的 `AgentDiscoveryResult`。Summary、管控详情、Catalog、Discover 和
 Watch 对象都是上述事实的读取投影。
@@ -263,82 +263,70 @@ namespaceId / agentName / runtimeVersion / versionRange? / protocol
 endpoints[1..1000]
 ```
 
-批次中全部 Endpoint 共享 Version binding 和 protocol。单元素数组就是通用单 Endpoint 形式。
-命令本身不持久化。服务端在原子应用前校验完整批次。批次包含重复自然键时整体拒绝。
-注册只 upsert 列出的 contribution，不删除未列出的 Endpoint；重复提交相同内容成功且不产生
-语义变化。
+批次中全部 Endpoint 共享一组 `runtimeVersion`/`versionRange` 和 protocol。单元素数组就是通用
+单 Endpoint 形式。命令本身不持久化。该批次是当前 publisher 对组合后 Naming Service 的完整期望状态。服务端校验
+完整批次后委托 Naming `batchRegisterInstance`；Naming 原子替换同一 Client 和 Service 的旧批次，
+未列出的 Endpoint 会被删除。批次包含重复自然键时整体拒绝；重复提交相同内容具有幂等性。
 
 `AgentEndpointDeregistrationBatch` 只包含 `namespaceId`、`agentName`、`protocol` 和
-`endpoints[] {uri, transport}`。对于当前 publisher，每个自然 Endpoint key 会删除该 publisher
-的全部 Version binding group。调用方不提交或缓存 endpoint id、runtime Version、range、
-metadata、priority 或 weight。
+`endpoints[] {uri, transport}`。它是 SDK 侧的操作意图，不是服务端局部删除命令。SDK 从 redo
+状态移除这些自然键，再通过同一注册路径提交保留后的完整批次；没有 Endpoint 时注销整个
+Client 和 Service publication。服务端不会为局部注销读取并合并旧批次。
 
 ### 4.3 内部 Publisher Contribution
 
-内部 publication group 身份为：
+Naming publication 身份为：
 
 ```text
 publisherIdentity
 + namespaceId + agentName + protocol
-+ runtimeVersion + canonicalVersionRange
 ```
 
-Endpoint contribution 身份在此基础上追加公开 Endpoint 自然键。必须保持以下区分：
+Naming 为该 Client 和 Service 只保存一份 `BatchInstancePublishInfo`。其中 Instance 共享一组
+`runtimeVersion` 和 canonical `versionRange`。后续注册完整替换该记录及这两个共享字段。
+因此首版同一 publisher、Agent 和 protocol 只能保存一组 singular
+`runtimeVersion`/`versionRange`。如果未来需要同时保存多组，应由客户端提供完整快照 wire model，
+而不是由服务端执行 read-merge-write。
 
-- 同一 publisher 可以通过多个 runtime-Version/range group 绑定相同 host、port 和 transport；
-- Version binding 不创建按 Version 划分的 Naming Service，也不在目标发现结果中复制公开
-  Endpoint；
-- 注册相同 contribution 身份执行 upsert；
-- 新的通用注销命令删除当前 publisher 下与该自然 Endpoint 匹配的全部 group。
+Agent 层不会读取旧 publisher 记录，不直接依赖 `ClientServiceIndexesManager`，不增加 Service 锁，
+也不在写入前扫描其他 publisher。Naming 负责完整替换、连接清理、索引、事件和 Distro AP 收敛；
+Agent 层只校验和转换完整批次。
 
-兼容 Adapter 可以使用内部 group-delete 操作。该操作只删除一个精确 publication group，
-不属于公开 RAD 命令集。旧 A2A 精确 Version 注销使用该操作，因此不会误删同一 publisher
-在其他 Version 上的 contribution。
-
-全部活跃 contribution 中，相同公开自然 Endpoint key 必须具有唯一的 canonical 公开 Endpoint
-payload，不受 publisher identity 或 Version range 是否相交影响。如果 URI scheme、path、query、priority、
-weight 或公开 metadata 与已有 payload 不同，则以 contribution 冲突拒绝注册。只有 canonical
-Endpoint payload 完全相同时，contribution 才能为同一自然键增加不同 Version binding。
+不同 publisher 的 Instance 可能在收敛后映射到同一公开自然 Endpoint key。读取投影聚合 canonical
+payload 完全相同的 contribution。如果收敛后的 Naming 状态对同一自然键包含不同 URI payload 字段、
+priority、weight 或公开 metadata，读取返回 `RESOURCE_CONFLICT`，不得任意选择。该检查用于保证
+投影安全，不是写时 reservation 或 CP 约束。
 
 ### 4.4 Binding 聚合
 
-Naming publisher contribution 聚合为包含 canonical `bindings[]` 数组的 Endpoint 投影：
-
-```json
-[
-  {"runtimeVersion":"1.0.6","versionRange":"[1.0.0,2.0.0)"}
-]
-```
-
-数组去重，并先按 `runtimeVersion` 的 Agent SemVer 升序排序，再按 `versionRange` 的
-大小写敏感字符串升序排序。该精确数组是 Version 匹配事实。
-
-每条有效 publisher record 使用 `__nacos.agent.endpoint.bindings__` 保存该数组。数组恰好
-包含一项时，同时写入以下诊断和首版兼容镜像：
+每条 Naming Instance 使用以下 singular metadata 保存一个 canonical binding：
 
 ```text
 __nacos.agent.endpoint.version__       = runtimeVersion
-__nacos.agent.endpoint.versionRange__  = versionRange
+__nacos.agent.endpoint.versionRange__  = canonicalVersionRange
 ```
 
-数组包含多项时移除两个 singular key。读取方在 `bindings` 存在时始终以其为准，不得将
-过期 singular key 合并进去。
+Naming metadata 中没有序列化的 `bindings` 值。只有读取 Naming Service 投影时才创建
+`RuntimeVersionBinding` 对象和公开 `bindings[]`。Binding 去重后先按 `runtimeVersion` 的
+Agent SemVer 升序排序，再按 `versionRange` 的大小写敏感字符串升序排序。
 
-`RuntimeEndpointSnapshot` 聚合 publisher contribution，但不暴露 publisher identity。每个公开
-自然 Endpoint key 恰好对应一项，包含 canonical Endpoint payload 和全部有效 `bindings[]`。
-按 Version 过滤的 Snapshot 只保留命中的 binding，并在没有剩余 binding 时删除该项。
+`RuntimeEndpointSnapshot` 从 `ServiceStorage` 读取完整的 Naming 内部 Service 投影，再聚合其中的
+Instance，但不暴露 publisher identity。每个公开自然 Endpoint key 恰好对应一项，包含 canonical
+Endpoint payload 和全部有效 `bindings[]`。按 Version 过滤的 Snapshot 只保留命中的 binding，并在没有
+剩余 binding 时删除该项。`ServiceStorage` 可以去重完全相同的 Instance；由于相同 Instance 的 payload、
+bindings、enabled 和 healthy 最终本就聚合为同一公开项，这不会改变公开投影。
 
-RAD Discover 先按目标 Version 过滤 binding，再将相同自然键聚合为一个公开 Endpoint。由于写入
-阶段会拒绝任何内容不一致的 payload，因此同一目标 Version 不会为同一自然键生成两个
-不同公开 payload。
+RAD Discover 先按目标 Version 过滤 binding，再将相同自然键聚合为一个公开 Endpoint。投影重建时
+拒绝 AP 收敛后可见的不一致 payload。因此成功生成的同一目标 Version 投影不会为同一自然键包含
+两个不同公开 payload。
 
 ### 4.5 预注册与生命周期
 
 Runtime 发布与 Agent 定义创建解耦。即使 Agent、Version 或 CallInterface 不存在，服务端也
 接受结构合法且鉴权通过的发布。注册成功表示运行时意图已接受，不表示当前可发现。
 
-注册校验 AgentName、runtime Version、range、protocol、Endpoint、鉴权、容量和 contribution
-冲突。它不校验定义是否存在或 Version 生命周期状态。
+注册校验 AgentName、runtime Version、range、protocol、Endpoint、鉴权和批次容量。它不校验
+定义是否存在、Version 生命周期状态或其他 publisher 的当前值。
 
 Publisher identity 是内部状态：
 
@@ -413,33 +401,38 @@ Cluster identity 和保留 metadata，读取时必须一致。
 | HTTPS 状态 | `__nacos.agent.endpoint.supportTls__`。 |
 | 原始 URI query | `__nacos.agent.endpoint.query__`。 |
 | native tenant，非空时 | `__nacos.agent.endpoint.tenant__`。 |
-| canonical binding | `__nacos.agent.endpoint.bindings__`。 |
-| 单 binding 诊断镜像 | `__nacos.agent.endpoint.version__`、`__nacos.agent.endpoint.versionRange__`。 |
+| runtime Version | `__nacos.agent.endpoint.version__`。 |
+| canonical Version range | `__nacos.agent.endpoint.versionRange__`。 |
 | priority | `__nacos.agent.endpoint.priority__`。 |
 | weight | `Instance.weight`。 |
 | 公开 Endpoint metadata | 其余 `Instance.metadata`。 |
 | 运行状态 | `Instance.enabled`、`Instance.healthy`、`ephemeral=true`。 |
 
 用户 metadata 不得覆盖任何 `__nacos.agent.endpoint.*__` key。服务端在接受 publication 前
-构造并校验完整 Naming metadata。缺失的 range 输入在写 `bindings` 前完成 canonicalize。
+构造并校验完整 Naming metadata。缺失的 range 输入在写 `versionRange` 前完成 canonicalize。
 
 `__nacos.agent.endpoint.protocolVersion__` 仅用于旧 A2A 兼容。只有 A2A 兼容 Adapter 可以写入；
-它不属于公开 RAD Endpoint metadata，也不进入 Runtime revision。反向投影旧 A2A 响应时，Adapter
-优先使用该值；缺失时回退到目标 CallInterface 的 `protocolVersion`。只有当一个聚合实例
-中全部 A2A contribution 的该值相同时才写入这个单值 key；值不同时移除 key，并由每个精确
-Version 投影使用目标 CallInterface fallback。该差异不构成公开 Endpoint payload 冲突。
+它不属于公开 RAD Endpoint metadata，也不进入 Runtime revision。反向投影旧 A2A 响应时，
+兼容 Adapter 优先使用该值；缺失时回退到目标 CallInterface 的 `protocolVersion`。
 
 公开自然键映射为 Service、Cluster、IP 和 port。Path 和 query 仍然是 payload metadata。
 ServiceName 和 clusterName 都不包含 Version，因此 Service 数量不会随兼容 Agent Version 增长。
 
 ### 5.3 Naming 事实边界
 
-包含 canonical binding 的 Naming Client publisher contribution 是 RUNTIME 事实源。普通 Naming
-`ServiceInfo` 可能合并相同 IP 和 port、应用 selector 或健康保护行为，并且不能保留所有 Agent
-publication group，因此不是 RAD 事实源。
+Naming Client 状态仍是 RUNTIME 写入事实，负责 publisher identity、连接或 heartbeat 活性、失活清理，
+完整批次替换、索引、事件和 AP 收敛。注册把完整 Agent Endpoint 批次转换为 Naming Instance 并调用
+Naming 一次；完整注销移除 Client 和 Service publication。Agent 服务端不读取或合并旧 publisher 记录。
 
-Agent 运行时读取从 Naming Client/index 路径聚合原始 publisher contribution，再应用 binding 和
-enabled filter。它们不得把标准 Naming Java SDK subscription 结果直接转发为 RAD Watch 快照。
+Runtime Snapshot 和 Discover 从 Naming `ServiceStorage` 缓存读取完整的内部 Service 投影。该投影由
+service-scoped Client index 构建，并包含运维 Instance metadata。Agent 层随后解析每条 Instance 的
+singular binding、应用可选的目标 Version filter、校验 payload 一致性，并按公开 Endpoint 自然键聚合。
+`ServiceStorage` 内部对完全相同 Instance 的去重是安全的，因为冗余且完全相同的 publication 不会
+改变任何公开聚合字段。
+
+`ServiceStorage` 返回的内部 `ServiceInfo` 容器与通过 Naming SDK、HTTP API、selector 或健康保护链路
+对外返回的 Naming 结果不是同一契约。不得把外部或已经过后处理的 Naming `ServiceInfo` 作为 Runtime
+事实源，也不得将其直接转发为 RAD Watch 快照。
 
 `enabled` 和 `weight` 的 Naming 运维 metadata 按普通规则优先于运行时 publication 值。Agent
 投影仍然保留 unhealthy Instance 并暴露其原始聚合健康状态，不应用 Naming 健康保护回退。
@@ -466,7 +459,7 @@ metadata。
 针对每个 `(namespaceId, agentName, targetVersion, protocol, source=RUNTIME)`，服务端在完成
 以下步骤后生成 opaque `sourceRevision`：
 
-1. 聚合活跃 publisher contribution；
+1. 从 `ServiceStorage` 读取完整的 Naming 内部 Service 投影；
 2. 选择包含目标 Version 的 binding；
 3. 规范每个 Endpoint URI，校验并保持 transport，显式写入有效默认值 `priority=0` 和
    `weight=1`，并要求 `healthy` 存在；
@@ -511,8 +504,8 @@ Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 八字节 big-endian 值，最后编码为小写十六进制。内部 Storage Schema version 1 同时以
 机器可读形式记录这些规则。
 
-实现对语义投影标脏、合并突发变化并缓存结果，不得对每次 heartbeat 或每次 Discover 读取都
-执行 hash。
+Naming `ServiceStorage` 提供当前已缓存的 Service 投影。Agent 读取路径直接从该结果派生公开
+Endpoint set 及其 revision，不维护第二份投影缓存。
 
 持久化 AgentVersion 内容继续使用 SHA-256。DECLARED Endpoint set 使用 Version
 `contentDigest` 作为 opaque source revision。
@@ -524,7 +517,7 @@ Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 | 管控 Agent 列表或 RAD Search | `ai_resource` page。 | 否 |
 | Agent overview | Resource 和有界 Version-row page。 | 否 |
 | 精确 Version detail | 一行 Version。 | 一次 |
-| Runtime Endpoint Snapshot | 一个 protocol 的原始 Naming publisher contribution；可选 binding filter。 | 否 |
+| Runtime Endpoint Snapshot | 一个 protocol 的完整内部 `ServiceStorage` 投影；可选 binding filter。 | 否 |
 | RAD Discover | Resource、online Version、缓存内容和符合条件的 runtime 投影。 | Digest 未命中时一次 |
 
 | 变化 | 写入目标 | 一致性规则 |
@@ -541,6 +534,10 @@ Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 | Agent 元数据 | `metaVersion`。 |
 | Agent Version 内容 | `contentDigest`。 |
 | 目标 Runtime 投影 | `sourceRevision`。 |
+
+Naming `ServiceStorage` 负责完整的 per-Service 投影缓存。Agent 层不维护额外 Runtime registry 或
+投影缓存；每次从当前 `ServiceStorage` 结果派生所需 Agent 投影，并根据最终公开 Endpoint set 计算
+`sourceRevision`。
 
 AI Storage provider 保证单个 StorageKey 的原子 bytes 和它声明的读取一致性。Agent Registry
 负责跨 Resource、Version、Storage pointer、digest 和派生目录的编排，并执行校验、幂等重试
@@ -589,17 +586,9 @@ A2A Adapter 是本存储契约的首个使用方：
 | Runtime 调用 protocol | 规范 Agent protocol token `a2a`。 |
 | 旧 Endpoint transport 和 URI 部分 | 通用 Endpoint 和 Naming 保留 metadata。 |
 
-旧 single 和 batch 注册保留精确 Version replacement scope：
+首个兼容阶段中，旧 A2A Runtime 注册继续使用现有的按 Version 划分 Naming layout。在 A2A 客户端
+或 Adapter 能够维护并提交新 Service 的完整期望批次之前，不得把旧注册直接重定向到新的
+Version-neutral Service，否则一个旧 Version 的注册会覆盖另一个 Version。
 
-```text
-(publisherIdentity, namespaceId, agentName, protocol=a2a,
- runtimeVersion=version, versionRange=[version])
-```
-
-兼容 Adapter 替换该内部 group。旧注销只删除该精确 group，即使同一 publisher 和物理
-Endpoint 还存在其他 Version binding 也不会误删。新的 RAD 注销则删除当前 publisher 下所提交
-自然 Endpoint 的全部 binding。
-
-切换后，兼容写入使用新的 AI Resource、AI Storage 和 Naming layout。历史 Config row、历史
-Naming Service、混合集群双读或双写、切换、回滚和异常历史身份处理属于独立的滚动升级与
-迁移契约。
+后续切换到公共 Naming layout、历史 Naming Service、混合集群双读或双写、回滚和异常历史身份处理
+属于独立的滚动升级与迁移契约。

@@ -43,9 +43,9 @@ class PublishPipelineResourceTypeTest {
     }
     
     @Test
-    void testValuesContainsAllThreeTypes() {
+    void testValuesContainsAllTypes() {
         PublishPipelineResourceType[] values = PublishPipelineResourceType.values();
-        assertEquals(3, values.length, "PublishPipelineResourceType should have exactly 3 values");
+        assertEquals(4, values.length, "PublishPipelineResourceType should have exactly 4 values");
         
         Set<PublishPipelineResourceType> valueSet =
             Arrays.stream(values).collect(Collectors.toSet());
@@ -55,5 +55,7 @@ class PublishPipelineResourceTypeTest {
             "values() should contain PROMPT");
         assertTrue(valueSet.contains(PublishPipelineResourceType.AGENTSPEC),
             "values() should contain AGENTSPEC");
+        assertTrue(valueSet.contains(PublishPipelineResourceType.AGENT),
+            "values() should contain AGENT");
     }
 }

@@ -98,7 +98,10 @@ public interface AiResourcePersistService {
     Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize);
     
     /**
-     * Update meta with optimistic lock on meta_version.
+     * Update mutable metadata with optimistic lock on meta_version.
+     *
+     * <p>This operation does not update {@code owner} or {@code scope}. Scope changes use the
+     * dedicated {@link #updateScope(String, String, String, String)} operation.</p>
      *
      * @return true if updated successfully (affectedRows == 1)
      */
