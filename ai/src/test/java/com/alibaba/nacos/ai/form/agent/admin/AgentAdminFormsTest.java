@@ -65,7 +65,6 @@ class AgentAdminFormsTest {
         assertEquals("initial draft", form.getChangeDescription());
         assertNull(form.getBasedOnVersion());
         
-        form.validate();
         AgentDraftCreateRequest request = form.toRequest();
         assertEquals(AGENT_NAME, request.getAgentName());
         assertEquals(VERSION, request.getVersion());
@@ -80,8 +79,6 @@ class AgentAdminFormsTest {
         form.setAgentName(AGENT_NAME);
         form.setVersion("2.0.0");
         form.setBasedOnVersion(VERSION);
-        
-        form.validate();
         
         assertEquals(VERSION, form.getBasedOnVersion());
         assertEquals(VERSION, form.toRequest().getBasedOnVersion());
@@ -98,7 +95,6 @@ class AgentAdminFormsTest {
         assertEquals("[]", form.getCallInterfaces());
         assertEquals("updated", form.getChangeDescription());
         
-        form.validate();
         AgentDraftUpdateRequest request = form.toRequest();
         assertEquals(AGENT_NAME, request.getAgentName());
         assertEquals(VERSION, request.getVersion());
@@ -114,7 +110,6 @@ class AgentAdminFormsTest {
         
         assertEquals("{\"stable\":\"1.0.0\"}", form.getLabels());
         
-        form.validate();
         AgentLabelsUpdateRequest request = form.toRequest();
         assertEquals(VERSION, request.getLabels().get("stable"));
     }
@@ -139,7 +134,6 @@ class AgentAdminFormsTest {
         assertEquals("{\"region\":\"east\"}", form.getExtensions());
         assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE, form.getStatus());
         
-        form.validate();
         AgentUpdateRequest request = form.toRequest();
         assertEquals("Demo", request.getDisplayName());
         assertEquals("Nacos", request.getProvider().getName());

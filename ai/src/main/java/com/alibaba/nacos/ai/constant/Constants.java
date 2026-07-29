@@ -118,6 +118,8 @@ public class Constants {
     
     public static class Agent {
         
+        public static final String CONSOLE_PATH = "/v3/console/ai/agents";
+        
         public static final String ADMIN_PATH = "/v3/admin/ai/agents";
         
         /**
