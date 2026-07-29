@@ -42,6 +42,17 @@ public abstract class AiConsoleApiBaseITCase extends AiAdminApiBaseITCase {
 
     protected static final String CONSOLE_A2A_VERSION_LIST_PATH = CONSOLE_A2A_PATH + "/version/list";
 
+    protected static final String CONSOLE_AGENT_PATH = Constants.Agent.CONSOLE_PATH;
+
+    protected static final String CONSOLE_AGENT_LIST_PATH = CONSOLE_AGENT_PATH + "/list";
+
+    protected static final String CONSOLE_AGENT_VERSIONS_PATH = CONSOLE_AGENT_PATH + "/versions";
+
+    protected static final String CONSOLE_AGENT_VERSION_PATH = CONSOLE_AGENT_PATH + "/version";
+
+    protected static final String CONSOLE_AGENT_RUNTIME_ENDPOINTS_PATH =
+            CONSOLE_AGENT_PATH + "/runtime-endpoints";
+
     protected static final String CONSOLE_MCP_PATH = Constants.MCP_CONSOLE_PATH;
 
     protected static final String CONSOLE_MCP_LIST_PATH = CONSOLE_MCP_PATH + "/list";
@@ -137,6 +148,12 @@ public abstract class AiConsoleApiBaseITCase extends AiAdminApiBaseITCase {
         addIfNotBlank(query, "version", version);
         addIfNotBlank(query, "registrationType", registrationType);
         deleteQuietly(CONSOLE_A2A_PATH, query);
+    }
+
+    @Override
+    protected void deleteAgentDefinitionQuietly(String namespaceId, String agentName)
+            throws Exception {
+        deleteQuietly(CONSOLE_AGENT_PATH, agentIdentityQuery(namespaceId, agentName));
     }
 
     @Override
