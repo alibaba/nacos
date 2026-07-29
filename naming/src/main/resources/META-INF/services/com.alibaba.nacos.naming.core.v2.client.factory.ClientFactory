@@ -15,5 +15,6 @@
 #
 
 com.alibaba.nacos.naming.core.v2.client.factory.impl.ConnectionBasedClientFactory
+com.alibaba.nacos.naming.core.v2.client.factory.impl.HttpConnectionBasedClientFactory
 com.alibaba.nacos.naming.core.v2.client.factory.impl.EphemeralIpPortClientFactory
 com.alibaba.nacos.naming.core.v2.client.factory.impl.PersistentIpPortClientFactory

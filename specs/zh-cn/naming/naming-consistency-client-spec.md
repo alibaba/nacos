@@ -31,11 +31,22 @@ Naming 使用 Client state 将 publisher 和 subscriber 连接到 service。Nami
 对于 HTTP 和兼容客户端，Naming 可以创建 IP-port-based Client 来模拟等价的 publisher 状态。由于
 不同 HTTP 请求可能落到不同 Nacos 节点，这类 Client 需要通过心跳和过期检查保活。
 
+对于具有稳定外部 Client id 的新 HTTP 契约，Naming 使用
+`HttpConnectionBasedClient`。它以 `HTTP_CLIENT@@<externalClientId>` 作为内部 Client id，
+由 Distro responsibility 选择责任节点，并与 connection-based Client 一样持有标准 publisher
+和 subscriber 容器。领域模块只负责把自己的运行时对象转换为 Naming
+`InstancePublishInfo`；相同 external id 跨模块复用同一个 Client 生命周期。
+
 | Client 类型 | 典型来源 | 生命周期 |
 | --- | --- | --- |
 | Connection-based client | gRPC SDK 连接。 | 连接关闭时释放。 |
+| HTTP connection-based client | 携带稳定 Client id 的 HTTP SDK。 | Client 与 Publisher 分层续约并由责任节点执行过期检查。 |
 | Ephemeral IP-port client | HTTP 或兼容临时注册。 | 通过心跳和过期检查保活。 |
 | Persistent IP-port client | 持久实例注册。 | 通过持久路径存储，可在进程重启后恢复。 |
+
+HTTP connection-based Client 的普通查询只刷新已存在 Client 的活性，不创建空 Client，也不刷新
+其中 publisher 的活性、健康或 revision。Publication 写入和显式 Publisher heartbeat 同时刷新
+Client 与 Publisher；Publisher 可以在 Client 因查询或订阅仍存活时独立变为 unhealthy 或过期。
 
 Client id 是内部状态。公开运行时 API 应通过 service scope、cluster、IP、port 和 service type 识别
 实例。

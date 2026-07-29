@@ -167,7 +167,7 @@ Endpoint 自然键。官方 SDK 的部分注销先更新本地期望 Batch，再
 
 ### 2.4 HTTP Publisher Identity 与活性
 
-Endpoint 写入和 heartbeat 必须携带：
+Endpoint 写入和 Publisher heartbeat 必须携带：
 
 ```text
 X-Nacos-Client-Id: http-<ipToken>-<processToken>-<clientSequence>-<createTimestamp>
@@ -179,28 +179,40 @@ Request-Module: AI
 `clientSequence` 区分同进程的 SDK 实例，并可加入诊断用 PID token。重试、切换
 Server 和 redo 保持 id；进程重启生成新 id。它是路由身份，不是 credential。
 
+服务端将外部值包装为 `HTTP_CLIENT@@<externalClientId>` Naming 内部 Client id。
+Search 和 Discover 可以携带相同 Header；如果对应 Client 已存在，查询只刷新 Client 活性，
+不创建空 Client，也不修改该 Client 中任何 Publisher 的活性、健康或 revision。AI 模块自己的
+Distro Filter 根据该内部 id 把有状态请求路由到责任节点；它不扩展 Naming HTTP API 的
+Distro Filter。
+
 `ClientLivenessInfo` 只包含：
 
 ```text
 heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 ```
 
-最近一次成功注册或 heartbeat 响应决定调度。一个 heartbeat 维持整个 Client 活性，
-与 Endpoint 数量无关；Endpoint 写入同样刷新活性。没有剩余 Endpoint 的 Client 被删除并停止 heartbeat。
+HTTP Client 分别维护 Client 活性和 Publisher 活性。合法查询只刷新 Client 活性；
+Endpoint 写入和 Publisher heartbeat 同时刷新 Client 以及该 Client 的全部 Publisher 活性。
+Publisher heartbeat 与 Endpoint 数量无关。没有剩余 Endpoint 且没有 subscriber state 的
+Client 被删除并停止 heartbeat。
 
 | 状态 | Runtime 行为 |
 |---|---|
-| `ACTIVE` | Contribution 使用当前 Naming health。 |
-| `UNHEALTHY` | 超过 `unhealthyTimeoutMillis` 后 Contribution 仍可发现，但 `healthy=false`。 |
-| `EXPIRED` | 超过 `expireTimeoutMillis` 后删除 Client 拥有的全部 Contribution。 |
+| `ACTIVE` | Publisher 活跃，Contribution 使用当前 Naming health。 |
+| `UNHEALTHY` | Publisher 超过 `unhealthyTimeoutMillis` 后 Contribution 仍可发现，但 `healthy=false`；查询不能恢复它。 |
+| `EXPIRED` | Publisher 超过 `expireTimeoutMillis` 后删除 Client 拥有的全部 Contribution，但仍有 subscriber state 的 Client 可以保留。 |
 
-服务端根据 `clientId`，使用 Distro type `AI_AGENT_HTTP_CLIENT` 路由 HTTP Publisher
-状态。只有责任节点持有 native Client、`lastActiveTime` 和超时任务；Peer 接收重建
-Naming/RAD 投影所需的完整 Client state。新 Owner 只有在收到完整 Snapshot 后才启动
-故障转移宽限，否则返回 `HTTP_CLIENT_NOT_FOUND`，Client 随后 redo 每个完整的
-Endpoint Service Batch。首次写入把 Client id 绑定到鉴权主体和 namespace；后续
-不匹配时拒绝。同一字符串
-在其他模块不共享活性和清理状态。
+HTTP Client 复用 Naming 的 `Nacos:Naming:v2:ClientData`、
+`DistroClientDataProcessor`、Client snapshot、verify 和 repair，不增加 Agent 专用 Distro
+type。`HttpConnectionBasedClientManager` 与现有 `ConnectionBasedClientManager` 同级并由
+`ClientManagerDelegate` 根据内部 id 路由。只有责任节点执行 native Client 和 Publisher
+超时任务；Peer 接收重建 Naming/RAD 投影所需的标准 Client state。责任转移后以 replica verify
+时间作为本地超时下界，Client 不再维护另一个 ownership 标记；该正常 Distro 故障转移不定义
+混合版本兼容路径。
+
+首次有状态写入把 Client id 绑定到鉴权主体和 namespace，后续不匹配时拒绝。其他模块使用相同
+external Client id 时复用同一个 HTTP Client 生命周期。旧节点没有对应 Agent Client HTTP API
+能力；本规范不为 API 尚未可用的升级中集群定义兼容执行路径。
 
 ### 2.5 gRPC Payload 与能力位
 
@@ -263,7 +275,8 @@ Watch 及其 Redo State，再发送 ACK。Reconnect 后，SDK 丢弃旧 Connecti
 | SDK 部分 Deregister | 从本地期望状态删除自然键，再 Register 完整剩余 Batch |
 | SDK 注销最后一项或直接远程 Deregister | 删除该 Publisher 的整份 Service Publication |
 | 重复整份 Publication Deregister | 成功且语义不变 |
-| 重复 heartbeat | 只刷新 Client 活性 |
+| 重复 Publisher heartbeat | 刷新 Client 与 Publisher 活性，不修改 Publisher payload 或 revision |
+| 携带已存在 Client id 的重复查询 | 只刷新 Client 活性，不创建 Client 或刷新 Publisher |
 | HTTP timeout | 保持 Client id 和 payload，退避重试 |
 | `HTTP_CLIENT_NOT_FOUND` | 将本地 Endpoint 意图标记为未注册，并 redo 每个完整 Service Batch |
 | gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch 和订阅 |

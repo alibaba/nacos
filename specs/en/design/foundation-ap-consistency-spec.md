@@ -34,9 +34,10 @@ Current AP-style implementations are:
 | Distro | Naming runtime state | Synchronize ephemeral client-owned service instance state between server nodes. |
 | Config Notify | Config cache and listener visibility | Notify peer nodes that a Config resource changed so local dump cache and listeners can refresh. |
 
-Section 6 defines the approved target Distro contract for Agent HTTP Client
-state. It is not included in the current-implementation table above and does
-not claim that `AI_AGENT_HTTP_CLIENT` is already implemented or advertised.
+Section 6 defines the target contract for a common HTTP connection-based
+Client. It reuses Naming's existing ClientData Distro resource type and
+processor. The Client type is not implemented or available until its manager is
+complete and an upper-layer API advertises the corresponding capability.
 
 The historical `APProtocol` interface exists in the consistency module, but the
 current active AP implementations are the Distro foundation and the Config
@@ -150,129 +151,115 @@ Naming Distro transport is carried by
 `DistroDataRequest` / `DistroDataResponse` over the
 [Internal RPC And Cluster Request Spec](foundation-internal-rpc-spec.md).
 
-## 6. Target AI Agent HTTP Client Distro Contract
+## 6. Target Common HTTP Connection-based Client Contract
 
-This section defines the target design for HTTP Runtime Endpoint publisher
-state. It becomes an active runtime contract only after the server implements
-it and advertises the corresponding Agent/RAD capability.
+This section defines an ephemeral Naming Client maintained across multiple
+HTTP requests. Agent Endpoints, ordinary Naming Instances, and future runtime
+Endpoints are adapted by their domains before entering the Client. The Client
+manager and Distro handle only standard `InstancePublishInfo` or
+`BatchInstancePublishInfo`.
 
 The target flow is:
 
 ```text
-Agent HTTP request
-  -> route by clientId to responsible server
-  -> mutate complete HTTP Client state
-  -> Distro full-state CHANGE or DELETE
+HTTP request
+  -> module-owned Distro Filter routes by internal client id
+  -> mutate HttpConnectionBasedClient
+  -> existing Naming ClientData CHANGE or DELETE
   -> peer Client state
-  -> Naming and RAD runtime events
+  -> Naming indexes and runtime projections
 ```
 
 ### 6.1 Resource Identity And Routing
 
 | Item | Required target semantics |
 | --- | --- |
-| Distro resource type | Constant `AI_AGENT_HTTP_CLIENT`. |
-| `resourceKey` and `responsibleId` | Exact opaque HTTP `clientId`. |
-| Responsibility | Distro's stable client-id shard selects one responsible server. |
-| Module isolation | The module is not concatenated into the shard key; resource type and a dedicated Client manager isolate Agent state from the same client id used by another module. |
-| Native owner | Only the responsible server owns the native HTTP Client, `lastActiveTime`, and timeout scheduling. |
-| Remote entry | A non-owner routes the mutation or heartbeat to the responsible server; it does not create an independent liveness timer. |
+| External identity | Caller-supplied opaque `externalClientId`. |
+| Internal Client id | `HTTP_CLIENT@@<externalClientId>`. |
+| Distro resource type | Reuse `Nacos:Naming:v2:ClientData`. |
+| `resourceKey` and `responsibleId` | The complete internal Client id. |
+| Client manager | `HttpConnectionBasedClientManager`, a peer of `ConnectionBasedClientManager` routed by `ClientManagerDelegate`. |
+| Responsibility | Distro selects one responsible node using the stable internal Client id. |
+| Module reuse | AI, Naming, and other modules using the same external id share one Client, publisher/subscriber container, and lifecycle. |
+| Remote entry | Each module owns an HTTP Distro Filter that forwards stateful requests to the responsible node; AI does not extend Naming's existing Distro Filter. |
 
-The first successful Endpoint registration binds the Client to one authenticated
-subject and one `namespaceId`. The state stores a stable subject identifier,
-not credentials or access tokens. Every later registration, deregistration, and
-heartbeat must use the same authenticated subject. Every later request that
-contains a namespace must use the bound namespace; a heartbeat without a body
-uses the stored namespace binding. A mismatch is rejected and does not refresh
-liveness.
+The first stateful Client creation binds one authenticated subject and one
+`namespaceId`. State stores a stable subject identity, never a credential or
+access token. Later stateful requests must use the same subject and namespace.
+A mismatch is rejected without refreshing either liveness clock. A Client id
+is routing and state-ownership identity, not an authorization credential.
 
-`clientId` is a routing and publisher-ownership identifier, not an
-authentication credential. Reusing the same text under another Distro resource
-type must not renew, mutate, verify, snapshot, or delete the Agent Client.
+### 6.2 ClientData And Operations
 
-### 6.2 Complete State And Operations
+The common HTTP Client directly reuses Naming `ClientSyncData`,
+`DistroClientDataProcessor`, and their existing
+`ADD/CHANGE/DELETE/VERIFY/SNAPSHOT/QUERY` semantics. It registers no new Distro
+resource type or processor. Synchronized data contains the normal Client
+identity, attributes, complete publications, and revision. HTTP Client
+attributes additionally carry namespace, authenticated-subject identity,
+Client liveness, and Publisher liveness.
 
-One synchronized Client datum is a complete replacement state containing:
+Publisher data remains the existing complete service publication owned by a
+Client:
 
-| Field group | Content |
-| --- | --- |
-| Identity | `clientId`, bound `namespaceId`, and authenticated subject identifier. |
-| Convergence | Domain revision and semantic liveness state. |
-| Liveness | `lastActiveTime`, `heartbeatIntervalMillis`, `unhealthyTimeoutMillis`, and `expireTimeoutMillis`. |
-| Publications | Every Agent Endpoint publication group and its complete Endpoint contributions. |
+- a single instance uses `InstancePublishInfo`;
+- a complete batch uses `BatchInstancePublishInfo`;
+- Agent and other domain adapters never put domain DTOs into Distro payload;
+- subscribers, as with current connection-based Clients, stay only on the node
+  carrying the subscription and are not part of the ClientData publication
+  snapshot.
 
-Endpoint groups include AgentName, canonical protocol, runtime Version,
-canonical Version range, and Endpoint payload. A Distro datum never carries a
-partial Endpoint patch. Credentials, request headers, and raw authentication
-material are excluded.
+Publication changes and semantic health transitions advance Client revision
+and emit the existing `ClientChangedEvent`. Ordinary Client renewal and
+Publisher heartbeat do not broadcast ClientData merely because a timestamp
+changed. Peers converge through the existing verify, snapshot, and repair
+flow.
 
-`AI_AGENT_HTTP_CLIENT` accepts this operation set:
+### 6.3 Layered Client And Publisher Liveness
 
-| Operation | Semantics |
-| --- | --- |
-| `CHANGE` | Idempotently create or replace one complete Client state. Local Endpoint changes and semantic liveness transitions emit this operation. |
-| `DELETE` | Remove the complete Client and all of its publisher contributions. Missing state is an idempotent no-op. |
-| `VERIFY` | Compare client id, existence, and domain revision; mismatch schedules targeted repair. |
-| `SNAPSHOT` | Transfer the complete set of full Client states owned by the source snapshot. |
-| `QUERY` | Return one complete Client state by client id, or a typed not-found result. |
+An HTTP Client maintains two liveness scopes:
 
-Creation uses `CHANGE`; this target does not require a separate `ADD` semantic.
-Apply logic rejects stale revisions, accepts duplicate identical state, and
-must not merge fields from out-of-order complete replacements. `VERIFY` and
-`QUERY` repair with a complete state, never with an Endpoint delta.
+| Liveness | Refresh sources | Effect |
+| --- | --- | --- |
+| Client liveness | Valid query, subscription change, publication write, and explicit Publisher heartbeat. | Determines whether the Client and subscriber state remain. |
+| Publisher liveness | Publication write and explicit Publisher heartbeat. | Determines whether publications owned by the Client remain healthy and retained. |
 
-An ordinary heartbeat refreshes `lastActiveTime` only on the responsible
-server. It does not broadcast on every interval. A semantic transition between
-active and unhealthy, an Endpoint change, or deletion advances the domain
-revision and synchronizes the latest complete state.
+A query renews only an existing Client. It does not create an empty Client or
+change publisher payload, revision, or health. Frequent queries may therefore
+retain Client or subscriber state, but cannot make a timed-out publication
+healthy or prevent Publisher expiration. An explicit Publisher heartbeat
+renews both the Client and all publications owned by that Client.
 
-### 6.3 Timeout And Failover
-
-The server returns and stores timeout values satisfying:
+Publisher timeouts satisfy:
 
 ```text
 heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 ```
 
-Heartbeat and successful Endpoint writes refresh Client activity. After
-`unhealthyTimeoutMillis`, that Client's contributions remain in RAD/Naming
-projections but become unhealthy; an Endpoint shared with another healthy
-publisher may still aggregate to `healthy=true`. The Client transition emits a
-full-state `CHANGE`. Activity restored before expiry returns the Client to
-active and emits `CHANGE` when the public health projection changes. After
-`expireTimeoutMillis`, the responsible server emits `DELETE` and removes every
-contribution. Deregistering the last Endpoint removes the empty Client
-immediately.
+After `unhealthyTimeoutMillis`, publications remain but become unhealthy.
+Publisher recovery returns them to active and emits `CHANGE` only when the
+public health projection changes. After `expireTimeoutMillis`, all
+publications owned by that Client are removed, while a Client with subscriber
+state remains. Client expiration releases all of its publisher and subscriber
+state.
 
-On responsibility transfer, a new owner may activate timeout scheduling only
-after it has installed a complete state from local replica data, `SNAPSHOT`, or
-`QUERY` and verified its identity and revision. It then starts a failover grace
-window equal to that Client's `expireTimeoutMillis`, measured from takeover.
-During the grace window it must not expire the Client solely because the
-replicated `lastActiveTime` is old. A valid heartbeat ends the grace and resumes
-normal timeout calculation; no heartbeat by the grace deadline expires the
-Client.
-
-If the new owner cannot obtain a complete state, it must not synthesize an
-empty Client. Heartbeat returns `HTTP_CLIENT_NOT_FOUND`, causing the SDK to mark
-all desired Endpoint groups unregistered and redo complete registration
-batches with the same client id. A registration can create the missing state;
-deregistration of missing state remains a successful no-op.
+Only the responsible node schedules native Client and Publisher timeouts.
+ClientData replicas converge through the existing snapshot, verify, and repair
+flow. A replica's latest successful verify time participates in local timeout
+calculation if that replica later becomes responsible, so the Client does not
+need a second ownership flag or a separately synchronized failover state.
+Ordinary heartbeat timestamps are not broadcast every interval.
 
 ### 6.4 Apply Events And Visibility
 
-Applying local mutation, remote `CHANGE`, repaired `QUERY`, or `SNAPSHOT` state
-must materialize the same Agent HTTP Client and raw Naming publisher
-contributions. A semantic apply emits the Naming Client/service change events
-needed to rebuild indexes and instance aggregation, and the RAD runtime
-projection/watch events needed to refresh Endpoint snapshots and
-`sourceRevision`.
+Local publication changes, remote `ADD/CHANGE`, repair, and snapshot apply use
+the existing Naming Client/service events to rebuild publisher indexes,
+service storage, and push views. `DELETE` uses the normal Client release path
+to clean derived state. `VERIFY` itself emits no discovery change.
 
-Applying `DELETE` emits the corresponding removal events. Duplicate state with
-the same semantic revision emits no duplicate domain change. `VERIFY` alone
-does not mutate domain state or emit a discovery event. Remote apply follows
-internal RPC authentication and source validation; it restores the stored
-authenticated-subject binding but never treats `clientId` as authority.
+Upper Agent/RAD projections consume only Naming `ServiceStorage` output. The
+HTTP Client manager does not maintain a second Agent Endpoint projection and
+does not depend directly on Agent definitions or AI Resource state.
 
 ## 7. Config Notify Contract
 
@@ -331,10 +318,10 @@ Rules:
 - AP consistency is eventual convergence, not strong consistency.
 - Local `NotifyCenter` events are not AP consistency by themselves; they become
   part of AP behavior only when a domain defines remote propagation and repair.
-- Distro is the formal shared AP framework for runtime data. Naming currently
-  uses it for ephemeral Client state; `AI_AGENT_HTTP_CLIENT` joins that
-  framework only after its target capability is implemented. Config Notify is
-  a Config-specific AP notification path for cache/listener visibility.
+- Distro is the formal shared AP framework for runtime data. Naming uses it for
+  ephemeral Client state, including common HTTP connection-based Clients.
+  Config Notify is a Config-specific AP notification path for cache/listener
+  visibility.
 - AP paths must not be used for permissions, namespace metadata, persistent
   service metadata, plugin state, or database schema state.
 - AP payloads are internal cluster contracts unless an interface spec exposes

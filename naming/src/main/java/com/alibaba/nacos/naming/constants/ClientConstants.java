@@ -35,6 +35,19 @@ public class ClientConstants {
     
     public static final String PERSISTENT_IP_PORT = "persistentIpPort";
     
+    public static final String HTTP_CONNECTION_BASED = "httpConnectionBased";
+    
+    public static final String HTTP_CLIENT_ID_HEADER = "X-Nacos-Client-Id";
+    
+    public static final String HTTP_CLIENT_ID_PREFIX = "HTTP_CLIENT@@";
+    
+    public static final String HTTP_CLIENT_LAST_UPDATED_TIME = "httpClientLastUpdatedTime";
+    
+    public static final String HTTP_PUBLISHER_LAST_UPDATED_TIME =
+        "httpPublisherLastUpdatedTime";
+    
+    public static final String HTTP_PUBLISHER_HEALTHY = "httpPublisherHealthy";
+    
     public static final String REVISION = "revision";
     
     public static final String PERSISTENT_SUFFIX = "false";

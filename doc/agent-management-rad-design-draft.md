@@ -1418,7 +1418,9 @@ Request-Module: AI
 `X-Nacos-Client-Id` 在 Client 生命周期内保持不变，服务端作为 opaque string 使用。Header 限制为 1～256 个
 `[A-Za-z0-9._:-]` 字符；官方生成值只使用 `[A-Za-z0-9-]`，`processToken` 至少包含 96-bit 随机量并可附带 PID 诊断段，
 `clientSequence` 区分同进程 Client。进程重启生成新值；重试、切换 Server 和 redo 保持原值。
-`Request-Module` 复用现有 Header 并固定为大小写不敏感的 `AI`；Search 和 Discover 不要求 Client Header。
+`Request-Module` 复用现有 Header 并固定为大小写不敏感的 `AI`。Search 和 Discover 不强制
+Client Header；携带已存在的 `X-Nacos-Client-Id` 时只续约 Client，不创建空 Client，也不续约
+其中的 Publisher。
 
 Registration Batch 是同一 publisher 对 `(namespaceId, agentName, protocol)` 的完整期望状态，并且整个
 Batch 只携带一组 runtimeVersion/versionRange；`versionRange` 缺失时规范化为 `[runtimeVersion]`，且
@@ -1441,12 +1443,13 @@ API 评审决定；首版不增加语义重复的 `/deregister` 别名。
 也不定义 `GET /endpoints`：调用方通过统一 Discover 获取定义与可调用 Endpoint，管理员通过
 RuntimeEndpointSnapshot 查看运行时状态。Client 级 heartbeat 继续使用语义明确的 `/endpoints/heartbeat`。
 
-Client 活性按服务端返回的三个时间参数管理：
+Publisher 活性按服务端返回的三个时间参数管理；HTTP Client 另行维护可由查询和订阅刷新
+的 Client 活性：
 
 ```mermaid
 stateDiagram-v2
-    [*] --> ACTIVE: 首次注册
-    ACTIVE --> ACTIVE: heartbeat 或 Endpoint 写操作
+    [*] --> ACTIVE: 首次 publication
+    ACTIVE --> ACTIVE: Publisher heartbeat 或 Endpoint 写操作
     ACTIVE --> UNHEALTHY: 超过 unhealthyTimeout
     UNHEALTHY --> ACTIVE: expireTimeout 前恢复 heartbeat
     UNHEALTHY --> EXPIRED: 超过 expireTimeout
@@ -1461,12 +1464,14 @@ publisher 时，至少一个 publisher 健康即可聚合为健康；全部 publ
 
 | 方面 | 语义 |
 |---|---|
-| 路由与隔离 | `responsibleId/resourceKey = clientId`，data type 为 `AI_AGENT_HTTP_CLIENT`；模块不拼入 hash |
-| 责任节点 | 仅责任节点维护 native Client、`lastActiveTime` 和超时；heartbeat 不全节点广播 |
-| 同步 | Endpoint、聚合健康或过期删除变化时同步完整 Client state，peer 重建 Naming 视图 |
-| 故障转移 | 新 owner 有完整 snapshot 才提升并开启 heartbeat 宽限；否则返回 `HTTP_CLIENT_NOT_FOUND` 触发 redo |
+| 身份与路由 | 内部 id 为 `HTTP_CLIENT@@<externalClientId>`；`responsibleId/resourceKey` 使用该内部 id |
+| Client manager | `HttpConnectionBasedClientManager` 与 `ConnectionBasedClientManager` 同级，由 `ClientManagerDelegate` 优先按前缀路由 |
+| Distro | 复用 `Nacos:Naming:v2:ClientData`、`ClientSyncData` 和现有 `DistroClientDataProcessor`，不增加 AI 专用 type/processor |
+| 责任节点 | 仅责任节点维护 native Client、Client/Publisher 活性和超时；普通时间戳续约不全节点广播 |
+| 同步 | Publication、聚合健康或过期删除变化时同步标准完整 Client state，peer 重建 Naming 视图 |
+| HTTP 路由 | AI 模块注册自己的 Distro Filter，按内部 Client id 转发有状态请求；不扩展 Naming 模块现有 Filter |
 | 身份约束 | 首次注册绑定鉴权主体和 namespace；后续不匹配则拒绝；clientId 不是鉴权凭据 |
-| 模块复用 | 相同 clientId 在其他模块必须使用不同 data type 和 Client manager，不能互相续约或清理 |
+| 模块复用 | AI、Naming、MCP 等模块使用相同 external clientId 时共享同一个 Client、publisher/subscriber 容器和生命周期 |
 | Client 类型 | 使用支持超时的 HTTP Client；不冒充 gRPC Connection Client，也不复用 Naming IP-port tag |
 
 #### 5.2.5 幂等、重试与 Redo
@@ -1478,7 +1483,8 @@ publisher 时，至少一个 publisher 健康即可聚合为健康；全部 publ
 | 同一批出现重复自然键 | 参数错误，不采用 last-write-wins |
 | SDK 重复局部注销 | 本地期望状态 no-op；非空时重发完整 Batch，空时注销整 publication |
 | 重复注销不存在的 publication/Client | 成功 no-op |
-| 重复 heartbeat | 只刷新 Client 活性 |
+| 重复 Publisher heartbeat | 刷新 Client 和 Publisher 活性，不修改 Publisher payload 或 revision |
+| 携带已存在 Client id 的 Search/Discover | 只刷新 Client 活性；不创建 Client，不刷新 Publisher 健康、payload 或 revision |
 | HTTP 请求超时 | 保持同一 clientId 和相同 payload 退避重试 |
 | heartbeat 返回 `HTTP_CLIENT_NOT_FOUND` | 将本地全部期望 Endpoint 标记为未注册，按分组完整 redo |
 | gRPC reconnect | 使用新 connectionId 完整 redo Endpoint 和订阅 |
@@ -1486,7 +1492,7 @@ publisher 时，至少一个 publisher 健康即可聚合为健康；全部 publ
 
 HTTP Client 在首次请求前记录每个 Agent protocol service 的完整期望 Batch；shutdown 时 best-effort 注销全部
 publication，失败由 expireTimeout 清理兜底。参数错误和鉴权失败不进入无限 redo。普通 Search/Discover
-不刷新 publisher 活性。
+可以续约已存在 Client，但不刷新 publisher 活性。
 
 ### 5.3 Admin API 与 Maintainer SDK
 
@@ -1902,10 +1908,11 @@ flowchart LR
 | 阻塞检查 | 是否需要共享底座改动；如需要则停止编码并等待决策 |
 | 验收门禁 | 格式、编译、单测、line coverage 与相应 IT/兼容场景 |
 
-#### 当前阶段范围留痕：Console 后端 Facade
+#### 已完成阶段范围留痕：Console 后端 Facade
 
 | 项目 | 本阶段结论 |
 |---|---|
+| 阶段状态 | 已完成并合入 `develop`（PR #15602） |
 | 规范依据 | Agent API Spec 第 3～4 章、Agent Management Spec 第 6 章、Agent Storage Spec 第 5.1 节、Console Spec 第 6 章、HTTP API/鉴权/错误规范、API Integration Test Spec，以及本文第 5.4、7.1 节 |
 | 当前目标 | 实现 `/v3/console/ai/agents` 对全部 Agent Admin 相对路径、Form、结果、生命周期和鉴权意图的同语义 Facade；Runtime 查询额外返回后端生成的 `ConsoleRuntimeEndpointView` 和 Naming Service 引用 |
 | 允许范围 | `ai.constant.Constants.Agent` 仅增加 Console path；`console` 模块新增 Agent Controller、Proxy、Handler interface、inner/remote/noop Handler 和 Console 专用 Runtime view；增加这些文件的单元测试；在 `test/openapi-test` 增加 Console Agent 场景、测试辅助常量和 coverage/scenario 登记；更新本设计阶段状态 |
@@ -1913,6 +1920,19 @@ flowchart LR
 | 已知问题 | Console UI 的 Version/Protocol 页签、懒加载交互、无 `RUNTIME` 来源提示和 Naming 页面跳转属于后续 UI 交付；本阶段只提供规范要求的后端数据与引用，不提前修改前端 |
 | 阻塞检查 | 现有 Agent Admin Application Service、Maintainer SDK、Runtime Snapshot 和 `RadServiceNameComposer` 已满足 inner/remote 两种部署路径；不需要修改共享底座。若实现中发现这些既有契约无法完成任一 Admin 镜像路径，则停止扩大范围并提交维护者决策 |
 | 验收门禁 | `console` Spotless、编译和相关单测；本阶段新增 production Java 可执行行 line coverage 100%；OpenAPI test-compile 和 Console Agent 独立 IT；复核实际 production diff 仅包含白名单文件 |
+
+#### 当前阶段范围留痕：HTTP Client 活性与 Distro
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 实现与本地验收已完成，待 PR 评审 |
+| 规范依据 | Agent API Spec 第 2.3～2.4、2.6 节，Agent Storage Spec 第 4.3、4.5、5.3 节，RAD Protocol Spec 第 7 节，以及本文第 4.1.4、4.2.4、5.2.4～5.2.5、7.1 节 |
+| 当前目标 | 实现通用 `HttpConnectionBasedClient`、Client/Publisher 分层活性、ACTIVE/UNHEALTHY/EXPIRED Publisher 生命周期，并通过现有 Naming ClientData Distro 完整快照使标准 publication 可被 Runtime Snapshot 和后续 Discover 读取 |
+| 允许范围 | `naming` 模块新增 HTTP connection-based Client、Factory、Manager 及测试；`ClientConstants` 只增加该 Client 类型所需常量；`ClientManagerDelegate` 只增加前缀路由和集合聚合；现有 ClientData Distro 测试补充新 Client 路径；`ai` 模块仅新增自己的 Distro Filter/注册配置和测试；更新直接相关中英文 Specs 与本文 |
+| 禁止范围 | `ai_resource`、`ai_resource_version`、Repository、AI Storage、既有 Client SDK、HTTP common、RAD Client API、旧 A2A Adapter、Console；不得修改 `DistroClientDataProcessor` 的既有协议语义，不得新增 AI 专用 Distro type/processor，不得顺手重构 Connection/IP-Port Client |
+| 已知问题 | Client HTTP Controller、Header/Form、错误映射和 OpenAPI IT 属于后续 Client HTTP/gRPC API 阶段；本阶段只提供通用 Client 生命周期和 AI 自有路由 Filter。旧节点没有对应 Client HTTP API 能力，升级完成前该功能不可用，本阶段不增加滚动升级兼容代码；同版本节点间的正常 Distro 责任转移复用 replica verify 时间作为本地超时下界 |
+| 阻塞检查 | 审计确认 Agent Endpoint 转换后的 `BatchInstancePublishInfo`、Client event、索引、ServiceStorage、ClientSyncData、verify、snapshot 和 repair 均可复用。新增 Manager 进入 Delegate 后没有独立查询扩展点或专用 Distro processor 的必要；若实现被迫修改上述协议或其他共享底座，则停止并重新提交维护者决策 |
+| 验收门禁 | 所有新增 production Java 可执行行 UT line coverage 100%；`ai` 与获批 Naming 最小范围的 Spotless、编译、单测和覆盖率验证；禁止通过排除文件或无业务断言规避覆盖率 |
 
 ### 7.2 分阶段任务
 
@@ -1922,7 +1942,7 @@ flowchart LR
 - [x] **公共模型与基础算法**：实现 Agent/RAD API 对象、Validation、SemVer/range、Endpoint canonicalizer、
   `RadAsciiAgentIdCodec`、serviceName composer、持久化 bytes 的 SHA-256 digest 和固定二进制 Murmur3
   revision；为 serializer、identity codec、composer、digest 与 revision 增加完整边界测试。
-- [ ] **Agent 持久化**：补齐 `type=agent` 的 Resource/Version DAO 与严格大小写查询、`AgentResourceExt`、
+- [x] **Agent 持久化**：补齐 `type=agent` 的 Resource/Version DAO 与严格大小写查询、`AgentResourceExt`、
   `versionCatalog`；扩展 `nacos_config` Storage keyFormat，并完成 Storage 指针、
   digest 校验、补偿和派生数据重建。
   - [x] 完成 `agent-version-config-v1` 坐标、Version Storage Descriptor，以及内容 save/load/delete、size 和
@@ -1936,8 +1956,9 @@ flowchart LR
 - [x] **Runtime Registry**：实现 Endpoint 与 Naming Service/Instance/完整 `BatchInstancePublishInfo` 的薄适配、
   预注册、singular version/range metadata、基于 `ServiceStorage` 的查询期 bindings 聚合、
   RuntimeEndpointSnapshot 和 revision；不增加 IndexManager 依赖、服务级锁或额外 projection cache。
-- [ ] **HTTP Client 活性与 Distro**：实现通用 `X-Nacos-Client-Id`、Client 级 heartbeat、
-  `AI_AGENT_HTTP_CLIENT` Distro 路由、完整 Snapshot、超时/故障转移、`HTTP_CLIENT_NOT_FOUND` 与服务端事件。
+- [x] **HTTP Client 活性与 Distro**：实现通用 `X-Nacos-Client-Id`、`HTTP_CLIENT@@` 内部身份、
+  Client/Publisher 分层活性，接入 `ClientManagerDelegate` 并复用 Naming ClientData Distro、完整 Snapshot、
+  verify/repair、超时与服务端事件；AI 使用模块内 Distro Filter，不新增专用 Distro type/processor。
 - [ ] **RAD 数据面服务**：实现 Search、Discover 和 Watch 的版本/label 解析、内容缓存、来源过滤、Runtime
   聚合、完整快照推送和 terminal `NOT_FOUND`。
 - [ ] **Client HTTP/gRPC API**：新增 v3 Client Controller、gRPC Payload/Handler、能力位与错误映射；实现
