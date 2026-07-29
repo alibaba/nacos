@@ -304,7 +304,10 @@ CREATE TABLE `ai_resource_search_index_task` (
     `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
     `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
     `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
+    `task_stage` varchar(32) NOT NULL DEFAULT 'base_index' COMMENT '任务阶段',
     `status` varchar(32) NOT NULL COMMENT '任务状态',
+    `enhancement_requested` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否请求增强',
+    `enhancement_fingerprint` varchar(64) DEFAULT NULL COMMENT '增强配置指纹',
     `attempt_count` int NOT NULL DEFAULT 0 COMMENT '重试次数',
     `revision` bigint(20) NOT NULL DEFAULT 1 COMMENT '任务修订号',
     `next_retry_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '下次重试时间',
@@ -313,6 +316,6 @@ CREATE TABLE `ai_resource_search_index_task` (
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`task_key`),
-    KEY `idx_search_task_due` (`status`,`next_retry_time`),
-    KEY `idx_search_task_lease` (`status`,`lease_until`)
+    KEY `idx_search_task_due` (`task_stage`,`status`,`next_retry_time`),
+    KEY `idx_search_task_lease` (`task_stage`,`status`,`lease_until`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索索引任务表';

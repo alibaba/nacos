@@ -645,7 +645,10 @@ CREATE TABLE "ai_resource_search_index_task" (
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "resource_type" varchar(32) NOT NULL,
   "resource_name" varchar(256) NOT NULL,
+  "task_stage" varchar(32) NOT NULL DEFAULT 'base_index',
   "status" varchar(32) NOT NULL,
+  "enhancement_requested" int2 NOT NULL DEFAULT 0,
+  "enhancement_fingerprint" varchar(64),
   "attempt_count" int4 NOT NULL DEFAULT 0,
   "revision" int8 NOT NULL DEFAULT 1,
   "next_retry_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -656,5 +659,5 @@ CREATE TABLE "ai_resource_search_index_task" (
 );
 
 ALTER TABLE "ai_resource_search_index_task" ADD CONSTRAINT "ai_resource_search_index_task_pkey" PRIMARY KEY ("task_key");
-CREATE INDEX "idx_search_task_due" ON "ai_resource_search_index_task" USING btree ("status", "next_retry_time");
-CREATE INDEX "idx_search_task_lease" ON "ai_resource_search_index_task" USING btree ("status", "lease_until");
+CREATE INDEX "idx_search_task_due" ON "ai_resource_search_index_task" USING btree ("task_stage", "status", "next_retry_time");
+CREATE INDEX "idx_search_task_lease" ON "ai_resource_search_index_task" USING btree ("task_stage", "status", "lease_until");

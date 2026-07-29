@@ -313,7 +313,10 @@ CREATE TABLE ai_resource_search_index_task (
     namespace_id varchar(128) NOT NULL DEFAULT '',
     resource_type varchar(32) NOT NULL,
     resource_name varchar(256) NOT NULL,
+    task_stage varchar(32) NOT NULL DEFAULT 'base_index',
     status varchar(32) NOT NULL,
+    enhancement_requested smallint NOT NULL DEFAULT 0,
+    enhancement_fingerprint varchar(64) DEFAULT NULL,
     attempt_count int NOT NULL DEFAULT 0,
     revision bigint NOT NULL DEFAULT 1,
     next_retry_time timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
@@ -323,5 +326,5 @@ CREATE TABLE ai_resource_search_index_task (
     gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00'
 );
 
-CREATE INDEX idx_search_task_due ON ai_resource_search_index_task(status, next_retry_time);
-CREATE INDEX idx_search_task_lease ON ai_resource_search_index_task(status, lease_until);
+CREATE INDEX idx_search_task_due ON ai_resource_search_index_task(task_stage, status, next_retry_time);
+CREATE INDEX idx_search_task_lease ON ai_resource_search_index_task(task_stage, status, lease_until);
