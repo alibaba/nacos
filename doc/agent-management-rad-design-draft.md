@@ -1902,10 +1902,11 @@ flowchart LR
 | 阻塞检查 | 是否需要共享底座改动；如需要则停止编码并等待决策 |
 | 验收门禁 | 格式、编译、单测、line coverage 与相应 IT/兼容场景 |
 
-#### 当前阶段范围留痕：Console 后端 Facade
+#### 已完成阶段范围留痕：Console 后端 Facade
 
 | 项目 | 本阶段结论 |
 |---|---|
+| 阶段状态 | 已完成并合入 `develop`（PR #15602） |
 | 规范依据 | Agent API Spec 第 3～4 章、Agent Management Spec 第 6 章、Agent Storage Spec 第 5.1 节、Console Spec 第 6 章、HTTP API/鉴权/错误规范、API Integration Test Spec，以及本文第 5.4、7.1 节 |
 | 当前目标 | 实现 `/v3/console/ai/agents` 对全部 Agent Admin 相对路径、Form、结果、生命周期和鉴权意图的同语义 Facade；Runtime 查询额外返回后端生成的 `ConsoleRuntimeEndpointView` 和 Naming Service 引用 |
 | 允许范围 | `ai.constant.Constants.Agent` 仅增加 Console path；`console` 模块新增 Agent Controller、Proxy、Handler interface、inner/remote/noop Handler 和 Console 专用 Runtime view；增加这些文件的单元测试；在 `test/openapi-test` 增加 Console Agent 场景、测试辅助常量和 coverage/scenario 登记；更新本设计阶段状态 |
@@ -1922,7 +1923,7 @@ flowchart LR
 - [x] **公共模型与基础算法**：实现 Agent/RAD API 对象、Validation、SemVer/range、Endpoint canonicalizer、
   `RadAsciiAgentIdCodec`、serviceName composer、持久化 bytes 的 SHA-256 digest 和固定二进制 Murmur3
   revision；为 serializer、identity codec、composer、digest 与 revision 增加完整边界测试。
-- [ ] **Agent 持久化**：补齐 `type=agent` 的 Resource/Version DAO 与严格大小写查询、`AgentResourceExt`、
+- [x] **Agent 持久化**：补齐 `type=agent` 的 Resource/Version DAO 与严格大小写查询、`AgentResourceExt`、
   `versionCatalog`；扩展 `nacos_config` Storage keyFormat，并完成 Storage 指针、
   digest 校验、补偿和派生数据重建。
   - [x] 完成 `agent-version-config-v1` 坐标、Version Storage Descriptor，以及内容 save/load/delete、size 和
