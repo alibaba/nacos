@@ -17,9 +17,11 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
@@ -57,6 +59,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.BeanUtils;
 
 import java.time.ZoneOffset;
@@ -101,6 +104,9 @@ public class McpServerOperationService {
     
     private final SyncEffectService syncEffectService;
     
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
+        AiResourceIndexMaintenanceService.NOOP;
+    
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
         McpResourceOperationService resourceOperationService,
@@ -113,6 +119,14 @@ public class McpServerOperationService {
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
         this.syncEffectService = syncEffectService;
+    }
+    
+    @Autowired(required = false)
+    public void setAiResourceIndexMaintenanceService(
+        AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
+        if (resourceIndexMaintenanceService != null) {
+            this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
+        }
     }
     
     /**
@@ -443,6 +457,8 @@ public class McpServerOperationService {
         AiResourceTraceService.logSuccess("mcp", serverSpecification.getName(),
             versionDetail.getVersion(), AiResourceTraceService.OP_CREATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        scheduleMcpIndexRebuild(namespaceId, newSpecification, toolSpecification,
+            resourceSpecification);
         
         return id;
     }
@@ -586,6 +602,10 @@ public class McpServerOperationService {
             updateVersion,
             isPublish ? AiResourceTraceService.OP_PUBLISH : AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        if (isPublish) {
+            scheduleMcpIndexRebuild(namespaceId, newSpecification, toolSpecification,
+                resourceSpecification);
+        }
     }
     
     /**
@@ -646,6 +666,52 @@ public class McpServerOperationService {
             StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        if (StringUtils.isNotEmpty(version)) {
+            scheduleMcpVersionIndexDeletion(namespaceId, mcpServerId, version);
+        } else {
+            scheduleMcpIndexDeletion(namespaceId, mcpServerId);
+        }
+    }
+    
+    private void scheduleMcpIndexRebuild(String namespaceId,
+        McpServerBasicInfo serverSpecification) {
+        scheduleMcpIndexRebuild(namespaceId, serverSpecification, null, null);
+    }
+    
+    private void scheduleMcpIndexRebuild(String namespaceId, McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification) {
+        McpServerBasicInfo indexSpec = mcpIndexSpec(serverSpecification, toolSpecification,
+            resourceSpecification);
+        if (indexSpec != null) {
+            String resourceName = StringUtils.isNotBlank(indexSpec.getId()) ? indexSpec.getId()
+                : indexSpec.getName();
+            resourceIndexMaintenanceService.schedule(namespaceId,
+                AiResourceConstants.RESOURCE_TYPE_MCP,
+                resourceName);
+        }
+    }
+    
+    private McpServerBasicInfo mcpIndexSpec(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification) {
+        if (toolSpecification == null && resourceSpecification == null) {
+            return serverSpecification;
+        }
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        BeanUtils.copyProperties(serverSpecification, detail);
+        detail.setToolSpec(toolSpecification);
+        detail.setResourceSpec(resourceSpecification);
+        return detail;
+    }
+    
+    private void scheduleMcpIndexDeletion(String namespaceId, String mcpServerId) {
+        resourceIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
+            mcpServerId);
+    }
+    
+    private void scheduleMcpVersionIndexDeletion(String namespaceId, String mcpServerId,
+        String version) {
+        resourceIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
+            mcpServerId);
     }
     
     private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {

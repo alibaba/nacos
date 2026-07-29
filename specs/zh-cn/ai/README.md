@@ -28,6 +28,7 @@ AI Registry 规范定义 Nacos 3.x 的 AI 资源模型。它扩展
 - [AI Registry 规范](ai-registry-spec.md)
 - [AI 资源模型规范](ai-resource-model-spec.md)
 - [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)
+- [AI 资源检索规范](ai-resource-search-spec.md)
 - [AI Registry 适配器规范](ai-registry-adaptor-spec.md)
 
 ## Agent Registry

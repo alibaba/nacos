@@ -1,0 +1,371 @@
+openapi: 3.1.0
+info:
+  title: Agentic Resource Discovery Registry API
+  version: 0.5.0
+  description: |
+    Universal federated discovery API specification for AI agents, tools, and capabilities.
+    Allows LLM orchestrators to semantically search and discover registries for relevant capabilities
+    and enables registry-to-registry federated query routing.
+paths:
+  /search:
+    post:
+      summary: Semantic Search Registry
+      description: |
+        Query a registry with natural language to find matching capabilities.
+        Accepts a shared semantic and structural query object. Supports multi-hop federation.
+      operationId: searchAgents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Successful search operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /explore:
+    post:
+      summary: Dynamic Registry Introspection
+      description: |
+        Aggregates statistical facets and bucketing over the matched search space. 
+        Returns counts instead of ranked catalog entries. 
+      operationId: exploreRegistry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExploreRequest'
+      responses:
+        '200':
+          description: Successful explore operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExploreResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429TooManyRequests'
+        '501':
+          description: Dynamic registry exploration is not implemented by this server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /agents:
+    get:
+      summary: Browse Catalog Entries
+      description: |
+        Deterministic, highly cacheable listing endpoint designed for developer portals.
+        Relies on strict EBNF database filtering instead of natural language search.
+      operationId: listAgents
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          description: EBNF-like filter expression (e.g., "type = 'application/mcp-server-card+json' AND createdAfter > '2026-01-01'")
+          schema:
+            type: string
+        - name: orderBy
+          in: query
+          required: false
+          description: Field and sorting direction (e.g., "displayName", "updatedAt DESC")
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          required: false
+          description: Maximum number of entries to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: pageToken
+          in: query
+          required: false
+          description: Token for pagination.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful deterministic list operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+components:
+  schemas:
+    QueryModel:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Natural language description narrows the set by semantic relevance.
+          example: "find me a weather lookup tool"
+        filter:
+          type: object
+          description: |
+            Structured constraints. Keys are field paths (can be dot-separated for nested fields). 
+            Values are arrays or scalar values.
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example:
+            type: ["application/mcp-server-card+json"]
+            "trustManifest.attestations.type": ["SOC2-Type2"]
+      additionalProperties: false
+
+    SearchQueryModel:
+      allOf:
+        - $ref: '#/components/schemas/QueryModel'
+        - type: object
+          required:
+            - text
+
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          $ref: '#/components/schemas/SearchQueryModel'
+        federation:
+          type: string
+          enum: [auto, referrals, none]
+          default: auto
+        pageSize:
+          type: integer
+          default: 10
+          description: Maximum number of search results to return.
+        pageToken:
+          type: string
+          description: Pagination token.
+      additionalProperties: false
+
+    ExploreRequest:
+      type: object
+      required:
+        - resultType
+      properties:
+        query:
+          $ref: '#/components/schemas/QueryModel'
+        resultType:
+          type: object
+          required:
+            - facets
+          properties:
+            facets:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExploreFacetRequest'
+      additionalProperties: false
+
+    ExploreFacetRequest:
+      type: object
+      required:
+        - field
+      properties:
+        field:
+          type: string
+          description: Dot-separated path of the catalogEntry property to aggregate.
+          example: "type"
+        limit:
+          type: integer
+          default: 20
+        minCount:
+          type: integer
+          default: 1
+      additionalProperties: false
+
+    ExploreResponse:
+      type: object
+      required:
+        - resultType
+        - facets
+      properties:
+        resultType:
+          type: string
+          enum: [facets]
+        facets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ExploreFacetResult'
+      additionalProperties: false
+
+    ExploreFacetResult:
+      type: object
+      required:
+        - buckets
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExploreFacetBucket'
+        otherCount:
+          type: integer
+      additionalProperties: false
+
+    ExploreFacetBucket:
+      type: object
+      required:
+        - value
+        - count
+      properties:
+        value:
+          type: string
+        count:
+          type: integer
+      additionalProperties: false
+
+    SearchResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResultItem'
+        referrals:
+          type: array
+          description: List of upstream registries recommended to the client. Only returned in 'referrals' federation mode.
+          items:
+            $ref: '#/components/schemas/RegistryReferral'
+        pageToken:
+          type: string
+          description: Token for paging subsequent results.
+      additionalProperties: false
+
+    SearchResultItem:
+      allOf:
+        - $ref: './ai-catalog.schema.json#/$defs/catalogEntry'
+      type: object
+      required:
+        - score
+        - source
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "Semantic relevance rating (0 to 100) computed by the registry. Note: This is not a security or trust score."
+          example: 95
+        source:
+          type: string
+          format: uri
+          description: The URL endpoint of the registry where this entry was indexed.
+          example: "https://registry.acme.com/api/v1/"
+
+    RegistryReferral:
+      type: object
+      required:
+        - identifier
+        - displayName
+        - type
+        - url
+      properties:
+        identifier:
+          type: string
+          description: Logical identifier of the referred registry.
+          example: "urn:air:nlweb.ai:registry:public"
+        displayName:
+          type: string
+          description: Name of the referred registry.
+          example: "Public Agent Finder"
+        type:
+          type: string
+          enum: [application/ai-registry, application/ai-registry+json]
+          description: Registry media type identifier.
+        url:
+          type: string
+          format: uri
+          description: Endpoint URL for the referred registry's search route.
+          example: "https://finder.nlweb.ai/search"
+
+    ListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: './ai-catalog.schema.json#/$defs/catalogEntry'
+        total:
+          type: integer
+          description: Total count of matching entries in the registry.
+        pageToken:
+          type: string
+          description: Token for paginating subsequent results.
+
+    Error:
+      type: object
+      required:
+        - errorCode
+        - message
+      properties:
+        errorCode:
+          type: string
+          description: Standard uppercase error classification code.
+          example: "INVALID_ARGUMENT"
+        message:
+          type: string
+          description: Human-readable description explaining the error.
+          example: "The filter expression syntax 'type = MCP' is invalid. Did you mean 'type = application/mcp-server-card+json'?"
+
+  responses:
+    400BadRequest:
+      description: Malformed request payload or invalid syntax.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    401Unauthorized:
+      description: Credentials missing or rejected.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    429TooManyRequests:
+      description: Rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    500InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

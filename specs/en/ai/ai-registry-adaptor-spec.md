@@ -18,7 +18,7 @@
 
 This document defines the contract for the `ai-registry-adaptor` module. The
 adaptor exposes Nacos AI Registry resources through selected community registry
-protocols so existing MCP and Skill clients can discover Nacos-managed
+protocols so existing MCP, Skill, and ARD clients can discover Nacos-managed
 resources without speaking Nacos v3 APIs directly.
 
 ## 1. Scope
@@ -29,6 +29,8 @@ Nacos AI Registry resources into external registry response shapes, including:
 - MCP Server data exposed through MCP Registry v0-compatible read APIs;
 - Skill data exposed through skills CLI and well-known discovery-compatible
   endpoints;
+- Skill, Prompt, and MCP data exposed through Agentic Resource Discovery (ARD)
+  search, explore, catalog, and artifact endpoints;
 - protocol-specific pagination, search, response, and file-fetch behavior
   required by those ecosystems.
 
@@ -40,9 +42,10 @@ visibility, or publish rules. Those rules remain defined by the
 External protocol references include the
 [MCP Registry](https://modelcontextprotocol.info/tools/registry/),
 [skills.sh documentation](https://skills.sh/docs), and the
-[Agent Skills Specification](https://agentskills.io/specification). Nacos uses
-these references for compatibility, not as ownership boundaries for its
-canonical resource model.
+[Agent Skills Specification](https://agentskills.io/specification), and the
+[ARD Specification](https://agenticresourcediscovery.org/spec/). Nacos uses
+these references for compatibility, not as ownership boundaries for its canonical
+resource model.
 
 ## 2. Startup And Enablement
 
@@ -54,12 +57,20 @@ registry surface is explicitly enabled:
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | Enables MCP Registry-compatible endpoints. |
 | `nacos.ai.skill.registry.enabled` | `false` | Enables Skill registry-compatible endpoints. |
+| `nacos.ai.ard.enabled` | `false` | Enables ARD endpoints and their required AI resource search runtime. |
 | `nacos.ai.registry.port` | `9080` | HTTP port used by the adaptor context. |
 | `nacos.ai.mcp.registry.port` | deprecated | Legacy fallback for the adaptor port. |
 
 Users must opt in because the adaptor consumes an additional port and exposes
 protocol shapes that are designed for community clients rather than Nacos
 Admin, Console, or Client API consumers.
+
+Disabling ARD must not require PostgreSQL pgvector. AI resource search document
+and chunk metadata use the main datasource, while the pgvector extension and
+`ai_resource_search_embedding_pg` table are initialized exclusively through
+`pg-ai-vector-schema.sql` in the PostgreSQL datasource used for embeddings.
+This datasource may be the Nacos main datasource or a dedicated datasource;
+the main `pg-schema.sql` must remain usable without pgvector.
 
 ## 3. Security Boundary
 
@@ -76,8 +87,18 @@ For this reason:
   deployment contains non-public data;
 - adaptor endpoints should only expose resources that are suitable for the
   target community protocol;
-- future adaptor-level authentication must be compatible with the external
-  protocol and must not silently change canonical Nacos v3 auth semantics.
+- ARD endpoints participate in Nacos Open API authentication inside the
+  adaptor web context while retaining ARD-specific error responses.
+
+When Nacos authentication is enabled, explicit credentials on an ARD request
+are always validated. A valid identity is propagated to canonical visibility
+checks, so callers can discover private resources only when permitted. Rejected
+credentials return HTTP 401 with `UNAUTHENTICATED`. If anonymous AI access is
+enabled, a request without credentials uses the reserved anonymous identity and
+can discover only public resources; otherwise missing credentials also return
+HTTP 401. The request-context and authentication filters must be registered in
+the independent adaptor web context because filters in the main server web
+context are not inherited across sibling contexts.
 
 ## 4. MCP Registry Compatibility
 
@@ -154,11 +175,163 @@ The canonical package and lifecycle rules are defined by the
 [Skill Spec](skill-spec.md). The adaptor only converts eligible Nacos Skills
 into the community discovery shape.
 
-## 6. Compatibility Rules
+## 6. Agentic Resource Discovery Compatibility
+
+Nacos targets the ARD draft at upstream commit
+[`5fa2f5aef790b478319f6a3b43adf4661b0ed0e0`](https://github.com/ards-project/ard-spec/commit/5fa2f5aef790b478319f6a3b43adf4661b0ed0e0).
+The commit, rather than the draft's mutable version label, is the compatibility
+baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
+
+When `nacos.ai.ard.enabled=true`, the adaptor exposes these ARD discovery
+endpoints from the adaptor web context:
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| `POST` | `/v3/ai/ard/search` | Searches the latest online Skill, Prompt, and MCP resources. |
+| `POST` | `/v3/ai/ard/explore` | Returns facets for discoverable resources. |
+| `GET` | `/v3/ai/ard/agents` | Lists discoverable resources with filters and pagination. |
+| `GET` | `/v3/ai/ard/ai-catalog.json` | Returns a namespace-scoped catalog. |
+| `GET` | `/v3/ai/ard/artifacts` | Returns the versioned artifact referenced by a catalog entry. |
+| `GET` | `/.well-known/ai-catalog.json` | Returns the host-level ARD catalog. |
+
+The global ARD switch starts the adaptor context even when the MCP and Skill
+compatibility switches remain disabled.
+
+### 6.1 Protocol Contract
+
+ARD request and response models belong to this adaptor because they are
+external protocol contracts rather than canonical Nacos client API models.
+They must follow the pinned upstream schemas:
+
+- list responses use `items`; they must not rename the field to `results`;
+- search result `score` is an integer from 0 through 100;
+- search result `source` is an absolute URI identifying the serving registry;
+- ARD errors use exactly the protocol body `{ "errorCode": "...",
+  "message": "..." }` and must not be wrapped in Nacos `Result<T>`;
+- missing or rejected credentials use HTTP 401 with error code
+  `UNAUTHENTICATED`;
+- a generated `trustManifest`, when present, includes the required `identity`;
+  the adaptor omits the manifest when no valid identity is configured;
+- catalog, list, and search DTOs remain separate so search-only fields do not
+  leak into catalog entries.
+
+ARD controllers use protocol-specific exception handling. Nacos v3 controller
+annotations and the Nacos API exception envelope do not apply to these paths.
+Validation, not-found, access-denied, and unexpected failures must be translated
+to the HTTP statuses and error codes defined by the pinned ARD OpenAPI.
+
+### 6.2 Artifact Ownership
+
+Every artifact URL generated by an ARD response points to an adaptor-owned
+`/v3/ai/ard/artifacts` endpoint on the public adaptor base URL. It must not
+point to a main-server controller unless an explicit, separately configured
+main-server base URL is part of the contract.
+
+`nacos.ai.ard.catalog.base-url` is the complete public adaptor base URL. The
+implementation must not append the main Nacos server context path to it.
+
+For Skill resources, the artifact endpoint returns the complete Skill archive,
+including `SKILL.md` and its packaged resources, using
+`application/agent-skills+zip`. Prompt and MCP artifacts use their
+protocol-defined representations. A deployment with the default Nacos server
+on port 8848 and the adaptor on port 9080 must work without gateway path
+co-location.
+
+### 6.3 Discovery Boundary
+
+The AI module owns the protocol-neutral capability defined by the
+[AI Resource Search Spec](ai-resource-search-spec.md). ARD is its only consumer
+in this version, so `nacos.ai.ard.enabled` activates the required search
+runtime without creating a separate operator-facing search switch or another
+public API.
+
+Visibility and current-version validation occur before the requested result
+limit is applied. List and aggregation scans use bounded database batches.
+Keyword and vector recall use the bounds defined by the AI resource search
+specification and fail explicitly when a channel exceeds its configured
+bound. The cursor identifies a stable resource anchor rather than a mutable
+list offset.
+
+The adaptor validates and parses ARD requests, invokes the AI resource search
+service, and maps canonical results and aggregations to ARD DTOs. It must not
+directly query search repositories or reimplement recall, lifecycle,
+visibility, pagination, or aggregation rules. ARD-specific facet names and
+values are translated to and from canonical aggregation fields.
+
+Search accepts all federation values defined by the pinned OpenAPI: `auto`,
+`referrals`, and `none`. An omitted value defaults to `auto`. Until an upstream
+registry is configured, all three modes execute local search; `referrals`
+returns an empty referrals array rather than rejecting the request.
+
+The `GET /agents` filter parser supports single-quoted equality expressions
+joined by `AND` and timestamp comparisons such as
+`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Unsupported
+operators, malformed quoting, unknown fields, and legacy delimiter syntax fail
+with the ARD invalid-argument response instead of being partially interpreted.
+
+Catalog identifiers use deterministic, injective, schema-safe encoding for
+every Nacos-derived URN segment. Namespaces and resource names containing
+spaces, slashes, Unicode, or punctuation must remain distinct and validate
+against the pinned catalog schema.
+
+The namespace catalog contains the complete eligible resource set and pages
+through the canonical list service instead of silently stopping at 100
+entries. The host-level well-known catalog remains registry-only.
+
+Explore facets aggregate the complete eligible result set after visibility,
+current-version, and request filtering. They must not be computed from one
+page or a fixed candidate prefix. Protocol constants such as publisher,
+source, and trust identity are added by the adaptor after canonical
+aggregation.
+
+### 6.4 Index Consistency
+
+Canonical resource writes remain authoritative. Relational replacement of one
+resource's search document and chunks is atomic: deleting the previous index
+rows, inserting the new document, and inserting all chunks occur in one
+datasource transaction.
+
+Relational and vector indexes do not require a distributed transaction.
+Instead, the AI module records an idempotent, durable resource-level indexing
+task keyed by namespace, resource type, and resource name. The consumer
+re-reads canonical state, replaces or deletes the relational index, then
+converges the selected vector index. A task is complete only after both
+configured indexes have converged.
+
+Failures retain retry state, including attempt count, next retry time, lease,
+and the last error. Periodic reconciliation detects missed lifecycle events and
+independently verifies relational and vector state. Logging and swallowing an
+indexing exception is not a consistency mechanism, and startup backfill alone
+is not sufficient.
+
+`ai_resource_search_index_task` stores the coalesced task revision and retry
+state. Completion and retry updates are revision-conditional so a concurrent
+canonical change cannot be lost when an older lease finishes. While vector
+replacement is in progress, the relational document remains `pending`; search
+only reads `enabled` documents. The consumer enables the document after the vector
+provider confirms replacement. Reconciliation also compares the embedding
+model and vector document count with the relational chunks, and schedules
+missing, partial, stale, wrong-model, and orphaned indexes.
+
+### 6.5 Conformance
+
+The adaptor module keeps the pinned upstream OpenAPI and schemas as test
+fixtures with provenance and license information. Automated tests validate
+serialized responses against those fixtures. End-to-end coverage also runs the
+pinned official conformance runner, or an equivalent test matrix derived from
+it, against the actual adaptor web context.
+
+At minimum, integration coverage includes list `items`, integer search score,
+URI `source`, trust identity behavior, protocol error bodies, catalog schema,
+and Skill ZIP retrieval when the main server and adaptor use separate ports.
+
+## 7. Compatibility Rules
 
 - The adaptor must prefer external protocol compatibility over Nacos v3 response
   conventions on adaptor paths.
 - Canonical Nacos APIs remain the source of truth for management semantics.
+- ARD compatibility changes require updating the pinned upstream revision,
+  vendored fixtures, this specification, and conformance coverage together.
 - Community protocols evolve quickly. The adaptor may need breaking changes
   when MCP Registry, skills CLI, skills.sh, or well-known Skill discovery
   formats change.
@@ -166,7 +339,7 @@ into the community discovery shape.
   protocol introduces incompatible field, pagination, authentication, or route
   changes.
 
-## 7. Pending Issues
+## 8. Pending Issues
 
 - Define a stable adaptor authentication model for operators who need to expose
   compatibility protocols without making data public.

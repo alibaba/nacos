@@ -26,6 +26,12 @@ package com.alibaba.nacos.ai.constant;
  */
 public final class AiResourceConstants {
     
+    public static final String RESOURCE_TYPE_SKILL = "skill";
+    
+    public static final String RESOURCE_TYPE_PROMPT = "prompt";
+    
+    public static final String RESOURCE_TYPE_MCP = "mcp";
+    
     private AiResourceConstants() {
     }
     

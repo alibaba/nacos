@@ -113,6 +113,15 @@ class PluginTypeTest {
     }
     
     @Test
+    @DisplayName("test AI_VECTOR enum values")
+    void testAiVectorEnumValues() {
+        assertEquals("ai-vector", PluginType.AI_VECTOR.getType());
+        assertEquals("AI ARD vector index plugin", PluginType.AI_VECTOR.getDescription());
+        assertEquals(PluginExecutionMode.ROUTED, PluginType.AI_VECTOR.getExecutionMode());
+        assertFalse(PluginType.AI_VECTOR.isCritical());
+    }
+    
+    @Test
     @DisplayName("test AI_RESOURCE_IMPORT enum values")
     void testAiResourceImportEnumValues() {
         assertEquals("ai-resource-import", PluginType.AI_RESOURCE_IMPORT.getType());
@@ -125,7 +134,7 @@ class PluginTypeTest {
     @DisplayName("test all enum values count")
     void testAllEnumValuesCount() {
         PluginType[] values = PluginType.values();
-        assertEquals(11, values.length);
+        assertEquals(12, values.length);
     }
     
     @Test
@@ -134,6 +143,7 @@ class PluginTypeTest {
         assertEquals(PluginType.AUTH, PluginType.valueOf("AUTH"));
         assertEquals(PluginType.ENCRYPTION, PluginType.valueOf("ENCRYPTION"));
         assertEquals(PluginType.AI_PIPELINE, PluginType.valueOf("AI_PIPELINE"));
+        assertEquals(PluginType.AI_VECTOR, PluginType.valueOf("AI_VECTOR"));
         assertEquals(PluginType.AI_RESOURCE_IMPORT, PluginType.valueOf("AI_RESOURCE_IMPORT"));
     }
     

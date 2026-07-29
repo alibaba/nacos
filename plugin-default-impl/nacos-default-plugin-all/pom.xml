@@ -64,6 +64,11 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-default-ai-vector-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin-mysql</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -124,6 +129,8 @@
                                       tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-ai-vector-plugin/src/main/resources/META-INF/pg-ai-vector-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-ai-vector-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
                                       tofile="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-upgrade-null-tenant-id.sql"
@@ -147,6 +154,8 @@
                                            property="schema.source.mysql.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
                                            property="schema.source.pg.exists"/>
+                                <available file="${project.basedir}/../nacos-default-ai-vector-plugin/src/main/resources/META-INF/pg-ai-vector-schema.sql"
+                                           property="schema.source.pg.ai.vector.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-grant-nacos-readwrite.sql"
                                            property="schema.source.pg.grant.exists"/>
                                 <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
@@ -154,6 +163,7 @@
                                 <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
                                 <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
                                 <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
+                                <fail unless="schema.source.pg.ai.vector.exists" message="Missing postgresql AI vector schema source in default vector plugin."/>
                                 <fail unless="schema.source.pg.grant.exists" message="Missing postgresql read/write grant script in datasource plugin."/>
                                 <fail unless="schema.source.oracle.exists" message="Missing oracle schema source in datasource plugin."/>
 
@@ -163,6 +173,8 @@
                                            property="schema.output.mysql.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/pg-schema.sql"
                                            property="schema.output.pg.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/pg-ai-vector-schema.sql"
+                                           property="schema.output.pg.ai.vector.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/pg-grant-nacos-readwrite.sql"
                                            property="schema.output.pg.grant.exists"/>
                                 <available file="${project.basedir}/../../distribution/conf/oracle-schema.sql"
@@ -170,6 +182,7 @@
                                 <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.pg.ai.vector.exists" message="Missing postgresql AI vector schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.grant.exists" message="Missing postgresql grant script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.oracle.exists" message="Missing oracle schema in distribution/conf after packaging."/>
 
@@ -180,6 +193,10 @@
                                            property="plugin.output.ai.trace.exists"/>
                                 <fail unless="plugin.output.ai.trace.exists"
                                       message="Missing nacos-default-ai-trace-plugin in distribution/plugins after packaging."/>
+                                <available file="${project.basedir}/../../distribution/plugins/nacos-default-ai-vector-plugin-${project.version}.jar"
+                                           property="plugin.output.ai.vector.exists"/>
+                                <fail unless="plugin.output.ai.vector.exists"
+                                      message="Missing nacos-default-ai-vector-plugin in distribution/plugins after packaging."/>
 
                                 <condition property="plugin.output.spring.ldap.missing">
                                     <resourcecount count="0" when="equal">
@@ -207,7 +224,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-default-ai-vector-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

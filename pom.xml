@@ -372,6 +372,9 @@
                         <exclude>**/filter-config.json</exclude>
                         <!-- Strict JSON Schema cannot carry a source-code comment header. -->
                         <exclude>specs/schemas/**/*.schema.json</exclude>
+                        <!-- Pinned upstream ARD schema; license and provenance are stored beside it. -->
+                        <exclude>**/ard-spec/**/ai-catalog.schema.json</exclude>
+                        <exclude>**/ard-spec/**/ard.openapi.yaml</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>
