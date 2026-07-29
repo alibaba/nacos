@@ -1239,8 +1239,10 @@ flowchart LR
 | Console | 是 | 否 | Nacos Console UI | 复用 Admin 语义组织页面工作流 |
 
 HTTP 遵循 Nacos v3 API，路径位于 `/v3/{client|admin|console}/ai/agents`，响应为 `Result<T>`，并使用
-`@NacosApi`、`@Since`、对应 `ApiType`、`SignType.AI` 和 READ/WRITE 鉴权。GET 使用 query，写操作使用 JSON body；
-`agentName` 按原值比较且不作为 PathVariable。gRPC 继续使用统一 `Payload` 和 `metadata.type`，不增加 proto method。
+`@NacosApi`、`@Since`、对应 `ApiType`、`SignType.AI` 和 READ/WRITE 鉴权。GET 使用 query；Client 写入按正式
+Binding 使用 JSON body，Admin/Console 写入使用 `application/x-www-form-urlencoded`，复杂字段以 JSON 字符串
+承载。`agentName` 按原值比较且不作为 PathVariable。gRPC 继续使用统一 `Payload` 和 `metadata.type`，不增加
+proto method。
 
 RAD 对外 Schema 只定义六个根对象，API Binding 不再复制领域 DTO：
 
@@ -1265,9 +1267,10 @@ namespace 规则固定如下：
 |---|---|
 | 普通 Client SDK | 初始化时绑定一个 namespace；公开方法不接收调用级 namespace，由 Proxy 注入缓存值并禁止跨 namespace |
 | Client HTTP OpenAPI | 可显式传 `namespaceId`，省略时使用 Nacos 默认 namespace |
-| Maintainer SDK / Admin API | SDK 不绑定 namespace；每个 Request 或 Command 显式携带 `namespaceId` |
+| Maintainer SDK | SDK 不绑定 namespace；显式方法参数是自定义 namespace 的唯一来源，便利重载固定使用默认 namespace；Request/Command 不携带 `namespaceId` |
+| Admin / Console API | HTTP Form 保留 `namespaceId`，省略或空白时规范化为默认 namespace；Form 生成的 Request/Command 不携带该字段 |
 
-`Agent` 更新使用 `expectedMetaVersion`；draft 内容只允许在目标 Version 仍为 draft 时更新。
+`Agent` metadata 更新复用共享 AI Resource 更新流程；draft 内容只允许在目标 Version 仍为 draft 时更新。
 Search、Agent 管理列表和版本列表分页，`RuntimeEndpointSnapshot` 返回完整快照且不分页。公共错误语义为：
 
 | 场景 | 结果 |
@@ -1494,9 +1497,8 @@ Version descriptor。
 
 | Method | Path | 作用 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents` | 原子创建 Agent 和首个 draft | `Result<AgentOverview>` |
 | GET | `/v3/admin/ai/agents` | Agent 详情和有界版本摘要首页 | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | 以 metaVersion CAS 更新 Agent 可写字段 | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | 通过共享 AI Resource 更新流程修改 Agent 可写字段 | `Result<Agent>` |
 | DELETE | `/v3/admin/ai/agents` | 删除 Agent 及全部版本内容；Runtime publication 立即不可发现但不级联删除 | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | 按 Agent 字段筛选和分页 | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | 分页读取版本摘要 | `Result<Page<AgentVersionSummary>>` |
@@ -1508,13 +1510,15 @@ Runtime Endpoint 查询参数固定为 `namespaceId + agentName + protocol + ver
 返回空 `items[]`。省略 version 用于查看该 Agent + protocol 的全部 Runtime publication，提交 version 时只保留
 versionRange 命中该版本的项。
 
-`POST /agents` 的 body 包含 Agent 可写字段和必填 `initialDraft`；Resource、Version 和 Storage 必须按 4.2.5
-实现逻辑原子语义，任一步失败时不向调用方暴露可用的半成品 Agent，并执行补偿。
+不提供独立的 `POST /agents` 创建入口。`POST /agents/draft` 在 Agent 不存在时以直接提交的
+`callInterfaces` 创建 Agent metadata、首个 Version 和 Storage 内容；Agent 已存在时创建后续直接内容或
+复制 draft。首建 Resource、Version 和 Storage 必须按 4.2.5 实现逻辑原子语义，任一步失败时不向调用方
+暴露可用的半成品 Agent，并执行补偿。
 `PUT /agents` 只更新 displayName、description、iconUrl、provider、tags、extensions 和 status，
 保留已有 owner 和 scope，不修改身份、版本内容、labels 或服务端派生 versionCatalog。
 owner 首版不提供转移操作；scope 由独立的公开/私有可见性能力修改，不进入通用 metadata CAS。
 
-列表支持 agentName、tags、scope、owner、pageNo/pageSize 和 orderBy；不对 ext longtext
+列表支持 agentName、bizTag、scope、owner、pageNo/pageSize 和 orderBy；不对 ext longtext
 中的 displayName 或 provider 执行无索引模糊搜索。
 
 Runtime Endpoint 首版只提供只读快照，不提供 Agent 专属 enable/disable、管理员注销或健康状态修改 API。
@@ -1523,7 +1527,7 @@ Runtime Endpoint 首版只提供只读快照，不提供 Agent 专属 enable/dis
 
 | Method | Path | 作用 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents/draft` | 创建后续 draft，可从指定 version 复制或直接提交内容 | `Result<AgentVersionDetail>` |
+| POST | `/v3/admin/ai/agents/draft` | Agent 不存在时创建 Agent 和首个直接内容 draft；存在时创建后续直接内容或复制 draft | `Result<AgentVersionDetail>` |
 | PUT | `/v3/admin/ai/agents/draft` | 更新指定 draft | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | 删除指定 draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | draft -> reviewing；无 Pipeline 时可按统一 AI 生命周期直接 online | `Result<AgentVersionSummary>` |
@@ -1542,8 +1546,9 @@ Runtime Endpoint 首版只提供只读快照，不提供 Agent 专属 enable/dis
 #### 5.3.3 Maintainer SDK
 
 `AiMaintainerService.agent()` 返回 `AgentMaintainerService`，现有 `a2a()` 在兼容期保留。新接口一一映射上述
-Admin HTTP API，不增加 Maintainer gRPC；复杂写操作使用 Request/Command。该 SDK 不绑定 namespace，每次显式
-提交 namespaceId，也不提供依赖默认 namespace 的重载；返回对象不包含 AgentCard、registrationType 或 setAsLatest。
+Admin HTTP API，不增加 Maintainer gRPC；复杂写操作使用 Request/Command。该 SDK 不绑定 namespace；每个操作
+同时提供显式 namespace 形式，以及固定使用默认 namespace 的便利重载。Request/Command 不包含 namespaceId；
+返回对象不包含 AgentCard、registrationType 或 setAsLatest。
 
 ### 5.4 Console API
 
@@ -1897,6 +1902,18 @@ flowchart LR
 | 阻塞检查 | 是否需要共享底座改动；如需要则停止编码并等待决策 |
 | 验收门禁 | 格式、编译、单测、line coverage 与相应 IT/兼容场景 |
 
+#### 当前阶段范围留痕：Console 后端 Facade
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 规范依据 | Agent API Spec 第 3～4 章、Agent Management Spec 第 6 章、Agent Storage Spec 第 5.1 节、Console Spec 第 6 章、HTTP API/鉴权/错误规范、API Integration Test Spec，以及本文第 5.4、7.1 节 |
+| 当前目标 | 实现 `/v3/console/ai/agents` 对全部 Agent Admin 相对路径、Form、结果、生命周期和鉴权意图的同语义 Facade；Runtime 查询额外返回后端生成的 `ConsoleRuntimeEndpointView` 和 Naming Service 引用 |
+| 允许范围 | `ai.constant.Constants.Agent` 仅增加 Console path；`console` 模块新增 Agent Controller、Proxy、Handler interface、inner/remote/noop Handler 和 Console 专用 Runtime view；增加这些文件的单元测试；在 `test/openapi-test` 增加 Console Agent 场景、测试辅助常量和 coverage/scenario 登记；更新本设计阶段状态 |
+| 禁止范围 | 除上述 path 常量外的 `ai` production 代码；`ai_resource` / `ai_resource_version`、DAO、Repository、Manager、Storage、Runtime Registry 与生命周期；`api`、`maintainer-client`、HTTP common、Client runtime；RAD Client API、HTTP Client 活性/Distro、Java SDK、旧 A2A Adapter 和 Console UI |
+| 已知问题 | Console UI 的 Version/Protocol 页签、懒加载交互、无 `RUNTIME` 来源提示和 Naming 页面跳转属于后续 UI 交付；本阶段只提供规范要求的后端数据与引用，不提前修改前端 |
+| 阻塞检查 | 现有 Agent Admin Application Service、Maintainer SDK、Runtime Snapshot 和 `RadServiceNameComposer` 已满足 inner/remote 两种部署路径；不需要修改共享底座。若实现中发现这些既有契约无法完成任一 Admin 镜像路径，则停止扩大范围并提交维护者决策 |
+| 验收门禁 | `console` Spotless、编译和相关单测；本阶段新增 production Java 可执行行 line coverage 100%；OpenAPI test-compile 和 Console Agent 独立 IT；复核实际 production diff 仅包含白名单文件 |
+
 ### 7.2 分阶段任务
 
 - [x] **规范基线**：新增 Agent 管理、RAD 0.1.0、Agent API、Agent Storage 中英文 Specs；新增 RAD 外部、
@@ -1928,10 +1945,12 @@ flowchart LR
 - [ ] **Java Client SDK**：新增 `AgentDiscoveryService`、namespace 注入、Discover overload、Watch、本地选择
   helper、缓存、按 Agent protocol service 保存完整 Batch 的 HTTP/gRPC Endpoint redo、局部注销/更换后的
   全量重注册和重连恢复；保持 `AiService`/`A2aService` 二进制兼容。
-- [ ] **Admin API + Maintainer SDK**：实现 Agent CRUD、Version draft/submit/publish/online/offline/label、
+- [x] **Admin API + Maintainer SDK**：实现 Agent CRUD、Version draft/submit/publish/online/offline/label、
   Runtime Snapshot、审计和 Maintainer HTTP 映射；首版不提供同 Version 强制内容替换。
-- [ ] **Console 后端 Facade**：实现与 Admin 同语义的 Console Facade、版本/Protocol 页签、Runtime Snapshot 懒加载、
-  Naming 页面引用和只读 Runtime 体验。
+- [x] **Console 后端 Facade**：实现与 Admin 同语义的 Console Facade、Runtime Snapshot 包装和服务端生成的
+  Naming 页面引用；不修改通用 Agent/AI Resource 底座。
+- [ ] **Console UI**：实现版本/Protocol 页签、Runtime Snapshot 懒加载、无 `RUNTIME` 来源提示、
+  Naming 页面跳转和只读 Runtime 体验。
 - [ ] **旧 A2A API Adapter**：完成 AgentCard 写入、latest 兼容、URL/SERVICE 查询反向投影、订阅和
   Console/Admin/Maintainer 兼容窗口；首阶段 Endpoint 继续使用旧 version-specific Naming 布局，后续切流
   单独设计双读、迁移与回滚，不在新 Runtime Registry 中实现 group-delete 或 read-merge-write。

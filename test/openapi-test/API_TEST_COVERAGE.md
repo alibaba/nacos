@@ -53,9 +53,9 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
-| Console API | 27 | 25 | 3 | 0 | 88.89% | 94.44% |
+| Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
 | Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 77 | 64 | 11 | 3 | 86.30% | 93.15% |
+| Total | 78 | 64 | 11 | 3 | 86.30% | 93.15% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -107,6 +107,13 @@ creates missing Agent metadata together with the first draft; the removed root
 contract consolidation does not change the scenario-row totals. POST retry and
 conflict scenarios prove that creation does not replace current draft content;
 replacement remains the distinct `PUT /v3/admin/ai/agents/draft` operation.
+
+Agent Console management is tracked as one additional covered Console scenario
+row. It mirrors the Agent Admin relative paths and form contracts, while
+`GET /v3/console/ai/agents/runtime-endpoints` adds only the Console-specific
+Naming service reference wrapper. Agent lifecycle and persistence semantics
+remain covered by the existing Admin rows rather than being redefined by the
+Console facade.
 
 ## Coverage Documents
 

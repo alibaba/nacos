@@ -44,7 +44,11 @@ public class AgentDraftUpdateForm extends AgentVersionForm {
     }
     
     /**
-     * Parse the call-interface JSON field and build the public request model.
+     * Validate this form, parse JSON-valued fields, and build the public request model.
+     *
+     * <p>This method performs both Form and Request validation. Callers should invoke this method
+     * directly without calling {@link #validate()} first because {@code validate()} delegates to
+     * this method.</p>
      *
      * @return validated Agent draft-update request
      * @throws NacosApiException when the call-interface JSON is invalid

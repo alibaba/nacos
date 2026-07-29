@@ -41,7 +41,11 @@ public class AgentLabelsUpdateForm extends AgentAdminForm {
     }
     
     /**
-     * Parse the labels JSON field and build the public request model.
+     * Validate this form, parse the labels JSON field, and build the public request model.
+     *
+     * <p>This method performs both Form and Request validation. Callers should invoke this method
+     * directly without calling {@link #validate()} first because {@code validate()} delegates to
+     * this method.</p>
      *
      * @return validated Agent labels-update request
      * @throws NacosApiException when the labels JSON is invalid
