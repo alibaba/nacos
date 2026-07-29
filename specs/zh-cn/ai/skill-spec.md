@@ -36,9 +36,13 @@ Skill 是可复用的 AI Agent 能力包，包含：
 - 描述文件引用的可选资源文件；
 - description、bizTags、owner、scope、labels、version 和 download count 等元数据。
 
-Skill upload 接收 ZIP 包。Batch upload 是 best effort，必须报告每个 Skill 的成功和
-失败。当上传已有 Skill 因调用方缺少写权限而失败时，失败信息必须在可获取时包含当前
-owner。
+Skill upload 接收 ZIP 包。Batch upload 是 best effort，必须为每个 Skill 或候选目录返回
+一条结果。每条结果包含 `name`、`success`、`errorCode`、`errorMessage` 和可选的
+`owner`。成功项使用 `success=true`、错误码 `SUCCESS` 和错误信息 `success`；失败项使用
+`success=false` 并返回具体失败信息。Batch upload 对等失败复用 precheck 业务码
+`NOT_A_SKILL`、`INVALID_SKILL` 和 `NO_PERMISSION`，无法分类的失败使用
+`UPLOAD_FAILED`。当上传已有 Skill 因调用方缺少写权限而失败时，结果必须在可获取时包含
+当前 owner。
 
 上传预检必须接收与上传接口相同的 ZIP 包，并由服务端统一解析单个或批量 Skill。每个
 有效 Skill 返回一条结果；候选目录缺少 `SKILL.md` 时返回 `NOT_A_SKILL`，描述文件无效时

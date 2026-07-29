@@ -371,7 +371,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, secondSkillName));
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, firstSkillName));
         
-        BatchUploadResult result = maintainerService.skill()
+        List<BatchUploadResult> results = maintainerService.skill()
                 .batchUploadSkillsFromZip(NAMESPACE_ID,
                         buildMultiSkillZip(
                                 buildSkill(firstSkillName, "Maintainer SDK IT batch skill one",
@@ -380,10 +380,13 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                                         VERSION)),
                         false);
         
-        assertNotNull(result);
-        assertTrue(result.getFailed().isEmpty(), () -> result.getFailed().toString());
-        assertTrue(result.getSucceeded().contains(firstSkillName));
-        assertTrue(result.getSucceeded().contains(secondSkillName));
+        assertNotNull(results);
+        assertEquals(2, results.size());
+        assertTrue(results.stream().allMatch(BatchUploadResult::isSuccess), results::toString);
+        assertTrue(results.stream().allMatch(
+                result -> BatchUploadResult.ERROR_CODE_SUCCESS.equals(result.getErrorCode())));
+        assertTrue(results.stream().anyMatch(result -> firstSkillName.equals(result.getName())));
+        assertTrue(results.stream().anyMatch(result -> secondSkillName.equals(result.getName())));
         assertEquals(firstSkillName, maintainerService.skill()
                 .getSkillVersionDetail(NAMESPACE_ID, firstSkillName, VERSION).getName());
         assertEquals(secondSkillName, maintainerService.skill()

@@ -91,7 +91,13 @@ export const skillApi = {
     namespaceId: string,
     file: File,
     options?: { overwrite?: boolean },
-  ): ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }> => {
+  ): ApiResult<{
+    name: string;
+    success: boolean;
+    errorCode: string;
+    errorMessage: string;
+    owner?: string;
+  }[]> => {
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('namespaceId', namespaceId);
@@ -101,7 +107,13 @@ export const skillApi = {
     return client.post(`${BASE}/upload/batch`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
-    }) as ApiResult<{ succeeded: string[]; failed: { name: string; reason: string }[] }>;
+    }) as ApiResult<{
+      name: string;
+      success: boolean;
+      errorCode: string;
+      errorMessage: string;
+      owner?: string;
+    }[]>;
   },
 
   /** Delete skill */

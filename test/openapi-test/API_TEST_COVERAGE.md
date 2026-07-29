@@ -97,8 +97,9 @@ missing OpenAPI IT coverage.
 
 Skill upload precheck response-shape coverage is maintained by the admin and
 console Skill upload scenario rows, including `maxPublishedVersion` and
-`targetVersion`. Contract-only field changes do not alter the scenario-row
-totals above.
+`targetVersion`. Those rows also cover the batch upload per-item `success`,
+`errorCode`, and `errorMessage` contract. Contract-only field changes do not
+alter the scenario-row totals above.
 
 Agent Admin definition creation is counted in the existing Agent Admin and
 Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation

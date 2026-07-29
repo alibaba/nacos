@@ -77,6 +77,7 @@ import java.util.zip.ZipOutputStream;
 import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1481,13 +1482,18 @@ class SkillOperationServiceImplTest {
             .thenReturn(Optional.of(mockFilter));
         
         setupRequestContext("attackerUser");
-        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId,
-            createMultiSkillZipBytes(), false);
+        List<BatchUploadResult> results =
+            skillOperationService.batchUploadSkillsFromZip(namespaceId,
+                createMultiSkillZipBytes(), false);
         
-        assertEquals(1, result.getFailed().size());
-        assertEquals("test-skill", result.getFailed().get(0).getName());
-        assertEquals("ownerUser", result.getFailed().get(0).getOwner());
-        assertTrue(result.getFailed().get(0).getReason().contains("No permission"));
+        assertEquals(1, results.size());
+        BatchUploadResult result = results.get(0);
+        assertFalse(result.isSuccess());
+        assertEquals("test-skill", result.getName());
+        assertEquals(SkillUploadPrecheckResult.PRECHECK_CODE_NO_PERMISSION,
+            result.getErrorCode());
+        assertEquals("ownerUser", result.getOwner());
+        assertTrue(result.getErrorMessage().contains("No permission"));
     }
     
     @Test

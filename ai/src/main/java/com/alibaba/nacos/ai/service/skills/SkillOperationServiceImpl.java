@@ -304,28 +304,35 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Batch upload multiple skills from a single zip archive using best-effort strategy.
      */
     @Override
-    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    public List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
         SkillZipParser.MultiSkillParseResult parseResult =
             SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
-        BatchUploadResult result = new BatchUploadResult();
+        List<BatchUploadResult> results = new ArrayList<>(
+            parseResult.getFailures().size() + parseResult.getSkills().size());
         
         // Record parse failures from invalid skill folders
         for (SkillZipParser.ParseFailure failure : parseResult.getFailures()) {
-            result.addFailed(failure.getFolder(), failure.getReason());
+            results.add(BatchUploadResult.failure(failure.getFolder(),
+                failure.getType() == SkillZipParser.ParseFailureType.NOT_A_SKILL
+                    ? SkillUploadPrecheckResult.PRECHECK_CODE_NOT_A_SKILL
+                    : SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL,
+                failure.getReason()));
         }
         
         for (Skill skill : parseResult.getSkills()) {
             String skillName = skill.getName();
             try {
                 if (StringUtils.isBlank(skillName)) {
-                    result.addFailed("unknown", "Skill name is required in YAML front matter");
+                    results.add(BatchUploadResult.failure("unknown",
+                        SkillUploadPrecheckResult.PRECHECK_CODE_INVALID_SKILL,
+                        "Skill name is required in YAML front matter"));
                     continue;
                 }
                 UploadVersionCandidate uploadVersion = resolveUploadVersionCandidate(skill, null);
                 doUploadSingleSkill(namespaceId, skill, uploadVersion, overwrite, null, null);
-                result.addSucceeded(skillName);
+                results.add(BatchUploadResult.success(skillName));
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
                 String owner = null;
@@ -338,11 +345,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                         owner = meta.getOwner();
                     }
                 }
-                result.addFailed(skillName != null ? skillName : "unknown", owner,
-                    e.getMessage());
+                results.add(BatchUploadResult.failure(
+                    skillName != null ? skillName : "unknown",
+                    resolveBatchUploadErrorCode(e), resolveBatchUploadErrorMessage(e), owner));
             }
         }
-        return result;
+        return results;
+    }
+    
+    private static String resolveBatchUploadErrorCode(Exception exception) {
+        if (exception instanceof NacosException
+            && ((NacosException) exception).getErrCode() == NacosException.NO_RIGHT) {
+            return SkillUploadPrecheckResult.PRECHECK_CODE_NO_PERMISSION;
+        }
+        return BatchUploadResult.ERROR_CODE_UPLOAD_FAILED;
+    }
+    
+    private static String resolveBatchUploadErrorMessage(Exception exception) {
+        if (exception instanceof NacosException) {
+            return ((NacosException) exception).getErrMsg();
+        }
+        return exception.getMessage();
     }
     
     /**

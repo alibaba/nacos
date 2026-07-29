@@ -204,7 +204,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
     
     @Override
-    public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    public List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
@@ -216,8 +216,8 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             .setPath(Constants.AdminApiPath.AI_SKILL_BATCH_UPLOAD_ADMIN_PATH)
             .setParamValue(params).setFileUpload(zipBytes, "skills.zip", "file").build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<BatchUploadResult> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<BatchUploadResult>>() {
+        Result<List<BatchUploadResult>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<List<BatchUploadResult>>>() {
             });
         return result.getData();
     }

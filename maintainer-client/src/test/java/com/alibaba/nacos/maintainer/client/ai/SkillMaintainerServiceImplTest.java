@@ -36,6 +36,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -139,17 +141,21 @@ class SkillMaintainerServiceImplTest {
     @Test
     @DisplayName("batchUploadSkillsFromZip should return batch result")
     void testBatchUploadSkillsFromZip() throws NacosException {
-        BatchUploadResult batchUploadResult = new BatchUploadResult();
-        batchUploadResult.addSucceeded("test-skill");
+        List<BatchUploadResult> batchUploadResults =
+            Collections.singletonList(BatchUploadResult.success("test-skill"));
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success(batchUploadResult)));
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(batchUploadResults)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
         
-        BatchUploadResult actual =
+        List<BatchUploadResult> actual =
             skillService.batchUploadSkillsFromZip("public", "zip".getBytes(), false);
         
-        assertEquals(java.util.Collections.singletonList("test-skill"), actual.getSucceeded());
+        assertEquals(1, actual.size());
+        assertEquals("test-skill", actual.get(0).getName());
+        assertTrue(actual.get(0).isSuccess());
+        assertEquals(BatchUploadResult.ERROR_CODE_SUCCESS, actual.get(0).getErrorCode());
+        assertEquals("success", actual.get(0).getErrorMessage());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(clientHttpProxy).executeSyncHttpRequest(requestCaptor.capture());
         HttpRequest request = requestCaptor.getValue();

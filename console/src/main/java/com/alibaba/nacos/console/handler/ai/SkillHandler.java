@@ -121,10 +121,10 @@ public interface SkillHandler {
      * @param namespaceId namespace ID
      * @param zipBytes    zip file bytes
      * @param overwrite   whether to overwrite existing drafts
-     * @return batch upload result with succeeded and failed lists
+     * @return one result for each skill
      * @throws NacosException if zip parsing fails entirely
      */
-    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException;
     

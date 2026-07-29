@@ -247,21 +247,21 @@ public class SkillAdminController {
      * @param namespaceId namespace ID
      * @param overwrite   whether to overwrite existing drafts
      * @param file        zip file containing multiple skill subdirectories
-     * @return batch upload result with succeeded and failed lists
+     * @return one result for each skill
      * @throws NacosException if zip parsing fails entirely
      */
     @Since("3.2.2")
     @PostMapping(value = "/upload/batch", consumes = "multipart/form-data")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
-    public Result<BatchUploadResult> batchUploadSkills(HttpServletRequest request,
+    public Result<List<BatchUploadResult>> batchUploadSkills(HttpServletRequest request,
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
         @RequestParam(value = "overwrite", required = false,
             defaultValue = "false") boolean overwrite,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        BatchUploadResult result =
+        List<BatchUploadResult> result =
             skillOperationService.batchUploadSkillsFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(result);
     }

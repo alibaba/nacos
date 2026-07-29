@@ -326,11 +326,12 @@ public interface SkillMaintainerService {
      * Batch upload skills from a multi-skill zip archive with default namespace.
      *
      * @param zipBytes zip file bytes containing multiple skill directories
-     * @return batch upload result with succeeded and failed lists
+     * @return one result for each skill
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")
-    default BatchUploadResult batchUploadSkillsFromZip(byte[] zipBytes) throws NacosException {
+    default java.util.List<BatchUploadResult> batchUploadSkillsFromZip(byte[] zipBytes)
+        throws NacosException {
         return batchUploadSkillsFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
     
@@ -340,11 +341,12 @@ public interface SkillMaintainerService {
      * @param namespaceId namespace ID
      * @param zipBytes    zip file bytes containing multiple skill directories
      * @param overwrite   whether to overwrite existing drafts
-     * @return batch upload result with succeeded and failed lists
+     * @return one result for each skill
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")
-    BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
+    java.util.List<BatchUploadResult> batchUploadSkillsFromZip(String namespaceId,
+        byte[] zipBytes,
         boolean overwrite)
         throws NacosException;
     

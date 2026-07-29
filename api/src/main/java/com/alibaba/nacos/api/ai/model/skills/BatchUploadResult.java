@@ -16,99 +16,93 @@
 
 package com.alibaba.nacos.api.ai.model.skills;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 
 /**
- * Result of batch skill upload from a multi-skill zip archive.
+ * Result of one skill in a batch upload.
  *
  * @author nacos
  */
 public class BatchUploadResult {
     
-    private List<String> succeeded;
+    public static final String ERROR_CODE_SUCCESS = "SUCCESS";
     
-    private List<FailedItem> failed;
+    public static final String ERROR_CODE_UPLOAD_FAILED = "UPLOAD_FAILED";
+    
+    private String name;
+    
+    private boolean success;
+    
+    private String errorCode;
+    
+    private String errorMessage;
+    
+    private String owner;
     
     public BatchUploadResult() {
-        this.succeeded = new ArrayList<>();
-        this.failed = new ArrayList<>();
     }
     
-    public List<String> getSucceeded() {
-        return succeeded;
+    public BatchUploadResult(String name, boolean success, String errorCode, String errorMessage,
+        String owner) {
+        this.name = name;
+        this.success = success;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+        this.owner = owner;
     }
     
-    public void setSucceeded(List<String> succeeded) {
-        this.succeeded = succeeded;
+    public static BatchUploadResult success(String skillName) {
+        return new BatchUploadResult(skillName, true, ERROR_CODE_SUCCESS,
+            ErrorCode.SUCCESS.getMsg(), null);
     }
     
-    public List<FailedItem> getFailed() {
-        return failed;
+    public static BatchUploadResult failure(String skillName, String errorCode,
+        String errorMessage) {
+        return failure(skillName, errorCode, errorMessage, null);
     }
     
-    public void setFailed(List<FailedItem> failed) {
-        this.failed = failed;
+    public static BatchUploadResult failure(String skillName, String errorCode,
+        String errorMessage, String owner) {
+        return new BatchUploadResult(skillName, false, errorCode, errorMessage, owner);
     }
     
-    public void addSucceeded(String skillName) {
-        this.succeeded.add(skillName);
+    public String getName() {
+        return name;
     }
     
-    public void addFailed(String skillName, String reason) {
-        addFailed(skillName, null, reason);
+    public void setName(String name) {
+        this.name = name;
     }
     
-    public void addFailed(String skillName, String owner, String reason) {
-        this.failed.add(new FailedItem(skillName, owner, reason));
+    public boolean isSuccess() {
+        return success;
     }
     
-    /**
-     * Represents a skill that failed during batch upload.
-     */
-    public static class FailedItem {
-        
-        private String name;
-        
-        private String reason;
-        
-        private String owner;
-        
-        public FailedItem() {
-        }
-        
-        public FailedItem(String name, String reason) {
-            this(name, null, reason);
-        }
-        
-        public FailedItem(String name, String owner, String reason) {
-            this.name = name;
-            this.owner = owner;
-            this.reason = reason;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getReason() {
-            return reason;
-        }
-        
-        public void setReason(String reason) {
-            this.reason = reason;
-        }
-        
-        public String getOwner() {
-            return owner;
-        }
-        
-        public void setOwner(String owner) {
-            this.owner = owner;
-        }
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+    
+    public String getErrorCode() {
+        return errorCode;
+    }
+    
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+    
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+    
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }
