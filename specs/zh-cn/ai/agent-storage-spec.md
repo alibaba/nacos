@@ -331,10 +331,12 @@ Runtime 发布与 Agent 定义创建解耦。即使 Agent、Version 或 CallInte
 Publisher identity 是内部状态：
 
 - gRPC contribution 归属于 connection id；
-- HTTP contribution 归属于校验后的 client id，并使用一个 Client 级 heartbeat；
+- HTTP contribution 归属于通用 `HTTP_CLIENT@@<externalClientId>` Naming Client，并使用
+  一个 Client 级 Publisher heartbeat；
 - 公开管控和 RAD 对象不暴露 identity 或 publisher count。
 
-断连或 Client 过期只删除该 publisher 的 contribution，其他相同 contribution 继续存在。只要
+断连、Publisher 过期或 Client 过期只删除该 publisher 的 contribution，其他相同 contribution
+继续存在。HTTP 查询只续约 Client，不续约、恢复或保留 Publisher。只要
 至少一个匹配的活跃 contribution 健康，聚合 `healthy` 就为 true；只有全部不健康时才为 false。
 仅 heartbeat 或 publisher 数量变化不会改变公开投影。
 
@@ -420,9 +422,14 @@ ServiceName 和 clusterName 都不包含 Version，因此 Service 数量不会�
 
 ### 5.3 Naming 事实边界
 
-Naming Client 状态仍是 RUNTIME 写入事实，负责 publisher identity、连接或 heartbeat 活性、失活清理，
+Naming Client 状态仍是 RUNTIME 写入事实，负责 publisher identity、连接或分层 heartbeat 活性、失活清理，
 完整批次替换、索引、事件和 AP 收敛。注册把完整 Agent Endpoint 批次转换为 Naming Instance 并调用
 Naming 一次；完整注销移除 Client 和 Service publication。Agent 服务端不读取或合并旧 publisher 记录。
+
+HTTP publication 复用 Naming 通用 `HttpConnectionBasedClient`、
+`ClientManagerDelegate` 和 `Nacos:Naming:v2:ClientData` Distro 链路。AI 模块只负责
+external Client id 校验、自己的 Distro Filter 路由，以及 Agent Endpoint 到 Naming Instance 的转换；
+不维护 Agent 专用 ClientData processor 或 Distro resource type。
 
 Runtime Snapshot 和 Discover 从 Naming `ServiceStorage` 缓存读取完整的内部 Service 投影。该投影由
 service-scoped Client index 构建，并包含运维 Instance metadata。Agent 层随后解析每条 Instance 的
@@ -525,7 +532,7 @@ Endpoint set 及其 revision，不维护第二份投影缓存。
 | Agent 目录、治理、extensions | `ai_resource`。 | `metaVersion` CAS。 |
 | 创建或更新 draft | AI Storage 固定 key 和 Version row。 | Pointer、bytes、size 和 digest 一致。 |
 | Publish、online、offline、delete、label/latest | Version row 和 Resource 摘要。 | 重建派生目录。 |
-| Runtime register、heartbeat、deregister | Naming Client 运行时状态。 | 不写 AI Resource 或 Storage。 |
+| Runtime register、Publisher heartbeat、deregister | Naming Client 运行时状态。 | 不写 AI Resource 或 Storage。 |
 
 缓存校验值跟随事实：
 

@@ -38,6 +38,7 @@
 | Client 类别 | Owner 规则 |
 | --- | --- |
 | Connection-based client | 持有存活 gRPC connection 的节点拥有 native client。 |
+| HTTP connection-based client | Distro responsibility 根据 `HTTP_CLIENT@@<externalClientId>` 内部 id 选择责任节点。 |
 | Ephemeral IP-port client | 由 Distro responsibility 根据 client responsible id 选出的节点拥有 native client。 |
 | Synced client | 从其他 owner 节点同步来的远端副本，是服务状态，不代表本地 ownership。 |
 
@@ -52,6 +53,11 @@ client id。
 同步 payload 是 client 级数据，包含 client identity、已发布 service identity、instance publish
 information、可选的 batch instance data，以及 verify flow 使用的 client revision。Distro 不以
 service 级记录作为权威来源；service view 由 client state 和索引派生。
+
+HTTP connection-based Client 继续使用同一个 resource type 和
+`DistroClientDataProcessor`。它通过 Client attributes 同步 namespace、鉴权主体标识、Client
+活性和 Publisher 活性，不增加领域专用 Distro payload。普通续约只更新时间戳，不要求每次产生
+`CHANGE`；publication 或其语义健康投影变化时仍使用标准 Client revision 和 `CHANGE`。
 
 ## 4. 变更传播
 
@@ -86,6 +92,11 @@ native client 必须产生 disconnect 和 release event，使 Distro 删除远�
 
 Ephemeral IP-port client 通过心跳和 cache-time cleanup 过期。Owner 节点必须移除过期 native client，
 并发布 Distro deletion 使用的同类 disconnect event。
+
+HTTP connection-based Client 由责任节点分别检查 Client 和 Publisher 活性。Publisher 过期只删除
+该 Client 的 publication；Client 仍有 subscriber state 时可以继续存在。Client 自身过期时沿用
+Client release 事件清理全部 publisher 和 subscriber state。Replica 清理以及后续责任转移复用最近一次
+成功 Distro verify 的观测时间作为本地超时下界；Client 不维护并行的 responsibility 标记。
 
 Remote synced client 是 Distro path 的清理对象，不得在接收节点续约 native ownership。
 
