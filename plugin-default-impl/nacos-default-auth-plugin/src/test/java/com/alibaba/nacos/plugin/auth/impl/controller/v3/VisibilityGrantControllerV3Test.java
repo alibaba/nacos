@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -27,34 +28,33 @@ import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 class VisibilityGrantControllerV3Test {
     
     @Test
     void grantShouldDelegateToService() throws Exception {
-        VisibilityGrantService service = mock(VisibilityGrantService.class);
+        TestVisibilityGrantService service = new TestVisibilityGrantService();
         VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
         
         Result<String> result = controller.grant("public", "skill", "demo-skill", "bob", "r");
         
-        verify(service).grant("public", "skill", "demo-skill", "bob", "r");
+        assertEquals("grant:public:skill:demo-skill:bob:r", service.invocation);
         assertEquals("grant visibility permission ok!", result.getData());
     }
     
     @Test
     void revokeShouldDelegateToService() throws Exception {
-        VisibilityGrantService service = mock(VisibilityGrantService.class);
+        TestVisibilityGrantService service = new TestVisibilityGrantService();
         VisibilityGrantControllerV3 controller = new VisibilityGrantControllerV3(service);
         
         Result<String> result = controller.revoke("public", "skill", "demo-skill", "bob", "w");
         
-        verify(service).revoke("public", "skill", "demo-skill", "bob", "w");
+        assertEquals("revoke:public:skill:demo-skill:bob:w", service.invocation);
         assertEquals("revoke visibility permission ok!", result.getData());
     }
     
@@ -78,5 +78,30 @@ class VisibilityGrantControllerV3Test {
         assertEquals(ActionTypes.WRITE, secured.action());
         assertEquals(ApiType.ADMIN_API, secured.apiType());
         assertArrayEquals(new String[] {Constants.Tag.ONLY_IDENTITY}, secured.tags());
+    }
+    
+    private static class TestVisibilityGrantService implements VisibilityGrantService {
+        
+        private String invocation;
+        
+        @Override
+        public void grant(String namespaceId, String resourceType, String resourceName,
+            String username, String action) throws NacosException {
+            invocation = String.join(":", "grant", namespaceId, resourceType, resourceName,
+                username, action);
+        }
+        
+        @Override
+        public void revoke(String namespaceId, String resourceType, String resourceName,
+            String username, String action) throws NacosException {
+            invocation = String.join(":", "revoke", namespaceId, resourceType, resourceName,
+                username, action);
+        }
+        
+        @Override
+        public List<String> findAuthorizedResourceNames(String username, String namespaceId,
+            String resourceType, String action) {
+            return List.of();
+        }
     }
 }

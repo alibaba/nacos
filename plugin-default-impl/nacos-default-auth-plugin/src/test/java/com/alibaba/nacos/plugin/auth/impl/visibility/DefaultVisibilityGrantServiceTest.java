@@ -31,11 +31,14 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityResourceLocator;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -56,6 +59,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DefaultVisibilityGrantServiceTest {
+    
+    @BeforeEach
+    void setUp() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.core.auth.system.type", "nacos");
+        environment.setProperty("nacos.core.auth.server.identity.key", "nacos");
+        environment.setProperty("nacos.core.auth.server.identity.value", "nacos");
+        environment.setProperty("nacos.core.auth.admin.enabled", "true");
+        EnvUtil.setEnvironment(environment);
+    }
     
     @Test
     void buildUserRoleNameShouldBeReservedDeterministicAndBounded() {
@@ -104,6 +117,7 @@ class DefaultVisibilityGrantServiceTest {
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
+        EnvUtil.setEnvironment(null);
         ApplicationUtils.injectContext(null);
     }
     
@@ -288,6 +302,7 @@ class DefaultVisibilityGrantServiceTest {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
     void grantShouldRollbackRoleBindingWhenPermissionCreationFails() {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
@@ -295,19 +310,25 @@ class DefaultVisibilityGrantServiceTest {
         DefaultVisibilityGrantService service =
             new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
-        String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
-        String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
-            "demo-skill");
-        when(roleService.getRoles("bob")).thenReturn(List.of());
-        when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
-            .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
-        doThrow(new IllegalStateException("permission failed")).when(roleService)
-            .addPermission(roleName, resourceId, "r");
-        
-        assertThrows(IllegalStateException.class,
-            () -> service.grant("public", "skill", "demo-skill", "bob", "r"));
-        
-        verify(roleService).deleteRole(roleName, "bob");
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            when(roleService.getRoles("bob")).thenReturn(List.of());
+            when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            doThrow(new IllegalStateException("permission failed")).when(roleService)
+                .addPermission(roleName, resourceId, "r");
+            
+            assertThrows(IllegalStateException.class,
+                () -> service.grant("public", "skill", "demo-skill", "bob", "r"));
+            
+            verify(roleService).deleteRole(roleName, "bob");
+        } finally {
+            restoreAuthConfig(cached);
+        }
     }
     
     @Test
