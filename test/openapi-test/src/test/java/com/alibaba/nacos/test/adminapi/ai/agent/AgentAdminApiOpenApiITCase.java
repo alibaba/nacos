@@ -108,10 +108,10 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
         deleteJsonOk(ADMIN_AGENT_PATH, agentIdentityQuery(null, agentName));
         assertError(getRaw(ADMIN_AGENT_PATH, agentIdentityQuery(null, agentName)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
         assertError(getRaw(ADMIN_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, version)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
     }
 
     @Test
@@ -159,7 +159,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 agentIdentityQuery(namespaceId, agentName)).get("data");
         assertOverview(explicit, namespaceId, agentName, version, "create");
         assertError(getRaw(ADMIN_AGENT_PATH, agentIdentityQuery(null, agentName)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
 
         assertError(getRaw(ADMIN_AGENT_PATH, Query.newInstance()), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "agentName");
@@ -201,10 +201,10 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
         String absentAgent = randomAiName("agent-absent");
         assertError(getRaw(ADMIN_AGENT_PATH, agentIdentityQuery(namespaceId, absentAgent)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
         assertError(getRaw(ADMIN_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(namespaceId, absentAgent, "1.0.0")), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
     }
 
     private void assertOverview(JsonNode overview, String namespaceId, String agentName,

@@ -214,7 +214,7 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "basedOnVersion");
         assertError(postFormRaw(ADMIN_AGENT_PATH + "/force-publish",
                 agentForm(agentVersionCommand(null, absentAgent, "1.0.0"))), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "Agent not found");
+                ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
     }
 
     private JsonNode getOverview(String agentName) throws Exception {

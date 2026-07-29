@@ -330,13 +330,18 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected HttpResponse postFormRaw(String path, Map<String, String> form) throws Exception {
         HttpRestResult<String> result = nacosRestTemplate.postForm(requestUrl(path), Header.EMPTY,
                 form, String.class);
-        return httpResponse(result.getCode(), result.getData());
+        return toHttpResponse(result);
     }
 
     protected HttpResponse putFormRaw(String path, Map<String, String> form) throws Exception {
         HttpRestResult<String> result = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY,
                 form, String.class);
-        return httpResponse(result.getCode(), result.getData());
+        return toHttpResponse(result);
+    }
+
+    private HttpResponse toHttpResponse(HttpRestResult<String> result) {
+        String body = null == result.getData() ? result.getMessage() : result.getData();
+        return httpResponse(result.getCode(), body);
     }
 
     protected void deleteAgentDefinitionQuietly(String namespaceId, String agentName)
