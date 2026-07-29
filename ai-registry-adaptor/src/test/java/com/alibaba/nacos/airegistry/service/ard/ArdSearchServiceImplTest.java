@@ -379,10 +379,23 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void searchShouldRejectUnknownFilterKey() {
+    void searchShouldAcceptPinnedOpenApiNestedFieldPathExample() throws Exception {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",
-            Map.of("metadata.unknown", (Object) List.of("x")));
+            Map.of("type", (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_MCP),
+                "trustManifest.attestations.type", (Object) List.of("SOC2-Type2")));
+        
+        ArdSearchResponse response = service.search(request);
+        
+        assertTrue(response.getResults().isEmpty());
+        verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
+    }
+    
+    @Test
+    void searchShouldRejectMalformedFilterKey() {
+        ArdSearchServiceImpl service = service();
+        ArdSearchRequest request = request("api",
+            Map.of("metadata..unknown", (Object) List.of("x")));
         
         assertThrows(NacosException.class, () -> service.search(request));
     }
@@ -437,7 +450,8 @@ class ArdSearchServiceImplTest {
         
         ArdListResponse response = service.list("public",
             "type = '" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE
-                + "' AND createdAfter > '2026-01-01T00:00:00Z' AND displayName = 'api'",
+                + "' AND createdAfter > '2026-01-01'"
+                + " AND updatedAfter > '2026-01-01T00:00:00Z' AND displayName = 'api'",
             "displayName ASC", 1, null);
         
         assertEquals(1, response.getItems().size());

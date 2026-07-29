@@ -264,10 +264,14 @@ registry is configured, all three modes execute local search; `referrals`
 returns an empty referrals array rather than rejecting the request.
 
 The `GET /agents` filter parser supports single-quoted equality expressions
-joined by `AND` and timestamp comparisons such as
-`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Unsupported
-operators, malformed quoting, unknown fields, and legacy delimiter syntax fail
-with the ARD invalid-argument response instead of being partially interpreted.
+joined by `AND` and timestamp comparisons using either an ISO date or instant,
+such as `createdAfter > '2026-01-01'` or
+`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Search and
+explore filters accept syntactically valid dot-separated field paths, including
+the pinned OpenAPI example `trustManifest.attestations.type`; a path whose
+value is absent matches no entries. Unsupported operators, malformed quoting,
+invalid field-path syntax, and legacy delimiter syntax fail with the ARD
+invalid-argument response instead of being partially interpreted.
 
 Catalog identifiers use deterministic, injective, schema-safe encoding for
 every Nacos-derived URN segment. Namespaces and resource names containing

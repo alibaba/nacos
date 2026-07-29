@@ -57,6 +57,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +66,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -107,15 +108,13 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private static final Pattern CATALOG_PUBLISHER_IDENTIFIER = Pattern.compile("[A-Za-z0-9.-]+");
     
-    private static final Pattern LIST_FILTER_EXPRESSION = Pattern.compile(
-        "^\\s*([A-Za-z][A-Za-z0-9.]*)\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
+    private static final String FIELD_PATH_REGEX =
+        "[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*";
     
-    private static final Set<String> SUPPORTED_FILTER_KEYS =
-        new LinkedHashSet<>(Arrays.asList("displayName", "type", "publisher",
-            "publisherId", "version", "source", "tags", "capabilities",
-            "representativeQueries", "metadata.resourceType", "metadata.inputTypes",
-            "metadata.outputTypes", "metadata.sideEffects", "metadata.riskLevel",
-            "metadata.scope", "trustManifest.identity", "trustManifest.identityType"));
+    private static final Pattern FIELD_PATH = Pattern.compile("^" + FIELD_PATH_REGEX + "$");
+    
+    private static final Pattern LIST_FILTER_EXPRESSION = Pattern.compile(
+        "^\\s*(" + FIELD_PATH_REGEX + ")\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
     
     private final AiResourceSearchService searchService;
     
@@ -256,16 +255,64 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             || !matchesConstantFilter(filters.get("publisherId"), catalogPublisher)) {
             return false;
         }
-        Map<String, Object> trust = trustManifest();
-        String identity = trust == null ? null : stringValue(trust.get("identity"));
-        String identityType = trust == null ? null : stringValue(trust.get("identityType"));
-        return matchesConstantFilter(filters.get("trustManifest.identity"), identity)
-            && matchesConstantFilter(filters.get("trustManifest.identityType"), identityType);
+        return matchesNestedFilters(filters, "trustManifest", trustManifest());
     }
     
     private boolean matchesConstantFilter(List<String> expected, String actual) {
         return expected == null || expected.isEmpty()
             || equalsIgnoreCase(expected, actual);
+    }
+    
+    private boolean matchesNestedFilters(Map<String, List<String>> filters, String root,
+        Object value) {
+        String prefix = root + ".";
+        for (Map.Entry<String, List<String>> filter : filters.entrySet()) {
+            if (!filter.getKey().startsWith(prefix)) {
+                continue;
+            }
+            List<String> actual = nestedValues(value, filter.getKey().substring(prefix.length()));
+            if (!matchesFilterValues(filter.getValue(), actual)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private List<String> nestedValues(Object value, String path) {
+        List<String> result = new ArrayList<>();
+        addNestedValues(value, path.split("\\."), 0, result);
+        return result;
+    }
+    
+    private void addNestedValues(Object value, String[] path, int index, List<String> result) {
+        if (value == null) {
+            return;
+        }
+        if (value instanceof Collection) {
+            for (Object item : (Collection<?>) value) {
+                addNestedValues(item, path, index, result);
+            }
+            return;
+        }
+        if (index == path.length) {
+            result.add(String.valueOf(value));
+            return;
+        }
+        if (value instanceof Map) {
+            addNestedValues(((Map<?, ?>) value).get(path[index]), path, index + 1, result);
+        }
+    }
+    
+    private boolean matchesFilterValues(List<String> expected, List<String> actual) {
+        if (expected == null || expected.isEmpty()) {
+            return true;
+        }
+        for (String value : actual) {
+            if (equalsIgnoreCase(expected, value)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     private String property(String key, String defaultValue) {
@@ -521,10 +568,14 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private Instant parseInstant(String field, String value) throws NacosApiException {
         try {
             return Instant.parse(value);
-        } catch (DateTimeParseException e) {
-            throw new NacosApiException(NacosException.INVALID_PARAM,
-                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
-                "ARD list filter `" + field + "` should be ISO-8601 timestamp");
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDate.parse(value).atStartOfDay(ZoneOffset.UTC).toInstant();
+            } catch (DateTimeParseException e) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                    "ARD list filter `" + field + "` should be ISO-8601 date or timestamp");
+            }
         }
     }
     
@@ -610,10 +661,10 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private void validateFilterKeys(Set<String> keys) throws NacosApiException {
         for (String key : keys) {
-            if (!SUPPORTED_FILTER_KEYS.contains(key)) {
+            if (StringUtils.isBlank(key) || !FIELD_PATH.matcher(key).matches()) {
                 throw new NacosApiException(NacosException.INVALID_PARAM,
                     ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Unsupported ARD filter key: " + key);
+                    "Invalid ARD field path: " + key);
             }
         }
     }
