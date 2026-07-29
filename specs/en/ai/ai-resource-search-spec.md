@@ -96,9 +96,45 @@ Relational and vector indexes do not require a distributed transaction.
 Instead, an idempotent durable task keyed by namespace, resource type, and
 resource name re-reads canonical state and converges both indexes.
 
-Failures retain retry state. Periodic reconciliation detects missed,
-partial, stale, wrong-model, and orphaned index data. Discovery reads only
-enabled documents whose configured indexes have converged.
+The same task row owns two durable stages:
+
+- `base_index` converges deterministic relational chunks and the configured
+  vector index;
+- `llm_enhancement` replaces optional AI-generated chunks and then converges
+  the complete resource-version vector index.
+
+Each stage uses `pending`, `processing`, `retry`, and `completed` states.
+Successful rows are retained as bounded, per-live-resource checkpoints rather
+than task history. Resource lifecycle changes increment the task revision and
+restart the row at `base_index`. A claimed revision may advance, retry, or
+complete only while it still owns the row. A lease permits another node to
+resume work after process failure.
+
+Enhancement writes are idempotent. AI-generated chunk types are replaced
+transactionally rather than appended, and vector documents are replaced for
+the complete resource version. The task is completed only after both writes
+succeed. An enhancement configuration fingerprint covers the provider
+endpoint, model, prompt revision, output schema revision, and relevant output
+limits, but never secrets. The fingerprint records the configuration that
+produced a completed enhancement for audit and diagnosis; it is not a
+convergence target. Configuration changes do not reschedule completed
+resources. A resource lifecycle task records whether enhancement was enabled
+when the task was scheduled. Only a task with that durable request may advance
+from `base_index` to `llm_enhancement`, and it uses the effective configuration
+when the enhancement stage runs.
+
+When enhancement is disabled, base indexing may complete without the
+enhancement stage. When it is enabled but incompletely configured, the
+enhancement stage retains retry state instead of being treated as disabled.
+
+Failures retain retry state. Periodic reconciliation detects missed, partial,
+stale, and orphaned base index data. A missing or inconsistent index is rebuilt
+through the normal indexing flow and requests enhancement when enhancement is
+enabled at repair scheduling time. An already-consistent index is not repaired
+merely because the existing resource lacks an enhancement checkpoint, so
+enabling enhancement does not trigger a historical full refresh. Reconciliation
+preserves the durable enhancement intent of an active task for the same resource.
+Discovery reads only enabled documents whose configured indexes have converged.
 
 ## 7. Resource Bounds
 
@@ -124,8 +160,16 @@ must initialize all three protocol-neutral relational tables before enabling
 
 Use the matching current datasource schema for MySQL, PostgreSQL, Derby, or
 Oracle. The task table is required even when existing document and chunk
-tables already contain data; it stores retry and lease state and does not
-replace either index table.
+tables already contain data. It stores stage, retry, lease, revision,
+completion-checkpoint, and enhancement-fingerprint state and does not replace
+either index table. Deployments upgrading an existing task table must add
+`task_stage`, `enhancement_requested`, and `enhancement_fingerprint` before
+enabling search. Existing task rows default to the `base_index` stage with
+`enhancement_requested=false`; enabling enhancement therefore does not modify
+consistent historical search data. Periodic reconciliation enhances a
+historical resource only when its base or configured vector index actually
+requires repair. Enhancing otherwise-consistent historical resources is a
+separate explicit operator action.
 
 PostgreSQL deployments that do not enable the default vector plugin need no
 pgvector objects. Deployments that enable it must separately run the optional
@@ -138,5 +182,9 @@ SPI packages remain protocol-neutral even while ARD is the only consumer.
 
 Tests cover keyword and vector recall, ranking, visibility, current-version
 validation, cursor pagination, full-set aggregation beyond one page,
-transactional replacement, durable retry, and reconciliation. Protocol
-adaptors separately test their request grammar and response conformance.
+transactional replacement, both durable task stages, lease recovery,
+superseded revisions, idempotent enhancement retry, configuration-fingerprint
+recording without global rescheduling, lifecycle enhancement intent, and
+repair-triggered reconciliation enhancement without historical full refresh.
+Protocol adaptors separately test their request grammar and response
+conformance.

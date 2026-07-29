@@ -82,8 +82,32 @@ Schema 和 `ai_resource_search_embedding_pg` 表。主数据源 Schema 不得创
 事务；namespace、resource type 和 resource name 组成幂等持久化任务键。Consumer
 重新读取标准资源状态，并收敛两类索引。
 
-失败时保留重试状态。周期性 reconciliation 检测遗漏、部分、过期、模型错误和孤儿索引。
-检索只读取所配置索引已经收敛的 enabled document。
+同一任务行负责两个持久化阶段：
+
+- `base_index` 收敛确定性关系分片及已配置的向量索引；
+- `llm_enhancement` 替换可选的 AI 生成分片，再收敛完整资源版本的向量索引。
+
+每个阶段使用 `pending`、`processing`、`retry` 和 `completed` 状态。成功行作为每个存活
+资源的有界完成检查点保留，不记录任务历史。资源生命周期变更递增任务 revision，并从
+`base_index` 重新开始。已领取的 revision 只有在仍持有任务行时才能推进、重试或完成。
+进程失败后，其他节点可在 lease 过期后接管。
+
+Enhancement 写入必须幂等。AI 生成的 chunk type 必须事务性替换，不能追加；向量索引按完整
+资源版本替换。只有两类写入都成功后才能完成任务。Enhancement 配置 fingerprint 包含
+provider endpoint、model、Prompt 版本、输出 Schema 版本及相关输出限制，但不得包含密钥。
+Fingerprint 仅记录完成 Enhancement 时实际使用的配置，用于审计和问题诊断，不作为收敛
+目标。配置变化不得重新调度已完成资源。资源生命周期任务在调度时持久化当时是否开启
+Enhancement；只有明确请求 Enhancement 的任务才能从 `base_index` 推进到
+`llm_enhancement`，执行 Enhancement 阶段时使用当时生效的配置。
+
+Enhancement 关闭时，基础索引可以直接完成；开关已开启但配置不完整时，Enhancement 阶段
+必须保留重试状态，不能当作关闭处理。
+
+失败时保留重试状态。周期性 reconciliation 检测遗漏、部分、过期和孤儿基础索引。索引缺失
+或不一致时按正常建索引流程重建，并根据修复任务调度时的 Enhancement 开关决定是否请求
+Enhancement。索引已经一致时，不得仅因历史资源缺少 Enhancement 检查点而触发修复，因此
+开启 Enhancement 不会导致历史数据全量刷新。同一资源已有活动任务时，reconciliation 必须
+保留该任务持久化的 Enhancement 意图。检索只读取所配置索引已经收敛的 enabled document。
 
 ## 7. 资源边界
 
@@ -104,7 +128,13 @@ Schema 和 `ai_resource_search_embedding_pg` 表。主数据源 Schema 不得创
 - `ai_resource_search_index_task`。
 
 MySQL、PostgreSQL、Derby 和 Oracle 应分别使用匹配的当前主数据源 Schema。即使 document
-和 chunk 表中已经存在数据，也必须创建 task 表；该表保存重试与租约状态，不能替代两个索引表。
+和 chunk 表中已经存在数据，也必须创建 task 表；该表保存阶段、重试、租约、revision、
+完成检查点和 Enhancement 请求/配置指纹，不能替代两个索引表。升级已有 task 表的部署必须
+先增加 `task_stage`、`enhancement_requested` 和 `enhancement_fingerprint`。已有任务行
+默认属于 `base_index` 阶段且 `enhancement_requested=false`；开启 Enhancement 不得修改
+索引正常的历史检索数据。周期 reconciliation 只有在基础索引或已配置向量索引确实需要修复
+时，才会对历史资源执行 Enhancement。对其他索引正常的历史资源执行 Enhancement，必须由
+运维显式触发。
 
 PostgreSQL 环境如果不开启默认向量插件，无需创建任何 pgvector 对象；如果开启，则必须另外
 执行 `nacos-default-ai-vector-plugin` 自己维护的可选 Schema。
@@ -115,5 +145,7 @@ PostgreSQL 环境如果不开启默认向量插件，无需创建任何 pgvector
 保持协议无关。
 
 测试覆盖关键词和向量召回、排序、可见性、当前版本校验、cursor 分页、超过单页范围的全量
-聚合、事务替换、持久化重试和 reconciliation。各协议适配器分别测试自己的请求语法和响应
-一致性。
+聚合、事务替换、两个持久化任务阶段、lease 恢复、过期 revision、Enhancement 幂等重试、
+配置 fingerprint 记录但不全量重调度、生命周期 Enhancement 意图，以及仅对实际修复资源
+执行 Enhancement 且不全量刷新历史数据的 reconciliation。各协议适配器分别测试自己的
+请求语法和响应一致性。
