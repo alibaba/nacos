@@ -23,9 +23,9 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchDocumentBuilder;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
-import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -230,7 +230,7 @@ public class AiResourceIndexBackfillTask
                 stats.skipped++;
                 return;
             }
-            if (indexMaintenanceService.schedule(namespaceId, resource.getType(),
+            if (indexMaintenanceService.scheduleReconciliation(namespaceId, resource.getType(),
                 resource.getName())) {
                 stats.rebuilt++;
             } else {
@@ -291,7 +291,8 @@ public class AiResourceIndexBackfillTask
                 return;
             }
             String resourceName = firstNotBlank(server.getId(), server.getName());
-            if (indexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_MCP, resourceName)) {
+            if (indexMaintenanceService.scheduleReconciliation(namespaceId, RESOURCE_TYPE_MCP,
+                resourceName)) {
                 stats.rebuilt++;
             } else {
                 stats.failed++;
@@ -344,7 +345,7 @@ public class AiResourceIndexBackfillTask
                     || !scheduled.add(entry.getResourceName())) {
                     continue;
                 }
-                if (indexMaintenanceService.schedule(namespaceId, resourceType,
+                if (indexMaintenanceService.scheduleReconciliation(namespaceId, resourceType,
                     entry.getResourceName())) {
                     stats.rebuilt++;
                 } else {

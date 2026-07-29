@@ -23,8 +23,8 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
-import com.alibaba.nacos.ai.service.search.AiResourceSearchDocumentBuilder;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchDocumentBuilder;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -120,12 +120,13 @@ class AiResourceIndexBackfillTaskTest {
             anyInt(), eq(100))).thenReturn(emptyPage());
         lenient().when(mcpServerOperationService.listMcpServerWithPage(anyString(), isNull(),
             eq(Constants.MCP_LIST_SEARCH_ACCURATE), anyInt(), eq(100))).thenReturn(emptyPage());
-        lenient().when(indexMaintenanceService.schedule(anyString(), anyString(), anyString()))
+        lenient().when(
+            indexMaintenanceService.scheduleReconciliation(anyString(), anyString(), anyString()))
             .thenReturn(true);
         task =
             new AiResourceIndexBackfillTask(resourceManager, mcpServerOperationService, repository,
-                indexMaintenanceService, embeddingService, vectorIndex, namespaceOperationService,
-                configQueryChainService, configOperationService);
+                indexMaintenanceService, embeddingService, vectorIndex,
+                namespaceOperationService, configQueryChainService, configOperationService);
     }
     
     @AfterEach
@@ -186,15 +187,15 @@ class AiResourceIndexBackfillTaskTest {
             "stale-skill")).thenReturn(staleEntry);
         when(repository.findEntry(teamNamespace,
             NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "missing-prompt")).thenReturn(null);
-        
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "stale-skill");
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(teamNamespace,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "missing-prompt");
-        verify(indexMaintenanceService, after(ASYNC_TIMEOUT).never()).schedule(
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "stale-skill");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            teamNamespace, NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "missing-prompt");
+        verify(indexMaintenanceService, after(ASYNC_TIMEOUT).never()).scheduleReconciliation(
             PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "current-skill");
+        verify(indexMaintenanceService, never()).schedule(anyString(), anyString(), anyString());
         verifyMarkerReleased();
     }
     
@@ -222,8 +223,8 @@ class AiResourceIndexBackfillTaskTest {
         
         verify(resourceManager, timeout(ASYNC_TIMEOUT)).listMetaByType(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 2, 100);
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "page-two");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "page-two");
         verifyMarkerReleased();
     }
     
@@ -240,14 +241,14 @@ class AiResourceIndexBackfillTaskTest {
             eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("1.0.0")))
             .thenAnswer(invocation -> version(
                 "first".equals(invocation.getArgument(1)) ? first : second, "1.0.0"));
-        when(indexMaintenanceService.schedule(PUBLIC_NAMESPACE,
+        when(indexMaintenanceService.scheduleReconciliation(PUBLIC_NAMESPACE,
             Constants.Skills.RESOURCE_TYPE_SKILL, "first"))
             .thenThrow(new IllegalStateException("index failure"));
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "second");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "second");
         verifyMarkerReleased();
     }
     
@@ -275,8 +276,8 @@ class AiResourceIndexBackfillTaskTest {
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale");
         verifyMarkerReleased();
     }
     
@@ -293,8 +294,8 @@ class AiResourceIndexBackfillTaskTest {
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "deleted-skill");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "deleted-skill");
         verifyMarkerReleased();
     }
     
@@ -306,8 +307,8 @@ class AiResourceIndexBackfillTaskTest {
         
         task.onApplicationEvent(rootContextEvent());
         
-        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).schedule(PUBLIC_NAMESPACE, "mcp",
-            "avatar-mcp");
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, "mcp", "avatar-mcp");
         verifyMarkerReleased();
     }
     
@@ -323,7 +324,8 @@ class AiResourceIndexBackfillTaskTest {
         task.onApplicationEvent(rootContextEvent());
         
         verify(namespaceOperationService, after(ASYNC_TIMEOUT).never()).getNamespaceList();
-        verify(indexMaintenanceService, never()).schedule(anyString(), anyString(), anyString());
+        verify(indexMaintenanceService, never()).scheduleReconciliation(anyString(), anyString(),
+            anyString());
     }
     
     private void verifyMarkerReleased() throws Exception {

@@ -66,6 +66,9 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
     private static final RowMapper<AiResourceSearchHit> HIT_ROW_MAPPER =
         new AiResourceSearchHitRowMapper();
     
+    private static final RowMapper<AiResourceSearchChunk> CHUNK_ROW_MAPPER =
+        new AiResourceSearchChunkRowMapper();
+    
     private final JdbcTemplate injectedJdbcTemplate;
     
     private final TransactionTemplate injectedTransactionTemplate;
@@ -114,6 +117,30 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
             result.add(insertChunk(chunk));
         }
         return result;
+    }
+    
+    @Override
+    public List<AiResourceSearchChunk> replaceEnhancementChunks(AiResourceSearchDocument entry,
+        List<AiResourceSearchChunk> chunks) {
+        return getTransactionTemplate().execute(status -> {
+            if (entry == null || entry.getId() == null || !entryExists(entry)) {
+                throw new IllegalStateException("AI resource search document changed");
+            }
+            getJdbcTemplate().update("DELETE FROM ai_resource_search_chunk WHERE document_id=? "
+                + "AND chunk_type IN (?, ?, ?)", entry.getId(),
+                AiResourceSearchConstants.CHUNK_TYPE_AI_SUMMARY,
+                AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT,
+                AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM);
+            appendChunks(entry, chunks);
+            return listChunks(entry.getId());
+        });
+    }
+    
+    @Override
+    public List<AiResourceSearchChunk> listChunks(long documentId) {
+        return getJdbcTemplate().query(
+            "SELECT * FROM ai_resource_search_chunk WHERE document_id=? ORDER BY id",
+            CHUNK_ROW_MAPPER, documentId);
     }
     
     @Override
@@ -433,6 +460,31 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
             hit.setChunkType(rs.getString("chunk_type"));
             hit.setScore(rs.getDouble("score"));
             return hit;
+        }
+    }
+    
+    private static class AiResourceSearchChunkRowMapper
+        implements RowMapper<AiResourceSearchChunk> {
+        
+        @Override
+        public AiResourceSearchChunk mapRow(ResultSet rs, int rowNum) throws SQLException {
+            AiResourceSearchChunk chunk = new AiResourceSearchChunk();
+            chunk.setId(rs.getLong("id"));
+            chunk.setGmtCreate(rs.getTimestamp("gmt_create"));
+            chunk.setGmtModified(rs.getTimestamp("gmt_modified"));
+            chunk.setDocumentId(rs.getLong("document_id"));
+            chunk.setNamespaceId(rs.getString("namespace_id"));
+            chunk.setResourceType(rs.getString("resource_type"));
+            chunk.setResourceName(rs.getString("resource_name"));
+            chunk.setResourceVersion(rs.getString("resource_version"));
+            chunk.setChunkType(rs.getString("chunk_type"));
+            chunk.setChunkText(rs.getString("chunk_text"));
+            chunk.setCanonicalText(rs.getString("canonical_text"));
+            chunk.setLanguage(rs.getString("language"));
+            chunk.setChunkHash(rs.getString("chunk_hash"));
+            chunk.setMetadata(rs.getString("metadata"));
+            chunk.setStatus(rs.getString("status"));
+            return chunk;
         }
     }
 }

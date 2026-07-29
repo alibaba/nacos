@@ -49,6 +49,8 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     
     static final String STATUS_RETRY = "retry";
     
+    static final String STATUS_COMPLETED = "completed";
+    
     private static final int MAX_ERROR_LENGTH = 2000;
     
     private static final RowMapper<AiResourceIndexTask> ROW_MAPPER =
@@ -65,21 +67,36 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     }
     
     @Override
-    public void schedule(String namespaceId, String resourceType, String resourceName) {
+    public void schedule(String namespaceId, String resourceType, String resourceName,
+        boolean enhancementRequested) {
         String taskKey = taskKey(namespaceId, resourceType, resourceName);
-        int updated = updateExistingTask(taskKey, namespaceId, resourceType, resourceName);
+        int updated = updateExistingLifecycleTask(taskKey, namespaceId, resourceType, resourceName,
+            enhancementRequested);
         if (updated > 0) {
             return;
         }
         try {
-            getJdbcTemplate().update("INSERT INTO ai_resource_search_index_task "
-                + "(task_key, namespace_id, resource_type, resource_name, status, "
-                + "attempt_count, revision, next_retry_time, lease_until, last_error, "
-                + "gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, 0, 1, "
-                + "CURRENT_TIMESTAMP, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                taskKey, namespaceId, resourceType, resourceName, STATUS_PENDING);
+            insertTask(taskKey, namespaceId, resourceType, resourceName, enhancementRequested);
         } catch (DuplicateKeyException ignored) {
-            updateExistingTask(taskKey, namespaceId, resourceType, resourceName);
+            updateExistingLifecycleTask(taskKey, namespaceId, resourceType, resourceName,
+                enhancementRequested);
+        }
+    }
+    
+    @Override
+    public void scheduleReconciliation(String namespaceId, String resourceType,
+        String resourceName, boolean enhancementRequested) {
+        String taskKey = taskKey(namespaceId, resourceType, resourceName);
+        int updated = updateExistingReconciliationTask(taskKey, namespaceId, resourceType,
+            resourceName, enhancementRequested);
+        if (updated > 0) {
+            return;
+        }
+        try {
+            insertTask(taskKey, namespaceId, resourceType, resourceName, enhancementRequested);
+        } catch (DuplicateKeyException ignored) {
+            updateExistingReconciliationTask(taskKey, namespaceId, resourceType, resourceName,
+                enhancementRequested);
         }
     }
     
@@ -88,16 +105,19 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         if (limit <= 0) {
             return Collections.emptyList();
         }
-        String sql = "SELECT task_key, namespace_id, resource_type, resource_name, status, "
-            + "attempt_count, revision FROM ai_resource_search_index_task WHERE "
-            + "((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP) OR "
+        String sql = "SELECT task_key, namespace_id, resource_type, resource_name, task_stage, "
+            + "status, enhancement_requested, enhancement_fingerprint, attempt_count, revision "
+            + "FROM ai_resource_search_index_task WHERE "
+            + "((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP "
+            + "AND (lease_until IS NULL OR lease_until<CURRENT_TIMESTAMP)) OR "
             + "(status=? AND lease_until<CURRENT_TIMESTAMP)) "
-            + "ORDER BY next_retry_time, gmt_modified";
+            + "ORDER BY CASE WHEN task_stage=? THEN 0 ELSE 1 END, next_retry_time, gmt_modified";
         return getJdbcTemplate().query(connection -> {
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, STATUS_PENDING);
             statement.setString(2, STATUS_RETRY);
             statement.setString(3, STATUS_PROCESSING);
+            statement.setString(4, AiResourceIndexTask.STAGE_BASE_INDEX);
             statement.setMaxRows(limit);
             return statement;
         }, ROW_MAPPER);
@@ -106,37 +126,115 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     @Override
     public boolean claim(AiResourceIndexTask task, Timestamp leaseUntil) {
         int updated = getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET status=?, "
-            + "lease_until=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
-            + "AND ((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP) OR "
+            + "revision=revision+1, lease_until=?, gmt_modified=CURRENT_TIMESTAMP "
+            + "WHERE task_key=? AND revision=? AND task_stage=? "
+            + "AND ((status IN (?, ?) AND next_retry_time<=CURRENT_TIMESTAMP "
+            + "AND (lease_until IS NULL OR lease_until<CURRENT_TIMESTAMP)) OR "
             + "(status=? AND lease_until<CURRENT_TIMESTAMP))",
-            STATUS_PROCESSING, leaseUntil, task.getTaskKey(), task.getRevision(), STATUS_PENDING,
-            STATUS_RETRY, STATUS_PROCESSING);
+            STATUS_PROCESSING, leaseUntil, task.getTaskKey(), task.getRevision(),
+            task.getTaskStage(), STATUS_PENDING, STATUS_RETRY, STATUS_PROCESSING);
+        if (updated == 1) {
+            task.setRevision(task.getRevision() + 1);
+            task.setStatus(STATUS_PROCESSING);
+        }
         return updated == 1;
     }
     
     @Override
-    public void complete(AiResourceIndexTask task) {
-        getJdbcTemplate().update(
-            "DELETE FROM ai_resource_search_index_task WHERE task_key=? AND revision=?",
-            task.getTaskKey(), task.getRevision());
+    public boolean renewLease(AiResourceIndexTask task, Timestamp leaseUntil) {
+        int updated = getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET "
+            + "lease_until=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
+            + "AND task_stage=? AND status=?", leaseUntil, task.getTaskKey(),
+            task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
+        return updated == 1;
+    }
+    
+    @Override
+    public boolean advanceToEnhancement(AiResourceIndexTask task) {
+        int updated = getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET "
+            + "task_stage=?, status=?, enhancement_fingerprint=NULL, attempt_count=0, "
+            + "next_retry_time=CURRENT_TIMESTAMP, lease_until=NULL, last_error=NULL, "
+            + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
+            + "AND task_stage=? AND status=?", AiResourceIndexTask.STAGE_LLM_ENHANCEMENT,
+            STATUS_PENDING, task.getTaskKey(), task.getRevision(), task.getTaskStage(),
+            STATUS_PROCESSING);
+        return updated == 1;
+    }
+    
+    @Override
+    public boolean complete(AiResourceIndexTask task, String enhancementFingerprint) {
+        int updated = getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET status=?, "
+            + "enhancement_requested=?, enhancement_fingerprint=?, attempt_count=0, "
+            + "lease_until=NULL, last_error=NULL, gmt_modified=CURRENT_TIMESTAMP "
+            + "WHERE task_key=? AND revision=? AND task_stage=? AND status=?", STATUS_COMPLETED,
+            enhancementFingerprint != null ? 1 : 0, enhancementFingerprint, task.getTaskKey(),
+            task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
+        return updated == 1;
+    }
+    
+    @Override
+    public boolean remove(AiResourceIndexTask task) {
+        int updated = getJdbcTemplate().update(
+            "DELETE FROM ai_resource_search_index_task WHERE task_key=? AND revision=? "
+                + "AND task_stage=? AND status=?",
+            task.getTaskKey(), task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
+        return updated == 1;
     }
     
     @Override
     public void retry(AiResourceIndexTask task, Timestamp nextRetryTime, String lastError) {
         getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET status=?, "
             + "attempt_count=attempt_count+1, next_retry_time=?, lease_until=NULL, "
-            + "last_error=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=?",
+            + "last_error=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
+            + "AND task_stage=? AND status=?",
             STATUS_RETRY, nextRetryTime, truncate(lastError), task.getTaskKey(),
-            task.getRevision());
+            task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
     }
     
-    private int updateExistingTask(String taskKey, String namespaceId, String resourceType,
-        String resourceName) {
+    @Override
+    public void releaseSuperseded(AiResourceIndexTask task) {
+        getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET lease_until=NULL, "
+            + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision<>? AND status=?",
+            task.getTaskKey(), task.getRevision(), STATUS_PENDING);
+    }
+    
+    private int updateExistingLifecycleTask(String taskKey, String namespaceId, String resourceType,
+        String resourceName, boolean enhancementRequested) {
         return getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET namespace_id=?, "
-            + "resource_type=?, resource_name=?, status=?, attempt_count=0, "
-            + "revision=revision+1, next_retry_time=CURRENT_TIMESTAMP, lease_until=NULL, "
-            + "last_error=NULL, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=?",
-            namespaceId, resourceType, resourceName, STATUS_PENDING, taskKey);
+            + "resource_type=?, resource_name=?, task_stage=?, "
+            + "lease_until=CASE WHEN status=? THEN lease_until ELSE NULL END, status=?, "
+            + "enhancement_requested=?, enhancement_fingerprint=NULL, attempt_count=0, "
+            + "revision=revision+1, next_retry_time=CURRENT_TIMESTAMP, "
+            + "last_error=NULL, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=?", namespaceId,
+            resourceType, resourceName, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PROCESSING,
+            STATUS_PENDING, enhancementRequested ? 1 : 0, taskKey);
+    }
+    
+    private int updateExistingReconciliationTask(String taskKey, String namespaceId,
+        String resourceType, String resourceName, boolean enhancementRequested) {
+        return getJdbcTemplate().update("UPDATE ai_resource_search_index_task SET namespace_id=?, "
+            + "resource_type=?, resource_name=?, task_stage=?, "
+            + "enhancement_requested=CASE WHEN status IN (?, ?, ?) "
+            + "THEN enhancement_requested ELSE ? END, "
+            + "lease_until=CASE WHEN status=? THEN lease_until ELSE NULL END, status=?, "
+            + "enhancement_fingerprint=NULL, attempt_count=0, revision=revision+1, "
+            + "next_retry_time=CURRENT_TIMESTAMP, last_error=NULL, "
+            + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=?", namespaceId, resourceType,
+            resourceName, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PENDING, STATUS_RETRY,
+            STATUS_PROCESSING, enhancementRequested ? 1 : 0, STATUS_PROCESSING, STATUS_PENDING,
+            taskKey);
+    }
+    
+    private void insertTask(String taskKey, String namespaceId, String resourceType,
+        String resourceName, boolean enhancementRequested) {
+        getJdbcTemplate().update("INSERT INTO ai_resource_search_index_task "
+            + "(task_key, namespace_id, resource_type, resource_name, task_stage, status, "
+            + "enhancement_requested, enhancement_fingerprint, attempt_count, revision, "
+            + "next_retry_time, lease_until, last_error, gmt_create, gmt_modified) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0, 1, CURRENT_TIMESTAMP, NULL, NULL, "
+            + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", taskKey, namespaceId, resourceType,
+            resourceName, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PENDING,
+            enhancementRequested ? 1 : 0);
     }
     
     private String taskKey(String namespaceId, String resourceType, String resourceName) {
@@ -178,7 +276,10 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             task.setNamespaceId(rs.getString("namespace_id"));
             task.setResourceType(rs.getString("resource_type"));
             task.setResourceName(rs.getString("resource_name"));
+            task.setTaskStage(rs.getString("task_stage"));
             task.setStatus(rs.getString("status"));
+            task.setEnhancementRequested(rs.getBoolean("enhancement_requested"));
+            task.setEnhancementFingerprint(rs.getString("enhancement_fingerprint"));
             task.setAttemptCount(rs.getInt("attempt_count"));
             task.setRevision(rs.getLong("revision"));
             return task;

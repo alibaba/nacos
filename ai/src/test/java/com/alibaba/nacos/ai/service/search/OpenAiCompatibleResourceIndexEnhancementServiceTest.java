@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -33,6 +34,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class OpenAiCompatibleResourceIndexEnhancementServiceTest {
+    
+    @AfterEach
+    void tearDown() {
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENABLED);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MAX_ITEMS);
+    }
     
     @Test
     void systemPromptShouldFollowRetrievalEnrichmentContract() {
@@ -129,5 +139,26 @@ class OpenAiCompatibleResourceIndexEnhancementServiceTest {
             service.chatEndpoint("https://example.com/compatible-mode/v1/chat/completions"));
         assertEquals("https://example.com/custom",
             service.chatEndpoint("https://example.com/custom"));
+    }
+    
+    @Test
+    void fingerprintShouldTrackOutputConfigurationButExcludeCredentials() {
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT,
+            "https://example.com/v1/");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL, "model-v1");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY, "key-one");
+        OpenAiCompatibleResourceIndexEnhancementService service =
+            new OpenAiCompatibleResourceIndexEnhancementService();
+        
+        String initial = service.fingerprint();
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT,
+            "https://example.com/v1");
+        assertEquals(initial, service.fingerprint());
+        
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY, "key-two");
+        assertEquals(initial, service.fingerprint());
+        
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL, "model-v2");
+        assertFalse(initial.equals(service.fingerprint()));
     }
 }

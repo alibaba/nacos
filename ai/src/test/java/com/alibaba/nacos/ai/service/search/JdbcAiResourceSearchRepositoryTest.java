@@ -115,6 +115,31 @@ class JdbcAiResourceSearchRepositoryTest {
             repository.scanEnabledEntries("public", List.of("skill"), 0L, 2).size());
     }
     
+    @Test
+    void replaceEnhancementChunksShouldBeIdempotentAndKeepBaseChunks() {
+        AiResourceSearchDocument entry = entry("avatar");
+        AiResourceSearchChunk baseChunk = typedChunk(
+            AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION, "base");
+        AiResourceSearchChunk oldEnhancement = typedChunk(
+            AiResourceSearchConstants.CHUNK_TYPE_AI_SUMMARY, "old-summary");
+        repository.replaceEntry(entry, List.of(baseChunk, oldEnhancement));
+        
+        AiResourceSearchChunk newEnhancement = typedChunk(
+            AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM, "avatar generator");
+        repository.replaceEnhancementChunks(entry, List.of(newEnhancement));
+        List<AiResourceSearchChunk> secondReplacement =
+            repository.replaceEnhancementChunks(entry, List.of(typedChunk(
+                AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM, "avatar generator")));
+        
+        assertEquals(2, secondReplacement.size());
+        assertEquals(1, secondReplacement.stream().filter(
+            chunk -> AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION.equals(chunk.getChunkType()))
+            .count());
+        assertEquals(1, secondReplacement.stream().filter(
+            chunk -> AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM.equals(chunk.getChunkType()))
+            .count());
+    }
+    
     private AiResourceSearchDocument entry(String displayName) {
         AiResourceSearchDocument entry = new AiResourceSearchDocument();
         entry.setNamespaceId("public");
@@ -129,12 +154,20 @@ class JdbcAiResourceSearchRepositoryTest {
     }
     
     private AiResourceSearchChunk chunk(String text, String canonicalText) {
+        return chunk(AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION, text, canonicalText);
+    }
+    
+    private AiResourceSearchChunk chunk(String chunkType, String text, String canonicalText) {
         AiResourceSearchChunk chunk = new AiResourceSearchChunk();
-        chunk.setChunkType(AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION);
+        chunk.setChunkType(chunkType);
         chunk.setChunkText(text);
         chunk.setCanonicalText(canonicalText);
         chunk.setChunkHash(text + "-hash");
         chunk.setStatus(AiResourceSearchConstants.STATUS_ENABLED);
         return chunk;
+    }
+    
+    private AiResourceSearchChunk typedChunk(String chunkType, String text) {
+        return chunk(chunkType, text, text);
     }
 }

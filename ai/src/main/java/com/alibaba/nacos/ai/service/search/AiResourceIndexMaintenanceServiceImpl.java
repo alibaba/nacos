@@ -36,8 +36,12 @@ public class AiResourceIndexMaintenanceServiceImpl implements AiResourceIndexMai
     
     private final AiResourceIndexTaskRepository taskRepository;
     
-    public AiResourceIndexMaintenanceServiceImpl(AiResourceIndexTaskRepository taskRepository) {
+    private final AiResourceIndexEnhancementService enhancementService;
+    
+    public AiResourceIndexMaintenanceServiceImpl(AiResourceIndexTaskRepository taskRepository,
+        AiResourceIndexEnhancementService enhancementService) {
         this.taskRepository = taskRepository;
+        this.enhancementService = enhancementService;
     }
     
     @Override
@@ -46,11 +50,30 @@ public class AiResourceIndexMaintenanceServiceImpl implements AiResourceIndexMai
             return false;
         }
         try {
-            taskRepository.schedule(namespaceId, resourceType, resourceName);
+            taskRepository.schedule(namespaceId, resourceType, resourceName,
+                enhancementService.required());
             return true;
         } catch (Exception e) {
             LOGGER.warn(
                 "Failed to schedule AI resource index maintenance for {}:{} in namespace {}",
+                resourceType, resourceName, namespaceId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean scheduleReconciliation(String namespaceId, String resourceType,
+        String resourceName) {
+        if (StringUtils.isBlank(resourceType) || StringUtils.isBlank(resourceName)) {
+            return false;
+        }
+        try {
+            taskRepository.scheduleReconciliation(namespaceId, resourceType, resourceName,
+                enhancementService.required());
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn(
+                "Failed to schedule AI resource index reconciliation for {}:{} in namespace {}",
                 resourceType, resourceName, namespaceId, e);
             return false;
         }

@@ -33,6 +33,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,18 +65,81 @@ class AiResourceIndexTaskConsumerTest {
     }
     
     @Test
-    void shouldCompleteTaskAfterBothIndexesConverge() throws Exception {
+    void shouldAdvanceBaseTaskWhenEnhancementIsRequired() throws Exception {
         AiResourceIndexTask task = task();
+        task.setEnhancementRequested(true);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
         when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
+            .thenReturn(true);
+        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(taskRepository.advanceToEnhancement(task)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService);
+            mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
         verify(indexBuildService).rebuildLatestAiResource("public", "skill", "avatar");
-        verify(taskRepository).complete(task);
+        verify(taskRepository).advanceToEnhancement(task);
+        verify(taskRepository, never()).complete(eq(task), any());
         verify(taskRepository, never()).retry(eq(task), any(), any());
+    }
+    
+    @Test
+    void shouldCompleteBaseCheckpointWhenEnhancementIsDisabled() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setEnhancementRequested(true);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
+            .thenReturn(true);
+        when(taskRepository.complete(task, null)).thenReturn(true);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).complete(task, null);
+        verify(taskRepository, never()).advanceToEnhancement(task);
+    }
+    
+    @Test
+    void shouldNotEnhanceReconciledHistoricalResource() throws Exception {
+        AiResourceIndexTask task = task();
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
+            .thenReturn(true);
+        lenient().when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(taskRepository.complete(task, null)).thenReturn(true);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).complete(task, null);
+        verify(taskRepository, never()).advanceToEnhancement(task);
+        verify(indexBuildService, never()).isEnhancementRequired();
+    }
+    
+    @Test
+    void shouldCompleteEnhancementCheckpointWithFingerprint() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
+            .thenReturn(true);
+        when(indexBuildService.enhancementFingerprint()).thenReturn("fingerprint-v1");
+        when(taskRepository.complete(task, "fingerprint-v1")).thenReturn(true);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).complete(task, "fingerprint-v1");
+        verify(taskRepository, never()).advanceToEnhancement(task);
     }
     
     @Test
@@ -86,13 +150,50 @@ class AiResourceIndexTaskConsumerTest {
         doThrow(new NacosException(NacosException.SERVER_ERROR, "vector unavailable"))
             .when(indexBuildService).rebuildLatestAiResource("public", "skill", "avatar");
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService);
+            mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
         verify(taskRepository).retry(eq(task), any(Timestamp.class),
             eq("vector unavailable"));
-        verify(taskRepository, never()).complete(task);
+        verify(taskRepository, never()).complete(eq(task), any());
+    }
+    
+    @Test
+    void shouldRetainEnhancementTaskAfterLlmFailure() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        doThrow(new IllegalStateException("llm unavailable")).when(indexBuildService)
+            .enhanceLatestAiResource("public", "skill", "avatar");
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).retry(eq(task), any(Timestamp.class), eq("llm unavailable"));
+        verify(taskRepository, never()).complete(eq(task), any());
+    }
+    
+    @Test
+    void shouldRequeueBaseStageWhenEnhancementEntryIsStale() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
+            .thenReturn(false);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).schedule("public", "skill", "avatar", true);
+        verify(taskRepository, never()).remove(task);
+        verify(taskRepository, never()).complete(eq(task), any());
     }
     
     @Test
@@ -104,12 +205,12 @@ class AiResourceIndexTaskConsumerTest {
         doThrow(new NacosException(NacosException.NOT_FOUND, "not found"))
             .when(mcpServerOperationService).getMcpServerDetail("public", "avatar", null, null);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService);
+            mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
         verify(indexBuildService).deleteResource("public", "mcp", "avatar");
-        verify(taskRepository).complete(task);
+        verify(taskRepository).remove(task);
     }
     
     private AiResourceIndexTask task() {
@@ -118,6 +219,7 @@ class AiResourceIndexTaskConsumerTest {
         task.setNamespaceId("public");
         task.setResourceType("skill");
         task.setResourceName("avatar");
+        task.setTaskStage(AiResourceIndexTask.STAGE_BASE_INDEX);
         task.setRevision(1L);
         return task;
     }

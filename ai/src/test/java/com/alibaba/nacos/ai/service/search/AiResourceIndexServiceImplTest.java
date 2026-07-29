@@ -168,9 +168,8 @@ class AiResourceIndexServiceImplTest {
     
     @Test
     void rebuildAiResourceShouldPersistSkillContentChunksWithoutLlm() throws Exception {
-        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
-            Runnable::run);
+        final AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta());
         when(resourceManager.findVersion("public", "api-helper",
@@ -202,7 +201,7 @@ class AiResourceIndexServiceImplTest {
         assertTrue(chunksCaptor.getValue().stream().anyMatch(
             chunk -> AiResourceSearchConstants.CHUNK_TYPE_SKILL_CONTENT.equals(chunk.getChunkType())
                 && chunk.getChunkText().contains("talking head")));
-        verify(enhancementService).enabled();
+        verify(enhancementService, never()).enabled();
         verify(enhancementService, never()).enhance(any(AiResourceSearchDocument.class), anyList(),
             anyList());
     }
@@ -245,37 +244,40 @@ class AiResourceIndexServiceImplTest {
     }
     
     @Test
-    void rebuildAiResourceShouldAppendEnhancedChunksAsync() throws Exception {
-        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
-            Runnable::run);
+    void enhanceLatestAiResourceShouldReplaceEnhancedChunksAndFullVectorIndex() throws Exception {
+        final AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        AiResource meta = meta();
+        AiResourceVersion version = version(AiResourceConstants.VERSION_STATUS_ONLINE);
+        AiResourceSearchDocument entry = new AiResourceSearchDocument();
+        entry.setId(10L);
+        entry.setNamespaceId("public");
+        entry.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        entry.setResourceName("api-helper");
+        entry.setResourceVersion("1.0.0");
+        when(repository.findEntry("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"))
+            .thenReturn(entry);
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
-            .thenReturn(meta());
+            .thenReturn(meta);
         when(resourceManager.findVersion("public", "api-helper",
             Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
-            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
-        when(repository.replaceEntry(any(AiResourceSearchDocument.class), anyList()))
-            .thenAnswer(invocation -> {
-                AiResourceSearchDocument entry = invocation.getArgument(0);
-                entry.setId(10L);
-                List<AiResourceSearchChunk> chunks = invocation.getArgument(1);
-                long id = 1L;
-                for (AiResourceSearchChunk chunk : chunks) {
-                    chunk.setDocumentId(10L);
-                    chunk.setId(id++);
-                }
-                return chunks;
-            });
+            .thenReturn(version);
         when(enhancementService.enabled()).thenReturn(true);
         when(contentLoader.load(any(AiResourceSearchDocument.class), any(AiResourceVersion.class)))
             .thenReturn(
                 List.of(new AiResourceIndexEnhancementContent("SKILL.md",
                     "Create talking avatar videos")));
+        AiResourceSearchChunk baseChunk = new AiResourceSearchChunk();
+        baseChunk.setId(1L);
+        baseChunk.setDocumentId(10L);
+        baseChunk.setChunkType(AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION);
+        baseChunk.setCanonicalText("skill api helper description");
+        when(repository.listChunks(10L)).thenReturn(List.of(baseChunk));
         when(enhancementService.enhance(any(AiResourceSearchDocument.class), anyList(), anyList()))
             .thenReturn(List.of(new AiResourceIndexEnhancementChunk(
                 AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT,
                 "参数表格 parameter table", "{\"source\":\"llm\"}")));
-        when(repository.appendChunks(any(AiResourceSearchDocument.class), anyList()))
+        when(repository.replaceEnhancementChunks(any(AiResourceSearchDocument.class), anyList()))
             .thenAnswer(invocation -> {
                 List<AiResourceSearchChunk> chunks = invocation.getArgument(1);
                 long id = 100L;
@@ -283,14 +285,14 @@ class AiResourceIndexServiceImplTest {
                     chunk.setDocumentId(10L);
                     chunk.setId(id++);
                 }
-                return chunks;
+                return List.of(baseChunk, chunks.get(0));
             });
         when(vectorIndex.available()).thenReturn(true);
         when(embeddingService.model()).thenReturn("test-model");
         when(embeddingService.embed(any())).thenReturn(new double[] {1.0D});
         
-        service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
-            "1.0.0");
+        assertTrue(service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"));
         
         ArgumentCaptor<List<AiResourceSearchChunk>> chunksCaptor =
             ArgumentCaptor.forClass(List.class);
@@ -299,19 +301,39 @@ class AiResourceIndexServiceImplTest {
         verify(enhancementService).enhance(any(AiResourceSearchDocument.class), anyList(),
             contentCaptor.capture());
         assertEquals("SKILL.md", contentCaptor.getValue().get(0).getPath());
-        verify(repository).appendChunks(any(AiResourceSearchDocument.class),
+        verify(repository).replaceEnhancementChunks(any(AiResourceSearchDocument.class),
             chunksCaptor.capture());
         assertTrue(chunksCaptor.getValue().stream().anyMatch(
             chunk -> AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT
                 .equals(chunk.getChunkType())));
-        verify(vectorIndex).addDocuments(anyList());
+        verify(repository).updateEntryStatus(10L, AiResourceSearchConstants.STATUS_PENDING);
+        verify(vectorIndex).replaceResourceVersion(eq("public"),
+            eq(Constants.Skills.RESOURCE_TYPE_SKILL), eq("api-helper"), eq("1.0.0"), anyList());
+        verify(repository).updateEntryStatus(10L, AiResourceSearchConstants.STATUS_ENABLED);
+        verify(vectorIndex, never()).addDocuments(anyList());
+    }
+    
+    @Test
+    void enhanceLatestAiResourceShouldRequestBaseRebuildWhenEntryIsStale() throws Exception {
+        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        AiResourceSearchDocument entry = new AiResourceSearchDocument();
+        entry.setResourceVersion("0.9.0");
+        when(repository.findEntry("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"))
+            .thenReturn(entry);
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        
+        assertFalse(service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"));
+        
+        verify(enhancementService, never()).enhance(any(), anyList(), anyList());
     }
     
     @Test
     void rebuildMcpServerShouldPersistToolContentChunks() throws Exception {
         AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader,
-            Runnable::run);
+            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
         McpServerDetailInfo mcpServer = mcpServer();
         when(repository.replaceEntry(any(AiResourceSearchDocument.class), anyList()))
             .thenAnswer(invocation -> {

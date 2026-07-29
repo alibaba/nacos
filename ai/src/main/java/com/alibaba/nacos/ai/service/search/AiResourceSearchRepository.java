@@ -51,6 +51,17 @@ public interface AiResourceSearchRepository {
         List<AiResourceSearchChunk> chunks);
     
     /**
+     * Replace AI-generated chunks and return the complete current chunk set.
+     */
+    List<AiResourceSearchChunk> replaceEnhancementChunks(AiResourceSearchDocument entry,
+        List<AiResourceSearchChunk> chunks);
+    
+    /**
+     * List all chunks for one persisted document.
+     */
+    List<AiResourceSearchChunk> listChunks(long documentId);
+    
+    /**
      * Update one persisted entry status.
      */
     void updateEntryStatus(long documentId, String status);

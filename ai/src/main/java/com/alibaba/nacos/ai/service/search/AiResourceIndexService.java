@@ -37,11 +37,35 @@ public interface AiResourceIndexService {
         }
         
         @Override
-        public void rebuildLatestAiResource(String namespaceId, String resourceType, String name) {
+        public boolean rebuildLatestAiResource(String namespaceId, String resourceType,
+            String name) {
+            return false;
         }
         
         @Override
-        public void rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
+        public boolean rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
+            return false;
+        }
+        
+        @Override
+        public boolean isEnhancementRequired() {
+            return false;
+        }
+        
+        @Override
+        public String enhancementFingerprint() {
+            return "";
+        }
+        
+        @Override
+        public boolean enhanceLatestAiResource(String namespaceId, String resourceType,
+            String name) {
+            return false;
+        }
+        
+        @Override
+        public boolean enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
+            return false;
         }
         
         @Override
@@ -63,13 +87,40 @@ public interface AiResourceIndexService {
     /**
      * Rebuild the latest AI resource version index.
      */
-    void rebuildLatestAiResource(String namespaceId, String resourceType, String name)
+    boolean rebuildLatestAiResource(String namespaceId, String resourceType, String name)
         throws NacosException;
     
     /**
      * Rebuild an MCP server version index.
      */
-    void rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) throws NacosException;
+    boolean rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer)
+        throws NacosException;
+    
+    /**
+     * Whether durable LLM enhancement is required by configuration.
+     */
+    boolean isEnhancementRequired();
+    
+    /**
+     * Fingerprint of the effective enhancement configuration.
+     */
+    String enhancementFingerprint();
+    
+    /**
+     * Enhance the latest indexed AI resource and converge its vector index.
+     *
+     * @return whether a current index entry exists
+     */
+    boolean enhanceLatestAiResource(String namespaceId, String resourceType, String name)
+        throws Exception;
+    
+    /**
+     * Enhance an indexed MCP server and converge its vector index.
+     *
+     * @return whether a current index entry exists
+     */
+    boolean enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer)
+        throws Exception;
     
     /**
      * Remove all AI resource index rows for a resource.

@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.model.search.AiResourceIndexTask;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexTaskRepository;
+import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
@@ -35,7 +36,9 @@ import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -60,7 +63,11 @@ public class AiResourceIndexTaskConsumer
     
     private static final long LEASE_MILLIS = 60_000L;
     
+    private static final long LEASE_RENEW_INTERVAL_SECONDS = 20L;
+    
     private static final long MAX_RETRY_SECONDS = 300L;
+    
+    private static final long MAX_ENHANCEMENT_RETRY_SECONDS = 1800L;
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
@@ -76,12 +83,22 @@ public class AiResourceIndexTaskConsumer
     
     private final McpServerOperationService mcpServerOperationService;
     
+    private final Executor enhancementExecutor;
+    
     public AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
         AiResourceIndexService indexBuildService,
         McpServerOperationService mcpServerOperationService) {
+        this(taskRepository, indexBuildService, mcpServerOperationService,
+            ExecutorUtils.getAiResourceIndexEnhancementExecutor());
+    }
+    
+    AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
+        AiResourceIndexService indexBuildService,
+        McpServerOperationService mcpServerOperationService, Executor enhancementExecutor) {
         this.taskRepository = taskRepository;
         this.indexBuildService = indexBuildService;
         this.mcpServerOperationService = mcpServerOperationService;
+        this.enhancementExecutor = enhancementExecutor;
     }
     
     @Override
@@ -102,20 +119,88 @@ public class AiResourceIndexTaskConsumer
             if (!taskRepository.claim(task, leaseUntil)) {
                 continue;
             }
-            try {
-                converge(task);
-                taskRepository.complete(task);
-            } catch (Exception e) {
-                long retrySeconds = retryDelaySeconds(task.getAttemptCount());
-                taskRepository.retry(task,
-                    new Timestamp(System.currentTimeMillis() + retrySeconds * 1000L),
-                    errorMessage(e));
-                LOGGER.warn(
-                    "Failed to converge AI resource index for {}:{} in namespace {}, retry in {}s",
-                    task.getResourceType(), task.getResourceName(), task.getNamespaceId(),
-                    retrySeconds, e);
+            if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
+                submitEnhancement(task);
+            } else {
+                process(task);
             }
         }
+    }
+    
+    private void submitEnhancement(AiResourceIndexTask task) {
+        ScheduledFuture<?> leaseRenewal = executor.scheduleWithFixedDelay(
+            () -> renewLease(task), LEASE_RENEW_INTERVAL_SECONDS,
+            LEASE_RENEW_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        try {
+            enhancementExecutor.execute(() -> {
+                try {
+                    process(task);
+                } finally {
+                    leaseRenewal.cancel(false);
+                }
+            });
+        } catch (Exception e) {
+            leaseRenewal.cancel(false);
+            retry(task, e);
+            taskRepository.releaseSuperseded(task);
+        }
+    }
+    
+    private void renewLease(AiResourceIndexTask task) {
+        try {
+            taskRepository.renewLease(task,
+                new Timestamp(System.currentTimeMillis() + LEASE_MILLIS));
+        } catch (Exception e) {
+            LOGGER.warn("Failed to renew AI resource index task lease for {}:{} in namespace {}",
+                task.getResourceType(), task.getResourceName(), task.getNamespaceId(), e);
+        }
+    }
+    
+    private void process(AiResourceIndexTask task) {
+        try {
+            if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
+                processEnhancement(task);
+            } else {
+                processBaseIndex(task);
+            }
+        } catch (Exception e) {
+            retry(task, e);
+        } finally {
+            taskRepository.releaseSuperseded(task);
+        }
+    }
+    
+    private boolean processBaseIndex(AiResourceIndexTask task) throws NacosException {
+        if (!convergeBase(task)) {
+            return taskRepository.remove(task);
+        }
+        if (task.isEnhancementRequested() && indexBuildService.isEnhancementRequired()) {
+            return taskRepository.advanceToEnhancement(task);
+        }
+        return taskRepository.complete(task, null);
+    }
+    
+    private boolean processEnhancement(AiResourceIndexTask task) throws Exception {
+        if (!indexBuildService.isEnhancementRequired()) {
+            return taskRepository.complete(task, null);
+        }
+        if (!convergeEnhancement(task)) {
+            taskRepository.schedule(task.getNamespaceId(), task.getResourceType(),
+                task.getResourceName(), true);
+            return true;
+        }
+        return taskRepository.complete(task, indexBuildService.enhancementFingerprint());
+    }
+    
+    private void retry(AiResourceIndexTask task, Exception e) {
+        long retrySeconds = retryDelaySeconds(task);
+        taskRepository.retry(task,
+            new Timestamp(System.currentTimeMillis() + retrySeconds * 1000L), errorMessage(e));
+        LOGGER.warn(
+            "Failed to converge AI resource index stage {} for {}:{} in namespace {}, "
+                + "retry in {}s",
+            task.getTaskStage(), task.getResourceType(), task.getResourceName(),
+            task.getNamespaceId(), retrySeconds, e);
     }
     
     private void consumeSafely() {
@@ -126,36 +211,58 @@ public class AiResourceIndexTaskConsumer
         }
     }
     
-    private void converge(AiResourceIndexTask task) throws NacosException {
+    private boolean convergeBase(AiResourceIndexTask task) throws NacosException {
         if (AiResourceConstants.RESOURCE_TYPE_MCP.equals(task.getResourceType())) {
-            convergeMcp(task);
-            return;
+            return convergeMcpBase(task);
         }
-        indexBuildService.rebuildLatestAiResource(task.getNamespaceId(), task.getResourceType(),
+        return indexBuildService.rebuildLatestAiResource(task.getNamespaceId(),
+            task.getResourceType(),
             task.getResourceName());
     }
     
-    private void convergeMcp(AiResourceIndexTask task) throws NacosException {
+    private boolean convergeMcpBase(AiResourceIndexTask task) throws NacosException {
         try {
             McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
                 task.getNamespaceId(), task.getResourceName(), null, null);
             if (detail == null) {
                 indexBuildService.deleteResource(task.getNamespaceId(),
                     AiResourceConstants.RESOURCE_TYPE_MCP, task.getResourceName());
-            } else {
-                indexBuildService.rebuildMcpServer(task.getNamespaceId(), detail);
+                return false;
             }
+            return indexBuildService.rebuildMcpServer(task.getNamespaceId(), detail);
         } catch (NacosException e) {
             if (e.getErrCode() != NacosException.NOT_FOUND) {
                 throw e;
             }
             indexBuildService.deleteResource(task.getNamespaceId(),
                 AiResourceConstants.RESOURCE_TYPE_MCP, task.getResourceName());
+            return false;
         }
     }
     
-    private long retryDelaySeconds(int attemptCount) {
-        int exponent = Math.min(Math.max(attemptCount, 0), 6);
+    private boolean convergeEnhancement(AiResourceIndexTask task) throws Exception {
+        if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(task.getResourceType())) {
+            return indexBuildService.enhanceLatestAiResource(task.getNamespaceId(),
+                task.getResourceType(), task.getResourceName());
+        }
+        try {
+            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
+                task.getNamespaceId(), task.getResourceName(), null, null);
+            return detail != null
+                && indexBuildService.enhanceMcpServer(task.getNamespaceId(), detail);
+        } catch (NacosException e) {
+            if (e.getErrCode() != NacosException.NOT_FOUND) {
+                throw e;
+            }
+            return false;
+        }
+    }
+    
+    private long retryDelaySeconds(AiResourceIndexTask task) {
+        int exponent = Math.min(Math.max(task.getAttemptCount(), 0), 6);
+        if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
+            return Math.min(MAX_ENHANCEMENT_RETRY_SECONDS, 30L << exponent);
+        }
         return Math.min(MAX_RETRY_SECONDS, 5L << exponent);
     }
     

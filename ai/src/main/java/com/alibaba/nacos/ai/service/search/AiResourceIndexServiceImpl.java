@@ -23,7 +23,6 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchChunk;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -47,7 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import java.util.Objects;
 
 /**
  * Default AI resource index builder.
@@ -78,39 +77,11 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
     
     private final AiResourceIndexContentLoader contentLoader;
     
-    private final Executor enhancementExecutor;
-    
     @Autowired
     public AiResourceIndexServiceImpl(AiResourceManager resourceManager,
         AiResourceSearchRepository repository, AiResourceEmbeddingService embeddingService,
         AiResourceVectorIndex vectorIndex, AiResourceIndexEnhancementService enhancementService,
         AiResourceIndexContentLoader contentLoader) {
-        this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
-            contentLoader, ExecutorUtils.getAiResourceIndexEnhancementExecutor());
-    }
-    
-    public AiResourceIndexServiceImpl(AiResourceManager resourceManager,
-        AiResourceSearchRepository repository, AiResourceEmbeddingService embeddingService,
-        AiResourceVectorIndex vectorIndex) {
-        this(resourceManager, repository, embeddingService, vectorIndex,
-            AiResourceIndexEnhancementService.NOOP, AiResourceIndexContentLoader.NOOP,
-            Runnable::run);
-    }
-    
-    AiResourceIndexServiceImpl(AiResourceManager resourceManager,
-        AiResourceSearchRepository repository,
-        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
-        AiResourceIndexEnhancementService enhancementService, Executor enhancementExecutor) {
-        this(resourceManager, repository, embeddingService, vectorIndex, enhancementService,
-            AiResourceIndexContentLoader.NOOP, enhancementExecutor);
-    }
-    
-    AiResourceIndexServiceImpl(AiResourceManager resourceManager,
-        AiResourceSearchRepository repository,
-        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
-        AiResourceIndexEnhancementService enhancementService,
-        AiResourceIndexContentLoader contentLoader,
-        Executor enhancementExecutor) {
         this.resourceManager = resourceManager;
         this.repository = repository;
         this.embeddingService = embeddingService;
@@ -120,9 +91,15 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
                 : enhancementService;
         this.contentLoader =
             contentLoader == null ? AiResourceIndexContentLoader.NOOP : contentLoader;
-        this.enhancementExecutor = enhancementExecutor;
         this.entryBuilder = new AiResourceSearchDocumentBuilder();
         this.chunkBuilder = new AiResourceSearchChunkBuilder();
+    }
+    
+    public AiResourceIndexServiceImpl(AiResourceManager resourceManager,
+        AiResourceSearchRepository repository, AiResourceEmbeddingService embeddingService,
+        AiResourceVectorIndex vectorIndex) {
+        this(resourceManager, repository, embeddingService, vectorIndex,
+            AiResourceIndexEnhancementService.NOOP, AiResourceIndexContentLoader.NOOP);
     }
     
     @Override
@@ -143,42 +120,99 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
     }
     
     @Override
-    public void rebuildLatestAiResource(String namespaceId, String resourceType, String name)
+    public boolean rebuildLatestAiResource(String namespaceId, String resourceType, String name)
         throws NacosException {
         AiResource meta = resourceManager.findMeta(namespaceId, name, resourceType);
         if (meta == null) {
             deleteResource(namespaceId, resourceType, name);
-            return;
+            return false;
         }
         String latestVersion = AiResourceManager.resolveVersion(meta, null,
             AiResourceConstants.LABEL_LATEST);
         if (StringUtils.isBlank(latestVersion)) {
             deleteResource(namespaceId, resourceType, name);
-            return;
+            return false;
         }
         AiResourceVersion resourceVersion =
             resourceManager.findVersion(namespaceId, name, resourceType, latestVersion);
         if (!isIndexable(meta, resourceVersion)) {
             deleteResource(namespaceId, resourceType, name);
-            return;
+            return false;
         }
         deleteResource(namespaceId, resourceType, name);
         replace(entryBuilder.fromAiResource(meta, resourceVersion), resourceVersion);
+        return true;
     }
     
     @Override
-    public void rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
+    public boolean rebuildMcpServer(String namespaceId, McpServerBasicInfo mcpServer) {
         if (mcpServer == null) {
-            return;
+            return false;
         }
         String resourceName = firstNotBlank(mcpServer.getId(), mcpServer.getName());
         String resourceVersion = resolveMcpVersion(mcpServer);
         if (!isIndexable(mcpServer) || StringUtils.isBlank(resourceName)
             || StringUtils.isBlank(resourceVersion)) {
             deleteResource(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP, resourceName);
-            return;
+            return false;
         }
         replace(entryBuilder.fromMcpServer(namespaceId, mcpServer), null, mcpContents(mcpServer));
+        return true;
+    }
+    
+    @Override
+    public boolean isEnhancementRequired() {
+        return enhancementService.required();
+    }
+    
+    @Override
+    public String enhancementFingerprint() {
+        return enhancementService.fingerprint();
+    }
+    
+    @Override
+    public boolean enhanceLatestAiResource(String namespaceId, String resourceType, String name)
+        throws Exception {
+        AiResourceSearchDocument entry = repository.findEntry(namespaceId, resourceType, name);
+        if (entry == null) {
+            return false;
+        }
+        AiResource meta = resourceManager.findMeta(namespaceId, name, resourceType);
+        if (meta == null) {
+            return false;
+        }
+        String latestVersion = AiResourceManager.resolveVersion(meta, null,
+            AiResourceConstants.LABEL_LATEST);
+        if (!Objects.equals(entry.getResourceVersion(), latestVersion)) {
+            return false;
+        }
+        AiResourceVersion resourceVersion =
+            resourceManager.findVersion(namespaceId, name, resourceType, latestVersion);
+        if (!isIndexable(meta, resourceVersion)) {
+            return false;
+        }
+        enhance(entry, contentLoader.load(entry, resourceVersion));
+        return true;
+    }
+    
+    @Override
+    public boolean enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer)
+        throws Exception {
+        if (mcpServer == null) {
+            return false;
+        }
+        String resourceName = firstNotBlank(mcpServer.getId(), mcpServer.getName());
+        String resourceVersion = resolveMcpVersion(mcpServer);
+        AiResourceSearchDocument entry = repository.findEntry(namespaceId,
+            AiResourceConstants.RESOURCE_TYPE_MCP, resourceName);
+        if (entry == null || !isIndexable(mcpServer)) {
+            return false;
+        }
+        if (!Objects.equals(entry.getResourceVersion(), resourceVersion)) {
+            return false;
+        }
+        enhance(entry, mcpContents(mcpServer));
+        return true;
     }
     
     @Override
@@ -229,7 +263,6 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
                 vectorDocuments(persistedChunks));
             repository.updateEntryStatus(entry.getId(), AiResourceSearchConstants.STATUS_ENABLED);
         }
-        submitEnhancement(entry, persistedChunks, contents);
     }
     
     private List<AiResourceIndexEnhancementContent> loadContents(AiResourceSearchDocument entry,
@@ -381,35 +414,39 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
         return text.substring(0, maxLength);
     }
     
-    private void submitEnhancement(AiResourceSearchDocument entry,
-        List<AiResourceSearchChunk> persistedChunks,
-        List<AiResourceIndexEnhancementContent> contents) {
+    private void enhance(AiResourceSearchDocument entry,
+        List<AiResourceIndexEnhancementContent> contents) throws Exception {
         if (!enhancementService.enabled()) {
-            return;
+            throw new IllegalStateException("AI resource index enhancement is not configured");
         }
-        enhancementExecutor.execute(() -> appendEnhancedChunks(entry, persistedChunks, contents));
+        List<AiResourceSearchChunk> baseChunks = new ArrayList<>();
+        for (AiResourceSearchChunk chunk : repository.listChunks(entry.getId())) {
+            if (!isEnhancementChunk(chunk)) {
+                baseChunks.add(chunk);
+            }
+        }
+        List<AiResourceIndexEnhancementChunk> enhancements =
+            enhancementService.enhance(entry, baseChunks, contents);
+        List<AiResourceSearchChunk> enhancedChunks =
+            chunkBuilder.buildEnhancementChunks(entry, enhancements);
+        enhancedChunks.removeIf(chunk -> !isEnhancementChunk(chunk));
+        boolean vectorAvailable = vectorIndex.available();
+        if (vectorAvailable) {
+            repository.updateEntryStatus(entry.getId(), AiResourceSearchConstants.STATUS_PENDING);
+        }
+        List<AiResourceSearchChunk> allChunks =
+            repository.replaceEnhancementChunks(entry, enhancedChunks);
+        if (vectorAvailable) {
+            vectorIndex.replaceResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
+                entry.getResourceName(), entry.getResourceVersion(), vectorDocuments(allChunks));
+            repository.updateEntryStatus(entry.getId(), AiResourceSearchConstants.STATUS_ENABLED);
+        }
     }
     
-    private void appendEnhancedChunks(AiResourceSearchDocument entry,
-        List<AiResourceSearchChunk> persistedChunks,
-        List<AiResourceIndexEnhancementContent> contents) {
-        try {
-            List<AiResourceIndexEnhancementChunk> enhancements =
-                enhancementService.enhance(entry, persistedChunks, contents);
-            List<AiResourceSearchChunk> enhancedChunks =
-                chunkBuilder.buildEnhancementChunks(entry, enhancements);
-            if (enhancedChunks.isEmpty()) {
-                return;
-            }
-            List<AiResourceSearchChunk> persistedEnhancedChunks =
-                repository.appendChunks(entry, enhancedChunks);
-            if (vectorIndex.available()) {
-                vectorIndex.addDocuments(vectorDocuments(persistedEnhancedChunks));
-            }
-        } catch (Exception e) {
-            LOGGER.warn("Failed to enhance AI resource index for {}:{}@{}", entry.getResourceType(),
-                entry.getResourceName(), entry.getResourceVersion(), e);
-        }
+    private boolean isEnhancementChunk(AiResourceSearchChunk chunk) {
+        return AiResourceSearchConstants.CHUNK_TYPE_AI_SUMMARY.equals(chunk.getChunkType())
+            || AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT.equals(chunk.getChunkType())
+            || AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM.equals(chunk.getChunkType());
     }
     
     private List<AiResourceVectorDocument> vectorDocuments(List<AiResourceSearchChunk> chunks) {

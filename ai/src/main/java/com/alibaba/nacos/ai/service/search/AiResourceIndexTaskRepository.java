@@ -29,9 +29,16 @@ import java.util.List;
 public interface AiResourceIndexTaskRepository {
     
     /**
-     * Coalesce a resource change into one pending task.
+     * Coalesce a resource change and its enhancement intent into one pending task.
      */
-    void schedule(String namespaceId, String resourceType, String resourceName);
+    void schedule(String namespaceId, String resourceType, String resourceName,
+        boolean enhancementRequested);
+    
+    /**
+     * Coalesce an inconsistent-index repair while preserving active task intent.
+     */
+    void scheduleReconciliation(String namespaceId, String resourceType, String resourceName,
+        boolean enhancementRequested);
     
     /**
      * Find tasks whose retry or lease time has elapsed.
@@ -44,12 +51,32 @@ public interface AiResourceIndexTaskRepository {
     boolean claim(AiResourceIndexTask task, Timestamp leaseUntil);
     
     /**
-     * Complete the claimed revision.
+     * Renew the lease held by one processing task revision.
      */
-    void complete(AiResourceIndexTask task);
+    boolean renewLease(AiResourceIndexTask task, Timestamp leaseUntil);
+    
+    /**
+     * Advance a completed base-index revision to durable enhancement.
+     */
+    boolean advanceToEnhancement(AiResourceIndexTask task);
+    
+    /**
+     * Retain a completed checkpoint for the claimed stage and revision.
+     */
+    boolean complete(AiResourceIndexTask task, String enhancementFingerprint);
+    
+    /**
+     * Remove a completed deletion task.
+     */
+    boolean remove(AiResourceIndexTask task);
     
     /**
      * Retain the claimed revision for a later retry.
      */
     void retry(AiResourceIndexTask task, Timestamp nextRetryTime, String lastError);
+    
+    /**
+     * Release a replacement revision that was scheduled while this revision was processing.
+     */
+    void releaseSuperseded(AiResourceIndexTask task);
 }

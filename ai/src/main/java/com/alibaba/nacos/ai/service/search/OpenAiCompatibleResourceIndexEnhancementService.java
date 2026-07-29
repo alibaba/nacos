@@ -30,6 +30,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +75,10 @@ public class OpenAiCompatibleResourceIndexEnhancementService
     
     private static final int MAX_ERROR_BODY_LENGTH = 1000;
     
+    private static final String PROMPT_VERSION = "v1";
+    
+    private static final String OUTPUT_SCHEMA_VERSION = "v1";
+    
     private static final TypeReference<Map<String, Object>> MAP_TYPE =
         new TypeReference<Map<String, Object>>() {
         };
@@ -89,8 +95,30 @@ public class OpenAiCompatibleResourceIndexEnhancementService
     
     @Override
     public boolean enabled() {
-        return Boolean.parseBoolean(property(KEY_ENABLED, "false"))
+        return required()
             && StringUtils.isNotBlank(endpoint()) && StringUtils.isNotBlank(model());
+    }
+    
+    @Override
+    public boolean required() {
+        return Boolean.parseBoolean(property(KEY_ENABLED, "false"));
+    }
+    
+    @Override
+    public String fingerprint() {
+        String identity = String.join("\n", "openai-compatible", chatEndpoint(endpoint()), model(),
+            PROMPT_VERSION, OUTPUT_SCHEMA_VERSION, String.valueOf(maxItems()));
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(identity.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder(digest.length * 2);
+            for (byte value : digest) {
+                result.append(String.format("%02x", value & 0xff));
+            }
+            return result.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
     
     @Override

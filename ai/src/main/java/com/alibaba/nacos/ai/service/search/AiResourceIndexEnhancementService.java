@@ -52,6 +52,20 @@ public interface AiResourceIndexEnhancementService {
     boolean enabled();
     
     /**
+     * Whether enhancement is required by configuration, including temporarily invalid settings.
+     */
+    default boolean required() {
+        return enabled();
+    }
+    
+    /**
+     * Stable audit fingerprint of the effective enhancement configuration.
+     */
+    default String fingerprint() {
+        return getClass().getName();
+    }
+    
+    /**
      * Generate extra search chunks for one search document.
      */
     List<AiResourceIndexEnhancementChunk> enhance(AiResourceSearchDocument entry,

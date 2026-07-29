@@ -23,6 +23,10 @@ package com.alibaba.nacos.ai.model.search;
  */
 public class AiResourceIndexTask {
     
+    public static final String STAGE_BASE_INDEX = "base_index";
+    
+    public static final String STAGE_LLM_ENHANCEMENT = "llm_enhancement";
+    
     private String taskKey;
     
     private String namespaceId;
@@ -31,7 +35,13 @@ public class AiResourceIndexTask {
     
     private String resourceName;
     
+    private String taskStage;
+    
     private String status;
+    
+    private boolean enhancementRequested;
+    
+    private String enhancementFingerprint;
     
     private int attemptCount;
     
@@ -69,12 +79,36 @@ public class AiResourceIndexTask {
         this.resourceName = resourceName;
     }
     
+    public String getTaskStage() {
+        return taskStage;
+    }
+    
+    public void setTaskStage(String taskStage) {
+        this.taskStage = taskStage;
+    }
+    
     public String getStatus() {
         return status;
     }
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public boolean isEnhancementRequested() {
+        return enhancementRequested;
+    }
+    
+    public void setEnhancementRequested(boolean enhancementRequested) {
+        this.enhancementRequested = enhancementRequested;
+    }
+    
+    public String getEnhancementFingerprint() {
+        return enhancementFingerprint;
+    }
+    
+    public void setEnhancementFingerprint(String enhancementFingerprint) {
+        this.enhancementFingerprint = enhancementFingerprint;
     }
     
     public int getAttemptCount() {
