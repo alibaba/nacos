@@ -145,6 +145,11 @@ public class AiResourceTraceService {
     public static final String OP_UPDATE_BIZ_TAGS = "UPDATE_BIZ_TAGS";
     
     /**
+     * Update a Resource's complete writable metadata.
+     */
+    public static final String OP_UPDATE_RESOURCE = "UPDATE_RESOURCE";
+    
+    /**
      * Enable resource.
      */
     public static final String OP_ENABLE = "ENABLE";

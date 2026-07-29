@@ -1001,21 +1001,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         
         // Step 2: Assemble query conditions (with visibility filtering) and execute paginated query
+        String bizTagsLike = StringUtils.isBlank(bizTag) ? null
+            : resourceManager
+                .generateLikeArgument(Constants.ALL_PATTERN + bizTag + Constants.ALL_PATTERN);
         QueryCondition queryCondition =
-            resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
-                VisibilityConstants.ACTION_READ);
+            resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike,
+                bizTagsLike, scope, owner, VisibilityConstants.ACTION_READ);
         queryCondition.setOrderBy(orderBy);
-        if (StringUtils.isNotBlank(owner)) {
-            queryCondition.setOwner(owner);
-        }
-        if (StringUtils.isNotBlank(scope)) {
-            queryCondition.setScope(scope);
-        }
-        if (StringUtils.isNotBlank(bizTag)) {
-            queryCondition.setBizTagsLike(
-                resourceManager
-                    .generateLikeArgument(Constants.ALL_PATTERN + bizTag + Constants.ALL_PATTERN));
-        }
         if (queryCondition.isAlwaysEmpty()) {
             return AiResourceManager.buildEmptyPage(pageNo);
         }

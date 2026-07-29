@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
@@ -32,6 +33,9 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -460,6 +464,9 @@ class AiResourceManagerTest {
             .thenReturn(true);
         
         manager.updateVersionInfoCas(NAMESPACE_ID, meta, new ResourceVersionInfo());
+        
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(2L), any());
     }
     
     @Test
@@ -1039,6 +1046,43 @@ class AiResourceManagerTest {
         assertEquals(RESOURCE_TYPE, condition.getType());
         assertEquals("name%", condition.getNameLike());
         assertEquals("tag%", condition.getBizTagsLike());
+    }
+    
+    @Test
+    void buildQueryConditionShouldNormalizeBlankScopeAndOwner() {
+        QueryCondition condition = manager.buildQueryCondition(NAMESPACE_ID, RESOURCE_TYPE,
+            null, null, " ", "", VisibilityConstants.ACTION_READ);
+        
+        assertNull(condition.getScope());
+        assertNull(condition.getOwner());
+    }
+    
+    @Test
+    void buildQueryConditionShouldIntersectBusinessScopeAndOwnerWithVisibility() {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.PUBLIC_AND_OWNER);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(eq("userA"), eq(VisibilityConstants.ACTION_READ),
+            eq("ADMIN_API"), any())).thenReturn(advisor);
+        try (MockedStatic<VisibilityHelper> helper =
+            org.mockito.Mockito.mockStatic(VisibilityHelper.class)) {
+            helper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("userA");
+            helper.when(VisibilityHelper::resolveCurrentApiType).thenReturn("ADMIN_API");
+            helper.when(VisibilityHelper::findVisibilityService)
+                .thenReturn(Optional.of(visibilityService));
+            
+            QueryCondition denied = manager.buildQueryCondition(NAMESPACE_ID, RESOURCE_TYPE,
+                null, null, VisibilityConstants.SCOPE_PRIVATE, "anotherUser",
+                VisibilityConstants.ACTION_READ);
+            assertTrue(denied.isAlwaysEmpty());
+            
+            QueryCondition narrowed = manager.buildQueryCondition(NAMESPACE_ID, RESOURCE_TYPE,
+                null, null, VisibilityConstants.SCOPE_PUBLIC, "anotherUser",
+                VisibilityConstants.ACTION_READ);
+            assertFalse(narrowed.isAlwaysEmpty());
+            assertEquals(VisibilityConstants.SCOPE_PUBLIC, narrowed.getScope());
+            assertEquals("anotherUser", narrowed.getOwner());
+        }
     }
     
     // ---- onPipelineComplete ----

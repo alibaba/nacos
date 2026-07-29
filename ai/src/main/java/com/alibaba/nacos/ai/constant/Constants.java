@@ -116,6 +116,8 @@ public class Constants {
     
     public static class Agent {
         
+        public static final String ADMIN_PATH = "/v3/admin/ai/agents";
+        
         /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
          */

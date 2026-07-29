@@ -40,7 +40,8 @@ public interface AiResourceMapper extends Mapper {
     /**
      * Query count rows for ai_resource list.
      *
-     * <p>Filters: namespace_id (required), type (optional), name (optional like), biz_tags (optional like).</p>
+     * <p>Filters: namespace_id (required), type/scope/owner (optional exact),
+     * name/biz_tags (optional like).</p>
      */
     default MapperResult findAiResourceCountRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder("SELECT count(*) FROM ai_resource");

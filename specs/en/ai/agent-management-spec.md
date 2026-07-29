@@ -82,9 +82,10 @@ namespaceId + resourceType=agent + agentName
 must use `agentName` when `displayName` is absent or blank. `displayName` never
 participates in identity, authorization, storage keys, or endpoint matching.
 
-Exact lookup compares the original `agentName`. A name filter performs literal
-substring matching; persistence implementations must escape wildcard
-characters such as `%` and `_` instead of interpreting them as patterns.
+Exact lookup compares the original `agentName`. Filter semantics belong to the
+corresponding API binding: RAD Search uses literal substring matching, while
+the initial Admin list reuses the shared AI Resource fuzzy-name query and does
+not add an Agent-specific persistence operator.
 
 ### 2.2 Version Identity
 
@@ -139,14 +140,14 @@ The Agent resource contains the following fields:
 | `description` | No | Catalog description. |
 | `iconUrl` | No | Catalog icon URI. |
 | `provider` | No | Provider `name` and `url`; this is not the management owner. |
-| `tags[]` | No | Public catalog and exact-match search tags. |
+| `tags[]` | No | Public catalog tags; RAD Search applies exact matching. |
 | `extensions` | No | Namespaced `Map<String, JsonValue>` for public Agent-level extensions. |
 | `status` | Yes | `enable` or `disable`. |
 | `owner` | Yes | Management owner. |
 | `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` in this version. |
 | `versionInfo` | Read-only | Shared editing, reviewing, online-count, and label summary. |
 | `versionCatalog` | Read-only | Compact catalog of online versions and protocols. |
-| `metaVersion` | Read-only | Metadata CAS version. |
+| `metaVersion` | Read-only | Monotonic metadata revision shared with the AI Resource model. The initial Agent Admin API does not expose a conditional-write parameter. |
 | `createTime`, `updateTime` | Read-only | Audit timestamps. |
 
 The following invariants apply:
@@ -199,6 +200,23 @@ by AI Storage without reserializing the object. Storage normalization and
 validation rules are defined by the [Agent Storage Spec](agent-storage-spec.md).
 
 ### 4.2 Lifecycle Rules
+
+Draft creation is the common entry for both Resource and Version creation:
+
+- if the Agent metadata does not exist, creating a draft also creates the
+  `ai_resource` metadata. The first draft must contain direct
+  `callInterfaces`; `basedOnVersion` is invalid because no source Version can
+  belong to the absent Agent. Optional catalog metadata is initialized from
+  the same request. The server derives enabled status, current owner, and
+  default scope;
+- if the Agent metadata exists, draft creation follows the normal editing-slot
+  rule and accepts either direct content or one exact source Version. Catalog
+  metadata belongs to the Agent update lifecycle and is not accepted on a
+  subsequent draft request.
+
+There is no independent metadata-only or `createAgent` operation in this
+version. Both first and subsequent draft creation return an
+`AgentVersionDetail`.
 
 Agent Versions use the shared lifecycle:
 

@@ -43,6 +43,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
     public static final String A2A_PATH = "/ai/a2a";
     
+    public static final String AGENT_PATH = "/ai/agents";
+    
     public static final String SKILL_PATH = "/ai/skills";
     
     public static final String PROMPT_PATH = "/ai/prompt";
@@ -71,6 +73,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         if (url.contains(MCP_PATH)) {
             return getMcpName(request);
         } else if (url.contains(A2A_PATH)) {
+            return getA2aAgentName(request);
+        } else if (isAgentPath(url)) {
             return getAgentName(request);
         } else if (url.contains(SKILL_PATH)) {
             return getSkillName(request);
@@ -87,11 +91,16 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         return StringUtils.isBlank(mcpName) ? StringUtils.EMPTY : mcpName;
     }
     
-    private String getAgentName(HttpServletRequest request) {
+    private String getA2aAgentName(HttpServletRequest request) {
         String agentName = request.getParameter("agentName");
         if (request.getParameterMap().containsKey(AGENT_CARD_PARAM)) {
             agentName = deserializeAndGetAgentName(request.getParameter(AGENT_CARD_PARAM));
         }
+        return StringUtils.isBlank(agentName) ? StringUtils.EMPTY : agentName;
+    }
+    
+    private String getAgentName(HttpServletRequest request) {
+        String agentName = request.getParameter("agentName");
         return StringUtils.isBlank(agentName) ? StringUtils.EMPTY : agentName;
     }
     
@@ -125,7 +134,7 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         String url = request.getRequestURI();
         if (url.contains(MCP_PATH)) {
             properties.setProperty(AI_TYPE, AI_TYPE_MCP);
-        } else if (url.contains(A2A_PATH)) {
+        } else if (url.contains(A2A_PATH) || isAgentPath(url)) {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT);
         } else if (url.contains(SKILL_PATH)) {
             properties.setProperty(AI_TYPE, AI_TYPE_SKILL);
@@ -135,5 +144,18 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT_SPEC);
         }
         return properties;
+    }
+    
+    private boolean isAgentPath(String url) {
+        return containsCompletePath(url, AGENT_PATH);
+    }
+    
+    private boolean containsCompletePath(String url, String path) {
+        int index = url.indexOf(path);
+        if (index < 0) {
+            return false;
+        }
+        int end = index + path.length();
+        return end == url.length() || url.charAt(end) == '/';
     }
 }
