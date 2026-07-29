@@ -30,12 +30,16 @@ interface BatchPrecheckState {
   items: SkillUploadPrecheckResult[];
 }
 
-interface BatchUploadResultData {
+interface BatchUploadItemResultData {
   name: string;
   success: boolean;
   errorCode: string;
   errorMessage: string;
   owner?: string;
+}
+
+interface BatchUploadResultData {
+  results: BatchUploadItemResultData[];
 }
 
 function isPrecheckBlocked(result: SkillUploadPrecheckResult): boolean {
@@ -229,8 +233,8 @@ export function UploadSkillDialog({
   );
 
   const showBatchUploadResult = useCallback(
-    (data: BatchUploadResultData[] | undefined, skippedCount = 0) => {
-      const results = data ?? [];
+    (data: BatchUploadResultData | undefined, skippedCount = 0) => {
+      const results = data?.results ?? [];
       const succeededList = results.filter(item => item.success);
       const failedList = results.filter(item => !item.success);
       if (failedList.length === 0) {
