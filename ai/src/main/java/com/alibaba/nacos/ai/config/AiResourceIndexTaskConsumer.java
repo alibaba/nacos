@@ -29,6 +29,7 @@ import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -85,6 +86,7 @@ public class AiResourceIndexTaskConsumer
     
     private final Executor enhancementExecutor;
     
+    @Autowired
     public AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
         AiResourceIndexService indexBuildService,
         McpServerOperationService mcpServerOperationService) {
