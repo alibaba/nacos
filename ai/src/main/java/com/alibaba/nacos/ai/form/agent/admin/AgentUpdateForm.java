@@ -55,7 +55,11 @@ public class AgentUpdateForm extends AgentAdminForm {
     }
     
     /**
-     * Parse JSON-valued fields and build the public request model.
+     * Validate this form, parse JSON-valued fields, and build the public request model.
+     *
+     * <p>This method performs both Form and Request validation. Callers should invoke this method
+     * directly without calling {@link #validate()} first because {@code validate()} delegates to
+     * this method.</p>
      *
      * @return validated Agent update request
      * @throws NacosApiException when a JSON-valued field is invalid

@@ -131,6 +131,20 @@ class ConsoleAgentControllerTest {
         verify(agentProxy).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
     }
     
+    @Test
+    void shouldDelegateListWithoutScope() throws Exception {
+        Page<AgentSummary> agentPage = new Page<>();
+        AiResourceFilterableForm filterableForm = new AiResourceFilterableForm();
+        when(agentProxy.listAgents(NAMESPACE_ID, AGENT_NAME, null, null, null,
+            "download_count", 1, 10)).thenReturn(agentPage);
+        
+        assertSame(agentPage,
+            controller.listAgents(listForm(), filterableForm, pageForm()).getData());
+        
+        verify(agentProxy).listAgents(NAMESPACE_ID, AGENT_NAME, null, null, null,
+            "download_count", 1, 10);
+    }
+    
     private AgentAdminForm agentForm() {
         AgentAdminForm result = new AgentAdminForm();
         result.setNamespaceId(NAMESPACE_ID);
