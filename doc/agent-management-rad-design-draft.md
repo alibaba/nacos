@@ -1915,6 +1915,20 @@ flowchart LR
 | 阻塞检查 | 现有 Agent Admin Application Service、Maintainer SDK、Runtime Snapshot 和 `RadServiceNameComposer` 已满足 inner/remote 两种部署路径；不需要修改共享底座。若实现中发现这些既有契约无法完成任一 Admin 镜像路径，则停止扩大范围并提交维护者决策 |
 | 验收门禁 | `console` Spotless、编译和相关单测；本阶段新增 production Java 可执行行 line coverage 100%；OpenAPI test-compile 和 Console Agent 独立 IT；复核实际 production diff 仅包含白名单文件 |
 
+#### 当前阶段范围留痕：HTTP Client 活性与 Distro
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 共享底座阻塞审计中；尚未开始 production 编码 |
+| 规范依据 | Agent API Spec 第 2.3～2.4、2.6 节，Agent Storage Spec 第 4.3、4.5、5.3 节，RAD Protocol Spec 第 7 节，以及本文第 4.1.4、4.2.4、5.2.4～5.2.5、7.1 节 |
+| 当前目标 | 实现独立 HTTP Publisher Client、Client 级 heartbeat、ACTIVE/UNHEALTHY/EXPIRED 生命周期、`AI_AGENT_HTTP_CLIENT` Distro 完整快照与故障转移，使其标准 Naming publication 可被 Runtime Snapshot 和后续 Discover 读取 |
+| 允许范围 | 维护者确认共享层方案后再确定；预期以 `ai.service.agent.runtime` 下 HTTP Client、Manager、Operation Service、Distro processor/registry、配置和对应单元测试为主 |
+| 禁止范围 | 未经维护者决策不得修改 `ai_resource`、`ai_resource_version`、Repository、AI Storage、既有 Client SDK、HTTP common、RAD Client API、旧 A2A Adapter、Console 和其他 Naming Client 行为 |
+| 已知问题 | Client HTTP Controller、Header/Form、错误映射和 OpenAPI IT 属于后续 Client HTTP/gRPC API 阶段；本阶段不提前新增公开 API。HTTP 请求按 clientId 转发到责任节点的 Binding 方式也随该阶段落地 |
+| 阻塞检查 | `ClientServiceIndexesManager` 可以接受新 Client 发布的标准事件，但 `ServiceStorage` 固定通过 `ClientManagerDelegate` 获取 Client；该 Delegate 只路由现有 Connection/IP-Port Client。AI 模块独立维护的 HTTP Client 因而无法进入 Naming Service 投影。复用 ConnectionBased/IP-Port Client 会违反“独立 Client 类型、独立 Distro data type、不冒充 gRPC Connection Client、不复用 Naming IP-port tag”的正式契约。主流程必须获得一个最小的共享 Client 查询扩展点，否则暂停实现 |
+| 待决方案 | 建议在 Naming Client 查询组合层增加窄范围扩展点，使 AI HTTP Client Manager 能按 clientId 被 `ServiceStorage` 查询，同时保持现有三类 Client 路由与 Distro 行为不变；需维护者确认允许修改的共享文件、兼容边界和测试范围后再编码 |
+| 验收门禁 | 所有新增 production Java 可执行行 UT line coverage 100%；`ai` 与获批 Naming 最小范围的 Spotless、编译、单测和覆盖率验证；禁止通过排除文件或无业务断言规避覆盖率 |
+
 ### 7.2 分阶段任务
 
 - [x] **规范基线**：新增 Agent 管理、RAD 0.1.0、Agent API、Agent Storage 中英文 Specs；新增 RAD 外部、
