@@ -76,6 +76,8 @@ public class AgentOperationService {
     
     private static final int MAX_TAG_LENGTH = 64;
     
+    private static final String DEFAULT_OWNER = "nacos";
+    
     private final AgentPersistenceService persistenceService;
     
     private final AiResourceManager resourceManager;
@@ -656,7 +658,8 @@ public class AgentOperationService {
         result.setTags(request.getTags());
         result.setExtensions(request.getExtensions());
         result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
-        result.setOwner(VisibilityHelper.resolveCurrentIdentity());
+        String currentIdentity = VisibilityHelper.resolveCurrentIdentity();
+        result.setOwner(StringUtils.isBlank(currentIdentity) ? DEFAULT_OWNER : currentIdentity);
         result.setScope(VisibilityHelper.resolveDefaultScopeForCreate(RESOURCE_TYPE));
         return result;
     }

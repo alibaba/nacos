@@ -188,7 +188,8 @@ AgentVersionContent
 - Agent metadata 不存在时，创建 draft 会同时创建 `ai_resource` metadata。首个 draft
   必须直接包含 `callInterfaces`；因为不存在可属于该 Agent 的源 Version，
   `basedOnVersion` 非法。同一请求可以初始化可选目录 metadata；enabled 状态、当前 owner
-  和默认 scope 由服务端派生；
+  和默认 scope 由服务端派生。请求上下文没有 identity（例如关闭鉴权）时，服务端使用
+  `nacos` 作为 owner；
 - Agent metadata 已存在时，draft 创建遵循普通 editing slot 规则，并在直接内容和一个
   精确源 Version 之间二选一。目录 metadata 属于 Agent 更新生命周期，后续 draft 请求
   不接受这些字段。

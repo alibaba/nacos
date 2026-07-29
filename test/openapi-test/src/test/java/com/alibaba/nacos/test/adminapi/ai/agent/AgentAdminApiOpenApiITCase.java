@@ -125,7 +125,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode page = getJsonOk(ADMIN_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", targetName)
                         .addParam("bizTag", "create").addParam("scope", "PRIVATE")
-                        .addParam("owner", "openapi-it").addParam("orderBy", "download_count")
+                        .addParam("owner", "nacos").addParam("orderBy", "download_count")
                         .addParam("pageNo", "1").addParam("pageSize", "1")).get("data");
 
         assertEmptyPageShape(page);
@@ -252,7 +252,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         return getJsonOk(ADMIN_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", nameContains)
                         .addParam("bizTag", "updated").addParam("scope", "PRIVATE")
-                        .addParam("owner", "openapi-it").addParam("orderBy", "download_count")
+                        .addParam("owner", "nacos").addParam("orderBy", "download_count")
                         .addParam("pageNo", "1").addParam("pageSize", "10"));
     }
 

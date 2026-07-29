@@ -175,6 +175,21 @@ class AgentOperationServiceTest {
     }
     
     @Test
+    void testCreateFirstDraftUsesDefaultOwnerWithoutRequestIdentity() throws NacosException {
+        visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("");
+        AgentVersionDetail expected = new AgentVersionDetail();
+        ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        when(persistenceService.createInitialDraft(any(Agent.class),
+            any(AgentVersionDetail.class))).thenReturn(expected);
+        
+        assertSame(expected, service.createDraft(NAMESPACE_ID, draftRequest()));
+        
+        verify(persistenceService).createInitialDraft(agentCaptor.capture(),
+            any(AgentVersionDetail.class));
+        assertEquals("nacos", agentCaptor.getValue().getOwner());
+    }
+    
+    @Test
     void testCreateFirstDraftRejectsBasedOnVersion() {
         AgentDraftCreateRequest request = draftRequest();
         request.setCallInterfaces(null);

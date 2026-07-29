@@ -208,7 +208,8 @@ Draft creation is the common entry for both Resource and Version creation:
   `callInterfaces`; `basedOnVersion` is invalid because no source Version can
   belong to the absent Agent. Optional catalog metadata is initialized from
   the same request. The server derives enabled status, current owner, and
-  default scope;
+  default scope. When the request context has no identity, such as while
+  authentication is disabled, the server uses `nacos` as the owner;
 - if the Agent metadata exists, draft creation follows the normal editing-slot
   rule and accepts either direct content or one exact source Version. Catalog
   metadata belongs to the Agent update lifecycle and is not accepted on a
