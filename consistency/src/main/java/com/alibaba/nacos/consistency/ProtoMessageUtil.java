@@ -22,6 +22,8 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.google.protobuf.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * protobuf message utils.
@@ -29,6 +31,8 @@ import com.google.protobuf.Message;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ProtoMessageUtil {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProtoMessageUtil.class);
     
     /**
      * should be different from field tags of ReadRequest or WriteQuest.
@@ -57,20 +61,23 @@ public class ProtoMessageUtil {
                 }
                 return result;
             }
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            LOGGER.debug("Failed to parse new protocol request, will try legacy format", e);
         }
-        
+
         // old consistency entity, will be @Deprecated in future
         try {
             GetRequest request = GetRequest.parseFrom(bytes);
             return convertToReadRequest(request);
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            LOGGER.debug("Failed to parse legacy GetRequest, will try Log format", e);
         }
-        
+
         try {
             Log log = Log.parseFrom(bytes);
             return convertToWriteRequest(log);
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            LOGGER.debug("Failed to parse legacy Log", e);
         }
         
         throw new ConsistencyException(
