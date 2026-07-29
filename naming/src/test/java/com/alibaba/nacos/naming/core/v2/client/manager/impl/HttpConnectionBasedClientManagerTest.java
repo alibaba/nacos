@@ -31,6 +31,9 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
@@ -66,8 +69,17 @@ class HttpConnectionBasedClientManagerTest {
     }
     
     @Test
-    void testPublicConstructorSchedulesCleaner() {
-        assertNotNull(new HttpConnectionBasedClientManager(distroMapper));
+    void testSpringConstructorSelection() {
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        AutowiredAnnotationBeanPostProcessor processor =
+            new AutowiredAnnotationBeanPostProcessor();
+        processor.setBeanFactory(beanFactory);
+        beanFactory.addBeanPostProcessor(processor);
+        beanFactory.registerSingleton("distroMapper", distroMapper);
+        beanFactory.registerBeanDefinition("httpConnectionBasedClientManager",
+            new RootBeanDefinition(HttpConnectionBasedClientManager.class));
+        
+        assertNotNull(beanFactory.getBean("httpConnectionBasedClientManager"));
     }
     
     @Test

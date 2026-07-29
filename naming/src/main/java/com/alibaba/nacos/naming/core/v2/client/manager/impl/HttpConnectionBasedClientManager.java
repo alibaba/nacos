@@ -33,6 +33,7 @@ import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +59,7 @@ public class HttpConnectionBasedClientManager implements ClientManager {
     
     private final ClientFactory<HttpConnectionBasedClient> clientFactory;
     
+    @Autowired
     public HttpConnectionBasedClientManager(DistroMapper distroMapper) {
         this(distroMapper, true);
     }
