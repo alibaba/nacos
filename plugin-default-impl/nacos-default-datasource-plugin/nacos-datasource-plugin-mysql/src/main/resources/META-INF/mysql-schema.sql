@@ -297,25 +297,24 @@ CREATE TABLE `ai_resource_search_chunk` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索分片表';
 
 /******************************************/
-/*   表名称 = ai_resource_search_index_task  */
+/*   表名称 = ai_resource_task  */
 /******************************************/
-CREATE TABLE `ai_resource_search_index_task` (
-    `task_key` varchar(64) NOT NULL COMMENT '资源任务键',
+CREATE TABLE `ai_resource_task` (
+    `task_key` varchar(64) NOT NULL COMMENT '任务唯一键',
     `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
-    `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
-    `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
-    `task_stage` varchar(32) NOT NULL DEFAULT 'base_index' COMMENT '任务阶段',
-    `status` varchar(32) NOT NULL COMMENT '任务状态',
-    `enhancement_requested` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否请求增强',
-    `enhancement_fingerprint` varchar(64) DEFAULT NULL COMMENT '增强配置指纹',
-    `attempt_count` int NOT NULL DEFAULT 0 COMMENT '重试次数',
+    `task_type` varchar(64) NOT NULL COMMENT '任务类型',
+    `task_stage` varchar(32) NOT NULL COMMENT '任务阶段',
+    `status` varchar(16) NOT NULL COMMENT '任务状态',
+    `task_payload` text NOT NULL COMMENT '任务输入，JSON文本',
+    `task_result` text COMMENT '任务结果，JSON文本',
+    `retry_count` int NOT NULL DEFAULT 0 COMMENT '当前阶段重试次数',
     `revision` bigint(20) NOT NULL DEFAULT 1 COMMENT '任务修订号',
-    `next_retry_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '下次重试时间',
+    `next_execute_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最早执行时间',
     `lease_until` datetime DEFAULT NULL COMMENT '租约到期时间',
     `last_error` varchar(2000) DEFAULT NULL COMMENT '最近错误',
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`task_key`),
-    KEY `idx_search_task_due` (`task_stage`,`status`,`next_retry_time`),
-    KEY `idx_search_task_lease` (`task_stage`,`status`,`lease_until`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索索引任务表';
+    KEY `idx_ai_resource_task_due` (`task_type`,`status`,`next_execute_time`),
+    KEY `idx_ai_resource_task_lease` (`task_type`,`status`,`lease_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源持久化异步任务表';

@@ -637,27 +637,26 @@ CREATE INDEX "idx_search_chunk_type_status" ON "ai_resource_search_chunk" USING 
 );
 
 -- ----------------------------
--- Table structure for ai_resource_search_index_task
+-- Table structure for ai_resource_task
 -- ----------------------------
-DROP TABLE IF EXISTS "ai_resource_search_index_task";
-CREATE TABLE "ai_resource_search_index_task" (
+DROP TABLE IF EXISTS "ai_resource_task";
+CREATE TABLE "ai_resource_task" (
   "task_key" varchar(64) NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
-  "resource_type" varchar(32) NOT NULL,
-  "resource_name" varchar(256) NOT NULL,
-  "task_stage" varchar(32) NOT NULL DEFAULT 'base_index',
-  "status" varchar(32) NOT NULL,
-  "enhancement_requested" int2 NOT NULL DEFAULT 0,
-  "enhancement_fingerprint" varchar(64),
-  "attempt_count" int4 NOT NULL DEFAULT 0,
+  "task_type" varchar(64) NOT NULL,
+  "task_stage" varchar(32) NOT NULL,
+  "status" varchar(16) NOT NULL,
+  "task_payload" text NOT NULL,
+  "task_result" text,
+  "retry_count" int4 NOT NULL DEFAULT 0,
   "revision" int8 NOT NULL DEFAULT 1,
-  "next_retry_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "next_execute_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "lease_until" timestamp(6),
   "last_error" varchar(2000),
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE "ai_resource_search_index_task" ADD CONSTRAINT "ai_resource_search_index_task_pkey" PRIMARY KEY ("task_key");
-CREATE INDEX "idx_search_task_due" ON "ai_resource_search_index_task" USING btree ("task_stage", "status", "next_retry_time");
-CREATE INDEX "idx_search_task_lease" ON "ai_resource_search_index_task" USING btree ("task_stage", "status", "lease_until");
+ALTER TABLE "ai_resource_task" ADD CONSTRAINT "ai_resource_task_pkey" PRIMARY KEY ("task_key");
+CREATE INDEX "idx_ai_resource_task_due" ON "ai_resource_task" USING btree ("task_type", "status", "next_execute_time");
+CREATE INDEX "idx_ai_resource_task_lease" ON "ai_resource_task" USING btree ("task_type", "status", "lease_until");
