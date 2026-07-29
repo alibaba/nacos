@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.airegistry.service.ard;
 
-import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
@@ -30,6 +29,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Sort;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.airegistry.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;

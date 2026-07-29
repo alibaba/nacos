@@ -77,9 +77,9 @@ public enum PluginType {
     AI_STORAGE("ai-storage", "AI resource storage plugin", PluginExecutionMode.ROUTED, true),
     
     /**
-     * AI ARD vector index plugin.
+     * AI resource vector index plugin.
      */
-    AI_VECTOR("ai-vector", "AI ARD vector index plugin", PluginExecutionMode.ROUTED, false),
+    AI_VECTOR("ai-vector", "AI resource vector index plugin", PluginExecutionMode.ROUTED, false),
     /**
      * AI resource import plugin.
      */

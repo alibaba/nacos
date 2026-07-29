@@ -67,7 +67,8 @@ public class AiResourceIndexTaskConsumer
     private final ScheduledExecutorService executor =
         ExecutorFactory.Managed.newSingleScheduledExecutorService(
             AiResourceIndexTaskConsumer.class.getCanonicalName(),
-            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-ard-index-%d").build());
+            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-resource-index-%d")
+                .build());
     
     private final AiResourceIndexTaskRepository taskRepository;
     

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.airegistry.config;
 
-import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.airegistry.controller.ArdSearchController;
 import com.alibaba.nacos.airegistry.controller.ArdWellKnownController;
 import com.alibaba.nacos.core.auth.AuthConfig;

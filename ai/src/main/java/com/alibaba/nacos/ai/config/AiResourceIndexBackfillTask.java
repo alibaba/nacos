@@ -96,7 +96,8 @@ public class AiResourceIndexBackfillTask
     private final ScheduledExecutorService backfillExecutor =
         ExecutorFactory.Managed.newSingleScheduledExecutorService(
             AiResourceIndexBackfillTask.class.getCanonicalName(),
-            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-ard-backfill-%d").build());
+            new ThreadFactoryBuilder().daemon(true)
+                .nameFormat("nacos-ai-resource-index-backfill-%d").build());
     
     private final AiResourceManager resourceManager;
     

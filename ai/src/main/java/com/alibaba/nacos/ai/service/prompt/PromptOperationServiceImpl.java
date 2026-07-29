@@ -407,7 +407,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         throws NacosException {
         resourceManager.validateAndUpdateLabels(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
             labels);
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexRebuild(namespaceId, promptKey);
     }
     
     @Override
@@ -419,7 +419,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexRebuild(namespaceId, promptKey);
     }
     
     @Override
@@ -431,7 +431,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_DESCRIPTION, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexRebuild(namespaceId, promptKey);
     }
     
     @Override
@@ -481,7 +481,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
-    private void rebuildLatestArdPromptIndex(String namespaceId, String promptKey) {
+    private void schedulePromptIndexRebuild(String namespaceId, String promptKey) {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     

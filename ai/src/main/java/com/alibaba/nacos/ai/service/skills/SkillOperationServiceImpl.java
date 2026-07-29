@@ -1425,7 +1425,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.setLabels(new LinkedHashMap<>(effectiveLabels));
             manifestService.write(namespaceId, name, manifest);
         }
-        rebuildLatestArdSkillIndex(namespaceId, name);
+        scheduleSkillIndexRebuild(namespaceId, name);
     }
     
     /**
@@ -1440,7 +1440,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, null,
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
-        rebuildLatestArdSkillIndex(namespaceId, name);
+        scheduleSkillIndexRebuild(namespaceId, name);
     }
     
     /**
@@ -1467,7 +1467,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (online) {
                 // On re-enable: rebuild index manifest from all online versions in DB
                 refreshSkillIndexManifest(namespaceId, name);
-                rebuildLatestArdSkillIndex(namespaceId, name);
+                scheduleSkillIndexRebuild(namespaceId, name);
             } else {
                 // On disable: delete index manifest so clients can no longer discover it
                 manifestService.delete(namespaceId, name);
@@ -1501,7 +1501,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
                 manifestService.write(namespaceId, name, manifest);
             }
-            rebuildLatestArdSkillIndex(namespaceId, name);
+            scheduleSkillIndexRebuild(namespaceId, name);
         }
     }
     
@@ -1511,14 +1511,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
-        rebuildLatestArdSkillIndex(namespaceId, name);
+        scheduleSkillIndexRebuild(namespaceId, name);
     }
     
     private void scheduleSkillIndexRebuild(String namespaceId, String name, String version) {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
-    private void rebuildLatestArdSkillIndex(String namespaceId, String name) {
+    private void scheduleSkillIndexRebuild(String namespaceId, String name) {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_SKILL, name);
     }
     
