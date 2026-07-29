@@ -51,7 +51,7 @@ public interface VisibilityService extends PluginConfigSpec {
      *
      * @param identity     current identity
      * @param apiType      current api type
-     * @param resourceType resource type, such as skill / agentspec
+     * @param resourceType domain-specific resource type
      * @return default scope for new resource
      */
     default String resolveDefaultScopeForCreate(String identity, String apiType,

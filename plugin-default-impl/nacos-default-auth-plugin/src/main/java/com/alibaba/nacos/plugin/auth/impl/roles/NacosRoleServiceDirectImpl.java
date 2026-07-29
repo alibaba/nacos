@@ -143,6 +143,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
         
         rolePersistService.addRole(role, username);
         getCachedRoleSet().add(role);
+        invalidateUserRoles(username);
     }
     
     @Override
@@ -164,6 +165,7 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
     public void deleteRole(String role, String userName) {
         rejectReservedRole(role);
         rolePersistService.deleteRole(role, userName);
+        invalidateUserRoles(userName);
     }
     
     @Override
@@ -179,11 +181,13 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService
             throw new IllegalArgumentException("role " + role + " not found!");
         }
         permissionPersistService.addPermission(role, resource, action);
+        invalidateRolePermissions(role);
     }
     
     @Override
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
+        invalidateRolePermissions(role);
     }
     
     @Override

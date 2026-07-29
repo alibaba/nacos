@@ -62,6 +62,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 buildRemotePermissionUrlPath(AuthConstants.PERMISSION_PATH),
                 RemoteServerUtil.buildServerRemoteHeader(), null, body, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateRolePermissions(role);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -79,6 +80,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 buildRemotePermissionUrlPath(AuthConstants.PERMISSION_PATH),
                 RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateRolePermissions(role);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -179,6 +181,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 RemoteServerUtil.buildServerRemoteHeader(), body, String.class);
             RemoteServerUtil.singleCheckResult(httpResult);
             getCachedRoleSet().add(role);
+            invalidateUserRoles(username);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {
@@ -196,6 +199,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService
                 nacosRestTemplate.delete(buildRemoteRoleUrlPath(AuthConstants.ROLE_PATH),
                     RemoteServerUtil.buildServerRemoteHeader(), query, String.class);
             RemoteServerUtil.singleCheckResult(result);
+            invalidateUserRoles(userName);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
         } catch (Exception unpectedException) {

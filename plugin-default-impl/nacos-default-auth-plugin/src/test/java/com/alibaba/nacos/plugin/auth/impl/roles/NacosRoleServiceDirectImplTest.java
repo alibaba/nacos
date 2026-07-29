@@ -344,6 +344,24 @@ class NacosRoleServiceDirectImplTest {
     }
     
     @Test
+    void addAndDeletePermissionInvalidatePermissionCache() {
+        nacosRoleService.getCachedRoleSet().add("role-admin");
+        nacosRoleService.getCachedPermissionInfoMap().put("role-admin",
+            Collections.singletonList(permissionInfo("role-admin", "resource", "r")));
+        
+        nacosRoleService.addPermission("role-admin", "resource", "rw");
+        
+        assertFalse(nacosRoleService.getCachedPermissionInfoMap().containsKey("role-admin"));
+        
+        nacosRoleService.getCachedPermissionInfoMap().put("role-admin",
+            Collections.singletonList(permissionInfo("role-admin", "resource", "rw")));
+        
+        nacosRoleService.deletePermission("role-admin", "resource", "rw");
+        
+        assertFalse(nacosRoleService.getCachedPermissionInfoMap().containsKey("role-admin"));
+    }
+    
+    @Test
     void joinResource() throws Exception {
         Method method =
             AbstractCheckedRoleService.class.getDeclaredMethod("joinResource", Resource.class);

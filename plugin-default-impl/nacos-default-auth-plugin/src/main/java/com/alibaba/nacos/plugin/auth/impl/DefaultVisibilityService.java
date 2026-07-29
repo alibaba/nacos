@@ -26,7 +26,8 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
@@ -37,21 +38,24 @@ import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Default AI visibility service implementation for nacos auth plugin.
+ * Default visibility service implementation for Nacos auth plugin.
  *
  * @author xiweng.yy
  */
-public class DefaultAiVisibilityService implements VisibilityService {
+public class DefaultVisibilityService implements VisibilityService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAiVisibilityService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultVisibilityService.class);
     
     private static final String NAME = AuthConstants.AUTH_PLUGIN_TYPE;
     
@@ -86,15 +90,12 @@ public class DefaultAiVisibilityService implements VisibilityService {
         }
         if (!VisibilityConstants.ACTION_READ.equals(action)) {
             advisor.setBasePredicate(BaseVisibilityPredicate.OWNER);
+            advisor.setAuthorizedPredicate(buildAuthorizedResources(identity, action, context));
             return advisor;
         }
         advisor.setBasePredicate(isAnonymousIdentity(identity) ? BaseVisibilityPredicate.PUBLIC
             : BaseVisibilityPredicate.PUBLIC_AND_OWNER);
-        AuthorizedResources authorized = new AuthorizedResources();
-        authorized.setResourceType(context == null ? null : context.getResourceType());
-        // TODO: populate explicit authorized resources from auth plugin once query advisor integration is complete.
-        authorized.setResources(new ArrayList<>());
-        advisor.setAuthorizedPredicate(authorized);
+        advisor.setAuthorizedPredicate(buildAuthorizedResources(identity, action, context));
         return advisor;
     }
     
@@ -139,7 +140,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
             return false;
         } catch (Exception e) {
             LOGGER.debug(
-                "[DefaultAiVisibilityService] Permission check failed for resource '{}': {}",
+                "[DefaultVisibilityService] Permission check failed for resource '{}': {}",
                 resourceId,
                 e.getMessage());
             return false;
@@ -171,19 +172,31 @@ public class DefaultAiVisibilityService implements VisibilityService {
     }
     
     private boolean isCurrentIdentityGlobalAdmin(String identity) {
-        if (StringUtils.isBlank(identity)) {
-            return false;
+        return AuthIdentityUtils.isCurrentIdentityGlobalAdmin(identity);
+    }
+    
+    private AuthorizedResources buildAuthorizedResources(String identity, String action,
+        VisibilityQueryContext context) {
+        AuthorizedResources authorized = new AuthorizedResources();
+        authorized.setResourceType(context == null ? null : context.getResourceType());
+        authorized.setResources(new ArrayList<>());
+        if (context == null || StringUtils.isBlank(identity)) {
+            return authorized;
         }
-        try {
-            IdentityContext identityContext =
-                RequestContextHolder.getContext().getAuthContext().getIdentityContext();
-            Object nacosUser = identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
-            if (!(nacosUser instanceof NacosUser user)) {
-                return false;
-            }
-            return identity.equals(user.getUserName()) && user.isGlobalAdmin();
-        } catch (Exception e) {
-            return false;
+        if (ApplicationUtils.getApplicationContext() == null) {
+            // Unit tests and lightweight runtimes may call the advisor before Spring context is ready.
+            return authorized;
         }
+        AtomicReference<VisibilityGrantService> serviceRef = new AtomicReference<>();
+        ApplicationUtils.getBeanIfExist(VisibilityGrantService.class, serviceRef::set);
+        VisibilityGrantService grantService = serviceRef.get();
+        if (grantService == null) {
+            return authorized;
+        }
+        // The domain adapter combines these names with the base predicate before count and paging.
+        List<String> resources = grantService.findAuthorizedResourceNames(identity,
+            context.getNamespaceId(), context.getResourceType(), action);
+        authorized.setResources(new ArrayList<>(resources));
+        return authorized;
     }
 }

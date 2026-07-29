@@ -25,9 +25,9 @@ caller. It is separate from auth:
 - Visibility decides whether the target resource, or a resource in a range
   query, should be visible to that identity.
 
-Visibility is especially important for AI registry resources, where users may
-create resources that are private to an owner, public to readers, or visible
-through explicit authorization.
+The plugin is domain-neutral. The current Nacos integration applies it to AI
+registry resources, where users may create resources that are private to an
+owner, public to readers, or visible through explicit authorization.
 
 Visibility complements the [Auth And Permission Spec](auth-permission-spec.md)
 and follows the common lifecycle rules in the
@@ -105,7 +105,7 @@ storage layer can apply visibility predicates. `QueryAdvisor` carries:
 The API or storage adapter that lists resources must combine both parts without
 leaking private resources.
 
-The default AI integration converts `QueryAdvisor` to repository `QueryCondition`
+The default domain integration converts `QueryAdvisor` to repository `QueryCondition`
 before count and page queries run. The base predicate maps as follows:
 
 | Predicate | Query behavior |
@@ -121,8 +121,9 @@ their intersection or an empty result; resource-type implementations must not
 reset those fields after conversion and overwrite plugin visibility constraints.
 
 If `AuthorizedResources` is populated, it is added as an OR branch with the base
-predicate. The default implementation currently leaves this list empty and keeps
-the field as the extension point for explicit resource grants.
+predicate. The default visibility implementation populates this list from
+plugin-owned explicit grants stored by the selected auth plugin. Stored write
+grants imply read visibility, while read grants only affect read/list queries.
 
 ## Plugin State And Configuration
 
@@ -156,9 +157,13 @@ An external implementation may own properties under:
 nacos.plugin.visibility.{serviceName}.{itemKey}
 ```
 
+If visibility is disabled, the owning domain must define whether it behaves as
+fully visible or whether it rejects visibility-sensitive operations. The default
+visibility implementation treats disabled auth as allowing visibility.
 Legacy implementations compiled against the older SPI, and implementations that declare no
 definitions, receive their service-local properties once through
 `VisibilityService.init(Properties)`.
+
 Use of non-empty legacy properties emits a migration warning without logging
 configuration values. When an implementation reports `isConfigurable()=true`, the visibility
 manager must not invoke the legacy callback; the core plugin
@@ -187,6 +192,23 @@ resources, while auth remains the source of permission decisions. The
 [default auth plugin implementation](default-auth-plugin-spec.md) provides the
 current built-in visibility implementation.
 
+When a plugin-owned grant-management API needs to verify resource existence or
+owner metadata, the domain may expose a lightweight lookup bridge such as
+`VisibilityResourceLocator` so the auth/visibility plugin can resolve
+`namespaceId`, `resourceType`, `resourceName`, `owner`, and `scope` without
+taking a direct compile-time dependency on domain persistence classes.
+
+The default built-in grant-management API is:
+
+```text
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
+```
+
+These endpoints are plugin-owned auth APIs and must use `ApiType.ADMIN_API`.
+The default implementation does not expose a management-side grant-list
+endpoint.
+
 ## API Requirements
 
 Any API that returns visibility-aware resources must:
@@ -194,6 +216,8 @@ Any API that returns visibility-aware resources must:
 - Validate single-resource read/write operations with `validateVisibility`.
 - Apply `adviseQuery` to list or search operations before returning data.
 - Preserve owner and scope metadata when resources are created or updated.
+- If the domain exposes explicit grant-management APIs, validate resource
+  existence and management authority before mutating grants.
 - Avoid exposing private resource names through counts, errors, or partial list
   responses.
 - Return not found for denied single-resource reads when the API needs to hide

@@ -86,6 +86,7 @@ guide, not as a final OpenAPI export.
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | User login and management in default auth plugin. |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | Role management in default auth plugin. |
 | `/v3/auth/permission` | 4 | GET, POST, DELETE | Permission management in default auth plugin. |
+| `/v3/auth/visibility` | 2 | POST, DELETE | Plugin-owned visibility grant management in default auth plugin. |
 
 ## 4. Open API Implemented Behavior
 
@@ -176,6 +177,7 @@ The v3 auth API lives in the default auth plugin, not in core:
 /v3/auth/user
 /v3/auth/role
 /v3/auth/permission
+/v3/auth/visibility
 ```
 
 Implemented behavior:
@@ -184,6 +186,8 @@ Implemented behavior:
   search.
 - role management supports add, delete, list, and search.
 - permission management supports add, delete, and list.
+- visibility grant management supports grant and revoke for explicit
+  resource visibility access.
 - first-admin bootstrap is implemented by `POST /v3/auth/user/admin`.
 
 The default auth plugin is shipped with Nacos, so its v3 auth endpoints should
@@ -250,8 +254,9 @@ code appear to describe different surfaces.
   AgentSpec; docs do not consistently describe the privileged operation.
 - AgentSpec version meta: code has `GET /v3/admin/ai/agentspecs/version/meta`;
   it is not documented in the admin API doc.
-- Auth v3: code exposes `/v3/auth/user`, `/role`, and `/permission`; the three
-  website API files do not cover this API surface.
+- Auth v3: code exposes `/v3/auth/user`, `/role`, `/permission`, and
+  `/v3/auth/visibility`; the three website API files do not cover this API
+  surface.
 - Config Open API exception handling: `ConfigOpenApiController` lacks
   `@NacosApi` while most v3 controllers have it; Open API docs assume unified
   response.

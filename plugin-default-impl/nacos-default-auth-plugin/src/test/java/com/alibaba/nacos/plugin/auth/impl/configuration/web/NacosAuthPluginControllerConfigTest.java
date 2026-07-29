@@ -18,12 +18,14 @@ package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.UserController;
+import com.alibaba.nacos.plugin.auth.impl.controller.v3.VisibilityGrantControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.UserControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -44,6 +46,11 @@ class NacosAuthPluginControllerConfigTest {
             tokenManagerDelegate) instanceof UserControllerV3);
         assertTrue(config.roleControllerV3(roleService) instanceof RoleControllerV3);
         assertTrue(config.permissionControllerV3(roleService) instanceof PermissionControllerV3);
+        VisibilityGrantService grantService =
+            config.visibilityGrantService(roleService, userService);
+        assertTrue(grantService != null);
+        assertTrue(config
+            .visibilityGrantControllerV3(grantService) instanceof VisibilityGrantControllerV3);
     }
     
     @Test

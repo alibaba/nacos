@@ -201,6 +201,7 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 | `/v3/auth/user/admin` | 当不存在全局管理员时进行管理员初始化。 |
 | `/v3/auth/role` | 角色管理。 |
 | `/v3/auth/permission` | 权限管理。 |
+| `/v3/auth/visibility` | 显式资源可见性授权管理。 |
 
 管理端点必须使用控制台域的 `@Secured` 资源保护，例如 `console/users`、
 `console/roles`、`console/permissions` 和 `console/user/password`。
@@ -208,6 +209,11 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 登录端点是有意公开的。管理员初始化端点只在无管理员初始化状态下有意暴露；一旦全局管理员
 已经存在，必须拒绝该端点。这些 API 属于 [V3 API 范围](../http-api/v3-api-surface.md)，
 并必须遵守 [HTTP 鉴权规范](../http-api/authorization-spec.md)。
+
+可见性授权 API 属于插件自有接口，而不是任何领域 controller 家族的一部分。它使用
+`ApiType.ADMIN_API` 与 identity-only 请求鉴权，并在授权服务层执行资源管理权限判断。
+启用鉴权时，只有资源 owner 或全局管理员可以对该资源执行 grant 或 revoke
+显式可见性授权。
 
 ## 默认可见性实现
 
@@ -230,8 +236,65 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
+默认 RBAC `permissions.resource` 列必须保存完整、精确的 canonical 资源字符串。
+该列至少需要支持 512 个字符，以避免命名空间资源持久化时被截断。资源匹配语义是精确且
+大小写敏感的；因此默认 MySQL schema 对该列使用 `utf8mb4_bin`，并为
+`permissions` 表使用 `ROW_FORMAT=DYNAMIC`，以保证现有 `(role, resource, action)`
+索引在 `utf8mb4` 下可用。
+
+已有 MySQL 部署在应用升级 SQL 前，应检查 MySQL 版本、InnoDB page size、row format
+以及当前 `permissions` 表结构。运维人员必须先配置兼容的 InnoDB 存储模式，再执行
+MySQL 迁移，以确保现有 `UNIQUE(role, resource, action)` 索引能够接受扩展后的
+`utf8mb4` resource 列。
+
+本次变更的升级脚本通过 `distribution/conf` 交付：
+
+| 数据库 | 升级脚本 | 精确 schema 变更 |
+|--------|----------|------------------|
+| MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
+| Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
+| PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+
+MySQL 脚本包含以下预检查：
+
+```sql
+SELECT VERSION();
+SHOW VARIABLES LIKE 'innodb_page_size';
+SHOW VARIABLES LIKE 'innodb_default_row_format';
+SHOW CREATE TABLE permissions;
+```
+
+这些脚本只扩展原始 canonical resource 列，不得添加仅服务于授权列表反查的
+`permissions(resource, action, role)` 或 `roles(role, username)` 索引。
+面向运维人员的升级说明见
+[`doc/visibility-permission-resource-upgrade.md`](../../../doc/visibility-permission-resource-upgrade.md)。
+
+当前支持资源的显式可见性授权通过以下接口管理：
+
+```text
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
+```
+
+两个端点均使用 `ApiType.ADMIN_API` 保护。
+
+授权行为：
+
+- 只读授权存储为动作 `r`。
+- 写或读写授权请求统一存储为 `rw`，并且 `rw` 在列表/搜索查询建议中隐式包含读权限。
+- 授权数据复用默认 RBAC 持久化，在鉴权后端以插件自有的内部角色和权限形式存储。
+- 默认实现最多为每个被授权用户创建一个保留的内部可见性角色。角色名必须确定性生成、
+  对被授权用户唯一，并受限于现有角色名列长度。资源和动作信息只能存储在绑定到该角色
+  的权限行中，不得编码进角色名。
+- 列表/搜索鉴权必须从调用方保留可见性角色绑定的实际权限行推导显式可见资源。只有角色
+  绑定、但没有匹配权限行时，不得授予可见性。
+- 资源存在性和 owner 元数据通过领域提供的可见性资源定位桥接解析，而不是让鉴权插件直接
+  编译依赖领域持久化类型。
+
 范围查询必须组合基础可见性谓词和显式授权资源。当前默认实现已经暴露显式授权资源结构；
-API 和存储集成在补齐后必须使用该结构。
+默认可见性实现会从授权服务填充显式授权资源，使列表/搜索路径能够返回授权给当前调用方
+的私有资源。
 
 对于 AI 列表和搜索路径，可见性必须在 count 和分页查询前转换为仓储层查询条件。这可以让
 `totalCount` 与可见资源集合保持一致，并避免全量加载后在内存中过滤。

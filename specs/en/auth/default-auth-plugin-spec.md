@@ -242,6 +242,7 @@ The default plugin owns these v3 API families:
 | `/v3/auth/user/admin` | Administrator bootstrap when no global admin exists. |
 | `/v3/auth/role` | Role management. |
 | `/v3/auth/permission` | Permission management. |
+| `/v3/auth/visibility` | Explicit visibility grant management. |
 
 Management endpoints must be protected by console-scoped `@Secured` resources
 such as `console/users`, `console/roles`, `console/permissions`, and
@@ -252,6 +253,12 @@ only for the no-admin initialization state and must be rejected after a global
 administrator exists. These APIs are part of the
 [V3 API Surface](../http-api/v3-api-surface.md) and must follow the
 [HTTP Authorization Spec](../http-api/authorization-spec.md).
+
+The visibility grant API is plugin-owned, not part of any domain controller
+family. It uses `ApiType.ADMIN_API` with identity-only request authentication
+and enforces resource management authority in the grant service. When auth is
+enabled, only the resource owner or a global administrator may grant or revoke
+explicit visibility access for that resource.
 
 ## Default Visibility Implementation
 
@@ -275,10 +282,76 @@ Explicit visibility permission resources use:
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
+The exact canonical resource string must be stored in the default RBAC
+`permissions.resource` column. The column must support at least 512 characters
+so namespaced resources can be persisted without truncation. Resource matching
+is exact and case-sensitive; the default MySQL schema therefore uses
+`utf8mb4_bin` for this column and `ROW_FORMAT=DYNAMIC` for the `permissions`
+table to keep the existing `(role, resource, action)` indexes valid with
+`utf8mb4`.
+
+Existing MySQL deployments should review the MySQL version, InnoDB page size,
+row format, and current `permissions` table definition before applying the
+upgrade SQL. Operators must configure a compatible InnoDB storage mode before
+running the MySQL migration so the existing `UNIQUE(role, resource, action)`
+index can accept the enlarged `utf8mb4` resource column.
+
+Upgrade scripts for this change are delivered in `distribution/conf`:
+
+| Database | Upgrade script | Exact schema change |
+|----------|----------------|---------------------|
+| MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
+| Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
+| PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+
+The MySQL script documents these preflight checks:
+
+```sql
+SELECT VERSION();
+SHOW VARIABLES LIKE 'innodb_page_size';
+SHOW VARIABLES LIKE 'innodb_default_row_format';
+SHOW CREATE TABLE permissions;
+```
+
+These scripts only expand the raw canonical resource column. They must not add
+grant-list-only reverse indexes such as `permissions(resource, action, role)` or
+`roles(role, username)`.
+The operator-facing upgrade note is
+[`doc/visibility-permission-resource-upgrade.md`](../../../doc/visibility-permission-resource-upgrade.md).
+
+Explicit visibility grants for currently supported resources are managed through:
+
+```text
+POST /v3/auth/visibility
+DELETE /v3/auth/visibility
+```
+
+Both endpoints are secured with `ApiType.ADMIN_API`.
+
+Grant behavior:
+
+- Read grants store action `r`.
+- Write or read-write grant requests store action `rw`, and `rw` implies read
+  visibility when list/search queries are advised.
+- Grant data reuses the default RBAC persistence by storing plugin-owned
+  internal roles and permissions in the auth backend.
+- The default implementation creates at most one reserved internal visibility
+  role for each grantee user. The role name is deterministic, unique to the
+  grantee, and bounded by the existing role-name column. Resource and action
+  data must be stored only in permission rows attached to that role, not encoded
+  into the role name.
+- List/search authorization must derive explicit resources from the actual
+  permission rows attached to the caller's reserved visibility role. A role
+  binding without a matching permission row must not grant visibility.
+- Resource existence and owner metadata are resolved through a domain-provided
+  visibility resource locator instead of a direct compile-time dependency from
+  the auth plugin to domain persistence types.
+
 Range queries must combine the base visibility predicate with explicitly
-authorized resources. The current default implementation exposes the structure
-for explicit authorized resources; API and storage integrations must use it as
-that integration is completed.
+authorized resources. The default visibility implementation populates
+explicit authorized resources from the grant service so list/search paths can
+include private resources that were granted to the caller.
 
 For AI list and search paths, visibility must be converted into repository query
 conditions before count and page queries run. This keeps `totalCount` aligned

@@ -187,8 +187,6 @@ CREATE TABLE permissions (
                              constraint uk_role_permission UNIQUE (role,resource,action)
 );
 
-
-
 /******************************************/
 /*   ipv6 support   */
 /******************************************/

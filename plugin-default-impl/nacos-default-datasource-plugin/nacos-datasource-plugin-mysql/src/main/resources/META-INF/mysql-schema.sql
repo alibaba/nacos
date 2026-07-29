@@ -172,10 +172,10 @@ CREATE TABLE `roles` (
 
 CREATE TABLE `permissions` (
                                `role` varchar(50) NOT NULL COMMENT 'role',
-                               `resource` varchar(128) NOT NULL COMMENT 'resource',
+                               `resource` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'resource',
                                `action` varchar(8) NOT NULL COMMENT 'action',
                                UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 
 /******************************************/

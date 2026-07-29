@@ -1,0 +1,53 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.plugin.datasource.impl.postgresql;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PostgresqlVisibilityPermissionSchemaResourceTest {
+    
+    @Test
+    void testPermissionResourceColumnSupportsCanonicalVisibilityResource() throws IOException {
+        String schema = readResource("META-INF/pg-schema.sql");
+        assertTrue(schema.contains("\"resource\" varchar(512)  NOT NULL"));
+        assertFalse(schema.contains("idx_permission_resource"));
+        assertFalse(schema.contains("idx_role_user"));
+    }
+    
+    @Test
+    void testPermissionResourceUpgradeScriptExpandsResourceColumn() throws IOException {
+        String sql = readResource("META-INF/pg-upgrade-visibility-permission-resource.sql");
+        assertTrue(sql.contains("ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512)"));
+        assertFalse(sql.contains("idx_permission_resource"));
+    }
+    
+    private String readResource(String resourceName) throws IOException {
+        try (InputStream inputStream =
+            getClass().getClassLoader().getResourceAsStream(resourceName)) {
+            assertNotNull(inputStream);
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+}

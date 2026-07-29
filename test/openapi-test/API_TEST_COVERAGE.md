@@ -53,8 +53,9 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
-| Console API | 28 | 25 | 3 | 0 | 89.29% | 94.64% |
-| Total | 74 | 64 | 10 | 0 | 86.49% | 93.24% |
+| Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
+| Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
+| Total | 78 | 64 | 11 | 3 | 86.30% | 93.15% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -121,4 +122,5 @@ Console facade.
 | Client OpenAPI | [CLIENT_API_TEST_SCENARIOS.md](CLIENT_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/openapi/client` |
 | Admin API | [ADMIN_API_TEST_SCENARIOS.md](ADMIN_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi` |
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
+| Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth` |
 | AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry` |
