@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -125,6 +126,7 @@ class AgentMaintainerServiceImplTest {
             .thenReturn(response(agent()), response(null));
         AgentUpdateRequest updateRequest = new AgentUpdateRequest();
         updateRequest.setAgentName(AGENT_NAME);
+        updateRequest.setDisplayName("Demo");
         
         Agent updated = service.updateAgent(NAMESPACE_ID, updateRequest);
         service.deleteAgent(NAMESPACE_ID, AGENT_NAME);
@@ -133,8 +135,15 @@ class AgentMaintainerServiceImplTest {
         List<HttpRequest> requests = captureRequests(2);
         assertRequest(requests.get(0), HttpMethod.PUT, rootPath());
         assertEquals(AGENT_NAME, requests.get(0).getParamValues().get("agentName"));
+        assertEquals("Demo", requests.get(0).getParamValues().get("displayName"));
         assertRequest(requests.get(1), HttpMethod.DELETE, rootPath());
         assertEquals(AGENT_NAME, requests.get(1).getParamValues().get("agentName"));
+    }
+    
+    @Test
+    void testNullRequestIsRejectedLocally() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.createDraft(NAMESPACE_ID, null));
     }
     
     @Test

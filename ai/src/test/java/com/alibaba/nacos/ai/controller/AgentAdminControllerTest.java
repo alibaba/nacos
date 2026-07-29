@@ -79,6 +79,10 @@ class AgentAdminControllerTest {
         verify(operationService).listAgents("public", "Demo", "assistant", "PRIVATE", "alice",
             "download_count", 2, 20);
         
+        mockMvc.perform(MockMvcRequestBuilders.get(PATH + "/list"))
+            .andExpect(status().isOk());
+        verify(operationService).listAgents("public", null, null, null, null, null, 1, 100);
+        
         mockMvc.perform(MockMvcRequestBuilders.get(PATH + "/versions")
             .param("agentName", "Demo Agent").param("status", "draft")
             .param("pageNo", "2").param("pageSize", "20")).andExpect(status().isOk());

@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -1229,6 +1230,56 @@ class AgentPersistenceServiceTest {
     }
     
     @Test
+    void testTryUpdateAgentRejectsNullMismatchAndCorruptCurrentRow() {
+        AiResource current = storedResource();
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(null, current));
+        
+        Agent replacement = newAgent();
+        AiResource mismatch = storedResource();
+        mismatch.setName("Other Agent");
+        NacosApiException notFound = assertThrows(NacosApiException.class,
+            () -> service.tryUpdateAgent(replacement, mismatch));
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(), notFound.getDetailErrCode());
+        
+        AiResource corrupt = storedResource();
+        corrupt.setStatus("invalid");
+        NacosApiException serverError = assertThrows(NacosApiException.class,
+            () -> service.tryUpdateAgent(replacement, corrupt));
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), serverError.getDetailErrCode());
+        
+        verifyNoInteractions(resourcePersistService);
+    }
+    
+    @Test
+    void testTryUpdateAgentRejectsEveryReadOnlyProjectionField() {
+        AiResource current = storedResource();
+        Agent replacement = newAgent();
+        
+        replacement.setVersionInfo(new AgentVersionInfo());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(replacement, current));
+        replacement.setVersionInfo(null);
+        replacement.setVersionCatalog(new AgentVersionCatalog());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(replacement, current));
+        replacement.setVersionCatalog(null);
+        replacement.setMetaVersion(1L);
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(replacement, current));
+        replacement.setMetaVersion(null);
+        replacement.setCreateTime(1L);
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(replacement, current));
+        replacement.setCreateTime(null);
+        replacement.setUpdateTime(1L);
+        assertThrows(IllegalArgumentException.class,
+            () -> service.tryUpdateAgent(replacement, current));
+        
+        verifyNoInteractions(resourcePersistService);
+    }
+    
+    @Test
     void testListAgentsMapsSummariesAndRetainsPageMetadata() throws NacosException {
         QueryCondition condition = new QueryCondition();
         condition.setNamespaceId(NAMESPACE_ID);
@@ -1248,6 +1299,31 @@ class AgentPersistenceServiceTest {
         assertEquals(VERSION,
             result.getPageItems().get(0).getVersionInfo().getEditingVersion());
         verifyNoInteractions(versionPersistService, storageService);
+    }
+    
+    @Test
+    void testListAgentsHandlesNullPagesAndRejectsInvalidStoredSummary()
+        throws NacosException {
+        QueryCondition condition = new QueryCondition();
+        Page<AiResource> emptySource = new Page<AiResource>();
+        emptySource.setPageItems(null);
+        AiResource invalid = storedResource();
+        invalid.setStatus("invalid");
+        Page<AiResource> invalidSource = new Page<AiResource>();
+        invalidSource.setPageItems(Collections.singletonList(invalid));
+        when(resourcePersistService.list(condition, 1, 10)).thenReturn(null, emptySource,
+            invalidSource);
+        
+        Page<AgentSummary> nullPage = service.listAgents(condition, 1, 10);
+        Page<AgentSummary> emptyPage = service.listAgents(condition, 1, 10);
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.listAgents(condition, 1, 10));
+        
+        assertEquals(0, nullPage.getTotalCount());
+        assertEquals(0, nullPage.getPagesAvailable());
+        assertTrue(nullPage.getPageItems().isEmpty());
+        assertTrue(emptyPage.getPageItems().isEmpty());
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), exception.getDetailErrCode());
     }
     
     @Test
@@ -1678,6 +1754,30 @@ class AgentPersistenceServiceTest {
         assertEquals(VERSION,
             JacksonUtils.toObj(updates.getAllValues().get(1).getVersionInfo(),
                 ResourceVersionInfo.class).getEditingVersion());
+    }
+    
+    @Test
+    void testDeleteDraftSuppressesCompensationReadFailure() throws NacosException {
+        IllegalStateException deleteFailure = new IllegalStateException("delete failed");
+        IllegalStateException compensationFailure =
+            new IllegalStateException("compensation read failed");
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion())
+            .thenThrow(compensationFailure);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(resourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(Constants.Agent.RESOURCE_TYPE_AGENT), eq(3L), any(AiResource.class)))
+            .thenReturn(true);
+        when(versionPersistService.delete(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenThrow(deleteFailure);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION));
+        
+        assertServerError(exception);
+        assertEquals(compensationFailure, deleteFailure.getSuppressed()[0]);
+        verify(storageService, never()).delete(any(AgentVersionStorageDescriptor.class));
     }
     
     @Test

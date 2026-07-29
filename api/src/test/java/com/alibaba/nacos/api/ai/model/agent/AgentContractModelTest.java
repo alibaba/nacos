@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentContractModelTest extends BasicRequestTest {
     
@@ -288,6 +289,110 @@ class AgentContractModelTest extends BasicRequestTest {
         
         request.setLabels(Collections.singletonMap("stable", "1.0.0"));
         request.validate();
+    }
+    
+    @Test
+    void testDraftCreateRequestAccessors() {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        AgentProvider provider = newProvider();
+        Map<String, Object> extensions = new LinkedHashMap<String, Object>();
+        extensions.put("region", "east");
+        request.setAgentName("Demo Agent");
+        request.setDisplayName("Demo");
+        request.setDescription("description");
+        request.setIconUrl("https://example.com/icon.png");
+        request.setProvider(provider);
+        request.setTags(Collections.singletonList("assistant"));
+        request.setExtensions(extensions);
+        request.setVersion("2.0.0");
+        request.setCallInterfaces(Collections.singletonList(newCallInterface()));
+        request.setAuthor("alice");
+        request.setChangeDescription("initial draft");
+        request.setBasedOnVersion(null);
+        
+        request.validate();
+        
+        assertEquals("Demo Agent", request.getAgentName());
+        assertEquals("Demo", request.getDisplayName());
+        assertEquals("description", request.getDescription());
+        assertEquals("https://example.com/icon.png", request.getIconUrl());
+        assertEquals(provider, request.getProvider());
+        assertEquals(Collections.singletonList("assistant"), request.getTags());
+        assertEquals(extensions, request.getExtensions());
+        assertEquals("2.0.0", request.getVersion());
+        assertEquals("a2a", request.getCallInterfaces().get(0).getProtocol());
+        assertEquals("alice", request.getAuthor());
+        assertEquals("initial draft", request.getChangeDescription());
+        assertNull(request.getBasedOnVersion());
+    }
+    
+    @Test
+    void testDraftUpdateRequestAccessorsAndValidation() {
+        AgentDraftUpdateRequest request = new AgentDraftUpdateRequest();
+        request.setAgentName("Demo Agent");
+        request.setVersion("2.0.0");
+        request.setCallInterfaces(Collections.singletonList(newCallInterface()));
+        request.setChangeDescription("updated");
+        
+        request.validate();
+        
+        assertEquals("Demo Agent", request.getAgentName());
+        assertEquals("2.0.0", request.getVersion());
+        assertEquals("a2a", request.getCallInterfaces().get(0).getProtocol());
+        assertEquals("updated", request.getChangeDescription());
+        
+        request.setCallInterfaces(null);
+        assertThrows(IllegalArgumentException.class, request::validate);
+    }
+    
+    @Test
+    void testAgentUpdateRequestAccessorsAndEveryWritableStatus() {
+        AgentUpdateRequest request = new AgentUpdateRequest();
+        AgentProvider provider = newProvider();
+        Map<String, Object> extensions = Collections.<String, Object>singletonMap("region", "east");
+        request.setAgentName("Demo Agent");
+        request.setDisplayName("Demo");
+        request.setDescription("description");
+        request.setIconUrl("https://example.com/icon.png");
+        request.setProvider(provider);
+        request.setTags(Collections.singletonList("assistant"));
+        request.setExtensions(extensions);
+        request.setStatus(AiConstants.Agent.RESOURCE_STATUS_DISABLE);
+        
+        request.validate();
+        
+        assertEquals("Demo Agent", request.getAgentName());
+        assertEquals("Demo", request.getDisplayName());
+        assertEquals("description", request.getDescription());
+        assertEquals("https://example.com/icon.png", request.getIconUrl());
+        assertEquals(provider, request.getProvider());
+        assertEquals(Collections.singletonList("assistant"), request.getTags());
+        assertEquals(extensions, request.getExtensions());
+        assertEquals(AiConstants.Agent.RESOURCE_STATUS_DISABLE, request.getStatus());
+    }
+    
+    @Test
+    void testLabelsUpdateRequestAccessorsAndNullLabels() {
+        AgentLabelsUpdateRequest request = new AgentLabelsUpdateRequest();
+        request.setAgentName("Demo Agent");
+        request.setLabels(null);
+        
+        assertEquals("Demo Agent", request.getAgentName());
+        assertNull(request.getLabels());
+        assertThrows(IllegalArgumentException.class, request::validate);
+        
+        Map<String, String> labels = Collections.singletonMap("stable", "1.0.0");
+        request.setLabels(labels);
+        request.validate();
+        assertEquals(labels, request.getLabels());
+    }
+    
+    @Test
+    void testAdminRequestBlankUtility() {
+        assertTrue(AgentAdminRequestUtils.isBlank(null));
+        assertTrue(AgentAdminRequestUtils.isBlank(""));
+        assertTrue(AgentAdminRequestUtils.isBlank(" \t"));
+        assertFalse(AgentAdminRequestUtils.isBlank(" value"));
     }
     
     private Agent newAgent() {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -52,6 +53,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -60,6 +62,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -261,6 +264,34 @@ class AgentOperationServiceTest {
     }
     
     @Test
+    void testAgentUpdateAndDraftCreationRejectNullRequests() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateAgent(null));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.createDraft(NAMESPACE_ID, null));
+        
+        verifyNoInteractions(persistenceService, resourceManager);
+    }
+    
+    @Test
+    void testAgentUpdateFailsAfterCasRetryExhaustion() throws NacosException {
+        Agent replacement = new Agent();
+        replacement.setNamespaceId(NAMESPACE_ID);
+        replacement.setAgentName(AGENT_NAME);
+        AiResource meta = meta(null, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        when(persistenceService.tryUpdateAgent(replacement, meta)).thenReturn(null);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateAgent(replacement));
+        
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), exception.getDetailErrCode());
+        verify(persistenceService,
+            org.mockito.Mockito.times(AiResourceConstants.MAX_WORKING_VERSION_RETRY))
+            .tryUpdateAgent(replacement, meta);
+    }
+    
+    @Test
     void testUpdateAgentRechecksWritePermissionBeforeEveryCasAttempt() throws NacosException {
         Agent replacement = new Agent();
         replacement.setNamespaceId(NAMESPACE_ID);
@@ -328,6 +359,40 @@ class AgentOperationServiceTest {
     }
     
     @Test
+    void testListAgentsReturnsEmptyPageForVisibilityDenial() throws NacosException {
+        QueryCondition query = new QueryCondition();
+        query.setAlwaysEmpty(true);
+        when(resourceManager.buildQueryCondition(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, null, null, null, null,
+            VisibilityConstants.ACTION_READ)).thenReturn(query);
+        
+        Page<AgentSummary> result =
+            service.listAgents(NAMESPACE_ID, null, null, null, null, null, 3, 20);
+        
+        assertEquals(3, result.getPageNumber());
+        assertEquals(0, result.getTotalCount());
+        verifyNoInteractions(persistenceService);
+    }
+    
+    @Test
+    void testListAgentsAcceptsPublicScopeAndRejectsUnsupportedFilters()
+        throws NacosException {
+        QueryCondition query = new QueryCondition();
+        Page<AgentSummary> expected = new Page<AgentSummary>();
+        when(resourceManager.buildQueryCondition(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, null, null, "PUBLIC", null,
+            VisibilityConstants.ACTION_READ)).thenReturn(query);
+        when(persistenceService.listAgents(query, 1, 20)).thenReturn(expected);
+        
+        assertSame(expected,
+            service.listAgents(NAMESPACE_ID, null, null, "PUBLIC", null, null, 1, 20));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.listAgents(NAMESPACE_ID, null, null, "INTERNAL", null, null, 1, 20));
+        assertThrows(IllegalArgumentException.class,
+            () -> service.listAgents(NAMESPACE_ID, null, null, null, null, "name", 1, 20));
+    }
+    
+    @Test
     void testListAgentsRejectsInvalidTagFilter() {
         assertThrows(IllegalArgumentException.class,
             () -> service.listAgents(NAMESPACE_ID, null, String.join("", Collections.nCopies(65,
@@ -376,6 +441,46 @@ class AgentOperationServiceTest {
             org.mockito.Mockito.times(4));
         verify(persistenceService).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
         verify(persistenceService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
+    }
+    
+    @Test
+    void testInitialDraftContentGuardCoversMissingDirectContent() {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> ReflectionTestUtils.invokeMethod(service, "requireInitialDraftContent",
+                request));
+    }
+    
+    @Test
+    void testInitialAgentMetadataDetectionChecksEveryField() {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        assertFalse(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        
+        request.setDisplayName("display");
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        request.setDisplayName(null);
+        request.setDescription("description");
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        request.setDescription(null);
+        request.setIconUrl("https://example.com/icon.png");
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        request.setIconUrl(null);
+        request.setProvider(new com.alibaba.nacos.api.ai.model.agent.AgentProvider());
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        request.setProvider(null);
+        request.setTags(Collections.singletonList("assistant"));
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
+        request.setTags(null);
+        request.setExtensions(Collections.<String, Object>singletonMap("region", "east"));
+        assertTrue(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
+            "hasInitialAgentMetadata", request)));
     }
     
     @Test
