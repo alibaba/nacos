@@ -45,8 +45,11 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -62,6 +65,14 @@ class AiMaintainerServiceDefaultMethodsTest {
     private ClientHttpProxy clientHttpProxy;
     
     private AiMaintainerService aiMaintainerService;
+    
+    @Test
+    void testDefaultAgentFacadeIsUnsupported() {
+        AiMaintainerService legacyImplementation =
+            mock(AiMaintainerService.class, CALLS_REAL_METHODS);
+        
+        assertThrows(UnsupportedOperationException.class, legacyImplementation::agent);
+    }
     
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
