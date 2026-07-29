@@ -34,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -221,6 +222,9 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
+                if (url == null) {
+                    throw new FileNotFoundException("SQL resource not found: " + sqlFile);
+                }
                 sqlFileIn = url.openStream();
             } else {
                 sqlFileIn = new FileInputStream(file);
@@ -242,7 +246,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
             return sqlList;
         } catch (Exception ex) {
-            throw new Exception(ex.getMessage());
+            throw new Exception(ex.getMessage(), ex);
         } finally {
             IoUtils.closeQuietly(sqlFileIn);
         }
