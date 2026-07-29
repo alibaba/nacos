@@ -249,9 +249,10 @@ Explore facet 必须在可见性、当前版本和请求过滤后，对完整的
 任务以 namespace、resource type 和 resource name 为键。Consumer 重新读取标准资源状态，
 替换或删除关系索引，再使所选向量索引收敛。只有已配置的两类索引均完成收敛，任务才算完成。
 
-失败任务回到 `pending`，并保留 retry count、next execution time、lease 和 last error。
-周期性 reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。
-只记录日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
+失败任务回到 `pending`，并保留 retry count、Unix Epoch 毫秒形式的 next execution 与
+lease 截止点，以及 last error。周期性 reconciliation 用于发现遗漏的生命周期事件，并
+分别校验关系索引与向量索引状态。只记录日志并吞掉索引异常不构成一致性机制，仅依靠启动
+backfill 也不充分。
 
 `ai_resource_task` 保存合并后的 `search_index` 任务 revision、版本化 Payload 和 Result，
 以及重试状态。任务完成和重试更新都必须带 revision 条件，避免旧租约结束时误删并发产生的

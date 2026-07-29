@@ -27,10 +27,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -69,7 +69,7 @@ class AiResourceIndexTaskConsumerTest {
         AiResourceIndexTask task = task();
         task.setEnhancementRequested(true);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
         when(indexBuildService.isEnhancementRequired()).thenReturn(true);
@@ -82,7 +82,7 @@ class AiResourceIndexTaskConsumerTest {
         verify(indexBuildService).rebuildLatestAiResource("public", "skill", "avatar");
         verify(taskRepository).advanceToEnhancement(task);
         verify(taskRepository, never()).complete(eq(task), any());
-        verify(taskRepository, never()).retry(eq(task), any(), any());
+        verify(taskRepository, never()).retry(eq(task), anyLong(), any());
     }
     
     @Test
@@ -90,7 +90,7 @@ class AiResourceIndexTaskConsumerTest {
         AiResourceIndexTask task = task();
         task.setEnhancementRequested(true);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
         when(taskRepository.complete(task, null)).thenReturn(true);
@@ -107,7 +107,7 @@ class AiResourceIndexTaskConsumerTest {
     void shouldNotEnhanceReconciledHistoricalResource() throws Exception {
         AiResourceIndexTask task = task();
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
         lenient().when(indexBuildService.isEnhancementRequired()).thenReturn(true);
@@ -127,7 +127,7 @@ class AiResourceIndexTaskConsumerTest {
         AiResourceIndexTask task = task();
         task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.isEnhancementRequired()).thenReturn(true);
         when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
@@ -146,16 +146,16 @@ class AiResourceIndexTaskConsumerTest {
     void shouldRetainTaskWithBackoffAfterIndexFailure() throws Exception {
         AiResourceIndexTask task = task();
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         doThrow(new NacosException(NacosException.SERVER_ERROR, "vector unavailable"))
             .when(indexBuildService).rebuildLatestAiResource("public", "skill", "avatar");
+        when(taskRepository.retry(task, 5_000L, "vector unavailable")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
-        verify(taskRepository).retry(eq(task), any(Timestamp.class),
-            eq("vector unavailable"));
+        verify(taskRepository).retry(task, 5_000L, "vector unavailable");
         verify(taskRepository, never()).complete(eq(task), any());
     }
     
@@ -163,17 +163,19 @@ class AiResourceIndexTaskConsumerTest {
     void shouldRetainEnhancementTaskAfterLlmFailure() throws Exception {
         AiResourceIndexTask task = task();
         task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        task.setRetryCount(13);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.isEnhancementRequired()).thenReturn(true);
         doThrow(new IllegalStateException("llm unavailable")).when(indexBuildService)
             .enhanceLatestAiResource("public", "skill", "avatar");
+        when(taskRepository.retry(task, 1_800_000L, "llm unavailable")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
-        verify(taskRepository).retry(eq(task), any(Timestamp.class), eq("llm unavailable"));
+        verify(taskRepository).retry(task, 1_800_000L, "llm unavailable");
         verify(taskRepository, never()).complete(eq(task), any());
     }
     
@@ -182,7 +184,7 @@ class AiResourceIndexTaskConsumerTest {
         AiResourceIndexTask task = task();
         task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.isEnhancementRequired()).thenReturn(true);
         when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
             .thenReturn(false);
@@ -201,7 +203,7 @@ class AiResourceIndexTaskConsumerTest {
         AiResourceIndexTask task = task();
         task.setResourceType("mcp");
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
-        when(taskRepository.claim(eq(task), any(Timestamp.class))).thenReturn(true);
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         doThrow(new NacosException(NacosException.NOT_FOUND, "not found"))
             .when(mcpServerOperationService).getMcpServerDetail("public", "avatar", null, null);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,

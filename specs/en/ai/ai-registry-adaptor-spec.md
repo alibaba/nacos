@@ -302,11 +302,11 @@ re-reads canonical state, replaces or deletes the relational index, then
 converges the selected vector index. A task is complete only after both
 configured indexes have converged.
 
-Failures return to `pending` and retain retry count, next execution time, lease,
-and the last error. Periodic reconciliation detects missed lifecycle events
-and independently verifies relational and vector state. Logging and swallowing
-an indexing exception is not a consistency mechanism, and startup backfill
-alone is not sufficient.
+Failures return to `pending` and retain retry count, the Unix Epoch millisecond
+next-execution and lease deadlines, and the last error. Periodic reconciliation
+detects missed lifecycle events and independently verifies relational and
+vector state. Logging and swallowing an indexing exception is not a consistency
+mechanism, and startup backfill alone is not sufficient.
 
 `ai_resource_task` stores the coalesced `search_index` task revision,
 versioned payload and result, and retry state. Completion and retry updates are

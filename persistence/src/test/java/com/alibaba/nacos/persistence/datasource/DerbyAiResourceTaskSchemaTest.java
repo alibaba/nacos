@@ -43,12 +43,15 @@ class DerbyAiResourceTaskSchemaTest {
         assertTrue(schema.contains("task_payload CLOB"));
         assertTrue(schema.contains("task_result CLOB"));
         assertTrue(schema.contains("retry_count int"));
-        assertTrue(schema.contains("next_execute_time timestamp"));
+        assertTrue(schema.contains("next_execute_at bigint"));
+        assertTrue(schema.contains("lease_expire_at bigint"));
         assertTrue(schema.contains("idx_ai_resource_task_due"));
         assertTrue(schema.contains("idx_ai_resource_task_lease"));
         assertFalse(schema.contains("CREATE TABLE ai_resource_search_index_task"));
         assertFalse(schema.contains("attempt_count"));
         assertFalse(schema.contains("next_retry_time"));
+        assertFalse(schema.contains("next_execute_time timestamp"));
+        assertFalse(schema.contains("lease_until timestamp"));
     }
     
     private String readSchema() throws IOException {

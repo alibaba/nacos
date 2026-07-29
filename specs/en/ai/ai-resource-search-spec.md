@@ -111,7 +111,7 @@ The same task row owns two durable stages:
   the complete resource-version vector index.
 
 Each stage uses `pending`, `processing`, and `completed` states. Initial and
-retryable work both use `pending`; `retry_count`, `next_execute_time`, and
+retryable work both use `pending`; `retry_count`, `next_execute_at`, and
 `last_error` distinguish a delayed retry from a new task. Successful rows are
 retained as bounded, per-live-resource checkpoints rather than task history.
 Resource lifecycle changes increment the task revision and restart the row at
@@ -127,6 +127,13 @@ Enhancement completion metadata is stored in versioned `task_result`; the
 current result contains the completed enhancement fingerprint. Scheduler
 metadata used by polling, claiming, retry, lease recovery, and revision fencing
 remains in dedicated relational columns.
+
+Scheduling deadlines use Unix Epoch milliseconds in the `next_execute_at` and
+`lease_expire_at` BIGINT columns. Polling, claiming, retry, and lease renewal
+must derive their comparisons and deadlines from the same injected application
+clock; they must not mix JDBC timestamps produced by the JVM with datasource
+`CURRENT_TIMESTAMP`. Nacos cluster nodes are expected to keep their system
+clocks synchronized.
 
 Enhancement writes are idempotent. AI-generated chunk types are replaced
 transactionally rather than appended, and vector documents are replaced for
@@ -147,7 +154,7 @@ enhancement stage returns to `pending` with retry metadata instead of being
 treated as disabled.
 
 Failures return the current stage to `pending`, increment `retry_count`, and
-set `next_execute_time` using exponential backoff. Periodic reconciliation
+set `next_execute_at` using exponential backoff. Periodic reconciliation
 detects missed, partial, stale, and orphaned base index data. A missing or
 inconsistent index is rebuilt through the normal indexing flow and requests
 enhancement when enhancement is enabled at repair scheduling time. An
@@ -190,7 +197,10 @@ to `ai_resource_task` before enabling search. Existing `resource_type`,
 `resource_name`, and `enhancement_requested` values move into the version-1
 `task_payload`; `enhancement_fingerprint` moves into version-1 `task_result`;
 `attempt_count` becomes `retry_count`; and `next_retry_time` becomes
-`next_execute_time`. Existing `retry` rows become `pending`. Migrated rows use
+the Unix Epoch millisecond `next_execute_at`. Existing `retry` rows become
+`pending`. An intermediate `ai_resource_task` schema that used
+`next_execute_time` and `lease_until` timestamps must convert them to
+`next_execute_at` and `lease_expire_at` Epoch milliseconds. Migrated rows use
 `task_type=search_index`, and their task keys are regenerated with the task
 type included. Existing task intent must be retained during a live upgrade.
 For an unreleased development deployment where task state may be discarded,
@@ -216,7 +226,9 @@ Tests cover keyword and vector recall, ranking, visibility, current-version
 validation, cursor pagination, full-set aggregation beyond one page,
 transactional replacement, both durable task stages, lease recovery,
 superseded revisions, versioned task payload and result, task-type isolation,
-idempotent enhancement retry, configuration-fingerprint recording without
-global rescheduling, lifecycle enhancement intent, and repair-triggered
-reconciliation enhancement without historical full refresh. Protocol adaptors
-separately test their request grammar and response conformance.
+timezone-independent Epoch scheduling, deterministic-clock lease and retry
+boundaries, idempotent enhancement retry, configuration-fingerprint recording
+without global rescheduling, lifecycle enhancement intent, and
+repair-triggered reconciliation enhancement without historical full refresh.
+Protocol adaptors separately test their request grammar and response
+conformance.

@@ -309,12 +309,12 @@ CREATE TABLE `ai_resource_task` (
     `task_result` text COMMENT '任务结果，JSON文本',
     `retry_count` int NOT NULL DEFAULT 0 COMMENT '当前阶段重试次数',
     `revision` bigint(20) NOT NULL DEFAULT 1 COMMENT '任务修订号',
-    `next_execute_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最早执行时间',
-    `lease_until` datetime DEFAULT NULL COMMENT '租约到期时间',
+    `next_execute_at` bigint(20) NOT NULL COMMENT '最早执行时间，Unix Epoch毫秒',
+    `lease_expire_at` bigint(20) DEFAULT NULL COMMENT '租约到期时间，Unix Epoch毫秒',
     `last_error` varchar(2000) DEFAULT NULL COMMENT '最近错误',
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`task_key`),
-    KEY `idx_ai_resource_task_due` (`task_type`,`status`,`next_execute_time`),
-    KEY `idx_ai_resource_task_lease` (`task_type`,`status`,`lease_until`)
+    KEY `idx_ai_resource_task_due` (`task_type`,`status`,`next_execute_at`),
+    KEY `idx_ai_resource_task_lease` (`task_type`,`status`,`lease_expire_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源持久化异步任务表';

@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.model.search.AiResourceIndexTask;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -46,14 +45,16 @@ public interface AiResourceIndexTaskRepository {
     List<AiResourceIndexTask> findDueTasks(int limit);
     
     /**
-     * Claim one task revision for exclusive processing.
+     * Claim one task revision for exclusive processing for the given lease duration in
+     * milliseconds.
      */
-    boolean claim(AiResourceIndexTask task, Timestamp leaseUntil);
+    boolean claim(AiResourceIndexTask task, long leaseDurationMillis);
     
     /**
-     * Renew the lease held by one processing task revision.
+     * Renew the lease held by one processing task revision for the given duration in
+     * milliseconds.
      */
-    boolean renewLease(AiResourceIndexTask task, Timestamp leaseUntil);
+    boolean renewLease(AiResourceIndexTask task, long leaseDurationMillis);
     
     /**
      * Advance a completed base-index revision to durable enhancement.
@@ -71,9 +72,9 @@ public interface AiResourceIndexTaskRepository {
     boolean remove(AiResourceIndexTask task);
     
     /**
-     * Retain the claimed revision for a later retry.
+     * Retain the claimed revision for a retry after the given delay in milliseconds.
      */
-    void retry(AiResourceIndexTask task, Timestamp nextExecuteTime, String lastError);
+    boolean retry(AiResourceIndexTask task, long retryDelayMillis, String lastError);
     
     /**
      * Release a replacement revision that was scheduled while this revision was processing.

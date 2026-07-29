@@ -35,7 +35,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -117,8 +116,7 @@ public class AiResourceIndexTaskConsumer
     void consume() {
         List<AiResourceIndexTask> tasks = taskRepository.findDueTasks(BATCH_SIZE);
         for (AiResourceIndexTask task : tasks) {
-            Timestamp leaseUntil = new Timestamp(System.currentTimeMillis() + LEASE_MILLIS);
-            if (!taskRepository.claim(task, leaseUntil)) {
+            if (!taskRepository.claim(task, LEASE_MILLIS)) {
                 continue;
             }
             if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
@@ -150,8 +148,7 @@ public class AiResourceIndexTaskConsumer
     
     private void renewLease(AiResourceIndexTask task) {
         try {
-            taskRepository.renewLease(task,
-                new Timestamp(System.currentTimeMillis() + LEASE_MILLIS));
+            taskRepository.renewLease(task, LEASE_MILLIS);
         } catch (Exception e) {
             LOGGER.warn("Failed to renew AI resource index task lease for {}:{} in namespace {}",
                 task.getResourceType(), task.getResourceName(), task.getNamespaceId(), e);
@@ -196,13 +193,19 @@ public class AiResourceIndexTaskConsumer
     
     private void retry(AiResourceIndexTask task, Exception e) {
         long retrySeconds = retryDelaySeconds(task);
-        taskRepository.retry(task,
-            new Timestamp(System.currentTimeMillis() + retrySeconds * 1000L), errorMessage(e));
-        LOGGER.warn(
-            "Failed to converge AI resource index stage {} for {}:{} in namespace {}, "
-                + "retry in {}s",
-            task.getTaskStage(), task.getResourceType(), task.getResourceName(),
-            task.getNamespaceId(), retrySeconds, e);
+        if (taskRepository.retry(task, retrySeconds * 1000L, errorMessage(e))) {
+            LOGGER.warn(
+                "Failed to converge AI resource index stage {} for {}:{} in namespace {}, "
+                    + "retry in {}s",
+                task.getTaskStage(), task.getResourceType(), task.getResourceName(),
+                task.getNamespaceId(), retrySeconds, e);
+        } else {
+            LOGGER.warn(
+                "Failed to converge AI resource index stage {} for {}:{} in namespace {}, "
+                    + "retry skipped because task revision was superseded",
+                task.getTaskStage(), task.getResourceType(), task.getResourceName(),
+                task.getNamespaceId(), e);
+        }
     }
     
     private void consumeSafely() {

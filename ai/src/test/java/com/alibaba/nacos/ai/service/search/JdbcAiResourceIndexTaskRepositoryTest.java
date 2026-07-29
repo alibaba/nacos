@@ -25,7 +25,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -40,9 +42,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class JdbcAiResourceIndexTaskRepositoryTest {
     
+    private static final long INITIAL_EPOCH_MILLIS = 1_800_000_000_000L;
+    
     private JdbcTemplate jdbcTemplate;
     
     private JdbcAiResourceIndexTaskRepository repository;
+    
+    private long currentEpochMillis;
     
     @BeforeEach
     void setUp() {
@@ -55,21 +61,21 @@ class JdbcAiResourceIndexTaskRepositoryTest {
             + "task_type varchar(64) NOT NULL, task_stage varchar(32) NOT NULL,"
             + "status varchar(16) NOT NULL, task_payload clob NOT NULL, task_result clob,"
             + "retry_count int NOT NULL, revision bigint NOT NULL,"
-            + "next_execute_time timestamp NOT NULL,"
-            + "lease_until timestamp, last_error varchar(2000),"
+            + "next_execute_at bigint NOT NULL,"
+            + "lease_expire_at bigint, last_error varchar(2000),"
             + "gmt_create timestamp NOT NULL, gmt_modified timestamp NOT NULL)");
-        repository = new JdbcAiResourceIndexTaskRepository(jdbcTemplate);
+        setCurrentEpochMillis(INITIAL_EPOCH_MILLIS);
     }
     
     @Test
     void newerScheduleShouldWaitForClaimedRevisionAndThenRunBaseStage() {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask firstRevision = repository.findDueTasks(10).get(0);
-        assertTrue(repository.claim(firstRevision,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(firstRevision, 60_000L));
         
         repository.schedule("public", "skill", "avatar", true);
         assertFalse(repository.complete(firstRevision, "old-fingerprint"));
+        assertFalse(repository.retry(firstRevision, 30_000L, "old failure"));
         assertTrue(repository.findDueTasks(10).isEmpty());
         repository.releaseSuperseded(firstRevision);
         
@@ -85,16 +91,14 @@ class JdbcAiResourceIndexTaskRepositoryTest {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask baseTask = repository.findDueTasks(10).get(0);
         assertTrue(baseTask.isEnhancementRequested());
-        assertTrue(repository.claim(baseTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(baseTask, 60_000L));
         assertEquals(2L, baseTask.getRevision());
         assertTrue(repository.advanceToEnhancement(baseTask));
         
         AiResourceIndexTask enhancementTask = repository.findDueTasks(10).get(0);
         assertEquals(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT,
             enhancementTask.getTaskStage());
-        assertTrue(repository.claim(enhancementTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(enhancementTask, 60_000L));
         assertTrue(repository.complete(enhancementTask, "fingerprint-v1"));
         assertTrue(repository.findDueTasks(10).isEmpty());
         
@@ -124,24 +128,25 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     @Test
     void claimedEnhancementTaskShouldRenewItsLease() {
         AiResourceIndexTask task = scheduleEnhancementTask();
-        Timestamp initialLease = new Timestamp(System.currentTimeMillis() + 60_000L);
-        assertTrue(repository.claim(task, initialLease));
+        assertTrue(repository.claim(task, 60_000L));
+        assertEquals(currentEpochMillis + 60_000L, jdbcTemplate.queryForObject(
+            "SELECT lease_expire_at FROM ai_resource_task", Long.class));
         
-        Timestamp renewedLease = new Timestamp(System.currentTimeMillis() + 120_000L);
-        assertTrue(repository.renewLease(task, renewedLease));
-        assertEquals(renewedLease, jdbcTemplate.queryForObject(
-            "SELECT lease_until FROM ai_resource_task", Timestamp.class));
+        advanceTime(20_000L);
+        assertTrue(repository.renewLease(task, 120_000L));
+        assertEquals(currentEpochMillis + 120_000L, jdbcTemplate.queryForObject(
+            "SELECT lease_expire_at FROM ai_resource_task", Long.class));
     }
     
     @Test
     void expiredLeaseShouldBeClaimedByANewerRevision() {
         AiResourceIndexTask expired = scheduleEnhancementTask();
-        assertTrue(repository.claim(expired,
-            new Timestamp(System.currentTimeMillis() - 1_000L)));
+        assertTrue(repository.claim(expired, 1_000L));
+        assertTrue(repository.findDueTasks(10).isEmpty());
+        advanceTime(1_001L);
         
         AiResourceIndexTask takeover = repository.findDueTasks(10).get(0);
-        assertTrue(repository.claim(takeover,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(takeover, 60_000L));
         
         assertEquals(expired.getRevision() + 1, takeover.getRevision());
         assertFalse(repository.complete(expired, "stale-fingerprint"));
@@ -149,12 +154,17 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     }
     
     @Test
-    void failedEnhancementShouldRetainItsStageForRetry() {
+    void failedEnhancementShouldBackOffUsingEpochMillis() {
         AiResourceIndexTask task = scheduleEnhancementTask();
-        assertTrue(repository.claim(task, new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(task, 60_000L));
         
-        repository.retry(task, new Timestamp(System.currentTimeMillis() - 1_000L),
-            "llm unavailable");
+        assertTrue(repository.retry(task, 1_800_000L, "llm unavailable"));
+        assertEquals(currentEpochMillis + 1_800_000L, jdbcTemplate.queryForObject(
+            "SELECT next_execute_at FROM ai_resource_task", Long.class));
+        assertTrue(repository.findDueTasks(10).isEmpty());
+        advanceTime(1_799_999L);
+        assertTrue(repository.findDueTasks(10).isEmpty());
+        advanceTime(1L);
         
         AiResourceIndexTask retry = repository.findDueTasks(10).get(0);
         assertEquals(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT, retry.getTaskStage());
@@ -165,7 +175,7 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     @Test
     void completedEnhancementShouldWaitForResourceChange() {
         AiResourceIndexTask task = scheduleEnhancementTask();
-        assertTrue(repository.claim(task, new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(task, 60_000L));
         assertTrue(repository.complete(task, "fingerprint-v1"));
         
         assertTrue(repository.findDueTasks(10).isEmpty());
@@ -174,13 +184,11 @@ class JdbcAiResourceIndexTaskRepositoryTest {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask baseTask = repository.findDueTasks(10).get(0);
         assertEquals(AiResourceIndexTask.STAGE_BASE_INDEX, baseTask.getTaskStage());
-        assertTrue(repository.claim(baseTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(baseTask, 60_000L));
         assertTrue(repository.advanceToEnhancement(baseTask));
         
         AiResourceIndexTask enhancementTask = repository.findDueTasks(10).get(0);
-        assertTrue(repository.claim(enhancementTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(enhancementTask, 60_000L));
         assertTrue(repository.complete(enhancementTask, "fingerprint-v2"));
         assertEquals("fingerprint-v2", completedEnhancementFingerprint());
     }
@@ -224,8 +232,7 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     @Test
     void inconsistentCompletedIndexShouldRequestEnabledEnhancement() {
         AiResourceIndexTask enhancementTask = scheduleEnhancementTask();
-        assertTrue(repository.claim(enhancementTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(enhancementTask, 60_000L));
         assertTrue(repository.complete(enhancementTask, "fingerprint-v1"));
         
         repository.scheduleReconciliation("public", "skill", "avatar", true);
@@ -247,10 +254,11 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     void findDueTasksShouldOnlyReturnSearchIndexTasks() {
         jdbcTemplate.update("INSERT INTO ai_resource_task "
             + "(task_key, namespace_id, task_type, task_stage, status, task_payload, "
-            + "task_result, retry_count, revision, next_execute_time, lease_until, "
+            + "task_result, retry_count, revision, next_execute_at, lease_expire_at, "
             + "last_error, gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, "
-            + "CURRENT_TIMESTAMP, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-            "other-task", "public", "metadata_extract", "extract", "pending", "{}");
+            + "?, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+            "other-task", "public", "metadata_extract", "extract", "pending", "{}",
+            currentEpochMillis);
         repository.schedule("public", "skill", "avatar", false);
         
         List<AiResourceIndexTask> tasks = repository.findDueTasks(10);
@@ -262,10 +270,19 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     private AiResourceIndexTask scheduleEnhancementTask() {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask baseTask = repository.findDueTasks(10).get(0);
-        assertTrue(repository.claim(baseTask,
-            new Timestamp(System.currentTimeMillis() + 60_000L)));
+        assertTrue(repository.claim(baseTask, 60_000L));
         assertTrue(repository.advanceToEnhancement(baseTask));
         return repository.findDueTasks(10).get(0);
+    }
+    
+    private void advanceTime(long millis) {
+        setCurrentEpochMillis(currentEpochMillis + millis);
+    }
+    
+    private void setCurrentEpochMillis(long millis) {
+        currentEpochMillis = millis;
+        Clock clock = Clock.fixed(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
+        repository = new JdbcAiResourceIndexTaskRepository(jdbcTemplate, clock);
     }
     
     private String completedEnhancementFingerprint() {

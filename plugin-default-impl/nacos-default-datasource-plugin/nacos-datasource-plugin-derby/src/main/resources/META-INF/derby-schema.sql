@@ -318,12 +318,12 @@ CREATE TABLE ai_resource_task (
     task_result CLOB,
     retry_count int NOT NULL DEFAULT 0,
     revision bigint NOT NULL DEFAULT 1,
-    next_execute_time timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
-    lease_until timestamp DEFAULT NULL,
+    next_execute_at bigint NOT NULL,
+    lease_expire_at bigint DEFAULT NULL,
     last_error varchar(2000) DEFAULT NULL,
     gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
     gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00'
 );
 
-CREATE INDEX idx_ai_resource_task_due ON ai_resource_task(task_type, status, next_execute_time);
-CREATE INDEX idx_ai_resource_task_lease ON ai_resource_task(task_type, status, lease_until);
+CREATE INDEX idx_ai_resource_task_due ON ai_resource_task(task_type, status, next_execute_at);
+CREATE INDEX idx_ai_resource_task_lease ON ai_resource_task(task_type, status, lease_expire_at);

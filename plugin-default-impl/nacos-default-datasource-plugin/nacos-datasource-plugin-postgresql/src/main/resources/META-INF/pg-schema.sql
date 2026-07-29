@@ -650,13 +650,13 @@ CREATE TABLE "ai_resource_task" (
   "task_result" text,
   "retry_count" int4 NOT NULL DEFAULT 0,
   "revision" int8 NOT NULL DEFAULT 1,
-  "next_execute_time" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "lease_until" timestamp(6),
+  "next_execute_at" int8 NOT NULL,
+  "lease_expire_at" int8,
   "last_error" varchar(2000),
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE "ai_resource_task" ADD CONSTRAINT "ai_resource_task_pkey" PRIMARY KEY ("task_key");
-CREATE INDEX "idx_ai_resource_task_due" ON "ai_resource_task" USING btree ("task_type", "status", "next_execute_time");
-CREATE INDEX "idx_ai_resource_task_lease" ON "ai_resource_task" USING btree ("task_type", "status", "lease_until");
+CREATE INDEX "idx_ai_resource_task_due" ON "ai_resource_task" USING btree ("task_type", "status", "next_execute_at");
+CREATE INDEX "idx_ai_resource_task_lease" ON "ai_resource_task" USING btree ("task_type", "status", "lease_expire_at");
