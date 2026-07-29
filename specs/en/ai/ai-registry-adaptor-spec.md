@@ -302,20 +302,21 @@ re-reads canonical state, replaces or deletes the relational index, then
 converges the selected vector index. A task is complete only after both
 configured indexes have converged.
 
-Failures retain retry state, including attempt count, next retry time, lease,
-and the last error. Periodic reconciliation detects missed lifecycle events and
-independently verifies relational and vector state. Logging and swallowing an
-indexing exception is not a consistency mechanism, and startup backfill alone
-is not sufficient.
+Failures return to `pending` and retain retry count, next execution time, lease,
+and the last error. Periodic reconciliation detects missed lifecycle events
+and independently verifies relational and vector state. Logging and swallowing
+an indexing exception is not a consistency mechanism, and startup backfill
+alone is not sufficient.
 
-`ai_resource_search_index_task` stores the coalesced task revision and retry
-state. Completion and retry updates are revision-conditional so a concurrent
-canonical change cannot be lost when an older lease finishes. While vector
-replacement is in progress, the relational document remains `pending`; search
-only reads `enabled` documents. The consumer enables the document after the vector
-provider confirms replacement. Reconciliation also compares the embedding
-model and vector document count with the relational chunks, and schedules
-missing, partial, stale, wrong-model, and orphaned indexes.
+`ai_resource_task` stores the coalesced `search_index` task revision,
+versioned payload and result, and retry state. Completion and retry updates are
+revision-conditional so a concurrent canonical change cannot be lost when an
+older lease finishes. While vector replacement is in progress, the relational
+document remains `pending`; search only reads `enabled` documents. The
+consumer enables the document after the vector provider confirms replacement.
+Reconciliation also compares the embedding model and vector document count
+with the relational chunks, and schedules missing, partial, stale, wrong-model,
+and orphaned indexes.
 
 ### 6.5 Conformance
 

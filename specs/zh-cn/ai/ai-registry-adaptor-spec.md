@@ -249,15 +249,16 @@ Explore facet 必须在可见性、当前版本和请求过滤后，对完整的
 任务以 namespace、resource type 和 resource name 为键。Consumer 重新读取标准资源状态，
 替换或删除关系索引，再使所选向量索引收敛。只有已配置的两类索引均完成收敛，任务才算完成。
 
-失败任务保留 attempt count、next retry time、lease 和 last error 等重试状态。周期性
-reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。只记录
-日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
+失败任务回到 `pending`，并保留 retry count、next execution time、lease 和 last error。
+周期性 reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。
+只记录日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
 
-`ai_resource_search_index_task` 保存合并后的任务 revision 与重试状态。任务完成和重试更新
-都必须带 revision 条件，避免旧租约结束时误删并发产生的新变更。向量替换期间，关系
-document 保持 `pending`，检索只读取 `enabled` document；Vector Provider 完成替换后，
-Consumer 才启用关系 document。Reconciliation 还需要比较 embedding model、向量文档数量与关系 chunks，
-并调度缺失、部分写入、过期、模型不一致及孤儿索引。
+`ai_resource_task` 保存合并后的 `search_index` 任务 revision、版本化 Payload 和 Result，
+以及重试状态。任务完成和重试更新都必须带 revision 条件，避免旧租约结束时误删并发产生的
+新变更。向量替换期间，关系 document 保持 `pending`，检索只读取 `enabled` document；
+Vector Provider 完成替换后，Consumer 才启用关系 document。Reconciliation 还需要比较
+embedding model、向量文档数量与关系 chunks，并调度缺失、部分写入、过期、模型不一致及
+孤儿索引。
 
 ### 6.5 一致性测试
 

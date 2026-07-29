@@ -23,6 +23,8 @@ package com.alibaba.nacos.ai.model.search;
  */
 public class AiResourceIndexTask {
     
+    public static final String TASK_TYPE = "search_index";
+    
     public static final String STAGE_BASE_INDEX = "base_index";
     
     public static final String STAGE_LLM_ENHANCEMENT = "llm_enhancement";
@@ -30,6 +32,8 @@ public class AiResourceIndexTask {
     private String taskKey;
     
     private String namespaceId;
+    
+    private String taskType;
     
     private String resourceType;
     
@@ -41,9 +45,7 @@ public class AiResourceIndexTask {
     
     private boolean enhancementRequested;
     
-    private String enhancementFingerprint;
-    
-    private int attemptCount;
+    private int retryCount;
     
     private long revision;
     
@@ -61,6 +63,14 @@ public class AiResourceIndexTask {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
+    }
+    
+    public String getTaskType() {
+        return taskType;
+    }
+    
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
     }
     
     public String getResourceType() {
@@ -103,20 +113,12 @@ public class AiResourceIndexTask {
         this.enhancementRequested = enhancementRequested;
     }
     
-    public String getEnhancementFingerprint() {
-        return enhancementFingerprint;
+    public int getRetryCount() {
+        return retryCount;
     }
     
-    public void setEnhancementFingerprint(String enhancementFingerprint) {
-        this.enhancementFingerprint = enhancementFingerprint;
-    }
-    
-    public int getAttemptCount() {
-        return attemptCount;
-    }
-    
-    public void setAttemptCount(int attemptCount) {
-        this.attemptCount = attemptCount;
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
     
     public long getRevision() {

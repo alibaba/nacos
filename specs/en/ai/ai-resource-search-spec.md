@@ -79,9 +79,13 @@ The relational search index uses protocol-neutral objects:
 
 - `ai_resource_search_document`;
 - `ai_resource_search_chunk`;
-- `ai_resource_search_index_task`.
+- `ai_resource_task`.
 
 These relational objects are available in every supported main datasource.
+`ai_resource_task` is reusable for durable asynchronous work within the AI
+resource domain; it is not a global Nacos workflow engine. Each task type owns
+the schema of its versioned JSON input and result. The logical JSON values are
+stored as text or CLOB rather than datasource-specific native JSON types.
 The optional PostgreSQL vector implementation owns its separate pgvector
 schema and `ai_resource_search_embedding_pg` table. Main datasource schemas
 must not create the pgvector extension or an embedding table.
@@ -93,8 +97,11 @@ are derived state and may be rebuilt.
 
 Replacing one resource version's relational document and chunks is atomic.
 Relational and vector indexes do not require a distributed transaction.
-Instead, an idempotent durable task keyed by namespace, resource type, and
-resource name re-reads canonical state and converges both indexes.
+Instead, an idempotent durable `search_index` task re-reads canonical state and
+converges both indexes. Its task key is SHA-256 over task type, namespace, and
+the logical subject composed of resource type and resource name. Including the
+task type permits other AI resource workflows to use the same table without
+colliding with search-index tasks.
 
 The same task row owns two durable stages:
 
@@ -103,12 +110,23 @@ The same task row owns two durable stages:
 - `llm_enhancement` replaces optional AI-generated chunks and then converges
   the complete resource-version vector index.
 
-Each stage uses `pending`, `processing`, `retry`, and `completed` states.
-Successful rows are retained as bounded, per-live-resource checkpoints rather
-than task history. Resource lifecycle changes increment the task revision and
-restart the row at `base_index`. A claimed revision may advance, retry, or
-complete only while it still owns the row. A lease permits another node to
-resume work after process failure.
+Each stage uses `pending`, `processing`, and `completed` states. Initial and
+retryable work both use `pending`; `retry_count`, `next_execute_time`, and
+`last_error` distinguish a delayed retry from a new task. Successful rows are
+retained as bounded, per-live-resource checkpoints rather than task history.
+Resource lifecycle changes increment the task revision and restart the row at
+`base_index`. A claimed revision may advance, retry, or complete only while it
+still owns the row. A lease permits another node to resume work after process
+failure.
+
+The search-index task input is stored in `task_payload` with a mandatory
+`schemaVersion`, a `subject` containing resource type and resource name, and
+`options.enhancementRequested`. The payload is replaced atomically when a new
+revision is scheduled and remains immutable while that revision executes.
+Enhancement completion metadata is stored in versioned `task_result`; the
+current result contains the completed enhancement fingerprint. Scheduler
+metadata used by polling, claiming, retry, lease recovery, and revision fencing
+remains in dedicated relational columns.
 
 Enhancement writes are idempotent. AI-generated chunk types are replaced
 transactionally rather than appended, and vector documents are replaced for
@@ -125,16 +143,19 @@ when the enhancement stage runs.
 
 When enhancement is disabled, base indexing may complete without the
 enhancement stage. When it is enabled but incompletely configured, the
-enhancement stage retains retry state instead of being treated as disabled.
+enhancement stage returns to `pending` with retry metadata instead of being
+treated as disabled.
 
-Failures retain retry state. Periodic reconciliation detects missed, partial,
-stale, and orphaned base index data. A missing or inconsistent index is rebuilt
-through the normal indexing flow and requests enhancement when enhancement is
-enabled at repair scheduling time. An already-consistent index is not repaired
-merely because the existing resource lacks an enhancement checkpoint, so
-enabling enhancement does not trigger a historical full refresh. Reconciliation
-preserves the durable enhancement intent of an active task for the same resource.
-Discovery reads only enabled documents whose configured indexes have converged.
+Failures return the current stage to `pending`, increment `retry_count`, and
+set `next_execute_time` using exponential backoff. Periodic reconciliation
+detects missed, partial, stale, and orphaned base index data. A missing or
+inconsistent index is rebuilt through the normal indexing flow and requests
+enhancement when enhancement is enabled at repair scheduling time. An
+already-consistent index is not repaired merely because the existing resource
+lacks an enhancement checkpoint, so enabling enhancement does not trigger a
+historical full refresh. Reconciliation preserves the durable enhancement
+intent in the payload of an active task for the same resource. Discovery reads
+only enabled documents whose configured indexes have converged.
 
 ## 7. Resource Bounds
 
@@ -156,20 +177,31 @@ must initialize all three protocol-neutral relational tables before enabling
 
 - `ai_resource_search_document`;
 - `ai_resource_search_chunk`;
-- `ai_resource_search_index_task`.
+- `ai_resource_task`.
 
 Use the matching current datasource schema for MySQL, PostgreSQL, Derby, or
 Oracle. The task table is required even when existing document and chunk
-tables already contain data. It stores stage, retry, lease, revision,
-completion-checkpoint, and enhancement-fingerprint state and does not replace
-either index table. Deployments upgrading an existing task table must add
-`task_stage`, `enhancement_requested`, and `enhancement_fingerprint` before
-enabling search. Existing task rows default to the `base_index` stage with
-`enhancement_requested=false`; enabling enhancement therefore does not modify
-consistent historical search data. Periodic reconciliation enhances a
-historical resource only when its base or configured vector index actually
-requires repair. Enhancing otherwise-consistent historical resources is a
-separate explicit operator action.
+tables already contain data. It stores the task type, versioned payload and
+result, stage, retry, lease, revision, and completion checkpoint and does not
+replace either index table.
+
+Deployments that already created `ai_resource_search_index_task` must migrate
+to `ai_resource_task` before enabling search. Existing `resource_type`,
+`resource_name`, and `enhancement_requested` values move into the version-1
+`task_payload`; `enhancement_fingerprint` moves into version-1 `task_result`;
+`attempt_count` becomes `retry_count`; and `next_retry_time` becomes
+`next_execute_time`. Existing `retry` rows become `pending`. Migrated rows use
+`task_type=search_index`, and their task keys are regenerated with the task
+type included. Existing task intent must be retained during a live upgrade.
+For an unreleased development deployment where task state may be discarded,
+the old task table may instead be dropped and the current schema recreated;
+reconciliation then repairs inconsistent base indexes.
+
+Enabling enhancement does not modify consistent historical search data.
+Periodic reconciliation enhances a historical resource only when its base or
+configured vector index actually requires repair. Enhancing
+otherwise-consistent historical resources is a separate explicit operator
+action.
 
 PostgreSQL deployments that do not enable the default vector plugin need no
 pgvector objects. Deployments that enable it must separately run the optional
@@ -183,8 +215,8 @@ SPI packages remain protocol-neutral even while ARD is the only consumer.
 Tests cover keyword and vector recall, ranking, visibility, current-version
 validation, cursor pagination, full-set aggregation beyond one page,
 transactional replacement, both durable task stages, lease recovery,
-superseded revisions, idempotent enhancement retry, configuration-fingerprint
-recording without global rescheduling, lifecycle enhancement intent, and
-repair-triggered reconciliation enhancement without historical full refresh.
-Protocol adaptors separately test their request grammar and response
-conformance.
+superseded revisions, versioned task payload and result, task-type isolation,
+idempotent enhancement retry, configuration-fingerprint recording without
+global rescheduling, lifecycle enhancement intent, and repair-triggered
+reconciliation enhancement without historical full refresh. Protocol adaptors
+separately test their request grammar and response conformance.

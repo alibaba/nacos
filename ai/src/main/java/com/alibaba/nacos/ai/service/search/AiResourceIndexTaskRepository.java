@@ -41,7 +41,7 @@ public interface AiResourceIndexTaskRepository {
         boolean enhancementRequested);
     
     /**
-     * Find tasks whose retry or lease time has elapsed.
+     * Find search-index tasks whose execution or lease time has elapsed.
      */
     List<AiResourceIndexTask> findDueTasks(int limit);
     
@@ -73,7 +73,7 @@ public interface AiResourceIndexTaskRepository {
     /**
      * Retain the claimed revision for a later retry.
      */
-    void retry(AiResourceIndexTask task, Timestamp nextRetryTime, String lastError);
+    void retry(AiResourceIndexTask task, Timestamp nextExecuteTime, String lastError);
     
     /**
      * Release a replacement revision that was scheduled while this revision was processing.

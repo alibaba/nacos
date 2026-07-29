@@ -261,7 +261,7 @@ public class AiResourceIndexTaskConsumer
     }
     
     private long retryDelaySeconds(AiResourceIndexTask task) {
-        int exponent = Math.min(Math.max(task.getAttemptCount(), 0), 6);
+        int exponent = Math.min(Math.max(task.getRetryCount(), 0), 6);
         if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
             return Math.min(MAX_ENHANCEMENT_RETRY_SECONDS, 30L << exponent);
         }
