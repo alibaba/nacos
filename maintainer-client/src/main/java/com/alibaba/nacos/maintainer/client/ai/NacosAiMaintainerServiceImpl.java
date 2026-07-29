@@ -31,6 +31,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     
     private final AgentSpecMaintainerService agentSpecMaintainerService;
     
+    private final AgentMaintainerService agentMaintainerService;
+    
     private final McpMaintainerService mcpMaintainerService;
     
     private final A2aMaintainerService a2aMaintainerService;
@@ -43,6 +45,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         AiMaintainerHttpContext context = new AiMaintainerHttpContext(properties);
         SkillMaintainerService skillDelegate = new SkillMaintainerServiceImpl(context);
         AgentSpecMaintainerService agentSpecDelegate = new AgentSpecMaintainerServiceImpl(context);
+        this.agentMaintainerService = new AgentMaintainerServiceImpl(context);
         this.mcpMaintainerService = new McpMaintainerServiceImpl(context);
         this.a2aMaintainerService = new A2aMaintainerServiceImpl(context);
         this.promptMaintainerService = new PromptMaintainerServiceImpl(context);
@@ -59,6 +62,11 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public AgentSpecMaintainerService agentSpec() {
         return agentSpecMaintainerService;
+    }
+    
+    @Override
+    public AgentMaintainerService agent() {
+        return agentMaintainerService;
     }
     
     @Override

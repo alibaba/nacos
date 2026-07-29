@@ -1857,6 +1857,25 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testListSkillsShouldIntersectOwnerFilterWithVisibility() throws NacosException {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.OWNER);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(eq("userA"), eq(VisibilityConstants.ACTION_READ),
+            eq("ADMIN_API"), any())).thenReturn(advisor);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        setupRequestContext("userA");
+        
+        Page<SkillSummary> result =
+            skillOperationService.listSkills("test-namespace", null, null, null, "userB", null,
+                null, 1, 10);
+        
+        assertTrue(result.getPageItems().isEmpty());
+        verify(aiResourcePersistService, never()).list(any(), eq(1), eq(10));
+    }
+    
+    @Test
     void testUpdateBizTagsSuccess() throws NacosException {
         String namespaceId = "test-ns";
         String skillName = "my-skill";

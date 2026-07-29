@@ -22,6 +22,7 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AiResourceMapper;
@@ -135,6 +136,15 @@ class EmbeddedAiResourcePersistServiceImplTest {
             eq(AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER))).thenReturn(updated);
         
         assertTrue(service.updateMetaCas("public", "skill-a", "skill", 1L, newResource()));
+        ModifyRequest metaUpdate = EmbeddedStorageContextHolder.getCurrentSqlContext().get(0);
+        assertFalse(metaUpdate.getSql().contains("owner=?"));
+        assertFalse(metaUpdate.getSql().contains("scope=?"));
+        assertFalse(metaUpdate.getSql().contains("COALESCE"));
+        assertEquals(9, metaUpdate.getArgs().length);
+        assertEquals("public", metaUpdate.getArgs()[5]);
+        assertEquals("skill-a", metaUpdate.getArgs()[6]);
+        assertEquals("skill", metaUpdate.getArgs()[7]);
+        assertEquals(1L, metaUpdate.getArgs()[8]);
         assertFalse(service.updateSourceCas("public", "skill-a", "skill", 1L, "builtin"));
     }
     

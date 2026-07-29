@@ -52,14 +52,15 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
-| Admin API | 35 | 30 | 5 | 0 | 85.71% | 92.86% |
-| Console API | 27 | 25 | 2 | 0 | 92.59% | 96.30% |
-| Total | 70 | 63 | 7 | 0 | 90.00% | 95.00% |
+| Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
+| Console API | 27 | 24 | 3 | 0 | 88.89% | 94.44% |
+| Total | 73 | 63 | 10 | 0 | 86.30% | 93.15% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
-shared runtime/storage state, require publish-pipeline plugin data, or require
-an external LLM provider.
+shared runtime/storage state, require publish-pipeline plugin data, require a
+data-plane publisher binding not yet present in standalone IT, or require an
+external LLM provider.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
@@ -97,6 +98,14 @@ Skill upload precheck response-shape coverage is maintained by the admin and
 console Skill upload scenario rows, including `maxPublishedVersion` and
 `targetVersion`. Contract-only field changes do not alter the scenario-row
 totals above.
+
+Agent Admin definition creation is counted in the existing Agent Admin and
+Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
+creates missing Agent metadata together with the first draft; the removed root
+`POST /v3/admin/ai/agents` operation is no longer a coverage surface. This
+contract consolidation does not change the scenario-row totals. POST retry and
+conflict scenarios prove that creation does not replace current draft content;
+replacement remains the distinct `PUT /v3/admin/ai/agents/draft` operation.
 
 ## Coverage Documents
 

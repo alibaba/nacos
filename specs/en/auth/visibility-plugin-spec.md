@@ -115,6 +115,11 @@ before count and page queries run. The base predicate maps as follows:
 | `OWNER` | Restrict to `owner=identity`, or empty result if identity is absent or conflicts. |
 | `PUBLIC_AND_OWNER` | Restrict to `scope=PUBLIC OR owner=identity`; anonymous callers degrade to public-only. |
 
+Caller-supplied business filters such as owner and scope must be present in the
+base `QueryCondition` before `QueryAdvisor` is applied. The converter produces
+their intersection or an empty result; resource-type implementations must not
+reset those fields after conversion and overwrite plugin visibility constraints.
+
 If `AuthorizedResources` is populated, it is added as an OR branch with the base
 predicate. The default implementation currently leaves this list empty and keeps
 the field as the extension point for explicit resource grants.

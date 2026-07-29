@@ -539,6 +539,16 @@ public class AiResourceManager {
     public QueryCondition buildQueryCondition(String namespaceId, String resourceType,
         String nameLike,
         String bizTagsLike, String action) {
+        return buildQueryCondition(namespaceId, resourceType, nameLike, bizTagsLike, null, null,
+            action);
+    }
+    
+    /**
+     * Build a {@link QueryCondition} with business scope/owner filters intersected with
+     * visibility advice.
+     */
+    public QueryCondition buildQueryCondition(String namespaceId, String resourceType,
+        String nameLike, String bizTagsLike, String scope, String owner, String action) {
         String identity = VisibilityHelper.resolveCurrentIdentity();
         String apiType = VisibilityHelper.resolveCurrentApiType();
         QueryCondition queryCondition = new QueryCondition();
@@ -546,6 +556,8 @@ public class AiResourceManager {
         queryCondition.setType(resourceType);
         queryCondition.setNameLike(nameLike);
         queryCondition.setBizTagsLike(bizTagsLike);
+        queryCondition.setScope(StringUtils.isBlank(scope) ? null : scope);
+        queryCondition.setOwner(StringUtils.isBlank(owner) ? null : owner);
         VisibilityQueryContext context = new VisibilityQueryContext();
         context.setNamespaceId(namespaceId);
         context.setResourceType(resourceType);

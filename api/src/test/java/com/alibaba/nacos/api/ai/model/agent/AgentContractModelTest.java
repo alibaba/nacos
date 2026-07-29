@@ -230,6 +230,66 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals(Long.valueOf(2L), restoredItem.getLastUpdatedTime());
     }
     
+    @Test
+    void testAdminRequestModelsDoNotCarryNamespace() throws JsonProcessingException {
+        AgentUpdateRequest update = new AgentUpdateRequest();
+        update.setAgentName("Demo Agent");
+        update.setStatus(AiConstants.Agent.RESOURCE_STATUS_DISABLE);
+        update.validate();
+        
+        AgentVersionCommand command = new AgentVersionCommand();
+        command.setAgentName("Demo Agent");
+        command.setVersion("1.0.0");
+        command.validate();
+        
+        assertFalse(mapper.writeValueAsString(update).contains("namespaceId"));
+        assertFalse(mapper.writeValueAsString(command).contains("namespaceId"));
+    }
+    
+    @Test
+    void testAgentUpdateRequestRequiresResourceStatus() {
+        AgentUpdateRequest request = new AgentUpdateRequest();
+        request.setAgentName("Demo Agent");
+        request.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
+        
+        request.setStatus(null);
+        assertThrows(IllegalArgumentException.class, request::validate);
+        request.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
+        request.validate();
+    }
+    
+    @Test
+    void testDraftCreateRequiresExactlyOneContentSource() {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        request.setAgentName("Demo Agent");
+        request.setVersion("2.0.0");
+        
+        assertThrows(IllegalArgumentException.class, request::validate);
+        
+        request.setCallInterfaces(Collections.singletonList(newCallInterface()));
+        request.setBasedOnVersion("1.0.0");
+        assertThrows(IllegalArgumentException.class, request::validate);
+        
+        request.setBasedOnVersion(null);
+        request.validate();
+        
+        request.setCallInterfaces(null);
+        request.setBasedOnVersion("1.0.0");
+        request.validate();
+    }
+    
+    @Test
+    void testLabelsUpdateRejectsLatestLabel() {
+        AgentLabelsUpdateRequest request = new AgentLabelsUpdateRequest();
+        request.setAgentName("Demo Agent");
+        request.setLabels(Collections.singletonMap("latest", "1.0.0"));
+        
+        assertThrows(IllegalArgumentException.class, request::validate);
+        
+        request.setLabels(Collections.singletonMap("stable", "1.0.0"));
+        request.validate();
+    }
+    
     private Agent newAgent() {
         Agent agent = new Agent();
         agent.setNamespaceId("public");

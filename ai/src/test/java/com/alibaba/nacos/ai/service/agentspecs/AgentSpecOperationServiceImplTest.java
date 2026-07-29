@@ -36,7 +36,11 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -520,6 +524,24 @@ class AgentSpecOperationServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getPageItems().size());
         assertEquals("[\"iot\"]", result.getPageItems().get(0).getBizTags());
+    }
+    
+    @Test
+    void testListAgentSpecsShouldIntersectScopeFilterWithVisibility() throws NacosException {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.PUBLIC);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(any(), eq(VisibilityConstants.ACTION_READ), any(),
+            any())).thenReturn(advisor);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        
+        Page<AgentSpecSummary> result =
+            service.listAgentSpecs("public", null, null, null, null,
+                VisibilityConstants.SCOPE_PRIVATE, 1, 10);
+        
+        assertTrue(result.getPageItems().isEmpty());
+        verify(aiResourcePersistService, never()).list(any(), eq(1), eq(10));
     }
     
     @Test

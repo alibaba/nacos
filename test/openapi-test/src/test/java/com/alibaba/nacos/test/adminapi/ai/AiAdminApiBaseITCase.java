@@ -18,6 +18,8 @@ package com.alibaba.nacos.test.adminapi.ai;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
@@ -59,6 +61,17 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     protected static final String ADMIN_A2A_LIST_PATH = ADMIN_A2A_PATH + "/list";
 
     protected static final String ADMIN_A2A_VERSION_LIST_PATH = ADMIN_A2A_PATH + "/version/list";
+
+    protected static final String ADMIN_AGENT_PATH = nacosPath("/v3/admin/ai/agents");
+
+    protected static final String ADMIN_AGENT_LIST_PATH = ADMIN_AGENT_PATH + "/list";
+
+    protected static final String ADMIN_AGENT_VERSIONS_PATH = ADMIN_AGENT_PATH + "/versions";
+
+    protected static final String ADMIN_AGENT_VERSION_PATH = ADMIN_AGENT_PATH + "/version";
+
+    protected static final String ADMIN_AGENT_RUNTIME_ENDPOINTS_PATH =
+            ADMIN_AGENT_PATH + "/runtime-endpoints";
 
     protected static final String ADMIN_MCP_PATH = nacosPath(Constants.MCP_ADMIN_PATH);
 
@@ -226,6 +239,150 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         form.put("registrationType", registrationType);
         form.put("agentCard", agentCard);
         return form;
+    }
+
+    protected Query agentIdentityQuery(String namespaceId, String agentName) {
+        Query query = Query.newInstance();
+        addIfNotBlank(query, "namespaceId", namespaceId);
+        addIfNotBlank(query, "agentName", agentName);
+        return query;
+    }
+
+    protected Query agentVersionIdentityQuery(String namespaceId, String agentName, String version) {
+        Query query = agentIdentityQuery(namespaceId, agentName);
+        addIfNotBlank(query, "version", version);
+        return query;
+    }
+
+    protected Map<String, Object> agentInitialDraftRequest(String namespaceId, String agentName,
+            String version) {
+        Map<String, Object> request = agentCatalogFields(namespaceId, agentName, "create");
+        request.put("version", version);
+        request.put("callInterfaces", Collections.singletonList(
+                agentCallInterface(agentName, version, "initial")));
+        request.put("author", "openapi-it");
+        request.put("changeDescription", "Initial Agent draft");
+        return request;
+    }
+
+    protected Map<String, Object> agentUpdateRequest(String namespaceId, String agentName,
+            String marker) {
+        Map<String, Object> request = agentCatalogFields(namespaceId, agentName, marker);
+        request.put("status", "enable");
+        return request;
+    }
+
+    protected Map<String, Object> agentDraftCreateRequest(String namespaceId, String agentName,
+            String version, String basedOnVersion) {
+        Map<String, Object> request = agentVersionCommand(namespaceId, agentName, version);
+        if (null == basedOnVersion) {
+            request.put("callInterfaces", Collections.singletonList(
+                    agentCallInterface(agentName, version, "draft")));
+        } else {
+            request.put("basedOnVersion", basedOnVersion);
+        }
+        request.put("author", "openapi-it");
+        request.put("changeDescription", "Create Agent draft " + version);
+        return request;
+    }
+
+    protected Map<String, Object> agentDraftUpdateRequest(String namespaceId, String agentName,
+            String version, String marker) {
+        Map<String, Object> request = agentVersionCommand(namespaceId, agentName, version);
+        request.put("callInterfaces", Collections.singletonList(
+                agentCallInterface(agentName, version, marker)));
+        request.put("changeDescription", "Update Agent draft " + marker);
+        return request;
+    }
+
+    protected Map<String, Object> agentVersionCommand(String namespaceId, String agentName,
+            String version) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        if (null != namespaceId) {
+            request.put("namespaceId", namespaceId);
+        }
+        request.put("agentName", agentName);
+        request.put("version", version);
+        return request;
+    }
+
+    protected Map<String, Object> agentLabelsUpdateRequest(String namespaceId, String agentName,
+            Map<String, String> labels) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        if (null != namespaceId) {
+            request.put("namespaceId", namespaceId);
+        }
+        request.put("agentName", agentName);
+        request.put("labels", labels);
+        return request;
+    }
+
+    protected Map<String, String> agentForm(Map<String, Object> request) {
+        Map<String, String> result = new LinkedHashMap<>();
+        request.forEach((key, value) -> {
+            if (null != value) {
+                result.put(key, value instanceof String ? (String) value : JacksonUtils.toJson(value));
+            }
+        });
+        return result;
+    }
+
+    protected HttpResponse postFormRaw(String path, Map<String, String> form) throws Exception {
+        HttpRestResult<String> result = nacosRestTemplate.postForm(requestUrl(path), Header.EMPTY,
+                form, String.class);
+        return toHttpResponse(result);
+    }
+
+    protected HttpResponse putFormRaw(String path, Map<String, String> form) throws Exception {
+        HttpRestResult<String> result = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY,
+                form, String.class);
+        return toHttpResponse(result);
+    }
+
+    private HttpResponse toHttpResponse(HttpRestResult<String> result) {
+        String body = null == result.getData() ? result.getMessage() : result.getData();
+        return httpResponse(result.getCode(), body);
+    }
+
+    protected void deleteAgentDefinitionQuietly(String namespaceId, String agentName)
+            throws Exception {
+        deleteQuietly(ADMIN_AGENT_PATH, agentIdentityQuery(namespaceId, agentName));
+    }
+
+    private Map<String, Object> agentCatalogFields(String namespaceId, String agentName,
+            String marker) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        if (null != namespaceId) {
+            request.put("namespaceId", namespaceId);
+        }
+        request.put("agentName", agentName);
+        request.put("displayName", "OpenAPI Agent " + marker);
+        request.put("description", "Agent admin OpenAPI " + marker);
+        request.put("iconUrl", "https://example.com/" + agentName + "/icon.png");
+        Map<String, String> provider = new LinkedHashMap<>();
+        provider.put("name", "Nacos OpenAPI IT");
+        provider.put("url", "https://nacos.io");
+        request.put("provider", provider);
+        request.put("tags", List.of("openapi-it", marker));
+        Map<String, Object> extensions = new LinkedHashMap<>();
+        extensions.put("x-openapi-it", Collections.singletonMap("marker", marker));
+        request.put("extensions", extensions);
+        return request;
+    }
+
+    private Map<String, Object> agentCallInterface(String agentName, String version,
+            String marker) {
+        Map<String, Object> descriptor = new LinkedHashMap<>();
+        descriptor.put("name", agentName);
+        descriptor.put("version", version);
+        descriptor.put("marker", marker);
+        Map<String, Object> callInterface = new LinkedHashMap<>();
+        callInterface.put("protocol", "a2a");
+        callInterface.put("protocolVersion", "1.0");
+        callInterface.put("descriptorMediaType", "application/json");
+        callInterface.put("nativeDescriptor", descriptor);
+        callInterface.put("endpointSourceOrder", Collections.singletonList("RUNTIME"));
+        return callInterface;
     }
 
     protected String buildLegacyAgentCard(String agentName, String version) {

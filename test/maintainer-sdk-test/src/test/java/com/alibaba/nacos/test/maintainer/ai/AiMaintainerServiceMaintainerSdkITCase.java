@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: the AI maintainer factory exposes MCP, A2A,
- *     Prompt, Skill, AgentSpec, and Pipeline delegate services against a
+ *     Agent, Prompt, Skill, AgentSpec, and Pipeline delegate services against a
  *     standalone Nacos server.</li>
  *     <li>Expected capability: representative MCP, A2A, Prompt, Skill, and
  *     AgentSpec admin lifecycle workflows create, query, list, update,
@@ -100,6 +100,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         
         assertNotNull(maintainerService.mcp());
         assertNotNull(maintainerService.a2a());
+        assertNotNull(maintainerService.agent());
         assertNotNull(maintainerService.prompt());
         assertNotNull(maintainerService.skill());
         assertNotNull(maintainerService.agentSpec());

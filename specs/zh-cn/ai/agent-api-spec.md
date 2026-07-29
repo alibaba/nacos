@@ -43,8 +43,8 @@ HTTP API 遵循 Nacos v3 约定：
 - 响应使用 `Result<T>`；新 Controller 使用 `@NacosApi`、
   `@Since(version = "3.3.0")`、对应 `ApiType`、`SignType.AI` 以及 `READ` 或
   `WRITE` 鉴权；
-- GET 输入使用 query，写入使用 JSON body；`agentName` 按原值比较，不作为
-  PathVariable；
+- GET 输入使用 query；其他 HTTP 输入编码由对应 Client、Admin 或 Console Binding
+  分别定义；`agentName` 按原值比较，不作为 PathVariable；
 - gRPC 继续使用统一 Nacos `Payload` stream 和 `metadata.type`，不增加 proto
   service method。
 
@@ -58,23 +58,24 @@ HTTP API 遵循 Nacos v3 约定：
 |---|---|
 | 普通 Client SDK | SDK 实例绑定一个 namespace。公开方法不接受 namespace 参数；Proxy 复制请求并在传输前注入绑定值。 |
 | Client HTTP 调用方 | 可以显式提交 `namespaceId`；省略时 Binding 在进入 RAD 前注入规范化默认值 `public`。 |
-| Maintainer SDK 和 Admin API | Maintainer SDK 实例不绑定 namespace；每个请求都显式提交 `namespaceId`，不提供默认 namespace 重载。 |
+| Maintainer SDK 和 Admin API | Maintainer SDK 实例不绑定 namespace。Admin HTTP Form 保留 `namespaceId`，省略或空白值统一规范化为 `public`。Maintainer Request 和 Command Payload 不包含 `namespaceId`：显式方法参数是自定义 namespace 的唯一来源，便利重载始终使用 `public`。 |
 
 如果普通 Client SDK 接受的模型中已带非空 `namespaceId`，它必须拒绝与 SDK namespace
 不同的值，并且不得修改调用方原对象。
 
 ### 1.2 并发、结果与错误
 
-Agent 元数据更新使用 `expectedMetaVersion`；draft 内容只允许在目标 Version 等于 Resource
-当前 `editingVersion` 且仍为 `draft` 状态时更新，并复用现有 AI Resource 更新流程。
-列表使用分页；`RuntimeEndpointSnapshot` 是完整、不分页的快照。
+Agent 元数据更新复用当前共享的 AI Resource 更新流程。首版 Agent Admin 契约不暴露
+Agent 专属的 `expectedMetaVersion`；条件更新能力后续随 `ai_resource` 和
+`ai_resource_version` 的统一 CAS 能力定义。draft 内容只允许在目标 Version 等于
+Resource 当前 `editingVersion` 且仍为 `draft` 状态时更新。列表使用分页；
+`RuntimeEndpointSnapshot` 是完整、不分页的快照。
 
 | 条件 | 必须返回的结果 |
 |---|---|
 | 字段缺失或非法、URI/range 非法、Endpoint 自然键重复 | 标准参数错误 |
 | Discover 目标不可见或不存在 | `RESOURCE_NOT_FOUND`，不区分可见性 |
 | 不存在 Agent 定义时 Endpoint 预注册 | 完成结构、鉴权和单 Batch 配额校验后接受 |
-| 元数据 CAS 冲突 | `RESOURCE_CONFLICT` |
 | 收敛后的 Runtime 投影包含 Publisher Payload 冲突 | `RESOURCE_CONFLICT` |
 | Version 生命周期转换非法 | `ILLEGAL_STATE` |
 | HTTP heartbeat 找不到 Client | HTTP 404 和独立应用码 `HTTP_CLIENT_NOT_FOUND` |
@@ -280,31 +281,59 @@ Admin 读取不隐式执行数据面 Discover，也不把 Runtime Endpoint 注�
 
 | Method | Path | 动作 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents` | 原子创建 Agent 和 initial draft | `Result<AgentOverview>` |
 | GET | `/v3/admin/ai/agents` | 读取 Agent 和首个有界 Version Summary page | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | 使用 metadata CAS 更新 Agent 可写字段 | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | 通过共享 AI Resource 更新流程修改 Agent 可写字段 | `Result<Agent>` |
 | DELETE | `/v3/admin/ai/agents` | 删除 Agent 定义及 Version 内容 | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | 筛选和分页 Agent Summary | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | 分页读取 Version Summary | `Result<Page<AgentVersionSummary>>` |
 | GET | `/v3/admin/ai/agents/version` | 读取一个精确 Version 定义 | `Result<AgentVersionDetail>` |
 | GET | `/v3/admin/ai/agents/runtime-endpoints` | 读取一个 Protocol 的完整 Runtime Snapshot，可按 Version 过滤 | `Result<RuntimeEndpointSnapshot>` |
 
+首版 Admin 列表复用共享 AI Resource 查询契约。`agentName` 是名称模糊过滤条件，
+可选的 `bizTag` 是单个业务标签模糊过滤条件；该 Binding 不引入多标签 AND 匹配或
+Agent 专用 collation 规则。`scope` 和 `owner` 是业务筛选条件，并与 Visibility Plugin
+返回的可见性约束取交集后再执行稳定分页。首版不提供 `ai_resource.status` 列表过滤。
+
+Admin 写入使用 `application/x-www-form-urlencoded`。身份、治理和生命周期字段使用
+普通 form 参数。HTTP Form 包含 `namespaceId`，由 Form 生成的 Request 和 Command
+对象不包含该字段。以下复杂字段使用 JSON 字符串：
+
+- Agent 更新：`provider`、`tags` 和 `extensions`；
+- draft 创建：`provider`、`tags`、`extensions` 和 `callInterfaces`；
+- draft 更新：`callInterfaces`；
+- label 更新：`labels`。
+
+Form 大小复用 Nacos 统一 HTTP form-size 策略；序列化后的 AgentVersion 内容仍独立遵循
+Agent 管理契约的容量限制。
+
 Runtime 查询输入为 `namespaceId + agentName + protocol + version?`；`protocol` 必填。
 省略 `version` 时，对该 Protocol 的每个 Endpoint 自然键返回一项及其全部 Binding；指定
 `version` 时只保留匹配 Binding。
 查询不应用 `endpointSourceOrder`，不要求定义存在，没有 Instance 时返回空 items。
 
-Create 包含 Agent 可写字段和必填 `initialDraft`。Agent、Version row 与 Storage 写入
-具有一个逻辑原子结果，并补偿局部失败。Update 可以修改展示信息、tags、extensions、
-enabled 状态、owner 和 scope，但不能修改身份、Version 内容、label 或派生 Catalog。
-删除定义后，普通 Discover 立即不可见，但不会删除生命周期独立的 Runtime Publication。
+不再提供独立的 `createAgent` 操作。`POST /draft` 是唯一创建入口：
+
+- Agent 不存在时，在一个逻辑操作中创建 Agent metadata、首个 Version row 和 Storage
+  内容。请求必须直接提交 `callInterfaces`，不得使用 `basedOnVersion`；可以提交
+  `displayName`、`description`、`iconUrl`、`provider`、`tags` 和 `extensions`
+  等可选展示 metadata。服务端初始化 `status=enable`，将 owner 初始化为当前调用者身份，
+  并通过共享默认可见性规则初始化 scope；
+- Agent 已存在时，从直接 `callInterfaces` 或一个精确 `basedOnVersion` 创建后续 draft。
+  首建专用展示 metadata 必须被拒绝，不能静默忽略。
+
+首建 Agent、Version row 与 Storage 写入具有一个逻辑原子结果，并补偿局部失败。
+Agent Update 可以修改展示字段、tags、extensions 和 enabled 状态，但不能修改身份、
+owner、scope、Version 内容、labels 或派生 catalog。owner 在首建时由服务端初始化，
+首版不提供 owner 转移能力；scope 变更属于独立的公开/私有可见性操作，不进入通用
+metadata CAS，首版 Agent API 暂不暴露该操作。删除定义会立即阻止普通发现，但不会
+删除由独立 Publisher 拥有的 Runtime Publication。
 
 ### 3.2 Version 生命周期路径
 
 | Method | Path | 转换或动作 | 返回 |
 |---|---|---|---|
-| POST | `/v3/admin/ai/agents/draft` | 创建新 draft，可复制一个精确 Version | `Result<AgentVersionDetail>` |
-| PUT | `/v3/admin/ai/agents/draft` | 更新 draft | `Result<AgentVersionDetail>` |
+| POST | `/v3/admin/ai/agents/draft` | Agent 不存在时创建 Agent 和首个直接内容 draft；存在时创建后续直接内容或复制 draft | `Result<AgentVersionDetail>` |
+| PUT | `/v3/admin/ai/agents/draft` | 覆盖当前精确 draft 的内容；不得创建缺失的 Agent 或 Version，也不修改 Agent metadata | `Result<AgentVersionDetail>` |
 | DELETE | `/v3/admin/ai/agents/draft` | 删除 draft | `Result<Void>` |
 | POST | `/v3/admin/ai/agents/submit` | `draft -> reviewing`，或统一的无 Pipeline 转换 | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/publish` | `reviewed -> online` | `Result<AgentVersionSummary>` |
@@ -319,12 +348,18 @@ enabled 状态、owner 和 scope，但不能修改身份、Version 内容、labe
 失败都记录调用主体、资源身份、原状态、目标状态、结果、request id 和时间。审计不记录
 descriptor 或敏感 metadata。首版不提供同 Version 强制替换内容的 API。
 
+Agent metadata 更新与 Draft 内容更新是两类不同操作：`PUT /agents` 只更新
+`ai_resource` 中的展示、目录和资源启停字段并推进 `metaVersion`，保留已有 owner 和
+scope；`PUT /agents/draft` 只更新当前精确 Draft 的 CallInterface 内容、change
+description 和 `contentDigest`。
+
 ### 3.3 Maintainer SDK
 
 `AiMaintainerService.agent()` 返回 `AgentMaintainerService`；兼容期内继续保留
 `AiMaintainerService.a2a()`。Agent Maintainer 接口一一映射 Admin HTTP，复杂写入使用
-Request/Command 对象。它不绑定 namespace，每次调用都要求 `namespaceId`，不增加
-Maintainer gRPC 传输。
+Request/Command 对象。它不绑定 namespace；每个操作同时提供显式 namespace 形式，以及
+将省略 namespace 规范化为 `public` 的便利形式。Request 和 Command 对象不包含
+`namespaceId`，方法参数是自定义 namespace 的唯一来源；不增加 Maintainer gRPC 传输。
 
 ## 4. Console API
 

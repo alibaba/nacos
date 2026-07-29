@@ -31,6 +31,7 @@ import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageService;
 import com.alibaba.nacos.ai.service.agent.storage.PreparedAgentVersionWrite;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -38,6 +39,7 @@ import com.alibaba.nacos.api.ai.model.agent.Agent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -103,7 +105,7 @@ public class AgentPersistenceService {
     }
     
     /**
-     * Create one Agent and its initial draft as an insert-only logical operation.
+     * Create the first Agent draft and its metadata as an insert-only logical operation.
      *
      * <p>The Agent argument contains only writable Resource fields. The initial draft may omit the
      * repeated namespace, Agent name, and draft status; when supplied, those values must match the
@@ -113,10 +115,10 @@ public class AgentPersistenceService {
      *
      * @param agent writable Agent Resource fields
      * @param initialDraft initial draft definition
-     * @return persisted Agent and its one-item Version summary page
+     * @return persisted and storage-verified first draft
      * @throws NacosException when persistence or AI Storage fails
      */
-    public AgentOverview create(Agent agent, AgentVersionDetail initialDraft)
+    public AgentVersionDetail createInitialDraft(Agent agent, AgentVersionDetail initialDraft)
         throws NacosException {
         validateCreateInputs(agent, initialDraft);
         ResourceVersionInfo versionInfo = initialVersionInfo(initialDraft.getVersion());
@@ -182,14 +184,15 @@ public class AgentPersistenceService {
                 }
             }
             try {
-                return buildCreatedOverview(agent.getNamespaceId(), agent.getAgentName(),
+                return getAgentVersion(agent.getNamespaceId(), agent.getAgentName(),
                     initialDraft.getVersion());
             } catch (Exception e) {
-                throw serverError("Agent cannot be read after creation: "
-                    + agent.getAgentName(), e);
+                throw serverError("Agent draft cannot be read after creation: "
+                    + agent.getAgentName() + '@' + initialDraft.getVersion(), e);
             }
         } catch (Exception e) {
-            throw asNacosException("Failed to create Agent " + agent.getAgentName(), e);
+            throw asNacosException("Failed to create initial Agent draft " + agent.getAgentName()
+                + '@' + initialDraft.getVersion(), e);
         }
     }
     
@@ -214,6 +217,92 @@ public class AgentPersistenceService {
         } catch (IllegalArgumentException e) {
             throw serverError("Stored Agent metadata is invalid: " + agentName, e);
         }
+    }
+    
+    /**
+     * Read one Agent and the first bounded page of Version summaries.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName exact, case-sensitive Agent name
+     * @param versionPageSize bounded Version-summary page size
+     * @return Agent overview
+     * @throws NacosException when stored metadata is absent or invalid
+     */
+    public AgentOverview getAgentOverview(String namespaceId, String agentName,
+        int versionPageSize) throws NacosException {
+        AgentOverview result = new AgentOverview();
+        result.setAgent(getAgent(namespaceId, agentName));
+        result.setVersionPage(
+            listAgentVersions(namespaceId, agentName, null, 1, versionPageSize));
+        AgentModelValidator.validateOverview(result);
+        return result;
+    }
+    
+    /**
+     * Try to replace every writable field of one Agent using an already authorized Resource row.
+     *
+     * <p>The application service reloads and authorizes the Resource before each retry. This
+     * method performs one CAS attempt while preserving the derived Version facts from that exact
+     * authorized row.</p>
+     *
+     * @param replacement complete writable Agent replacement
+     * @param current authorized current Resource row
+     * @return updated Agent projection, or {@code null} when the CAS did not match
+     * @throws NacosException when the Resource is absent, invalid, or persistence fails
+     */
+    public Agent tryUpdateAgent(Agent replacement, AiResource current) throws NacosException {
+        validateAgentUpdateInputs(replacement);
+        if (!matches(current, replacement.getNamespaceId(), replacement.getAgentName())) {
+            throw notFound("Agent not found: " + replacement.getAgentName());
+        }
+        Agent currentAgent;
+        try {
+            currentAgent = toAgent(current);
+        } catch (IllegalArgumentException e) {
+            throw serverError("Stored Agent metadata is invalid: " + replacement.getAgentName(),
+                e);
+        }
+        Agent normalized = normalizeAgentUpdate(replacement, currentAgent);
+        AgentModelValidator.validateAgent(normalized);
+        AiResource updateValue = toResourceRow(normalized);
+        if (!resourcePersistService.updateMetaCas(replacement.getNamespaceId(),
+            replacement.getAgentName(), Constants.Agent.RESOURCE_TYPE_AGENT,
+            current.getMetaVersion(), updateValue)) {
+            return null;
+        }
+        return getAgent(replacement.getNamespaceId(), replacement.getAgentName());
+    }
+    
+    /**
+     * List bounded Agent summaries from an already visibility-constrained query.
+     *
+     * @param condition Resource query condition
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return Agent summary page
+     * @throws NacosException when stored metadata is invalid
+     */
+    public Page<AgentSummary> listAgents(QueryCondition condition, int pageNo, int pageSize)
+        throws NacosException {
+        Page<AiResource> source = resourcePersistService.list(condition, pageNo, pageSize);
+        List<AgentSummary> summaries = new ArrayList<AgentSummary>();
+        try {
+            if (source != null && source.getPageItems() != null) {
+                for (AiResource row : source.getPageItems()) {
+                    AgentSummary summary = toAgentSummary(row);
+                    AgentModelValidator.validateAgentSummary(summary);
+                    summaries.add(summary);
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            throw serverError("Stored Agent summary metadata is invalid", e);
+        }
+        Page<AgentSummary> result = new Page<AgentSummary>();
+        result.setPageNumber(pageNo);
+        result.setTotalCount(source == null ? 0 : source.getTotalCount());
+        result.setPagesAvailable(source == null ? 0 : source.getPagesAvailable());
+        result.setPageItems(summaries);
+        return result;
     }
     
     /**
@@ -356,11 +445,25 @@ public class AgentPersistenceService {
             AgentVersionStorageDescriptor descriptor =
                 requireStorageDescriptor(versionRow, agentName, version);
             clearEditingVersion(namespaceId, agentName, version);
-            int deleted = versionPersistService.delete(namespaceId, agentName,
-                Constants.Agent.RESOURCE_TYPE_AGENT, version);
-            if (deleted != 1) {
-                throw serverError("Agent draft Version row was not deleted: " + agentName + '@'
-                    + version, null);
+            try {
+                int deleted = versionPersistService.delete(namespaceId, agentName,
+                    Constants.Agent.RESOURCE_TYPE_AGENT, version);
+                if (deleted != 1) {
+                    throw serverError("Agent draft Version row was not deleted: " + agentName
+                        + '@' + version, null);
+                }
+            } catch (Exception deleteFailure) {
+                try {
+                    AiResourceVersion remaining = versionPersistService.find(namespaceId,
+                        agentName, Constants.Agent.RESOURCE_TYPE_AGENT, version);
+                    if (matches(remaining, namespaceId, agentName, version)
+                        && AiConstants.Agent.VERSION_STATUS_DRAFT.equals(remaining.getStatus())) {
+                        markEditingVersion(namespaceId, agentName, version);
+                    }
+                } catch (Exception compensationFailure) {
+                    deleteFailure.addSuppressed(compensationFailure);
+                }
+                throw deleteFailure;
             }
             storageService.delete(descriptor);
         } catch (Exception e) {
@@ -758,6 +861,8 @@ public class AgentPersistenceService {
         result.setDesc(source.getDesc());
         result.setBizTags(source.getBizTags());
         result.setExt(AgentResourceExtSerializer.serialize(resourceExt));
+        result.setOwner(source.getOwner());
+        result.setScope(source.getScope());
         try {
             result.setVersionInfo(JacksonUtils.toJson(versionInfo));
         } catch (NacosSerializationException e) {
@@ -831,6 +936,41 @@ public class AgentPersistenceService {
             && !AiConstants.Agent.VERSION_STATUS_DRAFT.equals(initialDraft.getStatus())) {
             throw new IllegalArgumentException("initialDraft status must be draft");
         }
+    }
+    
+    private void validateAgentUpdateInputs(Agent replacement) {
+        if (replacement == null) {
+            throw new IllegalArgumentException("Agent replacement must not be null");
+        }
+        AgentValidationUtils.validateNamespaceId(replacement.getNamespaceId());
+        AgentValidationUtils.validateAgentName(replacement.getAgentName());
+        if (replacement.getVersionInfo() != null || replacement.getVersionCatalog() != null
+            || replacement.getMetaVersion() != null || replacement.getCreateTime() != null
+            || replacement.getUpdateTime() != null) {
+            throw new IllegalArgumentException(
+                "Agent update input must not contain read-only projection fields");
+        }
+    }
+    
+    private Agent normalizeAgentUpdate(Agent source, Agent current) {
+        Agent result = new Agent();
+        result.setNamespaceId(source.getNamespaceId());
+        result.setAgentName(source.getAgentName());
+        result.setDisplayName(source.getDisplayName());
+        result.setDescription(source.getDescription());
+        result.setIconUrl(source.getIconUrl());
+        result.setProvider(source.getProvider());
+        result.setTags(source.getTags());
+        result.setExtensions(source.getExtensions());
+        result.setStatus(source.getStatus());
+        result.setOwner(current.getOwner());
+        result.setScope(current.getScope());
+        result.setVersionInfo(current.getVersionInfo());
+        result.setVersionCatalog(current.getVersionCatalog());
+        result.setMetaVersion(current.getMetaVersion() + 1);
+        result.setCreateTime(current.getCreateTime());
+        result.setUpdateTime(current.getUpdateTime());
+        return result;
     }
     
     private Agent normalizeCreateAgent(Agent source, AgentVersionInfo versionInfo,
@@ -1017,6 +1157,27 @@ public class AgentPersistenceService {
         return result;
     }
     
+    private AgentSummary toAgentSummary(AiResource row) {
+        AgentResourceExt resourceExt = AgentResourceExtSerializer.deserialize(row.getExt());
+        AgentSummary result = new AgentSummary();
+        result.setNamespaceId(row.getNamespaceId());
+        result.setAgentName(row.getName());
+        result.setDisplayName(resourceExt.getDisplayName());
+        result.setDescription(row.getDesc());
+        result.setIconUrl(resourceExt.getIconUrl());
+        result.setProvider(resourceExt.getProvider());
+        result.setTags(deserializeTags(row.getBizTags()));
+        result.setStatus(row.getStatus());
+        result.setOwner(row.getOwner());
+        result.setScope(row.getScope());
+        result.setVersionInfo(toAgentVersionInfo(AiResourceManager.requireVersionInfo(row)));
+        result.setVersionCatalog(resourceExt.getVersionCatalog());
+        result.setMetaVersion(row.getMetaVersion());
+        result.setCreateTime(toMillis(row.getGmtCreate()));
+        result.setUpdateTime(toMillis(row.getGmtModified()));
+        return result;
+    }
+    
     private AgentVersionDetail toVersionDetail(AiResourceVersion row,
         AgentVersionStorageDescriptor descriptor, AgentVersionContent content) {
         AgentVersionDetail result = new AgentVersionDetail();
@@ -1030,33 +1191,6 @@ public class AgentPersistenceService {
         result.setContentDigest(descriptor.getContentDigest());
         result.setCreateTime(toMillis(row.getGmtCreate()));
         result.setUpdateTime(toMillis(row.getGmtModified()));
-        return result;
-    }
-    
-    private AgentOverview buildCreatedOverview(String namespaceId, String agentName,
-        String version) throws NacosException {
-        Agent agent = getAgent(namespaceId, agentName);
-        AiResourceVersion versionRow = versionPersistService.find(namespaceId, agentName,
-            Constants.Agent.RESOURCE_TYPE_AGENT, version);
-        if (!matches(versionRow, namespaceId, agentName, version)) {
-            throw serverError("Created Agent Version row cannot be read", null);
-        }
-        final AgentVersionSummary summary;
-        try {
-            summary = toVersionSummary(versionRow);
-            AgentModelValidator.validateVersionSummary(summary);
-        } catch (IllegalArgumentException e) {
-            throw serverError("Created Agent Version metadata is invalid", e);
-        }
-        Page<AgentVersionSummary> page = new Page<AgentVersionSummary>();
-        page.setPageNumber(1);
-        page.setPagesAvailable(1);
-        page.setTotalCount(1);
-        page.setPageItems(Collections.singletonList(summary));
-        AgentOverview result = new AgentOverview();
-        result.setAgent(agent);
-        result.setVersionPage(page);
-        AgentModelValidator.validateOverview(result);
         return result;
     }
     

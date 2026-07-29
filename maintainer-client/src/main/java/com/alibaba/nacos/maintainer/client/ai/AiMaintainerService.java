@@ -43,6 +43,17 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
     @Since("3.2.0")
     AgentSpecMaintainerService agentSpec();
     
+    /**
+     * Get the protocol-neutral Agent maintainer facade.
+     *
+     * @return Agent maintainer service
+     */
+    @Since("3.3.0")
+    default AgentMaintainerService agent() {
+        throw new UnsupportedOperationException(
+            "Protocol-neutral Agent maintenance is not supported by this implementation");
+    }
+    
     @Since("3.2.0")
     McpMaintainerService mcp();
     
