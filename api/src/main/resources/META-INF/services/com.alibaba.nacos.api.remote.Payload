@@ -93,3 +93,10 @@ com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse
 com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest
 com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse
 com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest
+com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest
+com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse
+com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest
+com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse
+com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest
+com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest
+com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse

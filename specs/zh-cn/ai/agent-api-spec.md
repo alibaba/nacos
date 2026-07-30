@@ -78,14 +78,14 @@ Resource 当前 `editingVersion` 且仍为 `draft` 状态时更新。列表使�
 | 不存在 Agent 定义时 Endpoint 预注册 | 完成结构、鉴权和单 Batch 配额校验后接受 |
 | 收敛后的 Runtime 投影包含 Publisher Payload 冲突 | `RESOURCE_CONFLICT` |
 | Version 生命周期转换非法 | `ILLEGAL_STATE` |
-| HTTP heartbeat 找不到 Client | HTTP 404 和独立应用码 `HTTP_CLIENT_NOT_FOUND` |
+| HTTP 注册未能建立或保留 Client，或 heartbeat 找不到 Client/Publication | HTTP 404 和独立应用码 `HTTP_CLIENT_NOT_FOUND (50404)` |
 | 协商后的传输不支持能力 | 本地 `FEATURE_NOT_SUPPORTED`，不发送远程请求 |
 | 注销不存在的 contribution | 成功且不发生变更 |
 | 合法 Runtime 查询没有实例 | 成功返回 `items=[]` |
 | Discover Filter 没有匹配 | 按 RAD 返回类型化空结果，不返回 `NOT_FOUND` |
 
 HTTP 状态与 `Result.code` 使用通用 v3 异常映射；gRPC Response 暴露等价错误类别。
-新增应用错误码的数值由实现变更统一分配，但不得与普通 `RESOURCE_NOT_FOUND` 混用。
+`HTTP_CLIENT_NOT_FOUND` 固定为 `50404`，不得与普通 `RESOURCE_NOT_FOUND` 混用。
 
 ## 2. Client API
 
@@ -150,8 +150,8 @@ gRPC 写入不得盲目通过 HTTP 重试。
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD Search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD Reference 和可选 Filter query | `Result<AgentDiscoveryResult>` |
-| POST | `/v3/client/ai/agents/endpoints` | 完整 `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | JSON `namespaceId + agentName + protocol` Publication Identity | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | Form：完整 `AgentEndpointRegistrationBatch`，其中 `endpoints` 为 JSON 字符串 | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | Form：`namespaceId + agentName + protocol` Publication Identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 无 body | `Result<ClientLivenessInfo>` |
 
 Search query 名称与 RAD 字段相同。重复 `tagsAll` 取 AND，重复 `protocolsAny` 取 OR；
@@ -165,10 +165,16 @@ Endpoint 路径只使用 POST 和 DELETE。POST 完整替换当前 Publisher 对
 Protocol 的 Batch，因此通用 PUT 只会重复相同替换操作。GET 也没有必要：消费者使用
 Discover，管理员使用 `RuntimeEndpointSnapshot`。
 
+Endpoint HTTP 写入使用独立 Form，不直接绑定公共 RAD Request，也不使用 `@RequestBody`。
+POST 使用 `application/x-www-form-urlencoded`：`namespaceId`、`agentName`、
+`runtimeVersion`、`versionRange` 和 `protocol` 是普通字段，`endpoints` 是 JSON 数组
+字符串。DELETE 使用普通 `namespaceId`、`agentName` 和 `protocol` Form 参数。
+Form 负责将省略或空白的 namespace 规范化为 `public`。
+
 DELETE 删除当前 HTTP Publisher 对给定 Agent 和 Protocol 的整份 Publication，不接受
 Endpoint 自然键。官方 SDK 的部分注销先更新本地期望 Batch，再通过 POST 提交完整
 剩余内容；只有剩余 Batch 为空时才调用 DELETE。直接 HTTP 调用方同样自行维护完整
-期望 Batch。该三字段 DELETE Body 是 Binding 对象，不替代面向应用的
+期望 Batch。该三字段 DELETE Form 是 Binding 对象，不替代面向应用的
 `AgentEndpointDeregistrationBatch` RAD 模型。
 
 ### 2.4 HTTP Publisher Identity 与活性
@@ -197,6 +203,10 @@ Distro Filter。
 heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 ```
 
+首版 Naming HTTP Client 使用固定有效值 5000、15000 和 30000 毫秒，请求方不能覆盖。
+返回这些值是为了避免 SDK 硬编码服务端策略；如果后续 Naming 提供配置能力，响应返回
+当时的服务端有效值而不改变协议字段。
+
 HTTP Client 分别维护 Client 活性和 Publisher 活性。合法查询只刷新 Client 活性；
 Endpoint 写入和 Publisher heartbeat 同时刷新 Client 以及该 Client 的全部 Publisher 活性。
 Publisher heartbeat 与 Endpoint 数量无关。没有剩余 Endpoint 且没有 subscriber state 的
@@ -224,15 +234,21 @@ external Client id 时复用同一个 HTTP Client 生命周期。旧节点没有
 
 | Request | Response | 语义 |
 |---|---|---|
-| `AgentSearchRequest` | `AgentSearchResponse` | Search 并返回目录分页 |
-| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | 一次 Discover |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | 完整替换该 Connection 对一个 Agent 和 Protocol 的 RAD Batch |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | 删除该 Connection 对一个 Agent 和 Protocol 的整份 Publication |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | Search 并返回目录分页 |
+| `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | 一次 Discover |
+| `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | 完整替换该 Connection 对一个 Agent 和 Protocol 的 RAD Batch |
+| `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | 删除该 Connection 对一个 Agent 和 Protocol 的整份 Publication |
 
 所有 Request 的 module 为 `ai`。gRPC Endpoint Contribution 归属于
 `RequestMeta.connectionId`，不增加 Client id 或 heartbeat Payload。连接断开后删除该
 Connection 的 Contribution；重连取得新 connection id，并 redo Endpoint。SDK 本地
 轮询订阅不属于 Connection 维度的服务端状态。
+
+`RpcRequest` 后缀用于区分 Nacos Payload Wrapper 与传输无关的 RAD 根消息。Search 和
+Discover Wrapper 分别携带对应 RAD Request；Register 携带一个
+`AgentEndpointRegistrationBatch`；Deregister 直接携带
+`namespaceId + agentName + protocol`，不增加独立 Identity 对象，也不接受局部
+Endpoint Key。
 
 Endpoint Handler 是 Naming Adapter。Register 校验完整 Endpoint Batch，将其转换为
 Naming Instance，再调用 Naming Batch Register；Deregister 调用 Naming 的整份

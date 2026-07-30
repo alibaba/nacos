@@ -51,11 +51,11 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
+| Client OpenAPI | 10 | 10 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
 | Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 78 | 64 | 11 | 3 | 86.30% | 93.15% |
+| Total | 80 | 66 | 11 | 3 | 82.50% | 89.38% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -115,13 +115,26 @@ row. It mirrors the Agent Admin relative paths and form contracts, while
 `GET /v3/console/ai/agents/runtime-endpoints` adds only the Console-specific
 Naming service reference wrapper. Agent lifecycle and persistence semantics
 remain covered by the existing Admin rows rather than being redefined by the
-Console facade.
+Console facade. The Client Endpoint scenario cross-validates an Admin-created
+and published Agent through Console Overview, then verifies that Client
+registration and deregistration produce matching populated and empty Runtime
+snapshots through both Admin and Console.
 
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
 They are deprecated and planned for removal in Nacos 3.4.0; the managed
 `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
+
+RAD Agent Client coverage is split into two rows. Search/Discover validates the
+online catalog and discovery projection, while Endpoint publication validates
+the Form-based independent HTTP Publisher lifecycle, required headers, idempotency, and
+the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. The Endpoint row also
+cross-validates the published definition and Runtime state through Admin,
+Client, and Console reads. Querying with a Client id is explicitly covered as
+not creating an empty Client or Publisher. The Client-only renewal and
+Publisher-renewal separation is covered by the corresponding lifecycle unit
+tests.
 
 ## Coverage Documents
 

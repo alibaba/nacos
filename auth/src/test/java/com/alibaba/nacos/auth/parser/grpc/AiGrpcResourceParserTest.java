@@ -19,9 +19,17 @@ package com.alibaba.nacos.auth.parser.grpc;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
@@ -39,6 +47,8 @@ import java.lang.reflect.Method;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT;
 
 class AiGrpcResourceParserTest {
     
@@ -90,6 +100,26 @@ class AiGrpcResourceParserTest {
         return Stream.of(case1, case2, case3, case4);
     }
     
+    private static Stream<Arguments> agentClientRequests() {
+        return Stream.of(
+            Arguments.of(agentSearchRpcRequest("search-ns"), "search-ns", ""),
+            Arguments.of(new AgentSearchRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""),
+            Arguments.of(agentDiscoveryRpcRequest("discovery-ns", "discovery-agent"),
+                "discovery-ns", "discovery-agent"),
+            Arguments.of(agentDiscoveryRpcRequest("discovery-ns", null), "discovery-ns", ""),
+            Arguments.of(new AgentDiscoveryRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""),
+            Arguments.of(agentEndpointRegisterRpcRequest("register-ns", "register-agent"),
+                "register-ns", "register-agent"),
+            Arguments.of(new AgentEndpointRegisterRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""),
+            Arguments.of(agentEndpointDeregisterRpcRequest("deregister-ns", "deregister-agent"),
+                "deregister-ns", "deregister-agent"),
+            Arguments.of(new AgentEndpointDeregisterRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""));
+    }
+    
     @BeforeEach
     void setUp() throws Exception {
         resourceParser = new AiGrpcResourceParser();
@@ -109,6 +139,17 @@ class AiGrpcResourceParserTest {
         assertEquals(SignType.AI, actual.getType());
         assertEquals(expectedRequestClassName, actual.getProperties()
             .getProperty(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+    }
+    
+    @ParameterizedTest
+    @MethodSource("agentClientRequests")
+    @Secured(signType = SignType.AI)
+    void testParseAgentClientRequest(Request request, String expectedNamespaceId,
+        String expectedName) throws NoSuchMethodException {
+        Resource actual = resourceParser.parse(request, getMethodSecure());
+        assertEquals(expectedNamespaceId, actual.getNamespaceId());
+        assertEquals(expectedName, actual.getName());
+        assertEquals(AI_TYPE_AGENT, actual.getProperties().getProperty(AI_TYPE));
     }
     
     private static AbstractMcpRequest mockMcpRequest(String testNs, String testS) {
@@ -160,6 +201,47 @@ class AiGrpcResourceParserTest {
         result.setNamespace(testNs);
         result.setGroupName("");
         result.setServiceName(testS);
+        return result;
+    }
+    
+    private static AgentSearchRpcRequest agentSearchRpcRequest(String namespaceId) {
+        AgentSearchRequest search = new AgentSearchRequest();
+        search.setNamespaceId(namespaceId);
+        AgentSearchRpcRequest result = new AgentSearchRpcRequest();
+        result.setSearchRequest(search);
+        return result;
+    }
+    
+    private static AgentDiscoveryRpcRequest agentDiscoveryRpcRequest(
+        String namespaceId, String agentName) {
+        AgentDiscoveryRequest discovery = new AgentDiscoveryRequest();
+        discovery.setNamespaceId(namespaceId);
+        if (agentName != null) {
+            AgentReference reference = new AgentReference();
+            reference.setAgentName(agentName);
+            discovery.setReference(reference);
+        }
+        AgentDiscoveryRpcRequest result = new AgentDiscoveryRpcRequest();
+        result.setDiscoveryRequest(discovery);
+        return result;
+    }
+    
+    private static AgentEndpointRegisterRpcRequest agentEndpointRegisterRpcRequest(
+        String namespaceId,
+        String agentName) {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setNamespaceId(namespaceId);
+        batch.setAgentName(agentName);
+        AgentEndpointRegisterRpcRequest result = new AgentEndpointRegisterRpcRequest();
+        result.setRegistrationBatch(batch);
+        return result;
+    }
+    
+    private static AgentEndpointDeregisterRpcRequest agentEndpointDeregisterRpcRequest(
+        String namespaceId, String agentName) {
+        AgentEndpointDeregisterRpcRequest result = new AgentEndpointDeregisterRpcRequest();
+        result.setNamespaceId(namespaceId);
+        result.setAgentName(agentName);
         return result;
     }
     
