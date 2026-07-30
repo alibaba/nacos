@@ -123,6 +123,19 @@
       "latest": "Get latest",
       "byVersion": "By version",
       "byLabel": "By label"
+    },
+    "visibilityAuthorization": {
+      "title": "Visibility Authorization",
+      "entry": "Authorize",
+      "resourceType": "Resource Type",
+      "resourceName": "Resource Name",
+      "read": "Read",
+      "readWrite": "Read & Write",
+      "grant": "Grant",
+      "revoke": "Revoke",
+      "grantSuccess": "Visibility access granted",
+      "revokeSuccess": "Visibility access revoked",
+      "usernameRequired": "Username is required"
     }
   },
   "config": {

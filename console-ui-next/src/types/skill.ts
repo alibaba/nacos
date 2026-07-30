@@ -10,6 +10,7 @@ export interface SkillListItem {
   namespaceId: string;
   name: string;
   description: string;
+  owner: string;
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"
   bizTags: string; // JSON string: ["tag1","tag2"]
@@ -53,6 +54,7 @@ export interface SkillDocument {
 
 /** Skill admin detail */
 export interface SkillAdminDetail {
+  owner: string;
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"
   bizTags: string; // JSON string: ["tag1","tag2"]

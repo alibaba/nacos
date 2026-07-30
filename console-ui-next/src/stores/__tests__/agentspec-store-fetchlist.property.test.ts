@@ -14,6 +14,14 @@ import type { AgentSpecListItem } from '@/types/agentspec';
 
 // ── Mock agentSpecApi.list before importing the store ──────────────────────
 const mockList = vi.fn();
+const localStorageMock = {
+  getItem: vi.fn(() => null),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+
+vi.stubGlobal('localStorage', localStorageMock);
 
 vi.mock('@/api/agentspec', () => ({
   agentSpecApi: {
@@ -41,6 +49,7 @@ const arbListItem: fc.Arbitrary<AgentSpecListItem> = fc.record({
   namespaceId: fc.string({ minLength: 1, maxLength: 20 }),
   name: fc.string({ minLength: 1, maxLength: 50 }),
   description: fc.string({ maxLength: 100 }),
+  owner: fc.string({ minLength: 1, maxLength: 20 }),
   enable: fc.boolean(),
   scope: fc.constantFrom('PUBLIC', 'PRIVATE'),
   bizTags: fc.constant('[]'),

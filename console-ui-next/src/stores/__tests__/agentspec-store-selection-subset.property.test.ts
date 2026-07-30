@@ -13,6 +13,14 @@ import type { AgentSpecListItem } from '@/types/agentspec';
 
 // ── Mock agentSpecApi.list before importing the store ──────────────────────
 const mockList = vi.fn();
+const localStorageMock = {
+  getItem: vi.fn(() => null),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+
+vi.stubGlobal('localStorage', localStorageMock);
 
 vi.mock('@/api/agentspec', () => ({
   agentSpecApi: {
@@ -44,6 +52,7 @@ function makeItem(name: string): AgentSpecListItem {
     namespaceId: 'public',
     name,
     description: '',
+    owner: 'nacos',
     enable: true,
     scope: 'PUBLIC',
     bizTags: '[]',

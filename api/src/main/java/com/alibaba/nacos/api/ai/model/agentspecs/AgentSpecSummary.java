@@ -26,6 +26,8 @@ import java.util.Map;
  */
 public class AgentSpecSummary extends AgentSpecBasicInfo {
     
+    private String owner;
+
     private boolean enable;
     
     private String bizTags;
@@ -43,6 +45,14 @@ public class AgentSpecSummary extends AgentSpecBasicInfo {
     private Integer onlineCnt;
     
     private Long downloadCount;
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
     
     public boolean isEnable() {
         return enable;

@@ -89,6 +89,7 @@ import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
+import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SkillResourcePanel } from './SkillResourcePanel';
@@ -117,7 +118,7 @@ export default function SkillDetailPage() {
     searchParams.get('namespace') ||
     currentNamespace ||
     'public';
-  const { globalAdmin } = useAuthStore();
+  const { globalAdmin, username } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 
   const {
@@ -179,6 +180,7 @@ export default function SkillDetailPage() {
   // Enable/disable toggle state
   const [enableToggling, setEnableToggling] = useState(false);
   const [scopeToggling, setScopeToggling] = useState(false);
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [bizTags, setBizTags] = useState<string[]>([]);
   const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
 
@@ -748,6 +750,7 @@ export default function SkillDetailPage() {
   const resources = versionDoc?.resource ?? {};
   const resourceEntries = Object.entries(resources);
   const showVersionDiff = !isEditingDraft && versions.length >= 2;
+  const canManageVisibility = globalAdmin || detail.owner === username;
 
   return (
     <div className="space-y-5 pb-5">
@@ -875,6 +878,27 @@ export default function SkillDetailPage() {
                     {detail.scope === 'PUBLIC' ? t('skill.scopePublic') : t('skill.scopePrivate')}
                   </span>
                 </label>
+                {canManageVisibility && (
+                  <>
+                    <div className="h-4 w-px bg-border" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setVisibilityDialogOpen(true)}
+                        >
+                          <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                          {t('common.visibilityAuthorization.entry')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('common.visibilityAuthorization.title')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
@@ -1594,6 +1618,15 @@ export default function SkillDetailPage() {
           onApply={handleOptimizationApply}
         />
       )}
+
+      <VisibilityAuthorizationDialog
+        open={visibilityDialogOpen}
+        onOpenChange={setVisibilityDialogOpen}
+        namespaceId={namespaceId}
+        resourceType="skill"
+        resourceName={skillName}
+        onSuccess={loadDetail}
+      />
 
       {/* Force-publish confirmation dialog */}
       <Dialog open={forcePublishConfirmOpen} onOpenChange={setForcePublishConfirmOpen}>

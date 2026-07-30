@@ -53,6 +53,15 @@ export interface PermissionListResponse {
   pageItems: PermissionItem[];
 }
 
+/* ---------- Visibility Authorization ---------- */
+export interface VisibilityAuthorizationRequest {
+  namespaceId?: string;
+  resourceType: string;
+  resourceName: string;
+  username: string;
+  action: 'r' | 'w';
+}
+
 export const authApi = {
   /* login / admin — these return flat token data, NOT the standard {code,data} wrapper */
   login: (data: { username: string; password: string }): Promise<LoginResponse> =>
@@ -109,4 +118,11 @@ export const authApi = {
 
   deletePermission: (data: { role: string; resource: string; action: string }): ApiResult<boolean> =>
     client.delete('v3/auth/permission', { params: data }) as ApiResult<boolean>,
+
+  /* ---- Visibility Authorization ---- */
+  grantVisibility: (data: VisibilityAuthorizationRequest): ApiResult<string> =>
+    client.post('v3/auth/visibility', data) as ApiResult<string>,
+
+  revokeVisibility: (data: VisibilityAuthorizationRequest): ApiResult<string> =>
+    client.delete('v3/auth/visibility', { params: data }) as ApiResult<string>,
 };

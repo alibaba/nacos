@@ -197,6 +197,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         detail.setNamespaceId(meta.getNamespaceId());
         detail.setName(meta.getName());
         detail.setDescription(meta.getDesc());
+        detail.setOwner(meta.getOwner());
         detail.setBizTags(meta.getBizTags());
         detail.setFrom(meta.getFrom());
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
@@ -331,6 +332,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 item.setNamespaceId(namespaceId);
                 item.setName(meta.getName());
                 item.setDescription(meta.getDesc());
+                item.setOwner(meta.getOwner());
                 item.setEnable(
                     AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
                 item.setBizTags(meta.getBizTags());

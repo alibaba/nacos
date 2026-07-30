@@ -25,6 +25,7 @@ import {
   X,
   AlertCircle,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,7 @@ import {
 } from '@/components/ui/sheet';
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { agentSpecApi } from '@/api/agentspec';
 import { parseBizTags, parsePipelineInfo, type AgentSpecDocument, type AgentSpecResource, type AgentSpecVersionSummary } from '@/types/agentspec';
 import { cn } from '@/lib/utils';
@@ -73,6 +75,7 @@ import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
+import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   resolveCreateLocation,
@@ -96,6 +99,7 @@ export default function AgentSpecDetailPage() {
     searchParams.get('namespace') ||
     currentNamespace ||
     'public';
+  const { globalAdmin, username } = useAuthStore();
 
   const {
     currentDetail,
@@ -114,6 +118,7 @@ export default function AgentSpecDetailPage() {
   const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
   const [enableToggling, setEnableToggling] = useState(false);
   const [scopeToggling, setScopeToggling] = useState(false);
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [bizTags, setBizTags] = useState<string[]>([]);
 
   // Draft editing state
@@ -824,6 +829,7 @@ export default function AgentSpecDetailPage() {
     setCreateNodeFallbackType(value);
     setCreateNodePath(nextPath);
   };
+  const canManageVisibility = globalAdmin || detail.owner === username;
 
   return (
     <div className="flex min-h-[calc(100vh-88px)] flex-col gap-5 pb-5">
@@ -952,6 +958,27 @@ export default function AgentSpecDetailPage() {
                     {detail.scope === 'PUBLIC' ? t('agentSpec.scopePublic') : t('agentSpec.scopePrivate')}
                   </span>
                 </label>
+                {canManageVisibility && (
+                  <>
+                    <div className="h-4 w-px bg-border" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setVisibilityDialogOpen(true)}
+                        >
+                          <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                          {t('common.visibilityAuthorization.entry')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('common.visibilityAuthorization.title')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
@@ -1427,6 +1454,15 @@ export default function AgentSpecDetailPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <VisibilityAuthorizationDialog
+        open={visibilityDialogOpen}
+        onOpenChange={setVisibilityDialogOpen}
+        namespaceId={namespaceId}
+        resourceType="agentspec"
+        resourceName={agentSpecName}
+        onSuccess={loadDetail}
+      />
 
       {/* ===== Create Node Dialog ===== */}
       <Dialog open={createNodeOpen} onOpenChange={setCreateNodeOpen}>

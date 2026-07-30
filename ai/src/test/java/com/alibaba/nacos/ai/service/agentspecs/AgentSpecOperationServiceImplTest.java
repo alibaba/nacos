@@ -486,6 +486,7 @@ class AgentSpecOperationServiceImplTest {
         meta.setName(agentSpecName);
         meta.setType("agentspec");
         meta.setStatus("enable");
+        meta.setOwner("alice");
         meta.setBizTags("[\"finance\"]");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         Page<AiResourceVersion> versions = new Page<>();
@@ -499,6 +500,7 @@ class AgentSpecOperationServiceImplTest {
         AgentSpecMeta result = service.getAgentSpecDetail(namespaceId, agentSpecName);
         
         assertNotNull(result);
+        assertEquals("alice", result.getOwner());
         assertEquals("[\"finance\"]", result.getBizTags());
     }
     
@@ -510,6 +512,7 @@ class AgentSpecOperationServiceImplTest {
         meta.setName("test-agentspec");
         meta.setType("agentspec");
         meta.setDesc("desc");
+        meta.setOwner("alice");
         meta.setBizTags("[\"iot\"]");
         Page<AiResource> metaPage = new Page<>();
         metaPage.setPageItems(List.of(meta));
@@ -523,6 +526,7 @@ class AgentSpecOperationServiceImplTest {
         
         assertNotNull(result);
         assertEquals(1, result.getPageItems().size());
+        assertEquals("alice", result.getPageItems().get(0).getOwner());
         assertEquals("[\"iot\"]", result.getPageItems().get(0).getBizTags());
     }
     
