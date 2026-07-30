@@ -36,6 +36,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -196,10 +197,7 @@ class PluginStatePersistenceTest {
         Files.createDirectories(pluginDataDir);
         Files.write(configFile, "not a valid json".getBytes(StandardCharsets.UTF_8));
         
-        Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
-        
-        assertNotNull(configs);
-        assertEquals(0, configs.size());
+        assertThrows(PluginPersistenceException.class, persistence::loadAllConfigs);
     }
     
     @Test
@@ -258,8 +256,11 @@ class PluginStatePersistenceTest {
     }
     
     @Test
-    void ensureDataDirExistsTest() {
+    void dataDirCreationIsDeferredUntilWriteTest() {
         File dataDir = new File(pluginDataDir.toString());
+        
+        assertFalse(dataDir.exists());
+        persistence.saveState("trace:test", true);
         
         assertTrue(dataDir.exists());
         assertTrue(dataDir.isDirectory());

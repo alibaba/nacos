@@ -23,7 +23,6 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
@@ -61,16 +60,12 @@ public class PluginStateProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     public PluginStateProcessor(PluginManager pluginManager,
-        PluginStatePersistenceService persistence,
-        ProtocolManager protocolManager) {
+        PluginStatePersistenceService persistence) {
         this.pluginManager = pluginManager;
         this.persistence = persistence;
         this.serializer = SerializeFactory.getDefault();
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();
-        
-        // Register with Raft protocol
-        protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
     }
     
     @Override

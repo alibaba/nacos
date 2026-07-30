@@ -21,13 +21,30 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import java.util.Map;
 
 /**
- * Plugin state synchronizer interface.
- * Supports different synchronization strategies (Raft, standalone, etc.)
+ * Cluster plugin state and runtime configuration synchronizer.
+ *
+ * <p>Standalone mode persists and applies operations directly and does not
+ * create a synchronizer.</p>
  *
  * @author WangzJi
  * @since 3.2.0
  */
 public interface PluginStateSynchronizer {
+    
+    /**
+     * Initialize synchronization resources after local plugins have been initialized.
+     */
+    default void initialize() {
+    }
+    
+    /**
+     * Whether this synchronizer can currently accept cluster writes.
+     *
+     * @return true when synchronization is available
+     */
+    default boolean isAvailable() {
+        return true;
+    }
     
     /**
      * Synchronize plugin state change to cluster.
@@ -46,4 +63,10 @@ public interface PluginStateSynchronizer {
      * @throws NacosApiException if sync fails
      */
     void syncConfigChange(String pluginId, Map<String, String> config) throws NacosApiException;
+    
+    /**
+     * Release synchronization resources.
+     */
+    default void shutdown() {
+    }
 }

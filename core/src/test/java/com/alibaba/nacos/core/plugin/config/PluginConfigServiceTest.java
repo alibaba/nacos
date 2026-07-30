@@ -366,6 +366,33 @@ class PluginConfigServiceTest {
         assertTrue(exception.getMessage().contains("not runtime updatable"));
     }
     
+    @Test
+    void unavailablePersistedStorageRejectsClusterUpdateButAllowsLocalOnly() {
+        RuntimePersistedPluginConfigSourceResolver persistedResolver =
+            new RuntimePersistedPluginConfigSourceResolver(
+                (com.alibaba.nacos.core.plugin.config.storage.PluginConfigStorageProvider) null);
+        PluginConfigSourceRegistry registry = new PluginConfigSourceRegistry(
+            java.util.Arrays.asList(new LocalOnlyPluginConfigSourceResolver(),
+                persistedResolver, new StaticPluginConfigSourceResolver(),
+                new DefaultPluginConfigSourceResolver()));
+        PluginConfigService unavailableService = new PluginConfigService(
+            new PluginConfigResolver(registry), new PluginConfigBasicChecker(),
+            new PluginConfigApplier());
+        PluginInfo pluginInfo = pluginInfo(runtimeDefinition("endpoint", "default"));
+        persistedResolver.initialize();
+        
+        assertThrows(PluginPersistenceException.class,
+            () -> unavailableService.prepareRuntimeUpdate(pluginInfo,
+                Collections.singletonMap("endpoint", "runtime"),
+                PluginConfigSourceType.RUNTIME_PERSISTED));
+        assertEquals(Collections.singletonMap("endpoint", "local"),
+            unavailableService.prepareRuntimeUpdate(pluginInfo,
+                Collections.singletonMap("endpoint", "local"),
+                PluginConfigSourceType.LOCAL_ONLY));
+        
+        unavailableService.shutdown();
+    }
+    
     private PluginInfo pluginInfo(ConfigItemDefinition definition) {
         return pluginInfo(new ConfigItemDefinition[] {definition});
     }

@@ -82,6 +82,15 @@ public class PluginConfigResolver {
     }
     
     /**
+     * Whether the runtime persisted source storage is available.
+     *
+     * @return true when the selected storage initialized successfully
+     */
+    public boolean isRuntimePersistedSourceAvailable() {
+        return sourceRegistry.isPersistedSourceAvailable();
+    }
+    
+    /**
      * Normalize one loaded runtime persisted source config with plugin definitions.
      *
      * @param pluginInfo plugin info
@@ -144,6 +153,13 @@ public class PluginConfigResolver {
      */
     public void restoreRuntimePersistedConfigs(Map<String, Map<String, String>> configs) {
         sourceRegistry.restorePersistedConfigs(configs);
+    }
+    
+    /**
+     * Release the runtime persisted source storage.
+     */
+    public void shutdown() {
+        sourceRegistry.shutdownPersistedConfigs();
     }
     
     /**

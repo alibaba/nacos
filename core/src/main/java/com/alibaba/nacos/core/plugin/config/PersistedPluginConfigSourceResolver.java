@@ -31,6 +31,13 @@ interface PersistedPluginConfigSourceResolver extends PluginConfigSourceResolver
     void initialize();
     
     /**
+     * Whether the selected physical storage is available.
+     *
+     * @return true when runtime persisted reads and writes are available
+     */
+    boolean isAvailable();
+    
+    /**
      * Get the complete persisted source snapshot.
      *
      * @return plugin ID to source config map
@@ -43,4 +50,9 @@ interface PersistedPluginConfigSourceResolver extends PluginConfigSourceResolver
      * @param configs complete persisted source snapshot
      */
     void restoreConfigs(Map<String, Map<String, String>> configs);
+    
+    /**
+     * Release the selected physical storage.
+     */
+    void shutdown();
 }

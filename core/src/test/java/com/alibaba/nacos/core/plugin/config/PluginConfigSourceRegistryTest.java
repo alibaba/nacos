@@ -128,6 +128,11 @@ class PluginConfigSourceRegistryTest {
         }
         
         @Override
+        public boolean isAvailable() {
+            return true;
+        }
+        
+        @Override
         public Map<String, Map<String, String>> getAllConfigs() {
             return configs;
         }
@@ -135,6 +140,10 @@ class PluginConfigSourceRegistryTest {
         @Override
         public void restoreConfigs(Map<String, Map<String, String>> configs) {
             this.configs = configs;
+        }
+        
+        @Override
+        public void shutdown() {
         }
     }
     

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,11 @@ public class PluginConfigService {
     public Map<String, String> prepareRuntimeUpdate(PluginInfo pluginInfo,
         Map<String, String> config, PluginConfigSourceType sourceType) {
         validateRuntimeSource(sourceType);
+        if (PluginConfigSourceType.RUNTIME_PERSISTED == sourceType
+            && !resolver.isRuntimePersistedSourceAvailable()) {
+            throw new PluginPersistenceException(
+                "Runtime persisted plugin config source is unavailable");
+        }
         synchronized (getPluginLock(pluginInfo.getPluginId())) {
             Map<String, String> normalizedConfig = normalizeConfig(pluginInfo, config);
             Map<String, String> preparedConfig = preserveMaskedSensitiveValues(pluginInfo,
@@ -84,6 +90,13 @@ public class PluginConfigService {
      */
     public void initializeRuntimePersistedConfigs() {
         resolver.initializeRuntimePersistedConfigs();
+    }
+    
+    /**
+     * Release runtime persisted configuration storage resources.
+     */
+    public void shutdown() {
+        resolver.shutdown();
     }
     
     /**

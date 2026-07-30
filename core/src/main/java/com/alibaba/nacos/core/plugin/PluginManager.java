@@ -34,16 +34,18 @@ import com.alibaba.nacos.core.plugin.config.PluginConfigResolution;
 import com.alibaba.nacos.core.plugin.config.PluginConfigService;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateApplier;
 import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -133,7 +135,15 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
     
     @Autowired
     public PluginManager(PluginStatePersistenceService persistence,
-        @Lazy PluginStateSynchronizer synchronizer,
+        ObjectProvider<PluginStateSynchronizer> synchronizerProvider,
+        ObjectProvider<PreContextPluginInitializationResult> preContextResultProvider) {
+        this(persistence, synchronizerProvider.getIfAvailable(), new PluginTypePolicyRegistry(),
+            preContextResultProvider.getIfAvailable(
+                PreContextPluginInitializationResult::empty));
+    }
+    
+    public PluginManager(PluginStatePersistenceService persistence,
+        PluginStateSynchronizer synchronizer,
         ObjectProvider<PreContextPluginInitializationResult> preContextResultProvider) {
         this(persistence, synchronizer, new PluginTypePolicyRegistry(),
             preContextResultProvider.getIfAvailable(
@@ -258,8 +268,11 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
             return;
         }
         
-        // Synchronize to cluster
-        synchronizer.syncStateChange(pluginId, enabled);
+        if (EnvUtil.getStandaloneMode()) {
+            applyStandaloneStateChange(pluginId, enabled);
+        } else {
+            getClusterSynchronizer().syncStateChange(pluginId, enabled);
+        }
         
         LOGGER.info("[PluginManager] Plugin {} status changed to {}", pluginId,
             enabled ? "enabled" : "disabled");
@@ -314,6 +327,9 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+        } catch (PluginPersistenceException e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                e.getMessage());
         }
         
         // LocalOnly mode: only update local memory, skip cluster sync
@@ -337,8 +353,11 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
             return;
         }
         
-        // Synchronize to cluster
-        synchronizer.syncConfigChange(pluginId, normalizedConfig);
+        if (EnvUtil.getStandaloneMode()) {
+            applyStandaloneConfigChange(pluginId, normalizedConfig);
+        } else {
+            getClusterSynchronizer().syncConfigChange(pluginId, normalizedConfig);
+        }
         
         LOGGER.info("[PluginManager] Plugin {} config updated", pluginId);
     }
@@ -855,6 +874,44 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
         }
     }
     
+    private PluginStateSynchronizer getClusterSynchronizer() throws NacosApiException {
+        if (synchronizer == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "Plugin state synchronizer is unavailable in cluster mode");
+        }
+        return synchronizer;
+    }
+    
+    private void applyStandaloneStateChange(String pluginId, boolean enabled)
+        throws NacosApiException {
+        try {
+            persistence.saveState(pluginId, enabled);
+            applyStateChange(pluginId, enabled);
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+        } catch (PluginPersistenceException e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                "Failed to persist plugin state: " + pluginId);
+        }
+    }
+    
+    private void applyStandaloneConfigChange(String pluginId, Map<String, String> config)
+        throws NacosApiException {
+        try {
+            applyConfigChange(pluginId, config);
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
+        } catch (PluginConfigApplyException e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                e.getMessage());
+        } catch (RuntimeException e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                "Failed to apply or persist plugin config: " + pluginId);
+        }
+    }
+    
     private <T> Map<String, T> filterStandardEntries(Map<String, T> source,
         String sourceDescription) {
         Map<String, T> result = new LinkedHashMap<>();
@@ -929,6 +986,14 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier {
      */
     public boolean isPluginAvailable(String pluginId) {
         return pluginRegistry.containsKey(pluginId);
+    }
+    
+    /**
+     * Release internal plugin configuration storage resources.
+     */
+    @PreDestroy
+    public void shutdown() {
+        pluginConfigService.shutdown();
     }
     
 }

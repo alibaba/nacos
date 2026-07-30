@@ -23,14 +23,16 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -38,9 +40,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -59,29 +59,32 @@ class PluginClusterSyncIntegrationTest {
     @Mock
     private PluginStateSynchronizer synchronizer;
     
-    @Mock
-    private CPProtocol cpProtocol;
-    
-    @Mock
-    private ProtocolManager protocolManager;
-    
     private PluginManager pluginManager;
     
     private PluginStateProcessor stateProcessor;
     
+    private ConfigurableEnvironment previousEnvironment;
+    
     @BeforeEach
     void setUp() {
-        lenient().when(persistence.loadAllStates()).thenReturn(new HashMap<>());
-        lenient().when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
-        
-        lenient().when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        lenient().doNothing().when(cpProtocol).addRequestProcessors(anyList());
+        previousEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new MockEnvironment());
+        EnvUtil.setIsStandalone(false);
+        org.mockito.Mockito.lenient().when(persistence.loadAllStates()).thenReturn(new HashMap<>());
+        org.mockito.Mockito.lenient().when(persistence.loadAllConfigs())
+            .thenReturn(new HashMap<>());
         
         pluginManager = new PluginManager(persistence, synchronizer);
         
-        stateProcessor = new PluginStateProcessor(pluginManager, persistence, protocolManager);
+        stateProcessor = new PluginStateProcessor(pluginManager, persistence);
         
         registerTestPlugin("trace", "otel");
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setIsStandalone(null);
+        EnvUtil.setEnvironment(previousEnvironment);
     }
     
     @Test

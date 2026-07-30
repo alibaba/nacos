@@ -17,6 +17,9 @@
 package com.alibaba.nacos.core.plugin;
 
 import com.alibaba.nacos.api.plugin.PluginInitializationPhase;
+import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -32,8 +35,17 @@ public class StandardPluginInitializer
     
     private final PluginManager pluginManager;
     
+    private final ObjectProvider<PluginStateSynchronizer> synchronizerProvider;
+    
     public StandardPluginInitializer(PluginManager pluginManager) {
+        this(pluginManager, null);
+    }
+    
+    @Autowired
+    public StandardPluginInitializer(PluginManager pluginManager,
+        ObjectProvider<PluginStateSynchronizer> synchronizerProvider) {
         this.pluginManager = pluginManager;
+        this.synchronizerProvider = synchronizerProvider;
     }
     
     @Override
@@ -44,6 +56,13 @@ public class StandardPluginInitializer
     @Override
     public void initialize() {
         pluginManager.initialize();
+        if (synchronizerProvider == null) {
+            return;
+        }
+        PluginStateSynchronizer synchronizer = synchronizerProvider.getIfAvailable();
+        if (synchronizer != null) {
+            synchronizer.initialize();
+        }
     }
     
     @Override
