@@ -115,7 +115,10 @@ row. It mirrors the Agent Admin relative paths and form contracts, while
 `GET /v3/console/ai/agents/runtime-endpoints` adds only the Console-specific
 Naming service reference wrapper. Agent lifecycle and persistence semantics
 remain covered by the existing Admin rows rather than being redefined by the
-Console facade.
+Console facade. The Client Endpoint scenario cross-validates an Admin-created
+and published Agent through Console Overview, then verifies that Client
+registration and deregistration produce matching populated and empty Runtime
+snapshots through both Admin and Console.
 
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
@@ -126,10 +129,12 @@ They are deprecated and planned for removal in Nacos 3.4.0; the managed
 RAD Agent Client coverage is split into two rows. Search/Discover validates the
 online catalog and discovery projection, while Endpoint publication validates
 the Form-based independent HTTP Publisher lifecycle, required headers, idempotency, and
-the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. Querying with a Client id
-is explicitly covered as not creating an empty Client or Publisher. The
-Client-only renewal and Publisher-renewal separation is covered by the
-corresponding lifecycle unit tests.
+the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. The Endpoint row also
+cross-validates the published definition and Runtime state through Admin,
+Client, and Console reads. Querying with a Client id is explicitly covered as
+not creating an empty Client or Publisher. The Client-only renewal and
+Publisher-renewal separation is covered by the corresponding lifecycle unit
+tests.
 
 ## Coverage Documents
 

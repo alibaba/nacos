@@ -39,9 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     and optional exact Version are reflected in the snapshot; protocol and Version validation
  *     return HTTP 400.</li>
  *     <li>Exception/error handling: missing required identity/protocol fields produce controlled
- *     v3 {@code Result} errors rather than HTTP 500. Populated Naming publisher aggregation is
- *     covered by Runtime Registry unit tests because this management-stage standalone suite has
- *     no RAD endpoint-publication HTTP binding yet.</li>
+ *     v3 {@code Result} errors rather than HTTP 500. The populated Publisher path is exercised
+ *     across Client registration and Admin/Console reads by
+ *     {@code AgentEndpointClientOpenApiITCase}; merge conflicts and capacity limits remain
+ *     covered by Runtime Registry unit tests.</li>
  * </ul>
  *
  * @author xiweng.yy

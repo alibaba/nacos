@@ -20,8 +20,10 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -31,6 +33,8 @@ import org.apache.hc.core5.http.ClassicHttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Shared helpers for Agent Client OpenAPI integration tests.
@@ -47,6 +51,17 @@ public abstract class AgentClientOpenApiBaseITCase extends AiAdminApiBaseITCase 
     
     protected static final String AGENT_ENDPOINT_HEARTBEAT_PATH =
             AGENT_ENDPOINT_PATH + "/heartbeat";
+
+    protected static final String CONSOLE_AGENT_PATH = Constants.Agent.CONSOLE_PATH;
+
+    protected static final String CONSOLE_AGENT_RUNTIME_ENDPOINTS_PATH =
+            CONSOLE_AGENT_PATH + "/runtime-endpoints";
+
+    private static final String NACOS_CONSOLE_PORT =
+            System.getProperty("nacos.console.port", "8080");
+
+    private static final String CONSOLE_BASE_URL =
+            "http://" + NACOS_HOST + ":" + NACOS_CONSOLE_PORT;
     
     protected void publishAgent(String agentName, String version) throws Exception {
         postFormOk(ADMIN_AGENT_PATH + "/draft",
@@ -65,6 +80,16 @@ public abstract class AgentClientOpenApiBaseITCase extends AiAdminApiBaseITCase 
         HttpGet request = new HttpGet(requestUrl(path + "?" + query.toQueryUrl()));
         addClientId(request, clientId);
         return executeRaw(request);
+    }
+
+    protected JsonNode getConsoleJsonOk(String path, Query query) throws Exception {
+        HttpGet request =
+                new HttpGet(CONSOLE_BASE_URL + path + "?" + query.toQueryUrl());
+        HttpResponse response = executeRaw(request);
+        assertEquals(200, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
+        assertSuccess(root);
+        return root;
     }
     
     protected HttpResponse postEndpointForm(String clientId, String requestModule,

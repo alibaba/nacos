@@ -37,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: POST replaces one complete publication, heartbeat renews its
- *     Publisher, DELETE removes the complete publication, and retries remain idempotent.</li>
+ *     Publisher, DELETE removes the complete publication, and retries remain idempotent. The
+ *     same workflow cross-validates the Admin-created definition and Client publication through
+ *     Admin, Console, and Client read surfaces.</li>
  *     <li>Boundary/validation: Search with the same Client id does not create a Publisher;
  *     Discover can reuse that id without changing the publication payload; stateful operations
  *     require a valid Client id and {@code Request-Module: AI}; registration validates its
@@ -64,6 +66,7 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         
         String agentName = randomAiName("agent-endpoint");
         publishAgent(agentName, "1.0.0");
+        assertAgentVisibleThroughManagementSurfaces(agentName);
         addCleanup(() -> deleteEndpointForm(clientId, REQUEST_MODULE,
                 identityForm(agentName)));
         Map<String, String> registration = registrationForm(agentName);
@@ -78,6 +81,7 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
                 runtimeSet.get("endpoints").get(0).get("uri").asText(), runtimeSet.toString());
         assertTrue(runtimeSet.get("endpoints").get(0).get("healthy").asBoolean(),
                 runtimeSet.toString());
+        assertRuntimeEndpointVisibleThroughManagementSurfaces(agentName, 1);
         assertLiveness(heartbeat(clientId, REQUEST_MODULE));
         
         Query identity = identityForm(agentName);
@@ -87,6 +91,7 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         assertEquals(0, afterDeregister.get("callInterfaces").get(0)
                 .get("endpointSets").get(0).get("endpoints").size(),
                 afterDeregister.toString());
+        assertRuntimeEndpointVisibleThroughManagementSurfaces(agentName, 0);
         assertError(heartbeat(clientId, REQUEST_MODULE), 404,
                 ErrorCode.HTTP_CLIENT_NOT_FOUND, "HTTP Client");
     }
@@ -116,7 +121,7 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         JsonNode malformedBody = JacksonUtils.toObj(malformed.body());
         assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                 malformedBody.get("code").asInt(), malformed.body());
-        assertTrue(malformedBody.get("message").asText().contains("not valid JSON"),
+        assertTrue(malformedBody.get("data").asText().contains("not valid JSON"),
                 malformed.body());
         
         assertError(heartbeat(randomHttpClientId(), null), 400,
@@ -138,6 +143,60 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
     private void assertSuccessResponse(HttpResponse response) throws Exception {
         assertEquals(200, response.code(), response.body());
         assertSuccess(JacksonUtils.toObj(response.body()));
+    }
+
+    private void assertAgentVisibleThroughManagementSurfaces(String agentName) throws Exception {
+        Query identity = agentIdentityQuery(null, agentName);
+        JsonNode adminOverview = getJsonOk(ADMIN_AGENT_PATH, identity).get("data");
+        assertOnlineOverview(adminOverview, agentName);
+        JsonNode consoleOverview = getConsoleJsonOk(CONSOLE_AGENT_PATH, identity).get("data");
+        assertOnlineOverview(consoleOverview, agentName);
+    }
+
+    private void assertOnlineOverview(JsonNode overview, String agentName) {
+        assertEquals(agentName, overview.get("agent").get("agentName").asText(),
+                overview.toString());
+        assertEquals("online", overview.get("versionPage").get("pageItems").get(0)
+                .get("status").asText(), overview.toString());
+    }
+
+    private void assertRuntimeEndpointVisibleThroughManagementSurfaces(String agentName,
+            int expectedCount) throws Exception {
+        Query query = Query.newInstance().addParam("agentName", agentName)
+                .addParam("protocol", "a2a").addParam("version", "1.0.0");
+        JsonNode adminSnapshot =
+                getJsonOk(ADMIN_AGENT_RUNTIME_ENDPOINTS_PATH, query).get("data");
+        assertRuntimeSnapshot(adminSnapshot, agentName, expectedCount);
+
+        JsonNode consoleView =
+                getConsoleJsonOk(CONSOLE_AGENT_RUNTIME_ENDPOINTS_PATH, query).get("data");
+        assertRuntimeSnapshot(consoleView.get("runtimeEndpointSnapshot"), agentName,
+                expectedCount);
+        assertEquals("rad-" + agentName + "-a2a",
+                consoleView.get("namingServiceRef").get("serviceName").asText(),
+                consoleView.toString());
+    }
+
+    private void assertRuntimeSnapshot(JsonNode snapshot, String agentName, int expectedCount) {
+        assertEquals(DEFAULT_NAMESPACE, snapshot.get("namespaceId").asText(),
+                snapshot.toString());
+        assertEquals(agentName, snapshot.get("agentName").asText(), snapshot.toString());
+        assertEquals("a2a", snapshot.get("protocol").asText(), snapshot.toString());
+        assertEquals("1.0.0", snapshot.get("version").asText(), snapshot.toString());
+        assertEquals(expectedCount, snapshot.get("items").size(), snapshot.toString());
+        if (0 == expectedCount) {
+            return;
+        }
+        JsonNode item = snapshot.get("items").get(0);
+        assertEquals("http://127.0.0.1:18080/agent",
+                item.get("endpoint").get("uri").asText(), item.toString());
+        assertEquals("AVAILABLE", item.get("state").asText(), item.toString());
+        assertTrue(item.get("enabled").asBoolean(), item.toString());
+        assertTrue(item.get("healthy").asBoolean(), item.toString());
+        assertEquals("1.0.0", item.get("bindings").get(0).get("runtimeVersion").asText(),
+                item.toString());
+        assertEquals("[1.0.0]", item.get("bindings").get(0).get("versionRange").asText(),
+                item.toString());
     }
     
     private JsonNode discover(String clientId, String agentName) throws Exception {
