@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2023 Alibaba Group Holding Ltd.
+# Copyright 1999-2026 Alibaba Group Holding Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.ai.param.McpHttpParamExtractor
-com.alibaba.nacos.ai.param.AgentHttpParamExtractor
-com.alibaba.nacos.ai.param.AgentAdminHttpParamExtractor
-com.alibaba.nacos.ai.param.AgentClientHttpParamExtractor
-com.alibaba.nacos.ai.param.SkillHttpParamExtractor
-com.alibaba.nacos.ai.param.SkillListHttpParamExtractor
+com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor

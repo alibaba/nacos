@@ -85,16 +85,15 @@ current `editingVersion` and remains in `draft` status. Lists are paged; a
 | Endpoint pre-registration when no Agent definition exists | Accepted after structural, authorization, and per-batch quota validation |
 | Converged runtime projection contains conflicting publisher payloads | `RESOURCE_CONFLICT` |
 | Invalid Version lifecycle transition | `ILLEGAL_STATE` |
-| HTTP heartbeat for unknown client | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND` application code |
+| HTTP registration cannot establish or retain its Client, or heartbeat cannot find the Client/publication | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND (50404)` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
 | Deregistration of a missing contribution | Success without change |
 | Valid runtime query with no instances | Success with `items=[]` |
 | Discover filter matches no value | A typed empty result as defined by RAD, not `NOT_FOUND` |
 
 HTTP status and `Result.code` use the common v3 exception mapping. gRPC
-responses expose equivalent error categories. The numeric value for a new
-application error is allocated by the implementation change; it must not alias
-ordinary `RESOURCE_NOT_FOUND`.
+responses expose equivalent error categories. `HTTP_CLIENT_NOT_FOUND` is fixed
+at `50404`; it must not alias ordinary `RESOURCE_NOT_FOUND`.
 
 ## 2. Client API
 
@@ -167,8 +166,8 @@ repeated through HTTP.
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
-| POST | `/v3/client/ai/agents/endpoints` | Complete `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | JSON `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | Form: complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | Form: `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
 
 Search query names equal RAD field names. Repeated `tagsAll` values use AND;
@@ -185,12 +184,20 @@ current publisher's complete batch for one Agent and protocol, so a general
 PUT would duplicate the same replacement operation. GET is unnecessary because
 consumers use Discover and maintainers use `RuntimeEndpointSnapshot`.
 
+Endpoint HTTP writes use dedicated Forms. They do not bind public RAD request
+objects directly and do not use `@RequestBody`. POST uses
+`application/x-www-form-urlencoded`: `namespaceId`, `agentName`,
+`runtimeVersion`, `versionRange`, and `protocol` are ordinary fields, while
+`endpoints` is a JSON array string. DELETE uses ordinary `namespaceId`,
+`agentName`, and `protocol` Form parameters. The Form normalizes an omitted or
+blank namespace to `public`.
+
 DELETE removes the current HTTP publisher's whole publication for the supplied
 Agent and protocol. It does not accept endpoint keys. The official SDK
 implements partial deregistration by updating its local expected batch and
 POSTing the complete remainder; it uses DELETE only when that remainder is
 empty. A direct HTTP caller likewise owns its complete desired batch. The
-three-field DELETE body is a binding object, not a replacement for the
+three-field DELETE Form is a binding object, not a replacement for the
 application-facing `AgentEndpointDeregistrationBatch` RAD model.
 
 ### 2.4 HTTP Publisher Identity And Liveness
@@ -222,6 +229,12 @@ id; it does not extend the Naming HTTP API Distro Filter.
 ```text
 heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 ```
+
+The initial Naming HTTP Client uses fixed effective values of 5000, 15000, and
+30000 milliseconds; a caller cannot override them. Returning the values keeps
+the SDK from hard-coding server policy. If Naming later makes them configurable,
+the response carries the effective server values without changing the protocol
+fields.
 
 An HTTP Client tracks Client liveness and Publisher liveness separately. A
 valid query renews Client liveness only. Endpoint writes and Publisher
@@ -257,16 +270,23 @@ path for an upgrading cluster in which that API is not yet available.
 
 | Request | Response | Semantics |
 |---|---|---|
-| `AgentSearchRequest` | `AgentSearchResponse` | Search and return a page of catalog entries |
-| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | One Discover |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | Search and return a page of catalog entries |
+| `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | One Discover |
+| `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
+| `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
 
 All requests report module `ai`. gRPC endpoint contributions belong to
 `RequestMeta.connectionId`; no client id or heartbeat payload is added.
 Disconnect removes that connection's contributions. Reconnect obtains a new
 connection id and redoes endpoints. Local polling subscriptions are not
 connection-scoped server state.
+
+The `RpcRequest` suffix distinguishes Nacos Payload wrappers from the
+transport-neutral RAD root messages. Search and Discover wrappers carry their
+corresponding RAD request. Register carries one
+`AgentEndpointRegistrationBatch`. Deregister directly carries
+`namespaceId + agentName + protocol`; it does not introduce a separate
+identity object or accept partial Endpoint keys.
 
 The endpoint handlers are Naming adapters. Register validates and converts the
 submitted complete Endpoint batch to Naming Instances, then invokes Naming

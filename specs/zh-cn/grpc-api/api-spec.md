@@ -225,12 +225,12 @@ Payload 清单。
 
 | 目标 Request type | 目标 Response type | 方向 | 契约 |
 | --- | --- | --- | --- |
-| `AgentSearchRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
-| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
+| `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | 订阅或取消订阅 Agent Reference 和可选 Filter；订阅时返回不透明 `watchKey` 和当前完整结果。 |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK。 |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | 完整替换当前 Connection 对一个 Agent 和 Protocol 的 Runtime Endpoint Batch。 |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | 幂等移除当前 Connection 对一个 Agent 和 Protocol 的整份 Runtime Endpoint Publication。 |
+| `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | 完整替换当前 Connection 对一个 Agent 和 Protocol 的 Runtime Endpoint Batch。 |
+| `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | write | 幂等移除当前 Connection 对一个 Agent 和 Protocol 的整份 Runtime Endpoint Publication。 |
 
 在该目标 Binding 中，`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和
 `eventType`。`SNAPSHOT` 必须携带完整 `AgentDiscoveryResult` 且不携带错误；

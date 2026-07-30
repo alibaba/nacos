@@ -150,6 +150,19 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void testRejectInvalidDeregisterIdentityBeforeNamingWrite() {
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.deregisterPublisher(PUBLISHER_ID, null, AGENT_NAME, PROTOCOL));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.deregisterPublisher(PUBLISHER_ID, NAMESPACE_ID, null, PROTOCOL));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.deregisterPublisher(PUBLISHER_ID, NAMESPACE_ID, AGENT_NAME,
+                null));
+        
+        verify(clientOperationService, never()).deregisterInstance(any(), any(), any());
+    }
+    
+    @Test
     void testSnapshotAggregatesBindingsOnlyWhenReading() throws NacosException {
         Endpoint endpoint = endpoint("https://example.com/agent", "json-rpc");
         Instance versionOne = instance(endpoint, "1.0.0", "[1.0.0]", true, false);

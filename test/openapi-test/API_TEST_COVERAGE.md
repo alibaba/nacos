@@ -51,11 +51,11 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 8 | 8 | 0 | 0 | 100.00% | 100.00% |
+| Client OpenAPI | 10 | 10 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
 | Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 78 | 64 | 11 | 3 | 86.30% | 93.15% |
+| Total | 80 | 66 | 11 | 3 | 82.50% | 89.38% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -122,6 +122,14 @@ by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
 They are deprecated and planned for removal in Nacos 3.4.0; the managed
 `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
+
+RAD Agent Client coverage is split into two rows. Search/Discover validates the
+online catalog and discovery projection, while Endpoint publication validates
+the Form-based independent HTTP Publisher lifecycle, required headers, idempotency, and
+the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. Querying with a Client id
+is explicitly covered as not creating an empty Client or Publisher. The
+Client-only renewal and Publisher-renewal separation is covered by the
+corresponding lifecycle unit tests.
 
 ## Coverage Documents
 

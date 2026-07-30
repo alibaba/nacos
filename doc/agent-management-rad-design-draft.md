@@ -1239,10 +1239,10 @@ flowchart LR
 | Console | 是 | 否 | Nacos Console UI | 复用 Admin 语义组织页面工作流 |
 
 HTTP 遵循 Nacos v3 API，路径位于 `/v3/{client|admin|console}/ai/agents`，响应为 `Result<T>`，并使用
-`@NacosApi`、`@Since`、对应 `ApiType`、`SignType.AI` 和 READ/WRITE 鉴权。GET 使用 query；Client 写入按正式
-Binding 使用 JSON body，Admin/Console 写入使用 `application/x-www-form-urlencoded`，复杂字段以 JSON 字符串
-承载。`agentName` 按原值比较且不作为 PathVariable。gRPC 继续使用统一 `Payload` 和 `metadata.type`，不增加
-proto method。
+`@NacosApi`、`@Since`、对应 `ApiType`、`SignType.AI` 和 READ/WRITE 鉴权。GET 使用 query；Client、
+Admin 和 Console 写入均使用独立 Form，复杂字段以 JSON 字符串承载，不通过 `@RequestBody` 直接绑定公共
+Request。`agentName` 按原值比较且不作为 PathVariable。gRPC 继续使用统一 `Payload` 和 `metadata.type`，
+不增加 proto method。
 
 RAD 对外 Schema 只定义六个根对象，API Binding 不再复制领域 DTO：
 
@@ -1279,14 +1279,14 @@ Search、Agent 管理列表和版本列表分页，`RuntimeEndpointSnapshot` 返
 | Discover 或 Agent/Version 管控精确查询中资源不存在或不可见 | `RESOURCE_NOT_FOUND`；Endpoint 预注册和 RuntimeEndpointSnapshot 不执行定义存在性校验 |
 | metaVersion 不匹配 | `RESOURCE_CONFLICT` |
 | 非法生命周期转换 | `ILLEGAL_STATE` |
-| HTTP heartbeat 找不到 Client state | HTTP 404 + 专用 `HTTP_CLIENT_NOT_FOUND`，Client 必须执行 Endpoint redo |
+| HTTP 注册未能建立或保留 Client state，或 heartbeat 找不到 Client/Publication | HTTP 404 + 专用 `HTTP_CLIENT_NOT_FOUND (50404)`，Client 必须执行 Endpoint redo |
 | SDK 所选 transport 不支持该能力 | 本地 `FEATURE_NOT_SUPPORTED`，不发送远程请求 |
 | 注销不存在的 Endpoint | 成功 no-op |
 | 合法 RuntimeEndpointSnapshot 查询没有注册实例 | 成功返回空 `items[]`；endpointSourceOrder 不含 RUNTIME 也不是错误 |
 | Agent 存在但 Filter 无匹配 | 按 4.1.6 返回空 `callInterfaces`、`endpointSets` 或 `endpoints`，不返回 404 |
 
 HTTP 状态和 `Result.code` 按 Nacos v3 异常映射同时表达结果；gRPC Response 保留等价 `errorCode`。
-`HTTP_CLIENT_NOT_FOUND` 的数值在正式 API spec 中统一分配，不能复用普通 Agent `RESOURCE_NOT_FOUND`，否则 Client
+`HTTP_CLIENT_NOT_FOUND` 固定为 `50404`，不能复用普通 Agent `RESOURCE_NOT_FOUND`，否则 Client
 无法可靠判断是否需要全量 redo。
 
 ### 5.2 Client API
@@ -1350,17 +1350,19 @@ projection cache；未改变 healthy 或 Endpoint 投影的普通 heartbeat 不�
 
 | Request | Response | 语义 |
 |---|---|---|
-| `AgentSearchRequest` | `AgentSearchResponse` | 搜索并返回 Java 映射 `Page<AgentCatalogEntry>` |
-| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | Reference + 可选 Filter 的一次发现 |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | 携带一个 `AgentEndpointRegistrationBatch` |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | 注销当前 connection 对指定 namespaceId + agentName + protocol 的整份 publication |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | 携带 `AgentSearchRequest`，搜索并返回 Java 映射 `Page<AgentCatalogEntry>` |
+| `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | 携带 `AgentDiscoveryRequest`，完成 Reference + 可选 Filter 的一次发现 |
+| `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | 携带一个 `AgentEndpointRegistrationBatch` |
+| `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | 直接携带 namespaceId + agentName + protocol，注销当前 connection 的整份 publication |
 
 全部 Request 的 `getModule()` 返回 `ai`。gRPC Endpoint publisher identity 使用当前
 `RequestMeta.connectionId`，不在 body 中重复传 clientId，也不增加业务 heartbeat Payload；连接断开后释放该
 connection 的发布，重连取得新 connectionId 后由 SDK redo。
 
-`AgentEndpointDeregisterRequest` 的最终 body 是独立的 publication identity，还是复用去掉 `endpoints[]`
-后的兼容模型，仍需正式 gRPC API 评审决定；它不得携带局部 Endpoint 删除命令。
+gRPC Payload Wrapper 统一使用 `RpcRequest` 后缀，以区别于 RAD 协议根消息。
+`AgentEndpointDeregisterRpcRequest` 直接携带 `namespaceId + agentName + protocol`，
+不增加容易与安全身份混淆的 Identity 对象，也不复用语义不同的 Registration/Deregistration Batch；
+它不得携带局部 Endpoint 删除命令。
 
 首版不定义 `AgentSubscribeRequest`、`AgentDiscoveryNotifyRequest`、watchKey、Push ACK 或 Connection
 维度 Watch Redo State。轮询调度、完整结果缓存和变化去重全部属于 Java SDK 本地实现。
@@ -1403,8 +1405,8 @@ HTTP Runtime Endpoint 只提供三个 API，不创建 Session/Lease CRUD：
 
 | Method | Path | 请求 | 返回 |
 |---|---|---|---|
-| POST | `/v3/client/ai/agents/endpoints` | `AgentEndpointRegistrationBatch` | `Result<ClientLivenessInfo>` |
-| DELETE | `/v3/client/ai/agents/endpoints` | namespaceId + agentName + protocol；注销整份 publication | `Result<Void>` |
+| POST | `/v3/client/ai/agents/endpoints` | Form：Batch 普通字段 + JSON 字符串 `endpoints` | `Result<ClientLivenessInfo>` |
+| DELETE | `/v3/client/ai/agents/endpoints` | Form：namespaceId + agentName + protocol；注销整份 publication | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 无 body | `Result<ClientLivenessInfo>` |
 
 三个 API 固定携带：
@@ -1428,15 +1430,19 @@ runtimeVersion 必须命中该范围。服务端只对完整 Batch 做格式、�
 校验通过后直接转换并调用 Naming batch registration 覆盖旧 publication。HTTP 与 gRPC 共用相同完整 Batch
 和转换规则；Endpoint metadata 遵循 4.1.4 的 Naming 保留 key 规则。
 
+Endpoint POST 使用 `application/x-www-form-urlencoded`；Form 将 `endpoints` JSON 数组字符串解析为
+公共 Batch，并将空 namespace 规范化为 `public`。DELETE 使用普通 Form 参数。鉴权参数提取直接读取这些
+请求参数，不需要预读 InputStream、回填 parameter map 或增加 Body Filter。
+
 `ClientLivenessInfo` 仅包含 `heartbeatIntervalMillis`、`unhealthyTimeoutMillis`、`expireTimeoutMillis`，不包含
 sessionId、leaseId、endpointId 或 owner。三个值满足严格递增关系，最近一次注册或 heartbeat 响应决定后续调度；
-Java SDK 内部消费该对象，对外注册方法仍返回 `void`。
+Java SDK 内部消费该对象，对外注册方法仍返回 `void`。首版 Naming HTTP Client 的有效值固定为
+5000、15000 和 30000 毫秒，请求方不能覆盖；返回对象避免 SDK 硬编码，并允许未来配置化时返回服务端有效值。
 
 `POST` 与 `DELETE` 使用同一个 `/endpoints` 路径，由 HTTP Method 区分完整覆盖注册和整 publication 注销。
-SDK 的 `AgentEndpointDeregistrationBatch` 不直接映射为 DELETE body，而是在本地更新 redo 后执行 POST；
+SDK 的 `AgentEndpointDeregistrationBatch` 不直接映射为 DELETE Form，而是在本地更新 redo 后执行 POST；
 更新后为空才执行 DELETE。直接 HTTP 调用方若要局部移除 Endpoint，必须提交剩余完整 Registration Batch。
-DELETE 的参数放 query 还是 JSON body、完整 replacement 使用 POST 还是更符合幂等语义的 PUT，仍需正式
-API 评审决定；首版不增加语义重复的 `/deregister` 别名。
+DELETE 使用普通 Form 参数；首版不增加语义重复的 `/deregister` 别名。
 
 首版不定义 `PUT /endpoints`：POST 已表示 publisher 完整批次替换，再增加更新动作会产生两种替换语义。
 也不定义 `GET /endpoints`：调用方通过统一 Discover 获取定义与可调用 Endpoint，管理员通过
@@ -1933,11 +1939,11 @@ flowchart LR
 | 阻塞检查 | 审计确认 Agent Endpoint 转换后的 `BatchInstancePublishInfo`、Client event、索引、ServiceStorage、ClientSyncData、verify、snapshot 和 repair 均可复用。新增 Manager 进入 Delegate 后没有独立查询扩展点或专用 Distro processor 的必要；若实现被迫修改上述协议或其他共享底座，则停止并重新提交维护者决策 |
 | 验收门禁 | 所有新增 production Java 可执行行 UT line coverage 100%；`ai` 与获批 Naming 最小范围的 Spotless、编译、单测和覆盖率验证；禁止通过排除文件或无业务断言规避覆盖率 |
 
-#### 当前阶段范围留痕：RAD Search 与 Discover
+#### 已完成阶段范围留痕：RAD Search 与 Discover
 
 | 项目 | 本阶段结论 |
 |---|---|
-| 阶段状态 | 实现与本地验收已完成，待 PR 评审 |
+| 阶段状态 | 已完成并合入 `develop`（PR #15612） |
 | 规范依据 | RAD Protocol Spec 第 3～5、8～11 章，Agent API Spec 第 1、2.1～2.2 节，Agent Management Spec 第 5～6 章，Agent Storage Spec 第 5.1 节，以及本文第 4.1.5～4.1.7、4.2.5、5.2.1～5.2.2、7.1 节 |
 | 当前目标 | 在不新增传输入口的前提下完成 RAD Search 和一次 Discover Application Service：Search 从可见 Agent 的派生 `versionCatalog` 过滤并稳定分页；Discover 完成 version/label/latest 解析、online 校验、Version 内容缓存、来源与 Endpoint Filter、Runtime 投影组合及完整结果校验 |
 | 允许范围 | `ai` 模块新增 Agent 专用 RAD 数据面 Application Service 及其单元测试；只读复用现有 `AgentOperationService`、`AgentPersistenceService`、`AiResourceManager`、AI Storage 和 `AgentRuntimeRegistryService`；更新直接相关中英文 Specs 与本文 |
@@ -1945,6 +1951,19 @@ flowchart LR
 | 已知问题 | 共享 Resource 查询当前没有 RAD 所需的 enabled、Protocol 和大小写严格 `agentName` 排序能力；首版 Application Service 在可见 Agent 摘要上完成过滤、ASCII 排序和稳定分页，可能扫描多页。该规模优化属于后续独立派生索引设计，不修改共享查询底座 |
 | 阻塞检查 | 现有可见性 QueryCondition、派生 `versionCatalog`、精确 Version row、经 digest 校验的 Storage 读取、Endpoint canonicalizer 和 Runtime EndpointSet 已满足主流程；本阶段不需要修改共享底座。若实现必须改变这些契约才能正确返回结果，则停止编码并提交维护者决策 |
 | 验收门禁 | 新增 production Java 可执行行 UT line coverage 100%；`ai` Spotless、编译、相关单测和 JaCoCo XML 验证；实际 production diff 只能包含本阶段白名单，且不通过排除文件或无业务断言规避覆盖率 |
+
+#### 当前阶段范围留痕：Client HTTP/gRPC API
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 实现与本地验收已完成，待提交和 PR 评审 |
+| 规范依据 | Agent API Spec 第 1、2.1～2.6 章，RAD Protocol Spec 第 2～7 章，Agent Storage Spec 第 4～7 章，HTTP API、鉴权、错误规范，gRPC API Spec，以及本文第 4.1.4、4.2.4、5.1、5.2.2～5.2.5、7.1 节 |
+| 当前目标 | 完成 `/v3/client/ai/agents` 的 Search、Discover、Endpoint 完整批次注册、整 publication 注销和 HTTP Publisher heartbeat，并提供等价的 Search、Discover、Endpoint 注册/注销 gRPC Payload 与 Handler；本阶段客户端发现只采用主动轮询，不实现服务端 Watch/Push |
+| 允许范围 | `api` 模块新增 Agent/RAD Client API 绑定模型、gRPC Payload/Response 与 Payload SPI，`ErrorCode` 仅增加未占用的 `50404` HTTP Client 不存在错误，`AbilityKey` 仅定义 Agent Discovery/Endpoint 两个协商键但暂不加入服务端公开能力表；`ai` 模块新增 Client Form、Controller、HTTP Client 生命周期编排、gRPC Handler/参数提取及测试；`auth` 仅允许扩展 `AiGrpcResourceParser` 读取新 Agent gRPC 请求；同步 OpenAPI IT 场景、用例、覆盖登记和直接相关 Specs/本文 |
+| 禁止范围 | `ai_resource` / `ai_resource_version`、DAO、Repository、Mapper、通用 Resource/Version Manager、AI Storage；Naming Client/Manager/Distro 生产逻辑；HTTP common、公共 Client runtime、Java SDK、Console、旧 A2A Adapter；不得实现 Watch/Push、订阅协议、推送 ACK 或提前宣告尚未形成 SDK 闭环的能力位 |
+| 已知问题 | Watch/Push 继续作为正式规范和设计中的后续演进目标，本阶段不删除其设计；Java SDK 将在下一阶段基于 Discover 主动轮询实现首版订阅语义。能力位先形成稳定 wire key，待 Java SDK 与传输选择完成后再加入 `ServerAbilities` 并由客户端消费 |
+| 阻塞检查 | 维护者已确认可扩展 `AiGrpcResourceParser`；Endpoint HTTP API 使用普通 Form，HTTP 参数提取直接复用现有机制，不修改 HTTP common；现有 `HttpConnectionBasedClientManager`、Agent Runtime Registry 和 RAD Application Service 可直接复用。若实现仍要求修改上述禁止范围，则停止编码并提交维护者决策 |
+| 验收门禁 | 新增或修改 production Java 可执行行 UT line coverage 100%；相关 `api`、`ai`、`auth` Spotless、编译、单测和 JaCoCo XML 验证；OpenAPI test-compile、Client Agent 独立 IT 及场景/覆盖登记；最终 diff 逐项复核白名单 |
 
 ### 7.2 分阶段任务
 
@@ -1973,11 +1992,13 @@ flowchart LR
   verify/repair、超时与服务端事件；AI 使用模块内 Distro Filter，不新增专用 Distro type/processor。
 - [x] **RAD 数据面服务**：本阶段实现 Search、Discover 的版本/label/latest 解析、内容缓存、来源过滤和
   Runtime 聚合；服务端 Watch/Push 暂缓，不进入本阶段。
-- [ ] **Client HTTP/gRPC API**：新增 v3 Client Controller、gRPC Payload/Handler、能力位与错误映射；实现
-  publisher 完整 Batch 覆盖注册、整 publication 注销、HTTP heartbeat 以及传输能力检查。
+- [x] **Client HTTP/gRPC API**：新增 v3 Client Controller、gRPC Payload/Handler、能力协商 wire key 与错误映射；
+  实现 publisher 完整 Batch 覆盖注册、整 publication 注销和 HTTP heartbeat；本阶段不将尚未形成 SDK
+  闭环的能力键加入 `ServerAbilities`。
 - [ ] **Java Client SDK**：新增 `AgentDiscoveryService`、namespace 注入、Discover overload、Discover 轮询订阅、本地选择
   helper、缓存、按 Agent protocol service 保存完整 Batch 的 HTTP/gRPC Endpoint redo、局部注销/更换后的
-  全量重注册和重连恢复；保持 `AiService`/`A2aService` 二进制兼容。
+  全量重注册和重连恢复；将 Discovery/Endpoint 能力键加入 `ServerAbilities` 并实现客户端传输能力检查；
+  保持 `AiService`/`A2aService` 二进制兼容。
 - [x] **Admin API + Maintainer SDK**：实现 Agent CRUD、Version draft/submit/publish/online/offline/label、
   Runtime Snapshot、审计和 Maintainer HTTP 映射；首版不提供同 Version 强制内容替换。
 - [x] **Console 后端 Facade**：实现与 Admin 同语义的 Console Facade、Runtime Snapshot 包装和服务端生成的
