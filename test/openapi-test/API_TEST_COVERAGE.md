@@ -97,8 +97,11 @@ missing OpenAPI IT coverage.
 
 Skill upload precheck response-shape coverage is maintained by the admin and
 console Skill upload scenario rows, including `maxPublishedVersion` and
-`targetVersion`. Those rows also cover the batch upload compatibility fields
-`succeeded` and `failed`, plus per-item `success`, `errorCode`, and
+`targetVersion`. Precheck requests carry only the archive and namespace. Those
+rows verify that precheck predicts a version from archive sources and server
+state, while upload can select a later available request `targetVersion` before
+server-side version generation. They also cover the batch upload compatibility
+fields `succeeded` and `failed`, plus per-item `success`, `errorCode`, and
 `errorMessage` in `results`. Contract-only field changes do not alter the
 scenario-row totals above.
 

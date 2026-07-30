@@ -103,7 +103,7 @@ public class SkillNoopHandler implements SkillHandler {
     
     @Override
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
+        byte[] zipBytes) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             SKILL_NOT_ENABLED_MESSAGE);

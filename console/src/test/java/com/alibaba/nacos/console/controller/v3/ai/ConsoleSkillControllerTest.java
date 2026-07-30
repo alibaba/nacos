@@ -277,7 +277,7 @@ class ConsoleSkillControllerTest {
         precheckResult.setParsedVersion("1.0.0");
         precheckResult.setTargetVersion("1.0.0");
         precheckResult.setPrecheckCode(SkillUploadPrecheckResult.PRECHECK_CODE_READY);
-        when(skillProxy.precheckUploadSkillFromZip(eq(NS), aryEq(zipBytes), eq("1.0.0")))
+        when(skillProxy.precheckUploadSkillFromZip(eq(NS), aryEq(zipBytes)))
             .thenReturn(java.util.Collections.singletonList(precheckResult));
         MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
             "application/zip", zipBytes);
@@ -285,8 +285,7 @@ class ConsoleSkillControllerTest {
         MockHttpServletResponse response = mockMvc.perform(
             MockMvcRequestBuilders.multipart(BASE_PATH + "/upload/precheck")
                 .file(file)
-                .param("namespaceId", NS)
-                .param("targetVersion", "1.0.0"))
+                .param("namespaceId", NS))
             .andReturn().getResponse();
         
         assertEquals(200, response.getStatus());

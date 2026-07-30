@@ -98,7 +98,7 @@ class SkillNoopHandlerTest {
     @Test
     void testPrecheckUploadSkillFromZipThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-            () -> skillNoopHandler.precheckUploadSkillFromZip("public", new byte[0], null));
+            () -> skillNoopHandler.precheckUploadSkillFromZip("public", new byte[0]));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     

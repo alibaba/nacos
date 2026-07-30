@@ -82,8 +82,8 @@ public class SkillProxy {
     }
     
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
-        return skillHandler.precheckUploadSkillFromZip(namespaceId, zipBytes, targetVersion);
+        byte[] zipBytes) throws NacosException {
+        return skillHandler.precheckUploadSkillFromZip(namespaceId, zipBytes);
     }
     
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
