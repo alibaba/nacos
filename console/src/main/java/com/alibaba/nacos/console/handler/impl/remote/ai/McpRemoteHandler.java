@@ -99,6 +99,7 @@ public class McpRemoteHandler implements McpHandler {
             version);
     }
     
+    @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request)
@@ -108,6 +109,7 @@ public class McpRemoteHandler implements McpHandler {
             "MCP import functionality is not supported in remote mode");
     }
     
+    @Deprecated
     @Override
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {

@@ -38,7 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author liyunfei
  * @deprecated declare config definitions and implement the unified config callbacks on
- *             {@link com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService}
+ *             {@link com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService}. Planned
+ *             for removal in Nacos 4.0.0.
  **/
 @Deprecated
 @Configuration

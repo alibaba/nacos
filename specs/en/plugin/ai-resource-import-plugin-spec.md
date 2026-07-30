@@ -338,9 +338,11 @@ import compatibility. It is a Console helper for building an MCP Server schema
 from a user-owned MCP runtime endpoint and remains outside the AI resource
 marketplace or registry import flow.
 
-The compatibility endpoints are disabled by default. Operators may reopen them
-temporarily with `nacos.ai.resource.import.legacy-mcp-api-enabled=true` while
-clients migrate to `/v3/{admin|console}/ai/import/*`.
+The compatibility endpoints are deprecated, remain available only through
+Nacos 3.3.x, and are planned for removal in Nacos 3.4.0. They are disabled by
+default. Operators may reopen them temporarily with
+`nacos.ai.resource.import.legacy-mcp-api-enabled=true` while clients migrate to
+`/v3/{admin|console}/ai/import/*`.
 
 For legacy `importType=url`, the request must not use a user-provided URL as a
 network target by default. It may be interpreted as a `sourceId` when it matches

@@ -89,6 +89,7 @@ public class McpNoopHandler implements McpHandler {
             MCP_NOT_ENABLED_MESSAGE);
     }
     
+    @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request) throws NacosException {
@@ -97,6 +98,7 @@ public class McpNoopHandler implements McpHandler {
             MCP_NOT_ENABLED_MESSAGE);
     }
     
+    @Deprecated
     @Override
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {

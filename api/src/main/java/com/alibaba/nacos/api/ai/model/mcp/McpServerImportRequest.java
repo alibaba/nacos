@@ -22,7 +22,10 @@ import java.io.Serializable;
  * MCP Server Import Request.
  *
  * @author nacos
+ * @deprecated use the unified AI resource import request models instead. Planned for removal in
+ *     Nacos 3.4.0.
  */
+@Deprecated
 public class McpServerImportRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;

@@ -335,6 +335,38 @@ normalized full key 冲突。管理器在归一化前复制 definition 元数据
 `PRE_CONTEXT` 插件声明的 `RUNTIME` 生效模式在副本中按 `RESTART` 处理，原始 definition
 保持不变。
 
+### 计划移除的废弃兼容项
+
+以下兼容输入在各自注明的迁移窗口内继续接受，以便已有部署完成迁移，避免立即产生启动或行为
+回归。除表格另有更早版本说明外，它们均已废弃，并计划在 Nacos 4.0.0 移除。新部署、示例、
+测试和插件实现只能使用标准替代项。
+
+| 废弃兼容输入 | 标准替代项 | 迁移说明 |
+|--------------|------------|----------|
+| `nacos.core.auth.system.type` | `nacos.plugin.auth.type` | 静态互斥插件选择，迁移后需要重启。 |
+| `spring.sql.init.platform` | `nacos.plugin.datasource-dialect.type` | 静态数据库方言选择，迁移后需要重启。 |
+| `nacos.plugin.control.manager.type` | `nacos.plugin.control.type` | 静态 Control 实现选择，迁移后需要重启。 |
+| `nacos.core.config.plugin.{pluginName}.enabled` | `nacos.plugin.config-change.{pluginName}.enabled` 或统一 plugin state | 旧 key 只提供实现初始状态。 |
+| `nacos.plugin.visibility.type` | `nacos.plugin.visibility.{pluginName}.enabled` 或统一 plugin state | 旧 selector 只提供初始状态，不定义运行时路由。 |
+| `nacos.plugin.ai-pipeline.type` | `nacos.plugin.ai-pipeline.{pluginName}.enabled` 或统一 plugin state | 使用实现状态替代旧的逗号分隔启动链。 |
+| `nacos.core.auth.plugin.nacos.*`、`nacos.core.auth.caching.enabled` 和 `nacos.core.auth.nacos.anonymous.ai.enabled` | `nacos.plugin.auth.nacos.{itemKey}` | 按 definition 暴露的 canonical item key 迁移每个默认鉴权配置项。 |
+| `nacos.core.auth.ldap.*` | `nacos.plugin.auth.ldap.{itemKey}` | LDAP item 名称使用 canonical kebab-case definition。 |
+| `nacos.core.auth.plugin.oidc.*` | `nacos.plugin.auth.oidc.{itemKey}` | OIDC item 名称使用 canonical definition；当前全部 OIDC 配置仍为 `RESTART`。 |
+| `db.*` 和 JVM 参数 `QUERYTIMEOUT` | `nacos.plugin.datasource.db.*` | 数据源参数仍是只在重启后生效的模块配置，不进入插件 PUT API。 |
+| `executable`、`path`、`useLlm`、`apiKey` 等历史 AI Pipeline 相对 item key 和其他 camel-case alias | `nacos.plugin.ai-pipeline.{pluginName}.*` 下的 canonical kebab-case item key | 精确 alias 清单由 AI Pipeline 插件规范记录。 |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | 标准模块 key 保持权威，默认开启。 |
+| `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` 或统一 plugin state | 把旧内置 source 状态 key 迁移到受管实现状态。 |
+| `nacos.plugin.ai.importer.*` item 配置 | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | 把 display、description、limits 和 endpoint 输入迁移到受管 source 身份。 |
+| `nacos.ai.resource.import.legacy-mcp-api-enabled` 和 `nacos.ai.resource.import.allow-user-url` | 统一 `/v3/{admin|console}/ai/import/*` API 和受管 source endpoint 配置 | 这些开关和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
+| `ConfigChangeConfigs` property bridge | `ConfigChangePluginService` 上的 definitions 和 callbacks | 3.x 窗口内，没有 definitions 的旧二进制插件继续接收历史 properties。 |
+| `VisibilityService.init(Properties)` | 从 `PluginConfigSpec` 继承的 definitions 和 callbacks | 统一生命周期在 visibility 执行前应用 effective item-key map。 |
+| `CustomEnvironmentPluginManager.join(...)` | 通过 `PRE_CONTEXT` initializer 发现 Environment SPI | Environment 实现必须在 Spring environment 定制开始前可被发现。 |
+
+对于表中的配置 key，只要标准 key 存在就优先，即使其值为空；只有标准 key 不存在时才回退
+旧输入。在各自计划版本移除这些输入时，也会同时移除对应迁移 WARN 和仅兼容代码路径。
+`nacos.core.auth.enabled` 等核心模块总开关、`PluginConfigSpec` 的空 definitions 默认实现，
+以及旧版零配置插件实现的二进制加载兼容不属于本移除清单。
+
 ### 配置来源与值元数据
 
 插件配置的 effective value 由统一解析流程计算。配置来源优先级为：

@@ -357,8 +357,8 @@ validate 和 execute 端点应通过兼容 adapter 路由到统一导入管理�
 在构建 MCP Server schema 时，从用户自有 MCP runtime endpoint 拉取 tools 的辅助能力，不属于
 AI 资源市场或 registry 导入流程。
 
-兼容端点默认关闭。运维可以在迁移窗口期通过
-`nacos.ai.resource.import.legacy-mcp-api-enabled=true` 临时重新开启，客户端应迁移到
+兼容端点已废弃，仅保留至 Nacos 3.3.x，并计划在 Nacos 3.4.0 移除。端点默认关闭。
+运维可以通过 `nacos.ai.resource.import.legacy-mcp-api-enabled=true` 临时重新开启，客户端应迁移到
 `/v3/{admin|console}/ai/import/*`。
 
 对于旧的 `importType=url`，请求默认不得把用户传入 URL 作为网络目标。当 `data` 匹配已启用

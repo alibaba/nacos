@@ -34,6 +34,12 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
     
     private static final String CONTROL_MANAGER_TYPE = PREFIX + "type";
     
+    /**
+     * Legacy control manager selection property.
+     *
+     * @deprecated use {@link #CONTROL_MANAGER_TYPE} instead. Planned for removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String LEGACY_CONTROL_MANAGER_TYPE = PREFIX + "manager.type";
     
     private static final String RULE_EXTERNAL_STORAGE = PREFIX + "rule.external.storage";

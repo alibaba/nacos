@@ -38,28 +38,37 @@ final class SkillScannerPluginConfig {
     
     static final String DEFAULT_COMMAND = "skill-scanner";
     
+    // Deprecated compatibility aliases; use canonical kebab-case item keys.
+    // Planned for removal in Nacos 4.0.0.
+    @Deprecated
     static final String COMMAND_ALIAS_EXECUTABLE = "executable";
     
+    @Deprecated
     static final String COMMAND_ALIAS_PATH = "path";
     
     static final String USE_LLM = "use-llm";
     
+    @Deprecated
     static final String USE_LLM_ALIAS = "useLlm";
     
     static final String LLM_API_KEY = "llm-api-key";
     
+    @Deprecated
     static final String LLM_API_KEY_ALIAS = "llmApiKey";
     
     static final String LLM_MODEL = "llm-model";
     
+    @Deprecated
     static final String LLM_MODEL_ALIAS = "llmModel";
     
     static final String LLM_PROVIDER = "llm-provider";
     
+    @Deprecated
     static final String LLM_PROVIDER_ALIAS = "llmProvider";
     
     static final String ENABLE_META = "enable-meta";
     
+    @Deprecated
     static final String ENABLE_META_ALIAS = "enableMeta";
     
     private final String command;

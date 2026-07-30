@@ -23,7 +23,10 @@ import java.util.List;
  * MCP Server Import Response.
  *
  * @author nacos
+ * @deprecated use the unified AI resource import response models instead. Planned for removal in
+ *     Nacos 3.4.0.
  */
+@Deprecated
 public class McpServerImportResponse implements Serializable {
     
     private static final long serialVersionUID = 1L;

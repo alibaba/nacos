@@ -84,7 +84,10 @@ public class McpServerImportService {
      * @param request     import request
      * @return validation result
      * @throws NacosException if validation fails
+     * @deprecated use the unified AI resource import validation flow instead. Planned for removal
+     *     in Nacos 3.4.0.
      */
+    @Deprecated
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request)
         throws NacosException {
@@ -116,7 +119,10 @@ public class McpServerImportService {
      * @param namespaceId namespace ID
      * @param request     import request
      * @return import response
+     * @deprecated use the unified AI resource import execute flow instead. Planned for removal in
+     *     Nacos 3.4.0.
      */
+    @Deprecated
     public McpServerImportResponse executeImport(String namespaceId,
         McpServerImportRequest request) {
         try {

@@ -38,7 +38,8 @@ public interface VisibilityService extends PluginConfigSpec {
      * configurable items; those services are initialized through unified plugin configuration.</p>
      *
      * @param properties service-specific properties
-     * @deprecated declare configuration definitions and use the unified configuration lifecycle instead
+     * @deprecated declare configuration definitions and use the unified configuration lifecycle
+     *     instead. Planned for removal in Nacos 4.0.0.
      */
     @Deprecated
     default void init(Properties properties) {
