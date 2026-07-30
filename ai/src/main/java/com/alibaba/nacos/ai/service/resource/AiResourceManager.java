@@ -694,13 +694,91 @@ public class AiResourceManager {
         throws NacosException {
         AiResourceVersion v =
             aiResourceVersionPersistService.find(namespaceId, name, type, version);
-        if (v == null
-            || !AiResourceConstants.VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
+        if (v == null || !isDraftVersion(v)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 "Current editing version is not draft: " + version);
         }
         return v;
+    }
+    
+    /**
+     * Find a version row and verify it can be submitted.
+     *
+     * <p>Submit accepts a draft version for review, a reviewing version as an idempotent
+     * no-op, or a reviewed version for resubmission. Online and offline versions are
+     * rejected.</p>
+     *
+     * @throws NacosApiException if version not found or not in a submittable status
+     */
+    public AiResourceVersion requireSubmitVersion(String namespaceId, String name, String type,
+        String version)
+        throws NacosException {
+        AiResourceVersion v =
+            aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                type + " version not found: " + name + "@" + version);
+        }
+        if (!isDraftVersion(v) && !isReviewingVersion(v) && !isReviewedVersion(v)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Only draft, reviewing, or reviewed version can be submitted: " + version);
+        }
+        return v;
+    }
+    
+    /**
+     * Validate and normalize a version before submit.
+     *
+     * <p>A reviewing version remains unchanged when its pipeline result is absent, still in
+     * progress, or historical. A current terminal result left on a reviewing version indicates
+     * that pipeline completion persisted the result but did not finish the status transition;
+     * normalize that legacy row to reviewed so it can be resubmitted.</p>
+     */
+    public AiResourceVersion prepareSubmitVersion(String namespaceId, String name, String type,
+        String version) throws NacosException {
+        AiResourceVersion v = requireSubmitVersion(namespaceId, name, type, version);
+        if (!isReviewingVersion(v)) {
+            return v;
+        }
+        PublishPipelineInfo pipelineInfo = parsePublishPipelineInfo(v.getPublishPipelineInfo());
+        if (pipelineInfo == null || Boolean.TRUE.equals(pipelineInfo.getHistorical())) {
+            return v;
+        }
+        PipelineExecutionStatus status = pipelineInfo.getStatus();
+        if (status != PipelineExecutionStatus.APPROVED
+            && status != PipelineExecutionStatus.REJECTED) {
+            return v;
+        }
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+            AiResourceConstants.VERSION_STATUS_REVIEWED);
+        v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        return v;
+    }
+    
+    /**
+     * Check whether the given version row is in draft status.
+     */
+    public static boolean isDraftVersion(AiResourceVersion version) {
+        return version != null && AiResourceConstants.VERSION_STATUS_DRAFT
+            .equalsIgnoreCase(version.getStatus());
+    }
+    
+    /**
+     * Check whether the given version row is in reviewing status.
+     */
+    public static boolean isReviewingVersion(AiResourceVersion version) {
+        return version != null && AiResourceConstants.VERSION_STATUS_REVIEWING
+            .equalsIgnoreCase(version.getStatus());
+    }
+    
+    /**
+     * Check whether the given version row is in reviewed status.
+     */
+    public static boolean isReviewedVersion(AiResourceVersion version) {
+        return version != null && AiResourceConstants.VERSION_STATUS_REVIEWED
+            .equalsIgnoreCase(version.getStatus());
     }
     
     /**
@@ -778,7 +856,11 @@ public class AiResourceManager {
     }
     
     /**
-     * Resolve the target version for a submit operation (explicit version or current editing).
+     * Resolve the target version for a submit operation.
+     *
+     * <p>Draft submit normally resolves from {@code editingVersion}; reviewed resubmit resolves
+     * from {@code reviewingVersion} because reviewed versions remain there until the next
+     * operation.</p>
      *
      * @throws NacosApiException if no target version can be determined
      */
@@ -790,8 +872,11 @@ public class AiResourceManager {
             target = info.getEditingVersion();
         }
         if (StringUtils.isBlank(target)) {
+            target = info.getReviewingVersion();
+        }
+        if (StringUtils.isBlank(target)) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "No draft version to submit for " + type + ": " + name);
+                "No draft, reviewing, or reviewed version to submit for " + type + ": " + name);
         }
         return target;
     }
@@ -799,14 +884,17 @@ public class AiResourceManager {
     /**
      * Transition a version to reviewing status and update meta pointers accordingly.
      *
-     * <p>Only versions in {@code draft} status are allowed to enter the review stage.
-     * Submitting a version in any other status (reviewing / reviewed / online / offline)
-     * is rejected with {@code INVALID_PARAM} to prevent corrupting formal versions.</p>
+     * <p>Versions in {@code draft} or {@code reviewed} status are allowed to enter
+     * the review stage. A reviewed version is treated as a resubmission.</p>
      */
     public void moveToReviewing(String namespaceId, String name, String type, String version,
         AiResource meta, ResourceVersionInfo info) throws NacosException {
-        // Guard: only draft version can be submitted for review.
-        requireDraftVersion(namespaceId, name, type, version);
+        AiResourceVersion v = requireSubmitVersion(namespaceId, name, type, version);
+        if (!isDraftVersion(v) && !isReviewedVersion(v)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Only draft or reviewed version can enter review: " + version);
+        }
         aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
             AiResourceConstants.VERSION_STATUS_REVIEWING);
         updateVersionInfoCas(namespaceId, meta, info, latestInfo -> {

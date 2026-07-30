@@ -51,7 +51,7 @@ AgentSpec 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-sp
 
 - upload 或 create draft；
 - update draft；
-- submit 通过发布流水线或直接发布；
+- 提交 draft 或 reviewed 版本通过发布流水线或直接发布，提交 reviewing 版本按幂等调用返回；
 - publish、force publish、update labels、update bizTags、update scope、online/offline
   和 delete。
 

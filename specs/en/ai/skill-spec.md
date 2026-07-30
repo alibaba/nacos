@@ -184,7 +184,9 @@ Skill follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec
   version description when a draft version is created or overwritten;
 - bootstrap built-in Skill may directly create online metadata and version
   rows;
-- submit may run publish pipeline and then publish or return to draft;
+- submitting a draft or reviewed version may run publish pipeline and then
+  publish or leave the version reviewed; submitting a reviewing version is
+  idempotent;
 - labels, online/offline, scope, business tags, and delete operations update
   metadata through CAS where required.
 

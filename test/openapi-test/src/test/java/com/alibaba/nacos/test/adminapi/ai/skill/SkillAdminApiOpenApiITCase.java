@@ -185,6 +185,9 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue("online".equals(submittedStatus) || "reviewing".equals(submittedStatus),
                 submittedStatus);
         if ("reviewing".equals(submittedStatus)) {
+            JsonNode resubmit = postFormOk(ADMIN_SKILL_PATH + "/submit", skillQueryForm(skillName));
+            assertEquals("2.0.0", resubmit.get("data").asText(), resubmit.toString());
+            assertSkillVersionStatus(skillName, "2.0.0", "reviewing");
             postFormOk(ADMIN_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "2.0.0"));
         }
         assertSkillContent(getJsonOk(ADMIN_SKILL_VERSION_PATH, skillVersionQuery(skillName, "2.0.0"))

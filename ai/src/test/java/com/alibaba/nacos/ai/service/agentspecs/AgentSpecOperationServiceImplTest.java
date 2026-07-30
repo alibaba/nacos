@@ -26,6 +26,8 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
@@ -1184,6 +1186,86 @@ class AgentSpecOperationServiceImplTest {
         assertEquals("v1", result);
         verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(name), anyString(),
             eq("v1"), eq("online"));
+    }
+    
+    @Test
+    void testSubmitReviewedVersionResubmitsReview() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewed");
+        vRow.setPublishPipelineInfo("{\"executionId\":\"old-exec\",\"status\":\"REJECTED\"}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+            .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
+            eq(1L), any()))
+            .thenReturn(true);
+        PublishPipelineExecutor pipelineExecutor = mock(PublishPipelineExecutor.class);
+        when(pipelineExecutor.isPipelineAvailable(any())).thenReturn(true);
+        when(pipelineExecutor.execute(any(), any(), anyString())).thenReturn("exec-2");
+        AgentSpecOperationServiceImpl reviewedSubmitService =
+            new AgentSpecOperationServiceImpl(aiResourcePersistService,
+                aiResourceVersionPersistService, pipelineExecutor,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository));
+        
+        String result = reviewedSubmitService.submit(namespaceId, name, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(name), anyString(),
+            eq("v1"), eq("reviewing"));
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(namespaceId), eq(name),
+            anyString(), eq("v1"), eq("online"));
+        ArgumentCaptor<String> pipelineInfoCaptor = ArgumentCaptor.forClass(String.class);
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(namespaceId), eq(name),
+            anyString(), eq("v1"), pipelineInfoCaptor.capture());
+        PublishPipelineInfo pipelineInfo =
+            JacksonUtils.toObj(pipelineInfoCaptor.getValue(), PublishPipelineInfo.class);
+        assertEquals(PipelineExecutionStatus.IN_PROGRESS, pipelineInfo.getStatus());
+        assertNotNull(pipelineInfo.getExecutionId());
+        verify(aiResourceVersionPersistService, never()).updateStorageMd5(eq(namespaceId), eq(name),
+            anyString(), eq("v1"), anyString());
+    }
+    
+    @Test
+    void testSubmitReviewingVersionShouldBeIdempotent() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewing");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+            .thenReturn(vRow);
+        
+        String result = service.submit(namespaceId, name, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(namespaceId), eq(name),
+            anyString(), eq("v1"), anyString());
+        verify(aiResourceVersionPersistService, never()).updatePublishPipelineInfo(eq(namespaceId),
+            eq(name), anyString(), eq("v1"), anyString());
+        verify(aiResourceVersionPersistService, never()).updateStorageMd5(eq(namespaceId), eq(name),
+            anyString(), eq("v1"), anyString());
+        verify(storage, never()).get(any(StorageKey.class));
     }
     
     @Test

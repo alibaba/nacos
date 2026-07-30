@@ -282,7 +282,14 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String target =
             resourceManager.resolveSubmitTarget(resourceInfo, version, RESOURCE_TYPE_PROMPT,
                 promptKey);
+        AiResourceVersion submitVersion =
+            resourceManager.prepareSubmitVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+                target);
         final String finalTarget = target;
+        
+        if (AiResourceManager.isReviewingVersion(submitVersion)) {
+            return finalTarget;
+        }
         
         // Move to reviewing before pipeline execution
         resourceManager.moveToReviewing(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, finalTarget,
@@ -305,6 +312,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         // Check pipeline availability
         if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
+            if (StringUtils.isNotBlank(submitVersion.getPublishPipelineInfo())) {
+                resourceManager.clearPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+                    finalTarget);
+            }
             publish(namespaceId, promptKey, finalTarget, true);
             return finalTarget;
         }

@@ -105,6 +105,15 @@ fields `succeeded` and `failed`, plus per-item `success`, `errorCode`, and
 `errorMessage` in `results`. Contract-only field changes do not alter the
 scenario-row totals above.
 
+Skill, Prompt, and AgentSpec submit scenarios retry submit when the standalone
+environment leaves the target in `reviewing`, proving the HTTP operation is
+idempotent and does not require a new draft. Resubmitting a `reviewed` version
+and recovering a legacy `reviewing` Skill with a terminal pipeline result are
+covered by service tests because the standalone suite does not install a
+deterministic publish pipeline that can create those states. Service tests also
+verify that a terminal result marked `historical=true` remains an idempotent
+`reviewing` submit because it belongs to a previous review cycle.
+
 Agent Admin definition creation is counted in the existing Agent Admin and
 Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
 creates missing Agent metadata together with the first draft; the removed root
