@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.service.search;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.function.BooleanSupplier;
+
 /**
  * Builds and removes local AI resource indexes from Nacos resource lifecycle events.
  *
@@ -48,7 +50,7 @@ public interface AiResourceIndexService {
         }
         
         @Override
-        public boolean isEnhancementRequired() {
+        public boolean isEnhancementRequested() {
             return false;
         }
         
@@ -97,9 +99,9 @@ public interface AiResourceIndexService {
         throws NacosException;
     
     /**
-     * Whether durable LLM enhancement is required by configuration.
+     * Whether durable LLM enhancement is requested by configuration.
      */
-    boolean isEnhancementRequired();
+    boolean isEnhancementRequested();
     
     /**
      * Fingerprint of the effective enhancement configuration.
@@ -115,12 +117,39 @@ public interface AiResourceIndexService {
         throws Exception;
     
     /**
+     * Enhance the latest resource only while the caller still owns its durable task.
+     *
+     * @return exact enhancement fingerprint, or {@code null} if the resource or task is stale
+     */
+    default String enhanceLatestAiResource(String namespaceId, String resourceType, String name,
+        BooleanSupplier ownership) throws Exception {
+        if (!ownership.getAsBoolean()) {
+            return null;
+        }
+        return enhanceLatestAiResource(namespaceId, resourceType, name)
+            ? enhancementFingerprint() : null;
+    }
+    
+    /**
      * Enhance an indexed MCP server and converge its vector index.
      *
      * @return whether a current index entry exists
      */
     boolean enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer)
         throws Exception;
+    
+    /**
+     * Enhance an MCP server only while the caller still owns its durable task.
+     *
+     * @return exact enhancement fingerprint, or {@code null} if the resource or task is stale
+     */
+    default String enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer,
+        BooleanSupplier ownership) throws Exception {
+        if (!ownership.getAsBoolean()) {
+            return null;
+        }
+        return enhanceMcpServer(namespaceId, mcpServer) ? enhancementFingerprint() : null;
+    }
     
     /**
      * Remove all AI resource index rows for a resource.

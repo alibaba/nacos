@@ -62,6 +62,13 @@ public interface AiResourceIndexTaskRepository {
     boolean advanceToEnhancement(AiResourceIndexTask task);
     
     /**
+     * Restart the claimed task revision from the base-index stage.
+     *
+     * @return {@code false} when the claimed revision has already been superseded
+     */
+    boolean restartFromBase(AiResourceIndexTask task, boolean enhancementRequested);
+    
+    /**
      * Retain a completed checkpoint for the claimed stage and revision.
      */
     boolean complete(AiResourceIndexTask task, String enhancementFingerprint);

@@ -140,10 +140,11 @@ class PostgresqlAiResourceVectorIndexTest {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS ai_resource_search_embedding_pg ("
             + "namespace_id varchar(128), resource_type varchar(32),"
             + "resource_name varchar(256), resource_version varchar(64),"
-            + "embedding_model varchar(128))");
+            + "embedding_model varchar(128), document_id bigint)");
         jdbcTemplate.update("DELETE FROM ai_resource_search_embedding_pg");
-        jdbcTemplate.update("INSERT INTO ai_resource_search_embedding_pg VALUES (?, ?, ?, ?, ?)",
-            "public", "skill", "avatar", "1.0.0", "model-a");
+        jdbcTemplate.update(
+            "INSERT INTO ai_resource_search_embedding_pg VALUES (?, ?, ?, ?, ?, ?)",
+            "public", "skill", "avatar", "1.0.0", "model-a", 10L);
         PostgresqlAiResourceVectorIndex index =
             new PostgresqlAiResourceVectorIndex(jdbcTemplate);
         
@@ -153,6 +154,10 @@ class PostgresqlAiResourceVectorIndexTest {
             "model-b", 1));
         assertFalse(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
             "model-a", 2));
+        assertTrue(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
+            "model-a", 10L, 1));
+        assertFalse(index.isResourceVersionReady("public", "skill", "avatar", "1.0.0",
+            "model-a", 11L, 1));
     }
     
     private static class CapturingJdbcTemplate extends JdbcTemplate {

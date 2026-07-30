@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /**
  * Default AI resource index builder.
@@ -161,8 +162,8 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
     }
     
     @Override
-    public boolean isEnhancementRequired() {
-        return enhancementService.required();
+    public boolean isEnhancementRequested() {
+        return enhancementService.requested();
     }
     
     @Override
@@ -173,46 +174,56 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
     @Override
     public boolean enhanceLatestAiResource(String namespaceId, String resourceType, String name)
         throws Exception {
+        return enhanceLatestAiResource(namespaceId, resourceType, name, () -> true) != null;
+    }
+    
+    @Override
+    public String enhanceLatestAiResource(String namespaceId, String resourceType, String name,
+        BooleanSupplier ownership) throws Exception {
         AiResourceSearchDocument entry = repository.findEntry(namespaceId, resourceType, name);
         if (entry == null) {
-            return false;
+            return null;
         }
         AiResource meta = resourceManager.findMeta(namespaceId, name, resourceType);
         if (meta == null) {
-            return false;
+            return null;
         }
         String latestVersion = AiResourceManager.resolveVersion(meta, null,
             AiResourceConstants.LABEL_LATEST);
         if (!Objects.equals(entry.getResourceVersion(), latestVersion)) {
-            return false;
+            return null;
         }
         AiResourceVersion resourceVersion =
             resourceManager.findVersion(namespaceId, name, resourceType, latestVersion);
         if (!isIndexable(meta, resourceVersion)) {
-            return false;
+            return null;
         }
-        enhance(entry, contentLoader.load(entry, resourceVersion));
-        return true;
+        return enhance(entry, contentLoader.load(entry, resourceVersion), ownership);
     }
     
     @Override
     public boolean enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer)
         throws Exception {
+        return enhanceMcpServer(namespaceId, mcpServer, () -> true) != null;
+    }
+    
+    @Override
+    public String enhanceMcpServer(String namespaceId, McpServerBasicInfo mcpServer,
+        BooleanSupplier ownership) throws Exception {
         if (mcpServer == null) {
-            return false;
+            return null;
         }
         String resourceName = firstNotBlank(mcpServer.getId(), mcpServer.getName());
         String resourceVersion = resolveMcpVersion(mcpServer);
         AiResourceSearchDocument entry = repository.findEntry(namespaceId,
             AiResourceConstants.RESOURCE_TYPE_MCP, resourceName);
         if (entry == null || !isIndexable(mcpServer)) {
-            return false;
+            return null;
         }
         if (!Objects.equals(entry.getResourceVersion(), resourceVersion)) {
-            return false;
+            return null;
         }
-        enhance(entry, mcpContents(mcpServer));
-        return true;
+        return enhance(entry, mcpContents(mcpServer), ownership);
     }
     
     @Override
@@ -238,10 +249,6 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
         }
         repository.deleteByResourceVersion(namespaceId, resourceType, resourceName,
             resourceVersion);
-    }
-    
-    private void replace(AiResourceSearchDocument entry) {
-        replace(entry, null);
     }
     
     private void replace(AiResourceSearchDocument entry, AiResourceVersion resourceVersion) {
@@ -414,9 +421,10 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
         return text.substring(0, maxLength);
     }
     
-    private void enhance(AiResourceSearchDocument entry,
-        List<AiResourceIndexEnhancementContent> contents) throws Exception {
-        if (!enhancementService.enabled()) {
+    private String enhance(AiResourceSearchDocument entry,
+        List<AiResourceIndexEnhancementContent> contents, BooleanSupplier ownership)
+        throws Exception {
+        if (!enhancementService.ready()) {
             throw new IllegalStateException("AI resource index enhancement is not configured");
         }
         List<AiResourceSearchChunk> baseChunks = new ArrayList<>();
@@ -425,22 +433,32 @@ public class AiResourceIndexServiceImpl implements AiResourceIndexService {
                 baseChunks.add(chunk);
             }
         }
-        List<AiResourceIndexEnhancementChunk> enhancements =
-            enhancementService.enhance(entry, baseChunks, contents);
+        AiResourceIndexEnhancementResult enhancement =
+            enhancementService.enhanceWithResult(entry, baseChunks, contents);
+        if (!ownership.getAsBoolean()) {
+            return null;
+        }
         List<AiResourceSearchChunk> enhancedChunks =
-            chunkBuilder.buildEnhancementChunks(entry, enhancements);
+            chunkBuilder.buildEnhancementChunks(entry, enhancement.getChunks());
         enhancedChunks.removeIf(chunk -> !isEnhancementChunk(chunk));
         boolean vectorAvailable = vectorIndex.available();
         if (vectorAvailable) {
             repository.updateEntryStatus(entry.getId(), AiResourceSearchConstants.STATUS_PENDING);
         }
+        if (!ownership.getAsBoolean()) {
+            return null;
+        }
         List<AiResourceSearchChunk> allChunks =
             repository.replaceEnhancementChunks(entry, enhancedChunks);
         if (vectorAvailable) {
+            if (!ownership.getAsBoolean()) {
+                return null;
+            }
             vectorIndex.replaceResourceVersion(entry.getNamespaceId(), entry.getResourceType(),
                 entry.getResourceName(), entry.getResourceVersion(), vectorDocuments(allChunks));
             repository.updateEntryStatus(entry.getId(), AiResourceSearchConstants.STATUS_ENABLED);
         }
+        return enhancement.getFingerprint();
     }
     
     private boolean isEnhancementChunk(AiResourceSearchChunk chunk) {

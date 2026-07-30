@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -56,6 +58,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -271,7 +274,7 @@ class AiResourceIndexBackfillTaskTest {
         when(embeddingService.model()).thenReturn("model-v2");
         when(repository.countChunks(10L)).thenReturn(3);
         when(vectorIndex.isResourceVersionReady(PUBLIC_NAMESPACE,
-            Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale", "1.0.0", "model-v2", 3))
+            Constants.Skills.RESOURCE_TYPE_SKILL, "vector-stale", "1.0.0", "model-v2", 10L, 3))
             .thenReturn(false);
         
         task.onApplicationEvent(rootContextEvent());
@@ -328,11 +331,29 @@ class AiResourceIndexBackfillTaskTest {
             anyString());
     }
     
+    @Test
+    void shouldTakeOverExpiredMarkerWithCas() throws Exception {
+        when(configOperationService.publishConfig(any(), any(), any()))
+            .thenThrow(new ConfigAlreadyExistsException("marker exists"))
+            .thenReturn(true);
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("0");
+        response.setMd5("stale-marker-md5");
+        when(configQueryChainService.handle(any())).thenReturn(response);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        ArgumentCaptor<ConfigRequestInfo> requestInfo =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configOperationService, timeout(ASYNC_TIMEOUT).times(2))
+            .publishConfig(any(), requestInfo.capture(), isNull());
+        assertEquals("stale-marker-md5", requestInfo.getAllValues().get(1).getCasMd5());
+    }
+    
     private void verifyMarkerReleased() throws Exception {
-        verify(configOperationService, timeout(ASYNC_TIMEOUT)).deleteConfig(
-            eq("nacos.ai.resource.search.index.backfill"), eq("nacos_internal"),
-            eq(PUBLIC_NAMESPACE), isNull(),
-            isNull(), eq("nacos"), isNull());
+        verify(configOperationService, timeout(ASYNC_TIMEOUT)).publishConfig(any(), any(),
+            isNull());
     }
     
     private ApplicationReadyEvent rootContextEvent() {

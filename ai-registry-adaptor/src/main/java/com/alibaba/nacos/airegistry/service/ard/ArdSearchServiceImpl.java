@@ -108,13 +108,13 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     private static final Pattern CATALOG_PUBLISHER_IDENTIFIER = Pattern.compile("[A-Za-z0-9.-]+");
     
-    private static final String FIELD_PATH_REGEX =
-        "[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*";
+    private static final String LIST_FIELD_PATH_REGEX =
+        "[A-Za-z_][A-Za-z0-9_-]*(?:\\.[A-Za-z_][A-Za-z0-9_-]*)*";
     
-    private static final Pattern FIELD_PATH = Pattern.compile("^" + FIELD_PATH_REGEX + "$");
+    private static final Pattern FIELD_PATH = Pattern.compile("^[^.\\s]+(?:\\.[^.\\s]+)*$");
     
     private static final Pattern LIST_FILTER_EXPRESSION = Pattern.compile(
-        "^\\s*(" + FIELD_PATH_REGEX + ")\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
+        "^\\s*(" + LIST_FIELD_PATH_REGEX + ")\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
     
     private final AiResourceSearchService searchService;
     

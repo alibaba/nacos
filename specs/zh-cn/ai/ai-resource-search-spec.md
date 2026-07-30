@@ -96,13 +96,20 @@ key 是 task type、namespace 以及由 resource type 和 resource name 组成�
 `pending`；通过 `retry_count`、`next_execute_at` 和 `last_error` 区分延迟重试与新
 任务。成功行作为每个存活资源的有界完成检查点保留，不记录任务历史。资源生命周期变更递增
 任务 revision，并从 `base_index` 重新开始。已领取的 revision 只有在仍持有任务行时才能
-推进、重试或完成。进程失败后，其他节点可在 lease 过期后接管。
+推进、重试或完成。进程失败后，其他节点可在 lease 过期后接管。Enhancement 任务回退到
+`base_index` 同样必须使用 revision 条件，旧 worker 不得覆盖更新的生命周期 revision。
+基础阶段和 Enhancement 阶段都必须通过独立于轮询线程的执行器续租；领取的 Enhancement
+任务数不得超过已配置的 worker 并发数。
 
 检索索引任务输入保存在 `task_payload` 中，必须包含 `schemaVersion`、保存 resource type
 和 resource name 的 `subject`，以及 `options.enhancementRequested`。调度新 revision
 时整体替换 Payload，该 revision 执行期间 Payload 保持不可变。Enhancement 完成元数据
 保存在版本化 `task_result` 中，当前结果包含完成时的 Enhancement fingerprint。用于轮询、
 领取、重试、lease 接管和 revision 防并发覆盖的调度元数据继续使用独立关系列。
+
+无法解析或 Schema 版本不支持的任务 Payload 必须以带解码错误的完成检查点隔离，不能导致
+同一批其他到期任务失败或饥饿。若其基础索引不一致，后续 reconciliation 可以使用当前
+Payload 重新打开该任务。
 
 调度截止点以 Unix Epoch 毫秒保存到 BIGINT 类型的 `next_execute_at` 和
 `lease_expire_at`。轮询、领取、重试和 lease 续期必须使用同一个注入的应用时钟生成比较
@@ -117,21 +124,28 @@ Fingerprint 仅记录完成 Enhancement 时实际使用的配置，用于审计�
 Enhancement；只有明确请求 Enhancement 的任务才能从 `base_index` 推进到
 `llm_enhancement`，执行 Enhancement 阶段时使用当时生效的配置。
 
-Enhancement 关闭时，基础索引可以直接完成；开关已开启但配置不完整时，Enhancement 阶段
-必须回到 `pending` 并保留重试元数据，不能当作关闭处理。
+Enhancement 关闭时，仍处于 `base_index` 的任务可以直接完成。已经进入
+`llm_enhancement` 的任务不得直接完成；它必须创建
+`options.enhancementRequested=false` 的新 revision 并回到 `base_index`，以清除可能部分
+写入的 Enhancement chunk、重新收敛基础向量索引，再作为基础索引检查点完成。之后重新开启
+Enhancement 不得重新调度该已完成资源。开关已开启但配置不完整时，Enhancement 阶段必须回到
+`pending` 并保留重试元数据，不能当作关闭处理。
 
 失败时将当前阶段恢复为 `pending`，增加 `retry_count`，并按照指数退避设置
 `next_execute_at`。周期性 reconciliation 检测遗漏、部分、过期和孤儿基础索引。索引
 缺失或不一致时按正常建索引流程重建，并根据修复任务调度时的 Enhancement 开关决定是否
 请求 Enhancement。索引已经一致时，不得仅因历史资源缺少 Enhancement 检查点而触发修复，
 因此开启 Enhancement 不会导致历史数据全量刷新。同一资源已有活动任务时，
-reconciliation 必须保留其 Payload 中持久化的 Enhancement 意图。检索只读取所配置索引
-已经收敛的 enabled document。
+reconciliation 必须保留其 Payload 中持久化的 Enhancement 意图，以及 revision、阶段、
+重试延迟和 lease。向量 reconciliation 除模型和 chunk 数量外，还必须比较关系 document
+标识。检索只读取所配置索引已经收敛的 enabled document。
 
 ## 7. 资源边界
 
 列表、聚合、reconciliation 和持久化任务轮询必须按有界数据库批次扫描关系状态。完成
 可见性和当前版本校验后，列表分页在内存中只保留请求页及一条用于判断下一页的记录。
+Reconciliation 不得在内存中保留全部标准资源名称。集群扫描 lease 必须记录 owner 和
+过期时间，扫描期间通过 CAS 续租，并且只有相同 owner 仍持有 lease 时才能释放。
 
 关键词和向量召回分别设置可配置的候选上限。任一通道超过上限时，检索必须明确失败，不得
 返回静默截断的结果。运维可通过 `nacos.ai.resource.search.max-recall-candidates`

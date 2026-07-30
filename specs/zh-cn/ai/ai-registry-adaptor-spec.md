@@ -226,8 +226,8 @@ date 或 instant 的时间比较，例如 `createdAfter > '2026-01-01'` 和
 `createdAfter > '2026-01-01T00:00:00Z'`。解析必须感知引号边界。Search 和 explore
 filter 接受语法合法的点分字段路径，包括固定 OpenAPI 中的
 `trustManifest.attestations.type` 示例；路径对应的值不存在时不匹配任何条目。不支持的
-操作符、错误的引号、非法字段路径语法和旧分隔符语法必须返回 ARD invalid-argument，
-不能只解析其中一部分。
+扩展字段路径分段可以使用任意非空、非空白且不含点号的属性名。不支持的操作符、错误的
+引号、非法字段路径语法和旧分隔符语法必须返回 ARD invalid-argument，不能只解析其中一部分。
 
 Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
 字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，

@@ -51,7 +51,7 @@ public class AiResourceIndexMaintenanceServiceImpl implements AiResourceIndexMai
         }
         try {
             taskRepository.schedule(namespaceId, resourceType, resourceName,
-                enhancementService.required());
+                enhancementService.requested());
             return true;
         } catch (Exception e) {
             LOGGER.warn(
@@ -69,7 +69,7 @@ public class AiResourceIndexMaintenanceServiceImpl implements AiResourceIndexMai
         }
         try {
             taskRepository.scheduleReconciliation(namespaceId, resourceType, resourceName,
-                enhancementService.required());
+                enhancementService.requested());
             return true;
         } catch (Exception e) {
             LOGGER.warn(

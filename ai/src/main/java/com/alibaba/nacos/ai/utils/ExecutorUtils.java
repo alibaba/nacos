@@ -99,6 +99,13 @@ public final class ExecutorUtils {
         return AiResourceIndexEnhancementExecutorHolder.INSTANCE;
     }
     
+    /**
+     * Configured concurrency for async AI resource index enhancement.
+     */
+    public static int getAiResourceIndexEnhancementConcurrency() {
+        return resolveAiResourceIndexEnhancementConcurrency();
+    }
+    
     private static int resolveSkillStorageIoConcurrency() {
         String val = EnvUtil.getProperty(SKILL_STORAGE_IO_CONCURRENCY_CONFIG_KEY,
             String.valueOf(DEFAULT_SKILL_STORAGE_IO_CONCURRENCY));

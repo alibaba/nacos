@@ -392,6 +392,17 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void searchShouldAcceptExtensionFieldPathSegments() throws Exception {
+        ArdSearchServiceImpl service = service();
+        ArdSearchRequest request = request("api",
+            Map.of("vendor_metadata.2026-认证", (Object) List.of("verified")));
+        
+        ArdSearchResponse response = service.search(request);
+        
+        assertTrue(response.getResults().isEmpty());
+    }
+    
+    @Test
     void searchShouldRejectMalformedFilterKey() {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",

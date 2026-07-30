@@ -27,7 +27,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -72,7 +74,7 @@ class AiResourceIndexTaskConsumerTest {
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
-        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(indexBuildService.isEnhancementRequested()).thenReturn(true);
         when(taskRepository.advanceToEnhancement(task)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
@@ -110,7 +112,7 @@ class AiResourceIndexTaskConsumerTest {
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(indexBuildService.rebuildLatestAiResource("public", "skill", "avatar"))
             .thenReturn(true);
-        lenient().when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        lenient().when(indexBuildService.isEnhancementRequested()).thenReturn(true);
         when(taskRepository.complete(task, null)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
@@ -119,7 +121,7 @@ class AiResourceIndexTaskConsumerTest {
         
         verify(taskRepository).complete(task, null);
         verify(taskRepository, never()).advanceToEnhancement(task);
-        verify(indexBuildService, never()).isEnhancementRequired();
+        verify(indexBuildService, never()).isEnhancementRequested();
     }
     
     @Test
@@ -128,10 +130,10 @@ class AiResourceIndexTaskConsumerTest {
         task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
-        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
-        when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
-            .thenReturn(true);
-        when(indexBuildService.enhancementFingerprint()).thenReturn("fingerprint-v1");
+        when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(true);
+        when(indexBuildService.isEnhancementRequested()).thenReturn(true);
+        when(indexBuildService.enhanceLatestAiResource(eq("public"), eq("skill"), eq("avatar"),
+            any(BooleanSupplier.class))).thenReturn("fingerprint-v1");
         when(taskRepository.complete(task, "fingerprint-v1")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
@@ -166,9 +168,11 @@ class AiResourceIndexTaskConsumerTest {
         task.setRetryCount(13);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
-        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
+        when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(true);
+        when(indexBuildService.isEnhancementRequested()).thenReturn(true);
         doThrow(new IllegalStateException("llm unavailable")).when(indexBuildService)
-            .enhanceLatestAiResource("public", "skill", "avatar");
+            .enhanceLatestAiResource(eq("public"), eq("skill"), eq("avatar"),
+                any(BooleanSupplier.class));
         when(taskRepository.retry(task, 1_800_000L, "llm unavailable")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
@@ -180,22 +184,83 @@ class AiResourceIndexTaskConsumerTest {
     }
     
     @Test
-    void shouldRequeueBaseStageWhenEnhancementEntryIsStale() throws Exception {
+    void shouldRequeueBaseStageWhenEnhancementIsDisabled() throws Exception {
         AiResourceIndexTask task = task();
         task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        task.setRetryCount(1);
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
-        when(indexBuildService.isEnhancementRequired()).thenReturn(true);
-        when(indexBuildService.enhanceLatestAiResource("public", "skill", "avatar"))
-            .thenReturn(false);
+        when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
             mcpServerOperationService, Runnable::run);
         
         consumer.consume();
         
-        verify(taskRepository).schedule("public", "skill", "avatar", true);
+        verify(taskRepository).restartFromBase(task, false);
+        verify(indexBuildService, never()).enhanceLatestAiResource(eq("public"), eq("skill"),
+            eq("avatar"), any(BooleanSupplier.class));
+        verify(taskRepository, never()).complete(eq(task), any());
+        verify(taskRepository, never()).retry(eq(task), anyLong(), any());
+    }
+    
+    @Test
+    void shouldRequeueBaseStageWhenEnhancementEntryIsStale() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
+        when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(true);
+        when(indexBuildService.isEnhancementRequested()).thenReturn(true);
+        when(indexBuildService.enhanceLatestAiResource(eq("public"), eq("skill"), eq("avatar"),
+            any(BooleanSupplier.class))).thenReturn(null);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(taskRepository).restartFromBase(task, true);
         verify(taskRepository, never()).remove(task);
         verify(taskRepository, never()).complete(eq(task), any());
+    }
+    
+    @Test
+    void shouldNotClaimMoreEnhancementTasksThanWorkerConcurrency() {
+        AiResourceIndexTask first = task();
+        first.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        AiResourceIndexTask second = task();
+        second.setTaskKey("second-task");
+        second.setResourceName("second");
+        second.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        List<Runnable> queued = new ArrayList<>();
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(first, second));
+        when(taskRepository.claim(eq(first), anyLong())).thenReturn(true);
+        when(taskRepository.renewLease(eq(first), anyLong())).thenReturn(true);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, queued::add, 1);
+        
+        consumer.consume();
+        
+        verify(taskRepository).claim(eq(first), anyLong());
+        verify(taskRepository, never()).claim(eq(second), anyLong());
+        queued.get(0).run();
+    }
+    
+    @Test
+    void shouldStopEnhancementWhenClaimedRevisionLosesItsLease() throws Exception {
+        AiResourceIndexTask task = task();
+        task.setTaskStage(AiResourceIndexTask.STAGE_LLM_ENHANCEMENT);
+        when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
+        when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
+        when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(false);
+        consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
+            mcpServerOperationService, Runnable::run);
+        
+        consumer.consume();
+        
+        verify(indexBuildService, never()).enhanceLatestAiResource(any(), any(), any(),
+            any(BooleanSupplier.class));
+        verify(taskRepository, never()).complete(eq(task), any());
+        verify(taskRepository, never()).retry(eq(task), anyLong(), any());
     }
     
     @Test

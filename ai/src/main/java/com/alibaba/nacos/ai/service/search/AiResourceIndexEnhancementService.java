@@ -35,7 +35,7 @@ public interface AiResourceIndexEnhancementService {
     AiResourceIndexEnhancementService NOOP = new AiResourceIndexEnhancementService() {
         
         @Override
-        public boolean enabled() {
+        public boolean ready() {
             return false;
         }
         
@@ -47,15 +47,15 @@ public interface AiResourceIndexEnhancementService {
     };
     
     /**
-     * Whether this provider should run for newly built search documents.
+     * Whether enhancement is requested and the provider configuration is complete.
      */
-    boolean enabled();
+    boolean ready();
     
     /**
-     * Whether enhancement is required by configuration, including temporarily invalid settings.
+     * Whether enhancement is requested by the operator, including temporarily invalid settings.
      */
-    default boolean required() {
-        return enabled();
+    default boolean requested() {
+        return ready();
     }
     
     /**
@@ -80,5 +80,16 @@ public interface AiResourceIndexEnhancementService {
         List<AiResourceIndexEnhancementContent> contents)
         throws Exception {
         return enhance(entry, existingChunks);
+    }
+    
+    /**
+     * Generate chunks and return the exact configuration fingerprint used by this invocation.
+     */
+    default AiResourceIndexEnhancementResult enhanceWithResult(AiResourceSearchDocument entry,
+        List<AiResourceSearchChunk> existingChunks,
+        List<AiResourceIndexEnhancementContent> contents)
+        throws Exception {
+        return new AiResourceIndexEnhancementResult(
+            enhance(entry, existingChunks, contents), fingerprint());
     }
 }

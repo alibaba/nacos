@@ -69,6 +69,19 @@ public interface AiResourceVectorIndex extends AutoCloseable {
     }
     
     /**
+     * Verify the expected relational document identity in addition to model and count.
+     *
+     * <p>The default delegates to the original readiness method to preserve compatibility
+     * with existing providers.</p>
+     */
+    default boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        long expectedDocumentId, int expectedDocumentCount) {
+        return isResourceVersionReady(namespaceId, resourceType, resourceName, resourceVersion,
+            embeddingModel, expectedDocumentCount);
+    }
+    
+    /**
      * Vector search over AI resource search chunks.
      */
     List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,

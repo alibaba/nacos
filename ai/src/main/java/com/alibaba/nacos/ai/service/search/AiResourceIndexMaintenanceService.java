@@ -27,13 +27,13 @@ public interface AiResourceIndexMaintenanceService {
         
         @Override
         public boolean schedule(String namespaceId, String resourceType, String resourceName) {
-            return true;
+            return false;
         }
         
         @Override
         public boolean scheduleReconciliation(String namespaceId, String resourceType,
             String resourceName) {
-            return true;
+            return false;
         }
     };
     

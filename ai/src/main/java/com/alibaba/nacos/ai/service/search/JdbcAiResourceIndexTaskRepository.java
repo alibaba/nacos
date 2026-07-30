@@ -25,12 +25,15 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -45,6 +48,9 @@ import java.util.List;
 @Repository
 @ConditionalOnAiResourceSearchEnabled
 public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRepository {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(JdbcAiResourceIndexTaskRepository.class);
     
     static final String STATUS_PENDING = "pending";
     
@@ -99,15 +105,14 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         String taskKey = taskKey(namespaceId, resourceType, resourceName);
         String taskPayload = taskPayload(resourceType, resourceName, enhancementRequested);
         long nowEpochMillis = clock.millis();
-        int updated = updateExistingReconciliationTask(taskKey, namespaceId, taskPayload,
-            nowEpochMillis);
-        if (updated > 0) {
+        if (reopenCompletedReconciliationTask(taskKey, namespaceId, taskPayload,
+            nowEpochMillis) > 0 || taskExists(taskKey)) {
             return;
         }
         try {
             insertTask(taskKey, namespaceId, taskPayload, nowEpochMillis);
         } catch (DuplicateKeyException ignored) {
-            updateExistingReconciliationTask(taskKey, namespaceId, taskPayload, clock.millis());
+            reopenCompletedReconciliationTask(taskKey, namespaceId, taskPayload, clock.millis());
         }
     }
     
@@ -123,7 +128,7 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             + "AND (lease_expire_at IS NULL OR lease_expire_at<?)) OR "
             + "(status=? AND lease_expire_at<?)) "
             + "ORDER BY CASE WHEN task_stage=? THEN 0 ELSE 1 END, next_execute_at, gmt_modified";
-        return getJdbcTemplate().query(connection -> {
+        DueTaskRows rows = getJdbcTemplate().query(connection -> {
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, AiResourceIndexTask.TASK_TYPE);
             statement.setString(2, STATUS_PENDING);
@@ -134,7 +139,23 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             statement.setString(7, AiResourceIndexTask.STAGE_BASE_INDEX);
             statement.setMaxRows(limit);
             return statement;
-        }, ROW_MAPPER);
+        }, resultSet -> {
+            DueTaskRows result = new DueTaskRows();
+            int rowNumber = 0;
+            while (resultSet.next()) {
+                try {
+                    result.tasks.add(ROW_MAPPER.mapRow(resultSet, rowNumber++));
+                } catch (SQLException e) {
+                    result.malformedTasks.add(new MalformedTask(resultSet.getString("task_key"),
+                        resultSet.getLong("revision"), resultSet.getString("task_stage"), e));
+                }
+            }
+            return result;
+        });
+        for (MalformedTask malformedTask : rows.malformedTasks) {
+            quarantineMalformedTask(malformedTask);
+        }
+        return rows.tasks;
     }
     
     @Override
@@ -177,6 +198,20 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             AiResourceIndexTask.STAGE_LLM_ENHANCEMENT, STATUS_PENDING, clock.millis(),
             task.getTaskKey(), task.getRevision(), AiResourceIndexTask.TASK_TYPE,
             task.getTaskStage(), STATUS_PROCESSING);
+        return updated == 1;
+    }
+    
+    @Override
+    public boolean restartFromBase(AiResourceIndexTask task, boolean enhancementRequested) {
+        String payload = taskPayload(task.getResourceType(), task.getResourceName(),
+            enhancementRequested);
+        int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET task_payload=?, "
+            + "task_stage=?, status=?, task_result=NULL, retry_count=0, revision=revision+1, "
+            + "next_execute_at=?, lease_expire_at=NULL, last_error=NULL, "
+            + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND task_type=? AND revision=? "
+            + "AND task_stage=? AND status=?", payload, AiResourceIndexTask.STAGE_BASE_INDEX,
+            STATUS_PENDING, clock.millis(), task.getTaskKey(), AiResourceIndexTask.TASK_TYPE,
+            task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
         return updated == 1;
     }
     
@@ -234,20 +269,8 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             nowEpochMillis, taskKey, AiResourceIndexTask.TASK_TYPE);
     }
     
-    private int updateExistingReconciliationTask(String taskKey, String namespaceId,
+    private int reopenCompletedReconciliationTask(String taskKey, String namespaceId,
         String taskPayload, long nowEpochMillis) {
-        int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET namespace_id=?, "
-            + "task_stage=?, "
-            + "lease_expire_at=CASE WHEN status=? THEN lease_expire_at ELSE NULL END, status=?, "
-            + "task_result=NULL, retry_count=0, revision=revision+1, "
-            + "next_execute_at=?, last_error=NULL, "
-            + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND task_type=? "
-            + "AND status IN (?, ?)", namespaceId, AiResourceIndexTask.STAGE_BASE_INDEX,
-            STATUS_PROCESSING, STATUS_PENDING, nowEpochMillis, taskKey,
-            AiResourceIndexTask.TASK_TYPE, STATUS_PENDING, STATUS_PROCESSING);
-        if (updated > 0) {
-            return updated;
-        }
         return getJdbcTemplate().update("UPDATE ai_resource_task SET namespace_id=?, "
             + "task_payload=?, task_stage=?, status=?, lease_expire_at=NULL, task_result=NULL, "
             + "retry_count=0, revision=revision+1, next_execute_at=?, "
@@ -255,6 +278,27 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             + "AND status=?", namespaceId, taskPayload, AiResourceIndexTask.STAGE_BASE_INDEX,
             STATUS_PENDING, nowEpochMillis, taskKey, AiResourceIndexTask.TASK_TYPE,
             STATUS_COMPLETED);
+    }
+    
+    private boolean taskExists(String taskKey) {
+        Integer count = getJdbcTemplate().queryForObject("SELECT COUNT(*) "
+            + "FROM ai_resource_task WHERE task_key=? AND task_type=?", Integer.class, taskKey,
+            AiResourceIndexTask.TASK_TYPE);
+        return count != null && count > 0;
+    }
+    
+    private void quarantineMalformedTask(MalformedTask malformedTask) {
+        String error = truncate(malformedTask.error.getMessage());
+        int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET status=?, "
+            + "task_result=NULL, lease_expire_at=NULL, last_error=?, "
+            + "gmt_modified=CURRENT_TIMESTAMP "
+            + "WHERE task_key=? AND task_type=? AND revision=? AND task_stage=?",
+            STATUS_COMPLETED, error, malformedTask.taskKey, AiResourceIndexTask.TASK_TYPE,
+            malformedTask.revision, malformedTask.taskStage);
+        if (updated == 1) {
+            LOGGER.warn("Quarantined malformed AI resource index task {}", malformedTask.taskKey,
+                malformedTask.error);
+        }
     }
     
     private void insertTask(String taskKey, String namespaceId, String taskPayload,
@@ -345,6 +389,32 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             } catch (Exception e) {
                 throw new SQLException("Failed to decode AI resource task " + task.getTaskKey(), e);
             }
+        }
+    }
+    
+    private static final class DueTaskRows {
+        
+        private final List<AiResourceIndexTask> tasks = new ArrayList<>();
+        
+        private final List<MalformedTask> malformedTasks = new ArrayList<>();
+    }
+    
+    private static final class MalformedTask {
+        
+        private final String taskKey;
+        
+        private final long revision;
+        
+        private final String taskStage;
+        
+        private final SQLException error;
+        
+        private MalformedTask(String taskKey, long revision, String taskStage,
+            SQLException error) {
+            this.taskKey = taskKey;
+            this.revision = revision;
+            this.taskStage = taskStage;
+            this.error = error;
         }
     }
 }

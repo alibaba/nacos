@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,12 +72,6 @@ public class AiResourceIndexTaskConsumer
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
-    private final ScheduledExecutorService executor =
-        ExecutorFactory.Managed.newSingleScheduledExecutorService(
-            AiResourceIndexTaskConsumer.class.getCanonicalName(),
-            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-ai-resource-index-%d")
-                .build());
-    
     private final AiResourceIndexTaskRepository taskRepository;
     
     private final AiResourceIndexService indexBuildService;
@@ -85,21 +80,38 @@ public class AiResourceIndexTaskConsumer
     
     private final Executor enhancementExecutor;
     
+    private final Semaphore enhancementSlots;
+    
+    private final ScheduledExecutorService pollExecutor;
+    
+    private final ScheduledExecutorService leaseExecutor;
+    
     @Autowired
     public AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
         AiResourceIndexService indexBuildService,
         McpServerOperationService mcpServerOperationService) {
         this(taskRepository, indexBuildService, mcpServerOperationService,
-            ExecutorUtils.getAiResourceIndexEnhancementExecutor());
+            ExecutorUtils.getAiResourceIndexEnhancementExecutor(),
+            ExecutorUtils.getAiResourceIndexEnhancementConcurrency());
     }
     
     AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
         AiResourceIndexService indexBuildService,
         McpServerOperationService mcpServerOperationService, Executor enhancementExecutor) {
+        this(taskRepository, indexBuildService, mcpServerOperationService, enhancementExecutor, 1);
+    }
+    
+    AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
+        AiResourceIndexService indexBuildService,
+        McpServerOperationService mcpServerOperationService, Executor enhancementExecutor,
+        int enhancementConcurrency) {
         this.taskRepository = taskRepository;
         this.indexBuildService = indexBuildService;
         this.mcpServerOperationService = mcpServerOperationService;
         this.enhancementExecutor = enhancementExecutor;
+        this.enhancementSlots = new Semaphore(enhancementConcurrency);
+        this.pollExecutor = newScheduler("nacos-ai-resource-index-poll-%d");
+        this.leaseExecutor = newScheduler("nacos-ai-resource-index-lease-%d");
     }
     
     @Override
@@ -109,86 +121,106 @@ public class AiResourceIndexTaskConsumer
             return;
         }
         long intervalSeconds = positiveLong(INTERVAL_SECONDS_KEY, DEFAULT_INTERVAL_SECONDS);
-        executor.scheduleWithFixedDelay(this::consumeSafely, 0L, intervalSeconds,
+        pollExecutor.scheduleWithFixedDelay(this::consumeSafely, 0L, intervalSeconds,
             TimeUnit.SECONDS);
     }
     
     void consume() {
         List<AiResourceIndexTask> tasks = taskRepository.findDueTasks(BATCH_SIZE);
         for (AiResourceIndexTask task : tasks) {
-            if (!taskRepository.claim(task, LEASE_MILLIS)) {
+            boolean enhancement =
+                AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage());
+            if (enhancement && !enhancementSlots.tryAcquire()) {
                 continue;
             }
-            if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
-                submitEnhancement(task);
+            if (!taskRepository.claim(task, LEASE_MILLIS)) {
+                if (enhancement) {
+                    enhancementSlots.release();
+                }
+                continue;
+            }
+            TaskLease lease = new TaskLease(task);
+            if (enhancement) {
+                submitEnhancement(task, lease);
             } else {
-                process(task);
+                try {
+                    process(task, lease);
+                } finally {
+                    lease.close();
+                }
             }
         }
     }
     
-    private void submitEnhancement(AiResourceIndexTask task) {
-        ScheduledFuture<?> leaseRenewal = executor.scheduleWithFixedDelay(
-            () -> renewLease(task), LEASE_RENEW_INTERVAL_SECONDS,
-            LEASE_RENEW_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    private void submitEnhancement(AiResourceIndexTask task, TaskLease lease) {
         try {
             enhancementExecutor.execute(() -> {
                 try {
-                    process(task);
+                    if (lease.renewNow()) {
+                        process(task, lease);
+                    }
                 } finally {
-                    leaseRenewal.cancel(false);
+                    lease.close();
+                    enhancementSlots.release();
                 }
             });
         } catch (Exception e) {
-            leaseRenewal.cancel(false);
+            lease.close();
+            enhancementSlots.release();
             retry(task, e);
             taskRepository.releaseSuperseded(task);
         }
     }
     
-    private void renewLease(AiResourceIndexTask task) {
-        try {
-            taskRepository.renewLease(task, LEASE_MILLIS);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to renew AI resource index task lease for {}:{} in namespace {}",
-                task.getResourceType(), task.getResourceName(), task.getNamespaceId(), e);
-        }
-    }
-    
-    private void process(AiResourceIndexTask task) {
+    private void process(AiResourceIndexTask task, TaskLease lease) {
         try {
             if (AiResourceIndexTask.STAGE_LLM_ENHANCEMENT.equals(task.getTaskStage())) {
-                processEnhancement(task);
+                processEnhancement(task, lease);
             } else {
-                processBaseIndex(task);
+                processBaseIndex(task, lease);
             }
         } catch (Exception e) {
-            retry(task, e);
+            if (lease.isOwned()) {
+                retry(task, e);
+            }
         } finally {
             taskRepository.releaseSuperseded(task);
         }
     }
     
-    private boolean processBaseIndex(AiResourceIndexTask task) throws NacosException {
+    private void processBaseIndex(AiResourceIndexTask task, TaskLease lease)
+        throws NacosException {
         if (!convergeBase(task)) {
-            return taskRepository.remove(task);
+            if (lease.isOwned()) {
+                taskRepository.remove(task);
+            }
+            return;
         }
-        if (task.isEnhancementRequested() && indexBuildService.isEnhancementRequired()) {
-            return taskRepository.advanceToEnhancement(task);
+        if (!lease.isOwned()) {
+            return;
         }
-        return taskRepository.complete(task, null);
+        if (task.isEnhancementRequested() && indexBuildService.isEnhancementRequested()) {
+            taskRepository.advanceToEnhancement(task);
+            return;
+        }
+        taskRepository.complete(task, null);
     }
     
-    private boolean processEnhancement(AiResourceIndexTask task) throws Exception {
-        if (!indexBuildService.isEnhancementRequired()) {
-            return taskRepository.complete(task, null);
+    private void processEnhancement(AiResourceIndexTask task, TaskLease lease) throws Exception {
+        if (!indexBuildService.isEnhancementRequested()) {
+            taskRepository.restartFromBase(task, false);
+            return;
         }
-        if (!convergeEnhancement(task)) {
-            taskRepository.schedule(task.getNamespaceId(), task.getResourceType(),
-                task.getResourceName(), true);
-            return true;
+        String fingerprint = convergeEnhancement(task, lease);
+        if (fingerprint == null) {
+            if (lease.isOwned()) {
+                taskRepository.restartFromBase(task, true);
+            }
+            return;
         }
-        return taskRepository.complete(task, indexBuildService.enhancementFingerprint());
+        if (lease.isOwned()) {
+            taskRepository.complete(task, fingerprint);
+        }
     }
     
     private void retry(AiResourceIndexTask task, Exception e) {
@@ -245,21 +277,23 @@ public class AiResourceIndexTaskConsumer
         }
     }
     
-    private boolean convergeEnhancement(AiResourceIndexTask task) throws Exception {
+    private String convergeEnhancement(AiResourceIndexTask task, TaskLease lease)
+        throws Exception {
         if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(task.getResourceType())) {
             return indexBuildService.enhanceLatestAiResource(task.getNamespaceId(),
-                task.getResourceType(), task.getResourceName());
+                task.getResourceType(), task.getResourceName(), lease::isOwned);
         }
         try {
             McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
                 task.getNamespaceId(), task.getResourceName(), null, null);
-            return detail != null
-                && indexBuildService.enhanceMcpServer(task.getNamespaceId(), detail);
+            return detail == null ? null
+                : indexBuildService.enhanceMcpServer(task.getNamespaceId(), detail,
+                    lease::isOwned);
         } catch (NacosException e) {
             if (e.getErrCode() != NacosException.NOT_FOUND) {
                 throw e;
             }
-            return false;
+            return null;
         }
     }
     
@@ -286,6 +320,58 @@ public class AiResourceIndexTaskConsumer
     
     @Override
     public void destroy() {
-        executor.shutdownNow();
+        pollExecutor.shutdownNow();
+        leaseExecutor.shutdownNow();
+    }
+    
+    private ScheduledExecutorService newScheduler(String nameFormat) {
+        return ExecutorFactory.Managed.newSingleScheduledExecutorService(
+            AiResourceIndexTaskConsumer.class.getCanonicalName() + "." + nameFormat,
+            new ThreadFactoryBuilder().daemon(true).nameFormat(nameFormat).build());
+    }
+    
+    private final class TaskLease implements AutoCloseable {
+        
+        private final AiResourceIndexTask task;
+        
+        private final AtomicBoolean owned = new AtomicBoolean(true);
+        
+        private final ScheduledFuture<?> renewal;
+        
+        private TaskLease(AiResourceIndexTask task) {
+            this.task = task;
+            this.renewal = leaseExecutor.scheduleWithFixedDelay(this::renewSafely,
+                LEASE_RENEW_INTERVAL_SECONDS, LEASE_RENEW_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }
+        
+        private boolean renewNow() {
+            renewSafely();
+            return isOwned();
+        }
+        
+        private void renewSafely() {
+            if (!owned.get()) {
+                return;
+            }
+            try {
+                if (!taskRepository.renewLease(task, LEASE_MILLIS)) {
+                    owned.set(false);
+                }
+            } catch (Exception e) {
+                owned.set(false);
+                LOGGER.warn(
+                    "Failed to renew AI resource index task lease for {}:{} in namespace {}",
+                    task.getResourceType(), task.getResourceName(), task.getNamespaceId(), e);
+            }
+        }
+        
+        private boolean isOwned() {
+            return owned.get();
+        }
+        
+        @Override
+        public void close() {
+            renewal.cancel(false);
+        }
     }
 }

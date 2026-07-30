@@ -49,7 +49,7 @@ class AiResourceIndexMaintenanceServiceImplTest {
     
     @Test
     void resourceChangeShouldRequestEnabledEnhancement() {
-        when(enhancementService.required()).thenReturn(true);
+        when(enhancementService.requested()).thenReturn(true);
         
         assertTrue(service.schedule("public", "skill", "avatar"));
         
@@ -65,7 +65,7 @@ class AiResourceIndexMaintenanceServiceImplTest {
     
     @Test
     void reconciliationShouldRequestEnabledEnhancement() {
-        when(enhancementService.required()).thenReturn(true);
+        when(enhancementService.requested()).thenReturn(true);
         
         assertTrue(service.scheduleReconciliation("public", "skill", "avatar"));
         

@@ -152,6 +152,22 @@ public class PostgresqlAiResourceVectorIndex implements AiResourceVectorIndex {
     }
     
     @Override
+    public boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        long expectedDocumentId, int expectedDocumentCount) {
+        Boolean ready = getJdbcTemplate().queryForObject(
+            "SELECT COUNT(1), MIN(document_id), MAX(document_id) "
+                + "FROM ai_resource_search_embedding_pg WHERE namespace_id=? "
+                + "AND resource_type=? AND resource_name=? AND resource_version=? "
+                + "AND embedding_model=?",
+            (resultSet, rowNumber) -> resultSet.getInt(1) == expectedDocumentCount
+                && resultSet.getLong(2) == expectedDocumentId
+                && resultSet.getLong(3) == expectedDocumentId,
+            namespaceId, resourceType, resourceName, resourceVersion, embeddingModel);
+        return Boolean.TRUE.equals(ready);
+    }
+    
+    @Override
     public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
         double[] queryVector, List<String> resourceTypes, int limit) {
         if (StringUtils.isBlank(embeddingModel) || queryVector == null || queryVector.length == 0) {

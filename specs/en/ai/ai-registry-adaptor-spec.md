@@ -269,9 +269,11 @@ such as `createdAfter > '2026-01-01'` or
 `createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Search and
 explore filters accept syntactically valid dot-separated field paths, including
 the pinned OpenAPI example `trustManifest.attestations.type`; a path whose
-value is absent matches no entries. Unsupported operators, malformed quoting,
-invalid field-path syntax, and legacy delimiter syntax fail with the ARD
-invalid-argument response instead of being partially interpreted.
+value is absent matches no entries. Extension field-path segments may contain
+arbitrary non-whitespace property names but cannot be empty or contain a dot.
+Unsupported operators, malformed quoting, invalid field-path syntax, and
+legacy delimiter syntax fail with the ARD invalid-argument response instead
+of being partially interpreted.
 
 Catalog identifiers use deterministic, injective, schema-safe encoding for
 every Nacos-derived URN segment. Namespaces and resource names containing

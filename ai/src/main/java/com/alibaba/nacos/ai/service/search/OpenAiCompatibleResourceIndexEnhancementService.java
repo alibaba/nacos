@@ -94,20 +94,23 @@ public class OpenAiCompatibleResourceIndexEnhancementService
     }
     
     @Override
-    public boolean enabled() {
-        return required()
-            && StringUtils.isNotBlank(endpoint()) && StringUtils.isNotBlank(model());
+    public boolean ready() {
+        return configuration().ready();
     }
     
     @Override
-    public boolean required() {
+    public boolean requested() {
         return Boolean.parseBoolean(property(KEY_ENABLED, "false"));
     }
     
     @Override
     public String fingerprint() {
-        String identity = String.join("\n", "openai-compatible", chatEndpoint(endpoint()), model(),
-            PROMPT_VERSION, OUTPUT_SCHEMA_VERSION, String.valueOf(maxItems()));
+        return configuration().fingerprint;
+    }
+    
+    private String fingerprint(String endpoint, String model, int maxItems) {
+        String identity = String.join("\n", "openai-compatible", endpoint, model,
+            PROMPT_VERSION, OUTPUT_SCHEMA_VERSION, String.valueOf(maxItems));
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                 .digest(identity.getBytes(StandardCharsets.UTF_8));
@@ -132,26 +135,38 @@ public class OpenAiCompatibleResourceIndexEnhancementService
         List<AiResourceSearchChunk> existingChunks,
         List<AiResourceIndexEnhancementContent> contents)
         throws Exception {
-        if (!enabled()) {
-            return Collections.emptyList();
+        return enhanceWithResult(entry, existingChunks, contents).getChunks();
+    }
+    
+    @Override
+    public AiResourceIndexEnhancementResult enhanceWithResult(AiResourceSearchDocument entry,
+        List<AiResourceSearchChunk> existingChunks,
+        List<AiResourceIndexEnhancementContent> contents)
+        throws Exception {
+        EnhancementConfiguration configuration = configuration();
+        if (!configuration.ready()) {
+            throw new IllegalStateException("AI resource index enhancement is not configured");
         }
-        String content = requestEnhancement(entry, existingChunks, contents);
-        return parseEnhancementContent(content, model());
+        String content = requestEnhancement(entry, existingChunks, contents, configuration);
+        return new AiResourceIndexEnhancementResult(
+            parseEnhancementContent(content, configuration.model, configuration.maxItems),
+            configuration.fingerprint);
     }
     
     private String requestEnhancement(AiResourceSearchDocument entry,
         List<AiResourceSearchChunk> existingChunks,
-        List<AiResourceIndexEnhancementContent> contents) throws Exception {
+        List<AiResourceIndexEnhancementContent> contents,
+        EnhancementConfiguration configuration) throws Exception {
         Map<String, Object> request = new LinkedHashMap<>();
-        request.put("model", model());
+        request.put("model", configuration.model);
         request.put("temperature", 0.2D);
         request.put("messages", messages(entry, existingChunks, contents));
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(chatEndpoint(endpoint())))
-            .timeout(Duration.ofMillis(timeoutMs()))
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(configuration.endpoint))
+            .timeout(Duration.ofMillis(configuration.timeoutMs))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(JacksonUtils.toJson(request),
                 StandardCharsets.UTF_8));
-        String apiKey = apiKey();
+        String apiKey = configuration.apiKey;
         if (StringUtils.isNotBlank(apiKey)) {
             builder.header("Authorization", "Bearer " + apiKey);
         }
@@ -234,6 +249,11 @@ public class OpenAiCompatibleResourceIndexEnhancementService
     }
     
     List<AiResourceIndexEnhancementChunk> parseEnhancementContent(String content, String model) {
+        return parseEnhancementContent(content, model, maxItems());
+    }
+    
+    private List<AiResourceIndexEnhancementChunk> parseEnhancementContent(String content,
+        String model, int maxItems) {
         if (StringUtils.isBlank(content)) {
             return Collections.emptyList();
         }
@@ -244,25 +264,25 @@ public class OpenAiCompatibleResourceIndexEnhancementService
         String metadata = metadata(model);
         List<AiResourceIndexEnhancementChunk> chunks = new ArrayList<>();
         addValue(chunks, AiResourceSearchConstants.CHUNK_TYPE_AI_SUMMARY, parsed.get("summary"),
-            metadata);
+            metadata, maxItems);
         addValue(chunks, AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT,
-            parsed.get("searchIntents"), metadata);
+            parsed.get("searchIntents"), metadata, maxItems);
         addValue(chunks, AiResourceSearchConstants.CHUNK_TYPE_SEARCH_TERM,
-            parsed.get("searchTerms"), metadata);
+            parsed.get("searchTerms"), metadata, maxItems);
         return chunks;
     }
     
     private void addValue(List<AiResourceIndexEnhancementChunk> chunks, String chunkType,
         Object value,
-        String metadata) {
-        for (String text : toStringList(value)) {
+        String metadata, int maxItems) {
+        for (String text : toStringList(value, maxItems)) {
             if (StringUtils.isNotBlank(text)) {
                 chunks.add(new AiResourceIndexEnhancementChunk(chunkType, text.trim(), metadata));
             }
         }
     }
     
-    private List<String> toStringList(Object value) {
+    private List<String> toStringList(Object value, int maxItems) {
         if (value == null) {
             return Collections.emptyList();
         }
@@ -273,7 +293,7 @@ public class OpenAiCompatibleResourceIndexEnhancementService
                     result.add(String.valueOf(each));
                 }
             }
-            return limitItems(result);
+            return limitItems(result, maxItems);
         }
         if (value instanceof String && StringUtils.isNotBlank((String) value)) {
             return Collections.singletonList((String) value);
@@ -281,8 +301,7 @@ public class OpenAiCompatibleResourceIndexEnhancementService
         return Collections.singletonList(String.valueOf(value));
     }
     
-    private List<String> limitItems(List<String> values) {
-        int maxItems = maxItems();
+    private List<String> limitItems(List<String> values, int maxItems) {
         if (values.size() <= maxItems) {
             return values;
         }
@@ -413,6 +432,47 @@ public class OpenAiCompatibleResourceIndexEnhancementService
         } catch (Exception ignored) {
             String value = System.getProperty(key);
             return StringUtils.isBlank(value) ? defaultValue : value;
+        }
+    }
+    
+    private EnhancementConfiguration configuration() {
+        String configuredEndpoint = chatEndpoint(endpoint());
+        String configuredModel = model();
+        int configuredMaxItems = maxItems();
+        return new EnhancementConfiguration(requested(), configuredEndpoint, apiKey(),
+            configuredModel, timeoutMs(), configuredMaxItems,
+            fingerprint(configuredEndpoint, configuredModel, configuredMaxItems));
+    }
+    
+    private static final class EnhancementConfiguration {
+        
+        private final boolean requested;
+        
+        private final String endpoint;
+        
+        private final String apiKey;
+        
+        private final String model;
+        
+        private final int timeoutMs;
+        
+        private final int maxItems;
+        
+        private final String fingerprint;
+        
+        private EnhancementConfiguration(boolean requested, String endpoint, String apiKey,
+            String model, int timeoutMs, int maxItems, String fingerprint) {
+            this.requested = requested;
+            this.endpoint = endpoint;
+            this.apiKey = apiKey;
+            this.model = model;
+            this.timeoutMs = timeoutMs;
+            this.maxItems = maxItems;
+            this.fingerprint = fingerprint;
+        }
+        
+        private boolean ready() {
+            return requested && StringUtils.isNotBlank(endpoint) && StringUtils.isNotBlank(model);
         }
     }
 }

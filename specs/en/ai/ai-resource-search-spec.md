@@ -117,7 +117,10 @@ retained as bounded, per-live-resource checkpoints rather than task history.
 Resource lifecycle changes increment the task revision and restart the row at
 `base_index`. A claimed revision may advance, retry, or complete only while it
 still owns the row. A lease permits another node to resume work after process
-failure.
+failure. Returning an enhancement task to `base_index` is also revision-fenced,
+so a stale worker cannot overwrite a newer lifecycle revision. Base and
+enhancement stages both renew leases on an executor independent from polling;
+enhancement tasks are not claimed beyond configured worker concurrency.
 
 The search-index task input is stored in `task_payload` with a mandatory
 `schemaVersion`, a `subject` containing resource type and resource name, and
@@ -127,6 +130,11 @@ Enhancement completion metadata is stored in versioned `task_result`; the
 current result contains the completed enhancement fingerprint. Scheduler
 metadata used by polling, claiming, retry, lease recovery, and revision fencing
 remains in dedicated relational columns.
+
+A malformed or unsupported task payload is quarantined as a completed
+checkpoint with its decode error. It must not fail or starve other due tasks;
+reconciliation may reopen the row later with a current payload if the
+corresponding base index is inconsistent.
 
 Scheduling deadlines use Unix Epoch milliseconds in the `next_execute_at` and
 `lease_expire_at` BIGINT columns. Polling, claiming, retry, and lease renewal
@@ -148,10 +156,15 @@ when the task was scheduled. Only a task with that durable request may advance
 from `base_index` to `llm_enhancement`, and it uses the effective configuration
 when the enhancement stage runs.
 
-When enhancement is disabled, base indexing may complete without the
-enhancement stage. When it is enabled but incompletely configured, the
-enhancement stage returns to `pending` with retry metadata instead of being
-treated as disabled.
+When enhancement is disabled, a task that is still in `base_index` may complete
+without the enhancement stage. A task that has entered `llm_enhancement` must
+not complete directly. It creates a new revision with
+`options.enhancementRequested=false` and returns to `base_index` so that any
+partially written enhancement chunks are removed and the base vector index
+converges before the base-index checkpoint completes. Enabling enhancement
+later does not reschedule that completed resource. When enhancement is enabled
+but incompletely configured, the enhancement stage returns to `pending` with
+retry metadata instead of being treated as disabled.
 
 Failures return the current stage to `pending`, increment `retry_count`, and
 set `next_execute_at` using exponential backoff. Periodic reconciliation
@@ -161,15 +174,19 @@ enhancement when enhancement is enabled at repair scheduling time. An
 already-consistent index is not repaired merely because the existing resource
 lacks an enhancement checkpoint, so enabling enhancement does not trigger a
 historical full refresh. Reconciliation preserves the durable enhancement
-intent in the payload of an active task for the same resource. Discovery reads
-only enabled documents whose configured indexes have converged.
+intent, revision, stage, retry delay, and lease of an active task for the same
+resource. Vector reconciliation compares the relational document identity as
+well as model and chunk count. Discovery reads only enabled documents whose
+configured indexes have converged.
 
 ## 7. Resource Bounds
 
 List, aggregation, reconciliation, and durable-task polling scan relational
 state in bounded database batches. List pagination retains only the requested
 page and one look-ahead result in memory after visibility and current-version
-validation.
+validation. Reconciliation does not retain every canonical resource name in
+memory. Its cluster-wide scan lease records an owner and expiry, renews through
+CAS while scanning, and releases only while the same owner still holds it.
 
 Keyword and vector recall have a configurable per-channel candidate bound.
 When a channel exceeds the bound, discovery fails explicitly instead of
