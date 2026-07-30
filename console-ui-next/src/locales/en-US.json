@@ -757,6 +757,7 @@
     "versionStatus.pendingPublish": "Pending Publish",
     "versionStatus.rejected": "Rejected",
     "submit": "Submit for Review",
+    "resubmit": "Resubmit for Review",
     "publish": "Publish",
     "forcePublish": "Force Publish",
     "online": "Online",

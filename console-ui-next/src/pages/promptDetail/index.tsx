@@ -78,6 +78,7 @@ import { parsePipelineInfo } from '@/types/skill';
 import { PromptVersionTimeline } from '@/pages/promptManagement/components/PromptVersionTimeline';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
+import { canResubmitReview } from '@/components/ai/version-lifecycle';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
@@ -197,6 +198,7 @@ export default function PromptDetailPage() {
   const currentVersionSummary = meta?.versionDetails?.find((v) => v.version === selectedVersion);
   const currentPipelineInfoRaw = currentVersionSummary?.publishPipelineInfo;
   const currentPipelineInfo = parsePipelineInfo(currentPipelineInfoRaw);
+  const showResubmitReview = canResubmitReview(currentVersionStatus, currentPipelineInfo);
 
   // Labels bound to the currently selected version
   const currentVersionLabels = Object.entries(labelsMap).filter(
@@ -871,6 +873,18 @@ export default function PromptDetailPage() {
                     {/* Reviewing / Reviewed actions */}
                     {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                       <>
+                        {showResubmitReview && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={actionLoading}
+                            onClick={() => handleSubmit(selectedVersion)}
+                          >
+                            <Send className="h-3 w-3" />
+                            {t('prompt.resubmit')}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           className="h-7 text-xs gap-1.5"
