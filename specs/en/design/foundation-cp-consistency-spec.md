@@ -129,7 +129,7 @@ contracts unless a domain API explicitly defines them.
 | `naming_service_metadata` | Naming | Replicate service metadata and cluster metadata. |
 | `naming_instance_metadata` | Naming | Replicate operational instance metadata. |
 | `naming_persistent_service` | Naming operations | Replicate legacy naming switch/domain state. |
-| `plugin_state` | Core plugin | Replicate plugin state changes. |
+| `plugin_state` | Core plugin | Replicate plugin state and runtime configuration changes when the built-in Raft synchronizer is selected. |
 
 New CP consumers must add their group to the relevant domain spec and define the
 resource semantics that the group commits.
@@ -146,6 +146,18 @@ Write rules:
 - domain apply logic must be idempotent or guarded when duplicate submissions
   are possible at the caller layer;
 - writes must not publish events before committed apply.
+
+The Core plugin domain treats `plugin_state` as the built-in Raft
+synchronizer's optional runtime resource, not a prerequisite for constructing
+the Spring context. Standalone mode and clusters that explicitly select a
+custom `PluginStateSynchronizerProvider` do not register this group. The
+processor must not initialize CP or register the group from a bean constructor.
+After local plugin state and configuration have been accepted, Core starts
+default Raft synchronizer and group initialization asynchronously. CP
+initialization or group registration failure is logged and marks cluster plugin
+writes unavailable, but does not fail Nacos startup. Calls that require this
+group must return an explicit server error while it is unavailable; they must
+not silently execute as standalone writes or switch to another synchronizer.
 
 Read rules:
 
@@ -188,6 +200,10 @@ built on the CP foundation and the
 - Replacing the CP implementation must preserve the `CPProtocol`,
   `RequestProcessor4CP`, group, snapshot, metadata, and error semantics defined
   here.
+- Optional-domain registration failure may be isolated from server startup only
+  when the owning domain spec defines a local read view and explicit unavailable
+  write behavior. This exception does not weaken readiness requirements for
+  critical CP-backed domains such as embedded Config storage.
 
 ## 10. Related Specs
 

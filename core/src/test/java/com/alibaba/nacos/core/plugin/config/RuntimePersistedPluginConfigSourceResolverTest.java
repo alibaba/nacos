@@ -18,23 +18,34 @@ package com.alibaba.nacos.core.plugin.config;
 
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.core.plugin.config.storage.PluginConfigStorage;
+import com.alibaba.nacos.core.plugin.config.storage.PluginConfigStorageProvider;
 import com.alibaba.nacos.core.plugin.model.PluginConfigSourceType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,6 +56,19 @@ class RuntimePersistedPluginConfigSourceResolverTest {
     
     @Mock
     private PluginStatePersistenceService persistence;
+    
+    private ConfigurableEnvironment previousEnvironment;
+    
+    @BeforeEach
+    void setUp() {
+        previousEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(previousEnvironment);
+    }
     
     @Test
     void testInitializeAndNormalizeLoadedConfig() {
@@ -111,6 +135,10 @@ class RuntimePersistedPluginConfigSourceResolverTest {
         
         assertEquals("value", resolver.getConfig(pluginInfo()).get("endpoint"));
         assertEquals(1, resolver.getAllConfigs().size());
+        
+        resolver.restoreConfigs(Collections.singletonMap(PLUGIN_ID,
+            Collections.singletonMap("endpoint", "restored")));
+        assertEquals("restored", resolver.getConfig(pluginInfo()).get("endpoint"));
     }
     
     @Test
@@ -154,6 +182,91 @@ class RuntimePersistedPluginConfigSourceResolverTest {
         assertThrows(PluginPersistenceException.class,
             () -> resolver.restoreConfigs(restored));
         assertEquals("current", resolver.getConfig(pluginInfo()).get("endpoint"));
+    }
+    
+    @Test
+    void testStorageInitializationFailureIsIsolatedFromStartup() {
+        PluginConfigStorage storage = mock(PluginConfigStorage.class);
+        doThrow(new IllegalStateException("initialization failed")).when(storage).initialize();
+        RuntimePersistedPluginConfigSourceResolver resolver =
+            new RuntimePersistedPluginConfigSourceResolver(provider("remote", storage));
+        
+        resolver.initialize();
+        
+        assertFalse(resolver.isAvailable());
+        assertTrue(resolver.getAllConfigs().isEmpty());
+        assertThrows(PluginPersistenceException.class, () -> resolver.updateConfig(PLUGIN_ID,
+            Collections.singletonMap("endpoint", "value")));
+        verify(storage).shutdown();
+        verify(storage, never()).loadAllConfigs();
+    }
+    
+    @Test
+    void testStorageReadFailureIsIsolatedFromStartup() {
+        PluginConfigStorage storage = mock(PluginConfigStorage.class);
+        when(storage.loadAllConfigs()).thenThrow(new IllegalStateException("read failed"));
+        RuntimePersistedPluginConfigSourceResolver resolver =
+            new RuntimePersistedPluginConfigSourceResolver(provider("remote", storage));
+        
+        resolver.initialize();
+        
+        assertFalse(resolver.isAvailable());
+        verify(storage).initialize();
+        verify(storage).shutdown();
+    }
+    
+    @Test
+    void testNullOrBrokenProviderLeavesSourceUnavailable() {
+        RuntimePersistedPluginConfigSourceResolver missing =
+            new RuntimePersistedPluginConfigSourceResolver(
+                (PluginConfigStorageProvider) null);
+        PluginConfigStorageProvider nullStorage = mock(PluginConfigStorageProvider.class);
+        when(nullStorage.getName()).thenReturn("null-storage");
+        when(nullStorage.createStorage()).thenReturn(null);
+        RuntimePersistedPluginConfigSourceResolver nullStorageResolver =
+            new RuntimePersistedPluginConfigSourceResolver(nullStorage);
+        PluginConfigStorageProvider broken = mock(PluginConfigStorageProvider.class);
+        when(broken.getName()).thenThrow(new LinkageError("name failed"));
+        when(broken.createStorage()).thenThrow(new LinkageError("create failed"));
+        RuntimePersistedPluginConfigSourceResolver brokenResolver =
+            new RuntimePersistedPluginConfigSourceResolver(broken);
+        
+        missing.initialize();
+        nullStorageResolver.initialize();
+        brokenResolver.initialize();
+        
+        assertFalse(missing.isAvailable());
+        assertFalse(nullStorageResolver.isAvailable());
+        assertFalse(brokenResolver.isAvailable());
+        assertThrows(PluginPersistenceException.class, () -> missing.updateConfig(PLUGIN_ID,
+            Collections.singletonMap("endpoint", "value")));
+    }
+    
+    @Test
+    void testInitializeIsIdempotentAndShutdownFailureIsContained() {
+        PluginConfigStorage storage = mock(PluginConfigStorage.class);
+        when(storage.loadAllConfigs()).thenReturn(Collections.emptyMap());
+        doThrow(new IllegalStateException("shutdown failed")).when(storage).shutdown();
+        PluginConfigStorageProvider provider = provider("remote", storage);
+        RuntimePersistedPluginConfigSourceResolver resolver =
+            new RuntimePersistedPluginConfigSourceResolver(provider);
+        
+        resolver.initialize();
+        resolver.initialize();
+        resolver.shutdown();
+        
+        assertFalse(resolver.isAvailable());
+        verify(provider, times(1)).createStorage();
+        verify(storage, times(1)).initialize();
+        verify(storage, times(1)).loadAllConfigs();
+        verify(storage, times(1)).shutdown();
+    }
+    
+    private PluginConfigStorageProvider provider(String name, PluginConfigStorage storage) {
+        PluginConfigStorageProvider result = mock(PluginConfigStorageProvider.class);
+        when(result.getName()).thenReturn(name);
+        when(result.createStorage()).thenReturn(storage);
+        return result;
     }
     
     private PluginInfo pluginInfo() {

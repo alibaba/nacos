@@ -428,6 +428,67 @@ applying a restored snapshot. Plugin orchestration does not directly read or
 write `plugin-configs.json`. Persisted plugin enabled state remains owned by the
 state-management path.
 
+The physical storage behind `RUNTIME_PERSISTED` is a core-internal extension,
+not a new `PluginType`. A `PluginConfigStorageProvider` declares a stable
+storage name, startup order, default enabled state, and creates one
+`PluginConfigStorage`. The storage owns resource initialization, complete-map
+load, single-plugin complete-map replacement, snapshot replacement, and
+shutdown. Providers are discovered through the internal Nacos SPI. Their
+selection and lifecycle are not exposed by plugin management APIs or the
+Console. SPI providers must have a public no-argument constructor and must
+defer resource access until storage creation and initialization.
+
+Storage enablement uses the restart-only static property:
+
+```text
+nacos.plugin.config.source.{storageName}.enabled
+```
+
+Enabled providers are ordered by ascending provider order. The first provider
+wins, and later enabled providers are ignored with a warning. The built-in
+`local-file` provider is enabled by default and has the lowest selection
+precedence, so an explicitly enabled internal implementation may replace it.
+Once a provider is selected, creation, initialization, or read failure marks
+the `RUNTIME_PERSISTED` source unavailable for that process. The server must not
+silently switch to another provider because doing so could change the
+authoritative store after startup. Provider discovery, metadata inspection, or
+enable-property resolution failure also makes the source unavailable; Core
+must not select the built-in provider from a partial or uncertain discovery
+result.
+
+Physical storage and cluster synchronization are independent extension
+boundaries. `PluginConfigStorage` owns the terminal `RUNTIME_PERSISTED` data,
+while `PluginStateSynchronizer` owns cluster ordering and transport for both
+plugin state and runtime persisted config operations. Replacing one does not
+implicitly replace the other.
+
+Standalone mode does not create or invoke a synchronizer. It persists and
+applies accepted state and config operations directly on the local process.
+Cluster mode uses the built-in Raft synchronizer when the following restart-only
+static property is absent, blank, or explicitly set to `raft`:
+
+```text
+nacos.plugin.state.synchronizer.type
+```
+
+The built-in path does not require SPI registration or any additional
+configuration. Only an explicitly configured non-`raft` value triggers
+discovery of `PluginStateSynchronizerProvider` implementations through the
+internal Nacos SPI. Provider names are matched exactly. If multiple providers
+have the selected name, class-name order is used as a deterministic tie-breaker;
+the first provider wins and later providers are ignored with a warning.
+External providers must have a public no-argument constructor, defer resource
+access until synchronizer creation or initialization, and create a synchronizer
+with the Core-owned `PluginStateSynchronizationContext`.
+
+A custom synchronizer owns transport, ordering, replay, and delivery
+idempotence. It must invoke the supplied context to validate, persist, and apply
+each accepted operation locally; it must not bypass the selected
+`PluginConfigStorage`. Selecting a custom synchronizer does not register the
+`plugin_state` Raft group. If an explicitly selected provider is missing, cannot
+be inspected, or fails during creation or initialization, Core must not fall
+back to Raft or standalone writes.
+
 Every internal source resolver must expose its canonical item-key map through
 `getConfig(PluginInfo)`. Reading is independent from update capability:
 `DEFAULT` reads definition defaults, `STATIC` reads normalized and alias keys
@@ -437,11 +498,12 @@ the complete map; an empty map clears all overrides for that plugin and source.
 The source contract does not require separate remove or restore operations.
 
 The core source registry owns the enabled resolver set and their fixed order.
-The four built-in sources are always registered in the order shown above;
-internal storage implementations may replace a resolver at the same source
-layer but must not insert a new priority above `LOCAL_ONLY` or merge `DEFAULT`
-into `STATIC`. Source implementation selection is a startup concern and is not
-changed by plugin config update APIs.
+The four logical sources are always registered in the order shown above;
+internal storage implementations replace only the physical storage behind
+`RUNTIME_PERSISTED`. They must not insert a new logical priority above
+`LOCAL_ONLY`, merge `DEFAULT` into `STATIC`, or create another value-source
+enum. Storage selection is a startup concern and is not changed by plugin
+config update APIs.
 
 ### Runtime State Enforcement
 
@@ -500,14 +562,36 @@ only `pluginId`, item key, and target source, and must not log the value.
 Startup and runtime updates use the same source resolver and effective config
 calculation:
 
-1. The runtime persisted source resolver loads all `plugin-configs.json`
-   entries before any plugin config is applied.
+1. The runtime persisted source resolver initializes the selected internal
+   storage and loads its complete map before any plugin config is applied. The
+   built-in `local-file` storage reads `plugin-configs.json`.
 2. Every loaded configurable plugin is then resolved and applied, including
    plugins without a persisted override. Startup may apply both `RUNTIME` and
    `RESTART` fields because the plugin is being initialized.
 3. A runtime request replaces one complete `RUNTIME_PERSISTED` or `LOCAL_ONLY`
    source map. The server resolves all sources again and invokes the plugin for
    each accepted request, including a same-map request used as a manual retry.
+
+Discovery, creation, resource initialization, and initial read failures of the
+selected runtime storage are isolated from Nacos startup. The server logs the
+storage identity and failure, resolves plugins without
+`RUNTIME_PERSISTED`, and continues with `STATIC > DEFAULT` plus any later
+explicit local-only override. A runtime persisted update while the storage is
+unavailable must fail explicitly before changing the resolver snapshot. It
+must not be reported as success, written to a different storage, or
+automatically converted to local-only. `localOnly=true` remains the explicit
+emergency path.
+
+In cluster mode, synchronizer selection, creation, and initialization are
+isolated from the Spring construction path. Core first initializes plugins from
+the selected local storage view, then initializes the selected synchronizer
+asynchronously. For the default Raft synchronizer, this includes asynchronous
+`plugin_state` group registration. Synchronizer or CP initialization failure
+must not roll back plugin startup or discard the accepted local view. Until the
+selected synchronizer is available, cluster-wide plugin state and
+runtime-config writes fail explicitly; reads may continue from the accepted
+local storage snapshot. There is no implicit fallback to another synchronizer
+or to standalone writes.
 
 `PRE_CONTEXT` plugins are an explicit startup-only variant of this flow. Before
 custom environment processing, core captures their static source, resolves
