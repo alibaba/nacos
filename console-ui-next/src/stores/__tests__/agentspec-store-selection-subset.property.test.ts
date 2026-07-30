@@ -63,6 +63,7 @@ function makeItem(name: string): AgentSpecListItem {
     onlineCnt: 0,
     updateTime: 0,
     downloadCount: 0,
+    writable: true,
   };
 }
 

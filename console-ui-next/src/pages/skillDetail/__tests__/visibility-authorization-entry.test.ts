@@ -11,6 +11,14 @@ describe('Skill visibility authorization entry', () => {
     expect(SOURCE).toContain('{canManageVisibility && (');
   });
 
+  it('keeps draft and lifecycle write operations guarded by resource write permission', () => {
+    expect(SOURCE).toContain('const canWriteResource = detail.writable;');
+    expect(SOURCE).toContain('{canWriteResource && selectedVersion && currentVersionStatus && (');
+    expect(SOURCE).toContain('disabled={enableToggling || !canWriteResource}');
+    expect(SOURCE).toContain('disabled={scopeToggling || !canWriteResource}');
+    expect(SOURCE).toContain('canWrite={canWriteResource}');
+  });
+
   it('derives the visibility resource identity from the current detail page', () => {
     expect(SOURCE).toContain('<VisibilityAuthorizationDialog');
     expect(SOURCE).toContain('namespaceId={namespaceId}');

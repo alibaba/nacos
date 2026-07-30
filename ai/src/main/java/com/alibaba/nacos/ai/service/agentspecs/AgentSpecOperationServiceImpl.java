@@ -210,6 +210,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             .setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setDownloadCount(meta.getDownloadCount());
         detail.setVersions(versionSummaries);
+        detail.setWritable(VisibilityHelper.canWriteResource(meta));
         return detail;
     }
     
@@ -341,6 +342,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 item.setUpdateTime(
                     meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
                 item.setDownloadCount(meta.getDownloadCount());
+                item.setWritable(VisibilityHelper.canWriteResource(meta));
                 if (versionInfo != null) {
                     item.setLabels(versionInfo.getLabels());
                     item.setEditingVersion(versionInfo.getEditingVersion());

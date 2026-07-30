@@ -53,6 +53,7 @@ interface SkillVersionTimelineProps {
   onSaveLabels?: (labels: Record<string, string>) => Promise<void>;
   skillEnabled?: boolean;
   isGlobalAdmin?: boolean;
+  canWrite?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -98,6 +99,7 @@ export function SkillVersionTimeline({
   onSaveLabels,
   skillEnabled = true,
   isGlobalAdmin = false,
+  canWrite = true,
 }: SkillVersionTimelineProps) {
   const { t } = useTranslation();
   const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export function SkillVersionTimeline({
   return (
     <div className="space-y-1">
       {/* Create draft button */}
-      {showCreateDraftButton && ((() => {
+      {canWrite && showCreateDraftButton && ((() => {
         const hasDraft = hasEditingVersion || hasReviewingVersion;
         const btn = (
           <Button
@@ -181,13 +183,13 @@ export function SkillVersionTimeline({
         {sorted.map((v, idx) => {
           const isActive = v.version === currentVersion;
           const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
-          const actionItems = getValidActionsWithContext(
+          const actionItems = canWrite ? getValidActionsWithContext(
             v.status,
             hasEditingVersion || hasReviewingVersion,
             pipelineInfo?.status,
             isGlobalAdmin,
             pipelineInfo?.historical,
-          );
+          ) : [];
 
           const isPendingPublish = (v.status === 'reviewed' && pipelineInfo?.status !== 'REJECTED') || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');
           const isRejected = v.status === 'reviewed' && pipelineInfo?.status === 'REJECTED';
@@ -278,7 +280,7 @@ export function SkillVersionTimeline({
                 )}
 
                 {/* Action buttons */}
-                {(actionItems.length > 0 || onDownload || onSaveLabels) && (
+                {(actionItems.length > 0 || onDownload || (canWrite && onSaveLabels)) && (
                   <div
                     className="flex items-center gap-1.5 mt-2 flex-wrap"
                     onClick={(e) => e.stopPropagation()}
@@ -335,7 +337,7 @@ export function SkillVersionTimeline({
                         {t('skill.download')}
                       </Button>
                     )}
-                    {onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
+                    {canWrite && onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
                       <Button
                         variant="ghost"
                         size="sm"

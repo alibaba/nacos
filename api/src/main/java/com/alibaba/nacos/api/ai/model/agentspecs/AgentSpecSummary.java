@@ -25,104 +25,114 @@ import java.util.Map;
  * @author nacos
  */
 public class AgentSpecSummary extends AgentSpecBasicInfo {
-    
+
     private String owner;
 
     private boolean enable;
-    
+
     private String bizTags;
-    
+
     private String from;
-    
+
     private String scope;
-    
+
     private Map<String, String> labels;
-    
+
     private String editingVersion;
-    
+
     private String reviewingVersion;
-    
+
     private Integer onlineCnt;
-    
+
     private Long downloadCount;
-    
+
+    private boolean writable;
+
     public String getOwner() {
         return owner;
     }
-    
+
     public void setOwner(String owner) {
         this.owner = owner;
     }
-    
+
     public boolean isEnable() {
         return enable;
     }
-    
+
     public void setEnable(boolean enable) {
         this.enable = enable;
     }
-    
+
     public String getBizTags() {
         return bizTags;
     }
-    
+
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
     }
-    
+
     public String getFrom() {
         return from;
     }
-    
+
     public void setFrom(String from) {
         this.from = from;
     }
-    
+
     public String getScope() {
         return scope;
     }
-    
+
     public void setScope(String scope) {
         this.scope = scope;
     }
-    
+
     public Map<String, String> getLabels() {
         return labels;
     }
-    
+
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-    
+
     public String getEditingVersion() {
         return editingVersion;
     }
-    
+
     public void setEditingVersion(String editingVersion) {
         this.editingVersion = editingVersion;
     }
-    
+
     public String getReviewingVersion() {
         return reviewingVersion;
     }
-    
+
     public void setReviewingVersion(String reviewingVersion) {
         this.reviewingVersion = reviewingVersion;
     }
-    
+
     public Integer getOnlineCnt() {
         return onlineCnt;
     }
-    
+
     public void setOnlineCnt(Integer onlineCnt) {
         this.onlineCnt = onlineCnt;
     }
-    
+
     public Long getDownloadCount() {
         return downloadCount;
     }
-    
+
     public void setDownloadCount(Long downloadCount) {
         this.downloadCount = downloadCount;
+    }
+
+    public boolean isWritable() {
+        return writable;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
     }
 }

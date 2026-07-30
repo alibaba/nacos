@@ -125,16 +125,16 @@
       "byLabel": "指定标签"
     },
     "visibilityAuthorization": {
-      "title": "可见性授权",
-      "entry": "授权",
+      "title": "权限管理",
+      "entry": "权限管理",
       "resourceType": "资源类型",
       "resourceName": "资源名称",
       "read": "只读",
       "readWrite": "读写",
       "grant": "授权",
       "revoke": "撤销",
-      "grantSuccess": "可见性授权成功",
-      "revokeSuccess": "可见性授权已撤销",
+      "grantSuccess": "授权成功",
+      "revokeSuccess": "撤销成功",
       "usernameRequired": "用户名不能为空"
     }
   },

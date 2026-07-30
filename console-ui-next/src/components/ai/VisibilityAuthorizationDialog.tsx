@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { authApi, type VisibilityAuthorizationRequest } from '@/api/auth';
+import {
+  authApi,
+  type UserItem,
+  type VisibilityAuthorizationRequest,
+} from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ComboInput } from '@/components/ui/combo-input';
 import {
   Select,
   SelectContent,
@@ -50,6 +55,11 @@ function getErrorMessage(error: unknown): string {
   return '';
 }
 
+function unwrapPageItems<T>(response: unknown): T[] {
+  const body = response as { data?: { pageItems?: T[] } };
+  return body.data?.pageItems || [];
+}
+
 export function VisibilityAuthorizationDialog({
   open,
   namespaceId,
@@ -62,8 +72,22 @@ export function VisibilityAuthorizationDialog({
   const [operation, setOperation] = useState<VisibilityOperation>('grant');
   const [action, setAction] = useState<VisibilityAction>('r');
   const [username, setUsername] = useState('');
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const response = await authApi.listUsers({ pageNo: 1, pageSize: 500, search: 'blur' });
+      setUsers(unwrapPageItems<UserItem>(response));
+    } catch {
+      setUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -71,8 +95,10 @@ export function VisibilityAuthorizationDialog({
       setAction('r');
       setUsername('');
       setError('');
+      return;
     }
-  }, [open]);
+    fetchUsers();
+  }, [fetchUsers, open]);
 
   const handleSubmit = async () => {
     const grantee = username.trim();
@@ -131,10 +157,13 @@ export function VisibilityAuthorizationDialog({
           </div>
           <div className="grid gap-2">
             <Label>{t('authority.username')}</Label>
-            <Input
+            <ComboInput
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder={t('authority.usernamePlaceholder')}
+              onChange={setUsername}
+              options={users.map((user) => ({ value: user.username, label: user.username }))}
+              placeholder={t('authority.selectUserPlaceholder')}
+              loading={usersLoading}
+              loadingText={t('common.loading')}
               disabled={submitting}
             />
           </div>

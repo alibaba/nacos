@@ -751,6 +751,7 @@ export default function SkillDetailPage() {
   const resourceEntries = Object.entries(resources);
   const showVersionDiff = !isEditingDraft && versions.length >= 2;
   const canManageVisibility = globalAdmin || detail.owner === username;
+  const canWriteResource = detail.writable;
 
   return (
     <div className="space-y-5 pb-5">
@@ -851,7 +852,7 @@ export default function SkillDetailPage() {
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                   <Switch
                     checked={detail.enable}
-                    disabled={enableToggling}
+                    disabled={enableToggling || !canWriteResource}
                     onCheckedChange={handleToggleEnable}
                     className={cn(
                       detail.enable
@@ -870,7 +871,7 @@ export default function SkillDetailPage() {
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                   <Switch
                     checked={detail.scope === 'PUBLIC'}
-                    disabled={scopeToggling}
+                    disabled={scopeToggling || !canWriteResource}
                     onCheckedChange={handleToggleScope}
                   />
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
@@ -941,7 +942,7 @@ export default function SkillDetailPage() {
               </div>
 
               {/* Version lifecycle action buttons */}
-              {selectedVersion && currentVersionStatus && (
+              {canWriteResource && selectedVersion && currentVersionStatus && (
                 <div className="mt-3 pt-3 border-t border-border/40">
                   {!detail.enable && (
                     <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mb-2">
@@ -1161,7 +1162,7 @@ export default function SkillDetailPage() {
               )}
 
               {/* Empty state: no versions, show create draft button or editing actions */}
-              {!selectedVersion && !detail.editingVersion && !detail.reviewingVersion && versions.length === 0 && (
+              {canWriteResource && !selectedVersion && !detail.editingVersion && !detail.reviewingVersion && versions.length === 0 && (
                 <div className="mt-3 pt-3 border-t border-border/40">
                   <div className="flex items-center gap-2">
                     {isCreatingNewDraft ? (
@@ -1600,9 +1601,10 @@ export default function SkillDetailPage() {
               onDownload={handleDownload}
               showCreateDraftButton
               allLabels={detail.labels}
-              onSaveLabels={handleSaveLabels}
+              onSaveLabels={canWriteResource ? handleSaveLabels : undefined}
               skillEnabled={detail.enable}
               isGlobalAdmin={globalAdmin}
+              canWrite={canWriteResource}
             />
           </div>
         </SheetContent>

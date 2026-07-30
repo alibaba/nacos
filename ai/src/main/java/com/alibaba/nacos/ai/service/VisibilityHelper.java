@@ -42,16 +42,16 @@ import java.util.Optional;
  * @author nacos
  */
 public class VisibilityHelper {
-    
+
     private static final String VISIBILITY_PLUGIN_TYPE_CONFIG_KEY = "nacos.plugin.visibility.type";
-    
+
     private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos";
-    
+
     private static volatile String cachedVisibilityServiceName;
-    
+
     private VisibilityHelper() {
     }
-    
+
     /**
      * Resolve the current identity from request context using the plugin-level identity abstraction.
      */
@@ -65,7 +65,7 @@ public class VisibilityHelper {
             return "";
         }
     }
-    
+
     /**
      * Resolve current API type from auth context.
      *
@@ -79,7 +79,7 @@ public class VisibilityHelper {
             return "";
         }
     }
-    
+
     /**
      * Resolve the client IP from request context.
      *
@@ -94,7 +94,7 @@ public class VisibilityHelper {
             return "";
         }
     }
-    
+
     /**
      * Filter candidate resources by read permission for current user.
      *
@@ -120,7 +120,7 @@ public class VisibilityHelper {
         }
         return result;
     }
-    
+
     /**
      * Check read permission for current user on the given resource.
      *
@@ -138,7 +138,25 @@ public class VisibilityHelper {
                 resource);
         return result.isAllowed();
     }
-    
+
+    /**
+     * Check write permission for current user on the given resource.
+     *
+     * @param resource the resource to check
+     * @return true when writable, false otherwise
+     */
+    public static boolean canWriteResource(VisibilityResource resource) {
+        Optional<VisibilityService> visibilityService = findVisibilityService();
+        if (visibilityService.isEmpty()) {
+            return true;
+        }
+        ValidationResult result = visibilityService.get()
+            .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_WRITE,
+                resolveCurrentApiType(),
+                resource);
+        return result.isAllowed();
+    }
+
     /**
      * Check write permission for current user on the given resource. Throws 403 if denied.
      *
@@ -159,7 +177,7 @@ public class VisibilityHelper {
                 "No permission to modify " + resource.getType() + ": " + resource.getName());
         }
     }
-    
+
     /**
      * Resolve default scope for creating a new resource, delegated to visibility plugin.
      *
@@ -175,7 +193,7 @@ public class VisibilityHelper {
             .map(each -> each.toUpperCase(Locale.ROOT))
             .orElse(VisibilityConstants.SCOPE_PRIVATE);
     }
-    
+
     private static String resolveVisibilityServiceName() {
         String serviceName = cachedVisibilityServiceName;
         if (serviceName != null) {
@@ -190,7 +208,7 @@ public class VisibilityHelper {
             return cachedVisibilityServiceName;
         }
     }
-    
+
     /**
      * Find configured visibility service from plugin manager.
      *

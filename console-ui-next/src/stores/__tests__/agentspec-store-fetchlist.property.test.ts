@@ -60,6 +60,7 @@ const arbListItem: fc.Arbitrary<AgentSpecListItem> = fc.record({
   onlineCnt: fc.nat({ max: 100 }),
   updateTime: fc.nat(),
   downloadCount: fc.nat(),
+  writable: fc.boolean(),
 });
 
 /** Generate a successful API response with random pageItems and totalCount */

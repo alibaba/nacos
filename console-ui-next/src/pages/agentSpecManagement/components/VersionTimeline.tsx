@@ -33,6 +33,7 @@ interface VersionTimelineProps {
   showCreateDraftButton?: boolean;
   allLabels?: Record<string, string>;
   onSaveLabels?: (labels: Record<string, string>) => Promise<void>;
+  canWrite?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -72,6 +73,7 @@ export function VersionTimeline({
   showCreateDraftButton = true,
   allLabels,
   onSaveLabels,
+  canWrite = true,
 }: VersionTimelineProps) {
   const { t } = useTranslation();
   const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
@@ -108,7 +110,7 @@ export function VersionTimeline({
   return (
     <div className="space-y-1">
       {/* Create draft button */}
-      {showCreateDraftButton && (
+      {canWrite && showCreateDraftButton && (
         <Button
           variant="outline"
           size="sm"
@@ -124,7 +126,7 @@ export function VersionTimeline({
       <div className="relative">
         {sorted.map((v, idx) => {
           const isActive = v.version === currentVersion;
-          const actions = getValidActions(v.status);
+          const actions = canWrite ? getValidActions(v.status) : [];
           const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
           const isPendingPublish = (v.status === 'reviewed' && pipelineInfo?.status !== 'REJECTED') || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');
           const isRejected = v.status === 'reviewed' && pipelineInfo?.status === 'REJECTED';
@@ -212,7 +214,7 @@ export function VersionTimeline({
                 )}
 
                 {/* Action buttons */}
-                {(actions.length > 0 || onSaveLabels) && (
+                {(actions.length > 0 || (canWrite && onSaveLabels)) && (
                   <div
                     className="flex items-center gap-1.5 mt-2 flex-wrap"
                     onClick={(e) => e.stopPropagation()}
@@ -239,7 +241,7 @@ export function VersionTimeline({
                         </Button>
                       );
                     })}
-                    {onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
+                    {canWrite && onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
                       <Button
                         variant="ghost"
                         size="sm"

@@ -21,6 +21,7 @@ export interface SkillListItem {
   onlineCnt: number;
   updateTime: number; // epoch millis
   downloadCount: number;
+  writable: boolean;
 }
 
 /** Skill version summary */
@@ -66,6 +67,7 @@ export interface SkillAdminDetail {
   updateTime: number;
   versions: SkillVersionSummary[];
   downloadCount: number;
+  writable: boolean;
 }
 
 /** List response */

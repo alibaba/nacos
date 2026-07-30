@@ -11,6 +11,7 @@ interface ComboInputProps {
   placeholder?: string;
   loading?: boolean;
   loadingText?: string;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export function ComboInput({
   placeholder,
   loading,
   loadingText = 'Loading...',
+  disabled,
   className,
 }: ComboInputProps) {
   const [open, setOpen] = useState(false);
@@ -79,7 +81,12 @@ export function ComboInput({
         value={open ? filter : value}
         onChange={handleInputChange}
         placeholder={placeholder}
-        onFocus={() => setOpen(true)}
+        disabled={disabled}
+        onFocus={() => {
+          if (!disabled) {
+            setOpen(true);
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setOpen(false);
@@ -89,8 +96,14 @@ export function ComboInput({
         className="pr-8"
       />
       <ChevronDown
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer"
+        className={cn(
+          'absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground',
+          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+        )}
         onClick={() => {
+          if (disabled) {
+            return;
+          }
           setOpen((prev) => !prev);
           inputRef.current?.focus();
         }}

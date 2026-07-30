@@ -830,6 +830,7 @@ export default function AgentSpecDetailPage() {
     setCreateNodePath(nextPath);
   };
   const canManageVisibility = globalAdmin || detail.owner === username;
+  const canWriteResource = detail.writable;
 
   return (
     <div className="flex min-h-[calc(100vh-88px)] flex-col gap-5 pb-5">
@@ -931,7 +932,7 @@ export default function AgentSpecDetailPage() {
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                   <Switch
                     checked={detail.enable}
-                    disabled={enableToggling}
+                    disabled={enableToggling || !canWriteResource}
                     onCheckedChange={handleToggleEnable}
                     className={cn(
                       detail.enable
@@ -950,7 +951,7 @@ export default function AgentSpecDetailPage() {
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                   <Switch
                     checked={detail.scope === 'PUBLIC'}
-                    disabled={scopeToggling}
+                    disabled={scopeToggling || !canWriteResource}
                     onCheckedChange={handleToggleScope}
                   />
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
@@ -1025,7 +1026,7 @@ export default function AgentSpecDetailPage() {
               </div>
 
               {/* Version lifecycle action buttons */}
-              {selectedVersion && currentVersionStatus && (
+              {canWriteResource && selectedVersion && currentVersionStatus && (
                 <div className="mt-3 pt-3 border-t border-border/40">
                   <div className="flex items-center gap-2">
                   {/* Draft actions */}
@@ -1449,7 +1450,8 @@ export default function AgentSpecDetailPage() {
               onOffline={handleOffline}
               showCreateDraftButton={false}
               allLabels={detail.labels}
-              onSaveLabels={handleSaveLabels}
+              onSaveLabels={canWriteResource ? handleSaveLabels : undefined}
+              canWrite={canWriteResource}
             />
           </div>
         </SheetContent>

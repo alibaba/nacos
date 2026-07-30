@@ -18,6 +18,7 @@ export interface AgentSpecListItem {
   onlineCnt: number;
   updateTime: number; // epoch millis
   downloadCount: number;
+  writable: boolean;
 }
 
 /** 版本摘要 */
@@ -62,6 +63,7 @@ export interface AgentSpecDetail {
   updateTime: number;
   versions: AgentSpecVersionSummary[];
   downloadCount: number;
+  writable: boolean;
 }
 
 /** 列表响应 */
