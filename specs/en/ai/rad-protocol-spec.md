@@ -613,9 +613,11 @@ A binding advertises the profiles and optional capabilities it supports:
 | Watch capability | `Watch` |
 
 A conforming binding implements at least one profile. Watch is optional at the
-RAD core level. The Nacos HTTP binding implements the Consumer and Publisher
-profiles but does not implement Watch. The Nacos full gRPC profile implements
-all five operations.
+RAD core level. The initial Nacos HTTP and gRPC bindings implement only the
+Consumer and Publisher profiles and expose no server-side Watch or Push
+operation. A later Java SDK may provide a local subscription convenience by
+periodically executing Discover. Such polling does not advertise RAD Watch
+support for either transport and adds no Watch wire message.
 
 ## 10. Error Semantics
 

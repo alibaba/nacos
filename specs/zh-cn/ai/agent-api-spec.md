@@ -31,7 +31,7 @@
 
 | 接口面 | 传输 | 主要调用方 | 职责 |
 |---|---|---|---|
-| Client | HTTP 和 gRPC | Agent 使用方与 Runtime 发布方 | Search、Discover、Watch、注册和注销 |
+| Client | HTTP 和 gRPC | Agent 使用方与 Runtime 发布方 | Search、Discover、注册和注销；SDK 后续通过 Discover 轮询提供本地订阅 |
 | Admin | HTTP | Maintainer SDK 与管理集成 | Agent CRUD、Version 生命周期和 Runtime 查看 |
 | Console | HTTP | Nacos Console UI | 面向 UI 的 Admin 语义 Facade |
 
@@ -103,14 +103,17 @@ AiService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | 不允许调用方控制 namespace 的 `AgentSearchRequest` | `Page<AgentCatalogEntry>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | 过滤 Discover | `discoverAgent` | `AgentReference`、`AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult` |
-| 取消 Watch | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
+| 轮询订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult`，目标尚不存在时为 `null` |
+| 取消轮询订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
 | 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
 
-`subscribeAgent` 返回当前完整结果，之后投递完整替换结果。`getAll`、
-`selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent Calling 是 SDK 本地
-helper，不增加远程操作。
+`subscribeAgent` 是 SDK 本地便利能力，不对应服务端 Watch/Push。SDK 周期执行与
+调用方 Reference、Filter 相同的 Discover；首次目标不存在时返回 `null` 但保留轮询，
+后续轮询仍为 `NOT_FOUND` 时不终止订阅，也不投递空快照。目标出现，或解析出的
+Version、`contentDigest`、任一 `sourceRevision` 发生变化时，Listener 收到新的完整
+替换结果。`getAll`、`selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent
+Calling 是 SDK 本地 helper，不增加远程操作。
 
 一个 Registration Batch 是该 SDK Publisher 在
 `(namespaceId, agentName, protocol)` 下的完整期望状态。Register 完整替换此前
@@ -131,12 +134,15 @@ force-publish，注册 Endpoint 也不会隐式创建定义。
 |---|:---:|:---:|
 | Search | 是 | 是 |
 | Discover | 是 | 是 |
-| Watch 和 Push | 否 | 是 |
+| 服务端 Watch 和 Push | 否 | 否 |
+| SDK 本地轮询订阅 | 复用 Discover | 复用 Discover |
 | 注册和注销 | 是 | 是 |
 | Publisher heartbeat | 是 | 复用 gRPC connection lifecycle |
 
-HTTP-only SDK 在本地拒绝 Watch，不得通过轮询伪装 Watch。写入超时后，只有 SDK
-确定服务端未处理请求时才允许切换传输；结果未知的 gRPC 写入不得盲目通过 HTTP 重试。
+轮询订阅使用 SDK 已选择的 Discover 传输，不新增 HTTP 路径、gRPC Payload、能力位或
+Publisher 续约行为。普通 Discover 和订阅轮询只刷新 HTTP Client 本身，不刷新其中的
+Publisher。写入超时后，只有 SDK 确定服务端未处理请求时才允许切换传输；结果未知的
+gRPC 写入不得盲目通过 HTTP 重试。
 
 ### 2.3 Client HTTP 路径
 
@@ -220,47 +226,33 @@ external Client id 时复用同一个 HTTP Client 生命周期。旧节点没有
 |---|---|---|
 | `AgentSearchRequest` | `AgentSearchResponse` | Search 并返回目录分页 |
 | `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | 一次 Discover |
-| `AgentSubscribeRequest` | `AgentSubscribeResponse` | 订阅或取消；订阅成功时返回不透明 `watchKey` 和当前完整结果 |
-| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | 为一个 `watchKey` Push `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK |
 | `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | 完整替换该 Connection 对一个 Agent 和 Protocol 的 RAD Batch |
 | `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | 删除该 Connection 对一个 Agent 和 Protocol 的整份 Publication |
 
 所有 Request 的 module 为 `ai`。gRPC Endpoint Contribution 归属于
 `RequestMeta.connectionId`，不增加 Client id 或 heartbeat Payload。连接断开后删除该
-Connection 的 Contribution；重连取得新 connection id，并 redo Endpoint 和订阅。
+Connection 的 Contribution；重连取得新 connection id，并 redo Endpoint。SDK 本地
+轮询订阅不属于 Connection 维度的服务端状态。
 
 Endpoint Handler 是 Naming Adapter。Register 校验完整 Endpoint Batch，将其转换为
 Naming Instance，再调用 Naming Batch Register；Deregister 调用 Naming 的整份
 Publication 注销。写入时不读取或合并此前 Publisher Batch、不增加 Agent Service
 Lock、不直接查询 Naming Client Index，也不扫描其他 Publisher。
 
-Runtime Snapshot、Discover 和 Watch 从 Naming `ServiceStorage` 读取完整内部投影，
+Runtime Snapshot 和 Discover 从 Naming `ServiceStorage` 读取完整内部投影，
 根据每个 Instance 的 singular runtime Version 和 Version-range metadata 构造一个 Binding，
 保留 Range 命中目标 Version 的项，再按公开 Endpoint 自然键聚合 `bindings[]` 和健康状态。
 
-`AgentSubscribeResponse.watchKey` 是 Binding 为已接受 Wire Subscription 定义的不透明
-身份。SDK 将它映射到规范化本地 Watch 身份，不解析其内容。
-`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和 `eventType`：
-
-- `SNAPSHOT` 必须携带一个完整 `AgentDiscoveryResult`，且不携带错误；
-- `TERMINATED` 不携带 Result，并且本版本固定要求 `errorCode=NOT_FOUND`；
-- 两种事件都使用 `AgentDiscoveryNotifyResponse` 确认；
-- `TERMINATED` 只关闭共享 Payload Connection 上由 `watchKey` 标识的 Watch，不关闭
-  Connection 或其他 Watch。
-
-SDK 对 `SNAPSHOT` 原子替换缓存结果。对于 `TERMINATED`，SDK 投递终止状态，仅删除该
-Watch 及其 Redo State，再发送 ACK。Reconnect 后，SDK 丢弃旧 Connection 维度的
-`watchKey`，使用规范化本地 Watch 身份重新订阅，并保存新 Response 中的 `watchKey`
-和当前结果。这些 Request 和 Response 是 Nacos gRPC Binding 对象，不增加 RAD 的六个
-根消息。
+本版本不定义 `AgentSubscribeRequest`、`AgentDiscoveryNotifyRequest`、`watchKey`、
+Push ACK 或 Connection 维度的 Watch Redo State。轮询调度、完整结果缓存和变化去重是
+Java SDK 本地实现，不扩展 RAD 的六个根消息。
 
 目标能力位如下：
 
 | 常量 | Wire key | 含义 |
 |---|---|---|
-| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search、Discover 和 Watch Payload |
+| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search 和 Discover Payload |
 | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Endpoint Publication Payload |
-| `SDK_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | SDK 接受 RAD Discovery Push |
 
 旧 `SERVER_AGENT_REGISTRY`、`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 只约束
 旧 A2A 契约。新能力位缺失时，不得通过旧能力位 fallback 发送 RAD Payload。
@@ -279,7 +271,7 @@ Watch 及其 Redo State，再发送 ACK。Reconnect 后，SDK 丢弃旧 Connecti
 | 携带已存在 Client id 的重复查询 | 只刷新 Client 活性，不创建 Client 或刷新 Publisher |
 | HTTP timeout | 保持 Client id 和 payload，退避重试 |
 | `HTTP_CLIENT_NOT_FOUND` | 将本地 Endpoint 意图标记为未注册，并 redo 每个完整 Service Batch |
-| gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch 和订阅 |
+| gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch；本地轮询订阅不需要服务端 redo |
 | 跨传输注销 | 禁止；一个 Publisher identity 不能删除另一传输的 Contribution |
 
 SDK 在第一次写入前记录期望状态，并按 Agent 和 Protocol 串行修改期望 Batch。
@@ -402,7 +394,7 @@ Console 不提供 RAD Search、Discover、Watch、Endpoint Publication 或远程
 1. API 对象、校验、错误映射、鉴权和审计；
 2. gRPC Payload 注册与能力协商；
 3. HTTP Publisher Distro 状态、活性、幂等和 redo；
-4. Java SDK namespace 绑定、缓存、Watch、重连和 Endpoint redo；
+4. Java SDK namespace 绑定、缓存、Discover 轮询订阅、重连和 Endpoint redo；
 5. Admin/Maintainer 与 Console 契约；
 6. 旧 A2A Facade 转换；
 7. OpenAPI、Java SDK 和 Maintainer SDK 集成测试场景矩阵与 coverage registry。
