@@ -92,12 +92,14 @@ public class McpInnerHandler implements McpHandler {
         mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
+    @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request) throws NacosException {
         return mcpLegacyImportAdapter.validateImport(namespaceId, request);
     }
     
+    @Deprecated
     @Override
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {

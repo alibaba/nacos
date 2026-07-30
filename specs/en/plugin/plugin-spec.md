@@ -391,6 +391,41 @@ collisions. Definition metadata is copied before normalization so the manager do
 plugin-owned objects. For `PRE_CONTEXT` plugins, any declared `RUNTIME` effect mode is copied as
 `RESTART`; the original plugin definition is not modified.
 
+### Deprecated Compatibility Scheduled For Removal
+
+The following compatibility inputs remain accepted during their stated migration windows so
+existing deployments can migrate without an immediate startup or behavior regression. They are
+deprecated and planned for removal in Nacos 4.0.0 unless a row states an earlier version. New
+deployments, examples, tests, and plugin implementations must use only the canonical replacement.
+
+| Deprecated compatibility input | Canonical replacement | Migration note |
+|--------------------------------|-----------------------|----------------|
+| `nacos.core.auth.system.type` | `nacos.plugin.auth.type` | Static exclusive-plugin selection; restart after migration. |
+| `spring.sql.init.platform` | `nacos.plugin.datasource-dialect.type` | Static dialect selection; restart after migration. |
+| `nacos.plugin.control.manager.type` | `nacos.plugin.control.type` | Static control implementation selection; restart after migration. |
+| `nacos.core.config.plugin.{pluginName}.enabled` | `nacos.plugin.config-change.{pluginName}.enabled` or unified plugin state | The old key supplies only initial implementation state. |
+| `nacos.plugin.visibility.type` | `nacos.plugin.visibility.{pluginName}.enabled` or unified plugin state | The old selector supplies only initial state and does not define runtime routing. |
+| `nacos.plugin.ai-pipeline.type` | `nacos.plugin.ai-pipeline.{pluginName}.enabled` or unified plugin state | Replace the old comma-separated startup chain with implementation state. |
+| `nacos.core.auth.plugin.nacos.*`, `nacos.core.auth.caching.enabled`, and `nacos.core.auth.nacos.anonymous.ai.enabled` | `nacos.plugin.auth.nacos.{itemKey}` | Migrate each default-auth item to the canonical item key exposed by its definition. |
+| `nacos.core.auth.ldap.*` | `nacos.plugin.auth.ldap.{itemKey}` | LDAP item names use canonical kebab-case definitions. |
+| `nacos.core.auth.plugin.oidc.*` | `nacos.plugin.auth.oidc.{itemKey}` | OIDC item names use canonical definitions; all current OIDC items remain `RESTART`. |
+| `db.*` and JVM property `QUERYTIMEOUT` | `nacos.plugin.datasource.db.*` | Datasource settings remain restart-only module configuration and do not enter plugin PUT APIs. |
+| Historical relative AI Pipeline item keys such as `executable`, `path`, `useLlm`, `apiKey`, and other camel-case aliases | Canonical kebab-case item keys under `nacos.plugin.ai-pipeline.{pluginName}.*` | The exact aliases are listed in the AI Pipeline plugin spec. |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | The standard module key remains authoritative and defaults to enabled. |
+| `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` or unified plugin state | Migrate old built-in source state keys to managed implementation state. |
+| `nacos.plugin.ai.importer.*` item configuration | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | Migrate display, description, limits, and endpoint inputs to the managed source identity. |
+| `nacos.ai.resource.import.legacy-mcp-api-enabled` and `nacos.ai.resource.import.allow-user-url` | Unified `/v3/{admin|console}/ai/import/*` APIs and managed source endpoint configuration | These switches and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
+| `ConfigChangeConfigs` property bridge | Definitions and callbacks on `ConfigChangePluginService` | Old binary plugins without definitions continue receiving legacy properties during the 3.x window. |
+| `VisibilityService.init(Properties)` | Definitions and callbacks inherited from `PluginConfigSpec` | The unified lifecycle applies effective item-key maps before visibility execution. |
+| `CustomEnvironmentPluginManager.join(...)` | Environment SPI discovery through the `PRE_CONTEXT` initializer | Environment implementations must be discoverable before Spring environment customization begins. |
+
+For each configuration-key row, a canonical key that is present wins even when its value is empty;
+fallback occurs only when the canonical key is absent. Removing these inputs at their planned
+versions also removes their migration warnings and compatibility-only code paths. Core module
+gates such as
+`nacos.core.auth.enabled`, the empty-definition defaults on `PluginConfigSpec`, and binary loading
+of old zero-config plugin implementations are not part of this removal list.
+
 ### Config Sources And Value Metadata
 
 Effective plugin config values are computed by a unified resolution flow. Source

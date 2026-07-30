@@ -37,6 +37,13 @@ public class SkillsShImportServiceBuilder
     
     public static final String SKILLS_SH_ENDPOINT = "https://skills.sh";
     
+    /**
+     * Legacy skills.sh importer configuration prefix.
+     *
+     * @deprecated use {@code nacos.plugin.ai-resource-import.skills-sh.} instead. Planned for
+     *     removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String LEGACY_PREFIX =
         "nacos.plugin.ai.importer.skills.skills-sh.";
     

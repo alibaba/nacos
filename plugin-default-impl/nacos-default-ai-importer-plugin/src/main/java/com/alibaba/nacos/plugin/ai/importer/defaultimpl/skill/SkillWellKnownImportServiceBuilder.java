@@ -35,6 +35,13 @@ public class SkillWellKnownImportServiceBuilder
     
     public static final String IMPORTER_TYPE = "skills-well-known";
     
+    /**
+     * Legacy Skill well-known importer configuration prefix.
+     *
+     * @deprecated use {@code nacos.plugin.ai-resource-import.skills-well-known.} instead. Planned
+     *     for removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String LEGACY_PREFIX =
         "nacos.plugin.ai.importer.skills.well-known.";
     

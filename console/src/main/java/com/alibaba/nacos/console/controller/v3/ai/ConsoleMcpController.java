@@ -238,7 +238,10 @@ public class ConsoleMcpController {
      * @param mcpImportForm import request form
      * @return validation result with details about potential issues
      * @throws NacosException any exception during validation
+     * @deprecated use {@code POST /v3/console/ai/import/validate} instead. Planned for removal in
+     *     Nacos 3.4.0.
      */
+    @Deprecated
     @Since("3.1.0")
     @PostMapping("/import/validate")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
@@ -257,7 +260,10 @@ public class ConsoleMcpController {
      * @param mcpImportForm import request form
      * @return import response with results and statistics
      * @throws NacosException any exception during import execution
+     * @deprecated use {@code POST /v3/console/ai/import/execute} instead. Planned for removal in
+     *     Nacos 3.4.0.
      */
+    @Deprecated
     @Since("3.1.0")
     @PostMapping("/import/execute")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
@@ -275,7 +281,10 @@ public class ConsoleMcpController {
      *
      * @param form the form from HTTP request
      * @return the import request for service layer
+     * @deprecated part of the legacy MCP import endpoint bridge. Planned for removal in Nacos
+     *     3.4.0.
      */
+    @Deprecated
     private McpServerImportRequest convertToImportRequest(McpImportForm form) {
         McpServerImportRequest request = new McpServerImportRequest();
         request.setImportType(form.getImportType());

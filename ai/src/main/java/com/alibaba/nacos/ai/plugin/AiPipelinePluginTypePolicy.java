@@ -34,6 +34,13 @@ public class AiPipelinePluginTypePolicy implements PluginTypePolicy {
     
     private static final String FUNCTION_MODE_AI = "ai";
     
+    /**
+     * Legacy AI pipeline startup chain property.
+     *
+     * @deprecated use per-implementation AI pipeline state instead. Planned for removal in Nacos
+     *     4.0.0.
+     */
+    @Deprecated
     private static final String AI_PIPELINE_TYPE_PROPERTY = "nacos.plugin.ai-pipeline.type";
     
     @Override

@@ -62,7 +62,10 @@ import java.util.stream.Collectors;
  * openapi.yaml</a>.</p>
  *
  * @author nacos
+ * @deprecated use managed AI resource import source implementations instead. Planned for removal
+ *     in Nacos 3.4.0.
  */
+@Deprecated
 @Service
 public class McpExternalDataAdaptor {
     

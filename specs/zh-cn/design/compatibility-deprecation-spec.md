@@ -103,6 +103,8 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
   [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)；
 - spec 出现前发布的 v3 兼容端点；
 - AI Prompt legacy endpoints 和旧 Pipeline REST 风格端点；
+- 默认关闭的旧 MCP Console 导入端点；迁移到统一 AI 资源导入端点后，计划在 Nacos
+  3.4.0 移除；
 - 旧 A2A AgentCard Java、gRPC、Admin、Maintainer 和 Console facade；
 - Naming API 定义的 service selector 字段和请求参数；
 - Config 聚合配置字段及相关数据库列；

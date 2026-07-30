@@ -32,6 +32,13 @@ public class VisibilityPluginTypePolicy implements PluginTypePolicy {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(VisibilityPluginTypePolicy.class);
     
+    /**
+     * Legacy visibility implementation selector.
+     *
+     * @deprecated use per-implementation visibility state instead. Planned for removal in Nacos
+     *     4.0.0.
+     */
+    @Deprecated
     private static final String VISIBILITY_TYPE_PROPERTY = "nacos.plugin.visibility.type";
     
     static final String VISIBILITY_ENABLED_PROPERTY = "nacos.plugin.visibility.enabled";

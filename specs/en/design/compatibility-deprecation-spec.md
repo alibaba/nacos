@@ -129,6 +129,9 @@ The following items are current compatibility or deprecation examples:
   [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter);
 - pre-spec v3 compatibility endpoints;
 - AI Prompt legacy endpoints and legacy Pipeline REST-style endpoints;
+- legacy MCP Console import endpoints, which are disabled by default and
+  scheduled for removal in Nacos 3.4.0 after migration to the unified AI
+  resource import endpoints;
 - legacy A2A AgentCard Java, gRPC, Admin, Maintainer, and Console facades;
 - Naming API-defined service selector fields and request parameters;
 - Config aggregation fields and related database columns;

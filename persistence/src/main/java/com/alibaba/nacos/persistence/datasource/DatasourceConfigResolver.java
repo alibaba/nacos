@@ -33,12 +33,25 @@ final class DatasourceConfigResolver {
     
     static final String CANONICAL_PREFIX = "nacos.plugin.datasource.db";
     
+    /**
+     * Legacy datasource configuration prefix.
+     *
+     * @deprecated use {@link #CANONICAL_PREFIX} instead. Planned for removal in Nacos 4.0.0.
+     */
+    @Deprecated
     static final String LEGACY_PREFIX = "db";
     
     private static final String POOL_CONFIG_SUFFIX = "pool.config";
     
     private static final String QUERY_TIMEOUT_ITEM = "query-timeout";
     
+    /**
+     * Legacy datasource query timeout JVM property.
+     *
+     * @deprecated use {@code nacos.plugin.datasource.db.query-timeout} instead. Planned for
+     *     removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String LEGACY_QUERY_TIMEOUT_PROPERTY = "QUERYTIMEOUT";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DatasourceConfigResolver.class);

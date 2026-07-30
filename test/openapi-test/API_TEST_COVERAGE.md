@@ -117,6 +117,12 @@ Naming service reference wrapper. Agent lifecycle and persistence semantics
 remain covered by the existing Admin rows rather than being redefined by the
 Console facade.
 
+The legacy MCP Console import validation and execute endpoints remain covered
+by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
+They are deprecated and planned for removal in Nacos 3.4.0; the managed
+`/v3/console/ai/import/*` flow is covered separately by
+`AiResourceImportConsoleApiOpenApiITCase`.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |

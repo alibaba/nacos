@@ -38,12 +38,17 @@ final class SkillSpectorPluginConfig {
     
     static final String DEFAULT_COMMAND = "skill-spector";
     
+    // Deprecated compatibility aliases; use canonical kebab-case item keys.
+    // Planned for removal in Nacos 4.0.0.
+    @Deprecated
     static final String COMMAND_ALIAS_EXECUTABLE = "executable";
     
+    @Deprecated
     static final String COMMAND_ALIAS_PATH = "path";
     
     static final String USE_LLM = "use-llm";
     
+    @Deprecated
     static final String USE_LLM_ALIAS = "useLlm";
     
     static final String PROVIDER = "provider";
@@ -52,26 +57,31 @@ final class SkillSpectorPluginConfig {
     
     static final String API_KEY = "api-key";
     
+    @Deprecated
     static final String API_KEY_ALIAS = "apiKey";
     
     static final String BASE_URL = "base-url";
     
+    @Deprecated
     static final String BASE_URL_ALIAS = "baseUrl";
     
     static final String LOG_LEVEL = "log-level";
     
+    @Deprecated
     static final String LOG_LEVEL_ALIAS = "logLevel";
     
     static final String DEFAULT_LOG_LEVEL = "WARNING";
     
     static final String RISK_SCORE_THRESHOLD = "risk-score-threshold";
     
+    @Deprecated
     static final String RISK_SCORE_THRESHOLD_ALIAS = "riskScoreThreshold";
     
     static final int DEFAULT_RISK_SCORE_THRESHOLD = 50;
     
     static final String MAX_FINDINGS = "max-findings";
     
+    @Deprecated
     static final String MAX_FINDINGS_ALIAS = "maxFindings";
     
     static final int DEFAULT_MAX_FINDINGS = 20;

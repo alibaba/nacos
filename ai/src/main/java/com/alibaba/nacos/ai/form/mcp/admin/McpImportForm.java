@@ -28,7 +28,10 @@ import java.io.Serial;
  * Nacos AI MCP Server import request form.
  *
  * @author WangzJi
+ * @deprecated migrate to the unified AI resource import request contract. Planned for removal in
+ *     Nacos 3.4.0.
  */
+@Deprecated
 public class McpImportForm extends McpForm {
     
     @Serial

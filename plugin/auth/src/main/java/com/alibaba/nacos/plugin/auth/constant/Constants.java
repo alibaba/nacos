@@ -37,11 +37,19 @@ public class Constants {
         /**
          * Legacy auth plugin selection property.
          *
-         * @deprecated use {@link #NACOS_PLUGIN_AUTH_TYPE} instead.
+         * @deprecated use {@link #NACOS_PLUGIN_AUTH_TYPE} instead. Planned for removal in
+         *     Nacos 4.0.0.
          */
         @Deprecated
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
         
+        /**
+         * Legacy default auth plugin authorization cache property.
+         *
+         * @deprecated use {@code nacos.plugin.auth.nacos.caching.enabled} instead. Planned for
+         *     removal in Nacos 4.0.0.
+         */
+        @Deprecated
         public static final String NACOS_CORE_AUTH_CACHING_ENABLED =
             "nacos.core.auth.caching.enabled";
         

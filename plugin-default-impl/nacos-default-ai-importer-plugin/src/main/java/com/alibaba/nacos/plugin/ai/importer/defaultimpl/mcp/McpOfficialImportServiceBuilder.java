@@ -29,6 +29,13 @@ public class McpOfficialImportServiceBuilder extends McpRegistryImportServiceBui
     public static final String OFFICIAL_ENDPOINT =
         "https://registry.modelcontextprotocol.io/v0/servers";
     
+    /**
+     * Legacy official MCP importer configuration prefix.
+     *
+     * @deprecated use {@code nacos.plugin.ai-resource-import.mcp-official.} instead. Planned for
+     *     removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String LEGACY_PREFIX = "nacos.plugin.ai.importer.mcp.official.";
     
     public McpOfficialImportServiceBuilder() {

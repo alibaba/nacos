@@ -39,8 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     name filters; delete removes the server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
- *     version, invalid custom ID, and import request field omissions are rejected with HTTP 400. Console currently
- *     accepts {@code resourceSpecification} but does not persist it because the controller does not parse resources.
+ *     version, invalid custom ID, and legacy import request field omissions are rejected with HTTP 400. The legacy
+ *     import endpoints remain covered through Nacos 3.3.x and are planned for removal in 3.4.0.
+ *     Console currently accepts {@code resourceSpecification} but does not persist it because the controller does
+ *     not parse resources.
  *     </li>
  *     <li>Exception/error handling: duplicate create returns conflict, absent server returns the MCP not-found result
  *     envelope, malformed JSON is rejected as a controlled validation error, and unsupported MCP tool import
