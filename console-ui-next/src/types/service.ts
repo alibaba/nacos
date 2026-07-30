@@ -6,7 +6,7 @@ export interface ServiceView {
   clusterCount: number;
   ipCount: number;
   healthyInstanceCount: number;
-  triggerFlag: boolean;
+  triggerFlag: string;
 }
 
 export interface ServiceListParams {

@@ -345,8 +345,8 @@ export default function ServiceManagementPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {svc.triggerFlag ? (
-                        <Badge variant="destructive">{t('service.triggerFlag')}</Badge>
+                      {(svc.triggerFlag === 'true') ? (
+                          <Badge variant="destructive">{t('service.triggerFlag')}</Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
