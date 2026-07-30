@@ -81,10 +81,23 @@ When several conditions apply, precheck must choose one code in this order:
 `DRAFT_EXISTS`, `VERSION_ADJUSTED`, `READY`. Clients must treat unknown codes
 as blocked.
 
-`targetVersion` is supported only when the ZIP contains at most one valid
-Skill. The server must reject the parameter for a multi-Skill ZIP. Version
-source priority remains `SKILL.md`, sibling `_meta.json`, request
-`targetVersion`, then the server default.
+The precheck request contains the ZIP archive and optional namespace only; it
+does not accept `targetVersion`. Its result `targetVersion` is the version the
+server predicts from the archive and current server state. Precheck version
+source priority is `SKILL.md` frontmatter `version`, `SKILL.md` frontmatter
+`metadata.version`, sibling `_meta.json` `version`, then the server default.
+
+Single-Skill upload additionally accepts an optional request `targetVersion`.
+Upload version source priority is `SKILL.md` frontmatter `version`, `SKILL.md`
+frontmatter `metadata.version`, sibling `_meta.json` `version`, request
+`targetVersion`, then the server default. The server must evaluate explicit
+version candidates in that order and use the first valid, available version.
+An invalid or occupied higher-priority candidate must not immediately trigger
+server-side version generation when a lower-priority candidate is available.
+The current editing version is available for overwrite; a replacement for that
+editing version must be greater and unoccupied. The server generates a version
+only when no explicit candidate is available. Consequently, an upload that
+supplies `targetVersion` may use a different version from an earlier precheck.
 
 In batch mode, `NOT_A_SKILL` and `INVALID_SKILL` items count as neither Skills
 nor blocked Skills. The client should disable upload only when there is no valid

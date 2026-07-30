@@ -40,6 +40,7 @@ import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.any;
@@ -199,7 +200,7 @@ class SkillMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(mockRestResult);
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillService.precheckUploadSkillFromZip("public", "zip".getBytes(), "v2");
+            skillService.precheckUploadSkillFromZip("public", "zip".getBytes());
         
         assertEquals(1, actual.size());
         assertEquals("test-skill", actual.get(0).getSkillName());
@@ -208,7 +209,7 @@ class SkillMaintainerServiceImplTest {
         HttpRequest request = requestCaptor.getValue();
         assertEquals(Constants.AdminApiPath.AI_SKILL_UPLOAD_PRECHECK_ADMIN_PATH,
             request.getPath());
-        assertEquals("v2", request.getParamValues().get("targetVersion"));
+        assertFalse(request.getParamValues().containsKey("targetVersion"));
         assertTrue(request.isFileUpload());
     }
     

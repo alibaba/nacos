@@ -206,7 +206,6 @@ public class ConsoleSkillController {
      *
      * @param request HTTP servlet request
      * @param namespaceId namespace ID
-     * @param targetVersion target version specified by the caller
      * @param file zip file containing one skill or multiple skill subdirectories
      * @return list of precheck results
      * @throws NacosException if zip parsing fails entirely
@@ -218,12 +217,10 @@ public class ConsoleSkillController {
     public Result<List<SkillUploadPrecheckResult>> precheckUploadSkill(
         HttpServletRequest request,
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
-        @RequestParam(value = "targetVersion", required = false) String targetVersion,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        return Result.success(
-            skillProxy.precheckUploadSkillFromZip(namespaceId, zipBytes, targetVersion));
+        return Result.success(skillProxy.precheckUploadSkillFromZip(namespaceId, zipBytes));
     }
     
     /**

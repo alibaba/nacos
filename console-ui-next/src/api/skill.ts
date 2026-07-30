@@ -72,14 +72,10 @@ export const skillApi = {
   precheckUpload: (
     namespaceId: string,
     file: File,
-    targetVersion?: string,
   ): ApiResult<SkillUploadPrecheckResult[]> => {
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('namespaceId', namespaceId);
-    if (targetVersion) {
-      formData.append('targetVersion', targetVersion);
-    }
     return client.post(`${BASE}/upload/precheck`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,

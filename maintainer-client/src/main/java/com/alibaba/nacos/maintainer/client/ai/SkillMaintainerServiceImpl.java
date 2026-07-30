@@ -187,11 +187,10 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     
     @Override
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
+        byte[] zipBytes) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
-        Map<String, String> params = new HashMap<>(4);
+        Map<String, String> params = new HashMap<>(2);
         params.put("namespaceId", namespaceId);
-        putIfNotBlank(params, "targetVersion", targetVersion);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
             .setHttpMethod(HttpMethod.POST)
             .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_PRECHECK_ADMIN_PATH)

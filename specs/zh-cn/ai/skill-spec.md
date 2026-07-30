@@ -70,9 +70,18 @@ Skill upload 接收 ZIP 包。Batch upload 是 best effort，返回兼容对象�
 `INVALID_SKILL`、`NO_PERMISSION`、`REVIEWING_EXISTS`、`DRAFT_EXISTS`、
 `VERSION_ADJUSTED`、`READY`。客户端必须将未知编码按阻断处理。
 
-`targetVersion` 只适用于最多包含一个有效 Skill 的 ZIP；多 Skill ZIP 携带该参数时服务端
-必须拒绝请求。版本来源优先级保持为 `SKILL.md`、同目录 `_meta.json`、请求参数
-`targetVersion`、服务端默认版本。
+预检请求只包含 ZIP 包和可选 namespace，不接受 `targetVersion`。预检结果中的
+`targetVersion` 是服务端根据 ZIP 内容和当前服务端状态推算的版本。预检版本来源优先级为
+`SKILL.md` frontmatter 的 `version`、`SKILL.md` frontmatter 的 `metadata.version`、
+同目录 `_meta.json` 的 `version`、服务端默认版本。
+
+单 Skill 上传请求额外支持可选的 `targetVersion`。上传版本来源优先级为 `SKILL.md`
+frontmatter 的 `version`、`SKILL.md` frontmatter 的 `metadata.version`、同目录
+`_meta.json` 的 `version`、请求参数 `targetVersion`、服务端默认版本。服务端必须按此顺序
+检查显式版本候选，并使用第一个合法且可用的版本。高优先级候选非法或已被占用时，如果存在
+低优先级可用候选，不得直接进入服务端版本生成逻辑。当前编辑中版本可用于覆盖；替换该编辑中
+版本的候选必须更大且未被占用。只有所有显式候选均不可用时，服务端才生成版本。因此，上传
+请求携带 `targetVersion` 时，实际版本可以不同于此前预检推算的版本。
 
 批量场景中，`NOT_A_SKILL` 和 `INVALID_SKILL` 项不计入 Skill 数量，也不计入阻断 Skill
 数量。只有没有有效 Skill，或所有有效 Skill 都被阻断时，客户端才应禁止上传；只要至少

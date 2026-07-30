@@ -123,9 +123,9 @@ public class SkillRemoteHandler implements SkillHandler {
     
     @Override
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
-        return clientHolder.getAiMaintainerService().skill().precheckUploadSkillFromZip(namespaceId,
-            zipBytes, targetVersion);
+        byte[] zipBytes) throws NacosException {
+        return clientHolder.getAiMaintainerService().skill()
+            .precheckUploadSkillFromZip(namespaceId, zipBytes);
     }
     
     @Override

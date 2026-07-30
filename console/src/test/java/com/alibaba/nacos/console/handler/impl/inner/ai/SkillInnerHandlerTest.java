@@ -188,15 +188,15 @@ class SkillInnerHandlerTest {
         precheckResult.setSkillName(SKILL_NAME);
         java.util.List<SkillUploadPrecheckResult> results =
             java.util.Collections.singletonList(precheckResult);
-        when(skillOperationService.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0"))
+        when(skillOperationService.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes))
             .thenReturn(results);
         
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillInnerHandler.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
+            skillInnerHandler.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes);
         
         assertEquals(1, actual.size());
         assertEquals(SKILL_NAME, actual.get(0).getSkillName());
-        verify(skillOperationService).precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
+        verify(skillOperationService).precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes);
     }
     
     @Test

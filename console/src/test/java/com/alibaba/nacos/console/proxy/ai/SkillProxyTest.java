@@ -166,15 +166,15 @@ class SkillProxyTest {
         precheckResult.setSkillName(SKILL_NAME);
         java.util.List<SkillUploadPrecheckResult> results =
             java.util.Collections.singletonList(precheckResult);
-        when(skillHandler.precheckUploadSkillFromZip(NS, zipBytes, "1.0.0"))
+        when(skillHandler.precheckUploadSkillFromZip(NS, zipBytes))
             .thenReturn(results);
         
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillProxy.precheckUploadSkillFromZip(NS, zipBytes, "1.0.0");
+            skillProxy.precheckUploadSkillFromZip(NS, zipBytes);
         
         assertEquals(1, actual.size());
         assertEquals(SKILL_NAME, actual.get(0).getSkillName());
-        verify(skillHandler).precheckUploadSkillFromZip(NS, zipBytes, "1.0.0");
+        verify(skillHandler).precheckUploadSkillFromZip(NS, zipBytes);
     }
     
     @Test

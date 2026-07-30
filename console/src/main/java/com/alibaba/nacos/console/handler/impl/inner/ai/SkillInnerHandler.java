@@ -103,9 +103,8 @@ public class SkillInnerHandler implements SkillHandler {
     
     @Override
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
-        byte[] zipBytes, String targetVersion) throws NacosException {
-        return skillOperationService.precheckUploadSkillFromZip(namespaceId, zipBytes,
-            targetVersion);
+        byte[] zipBytes) throws NacosException {
+        return skillOperationService.precheckUploadSkillFromZip(namespaceId, zipBytes);
     }
     
     @Override
