@@ -40,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     folders with persisted content.</li>
  *     <li>Boundary/validation: namespace defaults to public; upload version resolves from SKILL.md before
  *     targetVersion; short numeric versions are normalized; invalid uploaded versions fall back to server-generated
- *     drafts; duplicate working drafts require overwrite; batch upload keeps valid folders while reporting invalid
- *     folders in {@code failed}.</li>
+ *     drafts; duplicate working drafts require overwrite; batch upload keeps valid folders while reporting a
+ *     structured result for every folder.</li>
  *     <li>Exception/error handling: empty and malformed ZIP files and archives without
  *     {@code SKILL.md} return controlled HTTP 400 Result bodies instead of HTTP 500.</li>
  * </ul>
@@ -132,6 +132,9 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertArrayContains(data.get("succeeded"), firstSkill);
         assertArrayContains(data.get("succeeded"), secondSkill);
         assertEquals(0, data.get("failed").size(), data.toString());
+        assertEquals(2, data.get("results").size(), data.toString());
+        assertBatchSuccess(data.get("results"), firstSkill);
+        assertBatchSuccess(data.get("results"), secondSkill);
         addCleanup(() -> deleteSkillQuietly(firstSkill));
         addCleanup(() -> deleteSkillQuietly(secondSkill));
         assertSkillContent(getJsonOk(ADMIN_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.0"))
@@ -147,6 +150,8 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode shortVersionData = assertUploadResult(shortVersionBatch).get("data");
         assertArrayContains(shortVersionData.get("succeeded"), firstSkill);
         assertEquals(0, shortVersionData.get("failed").size(), shortVersionData.toString());
+        assertEquals(1, shortVersionData.get("results").size(), shortVersionData.toString());
+        assertBatchSuccess(shortVersionData.get("results"), firstSkill);
         assertSkillContent(getJsonOk(ADMIN_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.1"))
                 .get("data"), firstSkill, "1.0.1", "Batch body A v2.", "guide for " + firstSkill);
 
@@ -166,8 +171,12 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode partialData = assertUploadResult(partial).get("data");
         assertArrayContains(partialData.get("succeeded"), validSkill);
         assertEquals(2, partialData.get("failed").size(), partialData.toString());
-        assertBatchFailure(partialData.get("failed"), "invalid-skill");
-        assertBatchFailure(partialData.get("failed"), "not-a-skill");
+        assertLegacyBatchFailure(partialData.get("failed"), "invalid-skill");
+        assertLegacyBatchFailure(partialData.get("failed"), "not-a-skill");
+        assertEquals(3, partialData.get("results").size(), partialData.toString());
+        assertBatchSuccess(partialData.get("results"), validSkill);
+        assertBatchFailure(partialData.get("results"), "invalid-skill", "INVALID_SKILL");
+        assertBatchFailure(partialData.get("results"), "not-a-skill", "NOT_A_SKILL");
         addCleanup(() -> deleteSkillQuietly(validSkill));
     }
 
@@ -226,6 +235,18 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         throw new AssertionError("Expected " + expected + " in " + array);
     }
 
+    private void assertBatchSuccess(JsonNode array, String expected) {
+        for (JsonNode item : array) {
+            if (expected.equals(item.get("name").asText())) {
+                assertTrue(item.get("success").asBoolean(), item.toString());
+                assertEquals("SUCCESS", item.get("errorCode").asText(), item.toString());
+                assertEquals("success", item.get("errorMessage").asText(), item.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Expected successful batch item " + expected + " in " + array);
+    }
+
     private void assertPrecheckFailure(JsonNode array, String precheckCode, String entryPath,
             String reasonFragment) {
         for (JsonNode item : array) {
@@ -238,14 +259,26 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         throw new AssertionError("Expected precheck failure " + entryPath + " in " + array);
     }
 
-    private void assertBatchFailure(JsonNode array, String name) {
+    private void assertBatchFailure(JsonNode array, String name, String errorCode) {
+        for (JsonNode item : array) {
+            if (name.equals(item.get("name").asText())) {
+                assertFalse(item.get("success").asBoolean(), item.toString());
+                assertEquals(errorCode, item.get("errorCode").asText(), item.toString());
+                assertFalse(item.get("errorMessage").asText().isBlank(), item.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Expected batch failure " + name + " in " + array);
+    }
+
+    private void assertLegacyBatchFailure(JsonNode array, String name) {
         for (JsonNode item : array) {
             if (name.equals(item.get("name").asText())) {
                 assertFalse(item.get("reason").asText().isBlank(), item.toString());
                 return;
             }
         }
-        throw new AssertionError("Expected batch failure " + name + " in " + array);
+        throw new AssertionError("Expected legacy batch failure " + name + " in " + array);
     }
 
     private void assertCompactPrecheckResult(JsonNode precheck) {

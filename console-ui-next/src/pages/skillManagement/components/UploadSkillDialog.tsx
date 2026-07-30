@@ -30,9 +30,16 @@ interface BatchPrecheckState {
   items: SkillUploadPrecheckResult[];
 }
 
+interface BatchUploadItemResultData {
+  name: string;
+  success: boolean;
+  errorCode: string;
+  errorMessage: string;
+  owner?: string;
+}
+
 interface BatchUploadResultData {
-  succeeded?: string[];
-  failed?: { name: string; reason: string; owner?: string }[];
+  results: BatchUploadItemResultData[];
 }
 
 function isPrecheckBlocked(result: SkillUploadPrecheckResult): boolean {
@@ -227,8 +234,9 @@ export function UploadSkillDialog({
 
   const showBatchUploadResult = useCallback(
     (data: BatchUploadResultData | undefined, skippedCount = 0) => {
-      const succeededList = data?.succeeded ?? [];
-      const failedList = data?.failed ?? [];
+      const results = data?.results ?? [];
+      const succeededList = results.filter(item => item.success);
+      const failedList = results.filter(item => !item.success);
       if (failedList.length === 0) {
         const message = skippedCount > 0
           ? t('skill.batchUploadSuccessWithSkipped', {
@@ -247,8 +255,8 @@ export function UploadSkillDialog({
         : t('skill.batchUploadAllFailed', { count: failedList.length });
       const description = (
         <div className="flex flex-col gap-0.5 text-xs">
-          {succeededList.map((name) => (
-            <div key={name} style={{ color: '#16a34a' }}>✓ {name}</div>
+          {succeededList.map((item) => (
+            <div key={item.name} style={{ color: '#16a34a' }}>✓ {item.name}</div>
           ))}
           {skippedCount > 0 && (
             <div style={{ color: '#64748b' }}>
@@ -257,7 +265,10 @@ export function UploadSkillDialog({
           )}
           {failedList.map((item) => (
             <div key={item.name} style={{ color: '#dc2626' }}>
-              ✗ {item.name}<span style={{ opacity: 0.8 }}> — {item.reason}</span>
+              ✗ {item.name}
+              <span style={{ opacity: 0.8 }}>
+                {' '}— [{item.errorCode}] {item.errorMessage}
+              </span>
             </div>
           ))}
         </div>

@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -77,6 +78,7 @@ import java.util.zip.ZipOutputStream;
 import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1481,13 +1483,23 @@ class SkillOperationServiceImplTest {
             .thenReturn(Optional.of(mockFilter));
         
         setupRequestContext("attackerUser");
-        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(namespaceId,
-            createMultiSkillZipBytes(), false);
+        BatchUploadResult batchResult = skillOperationService.batchUploadSkillsFromZip(
+            namespaceId, createMultiSkillZipBytes(), false);
         
-        assertEquals(1, result.getFailed().size());
-        assertEquals("test-skill", result.getFailed().get(0).getName());
-        assertEquals("ownerUser", result.getFailed().get(0).getOwner());
-        assertTrue(result.getFailed().get(0).getReason().contains("No permission"));
+        List<BatchUploadItemResult> results = batchResult.getResults();
+        assertEquals(1, results.size());
+        BatchUploadItemResult result = results.get(0);
+        assertFalse(result.isSuccess());
+        assertEquals("test-skill", result.getName());
+        assertEquals(SkillUploadPrecheckResult.PRECHECK_CODE_NO_PERMISSION,
+            result.getErrorCode());
+        assertEquals("ownerUser", result.getOwner());
+        assertTrue(result.getErrorMessage().contains("No permission"));
+        assertTrue(batchResult.getSucceeded().isEmpty());
+        assertEquals(1, batchResult.getFailed().size());
+        assertEquals("test-skill", batchResult.getFailed().get(0).getName());
+        assertEquals("ownerUser", batchResult.getFailed().get(0).getOwner());
+        assertTrue(batchResult.getFailed().get(0).getReason().contains("No permission"));
     }
     
     @Test

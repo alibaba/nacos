@@ -38,10 +38,17 @@ A Skill is a packaged AI Agent capability. It contains:
 - metadata such as description, business tags, owner, scope, labels, version,
   and download count.
 
-Skill upload accepts ZIP archives. Batch upload is best effort and must report
-per-skill success and failure. When upload fails because the caller lacks write
-permission on an existing Skill, the failure information must include the
-current owner when available.
+Skill upload accepts ZIP archives. Batch upload is best effort and returns a
+compatibility object containing the legacy `succeeded` and `failed` fields plus
+one entry in `results` for every Skill or candidate directory. Each result
+contains `name`, `success`, `errorCode`, `errorMessage`, and optional `owner`.
+Successful items use `success=true`, error code `SUCCESS`, and error message
+`success`. Failed items use `success=false` and include the concrete failure
+message. Batch upload
+reuses the precheck business codes `NOT_A_SKILL`, `INVALID_SKILL`, and
+`NO_PERMISSION` for equivalent failures. Unclassified failures use
+`UPLOAD_FAILED`. When upload fails because the caller lacks write permission on
+an existing Skill, the result must include the current owner when available.
 
 Upload precheck must accept the same ZIP archive as the upload API and parse
 single-Skill and multi-Skill archives on the server. It returns one result for

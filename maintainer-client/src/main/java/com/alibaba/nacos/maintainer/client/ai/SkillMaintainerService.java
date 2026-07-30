@@ -326,7 +326,7 @@ public interface SkillMaintainerService {
      * Batch upload skills from a multi-skill zip archive with default namespace.
      *
      * @param zipBytes zip file bytes containing multiple skill directories
-     * @return batch upload result with succeeded and failed lists
+     * @return batch upload result with per-skill results
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")
@@ -340,7 +340,7 @@ public interface SkillMaintainerService {
      * @param namespaceId namespace ID
      * @param zipBytes    zip file bytes containing multiple skill directories
      * @param overwrite   whether to overwrite existing drafts
-     * @return batch upload result with succeeded and failed lists
+     * @return batch upload result with per-skill results
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")

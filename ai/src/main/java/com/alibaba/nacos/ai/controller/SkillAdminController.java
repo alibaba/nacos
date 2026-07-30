@@ -247,7 +247,7 @@ public class SkillAdminController {
      * @param namespaceId namespace ID
      * @param overwrite   whether to overwrite existing drafts
      * @param file        zip file containing multiple skill subdirectories
-     * @return batch upload result with succeeded and failed lists
+     * @return batch upload result with per-skill results
      * @throws NacosException if zip parsing fails entirely
      */
     @Since("3.2.2")
