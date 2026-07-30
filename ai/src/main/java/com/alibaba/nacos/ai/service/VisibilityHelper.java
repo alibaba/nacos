@@ -42,7 +42,14 @@ import java.util.Optional;
  * @author nacos
  */
 public class VisibilityHelper {
-
+    
+    /**
+     * Legacy visibility implementation selector.
+     *
+     * @deprecated use unified visibility implementation state instead. Planned for removal in
+     *     Nacos 4.0.0.
+     */
+    @Deprecated
     private static final String VISIBILITY_PLUGIN_TYPE_CONFIG_KEY = "nacos.plugin.visibility.type";
 
     private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos";

@@ -385,13 +385,16 @@ Version lifecycle status, or other publishers' current values.
 Publisher identity is internal:
 
 - gRPC contributions belong to a connection id;
-- HTTP contributions belong to a validated client id and use one client-level
+- HTTP contributions belong to the common Naming Client
+  `HTTP_CLIENT@@<externalClientId>` and use one client-level Publisher
   heartbeat; and
 - public management and RAD objects do not expose identity or publisher count.
 
-Disconnect or client expiration removes only that publisher's contributions.
-Other equal contributions remain. Aggregate `healthy` is true when at least one
-matching live contribution is healthy and false only when all are unhealthy.
+Disconnect, Publisher expiration, or Client expiration removes only that
+publisher's contributions. Other equal contributions remain. An HTTP query
+renews only the Client; it does not renew, recover, or retain the Publisher.
+Aggregate `healthy` is true when at least one matching live contribution is
+healthy and false only when all are unhealthy.
 Heartbeat-only and publisher-count-only changes do not change the public
 projection.
 
@@ -492,11 +495,17 @@ the service count does not grow with compatible Agent Versions.
 ### 5.3 Naming Fact Boundary
 
 Naming Client state remains the RUNTIME write fact and owns publisher identity,
-connection or heartbeat liveness, cleanup, complete-batch replacement, indexes,
+connection or layered heartbeat liveness, cleanup, complete-batch replacement, indexes,
 events, and AP convergence. Registration converts a complete Agent Endpoint
 batch to Naming Instances and invokes Naming once. Complete deregistration
 removes the Client and Service publication. The Agent server does not read or
 merge the old publisher record.
+
+HTTP publications reuse Naming's common `HttpConnectionBasedClient`,
+`ClientManagerDelegate`, and `Nacos:Naming:v2:ClientData` Distro path. The AI
+module only validates the external Client id, owns its Distro Filter routing,
+and converts Agent Endpoints to Naming Instances. It does not maintain an
+Agent-specific ClientData processor or Distro resource type.
 
 Runtime Snapshot and Discover reads use the complete internal Service
 projection cached by Naming `ServiceStorage`. That projection is built from the
@@ -620,7 +629,7 @@ set uses the Version `contentDigest` as its opaque source revision.
 | Agent catalog, governance, extensions | `ai_resource`. | `metaVersion` CAS. |
 | Create or update draft | AI Storage fixed key plus Version row. | Pointer, bytes, size, and digest agree. |
 | Publish, online, offline, delete, label/latest | Version row plus Resource summaries. | Rebuild derived catalog. |
-| Runtime register, heartbeat, deregister | Naming Client runtime state. | Does not write AI Resource or Storage. |
+| Runtime register, Publisher heartbeat, deregister | Naming Client runtime state. | Does not write AI Resource or Storage. |
 
 Cache validators follow facts:
 

@@ -18,12 +18,10 @@ package com.alibaba.nacos.core.plugin;
 
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.plugin.config.PluginConfigApplyException;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginPersistenceException;
@@ -45,14 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * {@link PluginStateProcessor} unit test.
@@ -68,22 +63,13 @@ class PluginStateProcessorTest {
     @Mock
     private PluginStatePersistenceService persistence;
     
-    @Mock
-    private ProtocolManager protocolManager;
-    
-    @Mock
-    private CPProtocol cpProtocol;
-    
     private PluginStateProcessor processor;
     
     private Serializer serializer;
     
     @BeforeEach
     void setUp() {
-        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        doNothing().when(cpProtocol).addRequestProcessors(anyList());
-        
-        processor = new PluginStateProcessor(pluginManager, persistence, protocolManager);
+        processor = new PluginStateProcessor(pluginManager, persistence);
         serializer = SerializeFactory.getDefault();
     }
     

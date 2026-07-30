@@ -42,7 +42,9 @@ class PluginConfigSourceRegistry {
         new EnumMap<>(PluginConfigSourceType.class);
     
     PluginConfigSourceRegistry() {
-        this((PluginStatePersistenceService) null);
+        this(Arrays.asList(new LocalOnlyPluginConfigSourceResolver(),
+            new RuntimePersistedPluginConfigSourceResolver(),
+            new StaticPluginConfigSourceResolver(), new DefaultPluginConfigSourceResolver()));
     }
     
     PluginConfigSourceRegistry(PluginStatePersistenceService persistence) {
@@ -100,12 +102,20 @@ class PluginConfigSourceRegistry {
         getPersistedSourceResolver().initialize();
     }
     
+    boolean isPersistedSourceAvailable() {
+        return getPersistedSourceResolver().isAvailable();
+    }
+    
     Map<String, Map<String, String>> getAllPersistedConfigs() {
         return getPersistedSourceResolver().getAllConfigs();
     }
     
     void restorePersistedConfigs(Map<String, Map<String, String>> configs) {
         getPersistedSourceResolver().restoreConfigs(configs);
+    }
+    
+    void shutdownPersistedConfigs() {
+        getPersistedSourceResolver().shutdown();
     }
     
     private PersistedPluginConfigSourceResolver getPersistedSourceResolver() {

@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.HttpConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,8 +54,13 @@ class ClientManagerDelegateTest {
     
     private final String persistentIpPortId = "127.0.0.1:80#false";
     
+    private final String httpClientId = "HTTP_CLIENT@@client";
+    
     @Mock
     private ConnectionBasedClientManager connectionBasedClientManager;
+    
+    @Mock
+    private HttpConnectionBasedClientManager httpConnectionBasedClientManager;
     
     @Mock
     private EphemeralIpPortClientManager ephemeralIpPortClientManager;
@@ -67,12 +73,16 @@ class ClientManagerDelegateTest {
     @BeforeEach
     void setUp() throws Exception {
         delegate = new ClientManagerDelegate(connectionBasedClientManager,
-            ephemeralIpPortClientManager, persistentIpPortClientManager);
+            httpConnectionBasedClientManager, ephemeralIpPortClientManager,
+            persistentIpPortClientManager);
         when(connectionBasedClientManager.contains(connectionId)).thenReturn(true);
+        when(httpConnectionBasedClientManager.contains(httpClientId)).thenReturn(true);
         when(ephemeralIpPortClientManager.contains(ephemeralIpPortId)).thenReturn(true);
         when(persistentIpPortClientManager.contains(persistentIpPortId)).thenReturn(true);
         when(connectionBasedClientManager.allClientId())
             .thenReturn(Collections.singletonList(connectionId));
+        when(httpConnectionBasedClientManager.allClientId())
+            .thenReturn(Collections.singletonList(httpClientId));
         when(ephemeralIpPortClientManager.allClientId())
             .thenReturn(Collections.singletonList(ephemeralIpPortId));
         when(persistentIpPortClientManager.allClientId())
@@ -93,6 +103,15 @@ class ClientManagerDelegateTest {
         verify(connectionBasedClientManager).getClient(connectionIdForV6);
         verify(ephemeralIpPortClientManager, never()).getClient(connectionIdForV6);
         verify(persistentIpPortClientManager, never()).getClient(connectionIdForV6);
+    }
+    
+    @Test
+    void testChooseHttpConnectionClient() {
+        delegate.getClient(httpClientId);
+        verify(httpConnectionBasedClientManager).getClient(httpClientId);
+        verify(connectionBasedClientManager, never()).getClient(httpClientId);
+        verify(ephemeralIpPortClientManager, never()).getClient(httpClientId);
+        verify(persistentIpPortClientManager, never()).getClient(httpClientId);
     }
     
     @Test
@@ -124,6 +143,11 @@ class ClientManagerDelegateTest {
     }
     
     @Test
+    void testContainsHttpClientId() {
+        assertTrue(delegate.contains(httpClientId));
+    }
+    
+    @Test
     void testContainsEphemeralIpPortId() {
         assertTrue(delegate.contains(ephemeralIpPortId));
     }
@@ -137,6 +161,7 @@ class ClientManagerDelegateTest {
     void testAllClientId() {
         Collection<String> actual = delegate.allClientId();
         assertTrue(actual.contains(connectionId));
+        assertTrue(actual.contains(httpClientId));
         assertTrue(actual.contains(ephemeralIpPortId));
         assertTrue(actual.contains(persistentIpPortId));
     }
@@ -167,5 +192,34 @@ class ClientManagerDelegateTest {
         verify(connectionBasedClientManager).isResponsibleClient(client);
         verify(ephemeralIpPortClientManager, never()).clientConnected(connectionId, attributes);
         verify(persistentIpPortClientManager, never()).clientConnected(connectionId, attributes);
+    }
+    
+    @Test
+    void testDelegateLifecycleForHttpClient() {
+        ClientAttributes attributes = new ClientAttributes();
+        Client client = mock(Client.class);
+        when(client.getClientId()).thenReturn(httpClientId);
+        when(httpConnectionBasedClientManager.clientConnected(httpClientId, attributes))
+            .thenReturn(true);
+        when(httpConnectionBasedClientManager.clientConnected(client)).thenReturn(true);
+        when(httpConnectionBasedClientManager.syncClientConnected(httpClientId, attributes))
+            .thenReturn(true);
+        when(httpConnectionBasedClientManager.clientDisconnected(httpClientId)).thenReturn(true);
+        when(httpConnectionBasedClientManager.isResponsibleClient(client)).thenReturn(true);
+        
+        assertTrue(delegate.clientConnected(httpClientId, attributes));
+        assertTrue(delegate.clientConnected(client));
+        assertTrue(delegate.syncClientConnected(httpClientId, attributes));
+        assertTrue(delegate.clientDisconnected(httpClientId));
+        assertTrue(delegate.isResponsibleClient(client));
+        
+        verify(httpConnectionBasedClientManager).clientConnected(httpClientId, attributes);
+        verify(httpConnectionBasedClientManager).clientConnected(client);
+        verify(httpConnectionBasedClientManager).syncClientConnected(httpClientId, attributes);
+        verify(httpConnectionBasedClientManager).clientDisconnected(httpClientId);
+        verify(httpConnectionBasedClientManager).isResponsibleClient(client);
+        verify(connectionBasedClientManager, never()).clientConnected(httpClientId, attributes);
+        verify(ephemeralIpPortClientManager, never()).clientConnected(httpClientId, attributes);
+        verify(persistentIpPortClientManager, never()).clientConnected(httpClientId, attributes);
     }
 }

@@ -31,7 +31,8 @@ public class PersistenceConstant {
     /**
      * Legacy datasource dialect selection property.
      *
-     * @deprecated use {@link #DATASOURCE_DIALECT_TYPE_PROPERTY} instead.
+     * @deprecated use {@link #DATASOURCE_DIALECT_TYPE_PROPERTY} instead. Planned for removal in
+     *     Nacos 4.0.0.
      */
     @Deprecated
     public static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";

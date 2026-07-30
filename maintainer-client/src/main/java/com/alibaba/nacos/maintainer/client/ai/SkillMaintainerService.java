@@ -290,7 +290,7 @@ public interface SkillMaintainerService {
     @Since("3.3.0")
     default java.util.List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(byte[] zipBytes)
         throws NacosException {
-        return precheckUploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, null);
+        return precheckUploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes);
     }
     
     /**
@@ -304,21 +304,6 @@ public interface SkillMaintainerService {
     @Since("3.3.0")
     default java.util.List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(
         String namespaceId, byte[] zipBytes) throws NacosException {
-        return precheckUploadSkillFromZip(namespaceId, zipBytes, null);
-    }
-    
-    /**
-     * Precheck one or more skill uploads from a zip file.
-     *
-     * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes
-     * @param targetVersion target version for a single-skill zip
-     * @return list of precheck results
-     * @throws NacosException if precheck failed unexpectedly
-     */
-    @Since("3.3.0")
-    default java.util.List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(
-        String namespaceId, byte[] zipBytes, String targetVersion) throws NacosException {
         return java.util.Collections.emptyList();
     }
     
@@ -326,7 +311,7 @@ public interface SkillMaintainerService {
      * Batch upload skills from a multi-skill zip archive with default namespace.
      *
      * @param zipBytes zip file bytes containing multiple skill directories
-     * @return batch upload result with succeeded and failed lists
+     * @return batch upload result with per-skill results
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")
@@ -340,7 +325,7 @@ public interface SkillMaintainerService {
      * @param namespaceId namespace ID
      * @param zipBytes    zip file bytes containing multiple skill directories
      * @param overwrite   whether to overwrite existing drafts
-     * @return batch upload result with succeeded and failed lists
+     * @return batch upload result with per-skill results
      * @throws NacosException if fail to upload
      */
     @Since("3.2.2")

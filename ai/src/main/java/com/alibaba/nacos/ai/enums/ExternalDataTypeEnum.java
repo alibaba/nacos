@@ -23,7 +23,10 @@ import com.alibaba.nacos.api.utils.StringUtils;
  * mcp server data to nacos, the data type is defined
  * by this enum.
  * @author xinluo
+ * @deprecated use a managed AI resource import source and resource type instead. Planned for
+ *     removal in Nacos 3.4.0.
  */
+@Deprecated
 public enum ExternalDataTypeEnum {
     
     /**

@@ -243,12 +243,12 @@ registrations, and negotiated abilities are present in the runtime.
 
 | Target request type | Target response type | Direction | Contract |
 | --- | --- | --- | --- |
-| `AgentSearchRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
-| `AgentDiscoveryRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
+| `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | Subscribe or unsubscribe an Agent reference and optional filter; subscribe returns an opaque `watchKey` and the current complete result. |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | Push one `SNAPSHOT` or `TERMINATED` event for a `watchKey` and receive an acknowledgement. |
-| `AgentEndpointRegisterRequest` | `AgentEndpointOperationResponse` | write | Replace the complete runtime Endpoint batch owned by the current connection for one Agent and protocol. |
-| `AgentEndpointDeregisterRequest` | `AgentEndpointOperationResponse` | write | Idempotently remove the current connection's whole runtime Endpoint publication for one Agent and protocol. |
+| `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | Replace the complete runtime Endpoint batch owned by the current connection for one Agent and protocol. |
+| `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | write | Idempotently remove the current connection's whole runtime Endpoint publication for one Agent and protocol. |
 
 For this target binding, `AgentDiscoveryNotifyRequest` contains `watchKey` and
 `eventType`. `SNAPSHOT` requires a complete `AgentDiscoveryResult` and no

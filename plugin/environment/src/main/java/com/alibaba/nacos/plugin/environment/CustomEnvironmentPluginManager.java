@@ -117,7 +117,8 @@ public class CustomEnvironmentPluginManager {
      * Injection realization.
      *
      * @param customEnvironmentPluginService customEnvironmentPluginService implementation
-     * @deprecated environment services are initialized by the pre-context plugin flow
+     * @deprecated environment services are initialized by the pre-context plugin flow. Planned
+     *     for removal in Nacos 4.0.0.
      */
     @Deprecated
     public static synchronized void join(

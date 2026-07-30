@@ -32,9 +32,11 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -78,9 +80,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     force-publish when applicable, and delete isolated resources.</li>
  *     <li>Boundary/validation: null factory properties and invalid MCP
  *     local/remote specifications fail with controlled SDK exceptions.</li>
- *     <li>Expected capability: Skill and AgentSpec ZIP uploads, including
- *     Skill batch upload, create editable drafts that can be queried through
- *     the maintainer SDK.</li>
+ *     <li>Expected capability: Skill ZIP-only precheck and Skill/AgentSpec ZIP
+ *     uploads, including Skill batch upload, create editable drafts that can
+ *     be queried through the maintainer SDK.</li>
  *     <li>Known standalone limitation: real pipeline approval workflows are
  *     documented as follow-up coverage because this IT uses force-publish
  *     instead of enabling review plugins.</li>
@@ -339,11 +341,17 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         String skillName = randomMaintainerName("skill-zip");
         String targetVersion = "2.1.0";
         String commitMsg = "upload skill zip";
+        byte[] zipBytes =
+                buildSkillZip(skillName, "Maintainer SDK IT uploaded skill", null);
+        
+        List<SkillUploadPrecheckResult> precheck =
+                maintainerService.skill().precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes);
+        assertEquals(1, precheck.size());
+        assertEquals(skillName, precheck.get(0).getSkillName());
+        assertEquals("0.0.1", precheck.get(0).getTargetVersion());
         
         String uploadedName = maintainerService.skill()
-                .uploadSkillFromZip(NAMESPACE_ID,
-                        buildSkillZip(skillName, "Maintainer SDK IT uploaded skill", null),
-                        false, targetVersion, commitMsg);
+                .uploadSkillFromZip(NAMESPACE_ID, zipBytes, false, targetVersion, commitMsg);
         assertEquals(skillName, uploadedName);
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, skillName));
         
@@ -371,7 +379,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, secondSkillName));
         addCleanup(() -> maintainerService.skill().deleteSkill(NAMESPACE_ID, firstSkillName));
         
-        BatchUploadResult result = maintainerService.skill()
+        BatchUploadResult batchResult = maintainerService.skill()
                 .batchUploadSkillsFromZip(NAMESPACE_ID,
                         buildMultiSkillZip(
                                 buildSkill(firstSkillName, "Maintainer SDK IT batch skill one",
@@ -380,10 +388,17 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                                         VERSION)),
                         false);
         
-        assertNotNull(result);
-        assertTrue(result.getFailed().isEmpty(), () -> result.getFailed().toString());
-        assertTrue(result.getSucceeded().contains(firstSkillName));
-        assertTrue(result.getSucceeded().contains(secondSkillName));
+        assertNotNull(batchResult);
+        List<BatchUploadItemResult> results = batchResult.getResults();
+        assertEquals(2, results.size());
+        assertEquals(2, batchResult.getSucceeded().size());
+        assertTrue(batchResult.getFailed().isEmpty());
+        assertTrue(results.stream().allMatch(BatchUploadItemResult::isSuccess),
+                results::toString);
+        assertTrue(results.stream().allMatch(
+                result -> BatchUploadItemResult.ERROR_CODE_SUCCESS.equals(result.getErrorCode())));
+        assertTrue(results.stream().anyMatch(result -> firstSkillName.equals(result.getName())));
+        assertTrue(results.stream().anyMatch(result -> secondSkillName.equals(result.getName())));
         assertEquals(firstSkillName, maintainerService.skill()
                 .getSkillVersionDetail(NAMESPACE_ID, firstSkillName, VERSION).getName());
         assertEquals(secondSkillName, maintainerService.skill()

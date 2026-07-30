@@ -45,6 +45,13 @@ public class AiResourceImportPluginTypePolicy implements PluginTypePolicy {
     
     private static final String STANDARD_STATE_PREFIX = "nacos.plugin.ai-resource-import.";
     
+    /**
+     * Legacy AI resource import implementation state properties.
+     *
+     * @deprecated use state keys under {@link #STANDARD_STATE_PREFIX} instead. Planned for
+     *     removal in Nacos 4.0.0.
+     */
+    @Deprecated
     private static final Map<String, String> LEGACY_STATE_PROPERTIES =
         buildLegacyStateProperties();
     

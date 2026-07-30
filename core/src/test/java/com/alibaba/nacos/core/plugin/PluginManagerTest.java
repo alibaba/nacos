@@ -109,6 +109,7 @@ class PluginManagerTest {
         cachedEnvironment = EnvUtil.getEnvironment();
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setIsStandalone(false);
         
         lenient().when(persistence.loadAllStates()).thenReturn(new HashMap<>());
         lenient().when(persistence.loadAllConfigs()).thenReturn(new HashMap<>());
@@ -133,6 +134,7 @@ class PluginManagerTest {
     
     @AfterEach
     void tearDown() {
+        EnvUtil.setIsStandalone(null);
         EnvUtil.setEnvironment(cachedEnvironment);
         PluginStateCheckerHolder.setInstance(null);
     }
@@ -147,10 +149,15 @@ class PluginManagerTest {
     void publicConstructorCreatesManagerWithServiceLoadedPoliciesTest() {
         assertNotNull(new PluginManager(persistence, synchronizer));
         @SuppressWarnings("unchecked")
+        ObjectProvider<PluginStateSynchronizer> synchronizerProvider =
+            mock(ObjectProvider.class);
+        when(synchronizerProvider.getIfAvailable()).thenReturn(synchronizer);
+        @SuppressWarnings("unchecked")
         ObjectProvider<PreContextPluginInitializationResult> resultProvider =
             mock(ObjectProvider.class);
         when(resultProvider.getIfAvailable(any(Supplier.class)))
             .thenReturn(PreContextPluginInitializationResult.empty());
+        assertNotNull(new PluginManager(persistence, synchronizerProvider, resultProvider));
         assertNotNull(new PluginManager(persistence, synchronizer, resultProvider));
     }
     
@@ -180,6 +187,59 @@ class PluginManagerTest {
         manager.setPluginEnabled("trace:test", true);
         
         verify(synchronizer).syncStateChange("trace:test", true);
+    }
+    
+    @Test
+    void setPluginEnabledPersistsAndAppliesDirectlyInStandaloneMode()
+        throws NacosApiException {
+        EnvUtil.setIsStandalone(true);
+        registerTestPlugin("trace", "test", true);
+        
+        manager.setPluginEnabled("trace:test", false);
+        
+        verify(persistence).saveState("trace:test", false);
+        verify(synchronizer, never()).syncStateChange(any(), anyBoolean());
+        assertFalse(manager.isPluginEnabled("trace", "test"));
+    }
+    
+    @Test
+    void setPluginEnabledReportsStandalonePersistenceFailure() {
+        EnvUtil.setIsStandalone(true);
+        registerTestPlugin("trace", "test", true);
+        doThrow(new PluginPersistenceException("save failed")).when(persistence)
+            .saveState("trace:test", false);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.setPluginEnabled("trace:test", false));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(manager.isPluginEnabled("trace", "test"));
+    }
+    
+    @Test
+    void setPluginEnabledReportsStandaloneApplyValidationFailure() {
+        EnvUtil.setIsStandalone(true);
+        registerTestPlugin("trace", "test", true);
+        PluginManager spyManager = spy(manager);
+        doThrow(new IllegalArgumentException("concurrent change")).when(spyManager)
+            .applyStateChange("trace:test", false);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> spyManager.setPluginEnabled("trace:test", false));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void clusterUpdateFailsWhenSynchronizerBeanIsMissing() {
+        manager = new PluginManager(persistence, null, policyRegistry);
+        registerTestPlugin("trace", "test", true);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.setPluginEnabled("trace:test", false));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("synchronizer is unavailable"));
     }
     
     @Test
@@ -373,6 +433,81 @@ class PluginManagerTest {
         manager.updatePluginConfig("trace:test", config);
         
         verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(config));
+    }
+    
+    @Test
+    void updatePluginConfigPersistsAndAppliesDirectlyInStandaloneMode()
+        throws NacosApiException {
+        EnvUtil.setIsStandalone(true);
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        Map<String, String> config = Collections.singletonMap("endpoint", "value");
+        
+        manager.updatePluginConfig("trace:test", config);
+        
+        verify(persistence).saveConfig("trace:test", config);
+        verify(synchronizer, never()).syncConfigChange(any(), anyMap());
+        assertEquals(config, plugin.getCurrentConfig());
+    }
+    
+    @Test
+    void updatePluginConfigReportsStandaloneApplyFailure() {
+        EnvUtil.setIsStandalone(true);
+        ThrowingConfigurablePlugin plugin = new ThrowingConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", Collections.emptyMap()));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("updated but failed to apply"));
+    }
+    
+    @Test
+    void updatePluginConfigReportsStandaloneValidationAndUnexpectedFailures() {
+        EnvUtil.setIsStandalone(true);
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+        PluginConfigService configService = mock(PluginConfigService.class);
+        ReflectionTestUtils.setField(manager, "pluginConfigService", configService);
+        Map<String, String> config = Collections.emptyMap();
+        PluginInfo info = manager.getPlugin("trace:test").get();
+        when(configService.prepareRuntimeUpdate(info, config,
+            PluginConfigSourceType.RUNTIME_PERSISTED)).thenReturn(config);
+        doThrow(new IllegalArgumentException("invalid")).when(configService)
+            .applyRuntimePersistedConfig("trace:test", info, plugin, config);
+        
+        NacosApiException invalid = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config));
+        assertEquals(NacosException.INVALID_PARAM, invalid.getErrCode());
+        
+        doThrow(new IllegalStateException("unexpected")).when(configService)
+            .applyRuntimePersistedConfig("trace:test", info, plugin, config);
+        NacosApiException unexpected = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test", config));
+        assertEquals(NacosException.SERVER_ERROR, unexpected.getErrCode());
+        assertTrue(unexpected.getErrMsg().contains("Failed to apply or persist"));
+    }
+    
+    @Test
+    void updatePluginConfigReportsUnavailableStorageBeforeClusterSync() throws NacosApiException {
+        environment.setProperty("nacos.plugin.config.source.local-file.enabled", "false");
+        manager = new PluginManager(persistence, synchronizer, policyRegistry);
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("endpoint");
+        definition.setEffectMode(ConfigItemEffectMode.RUNTIME);
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.updatePluginConfig("trace:test",
+                Collections.singletonMap("endpoint", "value")));
+        
+        assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("unavailable"));
+        verify(synchronizer, never()).syncConfigChange(any(), anyMap());
+        manager.shutdown();
     }
     
     @Test
@@ -892,6 +1027,23 @@ class PluginManagerTest {
         plugin.setConfigDefinitions(Collections.singletonList(definition));
         registerConfigurablePlugin("trace", "test", plugin);
         registerSelectedAuthPlugin();
+        
+        manager.initialize();
+        
+        assertEquals("default", plugin.getCurrentConfig().get("endpoint"));
+    }
+    
+    @Test
+    void initializeContinuesWhenRuntimePersistedConfigCannotBeRead() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        ConfigItemDefinition definition = new ConfigItemDefinition();
+        definition.setKey("endpoint");
+        definition.setDefaultValue("default");
+        plugin.setConfigDefinitions(Collections.singletonList(definition));
+        registerConfigurablePlugin("trace", "test", plugin);
+        registerSelectedAuthPlugin();
+        when(persistence.loadAllConfigs()).thenThrow(
+            new PluginPersistenceException("read failed"));
         
         manager.initialize();
         

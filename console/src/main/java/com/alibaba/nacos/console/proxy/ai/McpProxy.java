@@ -132,7 +132,10 @@ public class McpProxy {
      * @param request     import request containing data and settings
      * @return validation result with details about potential issues
      * @throws NacosException any exception during validation
+     * @deprecated use the unified AI resource import validation API instead. Planned for removal
+     *     in Nacos 3.4.0.
      */
+    @Deprecated
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request) throws NacosException {
         return mcpHandler.validateImport(namespaceId, request);
@@ -145,7 +148,10 @@ public class McpProxy {
      * @param request     import request containing data and settings
      * @return import response with results and statistics
      * @throws NacosException any exception during import execution
+     * @deprecated use the unified AI resource import execute API instead. Planned for removal in
+     *     Nacos 3.4.0.
      */
+    @Deprecated
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {
         return mcpHandler.executeImport(namespaceId, request);

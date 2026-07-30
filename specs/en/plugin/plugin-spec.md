@@ -391,6 +391,41 @@ collisions. Definition metadata is copied before normalization so the manager do
 plugin-owned objects. For `PRE_CONTEXT` plugins, any declared `RUNTIME` effect mode is copied as
 `RESTART`; the original plugin definition is not modified.
 
+### Deprecated Compatibility Scheduled For Removal
+
+The following compatibility inputs remain accepted during their stated migration windows so
+existing deployments can migrate without an immediate startup or behavior regression. They are
+deprecated and planned for removal in Nacos 4.0.0 unless a row states an earlier version. New
+deployments, examples, tests, and plugin implementations must use only the canonical replacement.
+
+| Deprecated compatibility input | Canonical replacement | Migration note |
+|--------------------------------|-----------------------|----------------|
+| `nacos.core.auth.system.type` | `nacos.plugin.auth.type` | Static exclusive-plugin selection; restart after migration. |
+| `spring.sql.init.platform` | `nacos.plugin.datasource-dialect.type` | Static dialect selection; restart after migration. |
+| `nacos.plugin.control.manager.type` | `nacos.plugin.control.type` | Static control implementation selection; restart after migration. |
+| `nacos.core.config.plugin.{pluginName}.enabled` | `nacos.plugin.config-change.{pluginName}.enabled` or unified plugin state | The old key supplies only initial implementation state. |
+| `nacos.plugin.visibility.type` | `nacos.plugin.visibility.{pluginName}.enabled` or unified plugin state | The old selector supplies only initial state and does not define runtime routing. |
+| `nacos.plugin.ai-pipeline.type` | `nacos.plugin.ai-pipeline.{pluginName}.enabled` or unified plugin state | Replace the old comma-separated startup chain with implementation state. |
+| `nacos.core.auth.plugin.nacos.*`, `nacos.core.auth.caching.enabled`, and `nacos.core.auth.nacos.anonymous.ai.enabled` | `nacos.plugin.auth.nacos.{itemKey}` | Migrate each default-auth item to the canonical item key exposed by its definition. |
+| `nacos.core.auth.ldap.*` | `nacos.plugin.auth.ldap.{itemKey}` | LDAP item names use canonical kebab-case definitions. |
+| `nacos.core.auth.plugin.oidc.*` | `nacos.plugin.auth.oidc.{itemKey}` | OIDC item names use canonical definitions; all current OIDC items remain `RESTART`. |
+| `db.*` and JVM property `QUERYTIMEOUT` | `nacos.plugin.datasource.db.*` | Datasource settings remain restart-only module configuration and do not enter plugin PUT APIs. |
+| Historical relative AI Pipeline item keys such as `executable`, `path`, `useLlm`, `apiKey`, and other camel-case aliases | Canonical kebab-case item keys under `nacos.plugin.ai-pipeline.{pluginName}.*` | The exact aliases are listed in the AI Pipeline plugin spec. |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | The standard module key remains authoritative and defaults to enabled. |
+| `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` or unified plugin state | Migrate old built-in source state keys to managed implementation state. |
+| `nacos.plugin.ai.importer.*` item configuration | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | Migrate display, description, limits, and endpoint inputs to the managed source identity. |
+| `nacos.ai.resource.import.legacy-mcp-api-enabled` and `nacos.ai.resource.import.allow-user-url` | Unified `/v3/{admin|console}/ai/import/*` APIs and managed source endpoint configuration | These switches and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
+| `ConfigChangeConfigs` property bridge | Definitions and callbacks on `ConfigChangePluginService` | Old binary plugins without definitions continue receiving legacy properties during the 3.x window. |
+| `VisibilityService.init(Properties)` | Definitions and callbacks inherited from `PluginConfigSpec` | The unified lifecycle applies effective item-key maps before visibility execution. |
+| `CustomEnvironmentPluginManager.join(...)` | Environment SPI discovery through the `PRE_CONTEXT` initializer | Environment implementations must be discoverable before Spring environment customization begins. |
+
+For each configuration-key row, a canonical key that is present wins even when its value is empty;
+fallback occurs only when the canonical key is absent. Removing these inputs at their planned
+versions also removes their migration warnings and compatibility-only code paths. Core module
+gates such as
+`nacos.core.auth.enabled`, the empty-definition defaults on `PluginConfigSpec`, and binary loading
+of old zero-config plugin implementations are not part of this removal list.
+
 ### Config Sources And Value Metadata
 
 Effective plugin config values are computed by a unified resolution flow. Source
@@ -428,6 +463,67 @@ applying a restored snapshot. Plugin orchestration does not directly read or
 write `plugin-configs.json`. Persisted plugin enabled state remains owned by the
 state-management path.
 
+The physical storage behind `RUNTIME_PERSISTED` is a core-internal extension,
+not a new `PluginType`. A `PluginConfigStorageProvider` declares a stable
+storage name, startup order, default enabled state, and creates one
+`PluginConfigStorage`. The storage owns resource initialization, complete-map
+load, single-plugin complete-map replacement, snapshot replacement, and
+shutdown. Providers are discovered through the internal Nacos SPI. Their
+selection and lifecycle are not exposed by plugin management APIs or the
+Console. SPI providers must have a public no-argument constructor and must
+defer resource access until storage creation and initialization.
+
+Storage enablement uses the restart-only static property:
+
+```text
+nacos.plugin.config.source.{storageName}.enabled
+```
+
+Enabled providers are ordered by ascending provider order. The first provider
+wins, and later enabled providers are ignored with a warning. The built-in
+`local-file` provider is enabled by default and has the lowest selection
+precedence, so an explicitly enabled internal implementation may replace it.
+Once a provider is selected, creation, initialization, or read failure marks
+the `RUNTIME_PERSISTED` source unavailable for that process. The server must not
+silently switch to another provider because doing so could change the
+authoritative store after startup. Provider discovery, metadata inspection, or
+enable-property resolution failure also makes the source unavailable; Core
+must not select the built-in provider from a partial or uncertain discovery
+result.
+
+Physical storage and cluster synchronization are independent extension
+boundaries. `PluginConfigStorage` owns the terminal `RUNTIME_PERSISTED` data,
+while `PluginStateSynchronizer` owns cluster ordering and transport for both
+plugin state and runtime persisted config operations. Replacing one does not
+implicitly replace the other.
+
+Standalone mode does not create or invoke a synchronizer. It persists and
+applies accepted state and config operations directly on the local process.
+Cluster mode uses the built-in Raft synchronizer when the following restart-only
+static property is absent, blank, or explicitly set to `raft`:
+
+```text
+nacos.plugin.state.synchronizer.type
+```
+
+The built-in path does not require SPI registration or any additional
+configuration. Only an explicitly configured non-`raft` value triggers
+discovery of `PluginStateSynchronizerProvider` implementations through the
+internal Nacos SPI. Provider names are matched exactly. If multiple providers
+have the selected name, class-name order is used as a deterministic tie-breaker;
+the first provider wins and later providers are ignored with a warning.
+External providers must have a public no-argument constructor, defer resource
+access until synchronizer creation or initialization, and create a synchronizer
+with the Core-owned `PluginStateSynchronizationContext`.
+
+A custom synchronizer owns transport, ordering, replay, and delivery
+idempotence. It must invoke the supplied context to validate, persist, and apply
+each accepted operation locally; it must not bypass the selected
+`PluginConfigStorage`. Selecting a custom synchronizer does not register the
+`plugin_state` Raft group. If an explicitly selected provider is missing, cannot
+be inspected, or fails during creation or initialization, Core must not fall
+back to Raft or standalone writes.
+
 Every internal source resolver must expose its canonical item-key map through
 `getConfig(PluginInfo)`. Reading is independent from update capability:
 `DEFAULT` reads definition defaults, `STATIC` reads normalized and alias keys
@@ -437,11 +533,12 @@ the complete map; an empty map clears all overrides for that plugin and source.
 The source contract does not require separate remove or restore operations.
 
 The core source registry owns the enabled resolver set and their fixed order.
-The four built-in sources are always registered in the order shown above;
-internal storage implementations may replace a resolver at the same source
-layer but must not insert a new priority above `LOCAL_ONLY` or merge `DEFAULT`
-into `STATIC`. Source implementation selection is a startup concern and is not
-changed by plugin config update APIs.
+The four logical sources are always registered in the order shown above;
+internal storage implementations replace only the physical storage behind
+`RUNTIME_PERSISTED`. They must not insert a new logical priority above
+`LOCAL_ONLY`, merge `DEFAULT` into `STATIC`, or create another value-source
+enum. Storage selection is a startup concern and is not changed by plugin
+config update APIs.
 
 ### Runtime State Enforcement
 
@@ -500,14 +597,36 @@ only `pluginId`, item key, and target source, and must not log the value.
 Startup and runtime updates use the same source resolver and effective config
 calculation:
 
-1. The runtime persisted source resolver loads all `plugin-configs.json`
-   entries before any plugin config is applied.
+1. The runtime persisted source resolver initializes the selected internal
+   storage and loads its complete map before any plugin config is applied. The
+   built-in `local-file` storage reads `plugin-configs.json`.
 2. Every loaded configurable plugin is then resolved and applied, including
    plugins without a persisted override. Startup may apply both `RUNTIME` and
    `RESTART` fields because the plugin is being initialized.
 3. A runtime request replaces one complete `RUNTIME_PERSISTED` or `LOCAL_ONLY`
    source map. The server resolves all sources again and invokes the plugin for
    each accepted request, including a same-map request used as a manual retry.
+
+Discovery, creation, resource initialization, and initial read failures of the
+selected runtime storage are isolated from Nacos startup. The server logs the
+storage identity and failure, resolves plugins without
+`RUNTIME_PERSISTED`, and continues with `STATIC > DEFAULT` plus any later
+explicit local-only override. A runtime persisted update while the storage is
+unavailable must fail explicitly before changing the resolver snapshot. It
+must not be reported as success, written to a different storage, or
+automatically converted to local-only. `localOnly=true` remains the explicit
+emergency path.
+
+In cluster mode, synchronizer selection, creation, and initialization are
+isolated from the Spring construction path. Core first initializes plugins from
+the selected local storage view, then initializes the selected synchronizer
+asynchronously. For the default Raft synchronizer, this includes asynchronous
+`plugin_state` group registration. Synchronizer or CP initialization failure
+must not roll back plugin startup or discard the accepted local view. Until the
+selected synchronizer is available, cluster-wide plugin state and
+runtime-config writes fail explicitly; reads may continue from the accepted
+local storage snapshot. There is no implicit fallback to another synchronizer
+or to standalone writes.
 
 `PRE_CONTEXT` plugins are an explicit startup-only variant of this flow. Before
 custom environment processing, core captures their static source, resolves

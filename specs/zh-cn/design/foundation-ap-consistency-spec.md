@@ -31,8 +31,9 @@ AP 和 CP 是 CAP 理论中的一致性选择。在 Nacos 中，AP 路径优先�
 | Distro | Naming 运行时状态 | 在服务端节点之间同步临时、客户端拥有的服务实例状态。 |
 | Config Notify | Config 缓存与 listener 可见性 | 通知 peer 节点某个 Config 资源发生变化，使本地 dump 缓存和 listener 刷新。 |
 
-第 6 节定义 Agent HTTP Client 状态已确定的目标 Distro 契约。它不属于上表的当前实现，也不
-表示 `AI_AGENT_HTTP_CLIENT` 已经实现或对外声明。
+第 6 节定义通用 HTTP connection-based Client 的目标契约。它复用 Naming 当前的 ClientData
+Distro 资源类型和处理器；在对应 Client manager 完成并由上层 API 声明能力前，不表示该
+Client 类型已经实现或可用。
 
 历史上 `consistency` 模块中存在 `APProtocol` 接口，但当前活跃 AP 实现是 Distro 基础能力和
 Config Notify 路径。新的规范应直接描述 AP 语义，而不应假设所有 AP 行为都必须实现 `APProtocol`。
@@ -129,108 +130,97 @@ Naming Distro 传输通过
 `DistroDataRequest` / `DistroDataResponse` 承载，并遵循
 [内部 RPC 与集群请求规范](foundation-internal-rpc-spec.md)。
 
-## 6. AI Agent HTTP Client Distro 目标契约
+## 6. 通用 HTTP Connection-based Client 目标契约
 
-本节定义 HTTP Runtime Endpoint publisher 状态的目标设计。只有服务端完成实现并声明对应
-Agent/RAD 能力后，它才成为有效运行时契约。
+本节定义由多个 HTTP 请求共同维护的临时 Naming Client。Agent Endpoint、普通 Naming
+Instance 和未来其他运行时 Endpoint 在进入 Client 前分别完成领域适配；Client manager 和
+Distro 只处理标准 `InstancePublishInfo` 或 `BatchInstancePublishInfo`。
 
 目标流程为：
 
 ```text
-Agent HTTP request
-  -> route by clientId to responsible server
-  -> mutate complete HTTP Client state
-  -> Distro full-state CHANGE or DELETE
+HTTP request
+  -> module-owned Distro Filter routes by internal client id
+  -> mutate HttpConnectionBasedClient
+  -> existing Naming ClientData CHANGE or DELETE
   -> peer Client state
-  -> Naming and RAD runtime events
+  -> Naming indexes and runtime projections
 ```
 
 ### 6.1 资源身份与路由
 
 | 项目 | 目标语义要求 |
 | --- | --- |
-| Distro resource type | 常量 `AI_AGENT_HTTP_CLIENT`。 |
-| `resourceKey` 和 `responsibleId` | 原始 opaque HTTP `clientId`。 |
-| 责任归属 | Distro 使用稳定 client-id 分片选择唯一责任节点。 |
-| 模块隔离 | module 不拼入分片 key；resource type 和专用 Client manager 将 Agent 状态与其他模块使用的同名 client id 隔离。 |
-| Native owner | 只有责任节点拥有 native HTTP Client、`lastActiveTime` 和超时调度。 |
-| 远端入口 | 非 owner 将变更或 heartbeat 路由到责任节点，不创建独立活性计时器。 |
+| 外部身份 | 调用方提供的 opaque `externalClientId`。 |
+| 内部 Client id | `HTTP_CLIENT@@<externalClientId>`。 |
+| Distro resource type | 复用 `Nacos:Naming:v2:ClientData`。 |
+| `resourceKey` 和 `responsibleId` | 完整内部 Client id。 |
+| Client manager | `HttpConnectionBasedClientManager`，与 `ConnectionBasedClientManager` 同级并由 `ClientManagerDelegate` 路由。 |
+| 责任归属 | Distro 根据稳定内部 Client id 选择唯一责任节点。 |
+| 模块复用 | AI、Naming 或其他模块使用相同 external id 时共享同一个 Client、publisher/subscriber 容器和生命周期。 |
+| 远端入口 | 每个模块使用自己的 HTTP Distro Filter 将有状态请求转发到责任节点；AI 不扩展 Naming 模块现有的 Distro Filter。 |
 
-首次 Endpoint 注册成功时，将 Client 绑定到一个鉴权主体和一个 `namespaceId`。状态只保存稳定
-主体标识，不保存 credential 或 access token。后续 registration、deregistration 和 heartbeat
-必须使用相同鉴权主体；后续包含 namespace 的请求必须使用已绑定 namespace，无 body 的 heartbeat
-使用已保存的 namespace binding。不匹配时拒绝请求且不刷新活性。
+首次创建有状态 Client 时绑定一个鉴权主体和一个 `namespaceId`。状态只保存稳定主体标识，
+不保存 credential 或 access token。后续有状态请求必须使用相同主体和 namespace；不匹配时
+拒绝请求且不刷新任何活性时间。Client id 只是路由和状态归属标识，不是鉴权凭据。
 
-`clientId` 只是路由和 publisher 归属标识，不是鉴权凭据。在其他 Distro resource type 下复用
-相同文本时，不得续约、修改、verify、snapshot 或删除 Agent Client。
+### 6.2 ClientData 与操作
 
-### 6.2 完整状态与操作
+通用 HTTP Client 直接复用 Naming `ClientSyncData`、`DistroClientDataProcessor` 及其
+`ADD/CHANGE/DELETE/VERIFY/SNAPSHOT/QUERY` 语义，不注册新的 Distro resource type 或
+processor。同步数据包含标准 Client identity、attributes、全部 publication 和 revision；
+HTTP Client attributes 额外保存 namespace、鉴权主体标识、Client 活性和 Publisher 活性。
 
-一个同步 Client datum 是完整替换状态，包含：
+Publisher 数据仍使用现有 Client 的完整 service publication：
 
-| 字段组 | 内容 |
-| --- | --- |
-| 身份 | `clientId`、绑定的 `namespaceId` 和鉴权主体标识。 |
-| 收敛 | 领域 revision 和语义活性状态。 |
-| 活性 | `lastActiveTime`、`heartbeatIntervalMillis`、`unhealthyTimeoutMillis` 和 `expireTimeoutMillis`。 |
-| Publication | 全部 Agent Endpoint publication group 及其完整 Endpoint contribution。 |
+- 单实例使用 `InstancePublishInfo`；
+- 完整批次使用 `BatchInstancePublishInfo`；
+- Agent 或其他领域 Adapter 不把领域 DTO 放入 Distro payload；
+- Subscriber 与现有 connection-based Client 一致，只保留在实际承载订阅的一侧，不进入
+  ClientData publication snapshot。
 
-Endpoint group 包含 AgentName、canonical protocol、runtime Version、canonical Version range
-和 Endpoint payload。Distro datum 永远不携带局部 Endpoint patch，并排除 credential、请求
-header 和原始鉴权材料。
+Publication 变化或语义健康状态变化推进 Client revision 并产生现有
+`ClientChangedEvent`。普通 Client 续约和 Publisher heartbeat 不因时间戳本身变化而广播
+ClientData；peer 通过已有 verify、snapshot 和 repair 收敛。
 
-`AI_AGENT_HTTP_CLIENT` 接受以下 operation：
+### 6.3 Client 与 Publisher 分层活性
 
-| Operation | 语义 |
-| --- | --- |
-| `CHANGE` | 幂等创建或替换一个完整 Client state。本地 Endpoint 变化和语义活性转换产生该操作。 |
-| `DELETE` | 删除完整 Client 及其全部 publisher contribution；状态不存在时幂等 no-op。 |
-| `VERIFY` | 比较 client id、存在性和领域 revision；不匹配时调度定向修复。 |
-| `SNAPSHOT` | 传输来源 snapshot 拥有的完整 Client state 集合。 |
-| `QUERY` | 按 client id 返回一个完整 Client state，或返回强类型 not-found 结果。 |
+HTTP Client 分别维护：
 
-创建使用 `CHANGE`；本目标不要求独立 `ADD` 语义。Apply 逻辑拒绝过期 revision，接受重复的
-相同状态，并且不得把乱序完整替换中的字段合并。`VERIFY` 和 `QUERY` 使用完整 state 修复，
-不得使用 Endpoint delta。
+| 活性 | 刷新来源 | 影响 |
+| --- | --- | --- |
+| Client 活性 | 合法查询、订阅变更、publication 写入和显式 Publisher heartbeat。 | 决定 Client 及 subscriber state 是否仍存在。 |
+| Publisher 活性 | publication 写入和显式 Publisher heartbeat。 | 决定该 Client 拥有的 publication 是否健康和保留。 |
 
-普通 heartbeat 只在责任节点刷新 `lastActiveTime`，不在每个间隔广播。Active/unhealthy 之间的
-语义转换、Endpoint 变化或删除会推进领域 revision，并同步最新完整状态。
+查询只续约已存在的 Client，不创建空 Client，不修改 publisher payload、revision 或健康状态。
+因此频繁查询可以维持 Client 或 subscriber state，但不能使已超时的 publication 恢复健康，
+也不能阻止 publisher expiry。显式 Publisher heartbeat 同时续约 Client 和该 Client 的全部
+publication。
 
-### 6.3 超时与故障转移
-
-服务端返回并保存满足以下关系的超时值：
+Publisher timeout 满足：
 
 ```text
 heartbeatIntervalMillis < unhealthyTimeoutMillis < expireTimeoutMillis
 ```
 
-Heartbeat 和成功的 Endpoint 写入会刷新 Client 活性。超过 `unhealthyTimeoutMillis` 后，该
-Client 的 contribution 仍保留在 RAD/Naming 投影中，但变为 unhealthy；与其他健康 publisher
-共享的 Endpoint 仍可能聚合为 `healthy=true`。Client 转换产生完整状态 `CHANGE`。过期前恢复
-活性时 Client 回到 active，并在公开健康投影发生变化时产生 `CHANGE`。超过
-`expireTimeoutMillis` 后，责任节点产生 `DELETE` 并移除全部 contribution。注销最后一个
-Endpoint 时立即删除空 Client。
+超过 `unhealthyTimeoutMillis` 时 publication 保留但转为 unhealthy；恢复 Publisher 活性时
+恢复为 active，并仅在公开健康投影变化时产生 `CHANGE`。超过 `expireTimeoutMillis` 时删除
+该 Client 的全部 publication，但如果 Client 仍有 subscriber state 则保留 Client。Client
+自身过期时释放其全部 publisher 和 subscriber state。
 
-责任转移时，新 owner 只有在从本地 replica、`SNAPSHOT` 或 `QUERY` 安装完整 state，并校验其
-identity 和 revision 后，才能启动超时调度。随后从接管时刻开始一个与该 Client
-`expireTimeoutMillis` 等长的 failover grace window。Grace 期间不得只因为复制的
-`lastActiveTime` 过旧就使 Client 过期。合法 heartbeat 会结束 grace 并恢复普通超时计算；到
-grace deadline 仍没有 heartbeat 时，Client 过期。
-
-新 owner 无法取得完整 state 时不得合成空 Client。Heartbeat 返回 `HTTP_CLIENT_NOT_FOUND`，
-使 SDK 将全部期望 Endpoint group 标记为未注册，并使用同一 client id redo 完整 registration
-batch。Registration 可以创建缺失 state；注销缺失 state 仍成功 no-op。
+只有责任节点执行 native Client 和 Publisher 超时调度。ClientData replica 通过现有 snapshot、
+verify 和 repair 流程收敛。Replica 最近一次成功 verify 的时间参与其后成为责任节点时的本地
+超时计算，因此 Client 不需要维护第二个 ownership 标记或单独同步 failover 状态。普通 heartbeat
+不在每个间隔广播。
 
 ### 6.4 Apply 事件与可见性
 
-Apply 本地变更、远端 `CHANGE`、修复后的 `QUERY` 或 `SNAPSHOT` state 时，必须物化相同的
-Agent HTTP Client 和原始 Naming publisher contribution。发生语义变化的 apply 会产生 Naming
-Client/service change 事件以重建 index 和 instance 聚合，同时产生 RAD runtime projection/watch
-事件以刷新 Endpoint snapshot 和 `sourceRevision`。
+本地 publication 变更、远端 `ADD/CHANGE`、repair 或 snapshot apply 必须沿用 Naming
+Client/service 事件，重建 publisher index、service storage 和 push view。`DELETE` 使用现有
+Client release 路径清理派生状态。`VERIFY` 本身不产生 discovery 变化。
 
-Apply `DELETE` 会产生对应删除事件。相同语义 revision 的重复 state 不产生重复领域变更。
-`VERIFY` 本身不修改领域状态或产生 discovery 事件。远端 apply 遵循内部 RPC 的鉴权和来源校验；
-它会恢复已保存的鉴权主体 binding，但永远不把 `clientId` 当作权限凭据。
+上层 Agent/RAD 投影只消费 Naming `ServiceStorage` 结果；HTTP Client manager 不维护第二份
+Agent Endpoint projection，也不直接依赖 Agent 定义或 AI Resource 状态。
 
 ## 7. Config Notify 契约
 
@@ -281,8 +271,8 @@ AP 使用方必须处理部分成功。
 - AP 一致性是最终收敛，不是强一致。
 - 本地 `NotifyCenter` 事件本身不是 AP 一致性；只有领域定义了远端传播和修复行为时，它才成为
   AP 行为的一部分。
-- Distro 是运行时数据的正式共享 AP 框架。Naming 当前使用它同步临时 Client state；
-  `AI_AGENT_HTTP_CLIENT` 只在目标能力实现后加入该框架。Config Notify 是 Config 特定的
+- Distro 是运行时数据的正式共享 AP 框架。Naming 使用它同步包括通用 HTTP
+  connection-based Client 在内的临时 Client state。Config Notify 是 Config 特定的
   cache/listener 可见性 AP 通知路径。
 - AP 路径不得用于权限、namespace 元数据、持久服务元数据、插件状态或数据库 schema 状态。
 - 除非接口规范显式暴露，AP payload 是内部集群契约。

@@ -42,7 +42,8 @@ public final class OidcConstants {
     /**
      * Legacy configuration prefix for OIDC plugin.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.} instead. Planned for removal in Nacos
+     *     4.0.0.
      */
     @Deprecated
     public static final String CONFIG_PREFIX = "nacos.core.auth.plugin.oidc.";
@@ -50,7 +51,8 @@ public final class OidcConstants {
     /**
      * Legacy OIDC issuer URI key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.issuer-uri} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.issuer-uri} instead. Planned for removal in
+     *     Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_ISSUER_URI = CONFIG_PREFIX + "issuer-uri";
@@ -58,7 +60,8 @@ public final class OidcConstants {
     /**
      * Legacy OIDC client ID key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.client-id} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.client-id} instead. Planned for removal in
+     *     Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_CLIENT_ID = CONFIG_PREFIX + "client-id";
@@ -66,7 +69,8 @@ public final class OidcConstants {
     /**
      * Legacy OIDC client secret key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.client-secret} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.client-secret} instead. Planned for removal
+     *     in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_CLIENT_SECRET = CONFIG_PREFIX + "client-secret";
@@ -74,7 +78,8 @@ public final class OidcConstants {
     /**
      * Legacy OIDC scopes key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.scope} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.scope} instead. Planned for removal in Nacos
+     *     4.0.0.
      */
     @Deprecated
     public static final String CONFIG_SCOPE = CONFIG_PREFIX + "scope";
@@ -82,7 +87,8 @@ public final class OidcConstants {
     /**
      * Legacy token validation method key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.token-validation-method} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.token-validation-method} instead. Planned
+     *     for removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_TOKEN_VALIDATION_METHOD =
@@ -91,7 +97,8 @@ public final class OidcConstants {
     /**
      * Legacy JWKS cache TTL key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.jwks-cache-ttl-seconds} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.jwks-cache-ttl-seconds} instead. Planned for
+     *     removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_JWKS_CACHE_TTL = CONFIG_PREFIX + "jwks-cache-ttl-seconds";
@@ -99,7 +106,8 @@ public final class OidcConstants {
     /**
      * Legacy username claim key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.username-claim} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.username-claim} instead. Planned for removal
+     *     in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_USERNAME_CLAIM = CONFIG_PREFIX + "username-claim";
@@ -107,7 +115,8 @@ public final class OidcConstants {
     /**
      * Legacy roles claim key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.roles-claim} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.roles-claim} instead. Planned for removal in
+     *     Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_ROLES_CLAIM = CONFIG_PREFIX + "roles-claim";
@@ -115,7 +124,8 @@ public final class OidcConstants {
     /**
      * Legacy admin role key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.admin-role} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.admin-role} instead. Planned for removal in
+     *     Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_ADMIN_ROLE = CONFIG_PREFIX + "admin-role";
@@ -123,7 +133,8 @@ public final class OidcConstants {
     /**
      * Legacy auto create user key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.auto-create-user} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.auto-create-user} instead. Planned for
+     *     removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_AUTO_CREATE_USER = CONFIG_PREFIX + "auto-create-user";
@@ -131,7 +142,8 @@ public final class OidcConstants {
     /**
      * Legacy external authorization endpoint key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-endpoint} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-endpoint} instead. Planned for
+     *     removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_AUTHORIZATION_ENDPOINT =
@@ -140,7 +152,8 @@ public final class OidcConstants {
     /**
      * Legacy authorization request timeout key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-timeout-ms} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.authorization-timeout-ms} instead. Planned
+     *     for removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_AUTHORIZATION_TIMEOUT_MS =
@@ -149,7 +162,8 @@ public final class OidcConstants {
     /**
      * Legacy strict nonce validation key.
      *
-     * @deprecated Use {@code nacos.plugin.auth.oidc.strict-nonce-validation} instead.
+     * @deprecated Use {@code nacos.plugin.auth.oidc.strict-nonce-validation} instead. Planned
+     *     for removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_STRICT_NONCE_VALIDATION =
@@ -159,6 +173,7 @@ public final class OidcConstants {
      * Legacy strict audience validation key.
      *
      * @deprecated Use {@code nacos.plugin.auth.oidc.strict-audience-validation} instead.
+     *     Planned for removal in Nacos 4.0.0.
      */
     @Deprecated
     public static final String CONFIG_STRICT_AUDIENCE_VALIDATION =

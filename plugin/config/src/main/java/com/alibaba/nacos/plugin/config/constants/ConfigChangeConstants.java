@@ -23,6 +23,13 @@ package com.alibaba.nacos.plugin.config.constants;
  */
 public class ConfigChangeConstants {
     
+    /**
+     * Legacy config change plugin configuration prefix.
+     *
+     * @deprecated use {@code nacos.plugin.config-change.{pluginName}.} instead. Planned for
+     *     removal in Nacos 4.0.0.
+     */
+    @Deprecated
     public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
     
     public static final String PLUGIN_PROPERTIES = "pluginProperties";

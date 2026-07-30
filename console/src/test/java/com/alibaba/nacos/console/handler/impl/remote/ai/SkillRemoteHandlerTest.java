@@ -236,15 +236,15 @@ class SkillRemoteHandlerTest {
         precheckResult.setSkillName(SKILL_NAME);
         java.util.List<SkillUploadPrecheckResult> results =
             java.util.Collections.singletonList(precheckResult);
-        when(skillMaintainerService.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0"))
+        when(skillMaintainerService.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes))
             .thenReturn(results);
         
         java.util.List<SkillUploadPrecheckResult> actual =
-            skillRemoteHandler.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
+            skillRemoteHandler.precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes);
         
         assertEquals(1, actual.size());
         assertEquals(SKILL_NAME, actual.get(0).getSkillName());
-        verify(skillMaintainerService).precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes, "1.0.0");
+        verify(skillMaintainerService).precheckUploadSkillFromZip(NAMESPACE_ID, zipBytes);
     }
     
     @Test

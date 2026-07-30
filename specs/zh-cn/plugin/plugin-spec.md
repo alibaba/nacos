@@ -335,6 +335,38 @@ normalized full key 冲突。管理器在归一化前复制 definition 元数据
 `PRE_CONTEXT` 插件声明的 `RUNTIME` 生效模式在副本中按 `RESTART` 处理，原始 definition
 保持不变。
 
+### 计划移除的废弃兼容项
+
+以下兼容输入在各自注明的迁移窗口内继续接受，以便已有部署完成迁移，避免立即产生启动或行为
+回归。除表格另有更早版本说明外，它们均已废弃，并计划在 Nacos 4.0.0 移除。新部署、示例、
+测试和插件实现只能使用标准替代项。
+
+| 废弃兼容输入 | 标准替代项 | 迁移说明 |
+|--------------|------------|----------|
+| `nacos.core.auth.system.type` | `nacos.plugin.auth.type` | 静态互斥插件选择，迁移后需要重启。 |
+| `spring.sql.init.platform` | `nacos.plugin.datasource-dialect.type` | 静态数据库方言选择，迁移后需要重启。 |
+| `nacos.plugin.control.manager.type` | `nacos.plugin.control.type` | 静态 Control 实现选择，迁移后需要重启。 |
+| `nacos.core.config.plugin.{pluginName}.enabled` | `nacos.plugin.config-change.{pluginName}.enabled` 或统一 plugin state | 旧 key 只提供实现初始状态。 |
+| `nacos.plugin.visibility.type` | `nacos.plugin.visibility.{pluginName}.enabled` 或统一 plugin state | 旧 selector 只提供初始状态，不定义运行时路由。 |
+| `nacos.plugin.ai-pipeline.type` | `nacos.plugin.ai-pipeline.{pluginName}.enabled` 或统一 plugin state | 使用实现状态替代旧的逗号分隔启动链。 |
+| `nacos.core.auth.plugin.nacos.*`、`nacos.core.auth.caching.enabled` 和 `nacos.core.auth.nacos.anonymous.ai.enabled` | `nacos.plugin.auth.nacos.{itemKey}` | 按 definition 暴露的 canonical item key 迁移每个默认鉴权配置项。 |
+| `nacos.core.auth.ldap.*` | `nacos.plugin.auth.ldap.{itemKey}` | LDAP item 名称使用 canonical kebab-case definition。 |
+| `nacos.core.auth.plugin.oidc.*` | `nacos.plugin.auth.oidc.{itemKey}` | OIDC item 名称使用 canonical definition；当前全部 OIDC 配置仍为 `RESTART`。 |
+| `db.*` 和 JVM 参数 `QUERYTIMEOUT` | `nacos.plugin.datasource.db.*` | 数据源参数仍是只在重启后生效的模块配置，不进入插件 PUT API。 |
+| `executable`、`path`、`useLlm`、`apiKey` 等历史 AI Pipeline 相对 item key 和其他 camel-case alias | `nacos.plugin.ai-pipeline.{pluginName}.*` 下的 canonical kebab-case item key | 精确 alias 清单由 AI Pipeline 插件规范记录。 |
+| `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | 标准模块 key 保持权威，默认开启。 |
+| `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` 或统一 plugin state | 把旧内置 source 状态 key 迁移到受管实现状态。 |
+| `nacos.plugin.ai.importer.*` item 配置 | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | 把 display、description、limits 和 endpoint 输入迁移到受管 source 身份。 |
+| `nacos.ai.resource.import.legacy-mcp-api-enabled` 和 `nacos.ai.resource.import.allow-user-url` | 统一 `/v3/{admin|console}/ai/import/*` API 和受管 source endpoint 配置 | 这些开关和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
+| `ConfigChangeConfigs` property bridge | `ConfigChangePluginService` 上的 definitions 和 callbacks | 3.x 窗口内，没有 definitions 的旧二进制插件继续接收历史 properties。 |
+| `VisibilityService.init(Properties)` | 从 `PluginConfigSpec` 继承的 definitions 和 callbacks | 统一生命周期在 visibility 执行前应用 effective item-key map。 |
+| `CustomEnvironmentPluginManager.join(...)` | 通过 `PRE_CONTEXT` initializer 发现 Environment SPI | Environment 实现必须在 Spring environment 定制开始前可被发现。 |
+
+对于表中的配置 key，只要标准 key 存在就优先，即使其值为空；只有标准 key 不存在时才回退
+旧输入。在各自计划版本移除这些输入时，也会同时移除对应迁移 WARN 和仅兼容代码路径。
+`nacos.core.auth.enabled` 等核心模块总开关、`PluginConfigSpec` 的空 definitions 默认实现，
+以及旧版零配置插件实现的二进制加载兼容不属于本移除清单。
+
 ### 配置来源与值元数据
 
 插件配置的 effective value 由统一解析流程计算。配置来源优先级为：
@@ -366,16 +398,61 @@ runtime persisted source resolver 负责完整的持久化生命周期：在插�
 插件编排层不得直接读写 `plugin-configs.json`。插件 enabled state 的持久化仍由状态管理
 链路负责。
 
+`RUNTIME_PERSISTED` 背后的物理存储属于 core 内部扩展，不是新的 `PluginType`。
+`PluginConfigStorageProvider` 声明稳定的存储名称、启动顺序、默认启用状态，并创建一个
+`PluginConfigStorage`。storage 负责资源初始化、完整 map 加载、单插件完整 map 替换、
+snapshot 完整替换和关闭。provider 通过 Nacos 内部 SPI 发现，其选择和生命周期不通过
+插件管理 API 或控制台暴露。SPI provider 必须提供 public 无参构造器，并把资源访问
+延迟到 storage 创建和初始化阶段。
+
+storage 使用以下仅重启生效的静态开关：
+
+```text
+nacos.plugin.config.source.{storageName}.enabled
+```
+
+已启用 provider 按 order 升序排列，first-wins；后续已启用 provider 记录 WARN 后忽略。
+内置 `local-file` provider 默认开启且选择优先级最低，因此显式开启的内部实现可以替换它。
+provider 一旦选中，创建、初始化或读取失败都会把当前进程的 `RUNTIME_PERSISTED` 标记为
+不可用；服务端不得静默切换到其他 provider，否则会在启动后改变权威存储。provider
+发现、metadata 检查或 enable property 解析失败同样将 source 标记为不可用，Core
+不得基于不完整或不确定的发现结果选择内置 provider。
+
+物理存储和集群同步是两个独立扩展边界。`PluginConfigStorage` 持有
+`RUNTIME_PERSISTED` 终态数据，`PluginStateSynchronizer` 负责插件状态与运行时持久化
+配置操作的集群顺序和传播；替换其中一个扩展点不得隐式替换另一个。
+
+standalone 模式不创建也不调用 synchronizer，接受的状态和配置操作由当前进程直接
+持久化并应用。集群模式在以下仅重启生效的静态属性不存在、为空或显式设置为 `raft`
+时使用内置 Raft synchronizer：
+
+```text
+nacos.plugin.state.synchronizer.type
+```
+
+内置路径不需要 SPI 注册或任何额外配置。只有显式配置非 `raft` 值时，Core 才通过
+Nacos 内部 SPI 发现 `PluginStateSynchronizerProvider`。provider name 必须精确匹配。
+同名 provider 多于一个时，以 class name 顺序作为确定性 tie-breaker，first-wins，
+后续 provider 记录 WARN 后忽略。外部 provider 必须提供 public 无参构造器，把资源访问
+延迟到 synchronizer 创建或初始化阶段，并使用 Core 提供的
+`PluginStateSynchronizationContext` 创建 synchronizer。
+
+自定义 synchronizer 负责传输、顺序、重放和投递幂等，且必须通过传入 context 在本节点
+校验、持久化和应用每个已接受操作，不得绕过已经选中的 `PluginConfigStorage`。选择自定义
+synchronizer 时不注册 `plugin_state` Raft group。显式选择的 provider 不存在、无法检查，
+或在创建、初始化期间失败时，Core 不得回退到 Raft 或 standalone 写入。
+
 每个内部 source resolver 都必须通过 `getConfig(PluginInfo)` 返回使用 canonical
 item key 的完整 map。读取能力与写入能力相互独立：`DEFAULT` 从 definition 读取默认值，
 `STATIC` 根据标准 key 和 alias 从环境读取，两个运行时 source 读取各自内部 map。
 `isUpdatable` 只在替换 source map 时检查。每次更新完整替换该 source 的 map；传入空
 map 表示清空该插件在该 source 下的全部 override，不额外提供 remove 或 restore 操作。
 
-core source registry 统一持有已启用 resolver 及其固定顺序。四个内置来源必须按上述
-顺序注册；内部存储实现可以替换同一 source 层的 resolver，但不能在 `LOCAL_ONLY` 之上
-插入新优先级，也不能把 `DEFAULT` 合并进 `STATIC`。source 实现的选择属于启动期行为，
-插件配置更新 API 不负责动态切换 source 实现。
+core source registry 统一持有已启用 resolver 及其固定顺序。四个逻辑来源必须按上述
+顺序注册；内部存储实现只替换 `RUNTIME_PERSISTED` 背后的物理存储，不能在
+`LOCAL_ONLY` 之上插入新的逻辑优先级、把 `DEFAULT` 合并进 `STATIC`，也不能新增另一种
+value source 枚举。storage 实现的选择属于启动期行为，插件配置更新 API 不负责动态
+切换。
 
 ### 运行时状态约束
 
@@ -420,14 +497,29 @@ source 的 effective value 复制成 runtime override。服务端应记录 WARN 
 
 启动和运行时更新复用同一套 source resolver 与 effective config 计算逻辑：
 
-1. runtime persisted source resolver 先将 `plugin-configs.json` 中的全部内容装载到
-   source，再开始应用插件配置。
+1. runtime persisted source resolver 先初始化选中的内部 storage 并加载完整 map，再
+   开始应用插件配置。内置 `local-file` storage 从 `plugin-configs.json` 读取。
 2. 随后对每个已加载的可配置插件执行 resolve 和 apply，即使该插件没有持久化
    override 也要处理。启动属于初始化阶段，可以同时应用 `RUNTIME` 和 `RESTART`
    字段。
 3. 运行时请求完整替换一个 `RUNTIME_PERSISTED` 或 `LOCAL_ONLY` source map，随后
    重新解析全部来源；每次接受的请求都调用插件实现，包括使用相同完整 map 发起的
    手动重试。
+
+选中 runtime storage 的发现、创建、资源初始化和首次读取失败必须与 Nacos 启动隔离。
+服务端记录 storage identity 和失败原因，在不包含 `RUNTIME_PERSISTED` 的情况下继续
+解析插件，以 `STATIC > DEFAULT` 以及后续显式 local-only override 完成启动。
+storage 不可用时，runtime persisted 更新必须在修改 resolver snapshot 前明确失败，
+不得返回成功、改写其他 storage 或自动转换成 local-only。`localOnly=true` 仍是显式
+应急路径。
+
+集群模式下，synchronizer 的选择、创建和初始化必须从 Spring 构造链路中隔离。
+Core 先根据选中 storage 的本地视图初始化插件，再异步初始化选中的 synchronizer。
+对于默认 Raft synchronizer，该过程包括异步注册 `plugin_state` group。synchronizer
+或 CP 初始化失败不得回滚插件启动，也不得丢弃已经接受的本地视图。在选中的
+synchronizer 可用前，集群级插件状态和 runtime config 写入必须明确失败；读取可以继续
+使用已接受的本地 storage snapshot，且不得隐式回退到其他 synchronizer 或 standalone
+写入。
 
 `PRE_CONTEXT` 插件是该流程显式定义的启动期变体。Core 在自定义环境处理前捕获其静态
 source，解析 `STATIC > DEFAULT`，校验并应用结果，同时保存已接受快照供后续插件 detail

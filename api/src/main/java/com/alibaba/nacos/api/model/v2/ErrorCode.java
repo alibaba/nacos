@@ -256,6 +256,11 @@ public enum ErrorCode {
     AGENT_VERSION_EXIST(50102, "Agent version already existed"),
     
     /**
+     * HTTP connection-based client does not exist or no longer owns a publication.
+     */
+    HTTP_CLIENT_NOT_FOUND(50404, "HTTP client not found"),
+    
+    /**
      * Config use 100001 ~ 100999.
      **/
     METADATA_ILLEGAL(100002, "Imported metadata is invalid"),

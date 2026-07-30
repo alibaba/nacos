@@ -37,11 +37,26 @@ objects to emulate equivalent publisher state. Those Clients are kept alive by
 heartbeat and expiration checks because separate HTTP requests may reach
 different Nacos server nodes.
 
+For new HTTP contracts with a stable external Client id, Naming uses
+`HttpConnectionBasedClient`. Its internal Client id is
+`HTTP_CLIENT@@<externalClientId>`, Distro responsibility selects its owner, and
+it holds the same standard publisher and subscriber containers as a
+connection-based Client. Domain modules only adapt their runtime objects to
+Naming `InstancePublishInfo`; the same external id shares one Client lifecycle
+across modules.
+
 | Client type | Typical source | Lifecycle |
 | --- | --- | --- |
 | Connection-based client | gRPC SDK connection. | Released when the connection is closed. |
+| HTTP connection-based client | HTTP SDK carrying a stable Client id. | Client and Publisher are renewed separately and the responsible node checks expiration. |
 | Ephemeral IP-port client | HTTP or compatibility ephemeral registration. | Kept alive by heartbeat and expiration checks. |
 | Persistent IP-port client | Persistent instance registration. | Stored through the persistent path and may survive process restart. |
+
+An ordinary query for an HTTP connection-based Client renews only an existing
+Client. It does not create an empty Client or renew publisher liveness, health,
+or revision. Publication writes and explicit Publisher heartbeat renew both
+Client and Publisher. A Publisher may therefore become unhealthy or expire
+while the Client remains active because of queries or subscriptions.
 
 Client id is internal state. Public runtime APIs should identify instances by
 service scope, cluster, IP, port, and service type.

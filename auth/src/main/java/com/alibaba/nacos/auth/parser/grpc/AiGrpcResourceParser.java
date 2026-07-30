@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.remote.request.AbstractAgentClientRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
@@ -49,6 +50,8 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             namespaceId = ((AbstractAgentRequest) request).getNamespaceId();
         } else if (request instanceof AbstractPromptRequest) {
             namespaceId = ((AbstractPromptRequest) request).getNamespaceId();
+        } else if (request instanceof AbstractAgentClientRpcRequest) {
+            namespaceId = ((AbstractAgentClientRpcRequest) request).extractNamespaceId();
         }
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
@@ -69,6 +72,9 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             return getAgentName((AbstractAgentRequest) request);
         } else if (request instanceof AbstractPromptRequest) {
             return getPromptName((AbstractPromptRequest) request);
+        } else if (request instanceof AbstractAgentClientRpcRequest) {
+            String agentName = ((AbstractAgentClientRpcRequest) request).extractAgentName();
+            return StringUtils.isBlank(agentName) ? StringUtils.EMPTY : agentName;
         }
         return StringUtils.EMPTY;
     }
@@ -109,6 +115,8 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT);
         } else if (request instanceof AbstractPromptRequest) {
             properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
+        } else if (request instanceof AbstractAgentClientRpcRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_AGENT);
         }
         return properties;
     }

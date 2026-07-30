@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.impl.HttpConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -253,6 +254,21 @@ class DistroClientDataProcessorTest {
         assertEquals(0, client.getAllPublishedService().size());
         distroClientDataProcessor.processData(distroData);
         verify(clientManager).syncClientConnected(CLIENT_ID, clientSyncData.getAttributes());
+        assertEquals(1L, client.getRevision());
+        assertEquals(1, client.getAllPublishedService().size());
+    }
+    
+    @Test
+    void testProcessDataForHttpConnectionBasedClient() {
+        String httpClientId = "HTTP_CLIENT@@client";
+        client = new HttpConnectionBasedClient(httpClientId, clientSyncData.getAttributes());
+        clientSyncData.setClientId(httpClientId);
+        when(clientManager.getClient(httpClientId)).thenReturn(client);
+        distroData.setType(DataOperation.CHANGE);
+        
+        assertTrue(distroClientDataProcessor.processData(distroData));
+        
+        verify(clientManager).syncClientConnected(httpClientId, clientSyncData.getAttributes());
         assertEquals(1L, client.getRevision());
         assertEquals(1, client.getAllPublishedService().size());
     }

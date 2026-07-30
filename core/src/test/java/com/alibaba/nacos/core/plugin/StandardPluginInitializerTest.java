@@ -17,13 +17,17 @@
 package com.alibaba.nacos.core.plugin;
 
 import com.alibaba.nacos.api.plugin.PluginInitializationPhase;
+import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class StandardPluginInitializerTest {
     
@@ -38,5 +42,35 @@ class StandardPluginInitializerTest {
         assertEquals(PluginInitializationPhase.STANDARD,
             initializer.getInitializationPhase());
         verify(pluginManager, times(2)).initialize();
+    }
+    
+    @Test
+    void testSynchronizerStartsAfterLocalPluginInitialization() {
+        PluginManager pluginManager = mock(PluginManager.class);
+        PluginStateSynchronizer synchronizer = mock(PluginStateSynchronizer.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<PluginStateSynchronizer> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(synchronizer);
+        StandardPluginInitializer initializer =
+            new StandardPluginInitializer(pluginManager, provider);
+        
+        initializer.initialize();
+        
+        org.mockito.InOrder order = inOrder(pluginManager, synchronizer);
+        order.verify(pluginManager).initialize();
+        order.verify(synchronizer).initialize();
+    }
+    
+    @Test
+    void testMissingSynchronizerKeepsStandaloneFlow() {
+        PluginManager pluginManager = mock(PluginManager.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<PluginStateSynchronizer> provider = mock(ObjectProvider.class);
+        StandardPluginInitializer initializer =
+            new StandardPluginInitializer(pluginManager, provider);
+        
+        initializer.initialize();
+        
+        verify(pluginManager).initialize();
     }
 }

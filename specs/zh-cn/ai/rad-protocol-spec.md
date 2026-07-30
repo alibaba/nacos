@@ -533,8 +533,9 @@ Binding 声明其支持的 Profile 和可选能力：
 | Watch 能力 | `Watch` |
 
 符合 RAD 的 Binding 至少实现一个 Profile。Watch 在 RAD 核心层是可选能力。Nacos
-HTTP Binding 实现 Consumer 和 Publisher Profile，但不实现 Watch；Nacos 完整 gRPC
-Profile 实现全部五个操作。
+首版 HTTP 和 gRPC Binding 都只实现 Consumer 与 Publisher Profile，不暴露服务端
+Watch/Push 操作。Java SDK 后续可以通过周期执行 Discover 提供本地订阅便利能力；
+这种轮询不表示对应传输支持 RAD Watch，也不增加 Watch Wire 消息。
 
 ## 10. 错误语义
 

@@ -31,6 +31,12 @@ public class ControlPluginTypePolicy implements PluginTypePolicy {
     
     public static final String CONTROL_TYPE_PROPERTY = "nacos.plugin.control.type";
     
+    /**
+     * Legacy control plugin selection property.
+     *
+     * @deprecated use {@link #CONTROL_TYPE_PROPERTY} instead. Planned for removal in Nacos 4.0.0.
+     */
+    @Deprecated
     public static final String LEGACY_CONTROL_TYPE_PROPERTY =
         "nacos.plugin.control.manager.type";
     

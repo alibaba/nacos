@@ -38,10 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: single ZIP upload creates a draft from {@code SKILL.md} plus resource files, precheck
  *     reports existing-draft overwrite target, overwrite updates an editing draft, and batch upload reports successful skill
  *     folders with persisted content.</li>
- *     <li>Boundary/validation: namespace defaults to public; upload version resolves from SKILL.md before
- *     targetVersion; short numeric versions are normalized; invalid uploaded versions fall back to server-generated
- *     drafts; duplicate working drafts require overwrite; batch upload keeps valid folders while reporting invalid
- *     folders in {@code failed}.</li>
+ *     <li>Boundary/validation: namespace defaults to public; precheck accepts only the archive and namespace; upload
+ *     selects the first available version from SKILL.md version, SKILL.md metadata.version, _meta.json, targetVersion,
+ *     and server fallback; short numeric versions are normalized; invalid uploaded versions fall through to
+ *     lower-priority candidates; duplicate working drafts require overwrite; batch upload keeps valid folders while
+ *     reporting a structured result for every folder.</li>
  *     <li>Exception/error handling: empty and malformed ZIP files and archives without
  *     {@code SKILL.md} return controlled HTTP 400 Result bodies instead of HTTP 500.</li>
  * </ul>
@@ -70,7 +71,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 buildSkillZip(skillName, "1.0.0", "Duplicate body.", "duplicate guide")),
                 409, ErrorCode.RESOURCE_CONFLICT, "working version");
         JsonNode precheck = assertUploadResult(postMultipartRaw(CONSOLE_SKILL_PATH
-                        + "/upload/precheck", precheckQuery("9.9.9"), "file",
+                        + "/upload/precheck", precheckQuery(), "file",
                 skillName + ".zip", "application/zip",
                 buildSkillZip(skillName, "1.0.0", "Duplicate body.", "duplicate guide")))
                 .get("data").get(0);
@@ -93,7 +94,7 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals("ok", postFormOk(CONSOLE_SKILL_PATH + "/offline",
                 skillOnlineForm(skillName, "1.0.0", null)).get("data").asText());
         JsonNode shortVersionPrecheck = assertUploadResult(postMultipartRaw(CONSOLE_SKILL_PATH
-                        + "/upload/precheck", precheckQuery(null), "file",
+                        + "/upload/precheck", precheckQuery(), "file",
                 skillName + ".zip", "application/zip",
                 buildSkillZip(skillName, "1.0", "Short version body.",
                         "short version guide")))
@@ -119,6 +120,43 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     @Test
+    public void testUploadUsesFirstAvailableVersionSource() throws Exception {
+        String skillName = randomAiName("version-source");
+        addCleanup(() -> deleteSkillQuietly(skillName));
+        assertUploadSuccess(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
+                uploadQuery(false, null, "upload 0.0.1"), "file", skillName + ".zip",
+                "application/zip",
+                buildSkillZip(skillName, "0.0.1", "Body 0.0.1.", "Guide 0.0.1")), skillName);
+        postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "0.0.1"));
+        assertUploadSuccess(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
+                uploadQuery(false, null, "upload 0.0.2"), "file", skillName + ".zip",
+                "application/zip",
+                buildSkillZip(skillName, "0.0.2", "Body 0.0.2.", "Guide 0.0.2")), skillName);
+        postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "0.0.2"));
+        
+        JsonNode precheck = assertUploadResult(postMultipartRaw(CONSOLE_SKILL_PATH
+                        + "/upload/precheck", precheckQuery(), "file",
+                skillName + ".zip", "application/zip",
+                buildSkillZip(skillName, "0.0.1", "Body 0.0.4.", "Guide 0.0.4")))
+                .get("data").get(0);
+        assertEquals("VERSION_ADJUSTED", precheck.get("precheckCode").asText(),
+                precheck.toString());
+        assertEquals("0.0.1", precheck.get("parsedVersion").asText(), precheck.toString());
+        assertEquals("0.0.2", precheck.get("maxPublishedVersion").asText(),
+                precheck.toString());
+        assertEquals("0.0.3", precheck.get("targetVersion").asText(), precheck.toString());
+        assertCompactPrecheckResult(precheck);
+        
+        assertUploadSuccess(postMultipartRaw(CONSOLE_SKILL_PATH + "/upload",
+                uploadQuery(false, "0.0.4", "upload fallback"), "file", skillName + ".zip",
+                "application/zip",
+                buildSkillZip(skillName, "0.0.1", "Body 0.0.4.", "Guide 0.0.4")), skillName);
+        assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH,
+                skillVersionQuery(skillName, "0.0.4")).get("data"), skillName, "0.0.4",
+                "Body 0.0.4.", "Guide 0.0.4");
+    }
+    
+    @Test
     public void testBatchSkillUploadSuccessAndPartialFailure() throws Exception {
         String firstSkill = randomAiName("batch-a");
         String secondSkill = randomAiName("batch-b");
@@ -132,6 +170,9 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertArrayContains(data.get("succeeded"), firstSkill);
         assertArrayContains(data.get("succeeded"), secondSkill);
         assertEquals(0, data.get("failed").size(), data.toString());
+        assertEquals(2, data.get("results").size(), data.toString());
+        assertBatchSuccess(data.get("results"), firstSkill);
+        assertBatchSuccess(data.get("results"), secondSkill);
         addCleanup(() -> deleteSkillQuietly(firstSkill));
         addCleanup(() -> deleteSkillQuietly(secondSkill));
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.0"))
@@ -147,13 +188,15 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode shortVersionData = assertUploadResult(shortVersionBatch).get("data");
         assertArrayContains(shortVersionData.get("succeeded"), firstSkill);
         assertEquals(0, shortVersionData.get("failed").size(), shortVersionData.toString());
+        assertEquals(1, shortVersionData.get("results").size(), shortVersionData.toString());
+        assertBatchSuccess(shortVersionData.get("results"), firstSkill);
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(firstSkill, "1.0.1"))
                 .get("data"), firstSkill, "1.0.1", "Batch body A v2.", "guide for " + firstSkill);
 
         String validSkill = randomAiName("batch-valid");
         byte[] partialZip = buildPartiallyInvalidMultiSkillZip(validSkill, "Valid batch body.");
         JsonNode partialPrecheck = assertUploadResult(postMultipartRaw(CONSOLE_SKILL_PATH
-                        + "/upload/precheck", precheckQuery(null), "file", "partial.zip",
+                        + "/upload/precheck", precheckQuery(), "file", "partial.zip",
                 "application/zip", partialZip)).get("data");
         assertEquals(3, partialPrecheck.size(), partialPrecheck.toString());
         assertPrecheckFailure(partialPrecheck, "INVALID_SKILL", "invalid-skill/",
@@ -166,8 +209,12 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode partialData = assertUploadResult(partial).get("data");
         assertArrayContains(partialData.get("succeeded"), validSkill);
         assertEquals(2, partialData.get("failed").size(), partialData.toString());
-        assertBatchFailure(partialData.get("failed"), "invalid-skill");
-        assertBatchFailure(partialData.get("failed"), "not-a-skill");
+        assertLegacyBatchFailure(partialData.get("failed"), "invalid-skill");
+        assertLegacyBatchFailure(partialData.get("failed"), "not-a-skill");
+        assertEquals(3, partialData.get("results").size(), partialData.toString());
+        assertBatchSuccess(partialData.get("results"), validSkill);
+        assertBatchFailure(partialData.get("results"), "invalid-skill", "INVALID_SKILL");
+        assertBatchFailure(partialData.get("results"), "not-a-skill", "NOT_A_SKILL");
         addCleanup(() -> deleteSkillQuietly(validSkill));
     }
 
@@ -199,10 +246,8 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         return query;
     }
 
-    private Query precheckQuery(String targetVersion) {
-        Query query = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE);
-        addIfNotBlank(query, "targetVersion", targetVersion);
-        return query;
+    private Query precheckQuery() {
+        return Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE);
     }
 
     private void assertUploadSuccess(HttpResponse response, String skillName) {
@@ -226,6 +271,18 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         throw new AssertionError("Expected " + expected + " in " + array);
     }
 
+    private void assertBatchSuccess(JsonNode array, String expected) {
+        for (JsonNode item : array) {
+            if (expected.equals(item.get("name").asText())) {
+                assertTrue(item.get("success").asBoolean(), item.toString());
+                assertEquals("SUCCESS", item.get("errorCode").asText(), item.toString());
+                assertEquals("success", item.get("errorMessage").asText(), item.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Expected successful batch item " + expected + " in " + array);
+    }
+
     private void assertPrecheckFailure(JsonNode array, String precheckCode, String entryPath,
             String reasonFragment) {
         for (JsonNode item : array) {
@@ -238,14 +295,26 @@ public class SkillUploadConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         throw new AssertionError("Expected precheck failure " + entryPath + " in " + array);
     }
 
-    private void assertBatchFailure(JsonNode array, String name) {
+    private void assertBatchFailure(JsonNode array, String name, String errorCode) {
+        for (JsonNode item : array) {
+            if (name.equals(item.get("name").asText())) {
+                assertFalse(item.get("success").asBoolean(), item.toString());
+                assertEquals(errorCode, item.get("errorCode").asText(), item.toString());
+                assertFalse(item.get("errorMessage").asText().isBlank(), item.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Expected batch failure " + name + " in " + array);
+    }
+
+    private void assertLegacyBatchFailure(JsonNode array, String name) {
         for (JsonNode item : array) {
             if (name.equals(item.get("name").asText())) {
                 assertFalse(item.get("reason").asText().isBlank(), item.toString());
                 return;
             }
         }
-        throw new AssertionError("Expected batch failure " + name + " in " + array);
+        throw new AssertionError("Expected legacy batch failure " + name + " in " + array);
     }
 
     private void assertCompactPrecheckResult(JsonNode precheck) {
