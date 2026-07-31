@@ -21,11 +21,13 @@ import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.auth.mock.MockResourceParser;
+import com.alibaba.nacos.auth.mock.MockSuccessResourceParser;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -45,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -104,7 +107,7 @@ class GrpcProtocolAuthServiceTest {
     }
     
     @Test
-    @Secured(resource = "testResource")
+    @Secured(resource = "testResource", parser = MockResourceParser.class)
     void testParseResourceWithSpecifiedResource() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithSpecifiedResource");
         Resource actual = protocolAuthService.parseResource(namingRequest, secured);
@@ -128,8 +131,19 @@ class GrpcProtocolAuthServiceTest {
     @Secured(signType = "non-exist", parser = MockResourceParser.class)
     void testParseResourceWithNonExistTypeException() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNonExistTypeException");
+        assertThrows(NacosRuntimeException.class,
+            () -> protocolAuthService.parseResource(namingRequest, secured));
+    }
+    
+    @Test
+    @Secured(signType = SignType.NAMING, parser = MockSuccessResourceParser.class)
+    void testExplicitParserOverridesTypedParser() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testExplicitParserOverridesTypedParser");
         Resource actual = protocolAuthService.parseResource(namingRequest, secured);
-        assertEquals(Resource.EMPTY_RESOURCE, actual);
+        assertEquals("testCustomResource", actual.getName());
+        assertEquals("testCustomNs", actual.getNamespaceId());
+        assertEquals("testCustomGroup", actual.getGroup());
+        assertEquals(SignType.NAMING, actual.getType());
     }
     
     @Test
