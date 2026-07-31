@@ -72,26 +72,21 @@ public class HessianSerializer implements Serializer {
             return null;
         }
         
-        Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
-        input.setSerializerFactory(serializerFactory);
-        Object resultObject;
-        try {
-            resultObject = input.readObject();
-            input.close();
+        try (Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data))) {
+            input.setSerializerFactory(serializerFactory);
+            Object resultObject = input.readObject();
+            return (T) resultObject;
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
         }
-        return (T) resultObject;
     }
     
     @Override
     public <T> byte[] serialize(T obj) {
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-        Hessian2Output output = new Hessian2Output(byteArray);
-        output.setSerializerFactory(serializerFactory);
-        try {
+        try (Hessian2Output output = new Hessian2Output(byteArray)) {
+            output.setSerializerFactory(serializerFactory);
             output.writeObject(obj);
-            output.close();
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer encode!", e);
         }
