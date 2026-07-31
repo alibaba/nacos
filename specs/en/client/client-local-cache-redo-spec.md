@@ -144,37 +144,31 @@ Config publish/delete operations are not automatically redone by the Client SDK.
 
 ## 8. Agent And RAD Target Recovery Contract
 
-This section defines the target recovery contract for the new Agent/RAD SDK. It
-does not describe a currently implemented capability. It becomes active only
-when the Agent/RAD abilities from the
-[Agent API Spec](../ai/agent-api-spec.md) are implemented and negotiated.
+This section defines the recovery contract for the new Agent/RAD SDK. The gRPC
+path becomes active after the Agent/RAD abilities from the
+[Agent API Spec](../ai/agent-api-spec.md) are negotiated. The HTTP path uses
+the same local desired state without depending on a gRPC ability.
 
 ### 8.1 Endpoint Publication Redo Identity
 
-The SDK keeps desired Endpoint publication state per canonical publication
-group and stores the complete Batch payload needed for replay. A materialized
-registration redo key contains:
+The SDK keeps desired Endpoint publication state per publication identity and
+stores the complete Batch payload needed for replay. The redo key is:
 
 ```text
-(namespaceId, agentName, protocol, runtimeVersion,
- canonicalVersionRange, sortedCanonicalEndpointNaturalKeys)
+(namespaceId, agentName, protocol)
 ```
 
-The missing `versionRange` value is canonicalized to `[runtimeVersion]` before
-key construction. Every Endpoint key is normalized according to the
-[RAD Protocol Spec](../ai/rad-protocol-spec.md), and the set is deduplicated
-and sorted in stable ASCII order. URI input order, map order, and omitted
-default values therefore cannot create different redo identities.
+Each key stores exactly one complete `AgentEndpointRegistrationBatch`.
+Register copies and validates every Endpoint before atomically replacing the
+old record with the submitted complete Batch; it does not merge Endpoint
+upserts. `runtimeVersion`, `versionRange`, and every Endpoint payload field are
+record content and may all be replaced by the next Register.
 
-The SDK maintains one canonical Endpoint map for each
-`(namespaceId, agentName, protocol, runtimeVersion, canonicalVersionRange)`
-group. Register merges the submitted Endpoint upserts into that map and
-atomically replaces the materialized redo record. Deregister removes each
-submitted natural key from every local group for the same namespace, Agent,
-and protocol, matching RAD's cross-binding deregistration semantics. The redo
-payload retains complete URI, priority, weight, and metadata values; these
-non-identity values are not discarded merely because they are absent from the
-redo key.
+Deregister removes members from that desired Batch by Endpoint natural key.
+When Endpoints remain, the SDK sends the complete remaining Batch through
+Register. When none remain, it sends whole-publication deregistration and
+removes the desired record after completion. The redo payload retains complete
+URI, priority, weight, and metadata values.
 
 ### 8.2 HTTP And gRPC Publisher Recovery
 
@@ -195,32 +189,29 @@ old connection unregistered, and replays complete desired groups under the new
 connection. HTTP and gRPC publisher records stay separate; one transport must
 not deregister contributions owned by the other.
 
-### 8.3 Watch Recovery Identity
+### 8.3 Local Polling Subscription Identity
 
-The canonical local Watch key contains:
+The first SDK does not create a server Watch or store a connection-scoped
+`watchKey`. Its canonical local polling-subscription key contains:
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
 Reference canonicalization preserves the distinction between an exact
-version, a label, and latest. Filter canonicalization applies defaults and
-sorts and deduplicates set-valued fields. Listener identity is the same
-listener instance used to cancel the Watch.
+version, a label, and latest. Filter collection and map contents participate
+in value equality. Listener identity is the same listener instance used to
+cancel the subscription. The SDK periodically performs the same Discover;
+gRPC reconnect does not add subscription redo because the next poll naturally
+uses the new connection. A missing target retains the poll without delivering
+an empty snapshot. A changed resolved version, `contentDigest`, or any
+`sourceRevision` atomically replaces the cache and delivers a complete result.
 
-The SDK stores the connection-scoped opaque `watchKey` returned by
-`AgentSubscribeResponse` alongside this canonical local identity. Incoming
-`SNAPSHOT` and `TERMINATED` notifications use that wire key only for lookup;
-it is not parsed or used as the redo identity.
-
-On gRPC disconnect, the SDK marks each Watch record unregistered. After a new
-connection is established, it restores the same canonical local Watch keys,
-discards each old wire key, and stores the new `watchKey` returned with the
-initial complete result. A `TERMINATED` notification with
-`errorCode=NOT_FOUND` removes only the identified Watch record and its cached
-snapshot, so it is not retried on later reconnects. Detailed replacement,
-acknowledgement, missed-push, and terminal behavior is defined by the
-[Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md).
+The server Watch/Push design in the
+[Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md) is a separate
+future contract. Agent API, abilities, and transport payloads must be updated
+before that contract is implemented; wire Watch state cannot be inferred from
+the local polling identity.
 
 ## 9. Shutdown
 

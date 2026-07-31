@@ -125,31 +125,28 @@ publish/delete 操作。
 
 ## 8. Agent 与 RAD 目标恢复契约
 
-本节定义新 Agent/RAD SDK 的目标恢复契约，不表示当前已经实现该能力。只有
-[Agent API 规范](../ai/agent-api-spec.md)中的 Agent/RAD 能力完成实现并经过协商后，
-本节才成为生效契约。
+本节定义新 Agent/RAD SDK 的恢复契约。gRPC 路径在
+[Agent API 规范](../ai/agent-api-spec.md)中的 Agent/RAD 能力完成协商后生效；HTTP
+路径使用同一份本地期望状态，但不依赖 gRPC ability。
 
 ### 8.1 Endpoint 发布 Redo 身份
 
-SDK 按规范化 Publication 分组维护期望 Endpoint 发布状态，并保存重放所需的完整 Batch
-Payload。物化后的注册 redo key 包含：
+SDK 按 Publication 身份维护期望 Endpoint 发布状态，并保存重放所需的完整 Batch
+Payload。Redo key 固定为：
 
 ```text
-(namespaceId, agentName, protocol, runtimeVersion,
- canonicalVersionRange, sortedCanonicalEndpointNaturalKeys)
+(namespaceId, agentName, protocol)
 ```
 
-构造 Key 前，缺失的 `versionRange` 规范化为 `[runtimeVersion]`。每个 Endpoint Key
-按 [RAD 协议规范](../ai/rad-protocol-spec.md)进行规范化，集合去重后按稳定 ASCII 顺序
-排序。因此 URI 输入顺序、Map 顺序和省略的缺省值不会产生不同 redo 身份。
+每个 key 只保存一份完整 `AgentEndpointRegistrationBatch`。Register 先复制并校验
+全部 Endpoint，再以提交的完整 Batch 原子替换旧记录；它不合并 Endpoint upsert。
+`runtimeVersion`、`versionRange` 和全部 Endpoint payload 都属于该记录内容，后一次
+Register 可以完整更换它们。
 
-SDK 为每个
-`(namespaceId, agentName, protocol, runtimeVersion, canonicalVersionRange)`
-分组维护一个规范化 Endpoint Map。Register 把提交的 Endpoint Upsert 合并到该 Map，
-并原子替换物化后的 redo record。Deregister 按 RAD 跨 Binding 注销语义，从相同
-namespace、Agent 和 protocol 的全部本地分组中移除每个已提交自然键。Redo Payload
-保留完整 URI、Priority、Weight 和 Metadata；不能因为这些非身份值不进入 redo key
-就丢弃它们。
+Deregister 按 Endpoint 自然键从这份期望 Batch 中删除成员。仍有 Endpoint 时，SDK
+通过 Register 发送完整剩余 Batch；没有 Endpoint 时发送整份 Publication 注销并清除
+成功完成的期望记录。Redo Payload 必须保留 URI、Priority、Weight 和 Metadata 等完整
+公开值。
 
 ### 8.2 HTTP 与 gRPC Publisher 恢复
 
@@ -166,26 +163,24 @@ gRPC Endpoint 意图归属于当前 connection id。Reconnect 后，SDK 获取�
 期望分组。HTTP 与 gRPC Publisher record 必须隔离；一种 Transport 不得注销另一种
 Transport 拥有的 Contribution。
 
-### 8.3 Watch 恢复身份
+### 8.3 本地轮询订阅身份
 
-规范化本地 Watch Key 包含：
+首版 SDK 不创建服务端 Watch，也不保存 Connection 维度 `watchKey`。规范化本地轮询
+订阅 Key 包含：
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
-Reference 规范化保持精确 Version、Label 和 Latest 之间的区别。Filter 规范化应用缺省值，
-并对集合字段排序和去重。Listener identity 是取消 Watch 时使用的同一 Listener 实例。
+Reference 规范化保持精确 Version、Label 和 Latest 之间的区别。Filter 的集合和 Map
+内容用于值相等比较，Listener identity 是取消订阅时使用的同一 Listener 实例。SDK 周期
+执行相同 Discover；gRPC reconnect 不增加订阅 redo，因为下一次轮询自然使用新连接。
+目标不存在时保留轮询但不投递空快照。解析 Version、`contentDigest` 或任一
+`sourceRevision` 改变时，SDK 原子替换缓存并投递完整结果。
 
-SDK 将 `AgentSubscribeResponse` 返回的 Connection 维度不透明 `watchKey` 与该规范化本地
-身份一同保存。收到的 `SNAPSHOT` 和 `TERMINATED` 通知只使用 Wire Key 定位记录；SDK
-不解析该 Key，也不把它作为 Redo 身份。
-
-gRPC Disconnect 时，SDK 将每条 Watch record 标记为未注册。新 Connection 建立后，
-它恢复相同的规范化本地 Watch Key，丢弃各旧 Wire Key，并保存随初始完整结果返回的新
-`watchKey`。携带 `errorCode=NOT_FOUND` 的 `TERMINATED` 通知只删除所标识的 Watch
-record 及其缓存快照，因此后续 Reconnect 不再重试。完整替换、ACK、Missed Push 和终止
-行为由[运行时推送与重连规范](runtime-push-reconnect-spec.md)定义。
+[运行时推送与重连规范](runtime-push-reconnect-spec.md)中的服务端 Watch/Push 是独立
+后续契约；实现该契约前必须先更新 Agent API、能力位和传输 Payload，不能从本地轮询
+身份推导 Wire Watch state。
 
 ## 9. Shutdown
 

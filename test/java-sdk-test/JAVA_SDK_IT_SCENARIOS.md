@@ -82,6 +82,20 @@ left as `Partial` or `Pending` without a documented reason.
 | Skill APIs | Download by latest/version/label, subscribe/unsubscribe, missing skill behavior, gRPC transport unsupported query behavior, invalid name/listener, and ZIP byte contract. | Partial | gRPC subscribe/query unsupported error, missing download controlled exception, invalid name/listener, and unsubscribe cleanup are covered. Functional ZIP contract and version/label download remain because the public Java SDK does not expose a stable upload/create Skill API for standalone setup. |
 | AgentSpec APIs | Load, subscribe/unsubscribe, missing AgentSpec behavior, gRPC transport unsupported query behavior, invalid name/listener, and assembled resource contract. | Partial | gRPC load/subscribe unsupported error, invalid name/listener, and unsubscribe cleanup are covered. Functional assembled resource contract remains because the public Java SDK does not expose a create/upload AgentSpec API and the client query path depends on AI resource metadata. |
 
+## AgentDiscoveryService
+
+The detailed operation, boundary, failure, and compound matrix is maintained in
+[`AGENT_DISCOVERY_SDK_IT_SCENARIOS.md`](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md).
+
+| Public SDK surface | Required scenarios | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| Factory, namespace, and lifecycle | Default/custom namespace binding, caller isolation, invalid mismatch, inactive/active/repeated shutdown. | Covered | Default and custom service creation, omitted/explicit/mismatched namespace behavior, caller-owned request and Batch isolation, active HTTP publication cleanup, and repeated shutdown are covered in standalone IT; deterministic resource cleanup is also covered by unit tests. |
+| Search | Default, literal name, tags-all, protocols-any, combined filters, pagination, empty result, validation, and transport parity. | Covered | Individual/default/combined/empty/paged searches, local null/page/duplicate/protocol boundaries, namespace isolation, and HTTP/gRPC parity are covered. |
+| Discover | Latest/exact/label resolution, unfiltered and combined filters, declared/runtime source shape, not found, validation, and transport parity. | Covered | Latest/exact/label and combined-filter results, full unfiltered interface shape, declared/runtime source projection, not-found mapping, ambiguous/null reference validation, and HTTP/gRPC parity are covered. |
+| Definition and Version evolution | Endpoint-first and definition-first ordering, latest/exact/label consistency, catalog ordering, offline/online latest recalculation, and publication ranges. | Covered | Standalone IT covers Versions 1 through 3, Endpoint-first and definition-first transitions, latest/exact/label polling behavior, catalog ordering, latest recalculation through offline/online, and replacement between two inclusive Version ranges. |
+| Local polling subscription | Existing and missing initial target, full replacement callbacks, fingerprint de-duplication, unsubscribe, and listener isolation/failure. | Covered | Standalone IT covers subscribe-before-create, subscribe-existing, Runtime source-revision replacement, unchanged de-duplication, and post-unsubscribe suppression. Listener identity, failure, scheduling, shutdown races, digest/version revisions, and poll failures use deterministic unit tests. |
+| Complete Endpoint publication | Pre-registration, register/replace/idempotence, partial/final/unknown/repeated deregistration, multiple protocols/publishers, HTTP heartbeat identity, gRPC redo, validation, and shutdown. | Covered | Stable standalone IT covers pre-registration, complete replacement convergence, canonical natural-key partial removal, final/unknown/repeated removal, protocol isolation, two-publisher aggregation, HTTP publication observed through gRPC, active HTTP shutdown, and public local boundaries. An opt-in directed IT stops and restarts the real server and verifies gRPC reconnect redo plus HTTP `50404` replay through the same SDK process. Other heartbeat failures, retry classification, rollback, and redo races use deterministic unit tests. |
+
 ## LockService
 
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
@@ -94,7 +108,6 @@ left as `Partial` or `Pending` without a documented reason.
 
 | Public SDK surface | Required scenarios | Current status | Notes |
 | --- | --- | --- | --- |
-| `AgentDiscoveryService` | Namespace-bound Search, Discover, Watch, Endpoint publication, local validation, response shapes, reconnect, cache, and redo behavior. | Pending | This change only adds the Agent/RAD contract models and deterministic local validation, covered by `nacos-api` unit tests. No SDK service method, transport binding, capability bit, or server behavior exists yet, so standalone Java SDK IT begins with the later `AgentDiscoveryService` implementation. |
 | Deprecated `NamingMaintainService` | Create/query/update/delete service and update instance if the deprecated client can still be created in the standalone IT. | Pending | Listed separately because the API is deprecated after 3.3.0. |
 | Maintainer client SDK interfaces | Maintainer API behavior, authorization assumptions, validation, and controlled errors. | Pending | Needs a separate batch because it uses a different artifact and service model. |
 
@@ -106,6 +119,3 @@ left as `Partial` or `Pending` without a documented reason.
 2. Add functional Prompt/Skill/AgentSpec Java SDK IT after the public SDK
    exposes stable create/upload setup APIs, or after the standalone framework
    provides an approved setup helper for AI resource metadata.
-3. Add the complete Agent discovery and Endpoint publication scenario matrix
-   when `AgentDiscoveryService` and its negotiated transport bindings are
-   implemented; model-only unit tests do not count as SDK IT coverage.
