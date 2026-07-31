@@ -17,8 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
@@ -60,21 +58,14 @@ public class JRaftUtils {
     
     public static RpcServer initRpcServer(JRaftServer server, PeerId peerId) {
         GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
-        raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(),
-            GetRequest.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(WriteRequest.class.getName(),
             WriteRequest.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(ReadRequest.class.getName(),
             ReadRequest.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(Response.class.getName(),
             Response.getDefaultInstance());
-        
+
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
-        registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
-        registry.registerResponseInstance(GetRequest.class.getName(),
-            Response.getDefaultInstance());
-        
         registry.registerResponseInstance(WriteRequest.class.getName(),
             Response.getDefaultInstance());
         registry.registerResponseInstance(ReadRequest.class.getName(),

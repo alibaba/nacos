@@ -360,10 +360,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
         com.alibaba.nacos.consistency.entity.ReadRequest.Builder.class,
         com.alibaba.nacos.consistency.entity.Response.class,
         com.alibaba.nacos.consistency.entity.Response.Builder.class,
-        com.alibaba.nacos.consistency.entity.GetRequest.class,
-        com.alibaba.nacos.consistency.entity.GetRequest.Builder.class,
-        com.alibaba.nacos.consistency.entity.Log.class,
-        com.alibaba.nacos.consistency.entity.Log.Builder.class,
         // grpc
         com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.class,
         com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamBlockingStub.class,
@@ -512,9 +508,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
         com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
         com.alibaba.nacos.consistency.entity.WriteRequest.class,
         com.alibaba.nacos.consistency.entity.ReadRequest.class,
-        com.alibaba.nacos.consistency.entity.Response.class,
-        com.alibaba.nacos.consistency.entity.GetRequest.class,
-        com.alibaba.nacos.consistency.entity.Log.class);
+        com.alibaba.nacos.consistency.entity.Response.class);
     // endregion
     
     private final String[] resourcePattern = {AotConfiguration.reflectToNativeLibraryLoader(),

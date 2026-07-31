@@ -399,11 +399,7 @@
                                 --initialize-at-run-time=com.alibaba.nacos.consistency.entity.ReadRequest$Builder
                                 --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Response
                                 --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Response$Builder
-                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.GetRequest
-                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.GetRequest$Builder
-                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Log
-                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Log$Builder
-                                
+
                                 --initialize-at-run-time=com.alipay.sofa.jraft.entity.LocalFileMetaOutter$LocalFileMeta
                                 --initialize-at-run-time=com.alipay.sofa.jraft.rpc.ProtobufMsgFactory
                                 
