@@ -47,7 +47,9 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
     public static final String PROMPT_PATH = "/ai/prompt";
     
-    public static final String AGENT_SPEC_PATH = "/ai/agentSpec";
+    public static final String AGENT_SPEC_PATH = "/ai/agentspecs";
+    
+    private static final String AGENT_SPEC_LIST_PATH = AGENT_SPEC_PATH + "/list";
     
     private static final String AGENT_CARD_PARAM = "agentCard";
     
@@ -76,7 +78,7 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             return getSkillName(request);
         } else if (url.contains(PROMPT_PATH)) {
             return getPromptName(request);
-        } else if (url.contains(AGENT_SPEC_PATH)) {
+        } else if (isAgentSpecPath(url)) {
             return getAgentSpecName(request);
         }
         return StringUtils.EMPTY;
@@ -115,6 +117,9 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     }
     
     private String getAgentSpecName(HttpServletRequest request) {
+        if (containsCompletePath(request.getRequestURI(), AGENT_SPEC_LIST_PATH)) {
+            return StringUtils.EMPTY;
+        }
         String agentSpecName = request.getParameter("agentSpecName");
         return StringUtils.isBlank(agentSpecName) ? StringUtils.EMPTY : agentSpecName;
     }
@@ -131,9 +136,21 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             properties.setProperty(AI_TYPE, AI_TYPE_SKILL);
         } else if (url.contains(PROMPT_PATH)) {
             properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
-        } else if (url.contains(AGENT_SPEC_PATH)) {
+        } else if (isAgentSpecPath(url)) {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT_SPEC);
         }
         return properties;
+    }
+    private boolean isAgentSpecPath(String url) {
+        return containsCompletePath(url, AGENT_SPEC_PATH);
+    }
+    
+    private boolean containsCompletePath(String url, String path) {
+        int index = url.indexOf(path);
+        if (index < 0) {
+            return false;
+        }
+        int end = index + path.length();
+        return end == url.length() || url.charAt(end) == '/';
     }
 }

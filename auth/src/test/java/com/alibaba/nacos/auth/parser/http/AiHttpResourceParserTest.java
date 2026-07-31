@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -303,20 +304,70 @@ class AiHttpResourceParserTest {
     
     @Test
     @Secured(signType = "ai")
-    void testGetPropertiesForAgentSpec() throws NoSuchMethodException {
+    void testParseAgentSpecDetail() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
-        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agentSpec/list");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agentspecs");
         when(request.getParameter(eq("agentSpecName"))).thenReturn("my-spec");
         when(request.getParameterMap()).thenReturn(new HashMap<>());
         
         Resource actual = resourceParser.parse(request, secured);
         
+        assertEquals("my-spec", actual.getName());
         assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT_SPEC,
             actual.getProperties().getProperty(
                 com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
     }
     
+    @Test
+    @Secured(signType = "ai")
+    void testParseAgentSpecListAsNamespaceRange() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/console/ai/agentspecs/list");
+        when(request.getParameter(eq("agentSpecName"))).thenReturn("filter-only-spec");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT_SPEC,
+            actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testAgentSpecPathRequiresPluralSegment() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agentSpec/list");
+        when(request.getParameter(eq("agentSpecName"))).thenReturn("legacy-spec");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertNull(actual.getProperties().getProperty(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testAgentSpecPathRequiresSegmentBoundary() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/agentspecs-extra");
+        when(request.getParameter(eq("agentSpecName"))).thenReturn("wrong-spec");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertNull(actual.getProperties().getProperty(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];
