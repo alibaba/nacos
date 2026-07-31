@@ -273,7 +273,7 @@ public class AgentSpecAdminController {
     @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
-        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.AI,
         apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();

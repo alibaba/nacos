@@ -159,7 +159,8 @@ public class ConsoleA2aController {
      */
     @Since("3.1.0")
     @GetMapping("/version/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI,
+        apiType = ApiType.CONSOLE_API)
     public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm)
         throws NacosException {
         agentForm.validate();
