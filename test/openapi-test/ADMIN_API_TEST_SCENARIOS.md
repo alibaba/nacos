@@ -32,6 +32,14 @@ boundary/validation behavior, and controlled exception/error handling.
 | Partial | The current IT verifies representative behavior, but important public API scenarios remain. |
 | Pending | No IT currently verifies this public API scenario. |
 
+## Authorization Metadata Coverage
+
+The standalone OpenAPI IT profile does not enable Admin API authorization.
+Functional scenarios therefore remain unchanged for authorization-only fixes.
+Focused module tests verify the corrected `@Secured` metadata for Config
+Capacity, Core Server Loader, and AI Agent/AgentSpec/Prompt/Skill
+force-publish endpoints.
+
 ## Config
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |

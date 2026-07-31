@@ -307,8 +307,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @GetMapping("/listener/ip")
-    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ,
-        signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG,
+        apiType = ApiType.CONSOLE_API)
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
         @RequestParam(value = "all", required = false) boolean all,
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -425,7 +425,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @DeleteMapping("/beta")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG,
+        apiType = ApiType.CONSOLE_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
         throws NacosException {
         configForm.validate();
@@ -453,7 +454,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @GetMapping("/beta")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG,
+        apiType = ApiType.CONSOLE_API)
     public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();

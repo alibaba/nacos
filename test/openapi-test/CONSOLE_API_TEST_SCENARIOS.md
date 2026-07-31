@@ -32,6 +32,14 @@ boundary/validation behavior, and controlled exception/error handling.
 | Partial | The current IT verifies representative behavior, but important public API scenarios remain. |
 | Pending | No IT currently verifies this public API scenario. |
 
+## Authorization Metadata Coverage
+
+The standalone OpenAPI IT profile does not enable Console API authorization.
+Functional scenarios therefore remain unchanged for authorization-only fixes.
+A focused Console module test verifies the corrected `@Secured` metadata for
+Cluster nodes, Config listener/beta, A2A version list, AI force-publish, and
+Copilot configuration endpoints.
+
 ## Core, Health, Plugin, And Server
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |

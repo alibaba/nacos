@@ -32,6 +32,10 @@ coverage before adding or debugging an IT.
   handling coverage when those scenario groups are practical.
 - If an exposed success path is intentionally not executed because it mutates
   risky runtime or storage state, record the reason in the scenario cell.
+- When a change only corrects authorization metadata without changing the HTTP
+  request or response contract, keep the functional scenario status unchanged,
+  record the affected surface in its scenario document, and verify the exact
+  `@Secured` tuple with a focused module test.
 
 ## Status Legend
 

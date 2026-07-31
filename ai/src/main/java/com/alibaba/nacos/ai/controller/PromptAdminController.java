@@ -250,7 +250,7 @@ public class PromptAdminController {
     @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = Constants.Prompt.ADMIN_PATH
-        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.AI,
         apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
