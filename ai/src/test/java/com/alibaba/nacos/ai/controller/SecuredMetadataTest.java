@@ -18,6 +18,9 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.auth.parser.http.AgentSpecCardHttpResourceParser;
+import com.alibaba.nacos.auth.parser.http.AgentSpecNameHttpResourceParser;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.jupiter.api.Test;
@@ -42,6 +45,14 @@ class SecuredMetadataTest {
             "/v3/admin/ai/skills/force-publish");
     }
     
+    @Test
+    void testAgentSpecResourceParsers() {
+        assertParser(AgentSpecAdminController.class, "updateDraft",
+            AgentSpecCardHttpResourceParser.class, ApiType.ADMIN_API);
+        assertParser(AgentSpecClientController.class, "get",
+            AgentSpecNameHttpResourceParser.class, ApiType.OPEN_API);
+    }
+    
     private void assertSecured(Class<?> controllerClass, String methodName, String resource) {
         Method method = Arrays.stream(controllerClass.getDeclaredMethods())
             .filter(candidate -> methodName.equals(candidate.getName()))
@@ -53,5 +64,18 @@ class SecuredMetadataTest {
         assertEquals(ActionTypes.WRITE, secured.action());
         assertEquals(SignType.AI, secured.signType());
         assertEquals(ApiType.ADMIN_API, secured.apiType());
+    }
+    
+    private void assertParser(Class<?> controllerClass, String methodName,
+        Class<? extends ResourceParser> parser, ApiType apiType) {
+        Method method = Arrays.stream(controllerClass.getDeclaredMethods())
+            .filter(candidate -> methodName.equals(candidate.getName()))
+            .findFirst()
+            .orElseThrow();
+        Secured secured = method.getAnnotation(Secured.class);
+        assertNotNull(secured);
+        assertEquals(parser, secured.parser());
+        assertEquals(SignType.AI, secured.signType());
+        assertEquals(apiType, secured.apiType());
     }
 }

@@ -76,7 +76,7 @@ content changes without downloading the full payload every cycle.
 
 - **Polling interval**: configurable via `nacosAiAgentSpecCacheUpdateInterval`;
   default 10 000 ms.
-- **Request**: `GET /v3/client/ai/agentspec?namespaceId=&name=&md5=<cached-md5>`.
+- **Request**: `GET /v3/client/ai/agentspecs?namespaceId=&name=&md5=<cached-md5>`.
 - **304 Not Modified**: server compares the request MD5 against the stored
   `contentMd5` (computed at publish time). If they match the server returns
   HTTP 304 with an `ETag` header; the client keeps its local cache unchanged.
@@ -87,6 +87,23 @@ content changes without downloading the full payload every cycle.
 - **Legacy backfill**: for versions published before the contentMd5 field
   existed, the server lazily computes and stores the MD5 on the first
   conditional query.
+
+### 5.2 Authorization Resource Resolution
+
+AgentSpec HTTP APIs use the plural `/ai/agentspecs` path segment and retain
+their declared `AI` sign type and API type while resolving the authorization
+resource:
+
+- regular Admin and Console operations resolve the resource name from
+  `agentSpecName`;
+- `GET .../agentspecs/list` is a namespace-range operation and therefore does
+  not resolve a single resource name; row visibility is enforced by the
+  visibility plugin;
+- `PUT .../agentspecs/draft` resolves the authoritative target from
+  `agentSpecCard.name`, because `agentSpecName` is optional and the card is the
+  object written by the service;
+- `GET /v3/client/ai/agentspecs` resolves the resource from the client `name`
+  parameter.
 
 ## 6. Evolution Note
 

@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.controller.v3;
 
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.http.AgentSpecCardHttpResourceParser;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleA2aController;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleAgentController;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleAgentSpecController;
@@ -70,6 +71,19 @@ class SecuredMetadataTest {
             "/v3/console/ai/prompt/force-publish", ActionTypes.WRITE, SignType.AI);
         assertSecured(ConsoleSkillController.class, "forcePublish",
             "console/skills", ActionTypes.WRITE, SignType.AI);
+    }
+    
+    @Test
+    void testConsoleAgentSpecUpdateParser() {
+        Method method = Arrays.stream(ConsoleAgentSpecController.class.getDeclaredMethods())
+            .filter(candidate -> "updateDraft".equals(candidate.getName()))
+            .findFirst()
+            .orElseThrow();
+        Secured secured = method.getAnnotation(Secured.class);
+        assertNotNull(secured);
+        assertEquals(AgentSpecCardHttpResourceParser.class, secured.parser());
+        assertEquals(SignType.AI, secured.signType());
+        assertEquals(ApiType.CONSOLE_API, secured.apiType());
     }
     
     private void assertSecured(Class<?> controllerClass, String methodName, String resource,

@@ -38,7 +38,9 @@ The standalone OpenAPI IT profile does not enable Console API authorization.
 Functional scenarios therefore remain unchanged for authorization-only fixes.
 A focused Console module test verifies the corrected `@Secured` metadata for
 Cluster nodes, Config listener/beta, A2A version list, AI force-publish, and
-Copilot configuration endpoints.
+Copilot configuration endpoints. AgentSpec parser tests additionally verify
+plural path recognition, namespace-range list semantics, and draft target
+resolution from `agentSpecCard.name`.
 
 ## Core, Health, Plugin, And Server
 

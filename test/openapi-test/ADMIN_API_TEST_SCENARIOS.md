@@ -38,7 +38,9 @@ The standalone OpenAPI IT profile does not enable Admin API authorization.
 Functional scenarios therefore remain unchanged for authorization-only fixes.
 Focused module tests verify the corrected `@Secured` metadata for Config
 Capacity, Core Server Loader, and AI Agent/AgentSpec/Prompt/Skill
-force-publish endpoints.
+force-publish endpoints. AgentSpec parser tests additionally verify plural
+path recognition, namespace-range list semantics, and draft target resolution
+from `agentSpecCard.name`.
 
 ## Config
 
