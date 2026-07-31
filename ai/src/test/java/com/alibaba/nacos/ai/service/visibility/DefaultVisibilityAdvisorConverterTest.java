@@ -266,18 +266,18 @@ class DefaultVisibilityAdvisorConverterTest {
     }
     
     @Test
-    void convertShouldAddAuthorizedResourcesIntoCondition() {
+    void convertShouldRecordAuthorizedResourceNamesButNotRestrictAllPredicate() {
+        // ALL OR G is still ALL: authorized resources must not narrow an unrestricted predicate.
         QueryCondition condition = new QueryCondition();
         QueryAdvisor advisor = advisor(BaseVisibilityPredicate.ALL);
-        AuthorizedResources authorizedResources = new AuthorizedResources();
-        authorizedResources.setResources(List.of("skillA", "skillB"));
-        advisor.setAuthorizedPredicate(authorizedResources);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA", "skillB"));
         
         QueryCondition actual =
             converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
         
         assertEquals(List.of("skillA", "skillB"), actual.getAuthorizedResourceNames());
-        assertEquals(List.of("skillA", "skillB"), actual.getOrGroup().get("name"));
+        assertTrue(actual.getOrGroup().isEmpty());
+        assertFalse(actual.isAlwaysEmpty());
     }
     
     @Test
@@ -285,9 +285,7 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition condition = new QueryCondition();
         condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
         QueryAdvisor advisor = advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER);
-        AuthorizedResources authorizedResources = new AuthorizedResources();
-        authorizedResources.setResources(List.of("skillA"));
-        advisor.setAuthorizedPredicate(authorizedResources);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
         
         QueryCondition actual =
             converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
@@ -295,6 +293,136 @@ class DefaultVisibilityAdvisorConverterTest {
         assertTrue(actual.getOwner() == null || actual.getOwner().isEmpty());
         assertEquals("userA", actual.getOrGroup().get("owner"));
         assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+    }
+    
+    // ---- Issue #15603: B OR G union, per predicate ----
+    
+    @Test
+    void convertShouldUnionOwnerBranchWithAuthorizedResourcesWhenOwnerBlank() {
+        // Case 1: OWNER + G, owner not yet set -> owner = currentUser OR name IN G.
+        QueryCondition condition = new QueryCondition();
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.OWNER);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertTrue(actual.getOwner() == null || actual.getOwner().isEmpty());
+        assertEquals("userA", actual.getOrGroup().get("owner"));
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+        assertFalse(actual.isAlwaysEmpty());
+    }
+    
+    @Test
+    void convertShouldReduceOwnerToAuthorizedResourcesWhenIdentityMismatched() {
+        // OWNER conflict rescued by G: B alone is impossible, B OR G collapses to G.
+        QueryCondition condition = new QueryCondition();
+        condition.setOwner("anotherUser");
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.OWNER);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertFalse(actual.isAlwaysEmpty());
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+    }
+    
+    @Test
+    void convertShouldStayAlwaysEmptyForOwnerPredicateWhenIdentityBlankEvenWithAuthorizedResources() {
+        // Anonymous callers are excluded from the authorization model: G must not rescue them.
+        QueryCondition condition = new QueryCondition();
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.OWNER);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, null, advisor, new VisibilityQueryContext());
+        
+        assertTrue(actual.isAlwaysEmpty());
+    }
+    
+    @Test
+    void convertShouldUnionPublicScopeWithAuthorizedResourcesWhenScopeBlank() {
+        // Case 2: PUBLIC + G, scope not yet set -> scope = PUBLIC OR name IN G.
+        QueryCondition condition = new QueryCondition();
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.PUBLIC);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertTrue(actual.getScope() == null || actual.getScope().isEmpty());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual.getOrGroup().get("scope"));
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+        assertFalse(actual.isAlwaysEmpty());
+    }
+    
+    @Test
+    void convertShouldReduceScopeToAuthorizedResourcesWhenScopeConflicts() {
+        // PUBLIC conflict rescued by G: B alone is impossible, B OR G collapses to G, while the
+        // pre-existing (non-visibility) scope filter is left untouched.
+        QueryCondition condition = new QueryCondition();
+        condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.PUBLIC);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertFalse(actual.isAlwaysEmpty());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual.getScope());
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+    }
+    
+    @Test
+    void convertShouldNotRestrictAllPredicateEvenWithAuthorizedResources() {
+        // Case 3: ALL + G -> no visibility restriction, since ALL OR G is still ALL.
+        QueryCondition condition = new QueryCondition();
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.ALL);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertTrue(actual.getOrGroup().isEmpty());
+        assertFalse(actual.isAlwaysEmpty());
+    }
+    
+    @Test
+    void convertShouldRescuePublicAndOwnerConflictWithAuthorizedResources() {
+        // Case 4: PUBLIC_AND_OWNER + G, scope and owner both already conflict -> previously this
+        // forced alwaysEmpty before G was considered; now B OR G collapses to G.
+        QueryCondition condition = new QueryCondition();
+        condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        condition.setOwner("anotherUser");
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor, new VisibilityQueryContext());
+        
+        assertFalse(actual.isAlwaysEmpty());
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
+    }
+    
+    @Test
+    void convertShouldStillMarkAlwaysEmptyForConflictsWhenNoAuthorizedResources() {
+        // Existing behavior is unchanged when AuthorizedResources.resources is empty.
+        QueryCondition condition = new QueryCondition();
+        condition.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        condition.setOwner("anotherUser");
+        
+        QueryCondition actual =
+            converter.convert(condition, "userA", advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER),
+                new VisibilityQueryContext());
+        
+        assertTrue(actual.isAlwaysEmpty());
+    }
+    
+    private AuthorizedResources authorizedResources(String... names) {
+        AuthorizedResources authorizedResources = new AuthorizedResources();
+        authorizedResources.setResources(List.of(names));
+        return authorizedResources;
     }
     
     private QueryAdvisor advisor(BaseVisibilityPredicate predicate) {
