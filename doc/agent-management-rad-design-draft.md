@@ -1952,11 +1952,11 @@ flowchart LR
 | 阻塞检查 | 现有可见性 QueryCondition、派生 `versionCatalog`、精确 Version row、经 digest 校验的 Storage 读取、Endpoint canonicalizer 和 Runtime EndpointSet 已满足主流程；本阶段不需要修改共享底座。若实现必须改变这些契约才能正确返回结果，则停止编码并提交维护者决策 |
 | 验收门禁 | 新增 production Java 可执行行 UT line coverage 100%；`ai` Spotless、编译、相关单测和 JaCoCo XML 验证；实际 production diff 只能包含本阶段白名单，且不通过排除文件或无业务断言规避覆盖率 |
 
-#### 当前阶段范围留痕：Client HTTP/gRPC API
+#### 已完成阶段范围留痕：Client HTTP/gRPC API
 
 | 项目 | 本阶段结论 |
 |---|---|
-| 阶段状态 | 实现与本地验收已完成，待提交和 PR 评审 |
+| 阶段状态 | 已完成并合入 `develop`（PR #15622） |
 | 规范依据 | Agent API Spec 第 1、2.1～2.6 章，RAD Protocol Spec 第 2～7 章，Agent Storage Spec 第 4～7 章，HTTP API、鉴权、错误规范，gRPC API Spec，以及本文第 4.1.4、4.2.4、5.1、5.2.2～5.2.5、7.1 节 |
 | 当前目标 | 完成 `/v3/client/ai/agents` 的 Search、Discover、Endpoint 完整批次注册、整 publication 注销和 HTTP Publisher heartbeat，并提供等价的 Search、Discover、Endpoint 注册/注销 gRPC Payload 与 Handler；本阶段客户端发现只采用主动轮询，不实现服务端 Watch/Push |
 | 允许范围 | `api` 模块新增 Agent/RAD Client API 绑定模型、gRPC Payload/Response 与 Payload SPI，`ErrorCode` 仅增加未占用的 `50404` HTTP Client 不存在错误，`AbilityKey` 仅定义 Agent Discovery/Endpoint 两个协商键但暂不加入服务端公开能力表；`ai` 模块新增 Client Form、Controller、HTTP Client 生命周期编排、gRPC Handler/参数提取及测试；`auth` 仅允许扩展 `AiGrpcResourceParser` 读取新 Agent gRPC 请求；同步 OpenAPI IT 场景、用例、覆盖登记和直接相关 Specs/本文 |
@@ -1964,6 +1964,19 @@ flowchart LR
 | 已知问题 | Watch/Push 继续作为正式规范和设计中的后续演进目标，本阶段不删除其设计；Java SDK 将在下一阶段基于 Discover 主动轮询实现首版订阅语义。能力位先形成稳定 wire key，待 Java SDK 与传输选择完成后再加入 `ServerAbilities` 并由客户端消费 |
 | 阻塞检查 | 维护者已确认可扩展 `AiGrpcResourceParser`；Endpoint HTTP API 使用普通 Form，HTTP 参数提取直接复用现有机制，不修改 HTTP common；现有 `HttpConnectionBasedClientManager`、Agent Runtime Registry 和 RAD Application Service 可直接复用。若实现仍要求修改上述禁止范围，则停止编码并提交维护者决策 |
 | 验收门禁 | 新增或修改 production Java 可执行行 UT line coverage 100%；相关 `api`、`ai`、`auth` Spotless、编译、单测和 JaCoCo XML 验证；OpenAPI test-compile、Client Agent 独立 IT 及场景/覆盖登记；最终 diff 逐项复核白名单 |
+
+#### 已完成阶段范围留痕：Java Client SDK
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 首版主动轮询范围已完成；10 个稳定 standalone Java SDK IT 同时通过默认 JSON 与 Jackson 3 适配器，并通过一次同时保留 gRPC、HTTP Publisher 与轮询订阅的真实单机停服/重启定向 IT |
+| 规范依据 | Agent API Spec 第 2 章、RAD Protocol Spec 第 3～7 章、Java SDK Implementation Spec 第 5.3 节、Client Ability Negotiation / Local Cache And Redo / Connection And Failover Specs、Java SDK Integration Test Spec，以及本文第 5.2、7.1～7.2 节 |
+| 当前目标 | 实现 `AgentDiscoveryService` 的 Search、Discover、本地 Discover 轮询订阅、HTTP/gRPC 完整 Endpoint Publication、局部注销后的全量替换、HTTP heartbeat 与 gRPC reconnect redo，并在 SDK 闭环完成后公开两个既有 Server ability key |
+| 允许范围 | `api` 仅新增 `AgentDiscoveryService`、Agent Discovery Listener/Event，并使 `AiService` 通过兼容 default bridge 继承该接口；`ServerAbilities` 仅启用既有 Discovery/Endpoint key；`client.ai` 仅增加或扩展 Agent 专用 transport、轮询、缓存、publication/redo 与生命周期实现；`test/java-sdk-test` 增加固定场景矩阵、Maintainer setup 依赖和 Agent Discovery SDK IT；增加上述 production 类的单元测试；同步直接相关中英文 Specs 与本文 |
+| 禁止范围 | `ai_resource` / `ai_resource_version`、DAO、Repository、Mapper、Resource/Version Manager、AI Storage、服务端 Agent Application Service 和 Runtime Registry；Naming Client/Manager/Distro、HTTP common、公共 Client runtime/redo 抽象、Console、旧 A2A Adapter；不得实现服务端 Watch/Push、Push ACK、通用 Agent 代码发布或顺手修复其他 SDK 问题 |
+| 已知问题 | 设计已经要求 `getAll`、`selectOneHealthy` 和 priority/weight 本地选址，但正式 Spec 尚未固定 Java helper 类型、方法签名及无健康/全零权重 fallback；该问题不阻塞 Search、Discover、轮询和 Endpoint Publication，本阶段只记录，不私自增加公开 helper API。未来服务端 Watch/Push 设计继续保留，但首版订阅只轮询 Discover。`AgentDiscoveryResult` 按 RAD 契约不包含 displayName、description、tags、provider 等管理元数据，轮询指纹也只包含解析 Version、`contentDigest` 和 Endpoint `sourceRevision`；因此未来若允许强制修改已发布 Agent 的管理元数据，Search 可在下次调用读取新值，但现有 Discover 订阅不会通知。该能力需要单独设计 Search/catalog 订阅或扩展 RAD Discover 契约，不在本阶段推断实现 |
+| 阻塞检查 | 已确认现有 Client HTTP/gRPC API、RAD model validator、Endpoint canonicalizer、HTTP Client lifecycle、gRPC connection listener 和 Agent 专用现有 redo 扩展点足以完成闭环；无需修改禁止范围。若实现中出现必须改变共享 Client runtime、HTTP common、Naming 或服务端数据面的情况，则立即暂停并提交维护者决策 |
+| 验收门禁 | 编码前完成 `AGENT_DISCOVERY_SDK_IT_SCENARIOS.md` 全操作/边界/故障/组合矩阵；新增或修改 production Java 可执行行 UT line coverage 100%；`api`、`client` Spotless、编译、相关单测和 JaCoCo XML 验证；Java SDK test-compile 与 10 个稳定 standalone IT 场景；与既有 13 个 AI SDK IT 联合回归；默认 JSON/Jackson 3 适配器、HTTP/gRPC 定向交叉验证，以及同一 SDK 进程跨真实 standalone 停服/重启的连接恢复、轮询、gRPC reconnect redo 和 HTTP `50404` replay 验证；最终 production diff 逐项复核白名单 |
 
 ### 7.2 分阶段任务
 
@@ -1995,10 +2008,14 @@ flowchart LR
 - [x] **Client HTTP/gRPC API**：新增 v3 Client Controller、gRPC Payload/Handler、能力协商 wire key 与错误映射；
   实现 publisher 完整 Batch 覆盖注册、整 publication 注销和 HTTP heartbeat；本阶段不将尚未形成 SDK
   闭环的能力键加入 `ServerAbilities`。
-- [ ] **Java Client SDK**：新增 `AgentDiscoveryService`、namespace 注入、Discover overload、Discover 轮询订阅、本地选择
-  helper、缓存、按 Agent protocol service 保存完整 Batch 的 HTTP/gRPC Endpoint redo、局部注销/更换后的
+- [x] **Java Client SDK**：新增 `AgentDiscoveryService`、namespace 注入、Discover overload、Discover 轮询订阅、
+  缓存、按 Agent protocol service 保存完整 Batch 的 HTTP/gRPC Endpoint redo、局部注销/更换后的
   全量重注册和重连恢复；将 Discovery/Endpoint 能力键加入 `ServerAbilities` 并实现客户端传输能力检查；
-  保持 `AiService`/`A2aService` 二进制兼容。
+  保持 `AiService`/`A2aService` 二进制兼容。本地 `getAll` / `selectOneHealthy` helper 因公开类型与 fallback
+  尚未形成正式 Spec，按本阶段已知问题继续独立待决，不阻塞首版完成。
+- [ ] **Agent 管理元数据订阅**：当前 Discover 快照及其轮询指纹不包含 displayName、description、tags、
+  provider 等管理元数据。后续若开放 Admin 强制更新已发布 Agent 管理元数据的能力，需要独立评审
+  Search/Catalog 订阅或扩展 RAD Discover 契约；本阶段只记录，不修改现有订阅行为。
 - [x] **Admin API + Maintainer SDK**：实现 Agent CRUD、Version draft/submit/publish/online/offline/label、
   Runtime Snapshot、审计和 Maintainer HTTP 映射；首版不提供同 Version 强制内容替换。
 - [x] **Console 后端 Facade**：实现与 Admin 同语义的 Console Facade、Runtime Snapshot 包装和服务端生成的

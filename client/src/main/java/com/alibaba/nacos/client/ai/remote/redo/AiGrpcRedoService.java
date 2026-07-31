@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
+import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -135,5 +136,94 @@ public class AiGrpcRedoService extends AbstractRedoService {
         RedoData<AgentEndpointWrapper> redoData =
             super.getRedoData(agentName, AgentEndpointWrapper.class);
         return redoData == null ? null : redoData.get();
+    }
+    
+    /**
+     * Cache one complete RAD Agent Endpoint batch for reconnect redo.
+     *
+     * @param batch complete registration batch
+     */
+    public void cacheAgentEndpointPublication(AgentEndpointRegistrationBatch batch) {
+        AgentEndpointPublicationRedoData redoData =
+            new AgentEndpointPublicationRedoData(batch);
+        super.cachedRedoData(redoData.getKey(), redoData, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Mark a complete RAD Agent Endpoint publication registered.
+     *
+     * @param key publication key
+     */
+    public void agentEndpointPublicationRegistered(String key) {
+        super.dataRegistered(key, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Mark a complete RAD Agent Endpoint publication for deregistration.
+     *
+     * @param key publication key
+     */
+    public void agentEndpointPublicationDeregistering(String key) {
+        super.dataDeregister(key, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Mark a complete RAD Agent Endpoint publication deregistered.
+     *
+     * @param key publication key
+     */
+    public void agentEndpointPublicationDeregistered(String key) {
+        super.dataDeregistered(key, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Remove a completed RAD Agent Endpoint publication redo record.
+     *
+     * @param key publication key
+     */
+    public void removeAgentEndpointPublication(String key) {
+        super.removeRedoData(key, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Find complete RAD Agent Endpoint publications that need redo.
+     *
+     * @return pending redo records
+     */
+    public Set<RedoData<AgentEndpointRegistrationBatch>> findAgentEndpointPublicationRedoData() {
+        return super.findRedoData(AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Return one cached complete RAD Agent Endpoint publication.
+     *
+     * @param key publication key
+     * @return cached batch, or {@code null}
+     */
+    public AgentEndpointRegistrationBatch getAgentEndpointPublication(String key) {
+        RedoData<AgentEndpointRegistrationBatch> redoData =
+            super.getRedoData(key, AgentEndpointRegistrationBatch.class);
+        return redoData == null ? null : redoData.get();
+    }
+    
+    /**
+     * Whether one RAD Agent Endpoint publication is registered.
+     *
+     * @param key publication key
+     * @return registered state
+     */
+    public boolean isAgentEndpointPublicationRegistered(String key) {
+        return super.isDataRegistered(key, AgentEndpointRegistrationBatch.class);
+    }
+    
+    /**
+     * Discard a non-retryable RAD Agent Endpoint publication intent.
+     *
+     * @param key publication key
+     */
+    public void discardAgentEndpointPublication(String key) {
+        super.dataDeregister(key, AgentEndpointRegistrationBatch.class);
+        super.dataDeregistered(key, AgentEndpointRegistrationBatch.class);
+        super.removeRedoData(key, AgentEndpointRegistrationBatch.class);
     }
 }
