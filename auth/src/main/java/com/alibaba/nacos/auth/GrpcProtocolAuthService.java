@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.context.GrpcIdentityContextBuilder;
+import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.AbstractGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.AiGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.ConfigGrpcResourceParser;
@@ -66,11 +67,14 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
         if (StringUtils.isNotBlank(secured.resource())) {
             return parseSpecifiedResource(secured);
         }
+        if (!DefaultResourceParser.class.equals(secured.parser())) {
+            return useSpecifiedParserToParse(secured, request);
+        }
         String type = secured.signType();
         AbstractGrpcResourceParser parser = resourceParserMap.get(type);
         if (parser == null) {
             Loggers.AUTH.warn("Can't find Grpc request resourceParser for type {}", type);
-            return useSpecifiedParserToParse(secured, request);
+            return new DefaultResourceParser().parse(request, secured);
         }
         return parser.parse(request, secured);
     }
