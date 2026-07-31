@@ -78,7 +78,8 @@ import java.util.concurrent.Executor;
  *
  * <p>Unlike Skill, AgentSpec uses simple vN versioning and does not maintain a separate index manifest.</p>
  *
- * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline / direct) -> Published/Online.</p>
+ * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> Reviewed -> (Publish) -> Online.
+ * When no pipeline is configured, submit publishes directly to Online.</p>
  *
  * @author nacos
  */
@@ -910,7 +911,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
-     * Submit a draft for review and publish.
+     * Submit a draft or reviewed version for review and publish.
      *
      * <p>Flow: resolve target version -> build pipeline context (with lazy file loading) ->
      * check if a publish pipeline is available. If no pipeline, publish directly;
@@ -928,16 +929,16 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             resourceManager.resolveSubmitTarget(info, version, RESOURCE_TYPE_AGENTSPEC, name);
         
         AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+            resourceManager.prepareSubmitVersion(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 target);
-        if (v == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "AgentSpec version not found: " + name + "@" + target);
-        }
-        
         final String finalTarget = target;
         
-        // Step 3: Build pipeline context (file list uses lazy loading, only read from storage when pipeline actually runs)
+        // Step 3: If the version is already reviewing, submit is idempotent.
+        if (AiResourceManager.isReviewingVersion(v)) {
+            return finalTarget;
+        }
+        
+        // Step 4: Build pipeline context with lazy file loading.
         AgentSpecPipelineContext ctx = new AgentSpecPipelineContext();
         ctx.setNamespaceId(namespaceId);
         ctx.setResourceName(name);
@@ -951,14 +952,14 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         });
         
-        // Step 4: Check if a publish pipeline is available
+        // Step 5: Check if a publish pipeline is available
         if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
             // No pipeline available -> skip review and publish directly
             resourceManager.directPublishVersion(namespaceId, meta, info, finalTarget, true);
             return finalTarget;
         }
         
-        // Step 5: Move version status to reviewing, then run pipeline asynchronously; fall back to direct publish if startup fails
+        // Step 6: Move draft or reviewed status to reviewing, then run pipeline asynchronously.
         resourceManager.moveToReviewing(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
             meta, info);
         if (!resourceManager.runPipelineExecution(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,

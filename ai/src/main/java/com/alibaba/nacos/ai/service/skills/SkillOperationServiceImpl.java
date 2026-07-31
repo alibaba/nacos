@@ -92,8 +92,9 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
  * {@link AiResourcePersistService} (meta row) and {@link AiResourceVersionPersistService} (version rows).
  * A {@link SkillIndexManifest} stored in Nacos config serves as a lightweight index for client-side discovery.</p>
  *
- * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline approved) -> Reviewed -> (Publish) -> Online.
- * Pipeline rejected returns to Draft. When no pipeline is configured, submit publishes directly to Online.</p>
+ * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> Reviewed -> (Publish) -> Online.
+ * Pipeline rejected also moves to Reviewed and requires an explicit redraft before editing.
+ * When no pipeline is configured, submit publishes directly to Online.</p>
  *
  * @author nacos
  */
@@ -1282,7 +1283,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Submit a draft for review and publish.
+     * Submit a draft or reviewed version for review and publish.
      *
      * <p>Flow: resolve target version -> move status to "reviewing" ->
      * check if a publish pipeline is available. If pipeline is available, run it asynchronously;
@@ -1300,19 +1301,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.resolveSubmitTarget(info, version, RESOURCE_TYPE_SKILL, name);
         
         AiResourceVersion v =
-            resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, target);
-        if (v == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Skill version not found: " + name + "@" + target);
-        }
-        
+            resourceManager.prepareSubmitVersion(namespaceId, name, RESOURCE_TYPE_SKILL, target);
         final String finalTarget = target;
         
-        // Step 3: Move version status from draft to reviewing
+        // Step 3: If the version is still being reviewed, submit is idempotent.
+        if (AiResourceManager.isReviewingVersion(v)) {
+            return finalTarget;
+        }
+        
+        // Step 4: Move draft or reviewed version status to reviewing.
         resourceManager.moveToReviewing(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, meta,
             info);
         
-        // Step 4: Build pipeline context (containing SKILL.md and all resource files)
+        // Step 5: Build pipeline context (containing SKILL.md and all resource files)
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
         SkillPipelineContext ctx = new SkillPipelineContext();
         ctx.setNamespaceId(namespaceId);
@@ -1320,14 +1321,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ctx.setVersion(finalTarget);
         ctx.setFiles(buildPipelineFiles(skill));
         
-        // Step 5: Check if a publish pipeline is available
+        // Step 6: Check if a publish pipeline is available
         if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
             // No pipeline available -> skip review and publish directly
+            if (StringUtils.isNotBlank(v.getPublishPipelineInfo())) {
+                resourceManager.clearPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL,
+                    finalTarget);
+            }
             publish(namespaceId, name, finalTarget, true);
             return finalTarget;
         }
         
-        // Step 6: Run pipeline asynchronously; fall back to direct publish if startup fails
+        // Step 7: Run pipeline asynchronously; fall back to direct publish if startup fails
         if (!resourceManager.runPipelineExecution(namespaceId, name, RESOURCE_TYPE_SKILL,
             finalTarget,
             ctx, publishPipelineExecutor,

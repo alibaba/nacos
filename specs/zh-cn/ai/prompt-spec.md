@@ -47,7 +47,8 @@ Prompt 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.
 
 - 从新内容或已有版本创建 draft；
 - 更新或删除当前 draft；
-- 提交到发布流水线，或在无匹配流水线时直接发布；
+- 提交 draft 或 reviewed 版本到发布流水线，或在无匹配流水线时直接发布；提交
+  reviewing 版本按幂等调用返回；
 - 发布、强制发布、上线/下线、更新 labels、更新描述、更新业务标签和删除；
 - 通过明确 version、label 或 `latest` 查询。
 

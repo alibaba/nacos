@@ -54,7 +54,8 @@ AgentSpec follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-
 
 - upload or create draft;
 - update draft;
-- submit through publish pipeline or direct publish;
+- submit a draft or reviewed version through publish pipeline or direct publish,
+  and submit a reviewing version idempotently;
 - publish, force publish, update labels, update business tags, update scope,
   online/offline, and delete.
 

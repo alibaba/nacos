@@ -676,11 +676,22 @@ class SkillDetail extends React.Component {
 
   // ===== Submit & Publish =====
 
+  canSubmitForReview = (versionStatus, pipelineInfo) => {
+    if (versionStatus === 'draft' || versionStatus === 'reviewed') {
+      return true;
+    }
+    return (
+      versionStatus === 'reviewing' &&
+      !pipelineInfo?.historical &&
+      (pipelineInfo?.status === 'APPROVED' || pipelineInfo?.status === 'REJECTED')
+    );
+  };
+
   handleSubmitForReview = () => {
     const { locale = {} } = this.props;
-    const { selectedVersion, selectedVersionStatus } = this.state;
+    const { selectedVersion, selectedVersionStatus, pipelineInfo } = this.state;
 
-    if (selectedVersionStatus !== 'draft') return;
+    if (!this.canSubmitForReview(selectedVersionStatus, pipelineInfo)) return;
 
     const skillName = getParams('name');
     const namespaceId = getParams('namespace') || '';
@@ -1968,14 +1979,21 @@ class SkillDetail extends React.Component {
                 </>
               )}
               {selectedVersionStatus === 'reviewing' && (
-                <Button
-                  type="primary"
-                  onClick={this.handlePublish}
-                  loading={publishing}
-                  disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
-                >
-                  {locale.publishVersion || 'Publish'}
-                </Button>
+                <>
+                  <Button
+                    type="primary"
+                    onClick={this.handlePublish}
+                    loading={publishing}
+                    disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
+                  >
+                    {locale.publishVersion || 'Publish'}
+                  </Button>
+                  {this.canSubmitForReview(selectedVersionStatus, pipelineInfo) && (
+                    <Button onClick={this.handleSubmitForReview} loading={submitting}>
+                      {locale.resubmitForReview || 'Resubmit for Review'}
+                    </Button>
+                  )}
+                </>
               )}
               {selectedVersionStatus === 'reviewed' && (
                 <>
@@ -1986,6 +2004,9 @@ class SkillDetail extends React.Component {
                     disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
                   >
                     {locale.publishVersion || 'Publish'}
+                  </Button>
+                  <Button onClick={this.handleSubmitForReview} loading={submitting}>
+                    {locale.resubmitForReview || 'Resubmit for Review'}
                   </Button>
                   <Button onClick={this.handleRedraft} loading={publishing}>
                     {locale.actionRedraft || 'Re-edit'}

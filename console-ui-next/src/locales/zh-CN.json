@@ -757,6 +757,7 @@
     "versionStatus.pendingPublish": "待发布",
     "versionStatus.rejected": "审核未通过",
     "submit": "提交审核",
+    "resubmit": "重新提交审核",
     "publish": "发布",
     "forcePublish": "强制发布",
     "online": "上线",

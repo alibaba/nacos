@@ -34,7 +34,7 @@
 | --- | --- |
 | `draft` | 正在编辑的版本。 |
 | `reviewing` | 已提交到发布流水线审核。 |
-| `reviewed` | 流水线已通过，等待显式发布。 |
+| `reviewed` | 流水线审核已完成，等待显式发布、强制发布、退回编辑或重新提交。 |
 | `online` | 已发布且可查询。 |
 | `offline` | 已存在但从普通运行时路由中移除。 |
 
@@ -69,11 +69,17 @@ create/upload draft
 
 ## 4. 审核和发布规则
 
-- Submit 会解析明确版本或当前 `editingVersion`。
-- 当不存在 draft 目标时，Submit 必须失败。
-- Submit 仅允许目标版本处于 `draft` 状态；对 `reviewing` / `reviewed` / `online`
-  / `offline` 等非 draft 版本调用 Submit 必须返回 `INVALID_PARAM`，且不得修改版本
-  状态或元数据指针，避免污染正式版本。
+- Submit 会解析明确版本、当前 `editingVersion`，或处于 `reviewing` / `reviewed` 状态的
+  `reviewingVersion`。
+- 当不存在 draft、reviewing 或 reviewed 目标时，Submit 必须失败。
+- Submit 允许目标版本处于 `draft`、`reviewing` 或 `reviewed` 状态。`draft` 和
+  `reviewed` 进入审核或直接发布流程；`reviewed` 目标按重新提交处理，不能绕过流水线
+  直接进入发布流程；`reviewing` 目标按幂等调用处理，返回当前版本且不得重复启动流水线。
+- `reviewing` 版本遗留当前审核轮次的 `APPROVED` / `REJECTED` 终态结果时，视为审核完成
+  回调未完成状态切换，先收敛为 `reviewed` 再重新提交。标记为 `historical=true` 的结果属于
+  之前的审核轮次，不能据此判定当前审核已完成，Submit 仍按幂等调用返回。
+- 对 `online` / `offline` 等状态的版本调用 Submit 必须返回
+  `INVALID_PARAM`，且不得修改版本状态或元数据指针。
 - 审核中版本必须在元数据中记录为 `reviewingVersion`。
 - 流水线执行状态可以写入 `publishPipelineInfo` 和 `pipeline_execution`。
 - 流水线通过和拒绝都会把版本改为 `reviewed`；拒绝后如果需要继续编辑，用户必须显式

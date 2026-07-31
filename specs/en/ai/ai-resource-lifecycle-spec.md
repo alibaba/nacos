@@ -34,7 +34,7 @@ Version status:
 | --- | --- |
 | `draft` | Editable version under construction. |
 | `reviewing` | Submitted for publish pipeline review. |
-| `reviewed` | Pipeline approved and waiting for explicit publish. |
+| `reviewed` | Pipeline review completed and waiting for explicit publish, force publish, redraft, or resubmit. |
 | `online` | Published and queryable. |
 | `offline` | Existing version removed from normal runtime routing. |
 
@@ -73,12 +73,21 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
 
 ## 4. Review And Publish Rules
 
-- Submit resolves an explicit version or the current `editingVersion`.
-- Submit must fail when no draft target exists.
-- Submit only accepts a target version in `draft` status; calling submit on a
-  version in any other status (`reviewing` / `reviewed` / `online` / `offline`)
-  must return `INVALID_PARAM` and must not mutate version status or metadata
-  pointers, to prevent corrupting formal versions.
+- Submit resolves an explicit version, the current `editingVersion`, or a
+  `reviewingVersion` in `reviewing` or `reviewed` status.
+- Submit must fail when no draft, reviewing, or reviewed target exists.
+- Submit accepts a target version in `draft`, `reviewing`, or `reviewed` status.
+  `draft` and `reviewed` targets enter the review/direct-publish flow. A
+  `reviewed` target is treated as a resubmission and must not bypass the
+  pipeline into the publish flow. A `reviewing` target is an idempotent no-op
+  that returns the current version without starting another pipeline.
+- A current terminal pipeline result (`APPROVED` or `REJECTED`) left on a
+  `reviewing` version is treated as an interrupted completion transition and
+  normalized to `reviewed` before resubmission. A result marked
+  `historical=true` belongs to a previous review cycle and must not complete
+  the current review; submit remains idempotent.
+- Calling submit on a version in `online` or `offline` status must return
+  `INVALID_PARAM` and must not mutate version status or metadata pointers.
 - A reviewing version must be recorded in metadata as `reviewingVersion`.
 - Pipeline execution state may be written to `publishPipelineInfo` and
   `pipeline_execution`.

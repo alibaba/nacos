@@ -204,6 +204,10 @@ public class AgentSpecConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertTrue("online".equals(submittedStatus) || "reviewing".equals(submittedStatus),
                 submittedStatus);
         if ("reviewing".equals(submittedStatus)) {
+            JsonNode resubmit = postFormOk(CONSOLE_AGENT_SPEC_PATH + "/submit",
+                    agentSpecQueryForm(agentSpecName));
+            assertEquals("2.0.0", resubmit.get("data").asText(), resubmit.toString());
+            assertAgentSpecVersionStatus(agentSpecName, "2.0.0", "reviewing");
             postFormOk(CONSOLE_AGENT_SPEC_PATH + "/force-publish",
                     agentSpecPublishForm(agentSpecName, "2.0.0"));
         }
