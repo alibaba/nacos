@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.agent.identity.RadAsciiAgentIdCodec;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
@@ -103,7 +104,7 @@ public final class AgentRuntimeEndpointMapper {
         Instance result = new Instance();
         result.setIp(host);
         result.setPort(EndpointCanonicalizer.effectivePort(canonical.getUri()));
-        result.setClusterName(canonical.getTransport());
+        result.setClusterName(RadAsciiAgentIdCodec.encode(canonical.getTransport()));
         result.setWeight(canonical.getWeight());
         result.setEnabled(true);
         result.setHealthy(true);
@@ -129,8 +130,6 @@ public final class AgentRuntimeEndpointMapper {
             throw new IllegalArgumentException(
                 "Invalid Naming instance port: " + instance.getPort());
         }
-        AgentValidationUtils.validateTransport(instance.getClusterName());
-        
         Map<String, String> metadata = stringMetadata(instance.getMetadata());
         validateCompleteMetadata(metadata);
         validateReservedKeys(metadata);
@@ -138,9 +137,9 @@ public final class AgentRuntimeEndpointMapper {
         String transport = requiredMetadata(metadata,
             Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY);
         AgentValidationUtils.validateTransport(transport);
-        if (!instance.getClusterName().equals(transport)) {
+        if (!instance.getClusterName().equals(RadAsciiAgentIdCodec.encode(transport))) {
             throw new IllegalArgumentException(
-                "Naming cluster and Agent Endpoint transport must match");
+                "Naming cluster must match the encoded Agent Endpoint transport");
         }
         String uriScheme = requiredMetadata(metadata,
             Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY);

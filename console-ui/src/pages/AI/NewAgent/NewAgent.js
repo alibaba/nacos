@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 import React from 'react';
@@ -25,651 +24,801 @@ import {
   Form,
   Input,
   Message,
-  Switch,
   Select,
-  Icon,
-  Grid,
-  Divider,
+  Step,
+  Tab,
 } from '@alifd/next';
 import PageTitle from 'components/PageTitle';
-import { getParams, request } from '@/globalLib';
+import { getParams } from '@/globalLib';
+import { agentApi } from '../agent-api';
+import {
+  DEFAULT_AGENT_CARD,
+  buildDraftCreateData,
+  buildDraftUpdateData,
+  buildMetadataUpdateData,
+  callInterfacesToFormValues,
+  createStructuredProtocolEditor,
+  metadataToFormValues,
+  projectA2aAgentCard,
+} from '../agent-console-model';
 import './NewAgent.scss';
 
-const { Row, Col } = Grid;
+const MODES = ['create', 'metadata', 'draft-create', 'draft-edit'];
 
 @ConfigProvider.config
 class NewAgent extends React.Component {
   static displayName = 'NewAgent';
 
   static propTypes = {
-    locale: PropTypes.object,
     history: PropTypes.object,
   };
 
   constructor(props) {
     super(props);
     this.field = new Field(this);
-
-    const agentName = getParams('name');
-    const mode = getParams('mode');
-
+    const modeParam = getParams('mode');
+    const mode = MODES.includes(modeParam) ? modeParam : 'create';
     this.state = {
-      loading: false,
-      isEdit: mode === 'edit' && !!agentName,
-      agentName,
-      showAdvanced: false,
+      mode,
+      createPath: mode === 'create' ? 'choose' : 'new',
+      createStep: 0,
+      contentMode: 'direct',
+      importAgentCard: '',
+      importVersion: '0.0.1',
+      protocolEditorKind: 'a2a',
+      declaredEndpoints: [{ uri: '', transport: 'HTTP' }],
+      protocolEditors: [createStructuredProtocolEditor('a2a', DEFAULT_AGENT_CARD)],
+      activeProtocolIndex: 0,
+      loading: mode === 'metadata' || mode === 'draft-edit',
+      saving: false,
     };
   }
 
   componentDidMount() {
-    if (this.state.isEdit) {
-      this.loadAgentData();
+    const { mode } = this.state;
+    const agentName = getParams('name') || '';
+    const version = getParams('version') || '';
+    this.field.setValues({
+      agentName,
+      version,
+      status: 'enable',
+      protocolEditorKind: 'a2a',
+      agentCard: DEFAULT_AGENT_CARD,
+      customProtocol: '',
+      customProtocolVersion: '',
+      customDescriptorMediaType: 'application/json',
+      customNativeDescriptor: '{}',
+      endpointSourceMode: 'declared-runtime',
+      callInterfaces: '',
+    });
+    if (mode === 'metadata') {
+      agentApi
+        .get({ namespaceId: this.namespaceId(), agentName })
+        .then(overview => this.field.setValues(metadataToFormValues(overview.agent)))
+        .catch(error => Message.error(error.message))
+        .finally(() => this.setState({ loading: false }));
+    } else if (mode === 'draft-edit') {
+      agentApi
+        .version({ namespaceId: this.namespaceId(), agentName, version })
+        .then(detail => {
+          const editor = callInterfacesToFormValues(detail.callInterfaces);
+          this.field.setValues({
+            ...editor,
+            changeDescription: detail.changeDescription || '',
+          });
+          this.setState({
+            protocolEditorKind: editor.protocolEditorKind,
+            declaredEndpoints: editor.declaredEndpoints || [],
+          });
+        })
+        .catch(error => Message.error(error.message))
+        .finally(() => this.setState({ loading: false }));
     }
   }
 
-  loadAgentData = () => {
-    const { agentName } = this.state;
-    const namespaceId = getParams('namespace') || '';
+  namespaceId = () => getParams('namespace') || 'public';
 
-    this.setState({ loading: true });
-
-    const params = new URLSearchParams();
-    params.append('agentName', agentName);
-    params.append('namespaceId', namespaceId);
-
-    request({
-      url: `v3/console/ai/a2a?${params.toString()}`,
-      success: data => {
-        this.setState({ loading: false });
-        if (data && (data.code === 0 || data.code === 200) && data.data) {
-          const agentData = data.data;
-          const supportedInterfaces = Array.isArray(agentData.supportedInterfaces)
-            ? agentData.supportedInterfaces
-            : [];
-          const primaryInterface = supportedInterfaces.length > 0 ? supportedInterfaces[0] : {};
-          const additionalInterfaceList =
-            supportedInterfaces.length > 1
-              ? supportedInterfaces.slice(1)
-              : agentData.additionalInterfaces || [];
-          // 处理 capabilities 字段，确保正确解析三个能力开关的状态
-          const capabilities = {
-            streaming: false,
-            pushNotifications: false,
-            stateTransitionHistory: false,
-          };
-
-          if (agentData.capabilities && typeof agentData.capabilities === 'object') {
-            capabilities.streaming = !!agentData.capabilities.streaming;
-            capabilities.pushNotifications = !!agentData.capabilities.pushNotifications;
-            capabilities.stateTransitionHistory = !!agentData.capabilities.stateTransitionHistory;
-          }
-
-          console.log(capabilities);
-
-          this.field.setValues({
-            name: agentData.name,
-            description: agentData.description,
-            version: agentData.version,
-            protocolVersion: primaryInterface.protocolVersion || agentData.protocolVersion,
-            url: primaryInterface.url || agentData.url,
-            preferredTransport:
-              primaryInterface.protocolBinding ||
-              primaryInterface.transport ||
-              agentData.preferredTransport,
-            iconUrl: agentData.iconUrl,
-            documentationUrl: agentData.documentationUrl,
-            organization: agentData.provider?.organization || '',
-            providerUrl: agentData.provider?.url || '',
-            // 设置能力配置开关的值
-            streaming: capabilities.streaming,
-            pushNotifications: capabilities.pushNotifications,
-            stateTransitionHistory: capabilities.stateTransitionHistory,
-            skills: agentData.skills ? JSON.stringify(agentData.skills, null, 2) : '',
-            security: agentData.security ? JSON.stringify(agentData.security, null, 2) : '',
-            securitySchemes: agentData.securitySchemes
-              ? JSON.stringify(agentData.securitySchemes, null, 2)
-              : '',
-            defaultInputModes: agentData.defaultInputModes?.join(',') || '',
-            defaultOutputModes: agentData.defaultOutputModes?.join(',') || '',
-            additionalInterfaces:
-              additionalInterfaceList.length > 0
-                ? JSON.stringify(additionalInterfaceList, null, 2)
-                : '',
-            supportsAuthenticatedExtendedCard:
-              agentData.capabilities?.extendedAgentCard ||
-              agentData.supportsAuthenticatedExtendedCard ||
-              false,
-            setAsLatest: true,
-          });
-        } else {
-          const { locale = {} } = this.props;
-          Message.error(
-            data?.message || locale.getAgentInfoFailed || 'Failed to get agent information'
-          );
-        }
-      },
-      error: () => {
-        this.setState({ loading: false });
-        const { locale = {} } = this.props;
-        Message.error(locale.getAgentInfoFailed || 'Failed to get agent information');
-      },
-    });
+  handleGoBack = () => {
+    this.props.history.goBack();
   };
 
   handleSubmit = () => {
-    const { locale = {} } = this.props;
-    this.field.validate((errors, values) => {
+    this.field.validate((errors, fieldValues) => {
       if (errors) {
         return;
       }
-
-      this.setState({ loading: true });
-
-      const namespaceId = getParams('namespace') || '';
-      const { isEdit } = this.state;
-
-      // 构建 agentCard 对象，按 A2A 1.0.0 的 supportedInterfaces 结构提交
-      const normalizeInterface = item => {
-        const protocolBinding = item.protocolBinding || item.transport || '';
-        return {
-          ...item,
-          protocolBinding,
-          transport: item.transport || protocolBinding,
-          protocolVersion: item.protocolVersion || '',
-          url: item.url || '',
-          tenant: item.tenant || '',
-        };
-      };
-      const supportedInterfaces = [
-        normalizeInterface({
-          url: values.url,
-          protocolBinding: values.preferredTransport,
-          protocolVersion: values.protocolVersion,
-        }),
-      ];
-      const agentCard = {
-        name: values.name,
-        description: values.description,
-        version: values.version,
-        iconUrl: values.iconUrl,
-        documentationUrl: values.documentationUrl,
-        supportedInterfaces,
-        // Add provider info if provided
-        provider:
-          values.organization || values.providerUrl
-            ? {
-                organization: values.organization || '',
-                url: values.providerUrl || '',
-              }
-            : undefined,
-      };
-
-      // 构建 capabilities 对象，使用三个开关的值
-      agentCard.capabilities = {
-        streaming: !!values.streaming,
-        pushNotifications: !!values.pushNotifications,
-        stateTransitionHistory: !!values.stateTransitionHistory,
-        extendedAgentCard: !!values.supportsAuthenticatedExtendedCard,
-      };
-
-      if (values.skills && values.skills.trim() && values.skills.trim() !== 'null') {
-        try {
-          const parsed = JSON.parse(values.skills.trim());
-          if (parsed !== null && parsed !== undefined) {
-            agentCard.skills = parsed;
-          }
-        } catch (e) {
-          Message.error('技能列表JSON格式错误: ' + e.message);
-          this.setState({ loading: false });
-          return;
-        }
-      }
-
-      if (values.security && values.security.trim() && values.security.trim() !== 'null') {
-        try {
-          const parsed = JSON.parse(values.security.trim());
-          if (parsed !== null && parsed !== undefined) {
-            agentCard.security = parsed;
-          }
-        } catch (e) {
-          Message.error('安全配置JSON格式错误: ' + e.message);
-          this.setState({ loading: false });
-          return;
-        }
-      }
-
-      if (
-        values.securitySchemes &&
-        values.securitySchemes.trim() &&
-        values.securitySchemes.trim() !== 'null'
-      ) {
-        try {
-          const parsed = JSON.parse(values.securitySchemes.trim());
-          if (parsed !== null && parsed !== undefined) {
-            agentCard.securitySchemes = parsed;
-          }
-        } catch (e) {
-          Message.error('安全模式配置JSON格式错误: ' + e.message);
-          this.setState({ loading: false });
-          return;
-        }
-      }
-
-      if (
-        values.additionalInterfaces &&
-        values.additionalInterfaces.trim() &&
-        values.additionalInterfaces.trim() !== 'null'
-      ) {
-        try {
-          const parsed = JSON.parse(values.additionalInterfaces.trim());
-          if (parsed !== null && parsed !== undefined) {
-            if (!Array.isArray(parsed)) {
-              Message.error('额外接口JSON格式错误: 必须是JSON数组');
-              this.setState({ loading: false });
-              return;
-            }
-            parsed.forEach(item => {
-              supportedInterfaces.push(normalizeInterface(item));
-            });
-          }
-        } catch (e) {
-          Message.error('额外接口JSON格式错误: ' + e.message);
-          this.setState({ loading: false });
-          return;
-        }
-      }
-
-      if (values.defaultInputModes && values.defaultInputModes.trim()) {
-        agentCard.defaultInputModes = values.defaultInputModes
-          .split(',')
-          .map(s => s.trim())
-          .filter(s => s);
-      }
-
-      if (values.defaultOutputModes && values.defaultOutputModes.trim()) {
-        agentCard.defaultOutputModes = values.defaultOutputModes
-          .split(',')
-          .map(s => s.trim())
-          .filter(s => s);
-      }
-
-      // 准备请求数据
-      const requestData = {
-        namespaceId: namespaceId,
-        agentName: values.name,
-        version: values.version,
-        registrationType: isEdit ? '' : 'URL', // 默认使用 url 类型
-        agentCard: JSON.stringify(agentCard),
-      };
-
-      // 更新模式下添加 setAsLatest 参数
-      if (isEdit) {
-        requestData.setAsLatest = values.setAsLatest;
-      }
-
-      const url = 'v3/console/ai/a2a';
-
-      // 使用项目中已有的request方法发送请求，会自动处理认证信息
-      request({
-        url: url,
-        method: isEdit ? 'PUT' : 'POST',
-        data: requestData,
-        contentType: 'application/x-www-form-urlencoded',
-        success: data => {
-          this.setState({ loading: false });
-          if (
-            data &&
-            (data.code === 0 ||
-              data.code === 200 ||
-              data.data === 'ok' ||
-              data.message === 'success')
-          ) {
-            const agentLocale = locale.AgentManagement || locale;
-            Message.success(
-              isEdit
-                ? agentLocale.updateSuccess || '更新成功'
-                : agentLocale.createSuccess || '创建成功'
-            );
-
-            setTimeout(() => {
-              this.handleGoBack();
-            }, 1000);
-          } else {
-            const agentLocale = locale.AgentManagement || locale;
-            Message.error(
-              data?.message ||
-                (isEdit
-                  ? agentLocale.updateFailed || '更新失败'
-                  : agentLocale.createFailed || '创建失败')
-            );
-          }
-        },
-        error: error => {
-          console.error('Request failed:', error);
-          this.setState({ loading: false });
-          const agentLocale = locale.AgentManagement || locale;
-          Message.error(
-            isEdit ? agentLocale.updateFailed || '更新失败' : agentLocale.createFailed || '创建失败'
+      const {
+        mode,
+        createPath,
+        contentMode,
+        declaredEndpoints,
+        importAgentCard,
+        importVersion,
+        protocolEditors,
+      } = this.state;
+      const values = { ...fieldValues, declaredEndpoints };
+      this.setState({ saving: true });
+      let operation;
+      try {
+        if (mode === 'metadata') {
+          operation = agentApi.update(buildMetadataUpdateData(this.namespaceId(), values));
+        } else if (mode === 'draft-edit') {
+          operation = agentApi.updateDraft(buildDraftUpdateData(this.namespaceId(), values));
+        } else if (mode === 'create' && createPath === 'import') {
+          const projection = projectA2aAgentCard(importAgentCard, importVersion);
+          Object.assign(values, projection, {
+            protocolEditorKind: 'a2a',
+            agentCard: projection.protocolEditor.agentCard,
+            changeDescription: 'Imported from A2A AgentCard',
+          });
+          operation = agentApi.createDraft(
+            buildDraftCreateData(this.namespaceId(), values, true, 'direct', [
+              projection.protocolEditor,
+            ])
           );
-        },
-      });
+        } else {
+          operation = agentApi.createDraft(
+            buildDraftCreateData(
+              this.namespaceId(),
+              values,
+              mode === 'create',
+              mode === 'create' ? 'direct' : contentMode,
+              mode === 'create' && createPath === 'new' ? protocolEditors : undefined
+            )
+          );
+        }
+      } catch (error) {
+        Message.error(error.message);
+        this.setState({ saving: false });
+        return;
+      }
+      operation
+        .then(result => {
+          Message.success(mode === 'metadata' ? 'Agent metadata updated' : 'Agent draft saved');
+          const resultAgentName = result.agentName || values.agentName;
+          const resultVersion = result.version || values.version;
+          const params = new URLSearchParams({
+            namespace: this.namespaceId(),
+            name: resultAgentName,
+          });
+          if (mode !== 'metadata') {
+            params.set('version', resultVersion);
+          }
+          this.props.history.push(`/agentDetail?${params.toString()}`);
+        })
+        .catch(error => Message.error(error.message))
+        .finally(() => this.setState({ saving: false }));
     });
   };
 
-  handleGoBack = () => {
-    const namespaceId = getParams('namespace') || '';
-    this.props.history.push(`/agentManagement?namespace=${namespaceId}`);
-  };
-
-  toggleAdvanced = () => {
-    this.setState({ showAdvanced: !this.state.showAdvanced });
-  };
-
-  validateRequired = (rule, value, callback) => {
-    const { locale = {} } = this.props;
-    if (!value || value.trim() === '') {
-      callback(locale.requiredField || 'This field is required');
+  required = (rule, value, callback) => {
+    if (!value || !String(value).trim()) {
+      callback('This field is required');
     } else {
       callback();
     }
   };
 
-  validateUrl = (rule, value, callback) => {
-    const { locale = {} } = this.props;
-    if (value && value.trim()) {
-      try {
-        new URL(value);
-        callback();
-      } catch (e) {
-        callback(locale.invalidUrl || 'Please enter a valid URL');
-      }
-    } else {
-      callback();
+  advanceCreateStep = () => {
+    const { createStep } = this.state;
+    const values = this.field.getValues();
+    if (createStep === 0 && !String(values.agentName || '').trim()) {
+      Message.error('Agent Name is required');
+      return;
     }
+    if (createStep === 1 && !String(values.version || '').trim()) {
+      Message.error('Version is required');
+      return;
+    }
+    this.setState({ createStep: Math.min(createStep + 1, 2) });
   };
 
-  validateJson = (rule, value, callback) => {
-    if (value && value.trim()) {
-      const trimmedValue = value.trim();
-      if (
-        trimmedValue.includes('=') &&
-        !trimmedValue.startsWith('{') &&
-        !trimmedValue.startsWith('[')
-      ) {
-        callback('JSON格式错误：不能包含等号(=)字符，请使用冒号(:)');
-        return;
-      }
-      try {
-        const parsed = JSON.parse(trimmedValue);
-        if (typeof parsed !== 'object') {
-          callback('JSON格式错误：必须是有效的JSON对象或数组');
-          return;
-        }
-        callback();
-      } catch (e) {
-        callback('JSON格式错误：' + e.message);
-      }
-    } else {
-      callback();
-    }
-  };
-
-  render() {
-    const { locale = {} } = this.props;
-    const { loading, isEdit, showAdvanced } = this.state;
-
-    const formItemLayout = {
-      labelCol: { span: 3 },
-      wrapperCol: { span: 20 },
-    };
-
+  renderCreatePathSelection() {
     return (
-      <div className="new-agent-container">
-        <Row>
-          <Col span={16}>
-            <h1>{isEdit ? '编辑Agent' : '新建Agent'}</h1>
-          </Col>
-          <Col span={8}>
-            <div style={{ textAlign: 'right', marginTop: 10 }}>
-              <Button
-                type="primary"
-                onClick={this.handleSubmit}
-                loading={loading}
-                style={{ marginRight: 10 }}
-              >
-                {isEdit ? '更新' : '创建'}
-              </Button>
-              <Button onClick={this.handleGoBack}>取消</Button>
-            </div>
-          </Col>
-        </Row>
+      <div className="agent-create-paths">
+        <button
+          type="button"
+          className="agent-create-path-card"
+          onClick={() => this.setState({ createPath: 'import' })}
+        >
+          <span className="agent-create-path-icon">⇩</span>
+          <strong>Import a Known Protocol</strong>
+          <span>
+            Paste a complete A2A Agent Card. Agent metadata, the initial version, Call Interface,
+            and declared endpoints are derived automatically.
+          </span>
+        </button>
+        <button
+          type="button"
+          className="agent-create-path-card"
+          onClick={() => this.setState({ createPath: 'new' })}
+        >
+          <span className="agent-create-path-icon">＋</span>
+          <strong>Create from Scratch</strong>
+          <span>
+            Configure metadata, the initial version, and one or more supported protocols step by
+            step.
+          </span>
+        </button>
+      </div>
+    );
+  }
 
-        <Form field={this.field} {...formItemLayout} className="new-agent-form">
-          <Form.Item label="命名空间">
-            <p>{getParams('namespace') || 'public'}</p>
+  renderKnownProtocolImport() {
+    const { importAgentCard, importVersion } = this.state;
+    let projection;
+    let error;
+    if (importAgentCard.trim()) {
+      try {
+        projection = projectA2aAgentCard(importAgentCard, importVersion);
+      } catch (e) {
+        error = e.message;
+      }
+    }
+    return (
+      <Card title="Import a Known Protocol" contentHeight="auto" className="agent-editor-card">
+        <div className="agent-import-protocol-label">Known Protocol</div>
+        <Select
+          value="a2a"
+          dataSource={[{ value: 'a2a', label: 'A2A' }]}
+          style={{ width: '100%', marginBottom: 16 }}
+        />
+        <div className="agent-import-protocol-label">Initial Version</div>
+        <Input
+          value={importVersion}
+          placeholder="0.0.1"
+          onChange={value => this.setState({ importVersion: value })}
+        />
+        <p className="agent-import-help">
+          Used only when the Agent Card omits version. An explicit Card version takes precedence.
+        </p>
+        <div className="agent-import-protocol-label">Complete Agent Card</div>
+        <Input.TextArea
+          value={importAgentCard}
+          rows={24}
+          placeholder="Paste the complete A2A Agent Card JSON"
+          onChange={value => this.setState({ importAgentCard: value })}
+        />
+        <p className="agent-import-help">
+          The Agent Card must contain name and callable interfaces. A missing version uses the
+          initial version above. Trailing commas are accepted and normalized before submission.
+        </p>
+        {error && <div className="agent-import-error">{error}</div>}
+        {projection && (
+          <div className="agent-import-preview">
+            <strong>Import Preview</strong>
+            <span>Agent: {projection.agentName}</span>
+            <span>Version: {projection.version}</span>
+            <span>Protocol: A2A</span>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  renderMetadataForm() {
+    const { mode } = this.state;
+    return (
+      <Card title="Agent Metadata" contentHeight="auto" className="agent-editor-card">
+        <div className="agent-form-grid">
+          <Form.Item label="Agent Name" required validator={this.required}>
+            <Input name="agentName" disabled={mode !== 'create'} />
           </Form.Item>
-
-          {/* 主要信息放在最上面 */}
-          <Form.Item
-            label="Agent名称"
-            required
-            validator={this.validateRequired}
-            help="Agent的唯一标识符，创建后不可修改"
-          >
-            <Input
-              name="name"
-              placeholder="请输入Agent名称，如：weather-agent"
-              disabled={isEdit}
-              maxLength={255}
-            />
+          <Form.Item label="Display Name">
+            <Input name="displayName" />
           </Form.Item>
-
-          <Form.Item
-            label="版本号"
-            required
-            validator={this.validateRequired}
-            help="遵循语义化版本规范，如：1.0.0"
-          >
-            <Input name="version" placeholder="1.0.0" maxLength={50} />
+          <Form.Item label="Icon URL">
+            <Input name="iconUrl" />
           </Form.Item>
-
-          <Form.Item
-            label="服务地址"
-            required
-            validator={[this.validateRequired, this.validateUrl]}
-            help="Agent服务的完整URL地址"
-          >
-            <Input name="url" placeholder="https://api.example.com/agent" maxLength={500} />
+          <Form.Item label="Tags" help="Comma-separated values">
+            <Input name="tags" />
           </Form.Item>
-
-          <Form.Item
-            label="协议版本"
-            required
-            validator={this.validateRequired}
-            help="Agent协议版本，默认使用最新版本"
-          >
-            <Input name="protocolVersion" placeholder="0.3.0" maxLength={50} />
+          <Form.Item label="Provider Name">
+            <Input name="providerName" />
           </Form.Item>
-
-          <Form.Item
-            label="传输协议"
-            required
-            validator={this.validateRequired}
-            help="Agent通信使用的传输协议"
-          >
+          <Form.Item label="Provider URL">
+            <Input name="providerUrl" />
+          </Form.Item>
+        </div>
+        <Form.Item label="Description">
+          <Input.TextArea name="description" rows={3} />
+        </Form.Item>
+        <Form.Item label="Extensions" help="JSON object">
+          <Input.TextArea name="extensions" rows={5} />
+        </Form.Item>
+        {mode === 'metadata' && (
+          <Form.Item label="Status">
             <Select
-              name="preferredTransport"
-              placeholder="请选择传输协议"
+              name="status"
               dataSource={[
-                { value: 'JSONRPC', label: 'JSONRPC' },
-                { value: 'GRPC', label: 'GRPC' },
-                { value: 'HTTP+JSON', label: 'HTTP_JSON' },
+                { value: 'enable', label: 'Enabled' },
+                { value: 'disable', label: 'Disabled' },
               ]}
             />
           </Form.Item>
+        )}
+      </Card>
+    );
+  }
 
-          <Form.Item label="描述信息" help="简要描述Agent的功能和用途">
-            <Input.TextArea
-              name="description"
-              placeholder="请输入Agent的功能描述..."
-              rows={3}
-              maxLength={1000}
+  renderVersionForm() {
+    const { mode, contentMode } = this.state;
+    return (
+      <Card title="Agent Version" contentHeight="auto" className="agent-editor-card">
+        {mode !== 'create' && (
+          <Form.Item label="Agent Name" required>
+            <Input name="agentName" disabled />
+          </Form.Item>
+        )}
+        <Form.Item label="Version" required validator={this.required}>
+          <Input name="version" disabled={mode === 'draft-edit'} />
+        </Form.Item>
+        {mode === 'draft-create' && (
+          <Form.Item label="Content Source">
+            <Select
+              value={contentMode}
+              onChange={value => this.setState({ contentMode: value })}
+              dataSource={[
+                { value: 'direct', label: 'Configure Protocol' },
+                { value: 'copy', label: 'Copy Existing Version' },
+              ]}
             />
           </Form.Item>
-
-          <Form.Item label="输入模式" help="Agent支持的默认输入模式，用逗号分隔">
-            <Input name="defaultInputModes" placeholder="text,audio,image" maxLength={255} />
+        )}
+        {mode === 'draft-create' && contentMode === 'copy' && (
+          <Form.Item label="Based-on Version" required validator={this.required}>
+            <Input name="basedOnVersion" />
           </Form.Item>
-
-          <Form.Item label="输出模式" help="Agent支持的默认输出模式，用逗号分隔">
-            <Input name="defaultOutputModes" placeholder="text,audio,image" maxLength={255} />
+        )}
+        {mode !== 'draft-edit' && (
+          <Form.Item label="Author">
+            <Input name="author" />
           </Form.Item>
+        )}
+        <Form.Item label="Change Description">
+          <Input.TextArea name="changeDescription" rows={3} />
+        </Form.Item>
+      </Card>
+    );
+  }
 
-          {/* 将原来的capabilities JSON输入框替换为横向排列的三个独立开关 */}
-          <Form.Item label="能力配置" help="Agent支持的核心能力配置">
-            <div className="capabilities-container">
-              <div className="capability-item">
-                <div className="capability-label">流式传输</div>
-                <div className="capability-switch">
-                  <Switch
-                    {...this.field.init('streaming', {
-                      valueName: 'checked',
-                      initValue: false,
-                    })}
-                    name="streaming"
-                  />
-                </div>
-                <div className="capability-description">是否支持流式数据传输</div>
+  updateEndpoint = (index, field, value) => {
+    this.setState(({ declaredEndpoints }) => ({
+      declaredEndpoints: declaredEndpoints.map((endpoint, itemIndex) =>
+        itemIndex === index ? { ...endpoint, [field]: value } : endpoint
+      ),
+    }));
+  };
+
+  updateProtocolEditor = (index, field, value) => {
+    this.setState(({ protocolEditors }) => ({
+      protocolEditors: protocolEditors.map((editor, itemIndex) =>
+        itemIndex === index ? { ...editor, [field]: value } : editor
+      ),
+    }));
+  };
+
+  updateProtocolEndpoint = (editorIndex, endpointIndex, field, value) => {
+    this.setState(({ protocolEditors }) => ({
+      protocolEditors: protocolEditors.map((editor, itemIndex) => {
+        if (itemIndex !== editorIndex) {
+          return editor;
+        }
+        return {
+          ...editor,
+          declaredEndpoints: editor.declaredEndpoints.map((endpoint, currentEndpointIndex) =>
+            currentEndpointIndex === endpointIndex ? { ...endpoint, [field]: value } : endpoint
+          ),
+        };
+      }),
+    }));
+  };
+
+  renderStructuredProtocolFields(editor, editorIndex) {
+    return (
+      <div className="agent-structured-protocol-fields">
+        <div className="agent-import-protocol-label">Protocol Type</div>
+        <Select
+          value={editor.protocolEditorKind}
+          dataSource={[
+            { value: 'a2a', label: 'A2A' },
+            { value: 'custom', label: 'Custom Protocol' },
+          ]}
+          style={{ width: '100%', marginBottom: 16 }}
+          onChange={value => this.updateProtocolEditor(editorIndex, 'protocolEditorKind', value)}
+        />
+        {editor.protocolEditorKind === 'a2a' ? (
+          <React.Fragment>
+            <div className="agent-import-protocol-label">Complete Agent Card</div>
+            <Input.TextArea
+              value={editor.agentCard}
+              rows={22}
+              onChange={value => this.updateProtocolEditor(editorIndex, 'agentCard', value)}
+            />
+            <p className="agent-import-help">
+              The complete Agent Card is normalized into the A2A descriptor and declared endpoints.
+              Its name and version are aligned with the Agent draft.
+            </p>
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <div className="agent-form-grid">
+              <div>
+                <div className="agent-import-protocol-label">Protocol</div>
+                <Input
+                  value={editor.customProtocol}
+                  onChange={value =>
+                    this.updateProtocolEditor(editorIndex, 'customProtocol', value)
+                  }
+                />
               </div>
-
-              <div className="capability-item">
-                <div className="capability-label">推送通知</div>
-                <div className="capability-switch">
-                  <Switch
-                    {...this.field.init('pushNotifications', {
-                      valueName: 'checked',
-                      initValue: false,
-                    })}
-                    name="pushNotifications"
-                  />
-                </div>
-                <div className="capability-description">是否支持推送通知功能</div>
+              <div>
+                <div className="agent-import-protocol-label">Protocol Version</div>
+                <Input
+                  value={editor.customProtocolVersion}
+                  onChange={value =>
+                    this.updateProtocolEditor(editorIndex, 'customProtocolVersion', value)
+                  }
+                />
               </div>
-
-              <div className="capability-item">
-                <div className="capability-label">状态历史</div>
-                <div className="capability-switch">
-                  <Switch
-                    {...this.field.init('stateTransitionHistory', {
-                      valueName: 'checked',
-                      initValue: false,
-                    })}
-                    name="stateTransitionHistory"
-                  />
-                </div>
-                <div className="capability-description">是否支持记录状态转换历史</div>
+              <div>
+                <div className="agent-import-protocol-label">Descriptor Media Type</div>
+                <Input
+                  value={editor.customDescriptorMediaType}
+                  onChange={value =>
+                    this.updateProtocolEditor(editorIndex, 'customDescriptorMediaType', value)
+                  }
+                />
+              </div>
+              <div>
+                <div className="agent-import-protocol-label">Endpoint Source Order</div>
+                <Select
+                  value={editor.endpointSourceMode}
+                  dataSource={[
+                    { value: 'declared-runtime', label: 'DECLARED → RUNTIME' },
+                    { value: 'runtime-declared', label: 'RUNTIME → DECLARED' },
+                    { value: 'declared-only', label: 'DECLARED' },
+                    { value: 'runtime-only', label: 'RUNTIME' },
+                  ]}
+                  style={{ width: '100%' }}
+                  onChange={value =>
+                    this.updateProtocolEditor(editorIndex, 'endpointSourceMode', value)
+                  }
+                />
               </div>
             </div>
-          </Form.Item>
-
-          <Form.Item label="技能列表" validator={this.validateJson} help="Agent具备的技能清单">
+            <div className="agent-import-protocol-label agent-field-spacing">Native Descriptor</div>
             <Input.TextArea
-              name="skills"
-              placeholder='[{"name": "weather_query", "description": "查询天气信息"}]'
-              rows={4}
+              value={editor.customNativeDescriptor}
+              rows={12}
+              onChange={value =>
+                this.updateProtocolEditor(editorIndex, 'customNativeDescriptor', value)
+              }
             />
+            <div className="declared-endpoint-title">
+              <span>Declared Endpoints</span>
+              <Button
+                size="small"
+                onClick={() =>
+                  this.updateProtocolEditor(editorIndex, 'declaredEndpoints', [
+                    ...editor.declaredEndpoints,
+                    { uri: '', transport: 'HTTP' },
+                  ])
+                }
+              >
+                Add Endpoint
+              </Button>
+            </div>
+            {editor.declaredEndpoints.map((endpoint, endpointIndex) => (
+              <div className="declared-endpoint-row" key={endpointIndex}>
+                <Input
+                  value={endpoint.uri}
+                  placeholder="Endpoint URI"
+                  onChange={value =>
+                    this.updateProtocolEndpoint(editorIndex, endpointIndex, 'uri', value)
+                  }
+                />
+                <Input
+                  value={endpoint.transport}
+                  placeholder="HTTP"
+                  onChange={value =>
+                    this.updateProtocolEndpoint(editorIndex, endpointIndex, 'transport', value)
+                  }
+                />
+                <Button
+                  warning
+                  text
+                  onClick={() =>
+                    this.updateProtocolEditor(
+                      editorIndex,
+                      'declaredEndpoints',
+                      editor.declaredEndpoints.filter(
+                        (item, currentIndex) => currentIndex !== endpointIndex
+                      )
+                    )
+                  }
+                >
+                  Delete
+                </Button>
+              </div>
+            ))}
+          </React.Fragment>
+        )}
+      </div>
+    );
+  }
+
+  renderMultiProtocolForm() {
+    const { protocolEditors, activeProtocolIndex } = this.state;
+    const moveProtocol = offset => {
+      const targetIndex = activeProtocolIndex + offset;
+      if (targetIndex < 0 || targetIndex >= protocolEditors.length) {
+        return;
+      }
+      const next = [...protocolEditors];
+      [next[activeProtocolIndex], next[targetIndex]] = [
+        next[targetIndex],
+        next[activeProtocolIndex],
+      ];
+      this.setState({ protocolEditors: next, activeProtocolIndex: targetIndex });
+    };
+    return (
+      <Card title="Protocol Configuration" contentHeight="auto" className="agent-editor-card">
+        <div className="agent-protocol-heading">
+          <div>
+            <strong>Supported Protocols</strong>
+            <p>
+              Protocol order is significant. The first compatible protocol is the default preference
+              used by discovery clients.
+            </p>
+          </div>
+          <Button
+            size="small"
+            onClick={() =>
+              this.setState({
+                protocolEditors: [...protocolEditors, createStructuredProtocolEditor('custom')],
+                activeProtocolIndex: protocolEditors.length,
+              })
+            }
+          >
+            Add Protocol
+          </Button>
+        </div>
+        <Tab
+          shape="wrapped"
+          activeKey={String(activeProtocolIndex)}
+          onChange={key => this.setState({ activeProtocolIndex: Number(key) })}
+        >
+          {protocolEditors.map((editor, index) => (
+            <Tab.Item
+              key={String(index)}
+              title={
+                editor.protocolEditorKind === 'a2a'
+                  ? 'A2A'
+                  : editor.customProtocol || `Protocol ${index + 1}`
+              }
+            >
+              <div className="agent-protocol-order">
+                <span>Preference {index + 1}</span>
+                <div>
+                  <Button text disabled={index === 0} onClick={() => moveProtocol(-1)}>
+                    Move Forward
+                  </Button>
+                  <Button
+                    text
+                    disabled={index === protocolEditors.length - 1}
+                    onClick={() => moveProtocol(1)}
+                  >
+                    Move Backward
+                  </Button>
+                  <Button
+                    text
+                    warning
+                    disabled={protocolEditors.length === 1}
+                    onClick={() => {
+                      const next = protocolEditors.filter((item, itemIndex) => itemIndex !== index);
+                      this.setState({
+                        protocolEditors: next,
+                        activeProtocolIndex: Math.min(index, next.length - 1),
+                      });
+                    }}
+                  >
+                    Remove Protocol
+                  </Button>
+                </div>
+              </div>
+              {this.renderStructuredProtocolFields(editor, index)}
+            </Tab.Item>
+          ))}
+        </Tab>
+      </Card>
+    );
+  }
+
+  renderProtocolForm() {
+    const { protocolEditorKind, declaredEndpoints } = this.state;
+    const protocolOptions = [
+      { value: 'a2a', label: 'A2A' },
+      { value: 'custom', label: 'Custom Protocol' },
+    ];
+    if (protocolEditorKind === 'raw') {
+      protocolOptions.push({ value: 'raw', label: 'Advanced Raw Configuration' });
+    }
+    return (
+      <Card title="Protocol Configuration" contentHeight="auto" className="agent-editor-card">
+        <Form.Item label="Protocol Type">
+          <Select
+            name="protocolEditorKind"
+            dataSource={protocolOptions}
+            onChange={value => this.setState({ protocolEditorKind: value })}
+          />
+        </Form.Item>
+        {protocolEditorKind === 'a2a' && (
+          <Form.Item
+            label="Complete Agent Card"
+            required
+            validator={this.required}
+            help="Agent name/version and declared endpoints are derived automatically."
+          >
+            <Input.TextArea name="agentCard" rows={22} />
           </Form.Item>
-
-          {/* 高级配置 */}
-          <Divider style={{ margin: '30px 0' }}>
-            <span>高级配置</span>
-            <Button text size="small" onClick={this.toggleAdvanced} style={{ marginLeft: 10 }}>
-              {showAdvanced ? '收起' : '展开'}
-              <Icon type={showAdvanced ? 'arrow-up' : 'arrow-down'} style={{ marginLeft: 4 }} />
-            </Button>
-          </Divider>
-
-          {showAdvanced && (
-            <>
-              <Form.Item
-                label="图标URL"
-                validator={this.validateUrl}
-                help="Agent的图标地址，用于界面展示"
-              >
-                <Input name="iconUrl" placeholder="https://example.com/icon.png" maxLength={500} />
+        )}
+        {protocolEditorKind === 'custom' && (
+          <React.Fragment>
+            <div className="agent-form-grid">
+              <Form.Item label="Protocol" required validator={this.required}>
+                <Input name="customProtocol" />
               </Form.Item>
-
-              <Form.Item label="文档URL" validator={this.validateUrl} help="Agent的使用文档地址">
+              <Form.Item label="Protocol Version">
+                <Input name="customProtocolVersion" />
+              </Form.Item>
+              <Form.Item label="Descriptor Media Type" required validator={this.required}>
+                <Input name="customDescriptorMediaType" />
+              </Form.Item>
+              <Form.Item label="Endpoint Source Order">
+                <Select
+                  name="endpointSourceMode"
+                  dataSource={[
+                    { value: 'declared-runtime', label: 'DECLARED → RUNTIME' },
+                    { value: 'runtime-declared', label: 'RUNTIME → DECLARED' },
+                    { value: 'declared-only', label: 'DECLARED' },
+                    { value: 'runtime-only', label: 'RUNTIME' },
+                  ]}
+                />
+              </Form.Item>
+            </div>
+            <Form.Item label="Native Descriptor" required validator={this.required}>
+              <Input.TextArea name="customNativeDescriptor" rows={12} />
+            </Form.Item>
+            <div className="declared-endpoint-title">
+              <span>Declared Endpoints</span>
+              <Button
+                size="small"
+                onClick={() =>
+                  this.setState({
+                    declaredEndpoints: [...declaredEndpoints, { uri: '', transport: 'HTTP' }],
+                  })
+                }
+              >
+                Add Endpoint
+              </Button>
+            </div>
+            {declaredEndpoints.map((endpoint, index) => (
+              <div className="declared-endpoint-row" key={index}>
                 <Input
-                  name="documentationUrl"
-                  placeholder="https://docs.example.com/agent"
-                  maxLength={500}
+                  value={endpoint.uri}
+                  placeholder="Endpoint URI"
+                  onChange={value => this.updateEndpoint(index, 'uri', value)}
                 />
-              </Form.Item>
-
-              <Form.Item label="提供商名称" help="Agent提供商的名称">
-                <Input name="organization" placeholder="请输入提供商名称" maxLength={255} />
-              </Form.Item>
-
-              <Form.Item label="提供商URL" validator={this.validateUrl} help="提供商的官方网站地址">
                 <Input
-                  name="providerUrl"
-                  placeholder="https://provider.example.com"
-                  maxLength={500}
+                  value={endpoint.transport}
+                  placeholder="HTTP"
+                  onChange={value => this.updateEndpoint(index, 'transport', value)}
                 />
-              </Form.Item>
+                <Button
+                  warning
+                  text
+                  onClick={() =>
+                    this.setState({
+                      declaredEndpoints: declaredEndpoints.filter(
+                        (item, itemIndex) => itemIndex !== index
+                      ),
+                    })
+                  }
+                >
+                  Delete
+                </Button>
+              </div>
+            ))}
+          </React.Fragment>
+        )}
+        {protocolEditorKind === 'raw' && (
+          <Form.Item label="Call Interfaces" required validator={this.required}>
+            <Input.TextArea name="callInterfaces" rows={22} />
+          </Form.Item>
+        )}
+      </Card>
+    );
+  }
 
-              <Form.Item
-                label="security"
-                validator={this.validateJson}
-                help="Agent的安全认证相关配置 (JSON格式)"
-              >
-                <Input.TextArea
-                  name="security"
-                  placeholder='[{"apiKey": ["read", "write"]}]'
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="securitySchemes"
-                validator={this.validateJson}
-                help="Agent的安全模式配置 (JSON格式)"
-              >
-                <Input.TextArea
-                  name="securitySchemes"
-                  placeholder='{"type": "apiKey", "description": "API密钥认证"}'
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="额外接口"
-                validator={this.validateJson}
-                help="Agent的额外接口配置 (JSON格式)"
-              >
-                <Input.TextArea
-                  name="additionalInterfaces"
-                  placeholder='[{"transport": "sse", "uri": "/sse"}]'
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Form.Item label="扩展卡片支持" help="是否支持认证扩展卡片功能">
-                <Switch name="supportsAuthenticatedExtendedCard" defaultChecked={false} />
-              </Form.Item>
-            </>
+  renderActions() {
+    const { mode, createPath, createStep, saving } = this.state;
+    const guidedCreate = mode === 'create' && createPath === 'new';
+    let primaryAction = null;
+    if (!(mode === 'create' && createPath === 'choose')) {
+      primaryAction =
+        guidedCreate && createStep < 2 ? (
+          <Button type="primary" onClick={this.advanceCreateStep}>
+            Next
+          </Button>
+        ) : (
+          <Button type="primary" loading={saving} onClick={this.handleSubmit}>
+            {createPath === 'import' ? 'Import and Create' : 'Save'}
+          </Button>
+        );
+    }
+    return (
+      <div className="agent-editor-actions">
+        <div>
+          {guidedCreate && createStep > 0 && (
+            <Button onClick={() => this.setState({ createStep: createStep - 1 })}>Previous</Button>
           )}
+          {mode === 'create' &&
+            createPath !== 'choose' &&
+            (createPath === 'import' || createStep === 0) && (
+              <Button onClick={() => this.setState({ createPath: 'choose', createStep: 0 })}>
+                Back to Creation Method
+              </Button>
+            )}
+        </div>
+        <div>
+          <Button onClick={this.handleGoBack}>Cancel</Button>
+          {primaryAction}
+        </div>
+      </div>
+    );
+  }
 
-          {/* 版本设置 - 仅编辑模式显示 */}
-          {isEdit && (
-            <>
-              <Form.Item label="设为最新版本" help="开启后，此版本将成为发布版本">
-                <Switch name="setAsLatest" defaultChecked={false} />
-              </Form.Item>
-            </>
-          )}
-        </Form>
+  render() {
+    const { mode, createPath, loading, createStep, contentMode } = this.state;
+    if (loading) {
+      return <div style={{ padding: 40 }}>Loading...</div>;
+    }
+    const titles = {
+      create: 'Create Agent',
+      metadata: 'Edit Agent Metadata',
+      'draft-create': 'Create Agent Draft',
+      'draft-edit': 'Edit Agent Draft',
+    };
+    const guidedCreate = mode === 'create' && createPath === 'new';
+    const directProtocolVisible = mode !== 'metadata' && contentMode === 'direct';
+
+    return (
+      <div className="new-agent-container">
+        <PageTitle title={titles[mode]} />
+        <span className="agent-editor-namespace">{this.namespaceId()}</span>
+        {mode === 'create' && createPath === 'choose' && this.renderCreatePathSelection()}
+        {mode === 'create' && createPath === 'import' && this.renderKnownProtocolImport()}
+        {guidedCreate && (
+          <Step current={createStep} shape="circle" className="agent-create-steps">
+            <Step.Item title="Agent Metadata" />
+            <Step.Item title="Initial Version" />
+            <Step.Item title="Protocol Configuration" />
+          </Step>
+        )}
+        {createPath !== 'choose' && createPath !== 'import' && (
+          <Form field={this.field} labelCol={{ span: 5 }} wrapperCol={{ span: 17 }}>
+            {(mode === 'metadata' || (guidedCreate && createStep === 0)) &&
+              this.renderMetadataForm()}
+            {(mode === 'draft-create' ||
+              mode === 'draft-edit' ||
+              (guidedCreate && createStep === 1)) &&
+              this.renderVersionForm()}
+            {directProtocolVisible && mode !== 'create' && this.renderProtocolForm()}
+            {guidedCreate && createStep === 2 && this.renderMultiProtocolForm()}
+          </Form>
+        )}
+        {this.renderActions()}
       </div>
     );
   }

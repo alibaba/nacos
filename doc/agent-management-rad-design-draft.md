@@ -1004,7 +1004,8 @@ Config 物理 `data_id` 最大 255 个字符，由通用 codec 保证；不能�
 
 #### 4.2.4 RuntimeEndpoint 与 Naming 映射
 
-RuntimeEndpoint 复用 Naming，物理逻辑分组为 `namespaceId + agentName + protocol`；transport 进入 cluster，
+RuntimeEndpoint 复用 Naming，物理逻辑分组为 `namespaceId + agentName + protocol`；transport 经
+`RadAsciiAgentIdCodec` 编码后进入 cluster，
 runtimeVersion 和 versionRange 进入 Instance metadata。
 
 | RAD 字段 | Naming Service / Instance 映射 |
@@ -1012,7 +1013,7 @@ runtimeVersion 和 versionRange 进入 Instance metadata。
 | `namespaceId` | Service namespace |
 | 固定 group | `agent-endpoints` |
 | `agentName + protocol` | `serviceName=radServiceNameComposer(encodedAgentId, protocol)` |
-| normalizedTransport | `Instance.clusterName=normalizedTransport` |
+| normalizedTransport | `Instance.clusterName=RadAsciiAgentIdCodec.encode(normalizedTransport)` |
 | normalized URI host / effective port | `Instance.ip/port` |
 | URI path | `__nacos.agent.endpoint.path__` |
 | normalized transport | `__nacos.agent.endpoint.transport__` |
@@ -1033,7 +1034,7 @@ runtimeVersion 和 versionRange 进入 Instance metadata。
 | 标识 | 固定规则 |
 |---|---|
 | serviceName | `rad-<encodedAgentId>-<protocol>`；不含 version，只含 `[A-Za-z0-9-]`，实际最大长度 297，保留大小写 |
-| clusterName | 直接使用 normalizedTransport；必须匹配 `[0-9A-Za-z-]{1,64}` |
+| clusterName | 使用 `rad-ascii-v1` 编码 normalizedTransport；只包含 `[A-Za-z0-9-]`，最大 260 字符 |
 | Instance 自然键 | 同一 Service/cluster 下的 host + effective port；transport 已进入 cluster |
 
 RAD 对 Gateway 的保证仅是 `lb://<serviceName>` 能被 URI 正常解析，不把 serviceName 定义成 DNS 名称，也不
@@ -1044,7 +1045,7 @@ version 不进入 serviceName 或 clusterName；精确版本发现由 RAD 对 In
 `rad-A-B-C` 的低概率冲突。首版不增加冲突索引或消歧逻辑，也不从 serviceName 反解组成部分；读取侧
 使用已知 AgentName 和 protocol 重组比较。未来需要时使用新的 composer id 迁移。
 
-clusterName 的 transport 同时保存在保留 metadata，读取时交叉校验。
+原始 transport 同时保存在保留 metadata，读取时重新编码并与 clusterName 交叉校验。
 用户 metadata 不得覆盖 `__nacos.agent.endpoint.xxx__` 保留 key。完整 Instance metadata 复用 Naming 容量校验。
 AgentEndpointRegistrationBatch 未提交 versionRange 时，转换层必须在写 Naming 前规范化为
 `[runtimeVersion]`。同一批次的每条 Instance 都写 singular version/versionRange；Naming metadata 不写
@@ -1057,7 +1058,8 @@ serialized bindings。读取端只从 singular pair 构造查询期 `RuntimeVers
 publisher record 做 read-merge-write。
 
 注册批次转换、Declared 去重和发现投影共用同一个 Endpoint canonicalizer：normalizedHost 写入
-`Instance.ip`，effectivePort 写入 `Instance.port`，normalizedTransport 直接写入 clusterName 和保留 metadata。
+`Instance.ip`，effectivePort 写入 `Instance.port`，normalizedTransport 使用 `RadAsciiAgentIdCodec`
+编码后写入 clusterName，原值写入保留 metadata。
 最终 Instance 统一复用 Naming 对 ip、port、clusterName、weight 和完整 metadata 的参数校验。
 
 Discover 先按 Agent + protocol 从 Naming `ServiceStorage` 缓存读取完整内部 Service 投影，可按 transport
@@ -1978,6 +1980,79 @@ flowchart LR
 | 阻塞检查 | 已确认现有 Client HTTP/gRPC API、RAD model validator、Endpoint canonicalizer、HTTP Client lifecycle、gRPC connection listener 和 Agent 专用现有 redo 扩展点足以完成闭环；无需修改禁止范围。若实现中出现必须改变共享 Client runtime、HTTP common、Naming 或服务端数据面的情况，则立即暂停并提交维护者决策 |
 | 验收门禁 | 编码前完成 `AGENT_DISCOVERY_SDK_IT_SCENARIOS.md` 全操作/边界/故障/组合矩阵；新增或修改 production Java 可执行行 UT line coverage 100%；`api`、`client` Spotless、编译、相关单测和 JaCoCo XML 验证；Java SDK test-compile 与 10 个稳定 standalone IT 场景；与既有 13 个 AI SDK IT 联合回归；默认 JSON/Jackson 3 适配器、HTTP/gRPC 定向交叉验证，以及同一 SDK 进程跨真实 standalone 停服/重启的连接恢复、轮询、gRPC reconnect redo 和 HTTP `50404` replay 验证；最终 production diff 逐项复核白名单 |
 
+#### 已完成阶段范围留痕：Console UI
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 通用 Agent API 切换已完成；本次根据实际试用反馈补充结构化创建向导、列表/详情体验和 `HTTP+JSON` Transport 闭环 |
+| 规范依据 | Agent API Spec 第 3～4 章、Agent Management Spec 第 3～6 章、Console Spec 第 6 章，以及本文第 5.4、7.1～7.2 节 |
+| 当前目标 | 使 legacy 和 next 两套 Console Agent 页面共同使用 `/v3/console/ai/agents`：创建入口先区分“从已知协议导入”和“全新创建”；A2A 导入接收 AgentCard JSON，并派生 metadata、首个 Version、CallInterface 和 Declared Endpoint；全新创建再按 metadata、首个 Version 和有序多 Protocol 三步配置；列表与详情对齐 Skill/Prompt 的信息层级，并完整显示 Protocol 来源与声明端点 |
+| 允许范围 | `console-ui` 与 `console-ui-next` 的 Agent 页面、Agent API/类型/状态、Agent 专用展示或表单 helper、locale、前端单元测试及构建生成的对应 Console 静态资源；本文和直接相关 Spec/Schema/IT。实际试用确认 `HTTP+JSON` 被 Naming cluster 字符集拒绝是主流程阻塞后，额外只允许修改 `AgentValidationUtils` 与 `AgentRuntimeEndpointMapper` 及其测试，复用现有 `RadAsciiAgentIdCodec` 编码 Transport |
+| 禁止范围 | `ai_resource` / `ai_resource_version`、DAO、Repository、AI Storage、Agent Application Service、Runtime Registry；除上述两个白名单类外的 `api`、`ai`、`console` Java 后端；Maintainer/Java Client SDK、HTTP common、Naming 共享逻辑；旧 A2A Adapter、服务端 Watch/Push、历史数据迁移、双读双写及非 Agent 页面重构 |
+| 已知问题 | 维护者已决定本阶段不处理旧 A2A Config/Naming 数据迁移；切换后页面只展示新 Agent API 的数据。旧 API 和 Adapter 的兼容窗口仍由后续独立阶段处理；管理元数据订阅问题继续按 Java SDK 阶段记录，不在 Console UI 中扩展 RAD 契约 |
+| 阻塞检查 | Console Facade 已提供全部管理路径以及后端生成的 `namingServiceRef`。实际 A2A AgentCard 使用规范 Transport `HTTP+JSON` 时，Naming clusterName 的字符集不能直接保存 `+`；维护者已明确决定复用 AgentName 的 `RadAsciiAgentIdCodec`，只在 Agent Runtime 映射边界编码，不修改 Naming 共享逻辑 |
+| 验收门禁 | 编码前冻结下述全部单操作、组合和边界场景；新增或修改的可执行 helper 行由单元测试 100% 覆盖；legacy/next 分别完成 lint 和生产构建，next 完成 Agent 单元测试；使用真实 standalone 对列表、创建、metadata、Draft、生命周期、Version/Protocol、Runtime/Naming 跳转与删除进行定向交叉验证；最终 production diff 逐项复核白名单 |
+
+Console UI 场景矩阵：
+
+| 类别 | 场景 | 必须验证的结果 |
+|---|---|---|
+| 列表 | 默认 namespace、空列表、模糊名称、tag/scope/owner 组合过滤、分页、切换 namespace | 只请求 `/agents/list`；筛选值和页码准确，空结果不回退旧 A2A 数据 |
+| 列表 | enable/disable、PUBLIC/PRIVATE、editing/reviewing/online 摘要 | 卡片或表格直接展示 Agent metadata 与 Version 摘要，不把 Version status 当作 Agent status |
+| 创建 | 选择从已知协议导入或全新创建 | 首屏不提前创建任何服务端对象；导入路径只展示已支持的协议和原始描述输入，全新创建路径才进入分步表单 |
+| 创建 | 导入 A2A AgentCard | 只调用一次 `POST /agents/draft`；AgentCard 的 `name` 直接作为 Agent 身份，显式 `version` 优先作为 Version 身份；A2A v1 正式契约仍要求 `version`，但对缺少该字段的不完整示例，Console 导入边界使用界面可见且可编辑的首版本号（默认 `0.0.1`），不放松服务端契约；保留原生扩展字段，并从 supported/legacy interfaces 稳定派生 metadata、CallInterface 和声明端点 |
+| 创建 | A2A 示例包含对象或数组尾逗号 | 只在 A2A 编辑/导入边界兼容尾逗号，字符串内容不受影响；提交前转换为严格 JSON，不放松服务端或公共模型校验 |
+| 创建 | 三步全新创建 metadata、首个 Version 和有序多 Protocol | 同一 Version 可添加、删除、前移和后移多个协议；提交顺序就是 SDK 默认协议偏好；协议 token 必须唯一且 `callInterfaces` 非空 |
+| 创建 | A2A 与自定义 Protocol 混合 | A2A 使用完整 AgentCard；自定义协议的 protocol、可选 protocolVersion、media type、source order、nativeDescriptor 和声明端点均使用结构化控件，不要求用户手写整个 `callInterfaces` 数组；新增自定义声明端点默认 Transport 为 `HTTP` |
+| 创建 | 连续输入或修改自定义端点 URI/Transport | 端点行使用与可编辑值无关的稳定 React key；每次输入不重建控件、不丢失焦点，最终提交完整输入值 |
+| 创建 | HTTP+JSON、WebSocket 等 Transport；重复自然端点 | 原始 Transport 保留在公开模型与 metadata；Naming cluster 使用 `RadAsciiAgentIdCodec` 编码；声明端点按 host、effective port 和 Transport 首项去重 |
+| 创建 | 初始 Agent 缺少名称、Card 与界面均缺少 Version、AgentCard、JSON 非法、接口 URL/Transport/Version 非法、自定义字段不完整 | 浏览器阻止明显非法提交；服务端错误保持可见，不发送旧 `registrationType` |
+| 后续 Draft | 直接填写新 Version 内容 | `POST /draft` 不提交创建 metadata；成功后读取精确 Version |
+| 后续 Draft | 从 `basedOnVersion` 派生 | 只提交精确目标 Version 和基线 Version，不同时提交 `callInterfaces` |
+| Draft 编辑 | 编辑当前 exact draft | `PUT /draft` 只更新 `callInterfaces` 与 `changeDescription`，不混入 metadata |
+| Metadata 编辑 | 修改 displayName/description/icon/provider/tags/extensions/status | `PUT /agents` 只更新 metadata，不修改 owner/scope/Version 内容 |
+| Version 读取 | 首屏 overview、翻页、按 status 筛选、切换 exact Version | overview 的 bounded page 可首屏展示；后续列表走 `/versions`，详情走 `/version` |
+| Version 生命周期 | draft→submit、reviewed→publish、draft/reviewing/reviewed→force-publish、reviewed→redraft、online↔offline、删除 draft | 每个按钮只在匹配状态显示或可用，动作始终携带 exact Version，完成后刷新 overview/Version detail |
+| Version 生命周期 | 非法转换、并发状态变化、目标不存在 | 显示服务端错误并重新读取；不得用 latest 或缺省 Version 重试 |
+| Label | 替换自定义 labels | `PUT /labels` 发送 JSON map；页面不允许用户管理服务端 `latest` label |
+| Protocol | 无 CallInterface、单协议、多协议、切换 Version 后协议集合变化 | 详情使用真正的 Protocol Tab，且只由当前 `AgentVersionDetail.callInterfaces[]` 构造；切换 Version 时清空旧 Protocol/Runtime 状态；多 CallInterface 存量 Draft 编辑保留原始高级模式 |
+| Protocol | endpointSourceOrder 与 declaredEndpoints | 详情按当前 Protocol 明确展示来源顺序、声明端点 URI/Transport 和完整 nativeDescriptor，不把声明端点误当作 Runtime Snapshot |
+| Runtime | 首次选择 Protocol、重复选择、切换 Version/Protocol | 每个 Version+Protocol 首次选择才请求 `/runtime-endpoints`；缓存键包含 exact Version 和 Protocol |
+| Runtime | 空快照、AVAILABLE/DISABLED/UNHEALTHY、多 bindings、metadata | 完整只读展示，不在 Console 内直接修改 Runtime |
+| Runtime | `endpointSourceOrder` 不含 `RUNTIME` 但存在注册项 | 仍查询并展示，同时明确提示这些地址不会进入当前 Version 的 Discover |
+| Runtime | Naming 跳转 | 使用后端 `namingServiceRef` 构造 Naming Instance 页面参数；浏览器不编码 Agent 名或拼 serviceName |
+| 组合 | 创建初始 Draft→提交/发布→详情→Protocol Runtime；metadata 更新→列表/详情；后续 Draft→发布→切换 Version | 各页面刷新后事实一致，metadata 和 Version 内容保持分层 |
+| 组合 | Runtime 预注册→Agent Version 后发布→详情；Runtime disable/enable 后刷新 | Console 只读观察注册事实和 Naming 状态，不隐式发布、Discover 或续约 Endpoint |
+| 删除 | 删除 draft；删除 Agent；批量删除部分失败 | 刷新列表/Version，部分失败必须报告，不把全部结果误报为成功 |
+| 兼容边界 | 仅存在旧 A2A 数据 | 新页面显示为空或 not found；不请求 `/v3/console/ai/a2a`，不做迁移、转换或双读 |
+| 权限与错误 | READ-only、WRITE denied、404、参数错误、网络超时 | 保持 Console 统一错误反馈；只读页面仍可用，失败不篡改本地已确认状态 |
+
+本阶段验收结论：
+
+- next Console Agent 的模型、API、Store 和 source-contract 共 90 个定向单元测试通过；TypeScript 编译、
+  目标 ESLint 和生产构建通过，生成静态资源已同步。
+- legacy Console Agent 使用对应的 Agent 专用 helper 约束模型与请求契约，改动文件通过 Prettier、
+  构建内置 eslint-loader 和标准 production webpack 全量构建，legacy 静态资源已同步。对该静态包进行
+  浏览器定向验证时，列表、Version/Protocol 详情与 Runtime Snapshot 均正常展示，请求日志只包含新
+  Agent Facade。
+- 真实 standalone 上完成初始 Agent/Draft 创建、force publish、HTTP Endpoint 注册、Runtime Snapshot
+  刷新、后端 `namingServiceRef` 跳转、metadata 更新、后续 Draft 直接编辑、从基线 Version 复制 Draft、
+  Version 切换与 status 过滤、自定义 label、Draft 删除、Endpoint 注销和 Agent 删除的交叉验证。
+- 使用实际 next Console 页面完成创建入口分流：导入路径只填写完整 A2A AgentCard，保留扩展字段、
+  同步 AgentName/Version 并派生两个声明端点；全新创建路径按三步配置 metadata、首个 Version，并添加、
+  前移形成 `custom-rpc + a2a` 两个有序协议。详情页以真实 Tab 切换并分别回读结构化 Protocol、
+  source order、nativeDescriptor 和 Endpoint；legacy Console 同步完成列表、创建入口和多协议详情浏览器验证。
+  两条创建路径均以 `HTTP+JSON` 成功回读。另以 Client HTTP API
+  注册 `HTTP+JSON` Runtime Endpoint，并通过 Discover 同时回读 DECLARED/RUNTIME 两组原始 Transport，
+  验证 Naming 内部编码不会泄漏到公开模型。
+- 以实际试用中的 A2A 示例再次回归：Card 缺少 `version` 且接口对象包含尾逗号时，页面预览并创建
+  `0.0.1` 草稿，提交后的 nativeDescriptor 已规范化为严格 JSON，声明端点仍保留 `HTTP+JSON`。
+  自定义协议路径逐字符输入完整 Endpoint URI 后焦点持续停留在同一输入框，默认 Transport 为 `HTTP`，
+  并成功创建及回读对应声明端点。验证使用的临时 standalone 已优雅停止，8080、8848、7848、9848、
+  9849 均无监听残留。
+- 空列表和名称过滤只读取 `/v3/console/ai/agents`；源契约测试确认两套页面均不请求旧
+  `/v3/console/ai/a2a`，不执行旧数据迁移、转换、双读或 fallback。
+
 ### 7.2 分阶段任务
 
 - [x] **规范基线**：新增 Agent 管理、RAD 0.1.0、Agent API、Agent Storage 中英文 Specs；新增 RAD 外部、
@@ -2020,7 +2095,7 @@ flowchart LR
   Runtime Snapshot、审计和 Maintainer HTTP 映射；首版不提供同 Version 强制内容替换。
 - [x] **Console 后端 Facade**：实现与 Admin 同语义的 Console Facade、Runtime Snapshot 包装和服务端生成的
   Naming 页面引用；不修改通用 Agent/AI Resource 底座。
-- [ ] **Console UI**：实现版本/Protocol 页签、Runtime Snapshot 懒加载、无 `RUNTIME` 来源提示、
+- [x] **Console UI**：实现版本/Protocol 页签、Runtime Snapshot 懒加载、无 `RUNTIME` 来源提示、
   Naming 页面跳转和只读 Runtime 体验。
 - [ ] **旧 A2A API Adapter**：完成 AgentCard 写入、latest 兼容、URL/SERVICE 查询反向投影、订阅和
   Console/Admin/Maintainer 兼容窗口；首阶段 Endpoint 继续使用旧 version-specific Naming 布局，后续切流

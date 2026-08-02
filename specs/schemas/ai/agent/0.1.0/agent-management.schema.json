@@ -95,7 +95,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 64,
-      "pattern": "^[0-9A-Za-z-]{1,64}$"
+      "pattern": "^[0-9A-Za-z+-]{1,64}$"
     },
     "ContentDigest": {
       "type": "string",
