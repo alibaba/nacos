@@ -2031,11 +2031,10 @@ Console UI 场景矩阵：
 
 - next Console Agent 的模型、API、Store 和 source-contract 共 90 个定向单元测试通过；TypeScript 编译、
   目标 ESLint 和生产构建通过，生成静态资源已同步。
-- legacy Console Agent 使用对应的 Agent 专用 helper 约束模型与请求契约，全部改动文件目标 ESLint
-  通过；标准全量构建仍被改动范围外 Header、MCP、Prompt、Skill、Plugin 等既有 eslint-loader 错误
-  阻塞。本阶段未扩大范围修复这些文件；在独立完成改动文件 lint 后，仅跳过该既有 lint preloader 的
-  production webpack 打包通过，legacy 静态资源已同步。对该静态包进行浏览器定向验证时，列表、
-  Version/Protocol 详情与 Runtime Snapshot 均正常展示，请求日志只包含新 Agent Facade。
+- legacy Console Agent 使用对应的 Agent 专用 helper 约束模型与请求契约，改动文件通过 Prettier、
+  构建内置 eslint-loader 和标准 production webpack 全量构建，legacy 静态资源已同步。对该静态包进行
+  浏览器定向验证时，列表、Version/Protocol 详情与 Runtime Snapshot 均正常展示，请求日志只包含新
+  Agent Facade。
 - 真实 standalone 上完成初始 Agent/Draft 创建、force publish、HTTP Endpoint 注册、Runtime Snapshot
   刷新、后端 `namingServiceRef` 跳转、metadata 更新、后续 Draft 直接编辑、从基线 Version 复制 Draft、
   Version 切换与 status 过滤、自定义 label、Draft 删除、Endpoint 注销和 Agent 删除的交叉验证。
