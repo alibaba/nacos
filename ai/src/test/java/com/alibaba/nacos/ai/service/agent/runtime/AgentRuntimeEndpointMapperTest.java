@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -46,7 +48,7 @@ class AgentRuntimeEndpointMapperTest {
     
     @Test
     void testMapEndpointToNamingAndBack() {
-        Endpoint endpoint = endpoint("HTTPS://EXAMPLE.COM/a2a?tenant=nacos", "JSON-RPC");
+        Endpoint endpoint = endpoint("HTTPS://EXAMPLE.COM/a2a?tenant=nacos", "HTTP+JSON");
         endpoint.setPriority(3);
         endpoint.setWeight(2.5D);
         endpoint.setHealthy(false);
@@ -58,7 +60,7 @@ class AgentRuntimeEndpointMapperTest {
         assertNull(instance.getServiceName());
         assertEquals("example.com", instance.getIp());
         assertEquals(443, instance.getPort());
-        assertEquals("JSON-RPC", instance.getClusterName());
+        assertEquals("enc-HTTP-043JSON", instance.getClusterName());
         assertEquals(2.5D, instance.getWeight());
         assertTrue(instance.isEnabled());
         assertTrue(instance.isHealthy());
@@ -67,7 +69,7 @@ class AgentRuntimeEndpointMapperTest {
         assertEquals("/a2a", metadata.get(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
         assertEquals("tenant=nacos",
             metadata.get(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
-        assertEquals("JSON-RPC",
+        assertEquals("HTTP+JSON",
             metadata.get(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
         assertEquals("https", metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
         assertEquals("true", metadata.get(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
@@ -83,7 +85,7 @@ class AgentRuntimeEndpointMapperTest {
             AgentRuntimeEndpointMapper.fromInstance(instance, 1234L);
         
         assertEndpoint(result.getEndpoint(), "https://example.com:443/a2a?tenant=nacos",
-            "JSON-RPC", 3, 2.5D);
+            "HTTP+JSON", 3, 2.5D);
         assertEquals("cn-hangzhou", result.getEndpoint().getMetadata().get("region"));
         assertEquals("1.0.0", result.getBindings().get(0).getRuntimeVersion());
         assertEquals("[1.0.0]", result.getBindings().get(0).getVersionRange());
@@ -151,6 +153,31 @@ class AgentRuntimeEndpointMapperTest {
         assertEquals("cn-hangzhou", instance.getMetadata().get("region"));
         assertEquals(RuntimeEndpointState.AVAILABLE, result.getState());
         assertEquals(1234L, result.getLastUpdatedTime());
+    }
+    
+    @Test
+    void testMapUnhealthyRuntimeState() {
+        Instance instance = validInstance();
+        instance.setHealthy(false);
+        
+        RuntimeEndpointSnapshotItem result =
+            AgentRuntimeEndpointMapper.fromInstance(instance, 1L);
+        
+        assertEquals(RuntimeEndpointState.UNHEALTHY, result.getState());
+    }
+    
+    @Test
+    void testRejectMalformedCanonicalUri() throws Exception {
+        Method method = AgentRuntimeEndpointMapper.class.getDeclaredMethod(
+            "parseCanonicalUri", String.class);
+        method.setAccessible(true);
+        
+        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+            () -> method.invoke(null, "https://example.com/%"));
+        
+        assertTrue(exception.getCause() instanceof IllegalArgumentException);
+        assertTrue(exception.getCause().getMessage().startsWith(
+            "Invalid canonical Agent Endpoint URI:"));
     }
     
     @Test

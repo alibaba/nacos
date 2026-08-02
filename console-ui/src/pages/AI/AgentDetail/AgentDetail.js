@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,670 +20,595 @@ import {
   Button,
   Card,
   ConfigProvider,
+  Input,
   Loading,
   Message,
-  Tag,
+  Pagination,
+  Select,
+  Tab,
   Table,
-  Grid,
-  Switch,
+  Tag,
 } from '@alifd/next';
-import PageTitle from 'components/PageTitle';
-import { getParams, request } from '@/globalLib';
+import { getParams } from '@/globalLib';
+import { agentApi } from '../agent-api';
+import {
+  getProtocols,
+  getVersionActions,
+  namingDetailPath,
+  runtimeCacheKey,
+  usesRuntimeSource,
+} from '../agent-console-model';
 import '../NewAgent/NewAgent.scss';
+
+const VERSION_STATUSES = ['draft', 'reviewing', 'reviewed', 'online', 'offline'];
+
+const ACTION_LABELS = {
+  submit: 'Submit for Review',
+  publish: 'Publish',
+  forcePublish: 'Force Publish',
+  redraft: 'Return to Draft',
+  online: 'Bring Online',
+  offline: 'Take Offline',
+};
 
 @ConfigProvider.config
 class AgentDetail extends React.Component {
   static displayName = 'AgentDetail';
 
   static propTypes = {
-    locale: PropTypes.object,
     history: PropTypes.object,
+    location: PropTypes.object,
   };
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      loading: false,
-      agentData: null,
-      versionList: [],
-    };
-  }
+  state = {
+    loading: true,
+    actionLoading: false,
+    runtimeLoading: false,
+    overview: null,
+    versionPage: null,
+    versionDetail: null,
+    selectedVersion: getParams('version') || '',
+    selectedProtocol: '',
+    runtimeCache: {},
+    versionStatus: '',
+    versionPageNo: 1,
+    labelsText: '{}',
+  };
 
   componentDidMount() {
-    this.loadAgentDetail();
-    this.loadVersionList();
+    this.loadOverview();
+    this.loadVersions();
   }
 
-  // 添加 componentDidUpdate 来监听路由参数变化
   componentDidUpdate(prevProps) {
-    // 检查URL参数是否发生变化
-    const prevSearch = prevProps.location?.search || '';
-    const currentSearch = this.props.location?.search || '';
-
-    // 如果URL参数发生变化，重新加载数据
-    if (prevSearch !== currentSearch) {
-      this.loadAgentDetail();
-      // 版本列表不需要重复加载，因为同一个agent的不同版本都在一个列表中
+    if (prevProps.location && prevProps.location.search !== this.props.location.search) {
+      // Route identity changed; clear Version-scoped state before loading the new Agent.
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState(
+        {
+          selectedVersion: getParams('version') || '',
+          selectedProtocol: '',
+          runtimeCache: {},
+        },
+        () => {
+          this.loadOverview();
+          this.loadVersions();
+        }
+      );
     }
   }
 
-  loadAgentDetail = () => {
-    const agentName = getParams('name');
-    const namespaceId = getParams('namespace') || 'public';
-    const version = getParams('version'); // 获取URL中的版本参数
+  namespaceId = () => getParams('namespace') || 'public';
 
+  agentName = () => getParams('name') || '';
+
+  loadOverview = () => {
+    const agentName = this.agentName();
     if (!agentName) {
-      Message.error('Agent名称不能为空');
-      return;
+      Message.error('Agent name is required');
+      this.setState({ loading: false });
+      return Promise.resolve(null);
     }
-
     this.setState({ loading: true });
-
-    const params = new URLSearchParams();
-    params.append('agentName', agentName);
-    params.append('namespaceId', namespaceId);
-
-    // 如果有版本号参数，则添加到请求参数中
-    if (version) {
-      params.append('version', version);
-    }
-
-    request({
-      url: `v3/console/ai/a2a?${params.toString()}`,
-      success: data => {
-        console.log('Agent detail API response:', data);
-        this.setState({ loading: false });
-        if (data && (data.code === 0 || data.code === 200) && data.data) {
-          const agentData = data.data;
-          this.setState(
-            {
-              agentData,
-            },
-            () => {
-              console.log('State updated, agentData:', this.state.agentData);
-            }
-          );
-        } else {
-          console.log('Failed to load agent detail:', data);
-          Message.error(data?.message || '获取Agent详情失败');
+    return agentApi
+      .get({ namespaceId: this.namespaceId(), agentName })
+      .then(overview => {
+        const labels = { ...((overview.agent.versionInfo || {}).labels || {}) };
+        delete labels.latest;
+        const selectedVersion =
+          this.state.selectedVersion ||
+          (overview.agent.versionCatalog && overview.agent.versionCatalog.latestVersion) ||
+          (overview.agent.versionInfo && overview.agent.versionInfo.editingVersion) ||
+          (overview.agent.versionInfo && overview.agent.versionInfo.reviewingVersion) ||
+          ((overview.versionPage.pageItems || [])[0] || {}).version ||
+          '';
+        this.setState({
+          overview,
+          labelsText: JSON.stringify(labels, null, 2),
+          selectedVersion,
+          loading: false,
+        });
+        if (selectedVersion) {
+          return this.loadVersion(selectedVersion);
         }
-      },
-      error: () => {
-        this.setState({ loading: false });
-        Message.error('获取Agent详情失败');
-      },
-    });
+        return overview;
+      })
+      .catch(error => {
+        this.setState({ overview: null, loading: false });
+        Message.error(error.message);
+        return null;
+      });
   };
 
-  loadVersionList = () => {
-    const agentName = getParams('name');
-    const namespaceId = getParams('namespace') || 'public';
+  loadVersions = (pageNo = this.state.versionPageNo) => {
+    return agentApi
+      .versions({
+        namespaceId: this.namespaceId(),
+        agentName: this.agentName(),
+        status: this.state.versionStatus || undefined,
+        pageNo,
+        pageSize: 10,
+      })
+      .then(versionPage => this.setState({ versionPage, versionPageNo: pageNo }))
+      .catch(error => Message.error(error.message));
+  };
 
-    if (!agentName) {
+  loadVersion = version => {
+    this.setState({
+      loading: true,
+      selectedVersion: version,
+      selectedProtocol: '',
+      runtimeCache: {},
+    });
+    return agentApi
+      .version({
+        namespaceId: this.namespaceId(),
+        agentName: this.agentName(),
+        version,
+      })
+      .then(versionDetail => {
+        const protocols = getProtocols(versionDetail.callInterfaces);
+        const selectedProtocol = protocols[0] || '';
+        this.setState({ versionDetail, selectedProtocol, loading: false });
+        if (selectedProtocol) {
+          this.loadRuntime(version, selectedProtocol);
+        }
+        return versionDetail;
+      })
+      .catch(error => {
+        this.setState({ versionDetail: null, loading: false });
+        Message.error(error.message);
+      });
+  };
+
+  loadRuntime = (version, protocol, force = false) => {
+    const key = runtimeCacheKey(version, protocol);
+    if (!force && this.state.runtimeCache[key]) {
+      return Promise.resolve(this.state.runtimeCache[key]);
+    }
+    this.setState({ runtimeLoading: true });
+    return agentApi
+      .runtime({
+        namespaceId: this.namespaceId(),
+        agentName: this.agentName(),
+        version,
+        protocol,
+      })
+      .then(view => {
+        this.setState(state => ({
+          runtimeCache: { ...state.runtimeCache, [key]: view },
+          runtimeLoading: false,
+        }));
+        return view;
+      })
+      .catch(error => {
+        this.setState({ runtimeLoading: false });
+        Message.error(error.message);
+      });
+  };
+
+  selectProtocol = protocol => {
+    const { versionDetail } = this.state;
+    this.setState({ selectedProtocol: protocol });
+    if (versionDetail) {
+      this.loadRuntime(versionDetail.version, protocol);
+    }
+  };
+
+  editPath = (mode, version) => {
+    const params = new URLSearchParams({
+      namespace: this.namespaceId(),
+      name: this.agentName(),
+      mode,
+    });
+    if (version) {
+      params.set('version', version);
+    }
+    this.props.history.push(`/newAgent?${params.toString()}`);
+  };
+
+  runAction = action => {
+    const { versionDetail } = this.state;
+    if (!versionDetail) {
       return;
     }
-
-    const params = new URLSearchParams();
-    params.append('agentName', agentName);
-    params.append('namespaceId', namespaceId);
-
-    request({
-      url: `v3/console/ai/a2a/version/list?${params.toString()}`,
-      success: data => {
-        if (data && (data.code === 0 || data.code === 200) && data.data) {
-          this.setState({
-            versionList: data.data,
-          });
-        } else {
-          console.log('Failed to load version list:', data);
-          Message.error(data?.message || '获取版本列表失败');
-        }
-      },
-      error: () => {
-        Message.error('获取版本列表失败');
-      },
-    });
+    const data = {
+      namespaceId: this.namespaceId(),
+      agentName: this.agentName(),
+      version: versionDetail.version,
+    };
+    this.setState({ actionLoading: true });
+    agentApi[action](data)
+      .then(() => {
+        Message.success('Version action completed');
+        return this.loadOverview();
+      })
+      .then(() => this.loadVersions(this.state.versionPageNo))
+      .catch(error => Message.error(error.message))
+      .finally(() => this.setState({ actionLoading: false }));
   };
 
-  handleGoBack = () => {
-    const namespaceId = getParams('namespace') || 'public';
-    this.props.history.push(`/agentManagement?namespace=${namespaceId}`);
+  deleteDraft = () => {
+    const { versionDetail } = this.state;
+    if (!versionDetail) {
+      return;
+    }
+    this.setState({ actionLoading: true });
+    agentApi
+      .deleteDraft({
+        namespaceId: this.namespaceId(),
+        agentName: this.agentName(),
+        version: versionDetail.version,
+      })
+      .then(() => {
+        Message.success('Draft deleted');
+        this.setState({ selectedVersion: '', versionDetail: null }, () => {
+          this.loadOverview();
+          this.loadVersions(1);
+        });
+      })
+      .catch(error => Message.error(error.message))
+      .finally(() => this.setState({ actionLoading: false }));
   };
 
-  handleEdit = () => {
-    const agentName = getParams('name');
-    const namespaceId = getParams('namespace') || 'public';
-    this.props.history.push(`/newAgent?namespace=${namespaceId}&name=${agentName}&mode=edit`);
-  };
-
-  formatTime = timeStr => {
-    if (!timeStr) return '--';
+  updateLabels = () => {
+    let labels;
     try {
-      const date = new Date(timeStr);
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    } catch (e) {
-      return timeStr;
-    }
-  };
-
-  formatSkills = skills => {
-    if (!skills) return '--';
-    if (Array.isArray(skills)) {
-      return skills.map(skill => skill.name || skill).join(', ') || '--';
-    }
-    if (typeof skills === 'object') {
-      return JSON.stringify(skills, null, 2);
-    }
-    return skills.toString();
-  };
-
-  formatCapabilities = capabilities => {
-    if (!capabilities) return '--';
-    if (typeof capabilities === 'object') {
-      const caps = [];
-      if (capabilities.sampling) caps.push('采样');
-      if (capabilities.tools && Array.isArray(capabilities.tools)) {
-        caps.push(`工具: ${capabilities.tools.join(', ')}`);
+      labels = JSON.parse(this.state.labelsText);
+      if (!labels || Array.isArray(labels) || typeof labels !== 'object') {
+        throw new Error('Labels must be a JSON object');
       }
-      return caps.length > 0 ? caps.join(', ') : JSON.stringify(capabilities, null, 2);
+      if (Object.prototype.hasOwnProperty.call(labels, 'latest')) {
+        throw new Error('The latest label is managed by the server');
+      }
+    } catch (error) {
+      Message.error(error.message);
+      return;
     }
-    return capabilities.toString();
+    agentApi
+      .updateLabels({
+        namespaceId: this.namespaceId(),
+        agentName: this.agentName(),
+        labels: JSON.stringify(labels),
+      })
+      .then(() => {
+        Message.success('Labels updated');
+        this.loadOverview();
+      })
+      .catch(error => Message.error(error.message));
   };
 
-  formatModes = modes => {
-    if (!modes) return '--';
-    if (Array.isArray(modes)) {
-      return modes.join(', ') || '--';
+  renderRuntime() {
+    const { versionDetail, selectedProtocol, runtimeCache, runtimeLoading } = this.state;
+    if (!versionDetail || !selectedProtocol) {
+      return <div>No Call Interface selected</div>;
     }
-    return modes.toString();
-  };
-
-  getSupportedInterfaces = agentData => {
-    const interfaces = Array.isArray(agentData?.supportedInterfaces)
-      ? agentData.supportedInterfaces
-      : [];
-    return interfaces.filter(item => item && item.url);
-  };
-
-  getPrimaryInterface = agentData => {
-    const interfaces = this.getSupportedInterfaces(agentData);
-    return interfaces.length > 0 ? interfaces[0] : null;
-  };
-
-  renderSkillsContent = skills => {
-    if (!skills || (Array.isArray(skills) && skills.length === 0)) {
-      return (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无技能配置</div>
-      );
-    }
-
-    if (Array.isArray(skills)) {
-      return (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-            gap: '16px',
-          }}
-        >
-          {skills.map((skill, index) => {
-            const name = (skill && skill.name) || `技能 ${index + 1}`;
-            const id = (skill && skill.id) || '--';
-            const desc = (skill && skill.description) || '--';
-            const tags = skill && Array.isArray(skill.tags) ? skill.tags : [];
-            const inputModes = skill && Array.isArray(skill.inputModes) ? skill.inputModes : [];
-            const outputModes = skill && Array.isArray(skill.outputModes) ? skill.outputModes : [];
-            const examples = skill && Array.isArray(skill.examples) ? skill.examples : [];
-            const examplesInline = examples.slice(0, 2).join('， ');
-            const moreSuffix = examples.length > 2 ? `，…等${examples.length}条` : '';
-
-            const Row = (label, content) => (
-              <div style={{ display: 'flex', gap: 8, margin: '6px 0', alignItems: 'flex-start' }}>
-                <div style={{ width: 72, color: '#666' }}>{label}：</div>
-                <div style={{ flex: 1 }}>{content || '--'}</div>
-              </div>
-            );
-
-            return (
-              <div
-                key={skill?.id || index}
-                style={{
-                  padding: '16px',
-                  backgroundColor: '#fafafa',
-                  borderRadius: '8px',
-                  border: '1px solid #e8e8e8',
-                }}
-              >
-                {Row('名称', <strong style={{ fontSize: 16, color: '#333' }}>{name}</strong>)}
-                {Row('ID', <span style={{}}>{id}</span>)}
-                {Row(
-                  '描述',
-                  <span
-                    title={desc}
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {desc}
-                  </span>
-                )}
-                {Row(
-                  '标签',
-                  tags.length
-                    ? tags.map((t, i) => (
-                        <Tag key={i} size="small" style={{ marginRight: 4, marginBottom: 4 }}>
-                          {t}
-                        </Tag>
-                      ))
-                    : null
-                )}
-                {Row(
-                  '输入模式',
-                  inputModes.length
-                    ? inputModes.map((m, i) => (
-                        <Tag key={i} size="small" style={{ marginRight: 4 }}>
-                          {m}
-                        </Tag>
-                      ))
-                    : null
-                )}
-                {Row(
-                  '输出模式',
-                  outputModes.length
-                    ? outputModes.map((m, i) => (
-                        <Tag key={i} size="small" type="primary" style={{ marginRight: 4 }}>
-                          {m}
-                        </Tag>
-                      ))
-                    : null
-                )}
-                {Row(
-                  '示例',
-                  examples.length ? (
-                    <span style={{ whiteSpace: 'pre-wrap' }}>
-                      {examplesInline}
-                      {moreSuffix}
-                    </span>
-                  ) : null
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    // 兜底：对象或字符串直接展示为 JSON
-    const skillsValue =
-      typeof skills === 'object' ? JSON.stringify(skills, null, 2) : String(skills);
-    return (
-      <pre
-        style={{
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          margin: 0,
-          padding: 12,
-          backgroundColor: '#f5f5f5',
-          borderRadius: 6,
-          border: '1px solid #e8e8e8',
-          fontSize: 13,
-        }}
-      >
-        {skillsValue}
-      </pre>
+    const callInterface = (versionDetail.callInterfaces || []).find(
+      item => item.protocol === selectedProtocol
     );
-  };
-
-  renderCapabilitiesContent = capabilities => {
-    if (!capabilities) {
-      return (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无能力配置</div>
-      );
-    }
-
-    if (typeof capabilities === 'object') {
-      // 解析三个核心能力的值，默认为false
-      const streaming = !!capabilities.streaming;
-      const pushNotifications = !!capabilities.pushNotifications;
-      const stateTransitionHistory = !!capabilities.stateTransitionHistory;
-
-      return (
-        <div className="new-agent-container">
-          <div className="capabilities-container">
-            <div className="capability-item">
-              <div className="capability-label">流式传输</div>
-              <div className="capability-switch">
-                <Switch
-                  checked={streaming}
-                  disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
-                />
-              </div>
-              <div className="capability-description">是否支持流式数据传输</div>
-            </div>
-
-            <div className="capability-item">
-              <div className="capability-label">推送通知</div>
-              <div className="capability-switch">
-                <Switch
-                  checked={pushNotifications}
-                  disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
-                />
-              </div>
-              <div className="capability-description">是否支持推送通知功能</div>
-            </div>
-
-            <div className="capability-item">
-              <div className="capability-label">状态历史</div>
-              <div className="capability-switch">
-                <Switch
-                  checked={stateTransitionHistory}
-                  disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
-                />
-              </div>
-              <div className="capability-description">是否支持记录状态转换历史</div>
-            </div>
+    const view = runtimeCache[runtimeCacheKey(versionDetail.version, selectedProtocol)];
+    const items = ((view && view.runtimeEndpointSnapshot.items) || []).map(item => ({
+      ...item,
+      runtimeKey: `${item.endpoint.uri}@@${item.endpoint.transport}`,
+    }));
+    return (
+      <Card title="Runtime Endpoints (read-only)" contentHeight="auto" style={{ marginTop: 16 }}>
+        {!usesRuntimeSource(callInterface) && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: 12,
+              color: '#ad6800',
+              background: '#fffbe6',
+              border: '1px solid #ffe58f',
+            }}
+          >
+            This version does not enable RUNTIME. Registered endpoints will not enter its Discover
+            result.
           </div>
-        </div>
-      );
-    }
-
-    // 兜底：如果capabilities不是对象，则以JSON形式展示
-    return (
-      <pre
-        style={{
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          margin: 0,
-          padding: '12px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '6px',
-          border: '1px solid #e8e8e8',
-          fontSize: '13px',
-        }}
-      >
-        {typeof capabilities === 'object'
-          ? JSON.stringify(capabilities, null, 2)
-          : String(capabilities)}
-      </pre>
-    );
-  };
-
-  renderDetailItem = (label, value, type = 'text') => {
-    let displayValue = value === null || value === undefined ? '--' : value;
-
-    if (type === 'url' && value) {
-      const isValidUrl = value.startsWith('http://') || value.startsWith('https://');
-      if (isValidUrl) {
-        displayValue = (
-          <a href={value} target="_blank" rel="noopener noreferrer">
-            {value}
-          </a>
-        );
-      } else {
-        displayValue = <span>{value}</span>;
-      }
-    } else if (type === 'tag' && (value || value === 0 || value === false)) {
-      displayValue = (
-        <Tag type="primary" size="small">
-          {value.toString()}
-        </Tag>
-      );
-    } else if (type === 'time') {
-      displayValue = this.formatTime(value);
-    }
-
-    return (
-      <div style={{ marginBottom: 16, display: 'flex' }}>
-        <div style={{ width: 120, fontWeight: 'bold', color: '#333' }}>{label}:</div>
-        <div style={{ flex: 1 }}>{displayValue}</div>
-      </div>
-    );
-  };
-
-  renderVersionTable = () => {
-    const { versionList, agentData } = this.state;
-    const currentVersion = agentData?.version;
-
-    if (!versionList || versionList.length === 0) {
-      return <div>暂无版本信息</div>;
-    }
-
-    return (
-      <Table dataSource={versionList} size="small">
-        <Table.Column
-          title="版本号"
-          dataIndex="version"
-          cell={(value, index, record) => {
-            // 如果不是当前版本，则显示为可点击链接
-            if (value !== currentVersion) {
-              return (
-                <a onClick={() => this.handleVersionClick(record)} style={{ cursor: 'pointer' }}>
-                  {value || '--'}
-                </a>
-              );
+        )}
+        <Button
+          size="small"
+          loading={runtimeLoading}
+          onClick={() => this.loadRuntime(versionDetail.version, selectedProtocol, true)}
+          style={{ marginBottom: 12 }}
+        >
+          Refresh
+        </Button>
+        <Table dataSource={items} size="small" primaryKey="runtimeKey">
+          <Table.Column title="URI" cell={(value, index, item) => item.endpoint.uri} />
+          <Table.Column title="Transport" cell={(value, index, item) => item.endpoint.transport} />
+          <Table.Column title="State" dataIndex="state" cell={value => <Tag>{value}</Tag>} />
+          <Table.Column
+            title="Bindings"
+            cell={(value, index, item) =>
+              (item.bindings || [])
+                .map(binding => `${binding.runtimeVersion} -> ${binding.versionRange}`)
+                .join(', ') || '--'
             }
-            return value || '--';
-          }}
-        />
-        <Table.Column
-          title="是否最新"
-          dataIndex="latest"
-          cell={value => (
-            <Tag type={value ? 'primary' : 'normal'} size="small">
-              {value ? '是' : '否'}
-            </Tag>
-          )}
-        />
-        <Table.Column
-          title="创建时间"
-          dataIndex="createdAt"
-          cell={value => this.formatTime(value)}
-        />
-        <Table.Column
-          title="更新时间"
-          dataIndex="updatedAt"
-          cell={value => this.formatTime(value)}
-        />
-      </Table>
+          />
+        </Table>
+        {view && view.namingServiceRef && (
+          <Button
+            style={{ marginTop: 12 }}
+            onClick={() => this.props.history.push(namingDetailPath(view.namingServiceRef))}
+          >
+            Naming: {view.namingServiceRef.groupName}
+            {'@@'}
+            {view.namingServiceRef.serviceName}
+          </Button>
+        )}
+        <div style={{ color: '#999', marginTop: 8 }}>
+          Enable or disable Runtime instances on the Naming service detail page.
+        </div>
+      </Card>
     );
-  };
-
-  // 处理版本号点击事件
-  handleVersionClick = versionRecord => {
-    const agentName = getParams('name');
-    const namespaceId = getParams('namespace') || 'public';
-
-    // 跳转到对应版本的详情页面
-    this.props.history.push(
-      `/agentDetail?namespace=${namespaceId}&name=${agentName}&version=${versionRecord.version}`
-    );
-  };
+  }
 
   render() {
-    const { locale = {} } = this.props;
-    const { loading, agentData } = this.state;
-    const { Row, Col } = Grid;
-
-    if (loading) {
-      return <Loading visible={true} style={{ width: '100%' }} />;
+    const {
+      loading,
+      actionLoading,
+      overview,
+      versionPage,
+      versionDetail,
+      selectedProtocol,
+      selectedVersion,
+      versionStatus,
+      versionPageNo,
+      labelsText,
+    } = this.state;
+    if (loading && !overview) {
+      return <Loading visible style={{ width: '100%' }} />;
     }
-
-    if (!agentData) {
-      return (
-        <div>
-          <PageTitle title="Agent详情" />
-          <Card style={{ marginTop: 16 }} contentHeight="auto">
-            <div style={{ textAlign: 'center', padding: 40 }}>Agent不存在或已被删除</div>
-          </Card>
-        </div>
-      );
+    if (!overview) {
+      return <Card contentHeight="auto">Agent not found</Card>;
     }
-
-    const primaryInterface = this.getPrimaryInterface(agentData);
-    const supportedInterfaces = this.getSupportedInterfaces(agentData);
-    const transport =
-      (primaryInterface && (primaryInterface.protocolBinding || primaryInterface.transport)) ||
-      '--';
-    const protocolVersion = (primaryInterface && primaryInterface.protocolVersion) || '--';
-    const serviceUrl = (primaryInterface && primaryInterface.url) || '--';
-    const extendedCardSupported = !!agentData?.capabilities?.extendedAgentCard;
-
-    // 构造包含版本信息的标题
-    const pageTitle = getParams('version')
-      ? `Agent详情 - ${agentData.name} (版本: ${getParams('version')})`
-      : `Agent详情 - ${agentData.name}`;
+    const { agent } = overview;
+    const protocols = getProtocols((versionDetail && versionDetail.callInterfaces) || []);
+    const actions = getVersionActions(versionDetail && versionDetail.status);
 
     return (
-      <div>
-        <PageTitle title={pageTitle} />
-
-        <div style={{ marginBottom: 16 }}>
-          <Button onClick={this.handleGoBack} style={{ marginRight: 8 }}>
-            返回列表
-          </Button>
-          <Button type="primary" onClick={this.handleEdit}>
-            编辑
-          </Button>
-        </div>
-
-        <Card title="基本信息" style={{ marginBottom: 16 }} contentHeight="auto">
-          <div style={{ display: 'flex', gap: '40px' }}>
-            <div style={{ flex: 1 }}>
-              {this.renderDetailItem('Agent名称', agentData.name)}
-              {this.renderDetailItem('版本号', agentData.version)}
-              {this.renderDetailItem('服务地址', serviceUrl)}
-              {this.renderDetailItem('描述信息', agentData.description)}
-              {this.renderDetailItem('协议版本', protocolVersion)}
-              {this.renderDetailItem('图标URL', agentData.iconUrl, 'url')}
-              {this.renderDetailItem('文档URL', agentData.documentationUrl, 'url')}
-            </div>
-            <div style={{ flex: 1 }}>
-              {this.renderDetailItem('输入模式', this.formatModes(agentData.defaultInputModes))}
-              {this.renderDetailItem('输出模式', this.formatModes(agentData.defaultOutputModes))}
-              {this.renderDetailItem('提供商名称', agentData.provider?.organization)}
-              {this.renderDetailItem('提供商URL', agentData.provider?.url)}
-              {this.renderDetailItem('传输协议', transport)}
-              {this.renderDetailItem('支持认证扩展卡', extendedCardSupported, 'tag')}
+      <div className="agent-detail-page">
+        <section className="agent-detail-hero">
+          <div className="agent-detail-hero-toolbar">
+            <Button text onClick={() => this.props.history.push('/agentManagement')}>
+              ← Back to List
+            </Button>
+            <div>
+              <Button onClick={() => this.editPath('metadata')}>Edit Metadata</Button>
+              <Button type="primary" onClick={() => this.editPath('draft-create')}>
+                Create Draft
+              </Button>
             </div>
           </div>
-        </Card>
-
-        <Card title="技能列表" style={{ marginBottom: 16 }} contentHeight="auto">
-          {this.renderSkillsContent(agentData.skills)}
-        </Card>
-
-        <Card title="能力配置" style={{ marginBottom: 16 }} contentHeight="auto">
-          {this.renderCapabilitiesContent(agentData.capabilities)}
-        </Card>
-
-        <Card title="安全方案" style={{ marginBottom: 16 }} contentHeight="auto">
-          {agentData.securitySchemes ? (
-            <pre
-              style={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                margin: 0,
-                padding: '12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '6px',
-                border: '1px solid #e8e8e8',
-                fontSize: '13px',
-              }}
-            >
-              {JSON.stringify(agentData.securitySchemes, null, 2)}
-            </pre>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-              暂无安全方案配置
+          <div className="agent-detail-identity">
+            <div className="agent-detail-avatar">🤖</div>
+            <div className="agent-detail-title">
+              <div>
+                <h1>{agent.displayName || agent.agentName}</h1>
+                <Tag type="primary">{agent.status}</Tag>
+                <Tag>{agent.scope || '--'}</Tag>
+              </div>
+              <code>{agent.agentName}</code>
+              <p>{agent.description || '--'}</p>
+            </div>
+            <Select
+              value={selectedVersion}
+              onChange={this.loadVersion}
+              dataSource={((versionPage && versionPage.pageItems) || []).map(version => ({
+                value: version.version,
+                label: `${version.version} · ${version.status}`,
+              }))}
+              style={{ width: 240 }}
+            />
+          </div>
+          {versionDetail && (
+            <div className="agent-version-action-bar">
+              <div>
+                <strong>{versionDetail.version}</strong>
+                <Tag>{versionDetail.status}</Tag>
+                <span>{versionDetail.changeDescription || 'No change description'}</span>
+              </div>
+              <div>
+                {actions.map(action => {
+                  if (action === 'editDraft') {
+                    return (
+                      <Button
+                        key={action}
+                        size="small"
+                        onClick={() => this.editPath('draft-edit', versionDetail.version)}
+                      >
+                        Edit Draft
+                      </Button>
+                    );
+                  }
+                  if (action === 'deleteDraft') {
+                    return (
+                      <Button
+                        key={action}
+                        warning
+                        size="small"
+                        loading={actionLoading}
+                        onClick={this.deleteDraft}
+                      >
+                        Delete Draft
+                      </Button>
+                    );
+                  }
+                  return (
+                    <Button
+                      key={action}
+                      type={action === 'submit' || action === 'publish' ? 'primary' : 'normal'}
+                      size="small"
+                      loading={actionLoading}
+                      onClick={() => this.runAction(action)}
+                    >
+                      {ACTION_LABELS[action]}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </Card>
+        </section>
 
-        <Card title="安全配置" style={{ marginBottom: 16 }} contentHeight="auto">
-          {agentData.security ? (
-            <pre
-              style={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                margin: 0,
-                padding: '12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '6px',
-                border: '1px solid #e8e8e8',
-                fontSize: '13px',
-              }}
+        <div className="agent-detail-grid">
+          <main>
+            <Card
+              title={`Supported Protocols (${protocols.length})`}
+              contentHeight="auto"
+              className="agent-protocol-card"
             >
-              {JSON.stringify(agentData.security, null, 2)}
-            </pre>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无安全配置</div>
-          )}
-        </Card>
+              {versionDetail && protocols.length > 0 ? (
+                <Tab shape="wrapped" activeKey={selectedProtocol} onChange={this.selectProtocol}>
+                  {protocols.map(protocol => {
+                    const callInterface = (versionDetail.callInterfaces || []).find(
+                      item => item.protocol === protocol
+                    );
+                    return (
+                      <Tab.Item key={protocol} title={protocol.toUpperCase()}>
+                        <div className="agent-protocol-summary">
+                          <div>
+                            <span>Protocol</span>
+                            <strong>{callInterface.protocol}</strong>
+                          </div>
+                          <div>
+                            <span>Protocol Version</span>
+                            <strong>{callInterface.protocolVersion || '--'}</strong>
+                          </div>
+                          <div>
+                            <span>Descriptor Media Type</span>
+                            <strong>{callInterface.descriptorMediaType}</strong>
+                          </div>
+                          <div>
+                            <span>Endpoint Source Order</span>
+                            <strong>{(callInterface.endpointSourceOrder || []).join(' → ')}</strong>
+                          </div>
+                        </div>
+                        <div className="agent-declared-endpoints">
+                          <strong>Declared Endpoints</strong>
+                          {(callInterface.declaredEndpoints || []).length === 0 ? (
+                            <p>--</p>
+                          ) : (
+                            (callInterface.declaredEndpoints || []).map(endpoint => (
+                              <div key={`${endpoint.uri}@@${endpoint.transport}`}>
+                                <code>{endpoint.uri}</code>
+                                <Tag>{endpoint.transport}</Tag>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <pre className="agent-native-descriptor">
+                          {JSON.stringify(callInterface.nativeDescriptor, null, 2)}
+                        </pre>
+                      </Tab.Item>
+                    );
+                  })}
+                </Tab>
+              ) : (
+                <p>No Call Interface available</p>
+              )}
+            </Card>
 
-        <Card title="附加接口（支持接口）" style={{ marginBottom: 16 }} contentHeight="auto">
-          {supportedInterfaces.length > 0 ? (
-            <div>
-              {supportedInterfaces.map((interfaceItem, index) => (
-                <div
-                  key={index}
-                  style={{
-                    marginBottom: '12px',
-                    padding: '12px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '6px',
-                    border: '1px solid #e8e8e8',
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                    {`接口 ${index + 1}`}
-                  </div>
-                  {interfaceItem.url && (
-                    <div style={{ color: '#666', fontSize: '13px' }}>URL: {interfaceItem.url}</div>
-                  )}
-                  {(interfaceItem.protocolBinding || interfaceItem.transport) && (
-                    <div style={{ color: '#666', fontSize: '13px' }}>
-                      传输协议: {interfaceItem.protocolBinding || interfaceItem.transport}
-                    </div>
-                  )}
-                  {interfaceItem.protocolVersion && (
-                    <div style={{ color: '#666', fontSize: '13px' }}>
-                      协议版本: {interfaceItem.protocolVersion}
-                    </div>
-                  )}
-                  {interfaceItem.tenant && (
-                    <div style={{ color: '#666', fontSize: '13px' }}>
-                      租户: {interfaceItem.tenant}
-                    </div>
-                  )}
+            {this.renderRuntime()}
+
+            <Card title="Version History" contentHeight="auto" style={{ marginTop: 16 }}>
+              <Select
+                value={versionStatus}
+                onChange={value =>
+                  this.setState({ versionStatus: value }, () => this.loadVersions(1))
+                }
+                dataSource={[
+                  { value: '', label: 'ALL' },
+                  ...VERSION_STATUSES.map(status => ({ value: status, label: status })),
+                ]}
+                style={{ width: 160, marginBottom: 12 }}
+              />
+              <Table
+                dataSource={(versionPage && versionPage.pageItems) || []}
+                size="small"
+                primaryKey="version"
+              >
+                <Table.Column
+                  title="Version"
+                  dataIndex="version"
+                  cell={value => <a onClick={() => this.loadVersion(value)}>{value}</a>}
+                />
+                <Table.Column title="Status" dataIndex="status" />
+                <Table.Column title="Change Description" dataIndex="changeDescription" />
+              </Table>
+              {versionPage && versionPage.pagesAvailable > 1 && (
+                <Pagination
+                  current={versionPageNo}
+                  total={versionPage.totalCount}
+                  pageSize={10}
+                  onChange={this.loadVersions}
+                />
+              )}
+            </Card>
+          </main>
+
+          <aside>
+            <Card title="Agent Metadata" contentHeight="auto">
+              <dl className="agent-metadata-list">
+                <div>
+                  <dt>Owner</dt>
+                  <dd>{agent.owner || '--'}</dd>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无支持接口</div>
-          )}
-        </Card>
-
-        <Card title="版本信息" contentHeight="auto">
-          {this.renderVersionTable()}
-        </Card>
+                <div>
+                  <dt>Provider</dt>
+                  <dd>{(agent.provider && agent.provider.name) || '--'}</dd>
+                </div>
+                <div>
+                  <dt>Tags</dt>
+                  <dd>{(agent.tags || []).join(', ') || '--'}</dd>
+                </div>
+                <div>
+                  <dt>Latest Version</dt>
+                  <dd>{(agent.versionCatalog && agent.versionCatalog.latestVersion) || '--'}</dd>
+                </div>
+                <div>
+                  <dt>Online Versions</dt>
+                  <dd>{(agent.versionInfo && agent.versionInfo.onlineCnt) || 0}</dd>
+                </div>
+              </dl>
+            </Card>
+            <Card title="Custom Version Labels" contentHeight="auto" style={{ marginTop: 16 }}>
+              <Input.TextArea
+                value={labelsText}
+                rows={5}
+                onChange={value => this.setState({ labelsText: value })}
+              />
+              <Button type="primary" style={{ marginTop: 8 }} onClick={this.updateLabels}>
+                Save Labels
+              </Button>
+              <div style={{ color: '#999', marginTop: 8 }}>
+                The latest label is managed by the server.
+              </div>
+            </Card>
+          </aside>
+        </div>
       </div>
     );
   }

@@ -134,7 +134,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 64,
-      "pattern": "^[0-9A-Za-z-]{1,64}$"
+      "pattern": "^[0-9A-Za-z+-]{1,64}$"
     },
     "ContentDigest": {
       "type": "string",
@@ -763,7 +763,11 @@
           "description": "Must equal the RadServiceNameComposerContract output for the known encodedAgentId and protocol. The regex alone cannot recover the component boundary."
         },
         "clusterName": {
-          "$ref": "#/$defs/TransportToken"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 260,
+          "pattern": "^[A-Za-z0-9-]+$",
+          "description": "Must equal RadAsciiAgentIdCodec.encode() applied to the reserved raw transport metadata."
         },
         "ip": {
           "type": "string",
@@ -793,7 +797,7 @@
           "$ref": "#/$defs/NamingRuntimeMetadata"
         }
       },
-      "$comment": "This definition covers only the new Version-neutral RAD Naming layout. Current legacy A2A services named <legacyEncodedAgentName>::<exactVersion> and their Instance metadata are outside its scope. clusterName must equal the reserved transport metadata. Each Naming Runtime publication carries exactly one runtime Version and canonical Version range pair in metadata, and the range must contain the runtime Version. A publisher submits the complete Instance batch for one Agent protocol service; a new batch replaces that publisher's previous batch. If the client's desired batch becomes empty, it invokes whole-publication deregistration instead of submitting an empty batch. The server adapter maps the submitted batch without reading and merging old publisher state. Query projections construct one RuntimeVersionBinding per Instance, apply range matching, and aggregate bindings by natural Endpoint key. IP, port, path, query, scheme, and TLS metadata must reconstruct the canonical Endpoint. The optional reserved protocolVersion is excluded from public RAD Endpoint metadata and Runtime revision."
+      "$comment": "This definition covers only the new Version-neutral RAD Naming layout. Current legacy A2A services named <legacyEncodedAgentName>::<exactVersion> and their Instance metadata are outside its scope. clusterName must equal RadAsciiAgentIdCodec.encode() applied to the reserved raw transport metadata. Each Naming Runtime publication carries exactly one runtime Version and canonical Version range pair in metadata, and the range must contain the runtime Version. A publisher submits the complete Instance batch for one Agent protocol service; a new batch replaces that publisher's previous batch. If the client's desired batch becomes empty, it invokes whole-publication deregistration instead of submitting an empty batch. The server adapter maps the submitted batch without reading and merging old publisher state. Query projections construct one RuntimeVersionBinding per Instance, apply range matching, and aggregate bindings by natural Endpoint key. IP, port, path, query, scheme, and TLS metadata must reconstruct the canonical Endpoint. The optional reserved protocolVersion is excluded from public RAD Endpoint metadata and Runtime revision."
     },
     "RuntimeRevisionContract": {
       "type": "object",

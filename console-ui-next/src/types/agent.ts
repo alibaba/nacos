@@ -1,127 +1,185 @@
-// ===== Agent (A2A) Types =====
+export type AgentResourceStatus = 'enable' | 'disable';
 
-export type AgentSearchMode = 'accurate' | 'blur';
+export type AgentVersionStatus = 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
 
-// ===== Skill =====
+export type AgentScope = 'PUBLIC' | 'PRIVATE';
 
-export interface AgentSkill {
-  id?: string;
-  name: string;
-  description?: string;
-  tags?: string[];
-  inputModes?: string[];
-  outputModes?: string[];
-  examples?: string[];
-}
+export type EndpointSource = 'RUNTIME' | 'DECLARED';
 
-// ===== Capabilities =====
-
-export interface AgentCapabilities {
-  streaming?: boolean;
-  pushNotifications?: boolean;
-  stateTransitionHistory?: boolean;
-  extendedAgentCard?: boolean;
-}
-
-// ===== Provider =====
+export type RuntimeEndpointState = 'AVAILABLE' | 'DISABLED' | 'UNHEALTHY';
 
 export interface AgentProvider {
-  organization?: string;
-  url?: string;
-}
-
-// ===== Additional Interface =====
-
-export interface AgentAdditionalInterface {
-  name?: string;
-  url?: string;
-  description?: string;
-  transport?: string;
-  uri?: string;
-  protocolBinding?: string;
-  protocolVersion?: string;
-  tenant?: string;
-}
-
-export interface AgentInterface {
-  url?: string;
-  transport?: string;
-  protocolBinding?: string;
-  protocolVersion?: string;
-  tenant?: string;
-}
-
-// ===== Version =====
-
-export interface AgentVersionDetail {
-  version: string;
-  latest?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// ===== Agent Basic Info (list item — matches AgentCardVersionInfo) =====
-
-export interface AgentBasicInfo {
   name: string;
-  description?: string;
-  version?: string;
-  latestPublishedVersion?: string;
-  iconUrl?: string;
-  protocolVersion?: string;
-  capabilities?: AgentCapabilities;
-  skills?: AgentSkill[];
-  versionDetails?: AgentVersionDetail[];
-  registrationType?: string;
-}
-
-// ===== Agent Detail Info (matches AgentCardDetailInfo) =====
-
-export interface AgentDetailInfo extends AgentBasicInfo {
   url?: string;
-  preferredTransport?: string;
-  defaultInputModes?: string[];
-  defaultOutputModes?: string[];
-  provider?: AgentProvider;
-  documentationUrl?: string;
-  security?: unknown;
-  securitySchemes?: unknown;
-  supportedInterfaces?: AgentInterface[];
-  additionalInterfaces?: AgentAdditionalInterface[];
-  supportsAuthenticatedExtendedCard?: boolean;
-  signatures?: Array<Record<string, unknown>>;
-  latestVersion?: boolean;
 }
 
-// ===== List Request/Response =====
+export interface AgentVersionInfo {
+  editingVersion?: string;
+  reviewingVersion?: string;
+  onlineCnt?: number;
+  labels?: Record<string, string>;
+}
+
+export interface AgentVersionCatalogEntry {
+  version: string;
+  labels?: string[];
+  protocols?: string[];
+}
+
+export interface AgentVersionCatalog {
+  latestVersion?: string;
+  onlineVersions?: AgentVersionCatalogEntry[];
+}
+
+export interface AgentMetadata {
+  namespaceId: string;
+  agentName: string;
+  displayName?: string;
+  description?: string;
+  iconUrl?: string;
+  provider?: AgentProvider;
+  tags?: string[];
+  extensions?: Record<string, unknown>;
+  status: AgentResourceStatus;
+  owner?: string;
+  scope?: AgentScope;
+  versionInfo?: AgentVersionInfo;
+  versionCatalog?: AgentVersionCatalog;
+  metaVersion?: number;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export type AgentSummary = Omit<AgentMetadata, 'extensions'>;
+
+export interface AgentEndpoint {
+  uri: string;
+  transport: string;
+  priority?: number;
+  weight?: number;
+  metadata?: Record<string, string>;
+  healthy?: boolean;
+}
+
+export interface AgentCallInterface {
+  protocol: string;
+  protocolVersion?: string;
+  descriptorMediaType: string;
+  nativeDescriptor: unknown;
+  endpointSourceOrder: EndpointSource[];
+  declaredEndpoints?: AgentEndpoint[];
+}
+
+export interface AgentVersionSummary {
+  version: string;
+  status: AgentVersionStatus;
+  author?: string;
+  changeDescription?: string;
+  contentDigest?: string;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export interface AgentVersionDetail extends AgentVersionSummary {
+  namespaceId: string;
+  agentName: string;
+  callInterfaces: AgentCallInterface[];
+}
+
+export interface AgentPage<T> {
+  totalCount: number;
+  pageNumber: number;
+  pagesAvailable: number;
+  pageItems: T[];
+}
+
+export interface AgentOverview {
+  agent: AgentMetadata;
+  versionPage: AgentPage<AgentVersionSummary>;
+}
+
+export interface RuntimeVersionBinding {
+  runtimeVersion: string;
+  versionRange: string;
+}
+
+export interface RuntimeEndpointSnapshotItem {
+  endpoint: AgentEndpoint;
+  bindings: RuntimeVersionBinding[];
+  state: RuntimeEndpointState;
+  enabled: boolean;
+  healthy: boolean;
+  lastUpdatedTime: number;
+}
+
+export interface RuntimeEndpointSnapshot {
+  namespaceId: string;
+  agentName: string;
+  protocol: string;
+  version?: string;
+  items: RuntimeEndpointSnapshotItem[];
+}
+
+export interface NamingServiceRef {
+  namespaceId: string;
+  groupName: string;
+  serviceName: string;
+}
+
+export interface ConsoleRuntimeEndpointView {
+  runtimeEndpointSnapshot: RuntimeEndpointSnapshot;
+  namingServiceRef: NamingServiceRef;
+}
 
 export interface AgentListParams {
-  agentName?: string;
   namespaceId?: string;
-  search?: AgentSearchMode;
+  agentName?: string;
+  bizTag?: string;
+  scope?: AgentScope;
+  owner?: string;
+  orderBy?: 'download_count';
   pageNo?: number;
   pageSize?: number;
 }
 
-export interface AgentListResponse {
-  totalCount: number;
-  pageItems: AgentBasicInfo[];
-}
-
-// ===== Create/Update =====
-
-export interface AgentCreateData {
+export interface AgentDraftCreateData {
   namespaceId?: string;
   agentName: string;
   version: string;
-  registrationType?: string;
-  agentCard: string; // JSON string of AgentDetailInfo
+  displayName?: string;
+  description?: string;
+  iconUrl?: string;
+  provider?: string;
+  tags?: string;
+  extensions?: string;
+  callInterfaces?: string;
+  author?: string;
+  changeDescription?: string;
+  basedOnVersion?: string;
 }
 
-export interface AgentUpdateData {
+export interface AgentDraftUpdateData {
   namespaceId?: string;
   agentName: string;
   version: string;
-  agentCard: string;
-  setAsLatest?: boolean;
+  callInterfaces: string;
+  changeDescription?: string;
+}
+
+export interface AgentMetadataUpdateData {
+  namespaceId?: string;
+  agentName: string;
+  displayName?: string;
+  description?: string;
+  iconUrl?: string;
+  provider?: string;
+  tags?: string;
+  extensions?: string;
+  status: AgentResourceStatus;
+}
+
+export interface AgentVersionActionData {
+  namespaceId?: string;
+  agentName: string;
+  version: string;
 }

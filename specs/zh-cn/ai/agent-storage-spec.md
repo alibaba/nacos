@@ -384,8 +384,10 @@ Version 1 优先保持物理名称简洁可读，不为 `encodedAgentId` 和 pro
 lowercase 大小写敏感的 Nacos Service 身份。会把 service id 规范化为小写的集成不在该兼容
 保证内。
 
-`clusterName` 是 normalized transport，匹配 `[0-9A-Za-z-]{1,64}`。Transport 同时存入
-Cluster identity 和保留 metadata，读取时必须一致。
+公开 normalized transport 匹配 `[0-9A-Za-z+-]{1,64}`。Naming `clusterName` 使用
+`RadAsciiAgentIdCodec.encode(transport)` 生成，因此只包含 `[A-Za-z0-9-]`；例如
+`HTTP+JSON -> enc-HTTP-043JSON`。原始 transport 同时存入保留 metadata，读取时必须重新编码
+metadata transport 并与 clusterName 交叉校验，不能从 clusterName 反向推断公开 transport。
 
 ### 5.2 Instance 字段映射
 
@@ -394,7 +396,7 @@ Cluster identity 和保留 metadata，读取时必须一致。
 | `namespaceId` | Service namespace。 |
 | 固定 group | `agent-endpoints`。 |
 | 编码后的 Agent 和 protocol | 第 5.1 节的规范 serviceName。 |
-| normalized transport | `Instance.clusterName`。 |
+| encoded normalized transport | `Instance.clusterName`。 |
 | normalized URI host 和 effective port | `Instance.ip`、`Instance.port`。 |
 | URI path | `__nacos.agent.endpoint.path__`。 |
 | normalized transport | `__nacos.agent.endpoint.transport__`。 |

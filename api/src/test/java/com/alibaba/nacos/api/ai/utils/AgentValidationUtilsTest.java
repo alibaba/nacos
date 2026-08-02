@@ -157,6 +157,7 @@ class AgentValidationUtilsTest {
     void testValidateTransport() {
         assertDoesNotThrow(() -> AgentValidationUtils.validateTransport("-"));
         assertDoesNotThrow(() -> AgentValidationUtils.validateTransport("JSON-RPC"));
+        assertDoesNotThrow(() -> AgentValidationUtils.validateTransport("HTTP+JSON"));
         assertDoesNotThrow(() -> AgentValidationUtils.validateTransport(repeat('A', 64)));
         
         assertThrows(IllegalArgumentException.class,

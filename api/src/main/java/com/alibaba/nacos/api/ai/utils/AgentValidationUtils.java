@@ -53,7 +53,7 @@ public final class AgentValidationUtils {
     
     private static final Pattern LABEL_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}");
     
-    private static final Pattern TRANSPORT_PATTERN = Pattern.compile("[0-9A-Za-z-]{1,64}");
+    private static final Pattern TRANSPORT_PATTERN = Pattern.compile("[0-9A-Za-z+-]{1,64}");
     
     private static final Pattern CONTENT_DIGEST_PATTERN = Pattern.compile("sha256:[0-9a-f]{64}");
     

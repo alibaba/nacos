@@ -39,7 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: POST replaces one complete publication, heartbeat renews its
  *     Publisher, DELETE removes the complete publication, and retries remain idempotent. The
  *     same workflow cross-validates the Admin-created definition and Client publication through
- *     Admin, Console, and Client read surfaces.</li>
+ *     Admin, Console, and Client read surfaces while preserving the A2A {@code HTTP+JSON}
+ *     transport.</li>
  *     <li>Boundary/validation: Search with the same Client id does not create a Publisher;
  *     Discover can reuse that id without changing the publication payload; stateful operations
  *     require a valid Client id and {@code Request-Module: AI}; registration validates its
@@ -79,6 +80,9 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         assertEquals(1, runtimeSet.get("endpoints").size(), runtimeSet.toString());
         assertEquals("http://127.0.0.1:18080/agent",
                 runtimeSet.get("endpoints").get(0).get("uri").asText(), runtimeSet.toString());
+        assertEquals("HTTP+JSON",
+                runtimeSet.get("endpoints").get(0).get("transport").asText(),
+                runtimeSet.toString());
         assertTrue(runtimeSet.get("endpoints").get(0).get("healthy").asBoolean(),
                 runtimeSet.toString());
         assertRuntimeEndpointVisibleThroughManagementSurfaces(agentName, 1);
@@ -190,6 +194,8 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         JsonNode item = snapshot.get("items").get(0);
         assertEquals("http://127.0.0.1:18080/agent",
                 item.get("endpoint").get("uri").asText(), item.toString());
+        assertEquals("HTTP+JSON", item.get("endpoint").get("transport").asText(),
+                item.toString());
         assertEquals("AVAILABLE", item.get("state").asText(), item.toString());
         assertTrue(item.get("enabled").asBoolean(), item.toString());
         assertTrue(item.get("healthy").asBoolean(), item.toString());
@@ -228,7 +234,7 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
     private Map<String, String> registrationForm(String agentName) {
         Map<String, Object> endpoint = new LinkedHashMap<>();
         endpoint.put("uri", "http://127.0.0.1:18080/agent");
-        endpoint.put("transport", "HTTP");
+        endpoint.put("transport", "HTTP+JSON");
         endpoint.put("priority", 0);
         endpoint.put("weight", 1.0D);
         endpoint.put("metadata", Collections.singletonMap("zone", "openapi-it"));

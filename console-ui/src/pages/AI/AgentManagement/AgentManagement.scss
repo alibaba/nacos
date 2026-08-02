@@ -1,8 +1,12 @@
 .agent-management {
   .search-form {
-    padding: 16px;
-    border-radius: 4px;
+    padding: 12px 0;
     margin-bottom: 16px;
+
+    .next-form-item {
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
   }
 
   .agent-table {
@@ -91,12 +95,12 @@
       border-radius: 12px;
     }
   }
-  
+
   .action-buttons {
     margin-bottom: 16px;
-    
+
     .next-btn {
       margin-right: 8px;
     }
   }
-} 
+}
