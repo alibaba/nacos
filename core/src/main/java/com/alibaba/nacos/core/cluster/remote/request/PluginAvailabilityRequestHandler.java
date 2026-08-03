@@ -17,13 +17,18 @@
 package com.alibaba.nacos.core.cluster.remote.request;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -38,6 +43,7 @@ import java.util.Map;
  */
 @Component
 @Since("3.2.0")
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 public class PluginAvailabilityRequestHandler
     extends RequestHandler<PluginAvailabilityRequest, PluginAvailabilityResponse> {
     
@@ -48,6 +54,8 @@ public class PluginAvailabilityRequestHandler
     }
     
     @Override
+    @Secured(resource = "pluginAvailability", signType = SignType.SPECIFIED,
+        apiType = ApiType.INNER_API)
     public PluginAvailabilityResponse handle(PluginAvailabilityRequest request, RequestMeta meta)
         throws NacosException {
         if (!request.isQueryAll() && request.getPluginId() == null) {

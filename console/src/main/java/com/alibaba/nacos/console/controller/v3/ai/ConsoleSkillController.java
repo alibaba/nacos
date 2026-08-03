@@ -315,7 +315,7 @@ public class ConsoleSkillController {
     @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
-        + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        + "skills", action = ActionTypes.WRITE, signType = SignType.AI,
         apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();

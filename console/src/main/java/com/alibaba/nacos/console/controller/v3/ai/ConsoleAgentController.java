@@ -232,7 +232,8 @@ public class ConsoleAgentController {
      */
     @Since("3.3.0")
     @PostMapping("/force-publish")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(resource = Constants.Agent.CONSOLE_PATH + "/force-publish",
+        action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<AgentVersionSummary> forcePublish(AgentVersionForm form)
         throws NacosException {
         form.validate();

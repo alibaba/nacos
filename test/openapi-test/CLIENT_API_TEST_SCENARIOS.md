@@ -33,6 +33,14 @@ exception/error handling.
 | Partial | The current IT verifies representative behavior, but important public API scenarios remain. |
 | Pending | No IT currently verifies this public API scenario. |
 
+## Authorization Metadata Coverage
+
+The standalone OpenAPI IT profile does not enable Client API authorization.
+Functional scenarios therefore remain unchanged for authorization-only fixes.
+Focused Auth and AI module tests verify that the AgentSpec detail endpoint
+keeps its `OPEN_API`/`AI` metadata and resolves the authorization resource from
+the client `name` parameter.
+
 ## Config
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
@@ -53,7 +61,7 @@ exception/error handling.
 | --- | --- | --- | --- |
 | `PromptClientOpenApiITCase` | `GET /v3/client/ai/prompt` | Covered | Queries online prompts by latest, explicit version, and label; verifies namespace defaulting, version-over-label priority, md5 conditional HTTP 304, missing promptKey/version resolution, absent prompt, unknown version, and offline/not-online errors. |
 | `SkillClientOpenApiITCase` | `GET /v3/client/ai/skills` | Covered | Downloads online skills as ZIP by latest, version, and label with resource entries; covers namespace defaulting, version-over-label priority, missing skillName, absent skill, unknown version/label, and controlled not-found JSON for download failures. |
-| `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Covered | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing agentSpecName, absent AgentSpec, unknown version, and controlled not-found errors. |
+| `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Covered | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing name, absent AgentSpec, unknown version, and controlled not-found errors. |
 | `AgentSpecSearchClientOpenApiITCase` | `GET /v3/client/ai/agentspecs/search` | Covered | Searches enabled AgentSpecs with online versions and keyword filters; covers optional keyword, namespace defaulting, page defaults and validation, empty page success, and invalid pagination errors. |
 | `AgentDiscoveryClientOpenApiITCase` | `GET /v3/client/ai/agents/search`<br>`GET /v3/client/ai/agents` | Covered | Publishes an Agent through the Admin helper path, then verifies RAD Search catalog projection and latest Discover with native descriptor and authoritative Endpoint sets. Covers default namespace, name/tag/protocol filters, typed empty protocol results, empty search, pagination bounds, mutually exclusive version/label, missing identity, and absent Agent errors. |
 | `AgentEndpointClientOpenApiITCase` | `POST,DELETE /v3/client/ai/agents/endpoints`<br>`PUT /v3/client/ai/agents/endpoints/heartbeat` | Covered | Verifies Form-based complete HTTP Publisher replacement, visibility through Discover, idempotent registration/deregistration, empty Runtime Endpoint projection after deregistration, liveness intervals, heartbeat, and `HTTP_CLIENT_NOT_FOUND (50404)` before registration and after deregistration. Cross-validates the same workflow from Admin creation and Overview through Console Overview, then checks the populated and post-deregistration empty Runtime snapshots on both management surfaces, including lossless `HTTP+JSON` transport, endpoint payload, Version binding, enablement, health, state, and Console Naming reference. Confirms that a query with the same Client id does not create a Publisher, and covers required headers, Client-id syntax, complete-batch validation, and malformed `endpoints` JSON Form-field handling. |

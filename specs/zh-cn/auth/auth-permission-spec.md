@@ -121,6 +121,17 @@ Nacos 将请求级授权和数据级可见性分开处理。
 | `tags` | 复制到 `Resource.properties` 的附加元数据。 |
 | `apiType` | API 受众与鉴权范围。 |
 
+资源解析遵循以下优先级：
+
+1. `resource` 非空时，直接转换为 `SPECIFIED` 资源。
+2. 方法级 `parser` 不是默认 Parser 时，由其解析请求，并保留注解声明的
+   `signType` 和 `apiType`。
+3. 否则根据 `signType` 选择协议对应的类型化 Parser。
+4. 找不到类型化 Parser 时，由 `DefaultResourceParser` 返回空资源。
+
+显式指定的 Parser 构造或解析失败时，不得静默降级为空资源。该失败应作为
+请求处理错误，因为继续使用更宽泛的资源可能削弱鉴权约束。
+
 每个非公开的 v3 HTTP API 和 gRPC 请求处理器都必须声明预期的鉴权元数据。公开端点必须由
 所属规范明确记录。
 
