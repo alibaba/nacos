@@ -1993,6 +1993,53 @@ flowchart LR
 | 阻塞检查 | Console Facade 已提供全部管理路径以及后端生成的 `namingServiceRef`。实际 A2A AgentCard 使用规范 Transport `HTTP+JSON` 时，Naming clusterName 的字符集不能直接保存 `+`；维护者已明确决定复用 AgentName 的 `RadAsciiAgentIdCodec`，只在 Agent Runtime 映射边界编码，不修改 Naming 共享逻辑 |
 | 验收门禁 | 编码前冻结下述全部单操作、组合和边界场景；新增或修改的可执行 helper 行由单元测试 100% 覆盖；legacy/next 分别完成 lint 和生产构建，next 完成 Agent 单元测试；使用真实 standalone 对列表、创建、metadata、Draft、生命周期、Version/Protocol、Runtime/Naming 跳转与删除进行定向交叉验证；最终 production diff 逐项复核白名单 |
 
+#### 已完成阶段范围留痕：旧 A2A API Adapter
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 最小兼容闭环及真实 standalone 交叉验证已完成；历史数据迁移、旧 Endpoint 切流和滚动升级仍按禁止范围留待独立阶段 |
+| 规范依据 | A2A Agent Spec 第 3～5 章、Agent Management Spec 第 3～6 章、Agent API Spec 第 3～5 章、HTTP API / gRPC API / SDK / Java SDK Implementation Specs、API Integration Test / Java SDK Integration Test Specs，以及本文第 6、7.1～7.2 节 |
+| 当前目标 | 保持旧 A2A Admin、Console、Maintainer 和 Java SDK 的公开 path、Payload、错误与订阅方式不变，将旧 AgentCard 定义写入唯一 `type=agent` 事实源，并从通用 Agent metadata/online A2A Version 反向投影旧 DTO；旧 Endpoint API 与 SERVICE 查询继续使用旧 exact-version Naming 布局 |
+| 定义切流 | 增加 `nacos.ai.a2a.compatibility.mode`：当前默认 `CANONICAL`；`LEGACY` 完整保留旧 Config 定义实现；`AUTO` 从旧分支开始，全部已知成员版本不低于 3.3.0 后单向切到标准分支。三种模式均不做双读、双写、请求级 fallback 或数据迁移，旧 Endpoint Handler 始终保持 exact-version Naming 布局 |
+| 允许范围 | `ai.service.a2a` 的定义兼容适配、转换和查询投影；旧 A2A Admin/Console/gRPC binding 仅允许切换 Client release/read 语义；`AgentOperationService`、`AgentPersistenceService` 仅增加 Adapter 所必需的直接 online Version 创建、同内容恢复、latest 选择和 exact Version 删除原语；对应单元测试、OpenAPI IT、Java SDK IT、Maintainer SDK IT、覆盖登记及本文状态 |
+| 禁止范围 | `ai_resource` / `ai_resource_version` 表、DAO、Repository、Mapper、通用 Resource/Version Manager 与 AI Storage SPI/provider；HTTP common、通用参数绑定/异常映射、Naming Client/Manager/Distro/ServiceStorage；旧 A2A Endpoint handler、version-specific Naming 写布局、RAD Runtime Registry、公共 Java SDK/API 模型、Console UI、Watch/Push、历史 Config 数据迁移、双读双写和完整滚动升级实现 |
+| 已知问题 | 维护者已决定暂不迁移历史 A2A Config 定义；Adapter 启用后只认新的 Agent 事实源，旧 Config-only 定义不会自动出现。旧 SERVICE 投影仍读取 exact-version legacy Naming；新 Runtime Registry 的双读、迁移和回滚继续独立设计。Agent 管理元数据订阅问题也不在本阶段扩展 |
+| 阻塞检查 | 现有 Agent 专用 Resource/Version/Storage、catalog 派生、可见性、旧 exact-version `ServiceStorage` 和旧 SDK 轮询已足以完成主流程。通用 Resource 查询没有批量 Version-content 读取能力，旧列表只在候选页内采用有界并发投影，不修改共享 Repository/Storage 契约；若该边界仍无法正确验收，则暂停并提交维护者决策 |
+| 验收门禁 | 新增或修改 production Java 可执行行 UT line coverage 100%；相关模块 Spotless、编译、单测和 JaCoCo XML 验证；OpenAPI、Java SDK、Maintainer SDK 场景矩阵及覆盖登记同步；真实 standalone 交叉验证旧写新读、新写旧读、URL/SERVICE、latest/exact、订阅、删除和冲突；最终 production diff 逐项复核白名单 |
+
+旧 A2A Adapter 场景矩阵：
+
+| 类别 | 场景 | 必须验证的结果 |
+|---|---|---|
+| 首次写入 | Client release、Admin POST、Console POST、Maintainer create 首个 URL/SERVICE Card | 只创建一个 enabled Agent 和一个 online A2A Version；首个 online 必为 common latest；不生成旧 Config 定义；metadata 只在首次从 Card 初始化 |
+| 后续写入 | 新 Version，`setAsLatest=true/false`；URL 与 SERVICE registrationType | 创建新的 online A2A Version；显式 latest 规则准确；后续 Card 不覆盖 Agent metadata；CallInterface 保存规范化完整 Card、source order 和 declared endpoints |
+| 同版重试 | Client release exact online 相同/不同内容；Admin PUT exact online 相同/不同内容 | Client 对已包含 A2A CallInterface 的 online exact Version 成功 no-op，不比较或覆盖内容，且不因 `setAsLatest` 改 latest；若 exact Version 仅包含其他协议，则按 immutable Version 内容冲突处理；Admin 相同内容可按请求提升 latest，不同内容 conflict |
+| 非 online 恢复 | exact draft/reviewing/reviewed/offline 的相同/不同内容 | 仅相同 canonical content 可直接转 online；不同内容 conflict；工作指针与派生 catalog/latest 一致清理或重建 |
+| 管理创建冲突 | Agent 已存在但没有 online A2A、已有其他 Protocol、已有 legacy 可见 A2A | Admin/Console/Maintainer POST 都 conflict；不得把创建降级为 update |
+| 管理读取 | disabled Agent；latest/exact；目标 absent、非 online、非 A2A | Admin/Console/Maintainer 可读 disabled Agent；只返回 common latest 或 exact online A2A；其余保持旧 not-found/error contract，不猜测替代 Version |
+| Client 读取 | enabled/disabled Agent；latest/exact；显式 URL/SERVICE | disabled 对 Client 隐藏；latest 只读 common latest；显式 type 只改变本次 endpoint 投影，不改变响应保存的 registrationType |
+| URL 投影 | root/supported/additional interfaces；缺省或显式 URL | 从 nativeDescriptor/declared endpoints 返回规范化 Card，保留旧 DTO 的 registrationType/latestVersion |
+| SERVICE 投影 | legacy Naming 无实例、enabled/disabled、healthy/unhealthy、多实例、多 transport | 空集回退 DECLARED Card；过滤 enabled=false，保留 unhealthy；按 priority 和自然键稳定排序；覆盖 supported/additional/root preferred endpoint；不读取新 Runtime Registry |
+| 列表 | accurate/blur、空名称、分页、disabled、无 online A2A、多 online A2A | 管理列表包含 disabled Agent，排除无 online A2A；按旧 DTO 稳定分页；Card 根字段来自 common latest，versionDetails 只列 online A2A |
+| 版本列表 | 多状态、多 Protocol、latest 重选 | 只返回 online A2A Version；时间/latest 标志与通用事实一致 |
+| 删除 | exact online/draft/reviewed/offline/absent；删除 latest；删除全部/absent | exact 任意状态删除且 absent no-op；删除 latest 后选择语义最大的 online；删除最后 Version 后按规范处理 Agent；全删不触碰旧 Endpoint Naming publication |
+| 订阅 | latest/exact、不存在后出现、同快照重复轮询、latest 切换、断线重连 | 继续复用旧 SDK QueryAgentCard 轮询；只在投影变化时通知；重连后读取同一 Agent 事实源，不新增服务端 Watch/Push |
+| 兼容交叉 | 旧 API 写→新 Admin/Console/RAD 读；新 Admin 写→旧 Admin/Console/SDK 读 | metadata、Version status、latest、nativeDescriptor 和 declared endpoints 双向一致；RAD Runtime 与旧 Endpoint Naming 保持各自边界 |
+| 校验与审计 | 非法 namespace/name/version/Card/interface/type；不可写；并发创建/删除/变更 | 保持旧公开错误码和鉴权；直接 online、删除、no-op/冲突均有可区分审计；并发不产生同 Version 内容覆盖 |
+
+本阶段验收结论：
+
+- 6 个相关生产类的本次新增或修改可执行行 UT line coverage 为 100%；相关 6 个单元测试类共
+  206 个用例全部通过。
+- release 模式 61 个模块完整构建通过；Admin/Console A2A OpenAPI 真实 standalone 定向测试
+  21/21 通过，覆盖旧写新读、新写旧读、latest、删除和同版冲突。
+- Agent Java SDK 真实 standalone 定向测试 12 个场景无失败（1 个既有条件场景跳过），覆盖旧
+  `releaseAgentCard` 与 RAD Discover 交叉、轮询订阅及断线重连；AI Maintainer SDK 真实测试
+  9/9 通过，并将同版不可变冲突和新 Version 更新固化为稳定 IT。
+- 临时 standalone 已在测试后优雅关闭，8848/8080 无监听残留；最终变更未触碰本阶段禁止的
+  Resource/Version Repository、HTTP common、Naming 共享逻辑、公共 SDK 模型、Runtime Registry
+  或旧 Endpoint Handler。
+
 Console UI 场景矩阵：
 
 | 类别 | 场景 | 必须验证的结果 |
@@ -2097,7 +2144,7 @@ Console UI 场景矩阵：
   Naming 页面引用；不修改通用 Agent/AI Resource 底座。
 - [x] **Console UI**：实现版本/Protocol 页签、Runtime Snapshot 懒加载、无 `RUNTIME` 来源提示、
   Naming 页面跳转和只读 Runtime 体验。
-- [ ] **旧 A2A API Adapter**：完成 AgentCard 写入、latest 兼容、URL/SERVICE 查询反向投影、订阅和
+- [x] **旧 A2A API Adapter**：完成 AgentCard 写入、latest 兼容、URL/SERVICE 查询反向投影、订阅和
   Console/Admin/Maintainer 兼容窗口；首阶段 Endpoint 继续使用旧 version-specific Naming 布局，后续切流
   单独设计双读、迁移与回滚，不在新 Runtime Registry 中实现 group-delete 或 read-merge-write。
 - [ ] **测试与交付门禁**：补齐单元测试、OpenAPI IT、Java SDK IT、Maintainer SDK IT、兼容矩阵、覆盖登记、
@@ -2109,7 +2156,8 @@ Console UI 场景矩阵：
   conditional create/replace/delete 和结果不确定恢复语义；内置 `nacos_config` 对接 Config CAS，
   并推动 Agent、Prompt、Skill、AgentSpec 共同迁移，分别处理单对象和多文件 generation。
 
-滚动升级、存量数据迁移和混合集群行为不混入上述单版本实现，单独按第 8 章设计和验收。
+当前只保留 `LEGACY`、`CANONICAL` 与保守单向 `AUTO` 的定义实现入口；滚动升级、存量数据迁移、
+双读双写和完整混合集群行为不混入上述单版本实现，仍单独按第 8 章设计和验收。
 
 ## 8. 滚动升级设计 TODO
 

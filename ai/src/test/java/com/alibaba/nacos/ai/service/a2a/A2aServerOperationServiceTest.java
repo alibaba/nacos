@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,36 +12,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
+import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
-import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
+import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.service.ConfigDetailService;
-import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,1114 +51,642 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentCaptor.forClass;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for A2aServerOperationServiceTest.
- *
- * @author nacos
- */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class A2aServerOperationServiceTest {
+class A2aServerOperationServiceTest {
     
-    private static final String TEST_NAMESPACE_ID = "test-namespace";
+    private static final String NAMESPACE_ID = "public";
     
-    private static final String TEST_AGENT_NAME = "test-agent";
+    private static final String AGENT_NAME = "research-agent";
     
-    private static final String TEST_AGENT_VERSION = "1.0.0";
+    private static final String VERSION = "1.0.0";
     
-    private static final String TEST_REGISTRATION_TYPE = "service";
-    
-    private static final String ENCODED_AGENT_NAME = "encoded-test-agent";
-    
-    private static final String ENCODED_AGENT_NAME_WITH_VERSION =
-        ENCODED_AGENT_NAME + "-" + TEST_AGENT_VERSION;
+    private static final String SECOND_VERSION = "2.0.0";
     
     @Mock
-    private ConfigQueryChainService configQueryChainService;
-    
-    @Mock
-    private ConfigOperationService configOperationService;
-    
-    @Mock
-    private ConfigDetailService configDetailService;
-    
-    @Mock
-    private SyncEffectService syncEffectService;
-    
-    @Mock
-    private AgentIdCodecHolder agentIdCodecHolder;
+    private AgentOperationService agentOperationService;
     
     @Mock
     private ServiceStorage serviceStorage;
     
-    private A2aServerOperationService a2aServerOperationService;
+    @Mock
+    private AgentIdCodecHolder agentIdCodecHolder;
+    
+    private A2aServerOperationService service;
     
     @BeforeEach
     void setUp() {
-        a2aServerOperationService =
-            new A2aServerOperationService(configQueryChainService, configOperationService,
-                configDetailService, syncEffectService, serviceStorage, agentIdCodecHolder);
-        
-        when(agentIdCodecHolder.encode(anyString())).thenReturn(ENCODED_AGENT_NAME);
-        when(agentIdCodecHolder.encodeForSearch(anyString())).thenReturn(ENCODED_AGENT_NAME);
-        ServiceInfo defaultServiceInfo = new ServiceInfo();
-        defaultServiceInfo.setHosts(Collections.emptyList());
-        when(serviceStorage.getData(any(Service.class))).thenReturn(defaultServiceInfo);
+        Executor directExecutor = Runnable::run;
+        service = new A2aServerOperationService(agentOperationService, serviceStorage,
+            agentIdCodecHolder, directExecutor);
+        when(agentIdCodecHolder.encode(anyString())).thenReturn("encoded-agent");
     }
     
     @Test
-    void testRegisterAgentSuccess() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        a2aServerOperationService.registerAgent(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService, times(1)).toSync(any(ConfigForm.class), anyLong());
+    void testPublicConstructor() {
+        assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage,
+            agentIdCodecHolder));
     }
     
     @Test
-    void testRegisterAgentAlreadyExists() throws NacosException {
-        AgentCard agentCard = buildTestAgentCard();
+    void testRegisterMapsNormalizedCardToCanonicalAgentRequest() throws NacosException {
+        AgentCard card = card(VERSION);
+        AgentInterface duplicate = interfaceOf("https://example.com/a2a", "HTTP+JSON", "0.3");
+        card.setSupportedInterfaces(Arrays.asList(card.getSupportedInterfaces().get(0), duplicate));
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        service.registerAgent(card, NAMESPACE_ID, null);
         
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenThrow(new ConfigAlreadyExistsException("Config already exists"));
-        
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            a2aServerOperationService.registerAgent(agentCard, TEST_NAMESPACE_ID,
-                TEST_REGISTRATION_TYPE);
-        });
-        
-        assertEquals(NacosException.CONFLICT, exception.getErrCode());
-        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), exception.getDetailErrCode());
+        verify(agentOperationService).registerLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture());
+        AgentDraftCreateRequest request = requestCaptor.getValue();
+        assertEquals(AGENT_NAME, request.getAgentName());
+        assertEquals(VERSION, request.getVersion());
+        assertNull(request.getDisplayName());
+        assertEquals("Research", request.getDescription());
+        assertEquals("https://example.com/icon.png", request.getIconUrl());
+        assertEquals("Example Org", request.getProvider().getName());
+        assertNull(request.getTags());
+        AgentCallInterface callInterface = request.getCallInterfaces().get(0);
+        assertEquals("a2a", callInterface.getProtocol());
+        assertEquals("0.3", callInterface.getProtocolVersion());
+        assertEquals("application/json", callInterface.getDescriptorMediaType());
+        assertInstanceOf(Map.class, callInterface.getNativeDescriptor());
+        assertEquals(Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME),
+            callInterface.getEndpointSourceOrder());
+        assertEquals(1, callInterface.getDeclaredEndpoints().size());
+        assertNull(card.getAdditionalInterfaces());
     }
     
     @Test
-    void testDeleteAgentSuccess() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+    void testRegisterMapsAbsentProvider() throws NacosException {
+        AgentCard card = card(VERSION);
+        card.setProvider(null);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        service.registerAgent(card, NAMESPACE_ID, null);
         
-        when(configOperationService.deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null))).thenReturn(true);
-        
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-            TEST_AGENT_VERSION);
-        
-        verify(configOperationService, times(1)).deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null));
+        verify(agentOperationService).registerLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture());
+        assertNull(requestCaptor.getValue().getProvider());
     }
     
     @Test
-    void testDeleteAgentDeleteAllVersions() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+    void testReleaseDefaultsToServiceAndPreservesSetAsLatest() throws NacosException {
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        service.releaseAgent(card(VERSION), NAMESPACE_ID, "", true);
         
-        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), any(),
-            any(), anyString(),
-            any())).thenReturn(true);
-        
-        // Test deleting all versions (version param is null)
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME, null);
-        
-        // Should delete both version-specific config and main config
-        verify(configOperationService, times(2)).deleteConfig(anyString(), anyString(), anyString(),
-            any(), any(),
-            anyString(), any());
+        verify(agentOperationService).releaseLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture(), eq(true));
+        assertEquals(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
+            requestCaptor.getValue().getCallInterfaces().get(0).getEndpointSourceOrder());
     }
     
     @Test
-    void testDeleteAgentDeleteLastVersion() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+    void testUpdateInheritsExactAndLatestRegistrationTypes() throws NacosException {
+        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        service.updateAgentCard(card(VERSION), NAMESPACE_ID, null, false);
         
-        when(configOperationService.deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null))).thenReturn(true);
-        when(configOperationService.deleteConfig(eq(ENCODED_AGENT_NAME),
-            eq(Constants.A2A.AGENT_GROUP),
-            eq(TEST_NAMESPACE_ID), eq(null), eq(null), eq("nacos"), eq(null))).thenReturn(true);
+        verify(agentOperationService).updateLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture(), eq(false));
+        assertEquals(EndpointSource.RUNTIME,
+            requestCaptor.getValue().getCallInterfaces().get(0).getEndpointSourceOrder().get(0));
         
-        // Test deleting the last version - should also delete main config
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-            TEST_AGENT_VERSION);
+        NacosApiException missing = new NacosApiException(NacosException.NOT_FOUND,
+            ErrorCode.AGENT_VERSION_NOT_FOUND, "missing");
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(missing);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, SECOND_VERSION))
+            .thenReturn(versionDetail(SECOND_VERSION, false));
+        service.updateAgentCard(card(VERSION), NAMESPACE_ID, "", true);
         
-        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null));
-        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME),
-            eq(Constants.A2A.AGENT_GROUP),
-            eq(TEST_NAMESPACE_ID), eq(null), eq(null), eq("nacos"), eq(null));
+        verify(agentOperationService).updateLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture(), eq(true));
+        assertEquals(EndpointSource.DECLARED,
+            requestCaptor.getValue().getCallInterfaces().get(0).getEndpointSourceOrder().get(0));
     }
     
     @Test
-    void testDeleteAgentLatestVersionElectsRemainingVersion() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentVersionDetail currentVersion = versionInfo.getVersionDetails().get(0);
-        currentVersion.setLatest(false);
+    void testUpdateWithoutInheritableVersionDefaultsToUrl() throws NacosException {
+        Agent agent = agent(null, false);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
+                ErrorCode.AGENT_VERSION_NOT_FOUND, "missing"));
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
-        AgentVersionDetail latestVersion = new AgentVersionDetail();
-        latestVersion.setVersion("2.0.0");
-        latestVersion.setLatest(true);
-        versionInfo.setVersion("2.0.0");
-        versionInfo.setLatestPublishedVersion("2.0.0");
-        versionInfo.setVersionDetails(new LinkedList<>(List.of(currentVersion, latestVersion)));
+        service.updateAgentCard(card(VERSION), NAMESPACE_ID, null, false);
         
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
-        
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME, "2.0.0");
-        
-        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME + "-2.0.0"),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"), eq(null));
-        ArgumentCaptor<ConfigForm> configCaptor = forClass(ConfigForm.class);
-        verify(configOperationService).publishConfig(configCaptor.capture(),
-            any(ConfigRequestInfo.class), eq(null));
-        
-        AgentCardVersionInfo updatedVersionInfo =
-            JacksonUtils.toObj(configCaptor.getValue().getContent(), AgentCardVersionInfo.class);
-        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getLatestPublishedVersion());
-        assertEquals(TEST_AGENT_VERSION, updatedVersionInfo.getVersion());
-        assertEquals(1, updatedVersionInfo.getVersionDetails().size());
-        assertEquals(TEST_AGENT_VERSION,
-            updatedVersionInfo.getVersionDetails().get(0).getVersion());
-        assertEquals(true, updatedVersionInfo.getVersionDetails().get(0).isLatest());
+        verify(agentOperationService).updateLegacyOnlineVersion(eq(NAMESPACE_ID),
+            requestCaptor.capture(), eq(false));
+        assertEquals(EndpointSource.DECLARED,
+            requestCaptor.getValue().getCallInterfaces().get(0).getEndpointSourceOrder().get(0));
     }
     
     @Test
-    void testDeleteAgentWhenAgentNotFound() throws NacosException {
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+    void testUpdatePropagatesNonMissingVersionLookupFailure() throws NacosException {
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(new NacosApiException(NacosException.NO_RIGHT,
+                ErrorCode.ACCESS_DENIED, "forbidden"));
         
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-            TEST_AGENT_VERSION);
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateAgentCard(card(VERSION), NAMESPACE_ID, null, false));
         
-        verify(configOperationService, times(0)).deleteConfig(anyString(), anyString(), anyString(),
-            any(), any(),
-            anyString(), any());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), exception.getDetailErrCode());
     }
     
     @Test
-    void testDeleteAgentWithVersionNotFoundInVersionDetails() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        // Change the version in version details to something else
-        versionInfo.getVersionDetails().get(0).setVersion("2.0.0");
+    void testWriteValidationAndDeleteRouting() throws NacosException {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.registerAgent(null, NAMESPACE_ID, "URL"));
+        NacosApiException invalid = assertThrows(NacosApiException.class,
+            () -> service.registerAgent(card(VERSION), NAMESPACE_ID, "OTHER"));
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), invalid.getDetailErrCode());
+        assertThrows(NacosApiException.class,
+            () -> service.updateAgentCard(card(VERSION), NAMESPACE_ID, "OTHER", false));
         
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        service.deleteAgent(NAMESPACE_ID, AGENT_NAME, null);
+        service.deleteAgent(NAMESPACE_ID, AGENT_NAME, "");
+        service.deleteAgent(NAMESPACE_ID, AGENT_NAME, VERSION);
         
-        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), any(),
-            any(), anyString(),
-            any())).thenReturn(true);
-        
-        // Try to delete a version that doesn't exist in version details
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-            TEST_AGENT_VERSION);
-        
-        // Should still delete the config file even if not in version details
-        verify(configOperationService).deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), any(), any(), anyString(),
-            any());
+        verify(agentOperationService, org.mockito.Mockito.times(2))
+            .deleteLegacyAgentIfPresent(NAMESPACE_ID, AGENT_NAME);
+        verify(agentOperationService).deleteLegacyVersionIfPresent(NAMESPACE_ID, AGENT_NAME,
+            VERSION);
     }
     
     @Test
-    void testUpdateAgentCardSuccess() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
+    void testManagementAndClientReadProjectLatestUrlCard() throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, false));
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardVersionInfo()));
+        AgentCardDetailInfo management =
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, null, null);
+        AgentCardDetailInfo client =
+            service.getAgentCardForClient(NAMESPACE_ID, AGENT_NAME, "", "url");
         
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE, true);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService, times(1)).toSync(any(ConfigForm.class), anyLong());
+        assertEquals(AGENT_NAME, management.getName());
+        assertEquals(VERSION, management.getVersion());
+        assertEquals("URL", management.getRegistrationType());
+        assertEquals(Boolean.TRUE, management.isLatestVersion());
+        assertEquals("URL", client.getRegistrationType());
+        verify(serviceStorage, never()).getData(any(Service.class));
     }
     
     @Test
-    void testUpdateAgentCardWithExistingVersion() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        AgentCardVersionInfo existingVersionInfo = buildTestAgentCardVersionInfo();
+    void testClientReadHidesDisabledAgentButManagementCanReadIt() throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        agent.setStatus(AiConstants.Agent.RESOURCE_STATUS_DISABLE);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, false));
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(existingVersionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        // Update with existing version
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE, true);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-    }
-    
-    @Test
-    void testUpdateAgentCardWithNewVersion() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        AgentCardVersionInfo existingVersionInfo = buildTestAgentCardVersionInfo();
-        // Modify version to be different from agent card
-        existingVersionInfo.getVersionDetails().get(0).setVersion("0.9.0");
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(existingVersionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        // Update with new version - should add to version list
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE, true);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-    }
-    
-    @Test
-    void testUpdateAgentCardWithoutRegistrationType() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        AgentCardVersionInfo existingVersionInfo = buildTestAgentCardVersionInfo();
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(existingVersionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        // Update without registration type - should use existing one
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID, null, false);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-    }
-    
-    @Test
-    void testUpdateAgentCardNotSetAsLatest() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardVersionInfo()));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        // Update without setting as latest
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE, false);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService, times(1)).toSync(any(ConfigForm.class), anyLong());
-    }
-    
-    @Test
-    void testUpdateAgentCardSetAsLatestWithMultipleVersions() throws NacosException {
-        final AgentCard agentCard = buildTestAgentCard();
-        AgentCardVersionInfo existingVersionInfo = buildTestAgentCardVersionInfo();
-        List<AgentVersionDetail> newVersionDetail =
-            new LinkedList<>(existingVersionInfo.getVersionDetails());
-        
-        // Add another version
-        AgentVersionDetail anotherVersion = new AgentVersionDetail();
-        anotherVersion.setVersion("0.9.0");
-        anotherVersion.setLatest(false);
-        newVersionDetail.add(anotherVersion);
-        existingVersionInfo.setVersionDetails(newVersionDetail);
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(existingVersionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent())
-            .thenReturn(JacksonUtils.toJson(buildTestAgentCardDetailInfo()));
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null))).thenReturn(true);
-        doNothing().when(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-        
-        // Update and set as latest - should update version details appropriately
-        a2aServerOperationService.updateAgentCard(agentCard, TEST_NAMESPACE_ID,
-            TEST_REGISTRATION_TYPE, true);
-        
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class),
-            eq(null));
-        verify(syncEffectService).toSync(any(ConfigForm.class), anyLong());
-    }
-    
-    @Test
-    void testListAgentsSuccess() throws NacosException {
-        Page<ConfigInfo> configPage = new Page<>();
-        ConfigInfo configInfo = new ConfigInfo();
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        configInfo.setContent(JacksonUtils.toJson(versionInfo));
-        configPage.setPageItems(Collections.singletonList(configInfo));
-        configPage.setTotalCount(1);
-        
-        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
-            anyString(),
-            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
-        
-        Page<AgentCardVersionInfo> result =
-            a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                Constants.A2A.SEARCH_BLUR, 1, 10);
-        
-        assertNotNull(result);
-        assertEquals(1, result.getTotalCount());
-        assertEquals(1, result.getPageItems().size());
-    }
-    
-    @Test
-    void testListAgentsAccurateSearch() throws NacosException {
-        Page<ConfigInfo> configPage = new Page<>();
-        ConfigInfo configInfo = new ConfigInfo();
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        configInfo.setContent(JacksonUtils.toJson(versionInfo));
-        configPage.setPageItems(Collections.singletonList(configInfo));
-        configPage.setTotalCount(1);
-        
-        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_ACCURATE), eq(1),
-            eq(10), anyString(),
-            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
-        
-        Page<AgentCardVersionInfo> result =
-            a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                Constants.A2A.SEARCH_ACCURATE, 1, 10);
-        
-        assertNotNull(result);
-        assertEquals(1, result.getTotalCount());
-        assertEquals(1, result.getPageItems().size());
-    }
-    
-    @Test
-    void testListAgentsEmptyAgentName() throws NacosException {
-        Page<ConfigInfo> configPage = new Page<>();
-        ConfigInfo configInfo = new ConfigInfo();
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        configInfo.setContent(JacksonUtils.toJson(versionInfo));
-        configPage.setPageItems(Collections.singletonList(configInfo));
-        configPage.setTotalCount(1);
-        
-        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
-            anyString(),
-            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
-        
-        Page<AgentCardVersionInfo> result =
-            a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, null,
-                Constants.A2A.SEARCH_BLUR, 1, 10);
-        
-        assertNotNull(result);
-        assertEquals(1, result.getTotalCount());
-        assertEquals(1, result.getPageItems().size());
-    }
-    
-    @Test
-    void testListAgentsNullAgentNameUsesSameWildcardAsEmptyString() throws NacosException {
-        Page<ConfigInfo> configPage = new Page<>();
-        configPage.setPageItems(Collections.emptyList());
-        configPage.setTotalCount(0);
-        when(agentIdCodecHolder.encodeForSearch("")).thenReturn("");
-        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
-            anyString(),
-            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
-        
-        a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, null,
-            Constants.A2A.SEARCH_BLUR, 1, 10);
-        
-        ArgumentCaptor<String> dataIdCaptor = forClass(String.class);
-        verify(configDetailService, times(1)).findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR),
-            eq(1), eq(10), dataIdCaptor.capture(), eq(Constants.A2A.AGENT_GROUP),
-            eq(TEST_NAMESPACE_ID), eq(null));
-        assertEquals("**", dataIdCaptor.getValue());
-    }
-    
-    @Test
-    void testListAgentVersionsSuccess() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
-        
-        List<AgentVersionDetail> result =
-            a2aServerOperationService.listAgentVersions(TEST_NAMESPACE_ID,
-                TEST_AGENT_NAME);
-        
-        assertNotNull(result);
-        assertEquals(1, result.size());
-    }
-    
-    @Test
-    void testQueryAgentCardVersionInfoNotFound() throws NacosApiException {
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
-        
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            // This is a private method, but we can test it through public methods that use it
-            a2aServerOperationService.listAgentVersions(TEST_NAMESPACE_ID, "non-existent-agent");
-        });
-        
-        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        assertEquals(VERSION,
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null).getVersion());
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.getAgentCardForClient(NAMESPACE_ID, AGENT_NAME, VERSION, null));
         assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), exception.getDetailErrCode());
     }
     
     @Test
-    void testGetAgentCardSuccess() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
+    void testLegacyReadsMapCanonicalAgentNotFound() throws NacosException {
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME))
+            .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
+                ErrorCode.RESOURCE_NOT_FOUND, "missing"));
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        NacosApiException queryException = assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
+        NacosApiException listException = assertThrows(NacosApiException.class,
+            () -> service.listAgentVersions(NAMESPACE_ID, AGENT_NAME));
         
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        
-        // Mock service storage for endpoint injection
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, TEST_REGISTRATION_TYPE);
-        
-        assertNotNull(result);
-        assertEquals(TEST_AGENT_NAME, result.getName());
-        assertEquals(TEST_AGENT_VERSION, result.getVersion());
+        assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), queryException.getDetailErrCode());
+        assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), listException.getDetailErrCode());
     }
     
     @Test
-    void testGetAgentCardNotFound() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+    void testLegacyReadPropagatesCanonicalAgentLookupFailure() throws NacosException {
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME))
+            .thenThrow(new NacosApiException(NacosException.NO_RIGHT,
+                ErrorCode.ACCESS_DENIED, "forbidden"));
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
         
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION,
-                TEST_REGISTRATION_TYPE);
-        });
-        
-        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
-        assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(), exception.getDetailErrCode());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), exception.getDetailErrCode());
     }
     
     @Test
-    void testGetAgentCardLatestVersion() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+    void testReadRejectsMissingOrNonProjectableVersion() throws NacosException {
+        Agent noA2a = agent(VERSION, false, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(noA2a);
+        assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null))
+            .getDetailErrCode());
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        Agent a2a = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(a2a);
+        assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(),
+            assertThrows(NacosApiException.class,
+                () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, SECOND_VERSION, null))
+                .getDetailErrCode());
         
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetailWithStatus(VERSION,
+                AiConstants.Agent.VERSION_STATUS_OFFLINE, true));
+        assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
         
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        final ServiceInfo serviceInfo = new ServiceInfo();
-        com.alibaba.nacos.api.naming.pojo.Instance instance =
-            new com.alibaba.nacos.api.naming.pojo.Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8080);
-        instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY,
-            detailInfo.getPreferredTransport());
-        serviceInfo.addHost(instance);
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
-        // Get latest version (version param is null)
-        AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME, null,
-                TEST_REGISTRATION_TYPE);
-        
-        assertNotNull(result);
-        assertEquals(TEST_AGENT_NAME, result.getName());
-        assertEquals(TEST_AGENT_VERSION, result.getVersion());
-        assertEquals(Boolean.TRUE, result.isLatestVersion());
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetailWithStatus(VERSION,
+                AiConstants.Agent.VERSION_STATUS_ONLINE, false));
+        assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
     }
     
     @Test
-    void testGetAgentCardLatestVersionNotFound() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        // No latest version
-        versionInfo.getVersionDetails().get(0).setLatest(false);
-        versionInfo.setLatestPublishedVersion(null);
+    void testReadMapsVersionStorageAndDescriptorFailuresToLegacyNotFound()
+        throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        NacosApiException missing = new NacosApiException(NacosException.NOT_FOUND,
+            ErrorCode.AGENT_VERSION_NOT_FOUND, "missing");
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(missing);
+        assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(),
+            assertThrows(NacosApiException.class,
+                () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null))
+                .getDetailErrCode());
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        NacosApiException forbidden = new NacosApiException(NacosException.NO_RIGHT,
+            ErrorCode.ACCESS_DENIED, "forbidden");
+        doThrow(forbidden).when(agentOperationService).getVersion(NAMESPACE_ID, AGENT_NAME,
+            VERSION);
+        assertEquals(forbidden, assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null)));
         
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse);
+        com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail invalid =
+            versionDetail(VERSION, false);
+        invalid.getCallInterfaces().get(0).setNativeDescriptor(Collections.emptyMap());
+        doReturn(invalid).when(agentOperationService).getVersion(NAMESPACE_ID, AGENT_NAME,
+            VERSION);
+        assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
+        invalid.getCallInterfaces().get(0).setNativeDescriptor("not-an-object");
+        assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
         
-        NacosApiException exception = assertThrows(NacosApiException.class, () -> {
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME, null,
-                TEST_REGISTRATION_TYPE);
-        });
-        
-        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
-        assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(), exception.getDetailErrCode());
+        invalid.getCallInterfaces().get(0).setNativeDescriptor(
+            JacksonUtils.toObj(JacksonUtils.toJson(card(SECOND_VERSION)), Map.class));
+        assertThrows(NacosApiException.class,
+            () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null));
     }
     
     @Test
-    void testGetAgentCardWithServiceRegistrationType() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setRegistrationType("service");
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        
-        Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+    void testServiceProjectionFiltersAndStablyOrdersRuntimeEndpoints()
+        throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
         ServiceInfo serviceInfo = new ServiceInfo();
-        serviceInfo.setHosts(Collections.emptyList());
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
+        Instance disabled = instance("10.0.0.9", 9000, "HTTP+JSON", null, null, true);
+        disabled.setEnabled(false);
+        Instance grpc = instance("10.0.0.1", 8001, "GRPC", null, "bad", false);
+        Instance websocket = instance("10.0.0.2", 8002, "WEBSOCKET", "0.2", null, true);
+        Instance json = instance("10.0.0.3", 8003, "HTTP+JSON", "0.3", "5", true);
+        serviceInfo.setHosts(Arrays.asList(disabled, json, websocket, grpc));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(serviceInfo);
         
         AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, "service");
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, "service");
         
-        assertNotNull(result);
-        assertEquals(TEST_AGENT_NAME, result.getName());
-        assertEquals(TEST_AGENT_VERSION, result.getVersion());
+        assertEquals("SERVICE", result.getRegistrationType());
+        assertEquals(3, result.getSupportedInterfaces().size());
+        assertEquals("HTTP+JSON", result.getPreferredTransport());
+        assertTrue(result.getUrl().contains("10.0.0.3:8003"));
+        assertEquals(3, result.getAdditionalInterfaces().size());
+        AgentInterface grpcInterface = result.getSupportedInterfaces().stream()
+            .filter(each -> "GRPC".equals(each.getProtocolBinding())).findFirst().orElseThrow();
+        assertEquals("0.3", grpcInterface.getProtocolVersion());
+        assertFalse(grpc.isHealthy());
     }
     
     @Test
-    void testGetAgentCardWithServiceEndpoints() throws NacosApiException {
-        final AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setRegistrationType("service");
-        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+    void testServiceProjectionFallsBackToDeclaredEndpoints() throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(null);
+        AgentCardDetailInfo noService =
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, "SERVICE");
+        assertEquals("https://example.com/a2a", noService.getUrl());
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        
-        final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        
-        // Create a service info with hosts
-        final ServiceInfo serviceInfo = new ServiceInfo();
-        com.alibaba.nacos.api.naming.pojo.Instance instance =
-            new com.alibaba.nacos.api.naming.pojo.Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8080);
-        instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY,
-            detailInfo.getPreferredTransport());
-        serviceInfo.addHost(instance);
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, "service");
-        
-        assertNotNull(result);
-        assertEquals(TEST_AGENT_NAME, result.getName());
-        assertEquals(TEST_AGENT_VERSION, result.getVersion());
-        assertNotNull(result.getSupportedInterfaces());
-        assertEquals(1, result.getSupportedInterfaces().size());
-        assertEquals("http://127.0.0.1:8080", result.getSupportedInterfaces().get(0).getUrl());
+        ServiceInfo disabledOnly = new ServiceInfo();
+        Instance disabled = instance("10.0.0.9", 9000, "GRPC", "0.3", "1", true);
+        disabled.setEnabled(false);
+        disabledOnly.setHosts(Collections.singletonList(disabled));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(disabledOnly);
+        assertEquals("https://example.com/a2a",
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, "SERVICE").getUrl());
     }
     
     @Test
-    void testGetAgentCardWithServiceRegistrationAndNormalizedCardShouldInjectEndpoint()
-        throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setRegistrationType("service");
-        detailInfo.setUrl("https://example.com/" + TEST_AGENT_NAME + "/jsonrpc");
-        detailInfo.setPreferredTransport("JSONRPC");
-        detailInfo.setProtocolVersion("1.0");
-        AgentInterface preferred = new AgentInterface();
-        preferred.setUrl("https://example.com/" + TEST_AGENT_NAME + "/jsonrpc");
-        preferred.setProtocolBinding("JSONRPC");
-        preferred.setProtocolVersion("1.0");
-        detailInfo.setSupportedInterfaces(Collections.singletonList(preferred));
-        detailInfo.setAdditionalInterfaces(Collections.emptyList());
-        
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        
-        Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+    void testServiceProjectionUsesFirstRuntimeWhenPreferredTransportIsAbsent()
+        throws NacosException {
+        Agent agent = agent(VERSION, true, VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
         ServiceInfo serviceInfo = new ServiceInfo();
-        serviceInfo.setHosts(Collections.emptyList());
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
+        serviceInfo.setHosts(Collections.singletonList(
+            instance("10.0.0.1", 8001, "GRPC", "0.3", "1", true)));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(serviceInfo);
         
         AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, "service");
+            service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, "SERVICE");
         
-        assertNotNull(result);
-        assertEquals(1, result.getSupportedInterfaces().size());
-        verify(serviceStorage, times(1)).getData(any(Service.class));
+        assertEquals("GRPC", result.getPreferredTransport());
+        assertEquals(1, result.getAdditionalInterfaces().size());
+        assertEquals(result.getUrl(), result.getAdditionalInterfaces().get(0).getUrl());
     }
     
     @Test
-    void testGetAgentCardWithServiceEndpointsShouldInheritCardProtocolVersion()
-        throws NacosApiException {
-        final AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setRegistrationType("service");
-        detailInfo.setProtocolVersion("1.0");
-        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        final ServiceInfo serviceInfo = new ServiceInfo();
-        com.alibaba.nacos.api.naming.pojo.Instance instance =
-            new com.alibaba.nacos.api.naming.pojo.Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8080);
-        instance.setMetadata(Map.of(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
-        serviceInfo.addHost(instance);
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, "service");
-        AgentInterface endpoint = result.getSupportedInterfaces().get(0);
-        assertEquals("1.0", endpoint.getProtocolVersion());
-        assertEquals("JSONRPC", endpoint.getProtocolBinding());
-    }
-    
-    @Test
-    void testGetAgentCardWithServiceEndpointsShouldFailWhenProtocolVersionMissingEverywhere() {
-        final AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
-        detailInfo.setRegistrationType("service");
-        detailInfo.setProtocolVersion(null);
-        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        final Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        final ServiceInfo serviceInfo = new ServiceInfo();
-        com.alibaba.nacos.api.naming.pojo.Instance instance =
-            new com.alibaba.nacos.api.naming.pojo.Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8080);
-        instance.setMetadata(Map.of(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
-        serviceInfo.addHost(instance);
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        NacosApiException exception =
-            assertThrows(NacosApiException.class, () -> a2aServerOperationService
-                .getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME, TEST_AGENT_VERSION, "service"));
-        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
-    }
-    
-    @Test
-    void testGetAgentCardWithEmptyRegistrationType() throws NacosApiException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
+    void testListFiltersBeforePagingAndProjectsOnlySelectedPage() throws NacosException {
+        AgentSummary eligible = summary(AGENT_NAME, SECOND_VERSION, true, VERSION,
+            SECOND_VERSION);
+        AgentSummary ineligible = summary("other-agent", VERSION, false, VERSION);
+        AgentSummary missingCatalog = new AgentSummary();
+        missingCatalog.setAgentName("missing-catalog");
+        when(agentOperationService.listAgents(eq(NAMESPACE_ID), any(), any(), any(), any(), any(),
+            eq(1), eq(100))).thenReturn(page(Arrays.asList(ineligible, missingCatalog, eligible)));
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, SECOND_VERSION))
+            .thenReturn(versionDetail(SECOND_VERSION, false));
+        AgentVersionSummary first = versionSummary(VERSION, 1000L, 2000L);
+        AgentVersionSummary second = versionSummary(SECOND_VERSION, 3000L, 4000L);
+        AgentVersionSummary unrelated = versionSummary("3.0.0", 5000L, 6000L);
+        when(agentOperationService.listVersions(NAMESPACE_ID, AGENT_NAME,
+            AiConstants.Agent.VERSION_STATUS_ONLINE, 1, 100))
+            .thenReturn(page(Arrays.asList(first, second, unrelated)));
         
-        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
-        when(versionResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        Page<AgentCardVersionInfo> result = service.listAgents(NAMESPACE_ID, "",
+            Constants.A2A.SEARCH_BLUR, 1, 10);
         
-        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
-        when(detailResponse.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
-        
-        Service service =
-            Service.newService(TEST_NAMESPACE_ID, Constants.Agent.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        ServiceInfo serviceInfo = new ServiceInfo();
-        serviceInfo.setHosts(Collections.emptyList());
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(versionResponse)
-            .thenReturn(detailResponse);
-        
-        // Pass empty registration type - should use the one from detailInfo
-        AgentCardDetailInfo result =
-            a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-                TEST_AGENT_VERSION, null);
-        
-        assertNotNull(result);
-        assertEquals(TEST_AGENT_NAME, result.getName());
-        assertEquals(TEST_AGENT_VERSION, result.getVersion());
-    }
-    
-    @Test
-    void testListAgentsWithNoAgentNameProvided() throws NacosException {
-        Page<ConfigInfo> configPage = new Page<>();
-        ConfigInfo configInfo = new ConfigInfo();
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        configInfo.setContent(JacksonUtils.toJson(versionInfo));
-        configPage.setPageItems(Collections.singletonList(configInfo));
-        configPage.setTotalCount(1);
-        
-        when(configDetailService.findConfigInfoPage(eq(Constants.A2A.SEARCH_BLUR), eq(1), eq(10),
-            anyString(),
-            eq(Constants.A2A.AGENT_GROUP), eq(TEST_NAMESPACE_ID), eq(null))).thenReturn(configPage);
-        
-        // Call with empty agent name
-        Page<AgentCardVersionInfo> result =
-            a2aServerOperationService.listAgents(TEST_NAMESPACE_ID, "",
-                Constants.A2A.SEARCH_BLUR, 1, 10);
-        
-        assertNotNull(result);
         assertEquals(1, result.getTotalCount());
-        assertEquals(1, result.getPageItems().size());
+        assertEquals(1, result.getPagesAvailable());
+        assertEquals(SECOND_VERSION, result.getPageItems().get(0).getVersion());
+        assertEquals(2, result.getPageItems().get(0).getVersionDetails().size());
+        assertTrue(result.getPageItems().get(0).getVersionDetails().get(1).isLatest());
+        assertEquals("1970-01-01T00:00:03Z",
+            result.getPageItems().get(0).getVersionDetails().get(1).getCreatedAt());
     }
     
     @Test
-    void testDeleteAgentWithEmptyVersion() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
+    void testListAccurateSearchAndMultiPageScan() throws NacosException {
+        List<AgentSummary> firstPage = new ArrayList<AgentSummary>();
+        for (int i = 0; i < 100; i++) {
+            firstPage.add(summary("other-" + i, VERSION, false, VERSION));
+        }
+        when(agentOperationService.listAgents(eq(NAMESPACE_ID), eq(AGENT_NAME), any(), any(),
+            any(), any(), anyInt(), eq(100))).thenReturn(page(firstPage), null);
         
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
+        Page<AgentCardVersionInfo> result = service.listAgents(NAMESPACE_ID, AGENT_NAME,
+            "AcCuRaTe", 1, 10);
         
-        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), any(),
-            any(), anyString(),
-            any())).thenReturn(true);
-        
-        // Test deleting with empty version string - should behave like null
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME, "");
-        
-        // Should delete all versions
-        verify(configOperationService, times(2)).deleteConfig(anyString(), anyString(), anyString(),
-            any(), any(),
-            anyString(), any());
+        assertEquals(0, result.getTotalCount());
+        assertTrue(result.getPageItems().isEmpty());
+        verify(agentOperationService).listAgents(NAMESPACE_ID, AGENT_NAME, null, null, null, null,
+            2, 100);
     }
     
     @Test
-    void testDeleteAgentVersionNotLatest() throws NacosException {
-        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
-        // Make it not the latest version
-        versionInfo.setLatestPublishedVersion("2.0.0");
-        versionInfo.getVersionDetails().get(0).setLatest(false);
-        List<AgentVersionDetail> newVersionDetails =
-            new LinkedList<>(versionInfo.getVersionDetails());
-        versionInfo.setVersionDetails(newVersionDetails);
+    void testListProjectionPropagatesCheckedAndUnexpectedFailures() throws NacosException {
+        AgentSummary eligible = summary(AGENT_NAME, VERSION, true, VERSION);
+        when(agentOperationService.listAgents(eq(NAMESPACE_ID), any(), any(), any(), any(), any(),
+            eq(1), eq(100))).thenReturn(page(Collections.singletonList(eligible)));
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "failed"));
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class, () -> service.listAgents(NAMESPACE_ID, null,
+                Constants.A2A.SEARCH_BLUR, 1, 10)).getErrCode());
         
-        ConfigQueryChainResponse response = mock(ConfigQueryChainResponse.class);
-        when(response.getStatus())
-            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(response.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-            .thenReturn(response);
-        
-        when(configOperationService.deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null))).thenReturn(true);
-        
-        // Add a second version so it doesn't delete the main config
-        AgentVersionDetail secondVersion = new AgentVersionDetail();
-        secondVersion.setVersion("2.0.0");
-        secondVersion.setLatest(true);
-        versionInfo.getVersionDetails().add(secondVersion);
-        
-        a2aServerOperationService.deleteAgent(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
-            TEST_AGENT_VERSION);
-        
-        verify(configOperationService, times(1)).deleteConfig(eq(ENCODED_AGENT_NAME_WITH_VERSION),
-            eq(Constants.A2A.AGENT_VERSION_GROUP), eq(TEST_NAMESPACE_ID), eq(null), eq(null),
-            eq("nacos"),
-            eq(null));
+        doThrow(new IllegalStateException("unexpected")).when(agentOperationService)
+            .getVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
+        assertThrows(CompletionException.class,
+            () -> service.listAgents(NAMESPACE_ID, null, Constants.A2A.SEARCH_BLUR, 1, 10));
     }
     
-    private AgentCard buildTestAgentCard() {
-        AgentCard agentCard = new AgentCard();
-        agentCard.setName(TEST_AGENT_NAME);
-        agentCard.setVersion(TEST_AGENT_VERSION);
-        agentCard.setDescription("Test Agent Description");
-        AgentProvider agentProvider = new AgentProvider();
-        agentProvider.setOrganization("Test Organization");
-        agentCard.setProvider(agentProvider);
-        agentCard.setPreferredTransport("http");
-        return agentCard;
+    @Test
+    void testListAgentVersionsScansAllRowsAndKeepsOnlyCataloguedA2aVersions()
+        throws NacosException {
+        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        List<AgentVersionSummary> firstPage = new ArrayList<AgentVersionSummary>();
+        firstPage.add(versionSummary(VERSION, 1000L, 2000L));
+        firstPage.add(versionSummary(SECOND_VERSION, 3000L, 4000L));
+        for (int i = 2; i < 100; i++) {
+            firstPage.add(versionSummary("ignored-" + i, 5000L, 6000L));
+        }
+        when(agentOperationService.listVersions(NAMESPACE_ID, AGENT_NAME,
+            AiConstants.Agent.VERSION_STATUS_ONLINE, 1, 100)).thenReturn(page(firstPage));
+        when(agentOperationService.listVersions(NAMESPACE_ID, AGENT_NAME,
+            AiConstants.Agent.VERSION_STATUS_ONLINE, 2, 100))
+            .thenReturn(page(Collections.emptyList()));
+        
+        List<com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail> result =
+            service.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
+        
+        assertEquals(2, result.size());
+        assertFalse(result.get(0).isLatest());
+        assertTrue(result.get(1).isLatest());
     }
     
-    private AgentCardDetailInfo buildTestAgentCardDetailInfo() {
-        AgentCardDetailInfo detailInfo = new AgentCardDetailInfo();
-        detailInfo.setName(TEST_AGENT_NAME);
-        detailInfo.setVersion(TEST_AGENT_VERSION);
-        detailInfo.setDescription("Test Agent Description");
-        AgentProvider agentProvider = new AgentProvider();
-        agentProvider.setOrganization("Test Organization");
-        detailInfo.setProvider(agentProvider);
-        detailInfo.setProtocolVersion("1.0");
-        detailInfo.setRegistrationType(TEST_REGISTRATION_TYPE);
-        return detailInfo;
+    @Test
+    void testListAgentVersionsSkipsCataloguedVersionWithoutSummary() throws NacosException {
+        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(agentOperationService.listVersions(NAMESPACE_ID, AGENT_NAME,
+            AiConstants.Agent.VERSION_STATUS_ONLINE, 1, 100))
+            .thenReturn(page(Collections.singletonList(
+                versionSummary(SECOND_VERSION, 3000L, 4000L))));
+        
+        List<com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail> result =
+            service.listAgentVersions(NAMESPACE_ID, AGENT_NAME);
+        
+        assertEquals(1, result.size());
+        assertEquals(SECOND_VERSION, result.get(0).getVersion());
     }
     
-    private AgentCardVersionInfo buildTestAgentCardVersionInfo() {
-        AgentCardVersionInfo versionInfo = new AgentCardVersionInfo();
-        versionInfo.setName(TEST_AGENT_NAME);
-        versionInfo.setVersion(TEST_AGENT_VERSION);
-        versionInfo.setLatestPublishedVersion(TEST_AGENT_VERSION);
-        versionInfo.setRegistrationType(TEST_REGISTRATION_TYPE);
-        
-        AgentVersionDetail versionDetail = new AgentVersionDetail();
-        versionDetail.setVersion(TEST_AGENT_VERSION);
-        versionDetail.setLatest(true);
-        versionInfo.setVersionDetails(Collections.singletonList(versionDetail));
-        
-        return versionInfo;
+    @Test
+    void testListAgentVersionsRejectsAgentWithoutA2aOnlineVersion()
+        throws NacosException {
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME))
+            .thenReturn(agent(VERSION, false, VERSION));
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.listAgentVersions(NAMESPACE_ID, AGENT_NAME));
+        assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), exception.getDetailErrCode());
+    }
+    
+    private AgentCard card(String version) {
+        AgentCard result = new AgentCard();
+        result.setName(AGENT_NAME);
+        result.setVersion(version);
+        result.setDescription("Research");
+        result.setIconUrl("https://example.com/icon.png");
+        AgentProvider provider = new AgentProvider();
+        provider.setOrganization("Example Org");
+        provider.setUrl("https://example.com");
+        result.setProvider(provider);
+        result.setSupportedInterfaces(Collections.singletonList(
+            interfaceOf("https://example.com/a2a", "HTTP+JSON", "0.3")));
+        return result;
+    }
+    
+    private AgentInterface interfaceOf(String url, String transport, String protocolVersion) {
+        AgentInterface result = new AgentInterface();
+        result.setUrl(url);
+        result.setProtocolBinding(transport);
+        result.setProtocolVersion(protocolVersion);
+        return result;
+    }
+    
+    private Agent agent(String latest, boolean a2a, String... versions) {
+        Agent result = new Agent();
+        result.setNamespaceId(NAMESPACE_ID);
+        result.setAgentName(AGENT_NAME);
+        result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
+        result.setVersionCatalog(catalog(latest, a2a, versions));
+        return result;
+    }
+    
+    private AgentSummary summary(String name, String latest, boolean a2a, String... versions) {
+        AgentSummary result = new AgentSummary();
+        result.setNamespaceId(NAMESPACE_ID);
+        result.setAgentName(name);
+        result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
+        result.setVersionCatalog(catalog(latest, a2a, versions));
+        return result;
+    }
+    
+    private AgentVersionCatalog catalog(String latest, boolean a2a, String... versions) {
+        AgentVersionCatalog result = new AgentVersionCatalog();
+        result.setLatestVersion(latest);
+        List<AgentVersionCatalogEntry> entries = new ArrayList<AgentVersionCatalogEntry>();
+        for (String version : versions) {
+            AgentVersionCatalogEntry entry = new AgentVersionCatalogEntry();
+            entry.setVersion(version);
+            entry.setProtocols(a2a ? Collections.singletonList("a2a")
+                : Collections.singletonList("custom"));
+            entries.add(entry);
+        }
+        result.setOnlineVersions(entries);
+        return result;
+    }
+    
+    private com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail versionDetail(String version,
+        boolean serviceFirst) {
+        return versionDetailWithStatus(version, AiConstants.Agent.VERSION_STATUS_ONLINE, true,
+            serviceFirst);
+    }
+    
+    private com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail versionDetailWithStatus(
+        String version, String status, boolean includeA2a) {
+        return versionDetailWithStatus(version, status, includeA2a, false);
+    }
+    
+    private com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail versionDetailWithStatus(
+        String version, String status, boolean includeA2a, boolean serviceFirst) {
+        com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail result =
+            new com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail();
+        result.setNamespaceId(NAMESPACE_ID);
+        result.setAgentName(AGENT_NAME);
+        result.setVersion(version);
+        result.setStatus(status);
+        AgentCallInterface callInterface = new AgentCallInterface();
+        callInterface.setProtocol(includeA2a ? "a2a" : "custom");
+        callInterface.setProtocolVersion("0.3");
+        callInterface.setDescriptorMediaType("application/json");
+        callInterface.setNativeDescriptor(JacksonUtils.toObj(JacksonUtils.toJson(card(version)),
+            Map.class));
+        callInterface.setEndpointSourceOrder(serviceFirst
+            ? Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED)
+            : Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME));
+        result.setCallInterfaces(Collections.singletonList(callInterface));
+        return result;
+    }
+    
+    private Instance instance(String ip, int port, String transport, String protocolVersion,
+        String priority, boolean healthy) {
+        Instance result = new Instance();
+        result.setIp(ip);
+        result.setPort(port);
+        result.setEnabled(true);
+        result.setHealthy(healthy);
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, transport);
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY, "http");
+        if (protocolVersion != null) {
+            metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, protocolVersion);
+        }
+        if (priority != null) {
+            metadata.put(Constants.Agent.AGENT_ENDPOINT_PRIORITY_KEY, priority);
+        }
+        result.setMetadata(metadata);
+        return result;
+    }
+    
+    private AgentVersionSummary versionSummary(String version, long createTime, long updateTime) {
+        AgentVersionSummary result = new AgentVersionSummary();
+        result.setVersion(version);
+        result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        result.setCreateTime(createTime);
+        result.setUpdateTime(updateTime);
+        return result;
+    }
+    
+    private <T> Page<T> page(List<T> items) {
+        Page<T> result = new Page<T>();
+        result.setPageItems(items);
+        result.setTotalCount(items.size());
+        return result;
     }
 }

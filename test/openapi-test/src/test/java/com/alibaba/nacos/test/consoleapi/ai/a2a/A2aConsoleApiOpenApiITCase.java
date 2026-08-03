@@ -17,11 +17,17 @@
 package com.alibaba.nacos.test.consoleapi.ai.a2a;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.consoleapi.ai.AiConsoleApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -35,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: legacy and v1 agent cards can be registered, normalized, queried by version/latest,
- *     updated to a new latest version, listed by blur search, and enumerated by version.</li>
+ *     updated to a new latest version, listed by blur search, and enumerated by version; a legacy Console create is
+ *     immediately visible through the canonical Agent Console overview and Version APIs. A
+ *     legacy Admin publication is also read through the canonical Console API, while a canonical
+ *     Console publication is projected through both legacy Console and Admin APIs.</li>
  *     <li>Boundary/validation: namespace defaults to public; register defaults registrationType to URL; update allows
  *     omitted registrationType; invalid search, missing agentName, invalid registrationType, empty card, malformed
  *     JSON, and incomplete legacy/v1 endpoint definitions are rejected with HTTP 400.</li>
@@ -109,8 +118,79 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
             assertTrue(null != additionalInterfaces && additionalInterfaces.isArray() && additionalInterfaces.size() >= 1,
                     "additionalInterfaces should be generated for v1 card");
             assertEquals("GRPC", additionalInterfaces.get(0).get("transport").asText());
+
+            JsonNode canonicalOverview = getJsonOk(CONSOLE_AGENT_PATH,
+                    agentIdentityQuery(null, agentName)).get("data");
+            assertEquals(agentName,
+                    canonicalOverview.get("agent").get("agentName").asText(),
+                    canonicalOverview.toString());
+            assertEquals("PUBLIC", canonicalOverview.get("agent").get("scope").asText(),
+                    canonicalOverview.toString());
+            assertEquals(1,
+                    canonicalOverview.get("agent").get("versionInfo").get("onlineCnt").asInt(),
+                    canonicalOverview.toString());
+            JsonNode canonicalVersion = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
+                    agentVersionIdentityQuery(null, agentName, version)).get("data");
+            assertEquals("online", canonicalVersion.get("status").asText(),
+                    canonicalVersion.toString());
+            assertEquals("a2a",
+                    canonicalVersion.get("callInterfaces").get(0).get("protocol").asText(),
+                    canonicalVersion.toString());
+            assertEquals("v1-" + agentName,
+                    canonicalVersion.get("callInterfaces").get(0).get("nativeDescriptor")
+                            .get("description").asText(), canonicalVersion.toString());
+            assertEquals(2,
+                    canonicalVersion.get("callInterfaces").get(0).get("declaredEndpoints")
+                            .size(), canonicalVersion.toString());
         } finally {
             deleteAgentQuietly(agentName, version, REGISTRATION_TYPE_URL);
+        }
+    }
+
+    @Test
+    public void testLegacyAdminAndCanonicalConsoleApisShareOneDefinitionAcrossPorts()
+            throws Exception {
+        String legacyAdminAgent = "openapi-admin-to-console-" + UUID.randomUUID();
+        String legacyVersion = "4.0.0";
+        try {
+            JsonNode registered = postAdminFormOk(ADMIN_A2A_PATH,
+                    buildAgentCardForm(legacyAdminAgent, legacyVersion,
+                            REGISTRATION_TYPE_URL,
+                            buildV1AgentCard(legacyAdminAgent, legacyVersion, "1.0")));
+            assertEquals("ok", registered.get("data").asText(), registered.toString());
+
+            JsonNode overview = getJsonOk(CONSOLE_AGENT_PATH,
+                    agentIdentityQuery(null, legacyAdminAgent)).get("data");
+            assertCanonicalOverview(overview, legacyAdminAgent, legacyVersion);
+            JsonNode version = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
+                    agentVersionIdentityQuery(null, legacyAdminAgent, legacyVersion))
+                    .get("data");
+            assertCanonicalVersion(version, legacyAdminAgent, legacyVersion);
+        } finally {
+            deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, legacyAdminAgent);
+        }
+
+        String canonicalConsoleAgent = "openapi-console-to-legacy-" + UUID.randomUUID();
+        String canonicalVersion = "5.0.0";
+        try {
+            JsonNode draft = postFormOk(CONSOLE_AGENT_PATH + "/draft",
+                    agentForm(legacyCompatibleInitialDraft(canonicalConsoleAgent,
+                            canonicalVersion))).get("data");
+            assertEquals("draft", draft.get("status").asText(), draft.toString());
+            JsonNode online = postFormOk(CONSOLE_AGENT_PATH + "/force-publish",
+                    agentForm(agentVersionCommand(null, canonicalConsoleAgent,
+                            canonicalVersion))).get("data");
+            assertEquals("online", online.get("status").asText(), online.toString());
+
+            JsonNode legacyConsole = getAgentCard(canonicalConsoleAgent, canonicalVersion,
+                    REGISTRATION_TYPE_URL).get("data");
+            assertLegacyProjection(legacyConsole, canonicalConsoleAgent, canonicalVersion);
+            JsonNode legacyAdmin = getAdminJsonOk(ADMIN_A2A_PATH,
+                    agentVersionIdentityQuery(null, canonicalConsoleAgent, canonicalVersion))
+                    .get("data");
+            assertLegacyProjection(legacyAdmin, canonicalConsoleAgent, canonicalVersion);
+        } finally {
+            deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, canonicalConsoleAgent);
         }
     }
     
@@ -256,6 +336,87 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 .addParam("search", search).addParam("pageNo", String.valueOf(pageNo))
                 .addParam("pageSize", String.valueOf(pageSize));
         return getJsonOk(CONSOLE_A2A_LIST_PATH, query);
+    }
+
+    private JsonNode postAdminFormOk(String path, Map<String, String> form) throws Exception {
+        HttpRestResult<String> result = nacosRestTemplate.postForm(BASE_URL + path, Header.EMPTY,
+                form, String.class);
+        assertTrue(result.ok(), "Admin HTTP status should be 2xx, code=" + result.getCode()
+                + ", body=" + result.getData() + ", message=" + result.getMessage());
+        JsonNode root = JacksonUtils.toObj(result.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    private JsonNode getAdminJsonOk(String path, Query query) throws Exception {
+        HttpRestResult<String> result = nacosRestTemplate.get(BASE_URL + path, Header.EMPTY,
+                query, String.class);
+        assertTrue(result.ok(), "Admin HTTP status should be 2xx, code=" + result.getCode()
+                + ", body=" + result.getData() + ", message=" + result.getMessage());
+        JsonNode root = JacksonUtils.toObj(result.getData());
+        assertSuccess(root);
+        return root;
+    }
+
+    private void assertCanonicalOverview(JsonNode overview, String agentName, String version) {
+        JsonNode agent = overview.get("agent");
+        assertEquals(agentName, agent.get("agentName").asText(), overview.toString());
+        assertEquals("v1-" + agentName, agent.get("description").asText(),
+                overview.toString());
+        assertEquals("enable", agent.get("status").asText(), overview.toString());
+        assertEquals("PUBLIC", agent.get("scope").asText(), overview.toString());
+        assertEquals(1, agent.get("versionInfo").get("onlineCnt").asInt(),
+                overview.toString());
+        assertEquals(version, agent.get("versionInfo").get("labels").get("latest").asText(),
+                overview.toString());
+    }
+
+    private void assertCanonicalVersion(JsonNode detail, String agentName, String version) {
+        assertEquals(version, detail.get("version").asText(), detail.toString());
+        assertEquals("online", detail.get("status").asText(), detail.toString());
+        JsonNode callInterface = detail.get("callInterfaces").get(0);
+        assertEquals("a2a", callInterface.get("protocol").asText(), detail.toString());
+        assertEquals("1.0", callInterface.get("protocolVersion").asText(), detail.toString());
+        assertEquals("application/json", callInterface.get("descriptorMediaType").asText(),
+                detail.toString());
+        assertEquals(agentName, callInterface.get("nativeDescriptor").get("name").asText(),
+                detail.toString());
+        assertEquals("v1-" + agentName,
+                callInterface.get("nativeDescriptor").get("description").asText(),
+                detail.toString());
+        assertEquals(2, callInterface.get("declaredEndpoints").size(), detail.toString());
+    }
+
+    private void assertLegacyProjection(JsonNode card, String agentName, String version) {
+        assertEquals(agentName, card.get("name").asText(), card.toString());
+        assertEquals(version, card.get("version").asText(), card.toString());
+        assertEquals("v1-" + agentName, card.get("description").asText(), card.toString());
+        assertEquals("URL", card.get("registrationType").asText(), card.toString());
+        assertEquals(2, card.get("supportedInterfaces").size(), card.toString());
+    }
+
+    private Map<String, Object> legacyCompatibleInitialDraft(String agentName, String version) {
+        Map<String, Object> result = agentInitialDraftRequest(null, agentName, version);
+        Map<String, Object> callInterface = new LinkedHashMap<>();
+        callInterface.put("protocol", "a2a");
+        callInterface.put("protocolVersion", "1.0");
+        callInterface.put("descriptorMediaType", "application/json");
+        callInterface.put("nativeDescriptor",
+                JacksonUtils.toObj(buildV1AgentCard(agentName, version, "1.0"), Map.class));
+        callInterface.put("endpointSourceOrder", Arrays.asList("DECLARED", "RUNTIME"));
+        callInterface.put("declaredEndpoints", Arrays.asList(
+                declaredEndpoint(agentName, "jsonrpc", "JSONRPC"),
+                declaredEndpoint(agentName, "grpc", "GRPC")));
+        result.put("callInterfaces", Collections.singletonList(callInterface));
+        return result;
+    }
+
+    private Map<String, Object> declaredEndpoint(String agentName, String path,
+            String transport) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("uri", "https://example.com/" + agentName + '/' + path);
+        result.put("transport", transport);
+        return result;
     }
     
     private void assertBadRequestContains(Map<String, String> form, String expectedText) throws Exception {
