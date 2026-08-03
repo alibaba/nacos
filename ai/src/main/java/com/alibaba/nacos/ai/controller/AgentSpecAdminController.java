@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.http.AgentSpecCardHttpResourceParser;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -217,7 +218,8 @@ public class AgentSpecAdminController {
      */
     @Since("3.2.0")
     @PutMapping("/draft")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = AgentSpecCardHttpResourceParser.class)
     public Result<String> updateDraft(AgentSpecUpdateForm form) throws NacosException {
         form.validate();
         AgentSpec agentSpec = AgentSpecRequestUtil.parseAgentSpec(form);
@@ -273,7 +275,7 @@ public class AgentSpecAdminController {
     @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
-        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.AI,
         apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
         form.validate();

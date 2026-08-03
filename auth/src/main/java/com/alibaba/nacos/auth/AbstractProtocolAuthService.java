@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
@@ -142,11 +144,14 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
      */
     protected Resource useSpecifiedParserToParse(Secured secured, R request) {
         try {
-            return secured.parser().newInstance().parse(request, secured);
-        } catch (Exception e) {
+            return secured.parser().getDeclaredConstructor().newInstance().parse(request, secured);
+        } catch (ReflectiveOperationException e) {
             Loggers.AUTH.error("Use specified resource parser {} parse resource failed.",
                 secured.parser().getCanonicalName(), e);
-            return Resource.EMPTY_RESOURCE;
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "Failed to initialize specified resource parser "
+                    + secured.parser().getCanonicalName(),
+                e);
         }
     }
 }
