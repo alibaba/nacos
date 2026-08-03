@@ -990,6 +990,7 @@ const I18N_CONF = {
     statusOffline: 'Offline',
     // Lifecycle actions
     submitForReview: 'Submit for Review',
+    resubmitForReview: 'Resubmit for Review',
     forcePublish: 'Force Publish',
     onlineAction: 'Online',
     offlineAction: 'Offline',
@@ -1205,6 +1206,7 @@ const I18N_CONF = {
     createDraftFromVersion: 'Create Draft from This Version',
     // Submit & Publish
     submitForReview: 'Submit for Review',
+    resubmitForReview: 'Resubmit for Review',
     submitSuccess: 'Submitted for review successfully',
     submitFailed: 'Failed to submit for review',
     publishVersion: 'Publish Version',

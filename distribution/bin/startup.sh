@@ -27,6 +27,42 @@ error_exit ()
     exit 1
 }
 
+configure_riscv64_libatomic() {
+    if [ "$(uname -s)" != "Linux" ] || [ "$(uname -m)" != "riscv64" ]; then
+        return
+    fi
+
+    if [[ "${LD_PRELOAD:-}" == *"libatomic.so.1"* ]]; then
+        return
+    fi
+
+    local libatomic_path=""
+    if command -v ldconfig > /dev/null 2>&1 && command -v awk > /dev/null 2>&1; then
+        libatomic_path=$(ldconfig -p 2> /dev/null | awk '/libatomic\.so\.1 .*=>/ {print $NF; exit}')
+    fi
+
+    if [ -z "${libatomic_path}" ] || [ ! -r "${libatomic_path}" ]; then
+        local candidate
+        for candidate in /lib/riscv64-linux-gnu/libatomic.so.1 \
+                         /usr/lib/riscv64-linux-gnu/libatomic.so.1 \
+                         /lib64/lp64d/libatomic.so.1 \
+                         /usr/lib64/lp64d/libatomic.so.1 \
+                         /lib64/libatomic.so.1 \
+                         /usr/lib64/libatomic.so.1; do
+            if [ -r "${candidate}" ]; then
+                libatomic_path="${candidate}"
+                break
+            fi
+        done
+    fi
+
+    if [ -z "${libatomic_path}" ] || [ ! -r "${libatomic_path}" ]; then
+        return
+    fi
+
+    export LD_PRELOAD="${LD_PRELOAD:+${LD_PRELOAD}:}${libatomic_path}"
+}
+
 validate_base64() {
     decode_cmd=""
     if command -v base64 > /dev/null 2>&1; then
@@ -293,6 +329,8 @@ if [ ! -f "$logfile" ]; then
 fi
 
 echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > "$logfile"
+
+configure_riscv64_libatomic
 
 if [ "$JAVA_OPT_EXT_FIX" = "" ]; then
   nohup "$JAVA" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &

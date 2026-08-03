@@ -150,6 +150,7 @@
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.4.0</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
+        <rocksdb.version>8.10.2</rocksdb.version>
         <!-- gson version should follow grcp-core dependency -->
         <!-- TODO try to remove direct dependency on gson -->
         <gson.version>2.11.0</gson.version>
@@ -1021,6 +1022,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdb.version}</version>
             </dependency>
             
             <!-- Third-party libs -->

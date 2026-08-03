@@ -669,10 +669,21 @@ class PromptDetail extends React.Component {
     });
   };
 
+  canSubmitForReview = (versionStatus, pipelineInfo) => {
+    if (versionStatus === 'draft' || versionStatus === 'reviewed') {
+      return true;
+    }
+    return (
+      versionStatus === 'reviewing' &&
+      !pipelineInfo?.historical &&
+      (pipelineInfo?.status === 'APPROVED' || pipelineInfo?.status === 'REJECTED')
+    );
+  };
+
   handleSubmitForReview = () => {
     const { locale = {} } = this.props;
-    const { selectedVersion, selectedVersionStatus } = this.state;
-    if (selectedVersionStatus !== 'draft') return;
+    const { selectedVersion, selectedVersionStatus, pipelineInfo } = this.state;
+    if (!this.canSubmitForReview(selectedVersionStatus, pipelineInfo)) return;
 
     const promptKey = getParams('promptKey') || '';
     const namespaceId = getParams('namespace') || '';
@@ -1349,6 +1360,11 @@ class PromptDetail extends React.Component {
                 >
                   {locale.publish || 'Publish'}
                 </Button>
+                {this.canSubmitForReview(selectedVersionStatus, pipelineInfo) && (
+                  <Button onClick={this.handleSubmitForReview} loading={submitting}>
+                    {locale.resubmitForReview || 'Resubmit for Review'}
+                  </Button>
+                )}
                 {pipelineInfo && pipelineInfo.status === 'REJECTED' && (
                   <Button onClick={this.handleForcePublish} loading={publishing}>
                     {locale.forcePublish || 'Force Publish'}
@@ -1365,6 +1381,9 @@ class PromptDetail extends React.Component {
                   disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
                 >
                   {locale.publish || 'Publish'}
+                </Button>
+                <Button onClick={this.handleSubmitForReview} loading={submitting}>
+                  {locale.resubmitForReview || 'Resubmit for Review'}
                 </Button>
                 {pipelineInfo && pipelineInfo.status === 'REJECTED' && (
                   <Button onClick={this.handleForcePublish} loading={publishing}>

@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -2517,6 +2518,185 @@ class SkillOperationServiceImplTest {
         verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
             anyString(),
             eq("v1"), eq("online"));
+    }
+    
+    @Test
+    void testSubmitReviewedVersionResubmitsReview() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewed");
+        vRow.setStorage(
+            "{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        vRow.setPublishPipelineInfo("{\"executionId\":\"old-exec\",\"status\":\"REJECTED\"}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+            ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any()))
+            .thenReturn(true);
+        PublishPipelineExecutor pipelineExecutor = mock(PublishPipelineExecutor.class);
+        when(pipelineExecutor.isPipelineAvailable(any())).thenReturn(true);
+        when(pipelineExecutor.execute(any(), any(), anyString())).thenReturn("exec-2");
+        SkillOperationServiceImpl reviewedSubmitService =
+            new SkillOperationServiceImpl(aiResourcePersistService,
+                aiResourceVersionPersistService, pipelineExecutor, manifestService,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository));
+        
+        String result = reviewedSubmitService.submit(namespaceId, skillName, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
+            anyString(), eq("v1"), eq("reviewing"));
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), eq("online"));
+        ArgumentCaptor<String> pipelineInfoCaptor = ArgumentCaptor.forClass(String.class);
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), pipelineInfoCaptor.capture());
+        PublishPipelineInfo pipelineInfo =
+            JacksonUtils.toObj(pipelineInfoCaptor.getValue(), PublishPipelineInfo.class);
+        assertEquals(PipelineExecutionStatus.IN_PROGRESS, pipelineInfo.getStatus());
+        assertNotNull(pipelineInfo.getExecutionId());
+        verify(manifestService, never()).write(eq(namespaceId), eq(skillName), any());
+    }
+    
+    @Test
+    void testSubmitReviewingVersionShouldBeIdempotent() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewing");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        
+        String result = skillOperationService.submit(namespaceId, skillName, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), anyString());
+        verify(aiResourceVersionPersistService, never()).updatePublishPipelineInfo(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), anyString());
+        verify(manifestService, never()).write(eq(namespaceId), eq(skillName), any());
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testSubmitHistoricalTerminalReviewShouldBeIdempotent() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewing");
+        vRow.setPublishPipelineInfo(
+            "{\"executionId\":\"old-exec\",\"status\":\"REJECTED\",\"historical\":true}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        
+        String result = skillOperationService.submit(namespaceId, skillName, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), anyString());
+        verify(aiResourceVersionPersistService, never()).updatePublishPipelineInfo(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), anyString());
+        verify(manifestService, never()).write(eq(namespaceId), eq(skillName), any());
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testSubmitShouldRecoverRejectedReviewWhenPipelineDisabled() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("reviewing");
+        vRow.setStorage(
+            "{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        vRow.setPublishPipelineInfo(
+            "{\"executionId\":\"old-exec\",\"status\":\"REJECTED\",\"pipeline\":[]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+            ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            anyLong(), any())).thenReturn(true);
+        doAnswer(invocation -> {
+            vRow.setStatus(invocation.getArgument(4));
+            return 1;
+        }).when(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
+            anyString(), eq("v1"), anyString());
+        doAnswer(invocation -> {
+            vRow.setPublishPipelineInfo(null);
+            return 1;
+        }).when(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), isNull());
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+            new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>());
+        manifest.setLabels(new HashMap<>());
+        when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        
+        String result = skillOperationService.submit(namespaceId, skillName, null);
+        
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
+            anyString(), eq("v1"), eq("reviewed"));
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
+            anyString(), eq("v1"), eq("reviewing"));
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName),
+            anyString(), eq("v1"), eq("online"));
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(namespaceId),
+            eq(skillName), anyString(), eq("v1"), isNull());
+        verify(manifestService).write(eq(namespaceId), eq(skillName), any());
     }
     
     @Test

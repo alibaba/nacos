@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.remote.redo;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.redo.data.RedoData;
@@ -160,5 +161,58 @@ class AiGrpcRedoServiceTest {
         
         redoDatas = redoService.findAgentEndpointRedoData();
         assertTrue(redoDatas.isEmpty());
+    }
+    
+    @Test
+    void completeAgentEndpointPublicationFollowsEveryRedoState() {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setNamespaceId("public");
+        batch.setAgentName("agent-a");
+        batch.setProtocol("a2a");
+        
+        assertNull(redoService.getAgentEndpointPublication("missing"));
+        redoService.cacheAgentEndpointPublication(batch);
+        String key = AgentEndpointPublicationRedoData.keyOf("public", "agent-a", "a2a");
+        
+        assertEquals(batch, redoService.getAgentEndpointPublication(key));
+        assertFalse(redoService.isAgentEndpointPublicationRegistered(key));
+        Set<RedoData<AgentEndpointRegistrationBatch>> redoData =
+            redoService.findAgentEndpointPublicationRedoData();
+        assertEquals(1, redoData.size());
+        assertInstanceOf(AgentEndpointPublicationRedoData.class, redoData.iterator().next());
+        assertEquals("public@@agent-a@@a2a",
+            ((AgentEndpointPublicationRedoData) redoData.iterator().next()).getKey());
+        
+        redoService.agentEndpointPublicationRegistered(key);
+        assertTrue(redoService.isAgentEndpointPublicationRegistered(key));
+        assertTrue(redoService.findAgentEndpointPublicationRedoData().isEmpty());
+        
+        redoService.agentEndpointPublicationDeregistering(key);
+        assertEquals(RedoData.RedoType.UNREGISTER,
+            redoService.findAgentEndpointPublicationRedoData().iterator().next().getRedoType());
+        
+        redoService.agentEndpointPublicationDeregistered(key);
+        assertFalse(redoService.isAgentEndpointPublicationRegistered(key));
+        assertEquals(RedoData.RedoType.REMOVE,
+            redoService.findAgentEndpointPublicationRedoData().iterator().next().getRedoType());
+        
+        redoService.removeAgentEndpointPublication(key);
+        assertNull(redoService.getAgentEndpointPublication(key));
+    }
+    
+    @Test
+    void discardCompleteAgentEndpointPublicationRemovesAnyIntent() {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setNamespaceId("public");
+        batch.setAgentName("agent-a");
+        batch.setProtocol("a2a");
+        String key = AgentEndpointPublicationRedoData.keyOf("public", "agent-a", "a2a");
+        redoService.cacheAgentEndpointPublication(batch);
+        redoService.agentEndpointPublicationRegistered(key);
+        
+        redoService.discardAgentEndpointPublication(key);
+        
+        assertNull(redoService.getAgentEndpointPublication(key));
+        assertFalse(redoService.isAgentEndpointPublicationRegistered(key));
     }
 }

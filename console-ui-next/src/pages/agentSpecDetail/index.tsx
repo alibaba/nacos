@@ -76,6 +76,7 @@ import { PipelineStatusDisplay } from '../skillManagement/components/PipelineSta
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
+import { canResubmitReview } from '@/components/ai/version-lifecycle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   resolveCreateLocation,
@@ -484,6 +485,7 @@ export default function AgentSpecDetailPage() {
   const currentVersionSummary = versionOptions.find((item) => item.version === selectedVersion);
   const currentVersionStatus = currentVersionSummary?.status;
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
+  const showResubmitReview = canResubmitReview(currentVersionStatus, currentPipelineInfo);
   const currentVersionStatusLabel = currentVersionStatus
     ? t(`agentSpec.versionStatus.${currentVersionStatus}`)
     : '-';
@@ -1098,6 +1100,18 @@ export default function AgentSpecDetailPage() {
                   {/* Reviewing / Reviewed actions */}
                   {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                     <>
+                      {showResubmitReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          disabled={actionLoading}
+                          onClick={() => handleSubmit(selectedVersion)}
+                        >
+                          <Send className="h-3 w-3" />
+                          {t('agentSpec.resubmit')}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         className="h-7 text-xs gap-1.5"

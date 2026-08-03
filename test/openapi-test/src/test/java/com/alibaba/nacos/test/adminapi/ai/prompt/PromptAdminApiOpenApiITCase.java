@@ -216,6 +216,11 @@ public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue("online".equals(submitted.get("status").asText())
                 || "reviewing".equals(submitted.get("status").asText()), submitted.toString());
         if (!"online".equals(submitted.get("status").asText())) {
+            JsonNode resubmit = postFormOk(ADMIN_PROMPT_PATH + "/submit", promptQueryForm(promptKey));
+            assertEquals("1.0.0", resubmit.get("data").asText(), resubmit.toString());
+            JsonNode resubmitted = getJsonOk(ADMIN_PROMPT_VERSION_PATH,
+                    promptVersionQuery(promptKey, "1.0.0")).get("data");
+            assertEquals("reviewing", resubmitted.get("status").asText(), resubmitted.toString());
             postFormOk(ADMIN_PROMPT_PATH + "/force-publish", promptPublishForm(promptKey, "1.0.0"));
         }
 

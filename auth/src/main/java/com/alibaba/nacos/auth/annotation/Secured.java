@@ -58,7 +58,8 @@ public @interface Secured {
     String signType() default SignType.NAMING;
     
     /**
-     * Custom resource parser. Should have lower priority than resource() and typed parser.
+     * Custom resource parser. Used when {@link #resource()} is empty and takes precedence over
+     * the parser selected by {@link #signType()}.
      *
      * @return class type of resource parser
      */

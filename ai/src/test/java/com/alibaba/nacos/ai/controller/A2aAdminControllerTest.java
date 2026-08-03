@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 class A2aAdminControllerTest {
     
     @Mock
-    private A2aServerOperationService a2aServerOperationService;
+    private A2aCompatibilityOperationService a2aServerOperationService;
     
     @InjectMocks
     private A2aAdminController a2aAdminController;
@@ -159,7 +159,7 @@ class A2aAdminControllerTest {
     }
     
     @Test
-    void testGetAgentCardSuccess() throws NacosApiException {
+    void testGetAgentCardSuccess() throws NacosException {
         // Arrange
         AgentCardDetailInfo expectedAgentCard = new AgentCardDetailInfo();
         expectedAgentCard.setName("test-agent");
@@ -183,7 +183,7 @@ class A2aAdminControllerTest {
     }
     
     @Test
-    void testGetAgentCardValidationFailure() throws NacosApiException {
+    void testGetAgentCardValidationFailure() throws NacosException {
         // Arrange
         AgentForm invalidForm = new AgentForm();
         // Missing required fields
@@ -195,7 +195,7 @@ class A2aAdminControllerTest {
     }
     
     @Test
-    void testGetAgentCardServiceException() throws NacosApiException {
+    void testGetAgentCardServiceException() throws NacosException {
         // Arrange
         NacosApiException exception =
             new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.RESOURCE_NOT_FOUND,
@@ -405,7 +405,7 @@ class A2aAdminControllerTest {
     }
     
     @Test
-    void testListAgentVersionsValidationFailure() throws NacosApiException {
+    void testListAgentVersionsValidationFailure() throws NacosException {
         // Arrange
         AgentForm invalidForm = new AgentForm();
         // Missing required fields

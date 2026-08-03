@@ -59,24 +59,22 @@ The current server declares support for:
 Adding a new ability requires both a named key and a domain rule that explains
 what behavior is gated by the ability.
 
-### 2.1 Experimental Agent/RAD Target Abilities
+### 2.1 Agent/RAD Abilities
 
-The [Agent API Spec](../ai/agent-api-spec.md) approves the following target
-abilities for the Nacos 3.3 line. They describe the target contract and are not
-current runtime abilities until the corresponding constants and handlers are
-implemented.
+The [Agent API Spec](../ai/agent-api-spec.md) approves the following server
+abilities for the Nacos 3.3 line. They enter the server ability table after
+their handlers and Java SDK form a complete implementation.
 
 | Mode | Constant | Wire key | Meaning |
 |---|---|---|---|
-| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search, Discover, and Watch payloads. |
+| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search and Discover payloads. |
 | `SERVER` | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD runtime Endpoint publication payloads. |
-| `SDK_CLIENT` | `SDK_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | SDK accepts RAD discovery push payloads. |
 
-Ability names are scoped by mode, so the same `agentDiscoveryV1` wire key is
-valid in both `SERVER` and `SDK_CLIENT` tables. Legacy
-`SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY`
-continue to gate only the old A2A contract. They are not a fallback for any RAD
-operation.
+The first `subscribeAgent` polls Discover locally and defines no SDK-client
+ability. A future server Watch/Push design must separately review its client
+ability, payload, and acknowledgement contract. Legacy `SERVER_AGENT_REGISTRY`,
+`SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY` continue to gate only the old
+A2A contract. They are not a fallback for any RAD operation.
 
 ## 3. gRPC Negotiation Flow
 
@@ -132,24 +130,19 @@ features:
   `SERVER_AGENT_REGISTRY`.
 - A2A AgentCard 1.0 fields should require `SERVER_AGENT_CARD_V1` or use an
   explicitly documented compatibility conversion.
-- RAD Search, Discover, and Watch requests must require
-  `SERVER_AGENT_DISCOVERY_V1`.
+- RAD Search and Discover requests must require `SERVER_AGENT_DISCOVERY_V1`;
+  local polling subscriptions reuse the same Discover check.
 - RAD runtime Endpoint registration and deregistration must require
   `SERVER_AGENT_ENDPOINT_V1`.
-- The server may push either `SNAPSHOT` or `TERMINATED`
-  `AgentDiscoveryNotifyRequest` only when the client advertises
-  `SDK_AGENT_DISCOVERY_V1`. The ability covers acknowledgement and isolated
-  termination of one `watchKey`; it never authorizes closing the shared
-  Payload connection for a terminal Watch.
 
 Feature code should not cache a positive ability result beyond the current
 connection. It should query the runtime connection ability when the operation is
 about to execute or when a cached value is known to belong to the current
 connection.
 
-After reconnect, the client must negotiate the ability again before restoring
-Watch intent. A restored subscription obtains a new connection-scoped opaque
-`watchKey` from `AgentSubscribeResponse`; the prior key must not be reused.
+After reconnect, the client must negotiate abilities again before restoring
+Endpoint publications. A local polling subscription stores no
+connection-scoped Watch state; its next Discover uses the new connection.
 
 ## 6. Compatibility Rules
 

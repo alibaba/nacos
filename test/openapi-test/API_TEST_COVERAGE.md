@@ -32,6 +32,10 @@ coverage before adding or debugging an IT.
   handling coverage when those scenario groups are practical.
 - If an exposed success path is intentionally not executed because it mutates
   risky runtime or storage state, record the reason in the scenario cell.
+- When a change only corrects authorization metadata without changing the HTTP
+  request or response contract, keep the functional scenario status unchanged,
+  record the affected surface in its scenario document, and verify the exact
+  `@Secured` tuple with a focused module test.
 
 ## Status Legend
 
@@ -105,6 +109,15 @@ fields `succeeded` and `failed`, plus per-item `success`, `errorCode`, and
 `errorMessage` in `results`. Contract-only field changes do not alter the
 scenario-row totals above.
 
+Skill, Prompt, and AgentSpec submit scenarios retry submit when the standalone
+environment leaves the target in `reviewing`, proving the HTTP operation is
+idempotent and does not require a new draft. Resubmitting a `reviewed` version
+and recovering a legacy `reviewing` Skill with a terminal pipeline result are
+covered by service tests because the standalone suite does not install a
+deterministic publish pipeline that can create those states. Service tests also
+verify that a terminal result marked `historical=true` remains an idempotent
+`reviewing` submit because it belongs to a previous review cycle.
+
 Agent Admin definition creation is counted in the existing Agent Admin and
 Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
 creates missing Agent metadata together with the first draft; the removed root
@@ -122,6 +135,17 @@ Console facade. The Client Endpoint scenario cross-validates an Admin-created
 and published Agent through Console Overview, then verifies that Client
 registration and deregistration produce matching populated and empty Runtime
 snapshots through both Admin and Console.
+
+Legacy A2A Admin and Console operations are now compatibility facades over the
+same canonical Agent definition. The Admin A2A row covers both directions:
+legacy create/update/promote/delete observed through canonical Agent reads, and
+canonical draft/force-publish observed through legacy AgentCard reads. The
+Console A2A row verifies legacy Console create to canonical Console read,
+legacy Admin create to canonical Console read across ports, and canonical
+Console create to legacy Console and Admin reads. These scenarios deliberately
+do not read or write the removed parallel
+Config definition layout; legacy SERVICE Runtime lookup remains a separate
+exact-Version Naming concern.
 
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.

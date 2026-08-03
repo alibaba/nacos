@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -46,9 +46,9 @@ import java.util.List;
 @EnabledAiHandler
 public class A2aInnerHandler implements A2aHandler {
     
-    private final A2aServerOperationService a2aServerOperationService;
+    private final A2aCompatibilityOperationService a2aServerOperationService;
     
-    public A2aInnerHandler(A2aServerOperationService a2aServerOperationService) {
+    public A2aInnerHandler(A2aCompatibilityOperationService a2aServerOperationService) {
         this.a2aServerOperationService = a2aServerOperationService;
     }
     

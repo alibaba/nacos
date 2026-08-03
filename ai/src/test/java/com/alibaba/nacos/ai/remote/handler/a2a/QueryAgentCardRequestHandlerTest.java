@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 class QueryAgentCardRequestHandlerTest {
     
     @Mock
-    private A2aServerOperationService a2aServerOperationService;
+    private A2aCompatibilityOperationService a2aServerOperationService;
     
     @Mock
     private RequestMeta meta;
@@ -72,7 +72,7 @@ class QueryAgentCardRequestHandlerTest {
         request.setNamespaceId("public");
         AgentCardDetailInfo mockAgentCard = new AgentCardDetailInfo();
         mockAgentCard.setName("test");
-        when(a2aServerOperationService.getAgentCard("public", "test", null, null))
+        when(a2aServerOperationService.getAgentCardForClient("public", "test", null, null))
             .thenReturn(mockAgentCard);
         QueryAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(mockAgentCard, response.getAgentCardDetailInfo());
@@ -84,9 +84,9 @@ class QueryAgentCardRequestHandlerTest {
         QueryAgentCardRequest request = new QueryAgentCardRequest();
         request.setAgentName("test");
         request.setNamespaceId("public");
-        when(a2aServerOperationService.getAgentCard("public", "test", null, null)).thenThrow(
-            new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "test error"));
+        when(a2aServerOperationService.getAgentCardForClient("public", "test", null, null))
+            .thenThrow(new NacosApiException(NacosException.SERVER_ERROR,
+                ErrorCode.SERVER_ERROR, "test error"));
         QueryAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.SERVER_ERROR, response.getErrorCode());

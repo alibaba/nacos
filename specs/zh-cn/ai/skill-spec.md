@@ -145,7 +145,8 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 - upload 根据请求选项创建或覆盖 draft；
 - upload 可以接收可选 commit message，创建或覆盖 draft 版本时必须保存为该版本描述；
 - bootstrap 内置 Skill 可以直接创建 online 元数据和版本行；
-- submit 可以运行发布流水线，并发布或退回 draft；
+- 提交 draft 或 reviewed 版本可以运行发布流水线，并发布或保留为 reviewed；提交
+  reviewing 版本应按幂等调用返回；
 - labels、online/offline、scope、bizTags 和 delete 操作按需通过 CAS 更新元数据。
 
 导入的 Skill 遵循 upload 和 draft 规则，除非该操作是服务端拥有的显式 bootstrap 流程。

@@ -51,6 +51,10 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     private static final long DEFAULT_WRITE_BUFFER_MB = 32;
     
+    static {
+        RocksDB.loadLibrary();
+    }
+    
     Map<String, RocksDB> rocksDbMap = new HashMap<>();
     
     private void createDirIfNotExist(String dir) {

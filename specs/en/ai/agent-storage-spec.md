@@ -450,9 +450,11 @@ URI. It does not define a DNS name and does not lowercase the case-sensitive
 Nacos service identity. An integration that normalizes service ids to lowercase
 is outside this compatibility guarantee.
 
-`clusterName` is normalized transport and matches
-`[0-9A-Za-z-]{1,64}`. Transport is stored in both cluster identity and reserved
-metadata and must agree on read.
+The public normalized transport matches `[0-9A-Za-z+-]{1,64}`. Naming
+`clusterName` is `RadAsciiAgentIdCodec.encode(transport)` and therefore contains only
+`[A-Za-z0-9-]`; for example, `HTTP+JSON -> enc-HTTP-043JSON`. The original transport is also
+stored in reserved metadata. A read must encode that metadata transport again and cross-validate
+it against `clusterName`; it must not infer the public transport by decoding `clusterName`.
 
 ### 5.2 Instance Field Mapping
 
@@ -461,7 +463,7 @@ metadata and must agree on read.
 | `namespaceId` | Service namespace. |
 | fixed group | `agent-endpoints`. |
 | encoded Agent and protocol | Canonical service name from section 5.1. |
-| normalized transport | `Instance.clusterName`. |
+| encoded normalized transport | `Instance.clusterName`. |
 | normalized URI host and effective port | `Instance.ip`, `Instance.port`. |
 | URI path | `__nacos.agent.endpoint.path__`. |
 | normalized transport | `__nacos.agent.endpoint.transport__`. |

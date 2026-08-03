@@ -44,6 +44,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
+
 /**
  * Console Copilot configuration controller.
  *
@@ -87,7 +89,8 @@ public class ConsoleCopilotConfigController {
      */
     @Since("3.2.0")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX + "copilot/config",
+        action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<CopilotProperties> getConfig() throws NacosException {
         CopilotProperties config = getStoredConfig();
         if (config == null) {
@@ -115,7 +118,8 @@ public class ConsoleCopilotConfigController {
      */
     @Since("3.2.0")
     @PostMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX + "copilot/config",
+        action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> saveConfig(HttpServletRequest request,
         @RequestBody CopilotProperties config)
         throws NacosException {

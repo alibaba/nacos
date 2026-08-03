@@ -185,6 +185,9 @@ public class SkillConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertTrue("online".equals(submittedStatus) || "reviewing".equals(submittedStatus),
                 submittedStatus);
         if ("reviewing".equals(submittedStatus)) {
+            JsonNode resubmit = postFormOk(CONSOLE_SKILL_PATH + "/submit", skillQueryForm(skillName));
+            assertEquals("2.0.0", resubmit.get("data").asText(), resubmit.toString());
+            assertSkillVersionStatus(skillName, "2.0.0", "reviewing");
             postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "2.0.0"));
         }
         assertSkillContent(getJsonOk(CONSOLE_SKILL_VERSION_PATH, skillVersionQuery(skillName, "2.0.0"))

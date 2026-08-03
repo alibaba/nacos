@@ -1,195 +1,255 @@
 import { create } from 'zustand';
-import { agentApi } from '@/api/agent';
-import type {
-  AgentBasicInfo,
-  AgentDetailInfo,
-  AgentListResponse,
-  AgentSearchMode,
-  AgentVersionDetail,
-} from '@/types/agent';
 import type { AxiosError } from 'axios';
+import { agentApi } from '@/api/agent';
+import { runtimeCacheKey } from '@/pages/newAgent/agent-console-model';
+import type {
+  AgentOverview,
+  AgentPage,
+  AgentScope,
+  AgentSummary,
+  AgentVersionDetail,
+  AgentVersionStatus,
+  AgentVersionSummary,
+  ConsoleRuntimeEndpointView,
+} from '@/types/agent';
 
 interface AgentState {
-  // List
-  agents: AgentBasicInfo[];
+  agents: AgentSummary[];
   loading: boolean;
   total: number;
   pageNo: number;
   pageSize: number;
-
-  // Search
   searchName: string;
-  searchMode: AgentSearchMode;
-
-  // Selection (batch operations)
+  bizTag: string;
+  scope?: AgentScope;
+  owner: string;
   selectedNames: Set<string>;
-
-  // Detail
-  currentAgent: AgentDetailInfo | null;
+  currentOverview: AgentOverview | null;
+  currentVersion: AgentVersionDetail | null;
+  versionPage: AgentPage<AgentVersionSummary> | null;
+  runtimeCache: Record<string, ConsoleRuntimeEndpointView>;
   detailLoading: boolean;
-  versionList: AgentVersionDetail[];
-
-  // Error
+  runtimeLoading: boolean;
   error: string | null;
 }
 
 interface AgentActions {
   fetchAgents: (namespaceId: string) => Promise<void>;
-  fetchAgentDetail: (namespaceId: string, agentName: string, version?: string) => Promise<void>;
-  fetchVersionList: (namespaceId: string, agentName: string) => Promise<void>;
+  fetchOverview: (namespaceId: string, agentName: string) => Promise<AgentOverview | null>;
+  fetchVersionPage: (
+    namespaceId: string,
+    agentName: string,
+    status?: AgentVersionStatus,
+    pageNo?: number,
+    pageSize?: number,
+  ) => Promise<AgentPage<AgentVersionSummary> | null>;
+  fetchVersion: (
+    namespaceId: string,
+    agentName: string,
+    version: string,
+  ) => Promise<AgentVersionDetail | null>;
+  fetchRuntime: (
+    namespaceId: string,
+    agentName: string,
+    version: string,
+    protocol: string,
+    force?: boolean,
+  ) => Promise<ConsoleRuntimeEndpointView | null>;
   deleteAgent: (namespaceId: string, agentName: string) => Promise<boolean>;
   batchDelete: (namespaceId: string, names: string[]) => Promise<boolean>;
-  setSearchParams: (params: { searchName?: string; searchMode?: AgentSearchMode }) => void;
+  setFilters: (filters: Partial<Pick<
+    AgentState,
+    'searchName' | 'bizTag' | 'scope' | 'owner'
+  >>) => void;
   setPage: (pageNo: number, pageSize?: number) => void;
-  resetSearch: () => void;
+  resetFilters: () => void;
   toggleSelect: (name: string) => void;
   selectAll: (names: string[]) => void;
   clearSelection: () => void;
-  clearCurrentAgent: () => void;
+  clearDetail: () => void;
   clearError: () => void;
 }
 
 type AgentStore = AgentState & AgentActions;
 
+function errorMessage(error: unknown, fallback: string): string {
+  const axiosError = error as AxiosError<{ message?: string }>;
+  return axiosError.response?.data?.message || fallback;
+}
+
 export const useAgentStore = create<AgentStore>((set, get) => ({
-  // List
   agents: [],
   loading: false,
   total: 0,
   pageNo: 1,
   pageSize: 12,
-
-  // Search
   searchName: '',
-  searchMode: 'blur',
-
-  // Selection
+  bizTag: '',
+  scope: undefined,
+  owner: '',
   selectedNames: new Set(),
-
-  // Detail
-  currentAgent: null,
+  currentOverview: null,
+  currentVersion: null,
+  versionPage: null,
+  runtimeCache: {},
   detailLoading: false,
-  versionList: [],
-
-  // Error
+  runtimeLoading: false,
   error: null,
 
-  fetchAgents: async (namespaceId: string) => {
-    const hasData = get().agents.length > 0;
-    set({ loading: !hasData, error: null });
+  fetchAgents: async (namespaceId) => {
+    set({ loading: true, error: null });
     try {
-      const { searchName, searchMode, pageNo, pageSize } = get();
+      const { searchName, bizTag, scope, owner, pageNo, pageSize } = get();
       const response = await agentApi.listAgents({
-        agentName: searchName || '',
         namespaceId,
-        search: searchMode,
+        agentName: searchName || undefined,
+        bizTag: bizTag || undefined,
+        scope,
+        owner: owner || undefined,
         pageNo,
         pageSize,
       });
-      const result = response as unknown as { data: AgentListResponse };
-      const data = result.data;
       set({
-        agents: data.pageItems || [],
-        total: data.totalCount || 0,
+        agents: response.data.pageItems || [],
+        total: response.data.totalCount || 0,
         loading: false,
       });
     } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
       set({
-        loading: false,
-        error: axiosError.response?.data?.message || 'Failed to fetch agents',
         agents: [],
         total: 0,
+        loading: false,
+        error: errorMessage(error, 'Failed to fetch agents'),
       });
     }
   },
 
-  fetchAgentDetail: async (namespaceId: string, agentName: string, version?: string) => {
-    const hasAgent = get().currentAgent !== null;
-    set({ detailLoading: !hasAgent, error: null });
+  fetchOverview: async (namespaceId, agentName) => {
+    set({ detailLoading: true, error: null });
     try {
-      const response = await agentApi.getAgent({
+      const response = await agentApi.getAgent({ namespaceId, agentName });
+      set({
+        currentOverview: response.data,
+        versionPage: response.data.versionPage,
+        detailLoading: false,
+      });
+      return response.data;
+    } catch (error) {
+      set({
+        currentOverview: null,
+        currentVersion: null,
+        versionPage: null,
+        detailLoading: false,
+        error: errorMessage(error, 'Failed to fetch agent detail'),
+      });
+      return null;
+    }
+  },
+
+  fetchVersionPage: async (namespaceId, agentName, status, pageNo = 1, pageSize = 20) => {
+    try {
+      const response = await agentApi.listVersions({
+        namespaceId,
+        agentName,
+        status,
+        pageNo,
+        pageSize,
+      });
+      set({ versionPage: response.data });
+      return response.data;
+    } catch (error) {
+      set({ error: errorMessage(error, 'Failed to fetch Agent versions') });
+      return null;
+    }
+  },
+
+  fetchVersion: async (namespaceId, agentName, version) => {
+    set({ detailLoading: true, error: null, currentVersion: null, runtimeCache: {} });
+    try {
+      const response = await agentApi.getVersion({ namespaceId, agentName, version });
+      set({ currentVersion: response.data, detailLoading: false });
+      return response.data;
+    } catch (error) {
+      set({
+        currentVersion: null,
+        detailLoading: false,
+        error: errorMessage(error, 'Failed to fetch Agent version'),
+      });
+      return null;
+    }
+  },
+
+  fetchRuntime: async (namespaceId, agentName, version, protocol, force = false) => {
+    const key = runtimeCacheKey(version, protocol);
+    const cached = get().runtimeCache[key];
+    if (cached && !force) {
+      return cached;
+    }
+    set({ runtimeLoading: true, error: null });
+    try {
+      const response = await agentApi.getRuntimeEndpoints({
+        namespaceId,
         agentName,
         version,
-        namespaceId,
+        protocol,
       });
-      const result = response as unknown as { data: AgentDetailInfo };
-      set({
-        currentAgent: result.data,
-        detailLoading: false,
-      });
+      set((state) => ({
+        runtimeCache: { ...state.runtimeCache, [key]: response.data },
+        runtimeLoading: false,
+      }));
+      return response.data;
     } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
       set({
-        detailLoading: false,
-        error: axiosError.response?.data?.message || 'Failed to fetch agent detail',
-        currentAgent: null,
+        runtimeLoading: false,
+        error: errorMessage(error, 'Failed to fetch Runtime Endpoints'),
       });
+      return null;
     }
   },
 
-  fetchVersionList: async (namespaceId: string, agentName: string) => {
+  deleteAgent: async (namespaceId, agentName) => {
     try {
-      const response = await agentApi.getVersionList({
-        agentName,
-        namespaceId,
-      });
-      const result = response as unknown as { data: AgentVersionDetail[] };
-      set({ versionList: result.data || [] });
-    } catch {
-      set({ versionList: [] });
-    }
-  },
-
-  deleteAgent: async (namespaceId: string, agentName: string) => {
-    try {
-      await agentApi.deleteAgent({ agentName, namespaceId });
+      await agentApi.deleteAgent({ namespaceId, agentName });
       return true;
     } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      set({ error: axiosError.response?.data?.message || 'Failed to delete agent' });
+      set({ error: errorMessage(error, 'Failed to delete agent') });
       return false;
     }
   },
 
-  batchDelete: async (namespaceId: string, names: string[]) => {
-    let allSuccess = true;
-    for (const name of names) {
-      try {
-        await agentApi.deleteAgent({ agentName: name, namespaceId });
-      } catch {
-        allSuccess = false;
-      }
-    }
+  batchDelete: async (namespaceId, names) => {
+    const results = await Promise.allSettled(
+      names.map((agentName) => agentApi.deleteAgent({ namespaceId, agentName })),
+    );
     set({ selectedNames: new Set() });
-    return allSuccess;
+    return results.every((result) => result.status === 'fulfilled');
   },
 
-  setSearchParams: (params) => {
-    set((state) => ({ ...state, ...params, pageNo: 1 }));
+  setFilters: (filters) => {
+    set({ ...filters, pageNo: 1 });
   },
 
-  setPage: (pageNo: number, pageSize?: number) => {
-    set((state) => ({
-      pageNo,
-      pageSize: pageSize ?? state.pageSize,
-    }));
+  setPage: (pageNo, pageSize) => {
+    set((state) => ({ pageNo, pageSize: pageSize ?? state.pageSize }));
   },
 
-  resetSearch: () => {
-    set({ searchName: '', searchMode: 'blur', pageNo: 1 });
+  resetFilters: () => {
+    set({ searchName: '', bizTag: '', scope: undefined, owner: '', pageNo: 1 });
   },
 
-  toggleSelect: (name: string) => {
+  toggleSelect: (name) => {
     set((state) => {
-      const next = new Set(state.selectedNames);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return { selectedNames: next };
+      const selectedNames = new Set(state.selectedNames);
+      if (selectedNames.has(name)) {
+        selectedNames.delete(name);
+      } else {
+        selectedNames.add(name);
+      }
+      return { selectedNames };
     });
   },
 
-  selectAll: (names: string[]) => {
+  selectAll: (names) => {
     set({ selectedNames: new Set(names) });
   },
 
@@ -197,8 +257,14 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     set({ selectedNames: new Set() });
   },
 
-  clearCurrentAgent: () => {
-    set({ currentAgent: null, versionList: [] });
+  clearDetail: () => {
+    set({
+      currentOverview: null,
+      currentVersion: null,
+      versionPage: null,
+      runtimeCache: {},
+      error: null,
+    });
   },
 
   clearError: () => {

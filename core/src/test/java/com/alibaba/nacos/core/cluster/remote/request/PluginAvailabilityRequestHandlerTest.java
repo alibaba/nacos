@@ -16,12 +16,18 @@
 
 package com.alibaba.nacos.core.cluster.remote.request;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Arrays;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -121,6 +128,24 @@ class PluginAvailabilityRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals("Either queryAll must be true or pluginId must be provided",
             response.getMessage());
+    }
+    
+    @Test
+    void securedMetadataTest() throws NoSuchMethodException {
+        InvokeSource invokeSource =
+            PluginAvailabilityRequestHandler.class.getAnnotation(InvokeSource.class);
+        assertNotNull(invokeSource);
+        assertArrayEquals(new String[] {RemoteConstants.LABEL_SOURCE_CLUSTER},
+            invokeSource.source());
+        
+        Secured secured = PluginAvailabilityRequestHandler.class
+            .getDeclaredMethod("handle", PluginAvailabilityRequest.class,
+                RequestMeta.class)
+            .getAnnotation(Secured.class);
+        assertNotNull(secured);
+        assertEquals("pluginAvailability", secured.resource());
+        assertEquals(SignType.SPECIFIED, secured.signType());
+        assertEquals(ApiType.INNER_API, secured.apiType());
     }
     
     private PluginInfo createPluginInfo(String pluginId, PluginType pluginType, String pluginName,

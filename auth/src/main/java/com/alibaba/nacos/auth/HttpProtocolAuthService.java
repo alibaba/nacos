@@ -19,6 +19,7 @@ package com.alibaba.nacos.auth;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
+import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.http.AbstractHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.AiHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.ConfigHttpResourceParser;
@@ -64,14 +65,16 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
         if (StringUtils.isNotBlank(secured.resource())) {
             return parseSpecifiedResource(secured);
         }
-        String type = secured.signType();
-        if (!resourceParserMap.containsKey(type)) {
-            Loggers.AUTH.warn(
-                "Can't find Http request resourceParser for type {} use specified resource parser",
-                type);
+        if (!DefaultResourceParser.class.equals(secured.parser())) {
             return useSpecifiedParserToParse(secured, request);
         }
-        return resourceParserMap.get(type).parse(request, secured);
+        String type = secured.signType();
+        AbstractHttpResourceParser parser = resourceParserMap.get(type);
+        if (parser == null) {
+            Loggers.AUTH.warn("Can't find Http request resourceParser for type {}", type);
+            return new DefaultResourceParser().parse(request, secured);
+        }
+        return parser.parse(request, secured);
     }
     
     @Override

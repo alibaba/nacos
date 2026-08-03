@@ -1,78 +1,76 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, Pencil, Trash2, ExternalLink, Zap, Radio, History } from 'lucide-react';
-import { Card, CardFooter } from '@/components/ui/card';
+import dayjs from 'dayjs';
+import {
+  Bot,
+  Clock,
+  ExternalLink,
+  FileEdit,
+  Globe,
+  Lock,
+  Trash2,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { AgentBasicInfo } from '@/types/agent';
+import type { AgentSummary } from '@/types/agent';
 
 interface AgentCardProps {
-  agent: AgentBasicInfo;
+  agent: AgentSummary;
   selected?: boolean;
   onSelect?: (name: string) => void;
   onDetail?: (name: string) => void;
-  onEdit?: (name: string) => void;
   onDelete?: (name: string) => void;
 }
-
-const CAPABILITY_CONFIG = [
-  { key: 'streaming' as const, icon: Zap, label: 'agent.streaming', color: 'text-amber-500' },
-  { key: 'pushNotifications' as const, icon: Radio, label: 'agent.pushNotifications', color: 'text-blue-500' },
-  { key: 'stateTransitionHistory' as const, icon: History, label: 'agent.stateHistory', color: 'text-emerald-500' },
-];
 
 export function AgentCard({
   agent,
   selected,
   onSelect,
   onDetail,
-  onEdit,
   onDelete,
 }: AgentCardProps) {
   const { t } = useTranslation();
   const [iconError, setIconError] = useState(false);
-  const version = agent.latestPublishedVersion || agent.version || '';
-  const skills = agent.skills || [];
-  const capabilities = agent.capabilities || {};
-  const activeCapabilities = CAPABILITY_CONFIG.filter((cap) => capabilities[cap.key]);
+  const title = agent.displayName || agent.agentName;
+  const latestVersion = agent.versionCatalog?.latestVersion;
+  const editingVersion = agent.versionInfo?.editingVersion;
+  const reviewingVersion = agent.versionInfo?.reviewingVersion;
+  const onlineCount = agent.versionInfo?.onlineCnt || 0;
 
   return (
     <Card
       className={cn(
-        'group relative flex flex-col py-0 gap-0 transition-all duration-200 hover:shadow-sm hover:border-primary/20 cursor-pointer overflow-hidden',
-        selected && 'ring-2 ring-primary border-primary/40'
+        'group relative flex cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all duration-200 hover:border-primary/20 hover:shadow-sm',
+        selected && 'border-primary/40 ring-2 ring-primary',
       )}
-      onClick={() => onDetail?.(agent.name)}
+      onClick={() => onDetail?.(agent.agentName)}
     >
-      {/* Header */}
-      <div className="flex items-start gap-3 px-4 pt-3.5 pb-2 relative">
-        {/* Checkbox - top right */}
+      <div className="relative flex items-start gap-3 px-4 pb-2 pt-3.5">
         {onSelect && (
           <div
-            className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity data-[checked=true]:opacity-100"
+            className="absolute right-2.5 top-2.5 opacity-0 transition-opacity group-hover:opacity-100 data-[checked=true]:opacity-100"
             data-checked={selected || undefined}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           >
-            <Checkbox
-              checked={selected}
-              onCheckedChange={() => onSelect(agent.name)}
-            />
+            <Checkbox checked={selected} onCheckedChange={() => onSelect(agent.agentName)} />
           </div>
         )}
-
-        {/* Icon */}
-        <div className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm overflow-hidden',
-          agent.iconUrl && !iconError
-            ? 'bg-white dark:bg-muted border border-border/60'
-            : 'bg-gradient-to-br from-violet-500 to-fuchsia-400 shadow-violet-500/15'
-        )}>
+        <div
+          className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-sm shadow-violet-500/15',
+            agent.iconUrl && !iconError
+              ? 'border bg-white dark:bg-muted'
+              : 'bg-gradient-to-br from-violet-500 to-fuchsia-400',
+          )}
+        >
           {agent.iconUrl && !iconError ? (
             <img
               src={agent.iconUrl}
-              alt={agent.name}
+              alt={title}
               className="h-full w-full object-contain p-1.5"
               onError={() => setIconError(true)}
             />
@@ -80,61 +78,91 @@ export function AgentCard({
             <Bot className="h-5 w-5 text-white" />
           )}
         </div>
-
-        {/* Title + meta */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm truncate leading-tight">{agent.name}</h3>
-          <div className="flex items-center gap-1.5 mt-1">
-            {/* Version */}
-            {version && (
-              <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
-                {version}
+        <div className="min-w-0 flex-1 pr-4">
+          <h3 className="truncate text-sm font-semibold leading-tight">{title}</h3>
+          <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
+            {agent.agentName}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <Badge
+              className={cn(
+                'h-4 border-0 px-1.5 py-0 text-[10px] font-medium',
+                agent.status === 'enable'
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+              )}
+            >
+              {agent.status === 'enable' ? t('agent.enabled') : t('agent.disabled')}
+            </Badge>
+            {agent.scope && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                {agent.scope === 'PUBLIC'
+                  ? <Globe className="h-2.5 w-2.5" />
+                  : <Lock className="h-2.5 w-2.5" />}
+                {agent.scope === 'PUBLIC' ? t('agent.publicScope') : t('agent.privateScope')}
+              </span>
+            )}
+            {latestVersion && (
+              <span className="rounded bg-muted/60 px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
+                {latestVersion}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 pb-2 flex-1">
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+      <div className="flex-1 px-4 pb-2">
+        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
           {agent.description || t('agent.noDescription')}
         </p>
-
-        {/* Capabilities + skills row */}
-        {(activeCapabilities.length > 0 || skills.length > 0) && (
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {activeCapabilities.map((cap) => {
-              const Icon = cap.icon;
-              return (
-                <Tooltip key={cap.key}>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      <Icon className={cn('h-3 w-3', cap.color)} />
-                      {t(cap.label)}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{t(cap.label)}</TooltipContent>
-                </Tooltip>
-              );
-            })}
-
-            {skills.length > 0 && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Zap className="h-3 w-3" />
-                {t('agent.skillCount', { count: skills.length })}
-              </span>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {(agent.tags || []).slice(0, 2).map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
+            >
+              {tag}
+            </span>
+          ))}
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+              onlineCount > 0
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : 'bg-muted text-muted-foreground',
             )}
-          </div>
-        )}
+          >
+            <Globe className="h-2.5 w-2.5" />
+            {t('agent.onlineVersions')}: {onlineCount}
+          </span>
+          {editingVersion && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+              <FileEdit className="h-2.5 w-2.5" />
+              {t('agent.editingVersion')}: {editingVersion}
+            </span>
+          )}
+          {reviewingVersion && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              {t('agent.reviewingVersion')}: {reviewingVersion}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Footer */}
-      <CardFooter className="px-4 py-1.5 border-t bg-muted/20 flex items-center justify-end [.border-t]:pt-1.5">
-        <div className="flex items-center -mr-1" onClick={(e) => e.stopPropagation()}>
+      <CardFooter className="flex items-center justify-between border-t bg-muted/20 px-4 py-1.5 [.border-t]:pt-1.5">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          {agent.updateTime ? dayjs(agent.updateTime).format('YYYY-MM-DD HH:mm') : '-'}
+        </span>
+        <div className="-mr-1 flex items-center" onClick={(event) => event.stopPropagation()}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDetail?.(agent.name)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => onDetail?.(agent.agentName)}
+              >
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
@@ -142,15 +170,12 @@ export function AgentCard({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit?.(agent.name)}>
-                <Pencil className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('common.edit')}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDelete?.(agent.name)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive"
+                onClick={() => onDelete?.(agent.agentName)}
+              >
                 <Trash2 className="h-3 w-3" />
               </Button>
             </TooltipTrigger>

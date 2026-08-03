@@ -336,7 +336,7 @@ public class SkillAdminController {
     @Since("3.2.1")
     @PostMapping("/force-publish")
     @Secured(resource = ADMIN_PATH
-        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+        + "/force-publish", action = ActionTypes.WRITE, signType = SignType.AI,
         apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();

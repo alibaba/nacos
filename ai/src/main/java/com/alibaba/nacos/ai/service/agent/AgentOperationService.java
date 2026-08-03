@@ -20,12 +20,14 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
@@ -54,6 +56,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -77,6 +80,14 @@ public class AgentOperationService {
     private static final int MAX_TAG_LENGTH = 64;
     
     private static final String DEFAULT_OWNER = "nacos";
+    
+    private static final String LEGACY_A2A_PROTOCOL = "a2a";
+    
+    private static final String LEGACY_A2A_RESOURCE_SOURCE = "legacy-a2a";
+    
+    private static final String OP_LEGACY_A2A_RELEASE = "LEGACY_A2A_RELEASE";
+    
+    private static final String OP_LEGACY_A2A_DELETE = "LEGACY_A2A_DELETE";
     
     private final AgentPersistenceService persistenceService;
     
@@ -260,6 +271,174 @@ public class AgentOperationService {
             AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
         return result;
+    }
+    
+    /**
+     * Register the first directly-online Version through the legacy A2A management facade.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete legacy definition converted to a protocol-neutral request
+     * @return verified online Version
+     * @throws NacosException when the Agent already exists or persistence fails
+     */
+    public AgentVersionDetail registerLegacyOnlineVersion(String namespaceId,
+        AgentDraftCreateRequest request) throws NacosException {
+        validateDirectOnlineRequest(namespaceId, request);
+        String agentName = request.getAgentName();
+        String version = request.getVersion();
+        try {
+            AiResource current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+            if (current != null) {
+                VisibilityHelper.checkWritableResource(current);
+                throw conflict("Agent already exists: " + agentName);
+            }
+            AgentVersionDetail result = persistenceService.createInitialOnlineVersion(
+                toInitialLegacyAgent(namespaceId, request), toOnlineVersion(request),
+                LEGACY_A2A_RESOURCE_SOURCE);
+            traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE, "mode=register");
+            return result;
+        } catch (Exception e) {
+            traceLegacyFailure(agentName, version, OP_LEGACY_A2A_RELEASE, e);
+            throw asNacosException(e);
+        }
+    }
+    
+    /**
+     * Release one directly-online Version through the legacy A2A Client facade.
+     *
+     * <p>An already-online exact Version is a successful no-op without comparing or replacing
+     * content and never changes latest. A non-online exact Version still requires identical
+     * canonical content.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete legacy definition converted to a protocol-neutral request
+     * @param setAsLatest whether a newly-created or restored Version should become latest
+     * @return verified online Version
+     * @throws NacosException when persistence, authorization, or content validation fails
+     */
+    public AgentVersionDetail releaseLegacyOnlineVersion(String namespaceId,
+        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        validateDirectOnlineRequest(namespaceId, request);
+        String agentName = request.getAgentName();
+        String version = request.getVersion();
+        try {
+            AiResource current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+            if (current == null) {
+                try {
+                    AgentVersionDetail result = persistenceService.createInitialOnlineVersion(
+                        toInitialLegacyAgent(namespaceId, request), toOnlineVersion(request),
+                        LEGACY_A2A_RESOURCE_SOURCE);
+                    traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
+                        "mode=client-create");
+                    return result;
+                } catch (NacosApiException e) {
+                    if (e.getDetailErrCode() != ErrorCode.RESOURCE_CONFLICT.getCode()) {
+                        throw e;
+                    }
+                    current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+                    if (current == null) {
+                        throw e;
+                    }
+                }
+            }
+            VisibilityHelper.checkWritableResource(current);
+            AgentVersionDetail result = directOnlineExistingAgent(namespaceId, request,
+                setAsLatest, true);
+            traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
+                "mode=client-release");
+            return result;
+        } catch (Exception e) {
+            traceLegacyFailure(agentName, version, OP_LEGACY_A2A_RELEASE, e);
+            throw asNacosException(e);
+        }
+    }
+    
+    /**
+     * Create or restore one directly-online Version through the legacy A2A management facade.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete legacy definition converted to a protocol-neutral request
+     * @param setAsLatest whether the target Version should become latest
+     * @return verified online Version
+     * @throws NacosException when the Agent is absent, content differs, or persistence fails
+     */
+    public AgentVersionDetail updateLegacyOnlineVersion(String namespaceId,
+        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        validateDirectOnlineRequest(namespaceId, request);
+        String agentName = request.getAgentName();
+        String version = request.getVersion();
+        try {
+            requireWritableMeta(namespaceId, agentName);
+            AgentVersionDetail result = directOnlineExistingAgent(namespaceId, request,
+                setAsLatest, false);
+            traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
+                "mode=management-update");
+            return result;
+        } catch (Exception e) {
+            traceLegacyFailure(agentName, version, OP_LEGACY_A2A_RELEASE, e);
+            throw asNacosException(e);
+        }
+    }
+    
+    /**
+     * Delete one exact Version for the legacy A2A facade if it exists.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName exact Agent name
+     * @param version exact Version
+     * @return {@code true} when a Version was deleted
+     * @throws NacosException when authorization or persistence fails
+     */
+    public boolean deleteLegacyVersionIfPresent(String namespaceId, String agentName,
+        String version) throws NacosException {
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        AgentValidationUtils.validateAgentName(agentName);
+        AgentValidationUtils.validateVersion(version);
+        try {
+            AiResource current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+            if (current == null) {
+                return false;
+            }
+            VisibilityHelper.checkWritableResource(current);
+            AiResourceVersion versionRow =
+                persistenceService.findVersionRow(namespaceId, agentName, version);
+            if (versionRow == null) {
+                return false;
+            }
+            persistenceService.deleteVersion(namespaceId, agentName, version);
+            traceLegacySuccess(agentName, version, OP_LEGACY_A2A_DELETE, "mode=version");
+            return true;
+        } catch (Exception e) {
+            traceLegacyFailure(agentName, version, OP_LEGACY_A2A_DELETE, e);
+            throw asNacosException(e);
+        }
+    }
+    
+    /**
+     * Delete one complete Agent for the legacy A2A facade if it exists.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName exact Agent name
+     * @return {@code true} when an Agent was deleted
+     * @throws NacosException when authorization or persistence fails
+     */
+    public boolean deleteLegacyAgentIfPresent(String namespaceId, String agentName)
+        throws NacosException {
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        AgentValidationUtils.validateAgentName(agentName);
+        try {
+            AiResource current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+            if (current == null) {
+                return false;
+            }
+            VisibilityHelper.checkWritableResource(current);
+            persistenceService.deleteAgent(namespaceId, agentName);
+            traceLegacySuccess(agentName, null, OP_LEGACY_A2A_DELETE, "mode=agent");
+            return true;
+        } catch (Exception e) {
+            traceLegacyFailure(agentName, null, OP_LEGACY_A2A_DELETE, e);
+            throw asNacosException(e);
+        }
     }
     
     /**
@@ -535,6 +714,114 @@ public class AgentOperationService {
         return true;
     }
     
+    private AgentVersionDetail directOnlineExistingAgent(String namespaceId,
+        AgentDraftCreateRequest request, boolean setAsLatest, boolean clientOnlineNoOp)
+        throws NacosException {
+        String agentName = request.getAgentName();
+        String version = request.getVersion();
+        AiResourceVersion versionRow =
+            persistenceService.findVersionRow(namespaceId, agentName, version);
+        if (versionRow == null) {
+            return persistenceService.createOnlineVersion(namespaceId, agentName,
+                toOnlineVersion(request), setAsLatest ? version : null);
+        }
+        AgentVersionDetail existing =
+            persistenceService.getAgentVersion(namespaceId, agentName, version);
+        if (AiConstants.Agent.VERSION_STATUS_ONLINE.equals(versionRow.getStatus())
+            && clientOnlineNoOp) {
+            if (containsProtocol(existing, LEGACY_A2A_PROTOCOL)) {
+                return existing;
+            }
+            throw conflict("Online Agent Version does not contain an A2A interface: "
+                + agentName + '@' + version);
+        }
+        String requestedDigest = AgentVersionContentSerializer.serialize(
+            new AgentVersionContent(request.getCallInterfaces())).getContentDigest();
+        if (!Objects.equals(existing.getContentDigest(), requestedDigest)) {
+            throw conflict("Agent Version content already exists: " + agentName + '@' + version);
+        }
+        if (AiConstants.Agent.VERSION_STATUS_ONLINE.equals(versionRow.getStatus())) {
+            if (setAsLatest) {
+                persistenceService.synchronizeDerivedState(namespaceId, agentName, version, null,
+                    null, null);
+            }
+            return existing;
+        }
+        String status = versionRow.getStatus();
+        if (!AiConstants.Agent.VERSION_STATUS_DRAFT.equals(status)
+            && !AiConstants.Agent.VERSION_STATUS_REVIEWING.equals(status)
+            && !AiConstants.Agent.VERSION_STATUS_REVIEWED.equals(status)
+            && !AiConstants.Agent.VERSION_STATUS_OFFLINE.equals(status)) {
+            throw illegalState("Agent Version cannot be restored online from status " + status
+                + ": " + agentName + '@' + version);
+        }
+        persistenceService.updateVersionStatus(namespaceId, agentName, version,
+            AiConstants.Agent.VERSION_STATUS_ONLINE);
+        persistenceService.synchronizeDerivedState(namespaceId, agentName,
+            setAsLatest ? version : null, null,
+            AiConstants.Agent.VERSION_STATUS_DRAFT.equals(status) ? version : null,
+            AiConstants.Agent.VERSION_STATUS_REVIEWING.equals(status)
+                || AiConstants.Agent.VERSION_STATUS_REVIEWED.equals(status) ? version : null);
+        return persistenceService.getAgentVersion(namespaceId, agentName, version);
+    }
+    
+    private void validateDirectOnlineRequest(String namespaceId,
+        AgentDraftCreateRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Agent direct-online request must not be null");
+        }
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        request.validate();
+        if (request.getCallInterfaces() == null || StringUtils.isNotBlank(
+            request.getBasedOnVersion())) {
+            throw new IllegalArgumentException(
+                "Agent direct-online request must contain callInterfaces");
+        }
+    }
+    
+    private AgentVersionDetail toOnlineVersion(AgentDraftCreateRequest request) {
+        AgentVersionDetail result = new AgentVersionDetail();
+        result.setVersion(request.getVersion());
+        result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        result.setCallInterfaces(request.getCallInterfaces());
+        result.setAuthor(request.getAuthor());
+        result.setChangeDescription(request.getChangeDescription());
+        return result;
+    }
+    
+    private boolean containsProtocol(AgentVersionDetail version, String protocol) {
+        if (version.getCallInterfaces() == null) {
+            return false;
+        }
+        for (AgentCallInterface callInterface : version.getCallInterfaces()) {
+            if (callInterface != null && protocol.equals(callInterface.getProtocol())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private void traceLegacySuccess(String agentName, String version, String operation,
+        String detail) {
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, version, operation,
+            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp(), detail);
+    }
+    
+    private void traceLegacyFailure(String agentName, String version, String operation,
+        Exception failure) {
+        AiResourceTraceService.logFailure(RESOURCE_TYPE, agentName, version, operation,
+            VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp(),
+            failure.getMessage());
+    }
+    
+    private NacosException asNacosException(Exception failure) {
+        if (failure instanceof NacosException) {
+            return (NacosException) failure;
+        }
+        return new NacosException(NacosException.SERVER_ERROR,
+            "Legacy A2A Agent operation failed", failure);
+    }
+    
     private void onPipelineComplete(String namespaceId, String agentName, String version,
         String executionId, PipelineExecutionResult result) {
         try {
@@ -661,6 +948,12 @@ public class AgentOperationService {
         String currentIdentity = VisibilityHelper.resolveCurrentIdentity();
         result.setOwner(StringUtils.isBlank(currentIdentity) ? DEFAULT_OWNER : currentIdentity);
         result.setScope(VisibilityHelper.resolveDefaultScopeForCreate(RESOURCE_TYPE));
+        return result;
+    }
+    
+    private Agent toInitialLegacyAgent(String namespaceId, AgentDraftCreateRequest request) {
+        Agent result = toInitialAgent(namespaceId, request);
+        result.setScope(VisibilityConstants.SCOPE_PUBLIC);
         return result;
     }
     

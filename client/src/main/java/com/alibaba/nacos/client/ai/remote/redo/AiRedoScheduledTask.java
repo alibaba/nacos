@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.remote.redo;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.NamingRedoData;
@@ -46,8 +47,44 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         try {
             redoForMcpSeverEndpoint();
             redoForAgentEndpoint();
+            redoForAgentEndpointPublication();
         } catch (Exception e) {
             LOGGER.warn("Redo task run with unexpected exception: ", e);
+        }
+    }
+    
+    private void redoForAgentEndpointPublication() {
+        for (RedoData<AgentEndpointRegistrationBatch> each : getRedoService()
+            .findAgentEndpointPublicationRedoData()) {
+            AgentEndpointPublicationRedoData redoData =
+                (AgentEndpointPublicationRedoData) each;
+            try {
+                redoForAgentEndpointPublication(redoData);
+            } catch (NacosException e) {
+                LOGGER.error("Redo Agent Endpoint publication operation {} for {} failed.",
+                    each.getRedoType(), redoData.getKey(), e);
+            }
+        }
+    }
+    
+    private void redoForAgentEndpointPublication(AgentEndpointPublicationRedoData redoData)
+        throws NacosException {
+        if (!aiGrpcClient.isEnable()) {
+            return;
+        }
+        switch (redoData.getRedoType()) {
+            case REGISTER:
+                aiGrpcClient.doRegisterAgentEndpoints(redoData.getKey(), redoData.get());
+                break;
+            case UNREGISTER:
+                AgentEndpointRegistrationBatch batch = redoData.get();
+                aiGrpcClient.doDeregisterAgentEndpoints(redoData.getKey(),
+                    batch.getNamespaceId(), batch.getAgentName(), batch.getProtocol());
+                break;
+            case REMOVE:
+                getRedoService().removeAgentEndpointPublication(redoData.getKey());
+                break;
+            default:
         }
     }
     

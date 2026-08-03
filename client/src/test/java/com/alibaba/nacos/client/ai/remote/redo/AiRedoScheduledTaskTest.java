@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.remote.redo;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.redo.data.RedoData;
@@ -296,6 +297,68 @@ class AiRedoScheduledTaskTest {
         verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent", expectedEndpoint);
     }
     
+    @Test
+    void redoCompleteAgentEndpointPublicationsCoversRegisterUnregisterAndRemove()
+        throws NacosException {
+        Set<RedoData<AgentEndpointRegistrationBatch>> publications =
+            new HashSet<RedoData<AgentEndpointRegistrationBatch>>();
+        publications.add(buildAgentEndpointPublicationRedoData("register",
+            RedoData.RedoType.REGISTER));
+        publications.add(buildAgentEndpointPublicationRedoData("unregister",
+            RedoData.RedoType.UNREGISTER));
+        publications.add(buildAgentEndpointPublicationRedoData("remove",
+            RedoData.RedoType.REMOVE));
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(publications);
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.isEnable()).thenReturn(true);
+        
+        task.run();
+        
+        verify(aiGrpcClient).doRegisterAgentEndpoints(anyString(),
+            any(AgentEndpointRegistrationBatch.class));
+        verify(aiGrpcClient).doDeregisterAgentEndpoints(
+            AgentEndpointPublicationRedoData.keyOf("public", "agent-unregister", "a2a"), "public",
+            "agent-unregister", "a2a");
+        verify(aiGrpcRedoService).removeAgentEndpointPublication(
+            AgentEndpointPublicationRedoData.keyOf("public", "agent-remove", "a2a"));
+    }
+    
+    @Test
+    void redoCompleteAgentEndpointPublicationSkipsDisabledClient() throws NacosException {
+        Set<RedoData<AgentEndpointRegistrationBatch>> publications =
+            Collections.<RedoData<AgentEndpointRegistrationBatch>>singleton(
+                buildAgentEndpointPublicationRedoData("register", RedoData.RedoType.REGISTER));
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(publications);
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.isEnable()).thenReturn(false);
+        
+        task.run();
+        
+        verify(aiGrpcClient, never()).doRegisterAgentEndpoints(anyString(),
+            any(AgentEndpointRegistrationBatch.class));
+    }
+    
+    @Test
+    void redoCompleteAgentEndpointPublicationIsolatesNacosFailure() throws NacosException {
+        Set<RedoData<AgentEndpointRegistrationBatch>> publications =
+            Collections.<RedoData<AgentEndpointRegistrationBatch>>singleton(
+                buildAgentEndpointPublicationRedoData("register", RedoData.RedoType.REGISTER));
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(publications);
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.isEnable()).thenReturn(true);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "failed"))
+            .when(aiGrpcClient).doRegisterAgentEndpoints(anyString(),
+                any(AgentEndpointRegistrationBatch.class));
+        
+        task.run();
+        
+        verify(aiGrpcClient).doRegisterAgentEndpoints(anyString(),
+            any(AgentEndpointRegistrationBatch.class));
+    }
+    
     private McpServerEndpointRedoData buildMcpServerEndpointRedoData(String mcpName,
         RedoData.RedoType redoType) {
         McpServerEndpoint mcpServerEndpoint = new McpServerEndpoint("127.0.0.1", 8080, "1.0.0");
@@ -343,5 +406,28 @@ class AiRedoScheduledTaskTest {
             default:
         }
         return agentEndpointRedoData;
+    }
+    
+    private AgentEndpointPublicationRedoData buildAgentEndpointPublicationRedoData(String key,
+        RedoData.RedoType redoType) {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setNamespaceId("public");
+        batch.setAgentName("agent-" + key);
+        batch.setProtocol("a2a");
+        AgentEndpointPublicationRedoData result =
+            new AgentEndpointPublicationRedoData(batch);
+        switch (redoType) {
+            case UNREGISTER:
+                result.registered();
+                result.setUnregistering(true);
+                result.setExpectedRegistered(false);
+                break;
+            case REMOVE:
+                result.unregistered();
+                result.setExpectedRegistered(false);
+                break;
+            default:
+        }
+        return result;
     }
 }

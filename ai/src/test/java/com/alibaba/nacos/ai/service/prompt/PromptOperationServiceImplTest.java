@@ -66,6 +66,7 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -341,11 +342,11 @@ class PromptOperationServiceImplTest {
         AiResource meta =
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
-        // submit reads "draft", then publish re-reads and expects "reviewing"
+        // submit validates "draft", moveToReviewing re-reads "draft", then publish expects "reviewing"
         AiResourceVersion draftRow = createVersionRow("0.0.1", "draft");
         AiResourceVersion reviewingRow = createVersionRow("0.0.1", "reviewing");
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
-            .thenReturn(draftRow).thenReturn(reviewingRow);
+            .thenReturn(draftRow).thenReturn(draftRow).thenReturn(reviewingRow);
         when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
             anyLong(),
             any(AiResource.class))).thenReturn(true);
@@ -369,8 +370,9 @@ class PromptOperationServiceImplTest {
         AiResource meta =
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.2\"}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
-        // submit reads "draft", then publish re-reads and expects "reviewing"
+        // submit validates "draft", moveToReviewing re-reads "draft", then publish expects "reviewing"
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.2"))
+            .thenReturn(createVersionRow("0.0.2", "draft"))
             .thenReturn(createVersionRow("0.0.2", "draft"))
             .thenReturn(createVersionRow("0.0.2", "reviewing"));
         when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
@@ -405,7 +407,7 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
-    void testSubmitShouldRejectNonDraftVersion() {
+    void testSubmitShouldRejectOnlineVersion() {
         AiResource meta =
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
@@ -419,6 +421,92 @@ class PromptOperationServiceImplTest {
         // Status must NOT be flipped to reviewing.
         verify(aiResourceVersionPersistService, never()).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE,
             "0.0.1", "reviewing");
+    }
+    
+    @Test
+    void testSubmitReviewedVersionShouldResubmitReview() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        AiResourceVersion reviewedVersion = createVersionRow("0.0.1", "reviewed");
+        reviewedVersion.setPublishPipelineInfo(
+            "{\"executionId\":\"old-exec\",\"status\":\"REJECTED\"}");
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(reviewedVersion);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(), any(AiResource.class))).thenReturn(true);
+        
+        PromptVersionInfo content = new PromptVersionInfo();
+        content.setTemplate("hello");
+        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
+        PublishPipelineExecutor pipelineExecutor = mock(PublishPipelineExecutor.class);
+        when(pipelineExecutor.isPipelineAvailable(any())).thenReturn(true);
+        when(pipelineExecutor.execute(any(), any(), anyString())).thenReturn("exec-2");
+        PromptOperationServiceImpl reviewedSubmitService =
+            new PromptOperationServiceImpl(pipelineExecutor, configOperationService,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                    pipelineExecutionRepository),
+                promptDataMigrationTask);
+        
+        String result = reviewedSubmitService.submit(NS, PROMPT_KEY, null);
+        
+        assertEquals("0.0.1", result);
+        verify(aiResourceVersionPersistService).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1",
+            "reviewing");
+        verify(aiResourceVersionPersistService, never()).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE,
+            "0.0.1", "online");
+        ArgumentCaptor<String> pipelineInfoCaptor = ArgumentCaptor.forClass(String.class);
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE), eq("0.0.1"), pipelineInfoCaptor.capture());
+        assertTrue(pipelineInfoCaptor.getValue().contains("IN_PROGRESS"));
+        verify(configOperationService, never()).publishConfig(any(), any(), any());
+    }
+    
+    @Test
+    void testSubmitReviewedVersionShouldClearOldPipelineInfoWhenPipelineUnavailable()
+        throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        AiResourceVersion reviewedVersion = createVersionRow("0.0.1", "reviewed");
+        reviewedVersion.setPublishPipelineInfo(
+            "{\"executionId\":\"old-exec\",\"status\":\"REJECTED\"}");
+        AiResourceVersion reviewingVersion = createVersionRow("0.0.1", "reviewing");
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(reviewedVersion).thenReturn(reviewedVersion).thenReturn(reviewingVersion);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE),
+            anyLong(), any(AiResource.class))).thenReturn(true);
+        
+        PromptVersionInfo content = new PromptVersionInfo();
+        content.setTemplate("hello");
+        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
+        
+        String result = service.submit(NS, PROMPT_KEY, null);
+        
+        assertEquals("0.0.1", result);
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(NS, PROMPT_KEY,
+            PROMPT_TYPE, "0.0.1", null);
+        verify(aiResourceVersionPersistService).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1",
+            "online");
+    }
+    
+    @Test
+    void testSubmitReviewingVersionShouldBeIdempotent() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "reviewing"));
+        
+        String result = service.submit(NS, PROMPT_KEY, null);
+        
+        assertEquals("0.0.1", result);
+        verify(aiResourceVersionPersistService, never()).updateStatus(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE), eq("0.0.1"), anyString());
+        verify(aiResourceVersionPersistService, never()).updatePublishPipelineInfo(eq(NS),
+            eq(PROMPT_KEY), eq(PROMPT_TYPE), eq("0.0.1"), anyString());
+        verify(configOperationService, never()).publishConfig(any(), any(), any());
+        verify(storage, never()).get(any(StorageKey.class));
     }
     
     // ========== publish ==========
@@ -499,6 +587,22 @@ class PromptOperationServiceImplTest {
         
         assertThrows(NacosApiException.class,
             () -> service.publish(NS, PROMPT_KEY, "0.0.1", false));
+    }
+    
+    @Test
+    void testPublishShouldAcceptReviewedVersion() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L,
+            "{\"labels\":{},\"reviewingVersion\":\"0.0.1\",\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(createVersionRow("0.0.1", "reviewed"));
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L),
+            any(AiResource.class))).thenReturn(true);
+        
+        service.publish(NS, PROMPT_KEY, "0.0.1", false);
+        
+        verify(aiResourceVersionPersistService).updateStatus(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1",
+            "online");
     }
     
     // ========== forcePublish ==========

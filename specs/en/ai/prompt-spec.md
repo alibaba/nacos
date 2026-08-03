@@ -48,7 +48,8 @@ Prompt follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spe
 
 - create draft from new content or an existing version;
 - update or delete the current draft;
-- submit to publish pipeline or direct publish when no pipeline applies;
+- submit a draft or reviewed version to publish pipeline or direct publish when
+  no pipeline applies, and submit a reviewing version idempotently;
 - publish, force publish, online/offline, update labels, update description,
   update business tags, and delete;
 - query by explicit version, label, or `latest`.

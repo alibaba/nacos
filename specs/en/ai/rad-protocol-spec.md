@@ -259,7 +259,7 @@ All operations reuse one `Endpoint` model:
 | Field | Required | Semantics |
 |---|:---:|---|
 | `uri` | Yes | Complete absolute calling URI, at most 2048 characters |
-| `transport` | Yes | Canonical transport; 1 to 64 `[0-9A-Za-z-]` characters |
+| `transport` | Yes | Canonical transport; 1 to 64 `[0-9A-Za-z+-]` characters, for example A2A `HTTP+JSON` |
 | `priority` | No | Lower is preferred; integer `0..2147483647`, default `0` |
 | `weight` | No | Weight within a priority; number `0..10000`, default `1` |
 | `metadata` | No | At most 32 flat string key/value entries |

@@ -96,6 +96,8 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     
     private static final String VERSION = "1.0.0";
     
+    private static final String UPDATED_VERSION = "1.0.1";
+    
     @Test
     void shouldCreateAiMaintainerServiceAndQueryDelegates() throws Exception {
         AiMaintainerService maintainerService = createAiMaintainerService();
@@ -192,15 +194,23 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                 maintainerService.a2a().searchAgentCardsByName(NAMESPACE_ID, agentName, 1, 10),
                 each -> agentName.equals(each.getName()));
         
+        AgentCard conflictingCard =
+                buildAgentCard(agentName, VERSION, "Maintainer SDK IT agent conflict");
+        NacosException conflict = assertThrows(NacosException.class,
+                () -> maintainerService.a2a().updateAgentCard(conflictingCard, NAMESPACE_ID, true,
+                        AiConstants.A2a.A2A_ENDPOINT_TYPE_URL));
+        assertEquals(NacosException.CONFLICT, conflict.getErrCode());
+        
         AgentCard updatedCard =
-                buildAgentCard(agentName, VERSION, "Maintainer SDK IT agent updated");
+                buildAgentCard(agentName, UPDATED_VERSION, "Maintainer SDK IT agent updated");
         assertTrue(maintainerService.a2a().updateAgentCard(updatedCard, NAMESPACE_ID, true,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL));
         
         AgentCardDetailInfo updated = maintainerService.a2a()
                 .getAgentCard(agentName, NAMESPACE_ID, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL,
-                        VERSION);
-        assertAgentCard(updated, agentName, VERSION, "Maintainer SDK IT agent updated");
+                        UPDATED_VERSION);
+        assertAgentCard(updated, agentName, UPDATED_VERSION,
+                "Maintainer SDK IT agent updated");
         
         assertTrue(maintainerService.a2a().deleteAgent(agentName, NAMESPACE_ID, ""));
         assertNoPageItem(maintainerService.a2a().listAgentCards(NAMESPACE_ID, agentName, 1, 10),

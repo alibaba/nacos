@@ -88,6 +88,7 @@ import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { canResubmitReview } from '@/components/ai/version-lifecycle';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
@@ -745,6 +746,7 @@ export default function SkillDetailPage() {
 
   // Pipeline info for current version
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
+  const showResubmitReview = canResubmitReview(currentVersionStatus, currentPipelineInfo);
 
   // Parse resources from version document
   const resources = versionDoc?.resource ?? {};
@@ -1044,6 +1046,18 @@ export default function SkillDetailPage() {
                   {/* Reviewing / Reviewed actions */}
                   {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                     <>
+                      {showResubmitReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          disabled={actionLoading}
+                          onClick={() => handleSubmit(selectedVersion)}
+                        >
+                          <Send className="h-3 w-3" />
+                          {t('skill.resubmit')}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         className="h-7 text-xs gap-1.5"

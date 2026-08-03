@@ -19,7 +19,7 @@
 | Item | Value |
 | --- | --- |
 | Status | Experimental target compatibility contract |
-| Activation | Canonical Agent write-path cutover |
+| Activation | `nacos.ai.a2a.compatibility.mode`, default `CANONICAL` |
 
 This document defines A2A as a protocol binding of the canonical Nacos Agent
 resource and specifies the compatibility facade for historical AgentCard APIs.
@@ -29,16 +29,27 @@ The canonical model is defined by the
 
 ## 1. Activation, Current Baseline, And Identity
 
-Before feature activation, the current Nacos runtime may continue to persist
-`type=a2a` resources and use the legacy Config and Naming layouts. That
-implementation remains conforming to the current A2A baseline; this target
-spec does not claim that it has already migrated.
+The legacy A2A surfaces select one complete definition implementation through
+`nacos.ai.a2a.compatibility.mode`:
 
-Sections 2 through 7 become normative for new requests only after the
-canonical Agent write path is activated. Activation and mixed-version rollout
-must be explicit: before cutover, the legacy model remains the fact source;
-after cutover, new writes use the canonical Agent model and the legacy surface
-is the compatibility facade defined here.
+| Mode | Definition fact source |
+| --- | --- |
+| `CANONICAL` | Canonical Agent metadata and Version storage. This is the default because this release does not support a rolling upgrade for this feature. |
+| `LEGACY` | Historical Config groups for AgentCard metadata and exact-Version content. |
+| `AUTO` | Start on `LEGACY`; switch once, and only once, to `CANONICAL` after every known cluster member reports version 3.3.0 or later. Missing or invalid member versions keep the legacy branch active. |
+
+Mode tokens are case-insensitive. Each request is routed wholly to one branch;
+there is no per-operation mixture, fallback, dual read, or dual write. The
+`AUTO` entry only reserves a conservative future cutover hook. It is not a
+rolling-upgrade guarantee, and a one-way switch does not migrate historical
+Config data. Operators that select `LEGACY` or later change from `LEGACY` to
+`CANONICAL` are responsible for the visibility consequences until a separate
+migration contract is implemented.
+
+Sections 2 through 7 are normative for requests routed to `CANONICAL`. Requests
+routed to `LEGACY` retain the historical Config definition behavior. Legacy
+Runtime Endpoint operations keep the Version-specific Naming layout in every
+mode.
 
 A2A is not a top-level AI resource type. The canonical identity is:
 
@@ -86,10 +97,12 @@ Rules:
 - a standard Agent publish or online operation always moves `latest`;
 - deleting or taking the current latest offline selects the greatest remaining
   online Agent version, or removes `latest` when none remains;
-- releasing an already-online exact version through the Client SDK is a
-  successful no-op;
-- an existing exact version with different canonical content is a conflict;
-  0.1.0 does not provide same-version force overwrite;
+- releasing an already-online exact version that already contains an A2A call
+  interface through the Client SDK is a successful no-op: content is neither
+  compared nor replaced, and `latest` is not moved;
+- different canonical content is a conflict for Admin updates of an existing
+  exact version and for Client releases that hit an exact version without an
+  A2A call interface; 0.1.0 does not provide same-version force overwrite;
 - deleting a missing Agent or version is a successful no-op only where the
   historical API already promises that behavior.
 
@@ -145,6 +158,11 @@ projection order is stable: priority first, then the endpoint natural key. New
 RAD-only fields such as source revision, health, priority, weight, and general
 metadata are not added to legacy DTOs.
 
+For wire compatibility, the complete projected Runtime Endpoint set is exposed
+through both `supportedInterfaces` and the historical `additionalInterfaces`
+field. The root URL and preferred transport select one member of that same set;
+the selected member is not removed from `additionalInterfaces`.
+
 Legacy list and version-list APIs read Agent metadata plus online A2A versions.
 Legacy subscription events pass through the same projection as GET. A legacy
 subscription may remain registered when the initial target is absent; this is a
@@ -163,9 +181,10 @@ and response wrappers remain stable during their windows. New Agent/RAD APIs
 must not expose `registrationType`, `setAsLatest`, or AgentCard-specific list
 wrappers.
 
-Historical data migration, mixed-version dual read/write, source switching,
-rollback, and cleanup are rolling-upgrade concerns and are not defined by this
-API compatibility spec.
+Historical data migration, mixed-version dual read/write, rollback, and cleanup
+remain rolling-upgrade concerns and are not defined by this API compatibility
+spec. The mode switch above selects an implementation; it does not provide any
+of those capabilities.
 
 ## 7. Evolution
 

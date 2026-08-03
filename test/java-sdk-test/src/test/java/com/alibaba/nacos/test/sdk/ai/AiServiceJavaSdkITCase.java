@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.sdk.ai;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
@@ -28,7 +29,6 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
 import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
 import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
-import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -44,7 +44,10 @@ import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +56,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -87,10 +91,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
-
-    private static final String A2A_AGENT_GROUP = "agent";
-
-    private static final String A2A_AGENT_VERSION_GROUP = "agent-version";
 
     private static final String MCP_SERVER_GROUP = "mcp-server";
 
@@ -272,13 +272,13 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testReleaseQueryAndSubscribeAgentCard() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent");
         String version = "1.0.0";
 
         aiService.releaseAgentCard(buildAgentCard(agentName, version),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
         AgentCardDetailInfo detail = aiService.getAgentCard(agentName, version,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
@@ -305,13 +305,13 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testAgentCardDuplicateReleaseKeepsExistingVersion() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent-duplicate");
         String version = "1.0.0";
 
         aiService.releaseAgentCard(buildAgentCard(agentName, version),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
         AgentCard duplicate = buildAgentCard(agentName, version);
         duplicate.setDescription("Duplicate release should not overwrite existing card");
         aiService.releaseAgentCard(duplicate, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, false);
@@ -327,7 +327,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testAgentCardLatestVersionAndEndpointScenarios() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent-version");
         String firstVersion = "1.0.0";
         String secondVersion = "2.0.0";
@@ -335,16 +335,14 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         aiService.releaseAgentCard(buildAgentCard(agentName, firstVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, firstVersion));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
         aiService.releaseAgentCard(buildAgentCard(agentName, secondVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, false);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, secondVersion));
         assertEquals(firstVersion, aiService.getAgentCard(agentName).getVersion());
         assertEquals(secondVersion, aiService.getAgentCard(agentName, secondVersion).getVersion());
 
         aiService.releaseAgentCard(buildAgentCard(agentName, thirdVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, thirdVersion));
         assertEquals(thirdVersion, aiService.getAgentCard(agentName).getVersion());
 
         AgentEndpoint endpoint = buildAgentEndpoint(thirdVersion);
@@ -361,13 +359,13 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testAgentCardBatchEndpointOverwritesSingleEndpoint() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent-batch-endpoint");
         String version = "1.0.0";
 
         aiService.releaseAgentCard(buildAgentCard(agentName, version),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
         AgentEndpoint singleEndpoint = buildAgentEndpoint(version, randomPort(),
                 "/a2a-single", null);
@@ -410,13 +408,13 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testAgentEndpointTlsQueryAndMissingCardBoundaries() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent-tls-endpoint");
         String version = "1.0.0";
 
         aiService.releaseAgentCard(buildAgentCard(agentName, version),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, version));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
         AgentEndpoint endpoint = buildAgentEndpoint(version, randomPort(), "a2a-tls",
                 "mode=tls");
@@ -441,14 +439,14 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     public void testAgentCardUnsubscribeStopsLaterCallbacks() throws Exception {
         AiService aiService = createAiService();
-        ConfigService configService = createConfigService();
+        AgentMaintainerService maintainer = createAgentMaintainerService();
         String agentName = randomServiceName("agent-unsubscribe");
         String firstVersion = "1.0.0";
         String secondVersion = "2.0.0";
 
         aiService.releaseAgentCard(buildAgentCard(agentName, firstVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, firstVersion));
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
         CountDownLatch activeLatch = new CountDownLatch(1);
         CountDownLatch stoppedLatch = new CountDownLatch(1);
@@ -467,7 +465,6 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         aiService.releaseAgentCard(buildAgentCard(agentName, secondVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
-        addCleanup(() -> cleanupAgentCard(configService, agentName, secondVersion));
 
         assertTrue(activeLatch.await(10, TimeUnit.SECONDS),
                 "active listener should receive the new latest agent card");
@@ -712,6 +709,12 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result.toString();
     }
 
+    private AgentMaintainerService createAgentMaintainerService() throws NacosException {
+        Properties properties = sdkProperties();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).agent();
+    }
+
     private void cleanupMcpServer(ConfigService configService, String mcpId, String version)
             throws NacosException {
         configService.removeConfig(mcpId + "-" + version + "-mcp-server.json", MCP_SERVER_GROUP);
@@ -720,13 +723,6 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 MCP_SERVER_TOOL_GROUP);
         configService.removeConfig(mcpId + "-" + version + "-mcp-resources.json",
                 MCP_SERVER_RESOURCE_GROUP);
-    }
-
-    private void cleanupAgentCard(ConfigService configService, String agentName, String version)
-            throws NacosException {
-        String encodedName = NacosAiConfigKeyCodec.encodeSegment(agentName);
-        configService.removeConfig(encodedName + "-" + version, A2A_AGENT_VERSION_GROUP);
-        configService.removeConfig(encodedName, A2A_AGENT_GROUP);
     }
 
     @FunctionalInterface

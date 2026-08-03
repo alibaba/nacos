@@ -979,6 +979,7 @@ const I18N_CONF = {
     statusOffline: '已下线',
     // Lifecycle actions
     submitForReview: '提交审核',
+    resubmitForReview: '重新提交审核',
     forcePublish: '强制发布',
     onlineAction: '上线',
     offlineAction: '下线',
@@ -1190,6 +1191,7 @@ const I18N_CONF = {
     createDraftFromVersion: '基于此版本创建草稿',
     // Submit & Publish
     submitForReview: '提交审核',
+    resubmitForReview: '重新提交审核',
     submitSuccess: '提交审核成功',
     submitFailed: '提交审核失败',
     publishVersion: '发布版本',

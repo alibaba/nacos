@@ -68,7 +68,7 @@ public class CapacityControllerV3 {
     @Since("3.0.0")
     @GetMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
-        signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+        signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Capacity> getCapacity(@RequestParam(required = false) String groupName,
         @RequestParam(required = false) String namespaceId) throws NacosApiException {
         if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
@@ -102,7 +102,7 @@ public class CapacityControllerV3 {
     @Since("3.0.0")
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-        signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+        signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm)
         throws NacosApiException {
         updateCapacityForm.checkNamespaceIdAndGroupName(capacityService);

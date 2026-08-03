@@ -61,7 +61,7 @@ public final class AiResourceConstants {
     public static final String VERSION_STATUS_REVIEWING = "reviewing";
     
     /**
-     * Version status: version has been reviewed (pipeline approved, awaiting publish).
+     * Version status: version has completed pipeline review and awaits the next action.
      */
     public static final String VERSION_STATUS_REVIEWED = "reviewed";
     
