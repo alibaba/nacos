@@ -31,6 +31,8 @@ import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityResourceLocator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Zhengcy05
  */
 public class DefaultVisibilityGrantService implements VisibilityGrantService {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(DefaultVisibilityGrantService.class);
     
     private final NacosRoleService roleService;
     
@@ -95,14 +100,30 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
     }
     
     private void grantPermission(String roleName, String resourceId, String storedAction) {
-        if ("rw".equals(storedAction)
-            && roleService.isDuplicatePermission(roleName, resourceId, "r").getData()) {
-            // Write grants are persisted as "rw"; remove an older read-only row so
-            // the same user/resource pair has one effective visibility grant.
-            roleService.deletePermission(roleName, resourceId, "r");
+        if (!"rw".equals(storedAction)) {
+            if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
+                roleService.addPermission(roleName, resourceId, storedAction);
+            }
+            return;
         }
+        boolean hasReadPermission =
+            roleService.isDuplicatePermission(roleName, resourceId, "r").getData();
         if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
             roleService.addPermission(roleName, resourceId, storedAction);
+        }
+        if (hasReadPermission) {
+            deleteReadPermissionAfterWriteGrant(roleName, resourceId);
+        }
+    }
+    
+    private void deleteReadPermissionAfterWriteGrant(String roleName, String resourceId) {
+        try {
+            // Write grants are persisted as "rw"; remove an older read-only row only
+            // after the write grant is stored successfully.
+            roleService.deletePermission(roleName, resourceId, "r");
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to delete old read-only visibility permission after granting "
+                + "write permission.", e);
         }
     }
     
@@ -119,9 +140,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
             resourceType, resourceName);
         if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM,
-                ErrorCode.PARAMETER_VALIDATE_ERROR,
-                "visibility permission does not exist for user '" + username + "'");
+            return;
         }
         // Keep the empty internal role binding; without a matching permission row it
         // cannot grant visibility, and retaining it makes future grants idempotent.
