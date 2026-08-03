@@ -1521,7 +1521,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     /**
      * Query a skill for client consumption. Resolves the target version via explicit version, label, or manifest,
-     * loads the skill content from the index manifest's file list, and publishes a download event.
+     * loads the skill content from the version's persisted storage descriptor, and publishes a download event.
      */
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label)
@@ -1548,14 +1548,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 "Skill version not found: " + name);
         }
         
-        // Step 4: Get file list from manifest and read storage content
+        // Step 4: Verify the version is indexed, then read using its persisted storage descriptor
         List<String> files = manifest.getVersions().get(resolved);
         if (files == null || files.isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill version not found: " + name + "@" + resolved);
         }
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, name,
+            RESOURCE_TYPE_SKILL, resolved);
+        if (versionRow == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill version not found: " + name + "@" + resolved);
+        }
         
-        Skill skill = loadSkillFromFiles(namespaceId, name, resolved, files);
+        Skill skill = loadSkillFromStorage(namespaceId, name, resolved, versionRow.getStorage());
         // Step 5: Publish download event for download count tracking
         NotifyCenter.publishEvent(
             new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
@@ -1646,6 +1652,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         } catch (Exception ignored) {
         }
         return null;
+    }
+    
+    /**
+     * Parse the provider persisted with a version. Historical descriptors without a provider belong to
+     * nacos_config, regardless of the provider selected for new writes.
+     */
+    private static String parseStorageProvider(String storageJson) {
+        if (StringUtils.isNotBlank(storageJson)) {
+            try {
+                Map<String, Object> map = JacksonUtils.toObj(storageJson, Map.class);
+                Object provider = map.get("provider");
+                if (provider instanceof String && StringUtils.isNotBlank((String) provider)) {
+                    return ((String) provider).trim();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return STORAGE_PROVIDER_NACOS_CONFIG;
     }
     
     /**
@@ -1822,7 +1846,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "No files found in storage for skill: " + skillName + "@" + version);
         }
-        return loadSkillFromFiles(namespaceId, skillName, version, files);
+        return loadSkillFromFiles(namespaceId, skillName, version,
+            parseStorageProvider(storageJson), files);
     }
     
     /**
@@ -1830,9 +1855,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * SKILL.md content provides name/description and markdown body; others populate the resource map.
      */
     private Skill loadSkillFromFiles(String namespaceId, String skillName, String version,
-        List<String> files)
+        String provider, List<String> files)
         throws NacosException {
-        String provider = resolveSkillStorageProvider();
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
         Map<String, SkillResource> resourceMap = new HashMap<>(files.size());

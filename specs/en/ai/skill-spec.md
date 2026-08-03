@@ -168,6 +168,12 @@ Skill metadata and versions use `ai_resource` and `ai_resource_version`.
 Skill file content is stored through AI storage. The default storage is
 `nacos_config`, but that is an implementation backend.
 
+Each version must persist its storage provider in the `ai_resource_version`
+storage descriptor. Reads and deletes must route through that persisted
+provider. The configured Skill storage provider controls new writes only and
+must not redirect existing versions. A legacy descriptor without `provider`
+belongs to `nacos_config`.
+
 Skill also maintains a lightweight manifest for client-side discovery. The
 manifest is an index derived from Skill metadata and must not become the source
 of truth for lifecycle state.
