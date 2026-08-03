@@ -21,6 +21,8 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceRemoteImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserServiceRemoteImpl;
+import com.alibaba.nacos.plugin.auth.impl.visibility.RemoteVisibilityGrantService;
+import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 
@@ -40,5 +42,10 @@ public class NacosAuthPluginRemoteServiceConfig {
     @Bean
     public NacosUserService nacosUserService() {
         return new NacosUserServiceRemoteImpl();
+    }
+    
+    @Bean
+    public VisibilityGrantService visibilityGrantService() {
+        return new RemoteVisibilityGrantService();
     }
 }

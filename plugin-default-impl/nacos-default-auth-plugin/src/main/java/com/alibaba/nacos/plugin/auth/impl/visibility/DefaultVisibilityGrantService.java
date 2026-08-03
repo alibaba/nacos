@@ -46,17 +46,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Zhengcy05
  */
 public class DefaultVisibilityGrantService implements VisibilityGrantService {
-
+    
     private final NacosRoleService roleService;
-
+    
     private final NacosUserService userService;
-
+    
     public DefaultVisibilityGrantService(NacosRoleService roleService,
         NacosUserService userService) {
         this.roleService = roleService;
         this.userService = userService;
     }
-
+    
     @Override
     public void grant(String namespaceId, String resourceType, String resourceName, String username,
         String action) throws NacosException {
@@ -93,7 +93,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             throw e;
         }
     }
-
+    
     private void grantPermission(String roleName, String resourceId, String storedAction) {
         if ("rw".equals(storedAction)
             && roleService.isDuplicatePermission(roleName, resourceId, "r").getData()) {
@@ -105,7 +105,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             roleService.addPermission(roleName, resourceId, storedAction);
         }
     }
-
+    
     @Override
     public void revoke(String namespaceId, String resourceType, String resourceName,
         String username, String action) throws NacosException {
@@ -127,7 +127,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         // cannot grant visibility, and retaining it makes future grants idempotent.
         roleService.deletePermission(roleName, resourceId, storedAction);
     }
-
+    
     // Query the names of all resources that a specified user has visibility permissions for,
     // under a specified namespace, resource type, and action.
     @Override
@@ -172,7 +172,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         }
         return new ArrayList<>(names);
     }
-
+    
     private VisibilityResource requireManagedResource(String namespaceId, String resourceType,
         String resourceName) throws NacosException {
         validateResourceTypeAndName(resourceType, resourceName);
@@ -190,7 +190,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             ErrorCode.RESOURCE_NOT_FOUND,
             "resource not found: " + resourceName));
     }
-
+    
     private void checkManageGrantAuthority(VisibilityResource resource) throws NacosException {
         // Allow access rules: 1. Authentication not enabled; 2. Global administrator; 3. Resource owner.
         if (!NacosAuthConfigHolder.getInstance().isAnyAuthEnabled()) {
@@ -208,7 +208,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             "No permission to manage visibility grants for resource: "
                 + resource.getResourceName());
     }
-
+    
     private void validateResourceTypeAndName(String resourceType, String resourceName)
         throws NacosException {
         if (StringUtils.isBlank(resourceType)) {
@@ -220,14 +220,14 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
                 "resourceName is blank");
         }
     }
-
+    
     private void validateUsername(String username) throws NacosException {
         if (StringUtils.isBlank(username)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "username is blank");
         }
     }
-
+    
     private void validateGranteeExists(String username) throws NacosException {
         User grantee = userService.getUser(username);
         if (grantee == null) {
@@ -236,7 +236,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
                 "user '" + username + "' not found");
         }
     }
-
+    
     private String normalizeGrantAction(String action) throws NacosException {
         try {
             // Persist write grants as "rw" so write authorization can imply read visibility.
@@ -246,7 +246,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
         }
     }
-
+    
     private boolean userHasRole(String username, String roleName) {
         List<RoleInfo> roles = roleService.getRoles(username);
         if (CollectionUtils.isEmpty(roles)) {
@@ -254,5 +254,5 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         }
         return roles.stream().anyMatch(each -> roleName.equals(each.getRole()));
     }
-
+    
 }
