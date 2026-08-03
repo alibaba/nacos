@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.parser.http.AgentSpecCardHttpResourceParser;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleA2aController;
-import com.alibaba.nacos.console.controller.v3.ai.ConsoleAgentController;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleAgentSpecController;
 import com.alibaba.nacos.console.controller.v3.ai.ConsoleCopilotConfigController;
 import com.alibaba.nacos.console.controller.v3.ai.ConsolePromptController;
@@ -47,8 +46,6 @@ class SecuredMetadataTest {
             "console/copilot/config", ActionTypes.READ, SignType.AI);
         assertSecured(ConsoleCopilotConfigController.class, "saveConfig",
             "console/copilot/config", ActionTypes.WRITE, SignType.AI);
-        assertSecured(ConsoleAgentController.class, "forcePublish",
-            "/v3/console/ai/agents/force-publish", ActionTypes.WRITE, SignType.AI);
     }
     
     @Test

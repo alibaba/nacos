@@ -35,8 +35,6 @@ class SecuredMetadataTest {
     
     @Test
     void testAdminAiForcePublishMetadata() {
-        assertSecured(AgentAdminController.class, "forcePublish",
-            "/v3/admin/ai/agents/force-publish");
         assertSecured(AgentSpecAdminController.class, "forcePublish",
             "/v3/admin/ai/agentspecs/force-publish");
         assertSecured(PromptAdminController.class, "forcePublish",

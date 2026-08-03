@@ -18,6 +18,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;

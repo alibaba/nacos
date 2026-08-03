@@ -141,6 +141,7 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         }
         return properties;
     }
+    
     private boolean isAgentSpecPath(String url) {
         return containsCompletePath(url, AGENT_SPEC_PATH);
     }

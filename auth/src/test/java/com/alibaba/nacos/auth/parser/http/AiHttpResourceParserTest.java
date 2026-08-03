@@ -367,7 +367,7 @@ class AiHttpResourceParserTest {
         assertNull(actual.getProperties().getProperty(
             com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
     }
-
+    
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];
