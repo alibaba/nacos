@@ -193,9 +193,7 @@ public class McpServerOperationService {
         McpServerVersionInfo mcpServerVersionInfo =
             getMcpServerVersionInfo(namespaceId, mcpServerId);
         if (StringUtils.isEmpty(version)) {
-            int size = mcpServerVersionInfo.getVersionDetails().size();
-            ServerVersionDetail last = mcpServerVersionInfo.getVersionDetails().get(size - 1);
-            version = last.getVersion();
+            version = mcpServerVersionInfo.getLatestPublishedVersion();
         }
         
         ConfigQueryChainRequest request =

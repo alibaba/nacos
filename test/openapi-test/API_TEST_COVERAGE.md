@@ -153,6 +153,11 @@ They are deprecated and planned for removal in Nacos 3.4.0; the managed
 `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
 
+MCP Admin detail coverage verifies the version-selection contract: when a
+newer draft exists after a published version, an omitted `version` resolves the
+latest published version, while the draft remains queryable by its explicit
+version.
+
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. Definition publication validates
 draft-only and `autoSubmit` workflows, idempotent retry/resume, direct and
