@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -35,19 +34,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReleaseAgentCardRequestHandlerTest {
     
     @Mock
-    private A2aServerOperationService a2aServerOperationService;
+    private A2aCompatibilityOperationService a2aServerOperationService;
     
     @Mock
     private RequestMeta meta;
@@ -83,14 +78,11 @@ class ReleaseAgentCardRequestHandlerTest {
         agentCard.setUrl("https://example.com");
         request.setAgentCard(agentCard);
         request.setNamespaceId("public");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-            new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_NOT_FOUND, ""));
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertNull(response.getMessage());
-        verify(a2aServerOperationService).registerAgent(any(AgentCard.class), anyString(),
-            anyString());
+        verify(a2aServerOperationService).releaseAgent(eq(agentCard), eq("public"),
+            eq("SERVICE"), eq(false));
     }
     
     @Test
@@ -105,43 +97,11 @@ class ReleaseAgentCardRequestHandlerTest {
         request.setAgentCard(agentCard);
         request.setNamespaceId("public");
         request.setSetAsLatest(true);
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        AgentCardDetailInfo existAgentCard = new AgentCardDetailInfo();
-        existAgentCard.setName("test");
-        existAgentCard.setVersion("0.9.0");
-        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-            new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND, ""));
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertNull(response.getMessage());
-        verify(a2aServerOperationService).updateAgentCard(any(AgentCard.class), anyString(),
-            anyString(), eq(true));
-    }
-    
-    @Test
-    void handleWithExistingAgentCard() throws NacosException {
-        final ReleaseAgentCardRequest request = new ReleaseAgentCardRequest();
-        AgentCard agentCard = new AgentCard();
-        agentCard.setName("test");
-        agentCard.setVersion("1.0.0");
-        agentCard.setProtocolVersion("0.3.0");
-        agentCard.setPreferredTransport("JSONRPC");
-        agentCard.setUrl("https://example.com");
-        request.setAgentCard(agentCard);
-        request.setNamespaceId("public");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        AgentCardDetailInfo existAgentCard = new AgentCardDetailInfo();
-        existAgentCard.setName("test");
-        existAgentCard.setVersion("1.0.0");
-        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", ""))
-            .thenReturn(existAgentCard);
-        ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
-        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(),
-            anyString());
-        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class),
-            anyString(), anyString(),
-            anyBoolean());
+        verify(a2aServerOperationService).releaseAgent(eq(agentCard), eq("public"),
+            eq("SERVICE"), eq(true));
     }
     
     @Test
@@ -155,18 +115,13 @@ class ReleaseAgentCardRequestHandlerTest {
         agentCard.setUrl("https://example.com");
         request.setAgentCard(agentCard);
         request.setNamespaceId("public");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        when(a2aServerOperationService.getAgentCard("public", "test", "1.0.0", "")).thenThrow(
-            new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "test error"));
+        doThrow(new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+            "test error")).when(a2aServerOperationService).releaseAgent(agentCard, "public",
+                "SERVICE", false);
         ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.SERVER_ERROR, response.getErrorCode());
         assertEquals("test error", response.getMessage());
-        verify(a2aServerOperationService, never()).registerAgent(any(AgentCard.class), anyString(),
-            anyString());
-        verify(a2aServerOperationService, never()).updateAgentCard(any(AgentCard.class),
-            anyString(), anyString(),
-            anyBoolean());
+        verify(a2aServerOperationService).releaseAgent(agentCard, "public", "SERVICE", false);
     }
 }

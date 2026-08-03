@@ -40,6 +40,7 @@ Watch request, Push payload, ACK, or Watch ability.
 
 | IT method | Scenario groups |
 | --- | --- |
+| `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration and SERVICE query, explicit isolation from the new Runtime Registry, canonical Version publication, and legacy latest-subscription convergence. |
 | `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; explicit and mismatched namespace binding; namespace-isolated publication. |
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical natural-key partial deregistration, unknown/repeated no-op, final deregistration, and protocol isolation. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
@@ -51,7 +52,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same ten stable workflows pass with both the default JSON adapter and
+The same eleven stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -221,6 +222,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Workflow | Cross-checks | Coverage |
 | --- | --- | --- |
 | Maintainer creates and publishes an Agent, then SDK Search and Discover | Admin write is visible through both Client read operations. | IT |
+| Legacy A2A SDK releases an AgentCard and old exact-Version Endpoint, then Console, RAD, and legacy SERVICE reads inspect it; Maintainer publishes a complete A2A Version, then legacy A2A query and latest subscription read it | Legacy and protocol-neutral surfaces share the canonical Agent definition in both directions; duplicate release does not overwrite an online Version; old Endpoint data remains deliberately isolated in legacy exact-Version Naming and does not appear in the new Runtime Registry. | IT |
 | SDK pre-registers Endpoint, Maintainer creates/publishes Agent, SDK Discover | Pre-registration becomes visible without implicit definition creation. | IT |
 | Maintainer publishes Agent, SDK registers/replaces/partially deregisters/finally deregisters | Discover observes full replacement, remainder, and empty Runtime source in order. | IT |
 | Two SDK publishers register the same Endpoint, one deregisters, then the other deregisters | Aggregated visibility remains until the last contribution is removed. | IT |
@@ -238,7 +240,6 @@ failed targeted run rather than a sleeping normal CI test.
 | --- | --- |
 | Server Watch/Push, `watchKey`, Push ACK, gap recovery, and Watch ability | The approved first version uses active Discover polling. |
 | Generic Agent code publication and `autoSubmit` | Explicit later enhancement in the design. |
-| Legacy A2A-to-Agent storage adapter | Separate compatibility phase; existing A2A APIs remain unchanged here. |
 | Public `getAll` / `selectOneHealthy` helper API shape | The design states local selection semantics but does not yet specify a stable Java type and method signature. It does not block Search, Discover, polling, or publication and is recorded rather than invented in this phase. |
 | Agent management-metadata change notification | `AgentDiscoveryResult` intentionally excludes display name, description, tags, provider, and other management metadata. Its polling fingerprint contains only resolved Version, Version `contentDigest`, and Endpoint `sourceRevision` values. A future requirement to subscribe to forced updates of published Agent metadata needs a Search/catalog subscription or an explicit RAD contract extension; it is not inferred by the current Discover subscription. |
 | Packet loss at individual frames and unknown gRPC write-result ambiguity | Covered with deterministic unit fault injection; a real single-node process restart is covered separately, while frame-level fault injection is not stable standalone IT. |

@@ -17,10 +17,9 @@
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,7 +28,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.AgentRequestParamExtractor;
@@ -53,9 +51,10 @@ public class ReleaseAgentCardRequestHandler
     private static final Logger LOGGER =
         LoggerFactory.getLogger(ReleaseAgentCardRequestHandler.class);
     
-    private final A2aServerOperationService a2aServerOperationService;
+    private final A2aCompatibilityOperationService a2aServerOperationService;
     
-    public ReleaseAgentCardRequestHandler(A2aServerOperationService a2aServerOperationService) {
+    public ReleaseAgentCardRequestHandler(
+        A2aCompatibilityOperationService a2aServerOperationService) {
         this.a2aServerOperationService = a2aServerOperationService;
     }
     
@@ -95,39 +94,9 @@ public class ReleaseAgentCardRequestHandler
         LOGGER.info("Release new agent {}, version {} into namespaceId {} from connectionId {}.",
             agentCard.getName(),
             agentCard.getVersion(), namespaceId, meta.getConnectionId());
-        try {
-            AgentCardDetailInfo existAgentCard = a2aServerOperationService.getAgentCard(namespaceId,
-                agentCard.getName(), agentCard.getVersion(), StringUtils.EMPTY);
-            LOGGER.info("AgentCard {} and target version {} already exist.",
-                existAgentCard.getName(),
-                existAgentCard.getVersion());
-        } catch (NacosApiException e) {
-            if (ErrorCode.AGENT_NOT_FOUND.getCode() == e.getDetailErrCode()) {
-                // agent card not found, create new agent card.
-                createAgentCard(namespaceId, agentCard, request.getRegistrationType());
-                LOGGER.info("AgentCard {} released.", agentCard.getName());
-            } else if (ErrorCode.AGENT_VERSION_NOT_FOUND.getCode() == e.getDetailErrCode()) {
-                // agent card found but version not found, update agent card.
-                createNewVersionAgentCard(namespaceId, agentCard, request.getRegistrationType(),
-                    request.isSetAsLatest());
-                LOGGER.info("AgentCard {} new version {} released.", agentCard.getName(),
-                    agentCard.getVersion());
-            } else {
-                LOGGER.error("AgentCard {} released failed.", agentCard.getName(), e);
-                throw e;
-            }
-        }
-    }
-    
-    private void createAgentCard(String namespaceId, AgentCard agentCard, String registrationType)
-        throws NacosException {
-        a2aServerOperationService.registerAgent(agentCard, namespaceId, registrationType);
-    }
-    
-    private void createNewVersionAgentCard(String namespaceId, AgentCard agentCard,
-        String registrationType,
-        boolean setAsLatest) throws NacosException {
-        a2aServerOperationService.updateAgentCard(agentCard, namespaceId, registrationType,
-            setAsLatest);
+        a2aServerOperationService.releaseAgent(agentCard, namespaceId,
+            request.getRegistrationType(), request.isSetAsLatest());
+        LOGGER.info("AgentCard {} version {} released.", agentCard.getName(),
+            agentCard.getVersion());
     }
 }

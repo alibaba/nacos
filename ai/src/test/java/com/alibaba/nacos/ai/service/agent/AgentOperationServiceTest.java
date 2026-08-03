@@ -20,9 +20,11 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
@@ -30,11 +32,13 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -55,6 +59,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -874,6 +879,291 @@ class AgentOperationServiceTest {
         assertSame(updated, service.updateLabels(NAMESPACE_ID, AGENT_NAME, labels));
     }
     
+    @Test
+    void testRegisterLegacyOnlineVersionCreatesPublicCanonicalAgent() throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail expected = new AgentVersionDetail();
+        ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        ArgumentCaptor<AgentVersionDetail> versionCaptor =
+            ArgumentCaptor.forClass(AgentVersionDetail.class);
+        when(persistenceService.createInitialOnlineVersion(any(Agent.class),
+            any(AgentVersionDetail.class), eq("legacy-a2a"))).thenReturn(expected);
+        
+        assertSame(expected, service.registerLegacyOnlineVersion(NAMESPACE_ID, request));
+        
+        verify(persistenceService).createInitialOnlineVersion(agentCaptor.capture(),
+            versionCaptor.capture(), eq("legacy-a2a"));
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, agentCaptor.getValue().getScope());
+        assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE,
+            agentCaptor.getValue().getStatus());
+        assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE,
+            versionCaptor.getValue().getStatus());
+        assertSame(request.getCallInterfaces(), versionCaptor.getValue().getCallInterfaces());
+        assertEquals(request.getAuthor(), versionCaptor.getValue().getAuthor());
+        assertEquals(request.getChangeDescription(),
+            versionCaptor.getValue().getChangeDescription());
+    }
+    
+    @Test
+    void testRegisterLegacyOnlineVersionRejectsExistingAgentAndMapsUnexpectedFailure()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
+        
+        NacosApiException conflict = assertThrows(NacosApiException.class,
+            () -> service.registerLegacyOnlineVersion(NAMESPACE_ID, request));
+        
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), conflict.getDetailErrCode());
+        verify(persistenceService, never()).createInitialOnlineVersion(any(Agent.class),
+            any(AgentVersionDetail.class), anyString());
+        
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(null);
+        when(persistenceService.createInitialOnlineVersion(any(Agent.class),
+            any(AgentVersionDetail.class), anyString()))
+            .thenThrow(new IllegalStateException("storage unavailable"));
+        NacosException serverError = assertThrows(NacosException.class,
+            () -> service.registerLegacyOnlineVersion(NAMESPACE_ID, request));
+        assertEquals(NacosException.SERVER_ERROR, serverError.getErrCode());
+    }
+    
+    @Test
+    void testReleaseLegacyOnlineVersionCreatesInitialAgent() throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail expected = new AgentVersionDetail();
+        when(persistenceService.createInitialOnlineVersion(any(Agent.class),
+            any(AgentVersionDetail.class), eq("legacy-a2a"))).thenReturn(expected);
+        
+        assertSame(expected,
+            service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, false));
+    }
+    
+    @Test
+    void testReleaseLegacyOnlineVersionRecoversConcurrentInitialCreate()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AiResource current = meta(null, null);
+        AgentVersionDetail expected = new AgentVersionDetail();
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(null, current);
+        doThrow(resourceConflict()).when(persistenceService).createInitialOnlineVersion(
+            any(Agent.class), any(AgentVersionDetail.class), anyString());
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(null);
+        when(persistenceService.createOnlineVersion(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            any(AgentVersionDetail.class), eq(VERSION))).thenReturn(expected);
+        
+        assertSame(expected,
+            service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, true));
+    }
+    
+    @Test
+    void testReleaseLegacyOnlineVersionPropagatesInitialFailureAndLostRace()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        NacosApiException forbidden = new NacosApiException(NacosException.NO_RIGHT,
+            ErrorCode.ACCESS_DENIED, "forbidden");
+        when(persistenceService.createInitialOnlineVersion(any(Agent.class),
+            any(AgentVersionDetail.class), anyString())).thenThrow(forbidden);
+        
+        assertSame(forbidden, assertThrows(NacosApiException.class,
+            () -> service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, false)));
+        
+        doThrow(resourceConflict()).when(persistenceService).createInitialOnlineVersion(
+            any(Agent.class), any(AgentVersionDetail.class), anyString());
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(),
+            assertThrows(NacosApiException.class,
+                () -> service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, false))
+                .getDetailErrCode());
+    }
+    
+    @Test
+    void testClientReleaseAlreadyOnlineA2aVersionIsUnconditionalNoOp()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail existing = existingVersion(request, "a2a");
+        existing.setContentDigest("different-content-is-ignored");
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionRow(AiConstants.Agent.VERSION_STATUS_ONLINE));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existing);
+        
+        assertSame(existing,
+            service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, true));
+        
+        verify(persistenceService, never()).synchronizeDerivedState(anyString(), anyString(),
+            anyString(), any(), any(), any());
+    }
+    
+    @Test
+    void testClientReleaseRejectsOnlineVersionWithoutA2aInterface()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail existing = existingVersion(request, "custom");
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionRow(AiConstants.Agent.VERSION_STATUS_ONLINE));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existing);
+        
+        NacosApiException conflict = assertThrows(NacosApiException.class,
+            () -> service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, true));
+        
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), conflict.getDetailErrCode());
+    }
+    
+    @Test
+    void testClientReleaseRejectsOnlineVersionWithMissingInterfaces()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail existing = existingVersion(request, "a2a");
+        existing.setCallInterfaces(null);
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionRow(AiConstants.Agent.VERSION_STATUS_ONLINE));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existing);
+        
+        assertThrows(NacosApiException.class,
+            () -> service.releaseLegacyOnlineVersion(NAMESPACE_ID, request, false));
+    }
+    
+    @Test
+    void testManagementUpdateCreatesMissingVersionAndControlsLatest() throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail expected = new AgentVersionDetail();
+        stubWritableMeta(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(null);
+        when(persistenceService.createOnlineVersion(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            any(AgentVersionDetail.class), eq(null))).thenReturn(expected);
+        
+        assertSame(expected,
+            service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false));
+    }
+    
+    @Test
+    void testManagementUpdateOnlineVersionRequiresSameContentAndMayPromoteLatest()
+        throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail existing = existingVersion(request, "a2a");
+        stubWritableMeta(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionRow(AiConstants.Agent.VERSION_STATUS_ONLINE));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existing);
+        
+        assertSame(existing,
+            service.updateLegacyOnlineVersion(NAMESPACE_ID, request, true));
+        assertSame(existing,
+            service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false));
+        
+        verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, VERSION,
+            null, null, null);
+        
+        existing.setContentDigest("sha256:different");
+        NacosApiException conflict = assertThrows(NacosApiException.class,
+            () -> service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false));
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), conflict.getDetailErrCode());
+    }
+    
+    @Test
+    void testManagementUpdateRestoresAllSupportedNonOnlineStates() throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        AgentVersionDetail existing = existingVersion(request, "a2a");
+        stubWritableMeta(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(
+            versionRow(AiConstants.Agent.VERSION_STATUS_DRAFT),
+            versionRow(AiConstants.Agent.VERSION_STATUS_REVIEWING),
+            versionRow(AiConstants.Agent.VERSION_STATUS_REVIEWED),
+            versionRow(AiConstants.Agent.VERSION_STATUS_OFFLINE));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existing);
+        
+        service.updateLegacyOnlineVersion(NAMESPACE_ID, request, true);
+        service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false);
+        service.updateLegacyOnlineVersion(NAMESPACE_ID, request, true);
+        service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false);
+        
+        verify(persistenceService, org.mockito.Mockito.times(4)).updateVersionStatus(
+            NAMESPACE_ID, AGENT_NAME, VERSION, AiConstants.Agent.VERSION_STATUS_ONLINE);
+        verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, VERSION,
+            null, VERSION, null);
+        verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, null,
+            null, null, VERSION);
+        verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, VERSION,
+            null, null, VERSION);
+        verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, null,
+            null, null, null);
+    }
+    
+    @Test
+    void testManagementUpdateRejectsUnsupportedState() throws NacosException {
+        AgentDraftCreateRequest request = legacyRequest();
+        stubWritableMeta(meta(null, null));
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionRow("unknown"));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(existingVersion(request, "a2a"));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.updateLegacyOnlineVersion(NAMESPACE_ID, request, false));
+        
+        assertIllegalState(exception);
+    }
+    
+    @Test
+    void testDirectOnlineRequestRejectsNullAndCopiedContent() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.registerLegacyOnlineVersion(NAMESPACE_ID, null));
+        AgentDraftCreateRequest copied = draftRequest();
+        copied.setCallInterfaces(null);
+        copied.setBasedOnVersion(VERSION);
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> service.releaseLegacyOnlineVersion(NAMESPACE_ID, copied, false));
+    }
+    
+    @Test
+    void testDeleteLegacyVersionCoversAbsentPresentAndFailure() throws NacosException {
+        AiResource current = meta(null, null);
+        AiResourceVersion row = versionRow(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(null, current, current, current);
+        when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(null, row, row);
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("delete failed"))
+            .when(persistenceService).deleteVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
+        
+        assertFalse(service.deleteLegacyVersionIfPresent(NAMESPACE_ID, AGENT_NAME, VERSION));
+        assertFalse(service.deleteLegacyVersionIfPresent(NAMESPACE_ID, AGENT_NAME, VERSION));
+        assertTrue(service.deleteLegacyVersionIfPresent(NAMESPACE_ID, AGENT_NAME, VERSION));
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> service.deleteLegacyVersionIfPresent(NAMESPACE_ID, AGENT_NAME, VERSION))
+                .getErrCode());
+    }
+    
+    @Test
+    void testDeleteLegacyAgentCoversAbsentPresentAndFailure() throws NacosException {
+        AiResource current = meta(null, null);
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(null, current, current);
+        org.mockito.Mockito.doNothing().doThrow(new NacosException(NacosException.SERVER_ERROR,
+            "delete failed")).when(persistenceService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
+        
+        assertFalse(service.deleteLegacyAgentIfPresent(NAMESPACE_ID, AGENT_NAME));
+        assertTrue(service.deleteLegacyAgentIfPresent(NAMESPACE_ID, AGENT_NAME));
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> service.deleteLegacyAgentIfPresent(NAMESPACE_ID, AGENT_NAME)).getErrCode());
+    }
+    
     private void prepareAsyncSubmit(AtomicReference<PipelineCallback> callback,
         AtomicReference<String> executionId) throws NacosException {
         stubWritableMeta(meta(VERSION, null));
@@ -938,6 +1228,39 @@ class AgentOperationServiceTest {
         result.setAuthor("alice");
         result.setChangeDescription("Create draft");
         return result;
+    }
+    
+    private AgentDraftCreateRequest legacyRequest() {
+        AgentDraftCreateRequest result = draftRequest();
+        result.setCallInterfaces(Collections.singletonList(callInterface("a2a")));
+        return result;
+    }
+    
+    private AgentCallInterface callInterface(String protocol) {
+        AgentCallInterface result = new AgentCallInterface();
+        result.setProtocol(protocol);
+        result.setProtocolVersion("0.3");
+        result.setDescriptorMediaType("application/json");
+        result.setNativeDescriptor(Collections.<String, Object>singletonMap("name", AGENT_NAME));
+        result.setEndpointSourceOrder(Arrays.asList(EndpointSource.DECLARED,
+            EndpointSource.RUNTIME));
+        return result;
+    }
+    
+    private AgentVersionDetail existingVersion(AgentDraftCreateRequest request,
+        String protocol) {
+        AgentVersionDetail result = new AgentVersionDetail();
+        result.setVersion(VERSION);
+        result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        result.setCallInterfaces(Collections.singletonList(callInterface(protocol)));
+        result.setContentDigest(AgentVersionContentSerializer.serialize(
+            new AgentVersionContent(request.getCallInterfaces())).getContentDigest());
+        return result;
+    }
+    
+    private NacosApiException resourceConflict() {
+        return new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+            "concurrent create");
     }
     
     private String pipelineInfo(String executionId, PipelineExecutionStatus status,

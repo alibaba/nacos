@@ -132,6 +132,17 @@ and published Agent through Console Overview, then verifies that Client
 registration and deregistration produce matching populated and empty Runtime
 snapshots through both Admin and Console.
 
+Legacy A2A Admin and Console operations are now compatibility facades over the
+same canonical Agent definition. The Admin A2A row covers both directions:
+legacy create/update/promote/delete observed through canonical Agent reads, and
+canonical draft/force-publish observed through legacy AgentCard reads. The
+Console A2A row verifies legacy Console create to canonical Console read,
+legacy Admin create to canonical Console read across ports, and canonical
+Console create to legacy Console and Admin reads. These scenarios deliberately
+do not read or write the removed parallel
+Config definition layout; legacy SERVICE Runtime lookup remains a separate
+exact-Version Naming concern.
+
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
 They are deprecated and planned for removal in Nacos 3.4.0; the managed

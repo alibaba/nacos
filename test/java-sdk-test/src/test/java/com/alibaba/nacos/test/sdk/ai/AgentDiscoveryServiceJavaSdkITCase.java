@@ -20,8 +20,14 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
+import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
@@ -41,12 +47,18 @@ import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -109,6 +121,111 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private static final String RECONNECT_CONTROL_DIR_PROPERTY =
         "nacos.agent.reconnect.control.dir";
+
+    private static final String CONSOLE_BASE_URL = "http://" + NACOS_HOST + ":"
+        + System.getProperty("nacos.console.port", "8080");
+
+    private static final String CONSOLE_AGENT_PATH = "/v3/console/ai/agents";
+
+    @Test
+    void shouldInteroperateWithLegacyA2aSdk() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService service = createAiService();
+        String agentName = randomServiceName("agent-legacy-a2a");
+        AgentCard firstCard = legacyCompatibleAgentCard(agentName, VERSION,
+            "legacy A2A SDK release");
+
+        service.releaseAgentCard(firstCard, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
+
+        AgentDiscoveryResult firstDiscovery =
+            service.discoverAgent(reference(agentName, null, null));
+        assertEquals(VERSION, firstDiscovery.getVersion());
+        assertEquals(1,
+            sourceEndpoints(firstDiscovery, PROTOCOL_A2A, EndpointSource.DECLARED).size());
+        Map<?, ?> firstDescriptor = (Map<?, ?>) firstDiscovery.getCallInterfaces().get(0)
+            .getNativeDescriptor();
+        assertEquals("legacy A2A SDK release", firstDescriptor.get("description"));
+        JsonNode consoleOverview = getConsoleAgent(CONSOLE_AGENT_PATH, agentName, null);
+        assertEquals(agentName, consoleOverview.get("agent").get("agentName").asText(),
+            consoleOverview.toString());
+        assertEquals("legacy A2A SDK release",
+            consoleOverview.get("agent").get("description").asText(),
+            consoleOverview.toString());
+        assertEquals(VERSION,
+            consoleOverview.get("agent").get("versionInfo").get("labels").get("latest")
+                .asText(), consoleOverview.toString());
+        JsonNode consoleVersion = getConsoleAgent(CONSOLE_AGENT_PATH + "/version", agentName,
+            VERSION);
+        assertEquals("a2a", consoleVersion.get("callInterfaces").get(0).get("protocol")
+            .asText(), consoleVersion.toString());
+        assertEquals(1, consoleVersion.get("callInterfaces").get(0)
+            .get("declaredEndpoints").size(), consoleVersion.toString());
+
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyEndpoint =
+            legacyEndpoint(VERSION);
+        service.registerAgentEndpoint(agentName, legacyEndpoint);
+        addCleanup(() -> service.deregisterAgentEndpoint(agentName, legacyEndpoint));
+        waitUntil("legacy SERVICE query should expose the old Endpoint", () ->
+            containsLegacyEndpoint(service.getAgentCard(agentName, VERSION,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyEndpoint));
+        JsonNode consoleRuntime = getConsoleAgent(CONSOLE_AGENT_PATH + "/runtime-endpoints",
+            agentName, VERSION);
+        assertEquals(0, consoleRuntime.get("runtimeEndpointSnapshot").get("items").size(),
+            "legacy exact-Version Naming Endpoints must remain isolated from the new Runtime "
+                + "Registry: " + consoleRuntime);
+
+        AgentCard duplicate = legacyCompatibleAgentCard(agentName, VERSION,
+            "duplicate must not overwrite the online Version");
+        service.releaseAgentCard(duplicate, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, false);
+        AgentCardDetailInfo unchanged = service.getAgentCard(agentName, VERSION,
+            AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+        assertEquals("legacy A2A SDK release", unchanged.getDescription());
+
+        CountDownLatch legacyLatestChanged = new CountDownLatch(1);
+        AtomicReference<AgentCardDetailInfo> legacySubscription = new AtomicReference<>();
+        AbstractNacosAgentCardListener legacyListener = new AbstractNacosAgentCardListener() {
+            @Override
+            public void onEvent(NacosAgentCardEvent event) {
+                if (event.getAgentCard() != null
+                    && VERSION_2.equals(event.getAgentCard().getVersion())) {
+                    legacySubscription.set(event.getAgentCard());
+                    legacyLatestChanged.countDown();
+                }
+            }
+        };
+        assertEquals(VERSION, service.subscribeAgentCard(agentName, legacyListener).getVersion());
+        addCleanup(() -> service.unsubscribeAgentCard(agentName, legacyListener));
+
+        AgentCard secondCard = legacyCompatibleAgentCard(agentName, VERSION_2,
+            "canonical Agent SDK publication");
+        AgentDraftCreateRequest secondDraft = new AgentDraftCreateRequest();
+        secondDraft.setAgentName(agentName);
+        secondDraft.setVersion(VERSION_2);
+        secondDraft.setCallInterfaces(Collections.singletonList(
+            legacyCompatibleCallInterface(secondCard)));
+        secondDraft.setAuthor("java-sdk-it");
+        secondDraft.setChangeDescription("publish a legacy-compatible Agent Version");
+        maintainer.createDraft(Constants.DEFAULT_NAMESPACE_ID, secondDraft);
+        maintainer.forcePublish(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentName, VERSION_2));
+
+        AgentCardDetailInfo legacyProjection = service.getAgentCard(agentName, VERSION_2,
+            AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+        assertEquals(agentName, legacyProjection.getName());
+        assertEquals(VERSION_2, legacyProjection.getVersion());
+        assertEquals("canonical Agent SDK publication", legacyProjection.getDescription());
+        assertTrue(legacyLatestChanged.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
+            "legacy latest subscription must observe a canonical Agent Version publication");
+        assertNotNull(legacySubscription.get());
+        assertEquals(VERSION_2, legacySubscription.get().getVersion());
+        assertEquals(VERSION_2,
+            service.discoverAgent(reference(agentName, null, null)).getVersion());
+        JsonNode updatedConsoleOverview = getConsoleAgent(CONSOLE_AGENT_PATH, agentName, null);
+        assertEquals(VERSION_2,
+            updatedConsoleOverview.get("agent").get("versionInfo").get("labels")
+                .get("latest").asText(), updatedConsoleOverview.toString());
+    }
     
     @Test
     void shouldSearchDiscoverAndIsolateNamespaces() throws Exception {
@@ -796,6 +913,65 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             () -> service.discoverAgent(reference(agentName, null, null)));
         assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
     }
+
+    private JsonNode getConsoleAgent(String path, String agentName, String version)
+        throws Exception {
+        StringBuilder query = new StringBuilder("namespaceId=")
+            .append(encode(Constants.DEFAULT_NAMESPACE_ID)).append("&agentName=")
+            .append(encode(agentName));
+        if (version != null) {
+            query.append("&version=").append(encode(version));
+        }
+        if (path.endsWith("/runtime-endpoints")) {
+            query.append("&protocol=").append(PROTOCOL_A2A);
+        }
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+            CONSOLE_BASE_URL + path + '?' + query).openConnection();
+        connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setRequestMethod("GET");
+        try {
+            int responseCode = connection.getResponseCode();
+            try (InputStream input = responseCode >= 400 ? connection.getErrorStream()
+                : connection.getInputStream()) {
+                String body = input == null ? "" : new String(input.readAllBytes(),
+                    StandardCharsets.UTF_8);
+                assertEquals(HttpURLConnection.HTTP_OK, responseCode, body);
+                JsonNode root = JacksonUtils.toObj(body);
+                assertEquals(0, root.get("code").asInt(), root.toString());
+                return root.get("data");
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyEndpoint(String version) {
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint result =
+            new com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint();
+        result.setVersion(version);
+        result.setAddress("127.0.0.1");
+        result.setPort(randomPort());
+        result.setTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+        result.setProtocolVersion("1.0");
+        result.setPath("/legacy-a2a");
+        return result;
+    }
+
+    private boolean containsLegacyEndpoint(AgentCardDetailInfo detail,
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint endpoint) {
+        String expectedUrl = "http://" + endpoint.getAddress() + ':' + endpoint.getPort()
+            + endpoint.getPath();
+        return detail.getSupportedInterfaces() != null
+            && detail.getSupportedInterfaces().stream()
+                .anyMatch(each -> expectedUrl.equals(each.getUrl())
+                    && endpoint.getTransport().equals(each.getProtocolBinding())
+                    && endpoint.getProtocolVersion().equals(each.getProtocolVersion()));
+    }
     
     private AgentMaintainerService createAgentMaintainerService() throws NacosException {
         Properties properties = sdkProperties();
@@ -886,6 +1062,39 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         } else {
             result.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
         }
+        return result;
+    }
+
+    private AgentCard legacyCompatibleAgentCard(String agentName, String version,
+        String description) {
+        AgentInterface agentInterface = new AgentInterface();
+        agentInterface.setUrl("https://example.com/" + agentName + "/a2a");
+        agentInterface.setProtocolBinding("HTTP+JSON");
+        agentInterface.setProtocolVersion("1.0");
+        AgentCapabilities capabilities = new AgentCapabilities();
+        capabilities.setStreaming(Boolean.TRUE);
+        AgentCard result = new AgentCard();
+        result.setName(agentName);
+        result.setVersion(version);
+        result.setDescription(description);
+        result.setSupportedInterfaces(Collections.singletonList(agentInterface));
+        result.setCapabilities(capabilities);
+        return result;
+    }
+
+    private AgentCallInterface legacyCompatibleCallInterface(AgentCard card) {
+        AgentInterface agentInterface = card.getSupportedInterfaces().get(0);
+        Endpoint declaredEndpoint = new Endpoint();
+        declaredEndpoint.setUri(agentInterface.getUrl());
+        declaredEndpoint.setTransport(agentInterface.getProtocolBinding());
+        AgentCallInterface result = new AgentCallInterface();
+        result.setProtocol(PROTOCOL_A2A);
+        result.setProtocolVersion(agentInterface.getProtocolVersion());
+        result.setDescriptorMediaType("application/json");
+        result.setNativeDescriptor(JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class));
+        result.setEndpointSourceOrder(Arrays.asList(EndpointSource.DECLARED,
+            EndpointSource.RUNTIME));
+        result.setDeclaredEndpoints(Collections.singletonList(declaredEndpoint));
         return result;
     }
     

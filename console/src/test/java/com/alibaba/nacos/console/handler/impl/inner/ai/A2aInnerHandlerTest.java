@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -69,7 +69,7 @@ public class A2aInnerHandlerTest {
     private static final int PAGE_SIZE = 10;
     
     @Mock
-    private A2aServerOperationService a2aServerOperationService;
+    private A2aCompatibilityOperationService a2aServerOperationService;
     
     private A2aInnerHandler a2aInnerHandler;
     
