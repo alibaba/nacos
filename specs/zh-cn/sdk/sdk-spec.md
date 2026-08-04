@@ -82,8 +82,14 @@ Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对
   不传 namespace；
 - 提供 Agent Search、带或不带 Filter 的 Discover、Watch 与取消 Watch，以及运行时
   Endpoint Register 和 Deregister；
+- 通过 `AiService.publishAgent` 提供可选的代码式 Agent 定义发布，默认只创建 draft，并可通过
+  `autoSubmit` 执行普通 submit Pipeline；
 - 在不修改调用方对象的前提下，把绑定的 namespace 注入传输请求；
 - 按客户端恢复规范在 reconnect 后恢复 Watch 和 Endpoint 发布意图。
+
+代码式定义发布是持久操作，不进入 Endpoint redo；Endpoint 注册仍不得隐式创建 Agent。
+旧 `A2aService` 的多 Version Endpoint redo、AgentCard 轮询订阅和 shutdown 生命周期在兼容窗口内
+必须保持可恢复且资源可释放。
 
 目标 Maintainer SDK 不绑定 namespace；每个 Agent 管理调用都必须显式标识 namespace。
 它提供新的 Agent 管理 Facade，并在 A2A 兼容窗口内继续保留 A2A 管理 Facade。

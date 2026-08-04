@@ -25,7 +25,7 @@ import java.util.Collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,6 +35,7 @@ class AgentEndpointWrapperTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress(address);
         endpoint.setPort(port);
+        endpoint.setVersion("1.0.0");
         return endpoint;
     }
     
@@ -43,7 +44,10 @@ class AgentEndpointWrapperTest {
         AgentEndpoint endpoint = newEndpoint("127.0.0.1", 8080);
         AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(endpoint);
         assertFalse(wrapper.isBatch());
-        assertSame(endpoint, wrapper.getData());
+        assertNotSame(endpoint, wrapper.getData());
+        assertEquals("1.0.0", wrapper.getVersion());
+        endpoint.setAddress("changed");
+        assertEquals("127.0.0.1", wrapper.getData().getAddress());
         assertThrows(UnsupportedOperationException.class, wrapper::getBatchData);
     }
     
@@ -54,6 +58,8 @@ class AgentEndpointWrapperTest {
         AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(list);
         assertTrue(wrapper.isBatch());
         assertEquals(2, wrapper.getBatchData().size());
+        assertThrows(UnsupportedOperationException.class,
+            () -> wrapper.getBatchData().clear());
         assertThrows(UnsupportedOperationException.class, wrapper::getData);
     }
     

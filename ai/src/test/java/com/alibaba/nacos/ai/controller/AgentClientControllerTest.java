@@ -19,10 +19,14 @@ package com.alibaba.nacos.ai.controller;
 import com.alibaba.nacos.ai.form.agent.client.AgentDiscoveryForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointDeregistrationForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointRegistrationForm;
+import com.alibaba.nacos.ai.form.agent.client.AgentPublishForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentSearchForm;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
+import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -44,13 +48,28 @@ class AgentClientControllerTest {
     
     private AgentHttpClientLifecycleService lifecycleService;
     
+    private AgentPublishApplicationService publishService;
+    
     private AgentClientController controller;
     
     @BeforeEach
     void setUp() {
         discoveryService = mock(AgentDiscoveryApplicationService.class);
         lifecycleService = mock(AgentHttpClientLifecycleService.class);
-        controller = new AgentClientController(discoveryService, lifecycleService);
+        publishService = mock(AgentPublishApplicationService.class);
+        controller = new AgentClientController(discoveryService, lifecycleService,
+            publishService);
+    }
+    
+    @Test
+    void testPublish() throws Exception {
+        AgentPublishForm form = mock(AgentPublishForm.class);
+        AgentPublishRequest request = new AgentPublishRequest();
+        AgentVersionDetail detail = new AgentVersionDetail();
+        when(form.getNamespaceId()).thenReturn("team");
+        when(form.toRequest()).thenReturn(request);
+        when(publishService.publish("team", request)).thenReturn(detail);
+        assertSame(detail, controller.publish(form).getData());
     }
     
     @Test

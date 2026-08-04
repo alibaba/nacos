@@ -137,6 +137,11 @@ old-service cleanup require a separate rolling-upgrade contract.
 Endpoint publication may precede Agent or Version creation. It never creates an
 Agent definition implicitly.
 
+The legacy Java SDK stores Endpoint redo independently for each
+`(agentName, exactVersion)` and keeps a defensive snapshot of the submitted
+payload. Reconnect caching must not lose one Version's publication intent
+because another Version shares the Agent name.
+
 ## 5. Legacy Query Projection
 
 The compatibility query first selects an online version containing a valid
@@ -167,6 +172,11 @@ Legacy list and version-list APIs read Agent metadata plus online A2A versions.
 Legacy subscription events pass through the same projection as GET. A legacy
 subscription may remain registered when the initial target is absent; this is a
 compatibility behavior and is not the RAD Watch contract.
+Exact-Version and latest subscriptions use distinct identities. A Version's
+current latest flag cannot choose the sole event target. Moving latest to an
+already cached exact Version still notifies latest subscribers. Resubscription
+after cancellation restarts polling, and SDK shutdown stops all legacy
+AgentCard polling tasks.
 
 ## 6. Compatibility Surfaces
 

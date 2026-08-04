@@ -206,10 +206,10 @@ continues only after the harness writes a restarted marker.
 
 | Phase | Operations and assertions | Coverage |
 | --- | --- | --- |
-| Initial server | Create and publish Version 1; register independent gRPC and HTTP Endpoint Batches; Search, latest/exact Discover, and polling subscriptions over both transports all agree. | Directed IT |
+| Initial server | Create and publish a legacy-compatible Version 1; pre-register legacy exact-Version Endpoints for Versions 1 and 2; register independent protocol-neutral gRPC and HTTP Endpoint Batches; Search, legacy SERVICE query, latest/exact Discover, and polling subscriptions agree. | Directed IT |
 | Server unavailable | Keep the same gRPC and HTTP SDK instances and their local subscription/publication intent; both transports observe connection unavailability, but the client process stays alive and no local intent is deleted. | Directed IT + UT |
-| Same server restarted | The gRPC SDK reconnects and redoes its complete Batch. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Polling over both transports resumes and converges. | Directed IT + UT |
-| Definition-first upgrade after reconnect | Create and publish Version 2 before registering either exact Batch; latest single Discover and both subscriptions first observe Version 2 with an empty Runtime set, then observe the gRPC Endpoint and finally the HTTP Endpoint. | Directed IT |
+| Same server restarted | The gRPC SDK reconnects and redoes its complete Batch. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Both legacy exact-Version Endpoint redo records recover independently. Polling over both transports resumes and converges. | Directed IT + UT |
+| Definition-first upgrade after reconnect | Create and publish Version 2 after its legacy Endpoint was already registered and recovered; legacy SERVICE query resolves it. Latest Discover and both subscriptions first observe Version 2 with an empty protocol-neutral Runtime set, then observe the gRPC Endpoint and finally the HTTP Endpoint. | Directed IT |
 | Exact and label checks after reconnect | Exact Version 1 remains resolvable, exact/latest Version 2 agree through both transports, and a moved custom label resolves Version 2. | Directed IT |
 | Cleanup | Unsubscribe both listeners, deregister both final publications, delete the Agent, and shut down clients while the restarted server remains usable for later IT. | Directed IT |
 
@@ -239,7 +239,6 @@ failed targeted run rather than a sleeping normal CI test.
 | Item | Reason |
 | --- | --- |
 | Server Watch/Push, `watchKey`, Push ACK, gap recovery, and Watch ability | The approved first version uses active Discover polling. |
-| Generic Agent code publication and `autoSubmit` | Explicit later enhancement in the design. |
 | Public `getAll` / `selectOneHealthy` helper API shape | The design states local selection semantics but does not yet specify a stable Java type and method signature. It does not block Search, Discover, polling, or publication and is recorded rather than invented in this phase. |
 | Agent management-metadata change notification | `AgentDiscoveryResult` intentionally excludes display name, description, tags, provider, and other management metadata. Its polling fingerprint contains only resolved Version, Version `contentDigest`, and Endpoint `sourceRevision` values. A future requirement to subscribe to forced updates of published Agent metadata needs a Search/catalog subscription or an explicit RAD contract extension; it is not inferred by the current Discover subscription. |
 | Packet loss at individual frames and unknown gRPC write-result ambiguity | Covered with deterministic unit fault injection; a real single-node process restart is covered separately, while frame-level fault injection is not stable standalone IT. |

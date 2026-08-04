@@ -107,6 +107,7 @@ AiService extends AgentDiscoveryService, A2aService
 | 取消轮询订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
 | 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
+| 代码式发布 | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` 是 SDK 本地便利能力，不对应服务端 Watch/Push。SDK 周期执行与
 调用方 Reference、Filter 相同的 Discover；首次目标不存在时返回 `null` 但保留轮询，
@@ -122,11 +123,22 @@ SDK 将该完整 Batch 保存为 redo 意图。
 
 `deregisterAgentEndpoints` 保留为按自然键操作的便利方法。SDK 从期望 Batch 中删除
 这些自然键，再通过 Register 发送完整的剩余 Batch；没有 Endpoint 剩余时发送整份
-Publication 注销。首个实现可以不增加通用 Agent 定义发布方法，但现有
-`A2aService.releaseAgentCard`
-必须通过兼容 Adapter 保持可用。后续 Client SDK 提供可选的代码式 Agent 发布：
-`autoSubmit=false` 创建 draft，`autoSubmit=true` 执行普通 submit Pipeline；它不是
-force-publish，注册 Endpoint 也不会隐式创建定义。
+Publication 注销。现有 `A2aService.releaseAgentCard` 必须通过兼容 Adapter 保持可用。
+
+`publishAgent` 是 namespace-bound 的可选定义发布步骤。`AgentPublishRequest` 复用
+`AgentDraftCreateRequest` 的 Version 内容、`basedOnVersion`、作者、变更说明和首次 Agent
+元数据字段，并增加默认值为 `false` 的 `autoSubmit`。调用方不能提交 namespace；Proxy
+复制 Request 后使用 SDK namespace，且不得修改调用方对象。`autoSubmit=false` 只创建或
+返回等价 draft；`autoSubmit=true` 在创建 draft 后执行普通 submit Pipeline，并返回最终可观察到的
+`reviewing`、`reviewed` 或 `online` Version。该操作不是 force-publish，注册 Endpoint 也不会
+隐式创建定义。
+
+同一 namespace、Agent 和精确 Version 的等价重试必须收敛：draft 重试保持幂等，
+`autoSubmit=true` 在先前请求已把等价内容推进到 `reviewing`、`reviewed` 或 `online` 时返回现有
+Version；draft 后以相同 Request 改为 `autoSubmit=true` 必须继续 submit。内容、作者、变更说明
+或调用方显式提供的首次元数据不等价时返回冲突。已推进 Version 上的
+`autoSubmit=false`、以及 `offline` Version 上的任一代码式发布均返回非法状态或冲突。Submit
+失败不得补偿删除已创建 draft。
 
 ### 2.2 传输矩阵
 
@@ -137,6 +149,7 @@ force-publish，注册 Endpoint 也不会隐式创建定义。
 | 服务端 Watch 和 Push | 否 | 否 |
 | SDK 本地轮询订阅 | 复用 Discover | 复用 Discover |
 | 注册和注销 | 是 | 是 |
+| 代码式定义发布 | 是 | 是 |
 | Publisher heartbeat | 是 | 复用 gRPC connection lifecycle |
 
 轮询订阅使用 SDK 已选择的 Discover 传输，不新增 HTTP 路径、gRPC Payload、能力位或
@@ -150,6 +163,7 @@ gRPC 写入不得盲目通过 HTTP 重试。
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD Search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD Reference 和可选 Filter query | `Result<AgentDiscoveryResult>` |
+| POST | `/v3/client/ai/agents` | Form：`AgentPublishRequest`，复杂字段使用 JSON 字符串 | `Result<AgentVersionDetail>` |
 | POST | `/v3/client/ai/agents/endpoints` | Form：完整 `AgentEndpointRegistrationBatch`，其中 `endpoints` 为 JSON 字符串 | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form：`namespaceId + agentName + protocol` Publication Identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 无 body | `Result<ClientLivenessInfo>` |
@@ -176,6 +190,12 @@ Endpoint 自然键。官方 SDK 的部分注销先更新本地期望 Batch，再
 剩余内容；只有剩余 Batch 为空时才调用 DELETE。直接 HTTP 调用方同样自行维护完整
 期望 Batch。该三字段 DELETE Form 是 Binding 对象，不替代面向应用的
 `AgentEndpointDeregistrationBatch` RAD 模型。
+
+定义发布 POST 使用独立 Form，不使用 JSON body。`provider`、`tags`、`extensions` 和
+`callInterfaces` 编码为 JSON 字符串，其余字段为普通 Form 字段。Form 只调用一次
+`toRequest()`；该方法完成反序列化和校验，Controller 不再单独调用 `validate()`。
+定义发布是持久 Agent/Version 操作，不要求 Endpoint Publisher 使用的
+`X-Nacos-Client-Id` 或 `Request-Module` Header。
 
 ### 2.4 HTTP Publisher Identity 与活性
 
@@ -236,6 +256,7 @@ external Client id 时复用同一个 HTTP Client 生命周期。旧节点没有
 |---|---|---|
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | Search 并返回目录分页 |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | 一次 Discover |
+| `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | 代码式创建 Agent draft，并按 `autoSubmit` 可选执行普通 submit |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | 完整替换该 Connection 对一个 Agent 和 Protocol 的 RAD Batch |
 | `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | 删除该 Connection 对一个 Agent 和 Protocol 的整份 Publication |
 
@@ -269,6 +290,7 @@ Java SDK 本地实现，不扩展 RAD 的六个根消息。
 |---|---|---|
 | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search 和 Discover Payload |
 | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Endpoint Publication Payload |
+| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server 接受通用 Agent 代码式发布 Payload |
 
 旧 `SERVER_AGENT_REGISTRY`、`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 只约束
 旧 A2A 契约。新能力位缺失时，不得通过旧能力位 fallback 发送 RAD Payload。

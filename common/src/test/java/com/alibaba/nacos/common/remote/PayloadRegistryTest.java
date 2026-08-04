@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.common.remote;
 
+import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
+import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PayloadRegistryTest {
@@ -42,5 +45,13 @@ class PayloadRegistryTest {
         assertThrows(RuntimeException.class, () -> {
             PayloadRegistry.register("ErrorResponse", ErrorResponse.class);
         });
+    }
+    
+    @Test
+    void testAgentPublishPayloadsRegistered() {
+        assertSame(AgentPublishRpcRequest.class,
+            PayloadRegistry.getClassByType("AgentPublishRpcRequest"));
+        assertSame(AgentPublishRpcResponse.class,
+            PayloadRegistry.getClassByType("AgentPublishRpcResponse"));
     }
 }

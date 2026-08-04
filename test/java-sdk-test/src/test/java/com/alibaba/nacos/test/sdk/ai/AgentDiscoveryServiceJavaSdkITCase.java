@@ -674,9 +674,13 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AiService httpService =
             createAiService(Constants.DEFAULT_NAMESPACE_ID, AiConstants.AI_TRANSPORT_MODE_HTTP);
         String agentName = randomServiceName("agent-real-reconnect");
-        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
-            Collections.singletonList("java-sdk-it"), Collections.singletonList(PROTOCOL_A2A),
-            false);
+        createLegacyCompatiblePublishedAgent(maintainer, agentName);
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyVersionOne =
+            legacyEndpoint(VERSION);
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyVersionTwo =
+            legacyEndpoint(VERSION_2);
+        grpcService.registerAgentEndpoint(agentName, legacyVersionOne);
+        grpcService.registerAgentEndpoint(agentName, legacyVersionTwo);
         Endpoint grpcVersionOne =
             endpoint(randomPort(), "/reconnect-grpc-v1", "grpc-before-restart");
         Endpoint httpVersionOne =
@@ -687,6 +691,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(httpVersionOne)));
         waitForEndpointCount(grpcService, reference(agentName, VERSION, null), PROTOCOL_A2A, 2);
         waitForEndpointCount(httpService, reference(agentName, VERSION, null), PROTOCOL_A2A, 2);
+        waitUntil("legacy Version 1 Endpoint should be visible before restart", () ->
+            containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne));
         assertEquals(agentName, searchOne(grpcService, agentName).getAgentName());
         assertEquals(agentName, searchOne(httpService, agentName).getAgentName());
         
@@ -718,10 +725,15 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 return containsEndpoint(grpcResult, PROTOCOL_A2A, grpcVersionOne.getUri())
                     && containsEndpoint(grpcResult, PROTOCOL_A2A, httpVersionOne.getUri())
                     && containsEndpoint(httpResult, PROTOCOL_A2A, grpcVersionOne.getUri())
-                    && containsEndpoint(httpResult, PROTOCOL_A2A, httpVersionOne.getUri());
+                    && containsEndpoint(httpResult, PROTOCOL_A2A, httpVersionOne.getUri())
+                    && containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
+                        AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne);
             });
         
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
+        waitUntilLong("the pre-registered legacy Version 2 Endpoint survives restart", () ->
+            containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION_2,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionTwo));
         awaitEvent(grpcLatestListener, "gRPC polling resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
@@ -1021,12 +1033,33 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         request.setAgentName(agentName);
         request.setVersion(version);
-        request.setCallInterfaces(Collections.singletonList(
-            callInterface(agentName, PROTOCOL_A2A, false, version)));
+        request.setCallInterfaces(Collections.singletonList(legacyCompatibleCallInterface(
+            legacyCompatibleAgentCard(agentName, version,
+                "legacy-compatible Agent Version " + version))));
         request.setAuthor("java-sdk-it");
         request.setChangeDescription("publish Agent Version " + version);
         maintainer.createDraft(namespaceId, request);
         maintainer.forcePublish(namespaceId, versionCommand(agentName, version));
+    }
+
+    private void createLegacyCompatiblePublishedAgent(AgentMaintainerService maintainer,
+        String agentName) throws NacosException {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        request.setAgentName(agentName);
+        request.setDisplayName("Display " + agentName);
+        request.setDescription("Legacy-compatible Agent before restart");
+        request.setTags(Collections.singletonList("java-sdk-it"));
+        request.setVersion(VERSION);
+        request.setCallInterfaces(Collections.singletonList(legacyCompatibleCallInterface(
+            legacyCompatibleAgentCard(agentName, VERSION,
+                "legacy-compatible Agent before restart"))));
+        request.setAuthor("java-sdk-it");
+        request.setChangeDescription("create legacy-compatible Agent before restart");
+        maintainer.createDraft(Constants.DEFAULT_NAMESPACE_ID, request);
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
+        maintainer.forcePublish(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentName, VERSION));
+        updateLabel(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, LABEL_STABLE, VERSION);
     }
     
     private void updateLabel(AgentMaintainerService maintainer, String namespaceId,

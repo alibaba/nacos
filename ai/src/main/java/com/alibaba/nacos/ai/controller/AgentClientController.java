@@ -20,11 +20,15 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.agent.client.AgentDiscoveryForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointDeregistrationForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointRegistrationForm;
+import com.alibaba.nacos.ai.form.agent.client.AgentPublishForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentSearchForm;
 import com.alibaba.nacos.ai.param.AgentClientHttpParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
+import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -65,10 +69,25 @@ public class AgentClientController {
     
     private final AgentHttpClientLifecycleService clientLifecycleService;
     
+    private final AgentPublishApplicationService publishService;
+    
     public AgentClientController(AgentDiscoveryApplicationService discoveryService,
-        AgentHttpClientLifecycleService clientLifecycleService) {
+        AgentHttpClientLifecycleService clientLifecycleService,
+        AgentPublishApplicationService publishService) {
         this.discoveryService = discoveryService;
         this.clientLifecycleService = clientLifecycleService;
+        this.publishService = publishService;
+    }
+    
+    /**
+     * Publish one exact Agent Version from application code.
+     */
+    @Since("3.3.0")
+    @PostMapping
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public Result<AgentVersionDetail> publish(AgentPublishForm form) throws NacosException {
+        AgentPublishRequest request = form.toRequest();
+        return Result.success(publishService.publish(form.getNamespaceId(), request));
     }
     
     /**

@@ -213,6 +213,23 @@ future contract. Agent API, abilities, and transport payloads must be updated
 before that contract is implemented; wire Watch state cannot be inferred from
 the local polling identity.
 
+### 8.4 Legacy A2A Compatibility Recovery
+
+The namespace-bound `A2aService` uses `(agentName, exactVersion)` as the local
+redo identity for legacy Version-specific Endpoint publications. Different
+exact versions never overwrite one another. A redo record stores a defensive
+snapshot of the Endpoint collection and fields such as URI, transport, and
+metadata. Later caller mutation of an original `AgentEndpoint` or collection
+must not change reconnect intent.
+
+Exact-Version and latest legacy AgentCard subscriptions are distinct local
+identities. Whether a returned Version is currently latest cannot replace the
+caller's subscription identity; one change notifies every affected exact and
+latest key. A latest-pointer move still produces a latest change when the
+target exact Version is already cached. Resubscribing after cancellation must
+restart polling even when the current value is served from cache. SDK shutdown
+stops every legacy AgentCard cache-holder poll.
+
 ## 9. Shutdown
 
 SDK shutdown must clear in-memory redo state, stop background retry tasks, close

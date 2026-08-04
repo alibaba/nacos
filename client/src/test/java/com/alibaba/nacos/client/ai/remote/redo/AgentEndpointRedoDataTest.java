@@ -29,6 +29,7 @@ class AgentEndpointRedoDataTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress(address);
         endpoint.setPort(port);
+        endpoint.setVersion("1.0.0");
         return endpoint;
     }
     
@@ -37,6 +38,9 @@ class AgentEndpointRedoDataTest {
         AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(newEndpoint("127.0.0.1", 8080));
         AgentEndpointRedoData data = new AgentEndpointRedoData("agentX", wrapper);
         assertEquals("agentX", data.getAgentName());
+        assertEquals("1.0.0", data.getVersion());
+        assertEquals("agentX@@1.0.0", data.getKey());
+        assertEquals("agentX@@1.0.0", AgentEndpointRedoData.keyOf("agentX", "1.0.0"));
         assertSame(wrapper, data.get());
     }
     
@@ -54,6 +58,10 @@ class AgentEndpointRedoDataTest {
         
         AgentEndpointRedoData diffName = new AgentEndpointRedoData("agentY", wrapper);
         assertNotEquals(data, diffName);
+        AgentEndpoint differentVersion = newEndpoint("127.0.0.1", 8080);
+        differentVersion.setVersion("2.0.0");
+        assertNotEquals(data,
+            new AgentEndpointRedoData("agentX", AgentEndpointWrapper.wrap(differentVersion)));
         
         AgentEndpointWrapper otherWrapper =
             AgentEndpointWrapper.wrap(newEndpoint("127.0.0.2", 9090));

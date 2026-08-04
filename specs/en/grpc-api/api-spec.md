@@ -245,6 +245,7 @@ registrations, and negotiated abilities are present in the runtime.
 | --- | --- | --- | --- |
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
+| `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit`. |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | Subscribe or unsubscribe an Agent reference and optional filter; subscribe returns an opaque `watchKey` and the current complete result. |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | Push one `SNAPSHOT` or `TERMINATED` event for a `watchKey` and receive an acknowledgement. |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | Replace the complete runtime Endpoint batch owned by the current connection for one Agent and protocol. |

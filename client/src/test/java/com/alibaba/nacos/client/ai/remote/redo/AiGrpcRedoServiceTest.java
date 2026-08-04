@@ -97,21 +97,22 @@ class AiGrpcRedoServiceTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
         AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(endpoint);
         
         redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
-        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
         
-        redoService.agentEndpointRegistered("testAgent");
-        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        redoService.agentEndpointRegistered("testAgent", "1.0.0");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
         
-        redoService.agentEndpointDeregister("testAgent");
-        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        redoService.agentEndpointDeregister("testAgent", "1.0.0");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
         
-        redoService.agentEndpointDeregistered("testAgent");
-        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        redoService.agentEndpointDeregistered("testAgent", "1.0.0");
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
         
-        redoService.removeAgentEndpointForRedo("testAgent");
+        redoService.removeAgentEndpointForRedo("testAgent@@1.0.0");
         Set<RedoData<AgentEndpointWrapper>> redoDatas = redoService.findAgentEndpointRedoData();
         assertTrue(redoDatas.isEmpty());
     }
@@ -121,9 +122,10 @@ class AiGrpcRedoServiceTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
         AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(endpoint);
         redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
-        AgentEndpointWrapper actual = redoService.getAgentEndpoint("testAgent");
+        AgentEndpointWrapper actual = redoService.getAgentEndpoint("testAgent", "1.0.0");
         assertNotNull(actual);
         assertFalse(actual.isBatch());
         assertEquals("127.0.0.1", actual.getData().getAddress());
@@ -131,7 +133,7 @@ class AiGrpcRedoServiceTest {
     
     @Test
     void getAgentEndpointReturnsNullWhenNotCached() {
-        assertNull(redoService.getAgentEndpoint("missing"));
+        assertNull(redoService.getAgentEndpoint("missing", "1.0.0"));
     }
     
     @Test
@@ -139,28 +141,34 @@ class AiGrpcRedoServiceTest {
         AgentEndpoint endpoint1 = new AgentEndpoint();
         endpoint1.setAddress("127.0.0.1");
         endpoint1.setPort(8080);
+        endpoint1.setVersion("1.0.0");
         
         AgentEndpoint endpoint2 = new AgentEndpoint();
         endpoint2.setAddress("127.0.0.2");
         endpoint2.setPort(8081);
+        endpoint2.setVersion("2.0.0");
         
         AgentEndpointWrapper wrapper =
             AgentEndpointWrapper.wrap(Collections.singletonList(endpoint1));
         
         redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
-        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        redoService.cachedAgentEndpointForRedo("testAgent",
+            AgentEndpointWrapper.wrap(endpoint2));
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent", "2.0.0"));
         
         Set<RedoData<AgentEndpointWrapper>> redoDatas = redoService.findAgentEndpointRedoData();
-        assertEquals(1, redoDatas.size());
+        assertEquals(2, redoDatas.size());
         RedoData<AgentEndpointWrapper> redoData = redoDatas.iterator().next();
         assertInstanceOf(AgentEndpointRedoData.class, redoData);
         assertEquals("testAgent", ((AgentEndpointRedoData) redoData).getAgentName());
         
-        redoService.agentEndpointRegistered("testAgent");
-        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        redoService.agentEndpointRegistered("testAgent", "1.0.0");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent", "1.0.0"));
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent", "2.0.0"));
         
         redoDatas = redoService.findAgentEndpointRedoData();
-        assertTrue(redoDatas.isEmpty());
+        assertEquals(1, redoDatas.size());
     }
     
     @Test

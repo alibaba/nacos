@@ -34,6 +34,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -174,6 +176,11 @@ public class NacosAiService implements AiService {
         NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
         NotifyCenter.registerToPublisher(SkillChangedEvent.class, 16384);
         NotifyCenter.registerSubscriber(this.aiChangeNotifier);
+    }
+    
+    @Override
+    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+        return aiClientProxy.publishAgent(AgentModelUtils.copyPublishRequest(request));
     }
     
     @Override
@@ -693,6 +700,7 @@ public class NacosAiService implements AiService {
         this.agentDiscoveryCacheHolder.shutdown();
         this.agentEndpointPublicationManager.shutdown();
         this.mcpServerCacheHolder.shutdown();
+        this.agentCardCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();
         this.agentSpecCacheHolder.shutdown();
         this.skillCacheHolder.shutdown();

@@ -36,12 +36,16 @@ public class AgentCardChangedEvent extends Event {
     private final AgentCardDetailInfo agentCard;
     
     public AgentCardChangedEvent(AgentCardDetailInfo agentCard) {
-        this.agentCard = agentCard;
-        this.agentName = agentCard.getName();
-        this.version = buildVersion(agentCard);
+        this(agentCard, buildVersion(agentCard));
     }
     
-    private String buildVersion(AgentCardDetailInfo agentCard) {
+    public AgentCardChangedEvent(AgentCardDetailInfo agentCard, String version) {
+        this.agentCard = agentCard;
+        this.agentName = agentCard.getName();
+        this.version = version;
+    }
+    
+    private static String buildVersion(AgentCardDetailInfo agentCard) {
         if (null == agentCard.isLatestVersion() || agentCard.isLatestVersion()) {
             return CacheKeyUtils.LATEST_VERSION;
         }

@@ -101,10 +101,19 @@ The target Client SDK must:
   public Agent discovery, watch, registration, and deregistration methods;
 - expose Agent Search, Discover with and without a Filter, Watch and cancel,
   and runtime Endpoint Register and Deregister;
+- expose optional code-first Agent definition publication through
+  `AiService.publishAgent`, creating only a draft by default and optionally
+  running the ordinary submit Pipeline through `autoSubmit`;
 - inject the bound namespace into a transport request without mutating a
   caller-owned object; and
 - preserve Watch and Endpoint publication intent across reconnect according to
   the client recovery specs.
+
+Code-first definition publication is persistent and is not Endpoint redo.
+Endpoint registration still never creates an Agent implicitly. During the
+compatibility window, legacy `A2aService` multi-Version Endpoint redo,
+AgentCard polling subscriptions, and shutdown lifecycle remain recoverable and
+resource-safe.
 
 The target Maintainer SDK is not namespace-bound. Every Agent management call
 must explicitly identify its namespace. It exposes the new Agent management

@@ -115,6 +115,9 @@ Version 注册覆盖另一个 Version。历史 Service 的迁移、双读或双�
 
 Endpoint 可以先于 Agent 或 Version 定义发布，但不得隐式创建 Agent 定义。
 
+旧 Java SDK 为每个 `(agentName, exactVersion)` 独立保存 Endpoint redo，且保存调用时 Payload
+的防御性快照；不同 Version 的发布意图不得因重连缓存 key 冲突而丢失。
+
 ## 5. 旧查询投影
 
 兼容查询先选择一个包含合法 `protocol=a2a` CallInterface 的 online Version。显式 Version
@@ -138,6 +141,9 @@ priority、再按 Endpoint 自然键稳定排序。source revision、health、pr
 
 旧 list/version-list 从 Agent 元数据和 online A2A Version 投影。旧订阅事件必须经过与 GET
 相同的投影。初始目标不存在时，旧订阅可以继续保留；这是兼容行为，不属于 RAD Watch 契约。
+exact Version 与 latest 订阅使用独立身份。Version 当前是否为 latest 不能决定事件只投递给哪一个
+身份；latest 指针切换到已有 exact Cache 时也必须触发 latest 订阅。取消后重新订阅必须恢复轮询，
+SDK shutdown 必须停止所有旧 AgentCard 轮询任务。
 
 ## 6. 兼容表面
 

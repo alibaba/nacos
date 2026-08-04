@@ -17,8 +17,11 @@
 package com.alibaba.nacos.ai.remote.handler.agent;
 
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
+import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
@@ -26,9 +29,11 @@ import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -50,14 +55,32 @@ class AgentClientRequestHandlerTest {
     
     private AgentRuntimeRegistryService runtimeRegistryService;
     
+    private AgentPublishApplicationService publishService;
+    
     private RequestMeta meta;
     
     @BeforeEach
     void setUp() {
         discoveryService = mock(AgentDiscoveryApplicationService.class);
         runtimeRegistryService = mock(AgentRuntimeRegistryService.class);
+        publishService = mock(AgentPublishApplicationService.class);
         meta = mock(RequestMeta.class);
         when(meta.getConnectionId()).thenReturn("connection");
+    }
+    
+    @Test
+    void testPublishHandler() throws NacosException {
+        AgentPublishRequest publication = new AgentPublishRequest();
+        AgentVersionDetail detail = new AgentVersionDetail();
+        AgentPublishRpcRequest request = new AgentPublishRpcRequest();
+        request.setPublishRequest(publication);
+        when(publishService.publish("public", publication)).thenReturn(detail);
+        
+        AgentPublishRpcResponse response =
+            new AgentPublishRpcRequestHandler(publishService).handle(request, meta);
+        assertSame(detail, response.getVersionDetail());
+        assertInvalid(new AgentPublishRpcRequestHandler(publishService)
+            .handle(new AgentPublishRpcRequest(), meta));
     }
     
     @Test

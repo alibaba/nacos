@@ -171,6 +171,12 @@ AiService extends AgentDiscoveryService, A2aService
 继承方法使用兼容 default bridge，在实现未 override 时报告不支持；Nacos 官方实现 override
 完整目标接口面。
 
+`AiService` 直接提供 namespace-bound 的
+`publishAgent(AgentPublishRequest)`，返回 `AgentVersionDetail`。该新增方法使用同样的兼容
+default bridge；它不放入 `AgentDiscoveryService`，因为定义发布不是发现操作。官方实现复制
+Request、注入 SDK namespace，并按 `autoSubmit` 创建 draft 或执行普通 submit Pipeline，且不
+修改调用方对象。等价重试、冲突和状态收敛遵循 [Agent API 规范](../ai/agent-api-spec.md)。
+
 `AgentDiscoveryService` 提供以下 namespace-bound 方法：
 
 | 能力 | 方法 | 契约 |
@@ -190,6 +196,11 @@ namespace 注入传输对象，并且不修改调用方对象。如果共享输�
 
 继承的 `A2aService` 继续作为兼容 Facade。新的 Agent 应用使用
 `AgentDiscoveryService`；现有 AgentCard 调用继续通过 A2A 兼容 Adapter 工作。
+
+旧 A2A Endpoint redo 按 namespace-bound SDK 内的 `(agentName, exactVersion)` 区分意图，
+并保存 Endpoint Payload 的防御性快照。旧 AgentCard 订阅必须同时正确处理 exact Version、latest
+指针变化和取消后以已有 Cache 重新订阅；`shutdown()` 必须停止其轮询任务。Endpoint 可以先于
+Agent 定义发布，且不得隐式创建定义。
 
 资源语义由 [AI Registry 规范](../ai/ai-registry-spec.md)、
 [Agent API 规范](../ai/agent-api-spec.md)、[RAD 协议规范](../ai/rad-protocol-spec.md)

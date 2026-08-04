@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.form.agent.client;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -175,6 +177,49 @@ class AgentClientFormsTest {
         
         form.setProtocol("");
         assertThrows(IllegalArgumentException.class, form::validate);
+    }
+    
+    @Test
+    void testPublishFormParsesAndValidatesOnce() throws NacosApiException {
+        AgentPublishForm form = new AgentPublishForm();
+        form.setNamespaceId("team");
+        form.setAgentName("demo-agent");
+        form.setVersion("1.0.0");
+        form.setDisplayName("Demo");
+        form.setDescription("description");
+        form.setIconUrl("https://example.com/icon.png");
+        form.setProvider("{\"name\":\"Nacos\"}");
+        form.setTags("[\"assistant\"]");
+        form.setExtensions("{\"region\":\"east\"}");
+        form.setCallInterfaces("[]");
+        form.setAuthor("alice");
+        form.setChangeDescription("initial");
+        form.setAutoSubmit("true");
+        
+        AgentPublishRequest request = form.toRequest();
+        assertEquals("demo-agent", request.getAgentName());
+        assertEquals("Demo", request.getDisplayName());
+        assertEquals("description", request.getDescription());
+        assertEquals("https://example.com/icon.png", request.getIconUrl());
+        assertEquals("Nacos", request.getProvider().getName());
+        assertEquals("assistant", request.getTags().get(0));
+        assertEquals("east", request.getExtensions().get("region"));
+        assertEquals("1.0.0", request.getVersion());
+        assertEquals(0, request.getCallInterfaces().size());
+        assertEquals("alice", request.getAuthor());
+        assertEquals("initial", request.getChangeDescription());
+        assertNull(request.getBasedOnVersion());
+        assertEquals("true", form.getAutoSubmit());
+        assertTrue(request.isAutoSubmit());
+        form.validate();
+        
+        form.setAutoSubmit("false");
+        assertFalse(form.toRequest().isAutoSubmit());
+        form.setAutoSubmit("invalid");
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setAutoSubmit("false");
+        form.setCallInterfaces("{");
+        assertThrows(NacosApiException.class, form::validate);
     }
     
     @Test
