@@ -26,6 +26,7 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import com.alibaba.nacos.plugin.auth.impl.visibility.DefaultVisibilityGrantService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -55,6 +56,7 @@ public class NacosAuthPluginControllerConfig {
     }
     
     @Bean
+    @ConditionalOnMissingBean(VisibilityGrantService.class)
     public VisibilityGrantService visibilityGrantService(NacosRoleService roleService,
         NacosUserService userService) {
         return new DefaultVisibilityGrantService(roleService, userService);

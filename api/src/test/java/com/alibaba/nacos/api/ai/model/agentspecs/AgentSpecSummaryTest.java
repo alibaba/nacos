@@ -36,6 +36,7 @@ class AgentSpecSummaryTest extends BasicRequestTest {
     @DisplayName("test default constructor")
     void testDefaultConstructor() {
         AgentSpecSummary summary = new AgentSpecSummary();
+        assertNull(summary.getOwner());
         assertFalse(summary.isEnable());
         assertNull(summary.getBizTags());
         assertNull(summary.getFrom());
@@ -60,6 +61,14 @@ class AgentSpecSummaryTest extends BasicRequestTest {
         assertEquals("testAgentSpec", summary.getName());
         assertEquals("Test agent spec description", summary.getDescription());
         assertEquals(1234567890L, summary.getUpdateTime());
+    }
+    
+    @Test
+    @DisplayName("test getter and setter for owner")
+    void testGetterAndSetterForOwner() {
+        AgentSpecSummary summary = new AgentSpecSummary();
+        summary.setOwner("admin");
+        assertEquals("admin", summary.getOwner());
     }
     
     @Test
@@ -148,6 +157,7 @@ class AgentSpecSummaryTest extends BasicRequestTest {
         AgentSpecSummary summary = new AgentSpecSummary();
         summary.setNamespaceId("public");
         summary.setName("testAgentSpec");
+        summary.setOwner("admin");
         summary.setEnable(true);
         summary.setOnlineCnt(2);
         summary.setDownloadCount(500L);
@@ -156,6 +166,7 @@ class AgentSpecSummaryTest extends BasicRequestTest {
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"name\":\"testAgentSpec\""));
+        assertTrue(json.contains("\"owner\":\"admin\""));
         assertTrue(json.contains("\"enable\":true"));
         assertTrue(json.contains("\"onlineCnt\":2"));
         assertTrue(json.contains("\"downloadCount\":500"));
@@ -166,13 +177,14 @@ class AgentSpecSummaryTest extends BasicRequestTest {
     void testDeserializeFromJson() throws JsonProcessingException {
         String json =
             "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"description\":\"Test\","
-                + "\"enable\":true,\"bizTags\":\"[\\\"tag1\\\"]\",\"from\":\"local\","
+                + "\"owner\":\"admin\",\"enable\":true,\"bizTags\":\"[\\\"tag1\\\"]\",\"from\":\"local\","
                 + "\"scope\":\"PUBLIC\",\"onlineCnt\":2,\"downloadCount\":100}";
         
         AgentSpecSummary summary = mapper.readValue(json, AgentSpecSummary.class);
         assertNotNull(summary);
         assertEquals("public", summary.getNamespaceId());
         assertEquals("testAgentSpec", summary.getName());
+        assertEquals("admin", summary.getOwner());
         assertEquals("Test", summary.getDescription());
         assertTrue(summary.isEnable());
         assertEquals("local", summary.getFrom());

@@ -44,10 +44,12 @@ class AgentSpecMetaTest extends BasicRequestTest {
         AgentSpecMeta meta = new AgentSpecMeta();
         meta.setNamespaceId("public");
         meta.setName("testAgentSpec");
+        meta.setOwner("admin");
         meta.setEnable(true);
         
         assertEquals("public", meta.getNamespaceId());
         assertEquals("testAgentSpec", meta.getName());
+        assertEquals("admin", meta.getOwner());
         assertTrue(meta.isEnable());
     }
     
@@ -73,25 +75,29 @@ class AgentSpecMetaTest extends BasicRequestTest {
         AgentSpecMeta meta = new AgentSpecMeta();
         meta.setNamespaceId("public");
         meta.setName("testAgentSpec");
+        meta.setOwner("admin");
         meta.setEnable(true);
         
         String json = mapper.writeValueAsString(meta);
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"name\":\"testAgentSpec\""));
+        assertTrue(json.contains("\"owner\":\"admin\""));
         assertTrue(json.contains("\"enable\":true"));
     }
     
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
-        String json = "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"enable\":true,"
-            + "\"versions\":[{\"version\":\"v1.0.0\",\"status\":\"online\"}]}";
+        String json =
+            "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"owner\":\"admin\",\"enable\":true,"
+                + "\"versions\":[{\"version\":\"v1.0.0\",\"status\":\"online\"}]}";
         
         AgentSpecMeta meta = mapper.readValue(json, AgentSpecMeta.class);
         assertNotNull(meta);
         assertEquals("public", meta.getNamespaceId());
         assertEquals("testAgentSpec", meta.getName());
+        assertEquals("admin", meta.getOwner());
         assertTrue(meta.isEnable());
         assertNotNull(meta.getVersions());
         assertEquals(1, meta.getVersions().size());

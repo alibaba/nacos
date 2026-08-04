@@ -31,6 +31,8 @@ import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityResourceLocator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Zhengcy05
  */
 public class DefaultVisibilityGrantService implements VisibilityGrantService {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(DefaultVisibilityGrantService.class);
     
     private final NacosRoleService roleService;
     
@@ -72,9 +77,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         // Scenario 1: the grantee already has the dedicated visibility role; only
         // ensure the requested permission row exists.
         if (userHasRole(username, roleName)) {
-            if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
-                roleService.addPermission(roleName, resourceId, storedAction);
-            }
+            grantPermission(roleName, resourceId, storedAction);
             return;
         }
         // Scenario 2: create the user's reserved visibility role binding first, then
@@ -83,9 +86,7 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         try {
             roleService.addRole(roleName, username);
             roleAdded = true;
-            if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
-                roleService.addPermission(roleName, resourceId, storedAction);
-            }
+            grantPermission(roleName, resourceId, storedAction);
         } catch (RuntimeException e) {
             if (roleAdded) {
                 try {
@@ -98,6 +99,34 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
         }
     }
     
+    private void grantPermission(String roleName, String resourceId, String storedAction) {
+        if (!"rw".equals(storedAction)) {
+            if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
+                roleService.addPermission(roleName, resourceId, storedAction);
+            }
+            return;
+        }
+        boolean hasReadPermission =
+            roleService.isDuplicatePermission(roleName, resourceId, "r").getData();
+        if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
+            roleService.addPermission(roleName, resourceId, storedAction);
+        }
+        if (hasReadPermission) {
+            deleteReadPermissionAfterWriteGrant(roleName, resourceId);
+        }
+    }
+    
+    private void deleteReadPermissionAfterWriteGrant(String roleName, String resourceId) {
+        try {
+            // Write grants are persisted as "rw"; remove an older read-only row only
+            // after the write grant is stored successfully.
+            roleService.deletePermission(roleName, resourceId, "r");
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to delete old read-only visibility permission after granting "
+                + "write permission.", e);
+        }
+    }
+    
     @Override
     public void revoke(String namespaceId, String resourceType, String resourceName,
         String username, String action) throws NacosException {
@@ -105,14 +134,17 @@ public class DefaultVisibilityGrantService implements VisibilityGrantService {
             requireManagedResource(namespaceId, resourceType, resourceName);
         checkManageGrantAuthority(resource);
         validateUsername(username);
+        validateGranteeExists(username);
         String storedAction = normalizeGrantAction(action);
         String roleName = VisibilityGrantRoleHelper.buildUserRoleName(username);
+        String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId,
+            resourceType, resourceName);
+        if (!roleService.isDuplicatePermission(roleName, resourceId, storedAction).getData()) {
+            return;
+        }
         // Keep the empty internal role binding; without a matching permission row it
         // cannot grant visibility, and retaining it makes future grants idempotent.
-        roleService.deletePermission(roleName,
-            VisibilityGrantRoleHelper.buildResourceIdentifier(namespaceId, resourceType,
-                resourceName),
-            storedAction);
+        roleService.deletePermission(roleName, resourceId, storedAction);
     }
     
     // Query the names of all resources that a specified user has visibility permissions for,

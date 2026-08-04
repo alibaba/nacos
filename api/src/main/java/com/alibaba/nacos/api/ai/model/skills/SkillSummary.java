@@ -76,6 +76,11 @@ public class SkillSummary extends SkillBasicInfo {
      */
     private Long downloadCount;
     
+    /**
+     * Whether current requester can modify this skill resource.
+     */
+    private boolean writable;
+    
     public String getOwner() {
         return owner;
     }
@@ -154,5 +159,13 @@ public class SkillSummary extends SkillBasicInfo {
     
     public void setDownloadCount(Long downloadCount) {
         this.downloadCount = downloadCount;
+    }
+    
+    public boolean isWritable() {
+        return writable;
+    }
+    
+    public void setWritable(boolean writable) {
+        this.writable = writable;
     }
 }

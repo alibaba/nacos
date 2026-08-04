@@ -127,6 +127,19 @@
       "latest": "Get latest",
       "byVersion": "By version",
       "byLabel": "By label"
+    },
+    "visibilityAuthorization": {
+      "title": "Permission Management",
+      "entry": "Permission Management",
+      "resourceType": "Resource Type",
+      "resourceName": "Resource Name",
+      "read": "Read",
+      "readWrite": "Read & Write",
+      "grant": "Grant",
+      "revoke": "Revoke",
+      "grantSuccess": "Granted successfully",
+      "revokeSuccess": "Revoked successfully",
+      "usernameRequired": "Username is required"
     }
   },
   "config": {

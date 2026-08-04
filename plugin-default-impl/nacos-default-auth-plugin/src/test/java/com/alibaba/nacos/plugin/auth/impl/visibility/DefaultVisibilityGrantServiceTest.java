@@ -36,6 +36,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
@@ -46,12 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -134,21 +137,18 @@ class DefaultVisibilityGrantServiceTest {
         Map<String, NacosAuthConfig> cached = authEnabledConfig();
         try {
             String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
             when(roleService.getRoles("bob")).thenReturn(List.of());
-            when(roleService.isDuplicatePermission(
-                roleName,
-                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
-                    "demo-skill"),
-                "rw")).thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
             
             service.grant("public", "skill", "demo-skill", "bob", "w");
             
             verify(roleService).addRole(roleName, "bob");
-            verify(roleService).addPermission(
-                roleName,
-                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
-                    "demo-skill"),
-                "rw");
+            verify(roleService).addPermission(roleName, resourceId, "rw");
         } finally {
             restoreAuthConfig(cached);
         }
@@ -250,6 +250,10 @@ class DefaultVisibilityGrantServiceTest {
             when(roleService.isDuplicatePermission(roleName,
                 VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
                     "skill-b"),
+                "r")).thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            when(roleService.isDuplicatePermission(roleName,
+                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
+                    "skill-b"),
                 "rw")).thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
             
             service.grant("public", "skill", "skill-a", "bob", "r");
@@ -296,6 +300,109 @@ class DefaultVisibilityGrantServiceTest {
             
             verify(roleService, times(1)).addRole(roleName, "bob");
             verify(roleService, times(1)).addPermission(roleName, resourceId, "r");
+        } finally {
+            restoreAuthConfig(cached);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void grantWriteShouldReplaceExistingReadPermission() throws Exception {
+        NacosRoleService roleService = mock(NacosRoleService.class);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
+        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            RoleInfo existingRole = new RoleInfo();
+            existingRole.setRole(roleName);
+            when(roleService.getRoles("bob")).thenReturn(List.of(existingRole));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(true));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            
+            service.grant("public", "skill", "demo-skill", "bob", "w");
+            
+            InOrder inOrder = inOrder(roleService);
+            inOrder.verify(roleService).addPermission(roleName, resourceId, "rw");
+            inOrder.verify(roleService).deletePermission(roleName, resourceId, "r");
+        } finally {
+            restoreAuthConfig(cached);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void grantWriteShouldPreserveExistingReadPermissionWhenWritePermissionCreationFails() {
+        NacosRoleService roleService = mock(NacosRoleService.class);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
+        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            RoleInfo existingRole = new RoleInfo();
+            existingRole.setRole(roleName);
+            when(roleService.getRoles("bob")).thenReturn(List.of(existingRole));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(true));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            doThrow(new IllegalStateException("permission failed")).when(roleService)
+                .addPermission(roleName, resourceId, "rw");
+            
+            assertThrows(IllegalStateException.class,
+                () -> service.grant("public", "skill", "demo-skill", "bob", "w"));
+            
+            verify(roleService).addPermission(roleName, resourceId, "rw");
+            verify(roleService, never()).deletePermission(roleName, resourceId, "r");
+        } finally {
+            restoreAuthConfig(cached);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void grantWriteShouldNotFailWhenOldReadPermissionCleanupFails() {
+        NacosRoleService roleService = mock(NacosRoleService.class);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
+        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            RoleInfo existingRole = new RoleInfo();
+            existingRole.setRole(roleName);
+            when(roleService.getRoles("bob")).thenReturn(List.of(existingRole));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(true));
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            doThrow(new IllegalStateException("cleanup failed")).when(roleService)
+                .deletePermission(roleName, resourceId, "r");
+            
+            assertDoesNotThrow(
+                () -> service.grant("public", "skill", "demo-skill", "bob", "w"));
+            
+            verify(roleService).addPermission(roleName, resourceId, "rw");
+            verify(roleService).deletePermission(roleName, resourceId, "r");
         } finally {
             restoreAuthConfig(cached);
         }
@@ -470,35 +577,10 @@ class DefaultVisibilityGrantServiceTest {
     
     @Test
     @SuppressWarnings("unchecked")
-    void revokeShouldNotRequireExistingGrantee() throws Exception {
+    void revokeShouldDeleteExistingVisibilityPermission() throws Exception {
         NacosRoleService roleService = mock(NacosRoleService.class);
         NacosUserService userService = mock(NacosUserService.class);
-        DefaultVisibilityGrantService service =
-            new DefaultVisibilityGrantService(roleService, userService);
-        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
-        setCurrentUser("alice", false);
-        Map<String, NacosAuthConfig> cached = authEnabledConfig();
-        try {
-            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
-            
-            service.revoke("public", "skill", "demo-skill", "bob", "w");
-            
-            verify(userService, never()).getUser("bob");
-            verify(roleService, never()).deleteRole(roleName, "bob");
-            verify(roleService, times(1)).deletePermission(roleName,
-                VisibilityGrantRoleHelper.buildResourceIdentifier("public", "skill",
-                    "demo-skill"),
-                "rw");
-        } finally {
-            restoreAuthConfig(cached);
-        }
-    }
-    
-    @Test
-    @SuppressWarnings("unchecked")
-    void repeatedRevokeShouldRemainIdempotentAfterGranteeDeletion() throws Exception {
-        NacosRoleService roleService = mock(NacosRoleService.class);
-        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
         DefaultVisibilityGrantService service =
             new DefaultVisibilityGrantService(roleService, userService);
         mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
@@ -508,12 +590,40 @@ class DefaultVisibilityGrantServiceTest {
             String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
             String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
                 "skill", "demo-skill");
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(true));
             
-            service.revoke("public", "skill", "demo-skill", "bob", "rw");
-            service.revoke("public", "skill", "demo-skill", "bob", "rw");
+            service.revoke("public", "skill", "demo-skill", "bob", "w");
             
-            verify(userService, never()).getUser("bob");
-            verify(roleService, times(2)).deletePermission(roleName, resourceId, "rw");
+            verify(roleService, never()).deleteRole(roleName, "bob");
+            verify(roleService, times(1)).deletePermission(roleName, resourceId, "rw");
+        } finally {
+            restoreAuthConfig(cached);
+        }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void revokeShouldSucceedWhenVisibilityPermissionDoesNotExist() {
+        NacosRoleService roleService = mock(NacosRoleService.class);
+        NacosUserService userService = mock(NacosUserService.class);
+        when(userService.getUser("bob")).thenReturn(new User());
+        DefaultVisibilityGrantService service =
+            new DefaultVisibilityGrantService(roleService, userService);
+        mockLocator(new TestLocator(new TestResource("public", "skill", "demo-skill", "alice")));
+        setCurrentUser("alice", false);
+        Map<String, NacosAuthConfig> cached = authEnabledConfig();
+        try {
+            String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
+            String resourceId = VisibilityGrantRoleHelper.buildResourceIdentifier("public",
+                "skill", "demo-skill");
+            when(roleService.isDuplicatePermission(roleName, resourceId, "rw"))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+            
+            assertDoesNotThrow(
+                () -> service.revoke("public", "skill", "demo-skill", "bob", "rw"));
+            
+            verify(roleService, never()).deletePermission(roleName, resourceId, "rw");
         } finally {
             restoreAuthConfig(cached);
         }
@@ -539,7 +649,8 @@ class DefaultVisibilityGrantServiceTest {
             String roleName = VisibilityGrantRoleHelper.buildUserRoleName("bob");
             when(roleService.getRoles("bob")).thenReturn(List.of());
             when(roleService.isDuplicatePermission(roleName, resourceId, "r"))
-                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false));
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(false))
+                .thenReturn(com.alibaba.nacos.api.model.v2.Result.success(true));
             
             service.grant("public", "skill", resourceName, "bob", "r");
             service.revoke("public", "skill", resourceName, "bob", "r");

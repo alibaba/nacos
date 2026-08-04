@@ -198,6 +198,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         detail.setNamespaceId(meta.getNamespaceId());
         detail.setName(meta.getName());
         detail.setDescription(meta.getDesc());
+        detail.setOwner(meta.getOwner());
         detail.setBizTags(meta.getBizTags());
         detail.setFrom(meta.getFrom());
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
@@ -210,6 +211,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             .setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setDownloadCount(meta.getDownloadCount());
         detail.setVersions(versionSummaries);
+        detail.setWritable(VisibilityHelper.canWriteResource(meta));
         return detail;
     }
     
@@ -332,6 +334,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 item.setNamespaceId(namespaceId);
                 item.setName(meta.getName());
                 item.setDescription(meta.getDesc());
+                item.setOwner(meta.getOwner());
                 item.setEnable(
                     AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
                 item.setBizTags(meta.getBizTags());
@@ -340,6 +343,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 item.setUpdateTime(
                     meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
                 item.setDownloadCount(meta.getDownloadCount());
+                item.setWritable(VisibilityHelper.canWriteResource(meta));
                 if (versionInfo != null) {
                     item.setLabels(versionInfo.getLabels());
                     item.setEditingVersion(versionInfo.getEditingVersion());

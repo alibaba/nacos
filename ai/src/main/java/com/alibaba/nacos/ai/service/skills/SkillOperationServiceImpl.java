@@ -983,6 +983,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             .setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setVersions(versionSummaries);
         detail.setDownloadCount(meta.getDownloadCount());
+        detail.setWritable(VisibilityHelper.canWriteResource(meta));
         return detail;
     }
     
@@ -1115,6 +1116,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setUpdateTime(
                 meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
             item.setDownloadCount(meta.getDownloadCount());
+            item.setWritable(VisibilityHelper.canWriteResource(meta));
             if (versionInfo != null) {
                 item.setLabels(versionInfo.getLabels());
                 item.setEditingVersion(versionInfo.getEditingVersion());

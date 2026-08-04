@@ -7,6 +7,7 @@ export interface AgentSpecListItem {
   namespaceId: string;
   name: string;
   description: string;
+  owner: string;
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"
   bizTags: string; // JSON string: ["tag1","tag2"]
@@ -17,6 +18,7 @@ export interface AgentSpecListItem {
   onlineCnt: number;
   updateTime: number; // epoch millis
   downloadCount: number;
+  writable: boolean;
 }
 
 /** 版本摘要 */
@@ -49,6 +51,7 @@ export interface AgentSpecDocument {
 
 /** 详情 */
 export interface AgentSpecDetail {
+  owner: string;
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"
   bizTags: string; // JSON string: ["tag1","tag2"]
@@ -60,6 +63,7 @@ export interface AgentSpecDetail {
   updateTime: number;
   versions: AgentSpecVersionSummary[];
   downloadCount: number;
+  writable: boolean;
 }
 
 /** 列表响应 */
