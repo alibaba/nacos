@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.fingerprint;
 
-import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -38,46 +39,51 @@ class RuntimeEndpointRevisionTest {
     
     private static final String DUAL_ENDPOINT_FRAME_HEX =
         "0000000200000017687474703a2f2f612e6578616d706c653a38302f727063000000044854"
-            + "54500000000a3fe000000000000000000000010000002168747470733a2f2f622e6578616d"
-            + "706c653a3434332f6132613f623d3226613d31000000074a534f4e525043000000003ff000"
-            + "00000000000000000200000002617a0000000162000000047a6f6e65000000027a3200";
+            + "54500000000a3fe000000000000000000000010000000100000005312e302e30000000075b"
+            + "312e302e305d0000002168747470733a2f2f622e6578616d706c653a3434332f6132613f62"
+            + "3d3226613d31000000074a534f4e525043000000003ff00000000000000000000200000002"
+            + "617a0000000162000000047a6f6e65000000027a32000000000100000005312e302e300000"
+            + "00075b312e302e305d";
     
     private static final String NATURAL_KEY_FRAME_HEX =
         "0000000300000018687474703a2f2f73616d652e6578616d706c653a38302f61000000044752"
-            + "5043000000003ff0000000000000000000000100000018687474703a2f2f73616d652e657861"
-            + "6d706c653a38302f62000000074a534f4e525043000000003ff0000000000000000000000000"
-            + "00001a687474703a2f2f73616d652e6578616d706c653a313030302f7a000000044854545000"
-            + "0000003ff00000000000000000000001";
+            + "5043000000003ff000000000000000000000010000000100000005312e302e30000000075b31"
+            + "2e302e305d00000018687474703a2f2f73616d652e6578616d706c653a38302f62000000074a"
+            + "534f4e525043000000003ff000000000000000000000000000000100000005312e302e300000"
+            + "00075b312e302e305d0000001a687474703a2f2f73616d652e6578616d706c653a313030302f"
+            + "7a0000000448545450000000003ff000000000000000000000010000000100000005312e302e"
+            + "30000000075b312e302e305d";
     
     @Test
     void testEmptyProjectionGoldenVector() {
         byte[] frame = RuntimeEndpointRevision.revisionBytes("public", "Order Agent", "a2a",
-            Collections.<Endpoint>emptyList());
+            Collections.<AgentDiscoveryEndpoint>emptyList());
         assertEquals("00000000", toHex(frame));
         assertEquals("murmur3-x64-128-v1:cfa0f7ddd84c76bc589623161cf526f1",
             RuntimeEndpointRevision.compute("public", "Order Agent", "a2a",
-                Collections.<Endpoint>emptyList()));
+                Collections.<AgentDiscoveryEndpoint>emptyList()));
         assertEquals("murmur3-x64-128-v1", RuntimeEndpointRevision.ALGORITHM_ID);
         assertEquals("murmur3-x64-128-v1:", RuntimeEndpointRevision.TOKEN_PREFIX);
     }
     
     @Test
     void testDualEndpointGoldenVectorAndNaturalKeyOrdering() {
-        Endpoint b = createEndpoint("HTTPS://B.EXAMPLE/a2a?b=2&a=1", "JSONRPC", false);
+        AgentDiscoveryEndpoint b =
+            createEndpoint("HTTPS://B.EXAMPLE/a2a?b=2&a=1", "JSONRPC", false);
         Map<String, String> metadata = new LinkedHashMap<String, String>();
         metadata.put("zone", "z2");
         metadata.put("az", "b");
         b.setMetadata(metadata);
-        Endpoint a = createEndpoint("http://a.example/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint a = createEndpoint("http://a.example/rpc", "HTTP", true);
         a.setPriority(10);
         a.setWeight(0.5D);
-        List<Endpoint> reversedInput = Arrays.asList(b, a);
+        List<AgentDiscoveryEndpoint> reversedInput = Arrays.asList(b, a);
         
         byte[] frame = RuntimeEndpointRevision.revisionBytes("public", "Order Agent", "a2a",
             reversedInput);
-        assertEquals(146, frame.length);
+        assertEquals(194, frame.length);
         assertEquals(DUAL_ENDPOINT_FRAME_HEX, toHex(frame));
-        assertEquals("murmur3-x64-128-v1:6553cc8de6bd96d7077624a5b3a5178d",
+        assertEquals("murmur3-x64-128-v1:4e63c05c7d885f71da9921101b14c8b0",
             RuntimeEndpointRevision.compute("public", "Order Agent", "a2a", reversedInput));
         assertArrayEquals(frame,
             RuntimeEndpointRevision.revisionBytes("public", "Order Agent", "a2a",
@@ -86,16 +92,20 @@ class RuntimeEndpointRevisionTest {
     
     @Test
     void testNaturalKeyOrdersNumericPortThenTransport() {
-        Endpoint port1000 = createEndpoint("http://same.example:1000/z", "HTTP", true);
-        Endpoint port80Json = createEndpoint("http://same.example/b", "JSONRPC", false);
-        Endpoint port80Grpc = createEndpoint("http://same.example/a", "GRPC", true);
-        List<Endpoint> reversed = Arrays.asList(port1000, port80Json, port80Grpc);
+        AgentDiscoveryEndpoint port1000 =
+            createEndpoint("http://same.example:1000/z", "HTTP", true);
+        AgentDiscoveryEndpoint port80Json =
+            createEndpoint("http://same.example/b", "JSONRPC", false);
+        AgentDiscoveryEndpoint port80Grpc =
+            createEndpoint("http://same.example/a", "GRPC", true);
+        List<AgentDiscoveryEndpoint> reversed =
+            Arrays.asList(port1000, port80Json, port80Grpc);
         
         byte[] frame = RuntimeEndpointRevision.revisionBytes("public", "Agent", "a2a",
             reversed);
-        assertEquals(168, frame.length);
+        assertEquals(240, frame.length);
         assertEquals(NATURAL_KEY_FRAME_HEX, toHex(frame));
-        assertEquals("murmur3-x64-128-v1:910d3654e3044e56d7669c07465477ef",
+        assertEquals("murmur3-x64-128-v1:7bea17b7faa9cb6c30a7bad931d2f4c1",
             RuntimeEndpointRevision.compute("public", "Agent", "a2a", reversed));
         assertArrayEquals(frame,
             RuntimeEndpointRevision.revisionBytes("public", "Agent", "a2a",
@@ -104,40 +114,58 @@ class RuntimeEndpointRevisionTest {
     
     @Test
     void testEquivalentDefaultsAndMetadataOrderHaveSameRevision() {
-        Endpoint omitted = createEndpoint("HTTP://EXAMPLE.COM/rpc", "HTTP", true);
-        Endpoint explicit = createEndpoint("http://example.com:80/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint omitted =
+            createEndpoint("HTTP://EXAMPLE.COM/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint explicit =
+            createEndpoint("http://example.com:80/rpc", "HTTP", true);
         explicit.setPriority(0);
         explicit.setWeight(1D);
         explicit.setMetadata(Collections.<String, String>emptyMap());
         assertEquals(revision(omitted), revision(explicit));
         
-        Endpoint firstOrder = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint firstOrder =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         Map<String, String> firstMetadata = new LinkedHashMap<String, String>();
         firstMetadata.put("zone", "z1");
         firstMetadata.put("az", "a");
         firstOrder.setMetadata(firstMetadata);
-        Endpoint secondOrder = createEndpoint("http://example.com:80/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint secondOrder =
+            createEndpoint("http://example.com:80/rpc", "HTTP", true);
         Map<String, String> secondMetadata = new LinkedHashMap<String, String>();
         secondMetadata.put("az", "a");
         secondMetadata.put("zone", "z1");
         secondOrder.setMetadata(secondMetadata);
         assertEquals(revision(firstOrder), revision(secondOrder));
+        
+        AgentDiscoveryEndpoint firstBindingOrder =
+            createEndpoint("http://bindings.example.com/rpc", "HTTP", true);
+        firstBindingOrder.setBindings(Arrays.asList(binding("2.0.0", "[2.0.0]"),
+            binding("1.0.0", "[1.0.0]")));
+        AgentDiscoveryEndpoint secondBindingOrder =
+            createEndpoint("http://bindings.example.com/rpc", "HTTP", true);
+        secondBindingOrder.setBindings(Arrays.asList(binding("1.0.0", "[1.0.0]"),
+            binding("2.0.0", "[2.0.0]")));
+        assertEquals(revision(firstBindingOrder), revision(secondBindingOrder));
     }
     
     @Test
     void testEquivalentSignedZeroWeightsHaveSameRevision() {
-        Endpoint positiveZero = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint positiveZero =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         positiveZero.setWeight(0D);
-        Endpoint negativeZero = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint negativeZero =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         negativeZero.setWeight(-0D);
         assertEquals(revision(positiveZero), revision(negativeZero));
     }
     
     @Test
     void testAdjacentWeightsHaveDifferentRevisions() {
-        Endpoint baseline = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint baseline =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         baseline.setWeight(1D);
-        Endpoint adjacent = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint adjacent =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         adjacent.setWeight(Math.nextUp(1D));
         assertNotEquals(revision(baseline), revision(adjacent));
     }
@@ -146,26 +174,37 @@ class RuntimeEndpointRevisionTest {
     void testEveryIncludedEndpointFieldChangesRevision() {
         String baseline = revision(createEndpoint("http://example.com/a", "HTTP", true));
         
-        Endpoint uri = createEndpoint("http://example.com/b", "HTTP", true);
+        AgentDiscoveryEndpoint uri = createEndpoint("http://example.com/b", "HTTP", true);
         assertNotEquals(baseline, revision(uri));
-        Endpoint transport = createEndpoint("http://example.com/a", "JSONRPC", true);
+        AgentDiscoveryEndpoint transport =
+            createEndpoint("http://example.com/a", "JSONRPC", true);
         assertNotEquals(baseline, revision(transport));
-        Endpoint priority = createEndpoint("http://example.com/a", "HTTP", true);
+        AgentDiscoveryEndpoint priority =
+            createEndpoint("http://example.com/a", "HTTP", true);
         priority.setPriority(1);
         assertNotEquals(baseline, revision(priority));
-        Endpoint weight = createEndpoint("http://example.com/a", "HTTP", true);
+        AgentDiscoveryEndpoint weight =
+            createEndpoint("http://example.com/a", "HTTP", true);
         weight.setWeight(0.5D);
         assertNotEquals(baseline, revision(weight));
-        Endpoint metadata = createEndpoint("http://example.com/a", "HTTP", true);
+        AgentDiscoveryEndpoint metadata =
+            createEndpoint("http://example.com/a", "HTTP", true);
         metadata.setMetadata(Collections.singletonMap("zone", "z1"));
         assertNotEquals(baseline, revision(metadata));
-        Endpoint health = createEndpoint("http://example.com/a", "HTTP", false);
+        AgentDiscoveryEndpoint health =
+            createEndpoint("http://example.com/a", "HTTP", false);
         assertNotEquals(baseline, revision(health));
+        
+        AgentDiscoveryEndpoint bindings =
+            createEndpoint("http://example.com/a", "HTTP", true);
+        bindings.setBindings(Collections.singletonList(binding("1.0.1", "[1.0.1]")));
+        assertNotEquals(baseline, revision(bindings));
     }
     
     @Test
     void testProjectionIdentityIsValidatedButExcludedFromRevisionBytes() {
-        Endpoint endpoint = createEndpoint("http://example.com/rpc", "HTTP", true);
+        AgentDiscoveryEndpoint endpoint =
+            createEndpoint("http://example.com/rpc", "HTTP", true);
         byte[] first = RuntimeEndpointRevision.revisionBytes("public", "Agent A", "a2a",
             Collections.singletonList(endpoint));
         byte[] second = RuntimeEndpointRevision.revisionBytes("tenant", "Agent B", "custom",
@@ -179,22 +218,35 @@ class RuntimeEndpointRevisionTest {
             () -> RuntimeEndpointRevision.compute("public", "Agent", "a2a", null));
         assertThrows(IllegalArgumentException.class,
             () -> RuntimeEndpointRevision.compute("", "Agent", "a2a",
-                Collections.<Endpoint>emptyList()));
+                Collections.<AgentDiscoveryEndpoint>emptyList()));
         assertThrows(IllegalArgumentException.class,
             () -> RuntimeEndpointRevision.compute("public", "", "a2a",
-                Collections.<Endpoint>emptyList()));
+                Collections.<AgentDiscoveryEndpoint>emptyList()));
         assertThrows(IllegalArgumentException.class,
             () -> RuntimeEndpointRevision.compute("public", "Agent", "-a2a",
-                Collections.<Endpoint>emptyList()));
+                Collections.<AgentDiscoveryEndpoint>emptyList()));
         assertThrows(IllegalArgumentException.class,
             () -> revision(null));
         
-        Endpoint missingHealth = createEndpoint("http://example.com/rpc", "HTTP", null);
+        AgentDiscoveryEndpoint missingHealth =
+            createEndpoint("http://example.com/rpc", "HTTP", null);
         assertThrows(IllegalArgumentException.class,
             () -> revision(missingHealth));
         
-        Endpoint first = createEndpoint("http://EXAMPLE.COM/a", "HTTP", true);
-        Endpoint duplicate = createEndpoint("http://example.com:80/b", "HTTP", false);
+        AgentDiscoveryEndpoint missingBindings =
+            createEndpoint("http://missing.example.com/rpc", "HTTP", true);
+        missingBindings.setBindings(null);
+        assertThrows(IllegalArgumentException.class, () -> revision(missingBindings));
+        
+        AgentDiscoveryEndpoint incompleteBinding =
+            createEndpoint("http://binding.example.com/rpc", "HTTP", true);
+        incompleteBinding.setBindings(Collections.singletonList(new RuntimeVersionBinding()));
+        assertThrows(IllegalArgumentException.class, () -> revision(incompleteBinding));
+        
+        AgentDiscoveryEndpoint first =
+            createEndpoint("http://EXAMPLE.COM/a", "HTTP", true);
+        AgentDiscoveryEndpoint duplicate =
+            createEndpoint("http://example.com:80/b", "HTTP", false);
         assertThrows(IllegalArgumentException.class,
             () -> RuntimeEndpointRevision.compute("public", "Agent", "a2a",
                 Arrays.asList(first, duplicate)));
@@ -202,7 +254,7 @@ class RuntimeEndpointRevisionTest {
     
     @Test
     void testMaximumProjectionIsBoundedAndPractical() {
-        List<Endpoint> endpoints = new ArrayList<Endpoint>();
+        List<AgentDiscoveryEndpoint> endpoints = new ArrayList<AgentDiscoveryEndpoint>();
         for (int i = 0; i < 1000; i++) {
             endpoints.add(createEndpoint("http://e" + i + ".example.com/rpc", "HTTP", true));
         }
@@ -216,16 +268,25 @@ class RuntimeEndpointRevisionTest {
             () -> RuntimeEndpointRevision.compute("public", "Agent", "a2a", endpoints));
     }
     
-    private String revision(Endpoint endpoint) {
+    private String revision(AgentDiscoveryEndpoint endpoint) {
         return RuntimeEndpointRevision.compute("public", "Agent", "a2a",
             Collections.singletonList(endpoint));
     }
     
-    private Endpoint createEndpoint(String uri, String transport, Boolean healthy) {
-        Endpoint result = new Endpoint();
+    private AgentDiscoveryEndpoint createEndpoint(String uri, String transport,
+        Boolean healthy) {
+        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
         result.setUri(uri);
         result.setTransport(transport);
         result.setHealthy(healthy);
+        result.setBindings(Collections.singletonList(binding("1.0.0", "[1.0.0]")));
+        return result;
+    }
+    
+    private RuntimeVersionBinding binding(String runtimeVersion, String versionRange) {
+        RuntimeVersionBinding result = new RuntimeVersionBinding();
+        result.setRuntimeVersion(runtimeVersion);
+        result.setVersionRange(versionRange);
         return result;
     }
     

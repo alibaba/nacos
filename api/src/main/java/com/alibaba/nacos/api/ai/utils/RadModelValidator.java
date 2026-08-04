@@ -19,9 +19,11 @@ package com.alibaba.nacos.api.ai.utils;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -363,10 +365,14 @@ public final class RadModelValidator {
             ? EndpointHealthRule.REQUIRED : EndpointHealthRule.FORBIDDEN;
         validateEndpointBatch(endpointSet.getEndpoints(), namespaceId, agentName, protocol,
             healthRule, false, true);
+        for (AgentDiscoveryEndpoint endpoint : endpointSet.getEndpoints()) {
+            validateDiscoveryBindings(endpoint, source);
+        }
         validateEndpointOrder(endpointSet.getEndpoints(), namespaceId, agentName, protocol);
     }
     
-    private static void validateEndpointBatch(List<Endpoint> endpoints, String namespaceId,
+    private static void validateEndpointBatch(List<? extends Endpoint> endpoints,
+        String namespaceId,
         String agentName, String protocol, EndpointHealthRule healthRule,
         boolean deregistration, boolean requireCanonicalOutput) {
         Set<EndpointNaturalKey> keys = new HashSet<EndpointNaturalKey>();
@@ -378,6 +384,40 @@ public final class RadModelValidator {
             if (!keys.add(key)) {
                 throw invalid("Duplicate Endpoint natural key: " + key);
             }
+        }
+    }
+    
+    private static void validateDiscoveryBindings(AgentDiscoveryEndpoint endpoint,
+        EndpointSource source) {
+        List<RuntimeVersionBinding> bindings = endpoint.getBindings();
+        if (source == EndpointSource.DECLARED) {
+            if (bindings != null) {
+                throw invalid("DECLARED discovery Endpoint must not contain bindings");
+            }
+            return;
+        }
+        requireNonEmpty(bindings, "bindings");
+        AgentVersion previousVersion = null;
+        String previousRange = null;
+        for (RuntimeVersionBinding binding : bindings) {
+            requireNonNull(binding, "bindings item");
+            AgentVersion runtimeVersion = AgentVersion.parse(binding.getRuntimeVersion());
+            AgentVersionRange range = AgentVersionRange.parse(binding.getVersionRange());
+            if (!range.getValue().equals(binding.getVersionRange())) {
+                throw invalid("Runtime Endpoint versionRange must be canonical");
+            }
+            if (!range.contains(runtimeVersion)) {
+                throw invalid("Runtime Endpoint versionRange must contain runtimeVersion");
+            }
+            if (previousVersion != null) {
+                int comparison = previousVersion.compareTo(runtimeVersion);
+                if (comparison > 0 || comparison == 0
+                    && previousRange.compareTo(binding.getVersionRange()) >= 0) {
+                    throw invalid("Runtime Endpoint bindings must be strictly sorted");
+                }
+            }
+            previousVersion = runtimeVersion;
+            previousRange = binding.getVersionRange();
         }
     }
     
@@ -402,7 +442,8 @@ public final class RadModelValidator {
         }
     }
     
-    private static void validateEndpointOrder(List<Endpoint> endpoints, String namespaceId,
+    private static void validateEndpointOrder(List<? extends Endpoint> endpoints,
+        String namespaceId,
         String agentName, String protocol) {
         Endpoint previous = null;
         EndpointNaturalKey previousKey = null;

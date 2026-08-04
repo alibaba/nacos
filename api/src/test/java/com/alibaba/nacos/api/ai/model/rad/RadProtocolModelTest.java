@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.ai.model.rad;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.model.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -116,13 +117,17 @@ class RadProtocolModelTest {
         assertEquals(EndpointSource.RUNTIME,
             restoredRequest.getFilter().getEndpointSources().get(0));
         
-        Endpoint endpoint = new Endpoint();
+        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
         endpoint.setUri("https://10.0.0.8:8443/a2a");
         endpoint.setTransport("JSONRPC");
         endpoint.setPriority(0);
         endpoint.setWeight(1.0D);
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-h"));
         endpoint.setHealthy(false);
+        RuntimeVersionBinding binding = new RuntimeVersionBinding();
+        binding.setRuntimeVersion("1.0.6");
+        binding.setVersionRange("[1.0.0,2.0.0)");
+        endpoint.setBindings(Collections.singletonList(binding));
         EndpointSet endpointSet = new EndpointSet();
         endpointSet.setSource(EndpointSource.RUNTIME);
         endpointSet.setSourceRevision("murmur3-x64-128-v1:0123456789abcdef0123456789abcdef");
@@ -150,11 +155,12 @@ class RadProtocolModelTest {
         assertEquals("1.0.6", restoredResult.getVersion());
         assertEquals("a2a", restoredResult.getCallInterfaces().get(0).getProtocol());
         assertNotNull(restoredResult.getCallInterfaces().get(0).getNativeDescriptor());
-        Endpoint restoredEndpoint =
+        AgentDiscoveryEndpoint restoredEndpoint =
             restoredResult.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints()
                 .get(0);
         assertEquals(Boolean.FALSE, restoredEndpoint.getHealthy());
         assertEquals("cn-hangzhou-h", restoredEndpoint.getMetadata().get("zone"));
+        assertEquals("1.0.6", restoredEndpoint.getBindings().get(0).getRuntimeVersion());
     }
     
     @Test

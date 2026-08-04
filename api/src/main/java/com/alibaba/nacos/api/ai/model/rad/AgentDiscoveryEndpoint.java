@@ -16,49 +16,30 @@
 
 package com.alibaba.nacos.api.ai.model.rad;
 
-import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
- * Snapshot of endpoints from one declared or runtime source.
+ * Endpoint returned by Agent discovery with Runtime Version provenance when the source is
+ * {@code RUNTIME}.
  *
  * @author Nacos
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class EndpointSet implements Serializable {
+public class AgentDiscoveryEndpoint extends Endpoint {
     
     private static final long serialVersionUID = 1L;
     
-    private EndpointSource source;
+    private List<RuntimeVersionBinding> bindings;
     
-    private String sourceRevision;
-    
-    private List<AgentDiscoveryEndpoint> endpoints;
-    
-    public EndpointSource getSource() {
-        return source;
+    public List<RuntimeVersionBinding> getBindings() {
+        return bindings;
     }
     
-    public void setSource(EndpointSource source) {
-        this.source = source;
-    }
-    
-    public String getSourceRevision() {
-        return sourceRevision;
-    }
-    
-    public void setSourceRevision(String sourceRevision) {
-        this.sourceRevision = sourceRevision;
-    }
-    
-    public List<AgentDiscoveryEndpoint> getEndpoints() {
-        return endpoints;
-    }
-    
-    public void setEndpoints(List<AgentDiscoveryEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public void setBindings(List<RuntimeVersionBinding> bindings) {
+        this.bindings = bindings;
     }
 }

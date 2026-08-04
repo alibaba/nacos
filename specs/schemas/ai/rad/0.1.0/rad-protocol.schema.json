@@ -112,7 +112,7 @@
       "minLength": 1,
       "maxLength": 128,
       "pattern": "^[!-~]+$",
-      "description": "Opaque equality token scoped to one Agent Version, protocol, and source."
+      "description": "Opaque equality token scoped to one Agent discovery projection, protocol, source, and selector semantics."
     },
     "AbsoluteEndpointUri": {
       "type": "string",
@@ -525,13 +525,30 @@
         }
       }
     },
+    "RuntimeVersionBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtimeVersion",
+        "versionRange"
+      ],
+      "properties": {
+        "runtimeVersion": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "versionRange": {
+          "$ref": "#/$defs/VersionRange"
+        }
+      }
+    },
     "RuntimeEndpoint": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "uri",
         "transport",
-        "healthy"
+        "healthy",
+        "bindings"
       ],
       "properties": {
         "uri": {
@@ -557,6 +574,14 @@
         },
         "healthy": {
           "type": "boolean"
+        },
+        "bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RuntimeVersionBinding"
+          }
         }
       }
     },

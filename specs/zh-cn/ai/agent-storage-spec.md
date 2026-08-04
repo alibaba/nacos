@@ -465,17 +465,17 @@ metadata。
 
 ## 7. Runtime Source Revision
 
-针对每个 `(namespaceId, agentName, targetVersion, protocol, source=RUNTIME)`，服务端在完成
-以下步骤后生成 opaque `sourceRevision`：
+针对每个 Runtime 发现投影，服务端在完成以下步骤后生成 opaque `sourceRevision`：
 
 1. 从 `ServiceStorage` 读取完整的 Naming 内部 Service 投影；
-2. 选择包含目标 Version 的 binding；
+2. 选择至少包含一个兼容目标 Version 的 binding；
 3. 规范每个 Endpoint URI，校验并保持 transport，显式写入有效默认值 `priority=0` 和
    `weight=1`，并要求 `healthy` 存在；
 4. 校验每个自然键只有一个 canonical payload；
 5. 移除 `enabled=false`，并保留两种健康状态；
-6. 按自然键排序 Endpoint，并按 UTF-16 code-unit ordinal 顺序排序 metadata key；
-7. 对下文定义的 revision bytes 计算 MurmurHash3 x64 128。
+6. 为每个 enabled Endpoint 附加有序去重的命中 binding 并集；
+7. 按自然键排序 Endpoint，并按 UTF-16 code-unit ordinal 顺序排序 metadata key；
+8. 对下文定义的 revision bytes 计算 MurmurHash3 x64 128。
 
 在同一个投影中，自然键依次按 `normalizedHost` 的 UTF-16 code-unit ordinal 顺序、
 `effectivePort` 的数值顺序、transport 的 UTF-16 code-unit ordinal 顺序比较。实现不得使用
@@ -487,11 +487,11 @@ locale-sensitive collation。URI path 和 query 不属于自然键，因此不�
 murmur3-x64-128-v1:<32 lowercase hex>
 ```
 
-Revision 输入包含 URI、transport、effective priority 和 weight、公开 Endpoint metadata 和
-`healthy`。它不包含 runtimeVersion、versionRange、publisher identity 和 count、heartbeat
-时间、last-updated time 或 Naming 内部 revision。Runtime Version 和 range 不进入 hash，
-因为目标投影已经完成过滤。Range 或 enabled 变化会改变成员；health 变化会改变返回内容。
-目标投影变化时，两者都会推进 revision。
+Revision 输入包含 URI、transport、effective priority 和 weight、公开 Endpoint metadata、
+`healthy`，以及返回的每个 `runtimeVersion` 和规范化 `versionRange` binding。它不包含
+publisher identity 和 count、heartbeat 时间、last-updated time 或 Naming 内部 revision。
+binding 或在线兼容目标集合变化时，只要发现可见投影改变，即使 Endpoint payload 未变也会
+推进 revision。
 
 公开 Endpoint metadata 缺失或为空时，metadata entry count 均编码为零。
 
@@ -508,10 +508,11 @@ Watch 去重，不用于身份、鉴权、CAS 或防篡改。
 | `weight` | 八字节 IEEE-754 binary64 bits；negative zero 规范为 positive zero。 |
 | metadata | unsigned 四字节 entry count；随后按上述 string 编码依次写入有序 key 和 value。 |
 | `healthy` | 一个 byte：false 为 `0`，true 为 `1`。 |
+| bindings | unsigned 四字节 binding count；随后按上述 string 编码写入每个有序 `runtimeVersion` 和规范化 `versionRange`。 |
 
 空集合恰好为 `uint32be(0)`。Murmur 结果先输出 `h1` 再输出 `h2`，每个都是 unsigned
-八字节 big-endian 值，最后编码为小写十六进制。内部 Storage Schema version 1 同时以
-机器可读形式记录这些规则。
+八字节 big-endian 值，最后编码为小写十六进制。内部 Storage Schema 同时以机器可读
+形式记录这些规则。
 
 Naming `ServiceStorage` 提供当前已缓存的 Service 投影。Agent 读取路径直接从该结果派生公开
 Endpoint set 及其 revision，不维护第二份投影缓存。

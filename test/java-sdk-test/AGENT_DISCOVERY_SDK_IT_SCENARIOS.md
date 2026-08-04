@@ -47,6 +47,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, complete callback snapshot, unsubscribe, and post-unsubscribe suppression. |
 | `shouldPollExistingAgentOnlyWhenCompleteFingerprintChanges` | Subscribe-existing current value, Runtime source-revision replacement event, and unchanged-fingerprint callback de-duplication. |
 | `shouldTrackVersionEvolutionAcrossRegistrationOrders` | Version 1 definition-first, Version 2 Endpoint-first, Version 3 definition-first, latest/exact/label subscriptions, catalog order, and offline/online latest recalculation. |
+| `shouldSeparateDefaultRolloutPoolFromExplicitLatest` | Two independent publishers keep exact Version 1 and Version 2 Endpoints concurrently. The omitted selector uses latest Version metadata while aggregating every online Version's compatible Endpoints; explicit `label=latest` remains latest-only. The workflow verifies the interval before Version 2 Endpoint registration, the combined pool after registration, Version 1 removal after it goes offline, binding provenance, and polling callback de-duplication for both selectors. |
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
@@ -97,7 +98,9 @@ is never stopped.
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Discover latest, exact Version, and label references | Each reference resolves to the expected complete Version snapshot. | IT |
+| Discover with no Version or label | Definition metadata resolves from latest while Runtime Endpoints aggregate bindings compatible with every online Version. | IT + UT |
+| Discover with explicit `label=latest` | Definition metadata and Runtime Endpoints are both restricted to the current latest Version. | IT + UT |
+| Discover exact Version and custom label references | Each reference resolves definition metadata and Runtime Endpoints for only that exact resolved Version. | IT |
 | Discover with no Filter | All permitted call interfaces and Endpoint sources are retained. | IT |
 | Filter by protocol and protocolVersion | Matching interfaces remain; no match returns `callInterfaces=[]`. | IT |
 | Filter by Endpoint source | Matching interface remains; no matching source returns `endpointSets=[]`. | IT |
@@ -118,14 +121,17 @@ Endpoint, and replacement across an already-online Version.
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Publish Version 1, then register its exact Endpoint Batch | Latest and exact-Version Discover both return Version 1 and the Runtime Endpoint. | IT |
+| Publish Version 1, then register its exact Endpoint Batch | Omitted, explicit-latest, and exact-Version Discover all return Version 1 and the Runtime Endpoint. | IT |
 | Register an exact Version 2 Batch before Version 2 exists | Registration succeeds; latest Version 1 remains discoverable but the Version 2-only Endpoint is filtered out. | IT |
-| Publish Version 2 after its Batch was pre-registered | Search changes `latestVersion` to Version 2; latest and exact-Version Discover immediately return Version 2 with its pre-registered Endpoint. | IT |
+| Publish Version 2 before registering its Endpoint | Search and both selector modes use Version 2 metadata. Omitted Discover retains the Version 1 Endpoint, while explicit latest returns an empty Runtime set. | IT + UT |
+| Register Version 2 from a publisher independent of Version 1 | Omitted Discover returns Version 1 and Version 2 Endpoints with their bindings; explicit latest returns only Version 2. | IT + UT |
+| Take Version 1 offline while Version 2 remains online | Omitted Discover removes the Version 1-only Endpoint; explicit latest is unchanged and does not emit a duplicate callback. | IT + UT |
 | Keep a custom label on Version 1 while latest advances | Label Discover remains on Version 1 and does not follow latest implicitly. | IT |
 | Move the custom label from Version 1 to Version 2 | Label Discover and the matching polling subscription atomically move to Version 2. | IT |
-| Publish Version 3 before registering its exact Batch | Latest Discover changes to Version 3 with an empty Runtime set; the later Register changes only its Runtime source revision. | IT |
+| Publish Version 3 before registering its exact Batch | Explicit-latest Discover changes to Version 3 with an empty Runtime set; omitted Discover retains Endpoints compatible with older online Versions. The later Register changes the relevant Runtime source revision. | IT |
 | Exact Version 1 subscription while latest moves through later Versions | It does not receive a Version-change callback; it changes only if the Version 1 content or matching source revision changes. | IT + UT |
-| Latest subscription through Endpoint replacement and Version changes | It receives complete replacement snapshots for the Version/source-revision changes and suppresses unchanged polls. | IT + UT |
+| Omitted-selector subscription through a latest change | It receives latest metadata immediately but keeps older online-version Endpoints until their Versions go offline. | IT + UT |
+| Explicit-latest subscription through Endpoint replacement and Version changes | It switches strictly to the new latest pool, including an intentionally empty interval, and suppresses unchanged polls. | IT + UT |
 | Search after multiple online Versions | One catalog entry lists all online Versions in descending SemVer order and reports the current latest. | IT |
 | Publication range spans multiple Versions | Every matching exact/latest Discover sees the shared Endpoint; a nonmatching Version does not. | IT + UT |
 | Offline and then bring the current latest online while another Version remains online | Search/Discover follow the server-managed recalculated latest without changing publisher intent. | IT |
@@ -141,6 +147,7 @@ Endpoint, and replacement across an already-online Version.
 | Resolved Version changes | One complete replacement event is delivered. | IT + UT |
 | `contentDigest` changes | One complete replacement event is delivered. | UT |
 | Any `sourceRevision` changes | One complete replacement event is delivered. | IT + UT |
+| A Runtime binding changes while its Endpoint payload and health stay equal | The v2 Runtime revision changes because discovery-visible binding provenance is part of the snapshot. | UT |
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
 | Same reference/filter and two listener instances | Listener identities are isolated and both receive changes. | UT |
 | Repeat subscribe with the same listener identity | Only one polling record and one callback per change are retained. | UT |
@@ -232,6 +239,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Same workflow through gRPC and explicit HTTP clients | Query shapes and publication semantics are transport-equivalent. | IT |
 | Public and custom namespace workflows run together | Search, Discover, subscription, and publication never cross namespaces. | IT |
 | Version 1 online + Version 2 Endpoint pre-registration + Version 2 publish | Search, latest/exact/label Discover, and subscriptions agree at every transition. | IT |
+| Version 1 online + Version 2 publish before Endpoint registration + independent Version 2 publisher | Omitted selection preserves the rollout pool across the transition, explicit latest observes only Version 2, and both polling subscriptions converge without duplicate callbacks. | IT |
 | Real standalone restart with active gRPC and HTTP publications and polling subscriptions | The same live SDK process restores both transport-owned complete Batches, resumes both polling loops, then observes a later Version and both Endpoints. | Directed IT |
 
 ## Deferred In This Phase

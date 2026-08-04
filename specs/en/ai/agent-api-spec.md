@@ -127,6 +127,13 @@ complete replacement result. `getAll`, `selectOneHealthy`, protocol choice,
 priority/weight selection, and actual Agent calling are local SDK helpers, not
 additional remote operations.
 
+An `AgentReference` with neither `version` nor `label` is the rollout-safe
+default: it returns latest definition metadata and Runtime Endpoints compatible
+with any current online Version. Explicit `label=latest` requests a strict
+latest-only Runtime pool. Exact versions and custom labels remain exact after
+resolution. Polling subscriptions preserve the same distinction because they
+repeat the unchanged Discover request.
+
 One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
 including its single `runtimeVersion` and `versionRange`; omitted Endpoints are

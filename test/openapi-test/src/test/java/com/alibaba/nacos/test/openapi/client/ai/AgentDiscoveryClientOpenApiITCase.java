@@ -18,12 +18,19 @@ package com.alibaba.nacos.test.openapi.client.ai;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,7 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: Search returns an enabled Agent's online Version catalog, while
  *     Discover resolves latest and returns the native protocol descriptor plus its authoritative
- *     Endpoint sets.</li>
+ *     Endpoint sets. During a two-Version rollout, omitted selection retains all online-Version
+ *     Runtime Endpoints while explicit latest remains latest-only.</li>
  *     <li>Boundary/validation: omitted namespace uses {@code public}; Search filters by name,
  *     tags, and protocol; Discover supports protocol filtering and rejects mutually exclusive
  *     Version and label references.</li>
@@ -112,6 +120,75 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
                         .addParam("version", "1.0.0").addParam("label", "stable")), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "mutually exclusive");
     }
+
+    @Test
+    public void testDefaultRolloutPoolAndExplicitLatest() throws Exception {
+        String agentName = randomAiName("agent-client-rollout");
+        String versionOne = "1.0.0";
+        String versionTwo = "2.0.0";
+        String versionOneClient = randomHttpClientId();
+        String versionTwoClient = randomHttpClientId();
+        publishAgent(agentName, versionOne);
+        addCleanup(() -> deleteEndpointForm(versionOneClient, "AI",
+                endpointIdentity(agentName)));
+        addCleanup(() -> deleteEndpointForm(versionTwoClient, "AI",
+                endpointIdentity(agentName)));
+
+        assertEndpointRegistration(postEndpointForm(versionOneClient, "AI",
+                endpointRegistration(agentName, versionOne, 18101)));
+        JsonNode initialDefault = waitForRuntimeEndpointCount(agentName, null, null, 1);
+        assertEquals(versionOne, initialDefault.get("version").asText(),
+                initialDefault.toString());
+        assertRuntimeEndpoint(initialDefault, versionOne, 18101);
+
+        postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(
+                agentDraftCreateRequest(null, agentName, versionTwo, null)));
+        postFormOk(ADMIN_AGENT_PATH + "/force-publish", agentForm(
+                agentVersionCommand(null, agentName, versionTwo)));
+
+        JsonNode defaultBeforeVersionTwoEndpoint = waitForRuntimeEndpointCount(agentName,
+                null, null, 1);
+        JsonNode latestBeforeVersionTwoEndpoint = waitForRuntimeEndpointCount(agentName,
+                null, "latest", 0);
+        assertEquals(versionTwo, defaultBeforeVersionTwoEndpoint.get("version").asText(),
+                defaultBeforeVersionTwoEndpoint.toString());
+        assertEquals(versionTwo, latestBeforeVersionTwoEndpoint.get("version").asText(),
+                latestBeforeVersionTwoEndpoint.toString());
+        assertRuntimeEndpoint(defaultBeforeVersionTwoEndpoint, versionOne, 18101);
+        assertNotEquals(runtimeEndpointSet(defaultBeforeVersionTwoEndpoint)
+                        .get("sourceRevision").asText(),
+                runtimeEndpointSet(latestBeforeVersionTwoEndpoint)
+                        .get("sourceRevision").asText());
+
+        assertEndpointRegistration(postEndpointForm(versionTwoClient, "AI",
+                endpointRegistration(agentName, versionTwo, 18102)));
+        JsonNode combinedDefault = waitForRuntimeEndpointCount(agentName,
+                null, null, 2);
+        JsonNode latestOnly = waitForRuntimeEndpointCount(agentName,
+                null, "latest", 1);
+        JsonNode exactVersionOne = waitForRuntimeEndpointCount(agentName,
+                versionOne, null, 1);
+        assertRuntimeEndpoint(combinedDefault, versionOne, 18101);
+        assertRuntimeEndpoint(combinedDefault, versionTwo, 18102);
+        assertRuntimeEndpoint(latestOnly, versionTwo, 18102);
+        assertRuntimeEndpoint(exactVersionOne, versionOne, 18101);
+        assertFalse(hasRuntimeEndpoint(latestOnly, 18101), latestOnly.toString());
+        assertFalse(hasRuntimeEndpoint(exactVersionOne, 18102), exactVersionOne.toString());
+
+        postFormOk(ADMIN_AGENT_PATH + "/offline", agentForm(
+                agentVersionCommand(null, agentName, versionOne)));
+        JsonNode defaultAfterVersionOneOffline = waitForRuntimeEndpointCount(agentName,
+                null, null, 1);
+        JsonNode latestAfterVersionOneOffline = waitForRuntimeEndpointCount(agentName,
+                null, "latest", 1);
+        assertRuntimeEndpoint(defaultAfterVersionOneOffline, versionTwo, 18102);
+        assertFalse(hasRuntimeEndpoint(defaultAfterVersionOneOffline, 18101),
+                defaultAfterVersionOneOffline.toString());
+        assertEquals(runtimeEndpointSet(latestAfterVersionOneOffline)
+                        .get("sourceRevision").asText(),
+                runtimeEndpointSet(defaultAfterVersionOneOffline)
+                        .get("sourceRevision").asText());
+    }
     
     private JsonNode findCatalog(JsonNode page, String agentName) {
         for (JsonNode item : page.get("pageItems")) {
@@ -120,5 +197,95 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
             }
         }
         return MissingNode.getInstance();
+    }
+
+    private Map<String, String> endpointRegistration(String agentName, String runtimeVersion,
+            int port) {
+        Map<String, Object> endpoint = new LinkedHashMap<>();
+        endpoint.put("uri", "http://127.0.0.1:" + port + "/agent");
+        endpoint.put("transport", "HTTP");
+        endpoint.put("priority", 0);
+        endpoint.put("weight", 1.0D);
+        endpoint.put("metadata", Collections.singletonMap("version", runtimeVersion));
+
+        Map<String, String> result = new LinkedHashMap<>();
+        result.put("agentName", agentName);
+        result.put("runtimeVersion", runtimeVersion);
+        result.put("versionRange", "[" + runtimeVersion + "]");
+        result.put("protocol", "a2a");
+        result.put("endpoints", JacksonUtils.toJson(Collections.singletonList(endpoint)));
+        return result;
+    }
+
+    private Query endpointIdentity(String agentName) {
+        return Query.newInstance().addParam("agentName", agentName)
+                .addParam("protocol", "a2a");
+    }
+
+    private void assertEndpointRegistration(HttpResponse response) throws Exception {
+        assertEquals(200, response.code(), response.body());
+        assertSuccess(JacksonUtils.toObj(response.body()));
+    }
+
+    private JsonNode waitForRuntimeEndpointCount(String agentName, String version, String label,
+            int expectedCount) throws Exception {
+        JsonNode actual = null;
+        int retries = 50;
+        while (retries-- > 0) {
+            Query query = Query.newInstance().addParam("agentName", agentName);
+            if (version != null) {
+                query.addParam("version", version);
+            }
+            if (label != null) {
+                query.addParam("label", label);
+            }
+            actual = getJsonOk(AGENT_CLIENT_PATH, query).get("data");
+            if (runtimeEndpointSet(actual).get("endpoints").size() == expectedCount) {
+                return actual;
+            }
+            TimeUnit.MILLISECONDS.sleep(100L);
+        }
+        throw new AssertionError("Expected " + expectedCount
+                + " Runtime Endpoints, last discovery=" + actual);
+    }
+
+    private JsonNode runtimeEndpointSet(JsonNode discovery) {
+        for (JsonNode callInterface : discovery.get("callInterfaces")) {
+            if (!"a2a".equals(callInterface.get("protocol").asText())) {
+                continue;
+            }
+            for (JsonNode endpointSet : callInterface.get("endpointSets")) {
+                if ("RUNTIME".equals(endpointSet.get("source").asText())) {
+                    return endpointSet;
+                }
+            }
+        }
+        throw new AssertionError("Runtime Endpoint set is missing: " + discovery);
+    }
+
+    private void assertRuntimeEndpoint(JsonNode discovery, String runtimeVersion, int port) {
+        for (JsonNode endpoint : runtimeEndpointSet(discovery).get("endpoints")) {
+            if (endpoint.get("uri").asText().contains(":" + port + "/")) {
+                assertEquals(1, endpoint.get("bindings").size(), endpoint.toString());
+                assertEquals(runtimeVersion,
+                        endpoint.get("bindings").get(0).get("runtimeVersion").asText(),
+                        endpoint.toString());
+                assertEquals("[" + runtimeVersion + "]",
+                        endpoint.get("bindings").get(0).get("versionRange").asText(),
+                        endpoint.toString());
+                return;
+            }
+        }
+        throw new AssertionError("Runtime Endpoint for port " + port + " is missing: "
+                + discovery);
+    }
+
+    private boolean hasRuntimeEndpoint(JsonNode discovery, int port) {
+        for (JsonNode endpoint : runtimeEndpointSet(discovery).get("endpoints")) {
+            if (endpoint.get("uri").asText().contains(":" + port + "/")) {
+                return true;
+            }
+        }
+        return false;
     }
 }

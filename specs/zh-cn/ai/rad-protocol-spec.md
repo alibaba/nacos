@@ -208,8 +208,10 @@ versions[] AgentCatalogVersion {
 | `version` | 否 | 选择一个在线的精确版本 |
 | `label` | 否 | 在请求时将 Label 解析为一个在线版本 |
 
-`version` 与 `label` 互斥。两者都缺失或 `label` 为 `latest` 时，解析当前 latest
-版本。
+`version` 与 `label` 互斥。定义元数据始终解析为一个精确在线版本。两者都缺失时，
+定义使用当前 latest，但 Runtime Endpoint 的兼容目标集合包含全部在线版本。显式
+`label=latest` 的语义不同：定义和 Runtime Endpoint 都严格限制为当前 latest。
+精确 version 或其他 label 同样只使用一个解析版本。
 
 ### 3.6 `AgentDiscoveryFilter`
 
@@ -250,6 +252,11 @@ Filter 的全部字段都是可选字段：
 
 运行时 Endpoint 不使用 `endpointId`。
 
+发现结果使用 `AgentDiscoveryEndpoint`，它在这些 Endpoint 字段上增加
+`bindings[] { runtimeVersion, versionRange }`。`DECLARED` Endpoint 不包含该字段，
+每个 `RUNTIME` Endpoint 的该字段非空。它是使该 Endpoint 命中当前发现目标集合的
+enabled publisher binding 的有序去重并集；不会暴露 publisher 身份或存活时间。
+
 ### 3.8 Endpoint 自然键与规范化
 
 运行时 Endpoint 的自然键是：
@@ -282,7 +289,7 @@ Path、Query、Metadata、Priority 和 Weight 不参与身份。同一分组内�
 EndpointSet {
   source = DECLARED | RUNTIME
   sourceRevision
-  endpoints[]
+  endpoints[] AgentDiscoveryEndpoint
 }
 ```
 
@@ -310,7 +317,8 @@ AgentDiscoveryResult
 
 规则：
 
-- `version` 是从 `AgentReference` 最终解析出的在线精确版本。
+- `version` 是提供定义元数据的在线精确版本。省略选择器时它仍为当前 latest，即使
+  Runtime Endpoint 可以同时服务多个在线版本。
 - 一个版本最多包含 16 个调用接口，Protocol 不重复。
 - 调用接口保持 Agent 版本定义中的顺序。
 - `nativeDescriptor` 可以是任意非 null JSON 值。
@@ -327,12 +335,12 @@ AgentDiscoveryResult
 - 不覆盖状态、latest、Label、管理元数据或运行时 Endpoint。
 - Consumer 只比较完整值，不自行计算。
 
-每个 `(namespaceId, agentName, version, protocol, source)` 具有一个
-`sourceRevision`：
+每个发现投影具有一个 `sourceRevision`，其作用域包含 namespace、Agent、定义版本、
+protocol、source 和选择器语义：
 
 - 它是不透明的相等性 Token，不能排序或跨作用域比较。
-- Endpoint 成员、URI、Transport、Priority、Weight、公开 Metadata 或健康状态变化时
-  必须改变。
+- Endpoint 成员、URI、Transport、Priority、Weight、公开 Metadata、健康状态或返回的
+  Runtime binding 来源变化时必须改变。
 - 心跳时间、发布者数量或内部存储 Revision 本身不要求它改变。
 - 空 EndpointSet 也具有稳定 Revision。
 - `DECLARED` 集合使用 Version `contentDigest`。Nacos `RUNTIME` 集合使用
@@ -397,15 +405,19 @@ filter?: AgentDiscoveryFilter
 Registry 按以下顺序执行 Discover：
 
 1. 在生效命名空间中按原值查找 `agentName`。
-2. 使用 `version`、`label` 或 latest 解析目标版本。
-3. 校验可见性、Agent Enabled 状态和目标 Online 状态。
-4. 按版本定义顺序加载调用接口。
-5. 保留 `versionRange` 包含目标精确版本的运行时 Publication。
-6. 排除 `enabled=false` 的运行时 Instance，保留 `healthy=true` 和
+2. 使用 `version`、`label` 或 latest 解析一个定义版本。
+3. 校验可见性、Agent Enabled 状态和定义版本 Online 状态。
+4. 按定义版本顺序加载调用接口。这些接口是权威定义；latest 已移除的 protocol 不会
+   被旧 Runtime Publication 重新带回。
+5. 构建 Runtime 兼容目标集合。`version` 和 `label` 都缺失时包含全部当前在线版本；
+   其他情况只包含解析出的精确版本，包括显式 `label=latest`。
+6. 保留 `versionRange` 至少包含一个目标版本的 Runtime binding，并在每个 Endpoint
+   返回命中 binding 的并集。
+7. 排除 `enabled=false` 的运行时 Instance，保留 `healthy=true` 和
    `healthy=false` 的 Instance。
-7. 聚合具有相同公开 Endpoint 自然键的匹配贡献。
-8. 应用可选 Filter。
-9. 按调用接口、来源、Priority 和稳定自然键返回完整快照。
+8. 聚合具有相同公开 Endpoint 自然键的匹配贡献。
+9. 应用可选 Filter。
+10. 按调用接口、来源、Priority 和稳定自然键返回完整快照。
 
 过滤后无匹配结果的固定形态为：
 
@@ -615,7 +627,11 @@ JSON Schema 只校验 Version Range 字符串的粗略语法，不能替代领�
         "priority": 0,
         "weight": 1,
         "metadata": {"zone": "cn-hangzhou-h"},
-        "healthy": true
+        "healthy": true,
+        "bindings": [{
+          "runtimeVersion": "1.0.6",
+          "versionRange": "[1.0.0,2.0.0)"
+        }]
       }]
     }, {
       "source": "DECLARED",

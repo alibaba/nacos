@@ -37,6 +37,7 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -68,8 +69,9 @@ import java.util.Set;
  * Application service for RAD Search and one-shot Discover.
  *
  * <p>This service deliberately owns no transport or subscription state. Search derives its
- * catalog from visible Agent summaries. Discover combines one immutable online Version with the
- * current Runtime Registry projection and caches verified Version content by content digest.</p>
+ * catalog from visible Agent summaries. Discover uses one immutable online Version for definition
+ * metadata, combines it with the selector's Runtime compatibility pool, and caches verified
+ * Version content by content digest.</p>
  *
  * @author Nacos
  */
@@ -146,7 +148,7 @@ public class AgentDiscoveryApplicationService {
     }
     
     /**
-     * Discover one visible, enabled, and online Agent Version.
+     * Discover one visible and enabled Agent using online definition and Runtime Versions.
      *
      * @param request RAD Discover request
      * @return complete replacement discovery snapshot
@@ -161,6 +163,7 @@ public class AgentDiscoveryApplicationService {
             throw notFound(reference.getAgentName());
         }
         String version = resolveVersion(agent, reference);
+        List<String> runtimeVersions = resolveRuntimeVersions(agent, reference, version);
         AgentVersionDetail detail =
             loadOnlineVersion(namespaceId, reference.getAgentName(), version);
         
@@ -170,7 +173,7 @@ public class AgentDiscoveryApplicationService {
         result.setVersion(version);
         result.setContentDigest(detail.getContentDigest());
         result.setCallInterfaces(resolveCallInterfaces(namespaceId, reference.getAgentName(),
-            version, detail, request.getFilter()));
+            runtimeVersions, detail, request.getFilter()));
         RadModelValidator.validate(result);
         return result;
     }
@@ -281,6 +284,23 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
+    private List<String> resolveRuntimeVersions(Agent agent, AgentReference reference,
+        String definitionVersion) throws NacosApiException {
+        if (reference.getVersion() != null || reference.getLabel() != null) {
+            return Collections.singletonList(definitionVersion);
+        }
+        AgentVersionCatalog catalog = agent.getVersionCatalog();
+        if (catalog == null || catalog.getOnlineVersions() == null
+            || catalog.getOnlineVersions().isEmpty()) {
+            throw notFound(reference.getAgentName());
+        }
+        List<String> result = new ArrayList<String>(catalog.getOnlineVersions().size());
+        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+            result.add(entry.getVersion());
+        }
+        return result;
+    }
+    
     private AgentVersionDetail loadOnlineVersion(String namespaceId, String agentName,
         String version) throws NacosException {
         AiResourceVersion row =
@@ -318,7 +338,7 @@ public class AgentDiscoveryApplicationService {
     }
     
     private List<AgentDiscoveryCallInterface> resolveCallInterfaces(String namespaceId,
-        String agentName, String version, AgentVersionDetail detail,
+        String agentName, List<String> runtimeVersions, AgentVersionDetail detail,
         AgentDiscoveryFilter filter) throws NacosException {
         List<AgentDiscoveryCallInterface> result =
             new ArrayList<AgentDiscoveryCallInterface>();
@@ -332,8 +352,8 @@ public class AgentDiscoveryApplicationService {
             callInterface.setProtocolVersion(source.getProtocolVersion());
             callInterface.setDescriptorMediaType(source.getDescriptorMediaType());
             callInterface.setNativeDescriptor(source.getNativeDescriptor());
-            callInterface.setEndpointSets(resolveEndpointSets(namespaceId, agentName, version,
-                detail.getContentDigest(), source, filter));
+            callInterface.setEndpointSets(resolveEndpointSets(namespaceId, agentName,
+                runtimeVersions, detail.getContentDigest(), source, filter));
             result.add(callInterface);
         }
         return result;
@@ -353,7 +373,8 @@ public class AgentDiscoveryApplicationService {
     }
     
     private List<EndpointSet> resolveEndpointSets(String namespaceId, String agentName,
-        String version, String contentDigest, AgentCallInterface callInterface,
+        List<String> runtimeVersions, String contentDigest,
+        AgentCallInterface callInterface,
         AgentDiscoveryFilter filter) throws NacosException {
         List<EndpointSet> result = new ArrayList<EndpointSet>();
         for (EndpointSource source : callInterface.getEndpointSourceOrder()) {
@@ -363,7 +384,7 @@ public class AgentDiscoveryApplicationService {
             }
             EndpointSet endpointSet = source == EndpointSource.RUNTIME
                 ? runtimeRegistryService.getRuntimeEndpointSet(namespaceId, agentName,
-                    callInterface.getProtocol(), version)
+                    callInterface.getProtocol(), runtimeVersions)
                 : declaredEndpointSet(contentDigest, callInterface.getDeclaredEndpoints());
             endpointSet.setEndpoints(filterEndpoints(namespaceId, agentName,
                 callInterface.getProtocol(), endpointSet.getEndpoints(), filter));
@@ -376,21 +397,46 @@ public class AgentDiscoveryApplicationService {
         EndpointSet result = new EndpointSet();
         result.setSource(EndpointSource.DECLARED);
         result.setSourceRevision(contentDigest);
-        result.setEndpoints(endpoints == null ? Collections.<Endpoint>emptyList() : endpoints);
+        List<AgentDiscoveryEndpoint> discoveryEndpoints =
+            new ArrayList<AgentDiscoveryEndpoint>();
+        if (endpoints != null) {
+            for (Endpoint endpoint : endpoints) {
+                discoveryEndpoints.add(copyDiscoveryEndpoint(endpoint));
+            }
+        }
+        result.setEndpoints(discoveryEndpoints);
         return result;
     }
     
-    private List<Endpoint> filterEndpoints(String namespaceId, String agentName, String protocol,
-        List<Endpoint> endpoints, AgentDiscoveryFilter filter) {
-        List<Endpoint> result = new ArrayList<Endpoint>();
-        for (Endpoint source : endpoints) {
-            Endpoint endpoint = EndpointCanonicalizer.canonicalize(source);
+    private List<AgentDiscoveryEndpoint> filterEndpoints(String namespaceId, String agentName,
+        String protocol, List<AgentDiscoveryEndpoint> endpoints, AgentDiscoveryFilter filter) {
+        List<AgentDiscoveryEndpoint> result = new ArrayList<AgentDiscoveryEndpoint>();
+        for (AgentDiscoveryEndpoint source : endpoints) {
+            AgentDiscoveryEndpoint endpoint = canonicalizeDiscoveryEndpoint(source);
             if (matchesEndpoint(endpoint, filter)) {
                 result.add(endpoint);
             }
         }
         Collections.sort(result,
             (left, right) -> compareEndpoints(namespaceId, agentName, protocol, left, right));
+        return result;
+    }
+    
+    private AgentDiscoveryEndpoint canonicalizeDiscoveryEndpoint(AgentDiscoveryEndpoint source) {
+        AgentDiscoveryEndpoint result =
+            copyDiscoveryEndpoint(EndpointCanonicalizer.canonicalize(source));
+        result.setBindings(source.getBindings());
+        return result;
+    }
+    
+    private AgentDiscoveryEndpoint copyDiscoveryEndpoint(Endpoint source) {
+        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+        result.setUri(source.getUri());
+        result.setTransport(source.getTransport());
+        result.setPriority(source.getPriority());
+        result.setWeight(source.getWeight());
+        result.setMetadata(source.getMetadata());
+        result.setHealthy(source.getHealthy());
         return result;
     }
     
