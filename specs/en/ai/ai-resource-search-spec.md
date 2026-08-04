@@ -116,9 +116,16 @@ retryable work both use `pending`; `retry_count`, `next_execute_at`, and
 retained as bounded, per-live-resource checkpoints rather than task history.
 Resource lifecycle changes increment the task revision and restart the row at
 `base_index`. A claimed revision may advance, retry, or complete only while it
-still owns the row. A lease permits another node to resume work after process
-failure. Returning an enhancement task to `base_index` is also revision-fenced,
-so a stale worker cannot overwrite a newer lifecycle revision. Base and
+still owns the row. Revision represents scheduled task content and is not
+incremented by claiming. Each successful claim increments an independent,
+monotonic `lease_token`. Lease renewal, state transitions, and superseded-work
+release compare this token so an expired worker cannot mutate or release a
+newer worker's lease. Lifecycle scheduling preserves an unexpired lease across
+any number of coalesced updates; the replacement revision becomes claimable
+only after the current token holder releases the lease or the lease expires. A
+lease permits another node to resume work after process failure. Returning an
+enhancement task to `base_index` is also revision- and token-fenced, so a stale
+worker cannot overwrite a newer lifecycle revision or claim. Base and
 enhancement stages both renew leases on an executor independent from polling;
 enhancement tasks are not claimed beyond configured worker concurrency.
 
@@ -128,8 +135,8 @@ The search-index task input is stored in `task_payload` with a mandatory
 revision is scheduled and remains immutable while that revision executes.
 Enhancement completion metadata is stored in versioned `task_result`; the
 current result contains the completed enhancement fingerprint. Scheduler
-metadata used by polling, claiming, retry, lease recovery, and revision fencing
-remains in dedicated relational columns.
+metadata used by polling, claiming, retry, lease recovery, revision fencing,
+and lease-token fencing remains in dedicated relational columns.
 
 A malformed or unsupported task payload is quarantined as a completed
 checkpoint with its decode error. It must not fail or starve other due tasks;
@@ -217,9 +224,11 @@ to `ai_resource_task` before enabling search. Existing `resource_type`,
 the Unix Epoch millisecond `next_execute_at`. Existing `retry` rows become
 `pending`. An intermediate `ai_resource_task` schema that used
 `next_execute_time` and `lease_until` timestamps must convert them to
-`next_execute_at` and `lease_expire_at` Epoch milliseconds. Migrated rows use
-`task_type=search_index`, and their task keys are regenerated with the task
-type included. Existing task intent must be retained during a live upgrade.
+`next_execute_at` and `lease_expire_at` Epoch milliseconds. Existing
+`ai_resource_task` tables must also add the non-null `lease_token` BIGINT column
+with default `0`. Migrated rows use `task_type=search_index`, and their task
+keys are regenerated with the task type included. Existing task intent must be
+retained during a live upgrade.
 For an unreleased development deployment where task state may be discarded,
 the old task table may instead be dropped and the current schema recreated;
 reconciliation then repairs inconsistent base indexes.
@@ -244,8 +253,10 @@ validation, cursor pagination, full-set aggregation beyond one page,
 transactional replacement, both durable task stages, lease recovery,
 superseded revisions, versioned task payload and result, task-type isolation,
 timezone-independent Epoch scheduling, deterministic-clock lease and retry
-boundaries, idempotent enhancement retry, configuration-fingerprint recording
-without global rescheduling, lifecycle enhancement intent, and
+boundaries, consecutive lifecycle coalescing that preserves an active lease,
+stale-worker release fencing by lease token, idempotent enhancement retry,
+configuration-fingerprint recording without global rescheduling, lifecycle
+enhancement intent, and
 repair-triggered reconciliation enhancement without historical full refresh.
 Protocol adaptors separately test their request grammar and response
 conformance.

@@ -123,7 +123,7 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         }
         long nowEpochMillis = clock.millis();
         String sql = "SELECT task_key, namespace_id, task_type, task_stage, status, task_payload, "
-            + "retry_count, revision FROM ai_resource_task WHERE task_type=? AND "
+            + "retry_count, revision, lease_token FROM ai_resource_task WHERE task_type=? AND "
             + "((status=? AND next_execute_at<=? "
             + "AND (lease_expire_at IS NULL OR lease_expire_at<?)) OR "
             + "(status=? AND lease_expire_at<?)) "
@@ -163,16 +163,18 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         long nowEpochMillis = clock.millis();
         long leaseExpireAt = nowEpochMillis + leaseDurationMillis;
         int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET status=?, "
-            + "revision=revision+1, lease_expire_at=?, gmt_modified=CURRENT_TIMESTAMP "
+            + "lease_token=lease_token+1, lease_expire_at=?, "
+            + "gmt_modified=CURRENT_TIMESTAMP "
             + "WHERE task_key=? AND task_type=? AND revision=? AND task_stage=? "
+            + "AND lease_token=? "
             + "AND ((status=? AND next_execute_at<=? "
             + "AND (lease_expire_at IS NULL OR lease_expire_at<?)) OR "
             + "(status=? AND lease_expire_at<?))",
             STATUS_PROCESSING, leaseExpireAt, task.getTaskKey(), AiResourceIndexTask.TASK_TYPE,
-            task.getRevision(), task.getTaskStage(), STATUS_PENDING, nowEpochMillis,
-            nowEpochMillis, STATUS_PROCESSING, nowEpochMillis);
+            task.getRevision(), task.getTaskStage(), task.getLeaseToken(), STATUS_PENDING,
+            nowEpochMillis, nowEpochMillis, STATUS_PROCESSING, nowEpochMillis);
         if (updated == 1) {
-            task.setRevision(task.getRevision() + 1);
+            task.setLeaseToken(task.getLeaseToken() + 1);
             task.setStatus(STATUS_PROCESSING);
         }
         return updated == 1;
@@ -180,11 +182,12 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     
     @Override
     public boolean renewLease(AiResourceIndexTask task, long leaseDurationMillis) {
+        long nowEpochMillis = clock.millis();
         int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET "
-            + "lease_expire_at=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
-            + "AND task_type=? AND task_stage=? AND status=?",
-            clock.millis() + leaseDurationMillis, task.getTaskKey(), task.getRevision(),
-            AiResourceIndexTask.TASK_TYPE, task.getTaskStage(), STATUS_PROCESSING);
+            + "lease_expire_at=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? "
+            + "AND task_type=? AND lease_token=? AND lease_expire_at>=?",
+            nowEpochMillis + leaseDurationMillis, task.getTaskKey(),
+            AiResourceIndexTask.TASK_TYPE, task.getLeaseToken(), nowEpochMillis);
         return updated == 1;
     }
     
@@ -194,10 +197,10 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             + "task_stage=?, status=?, task_result=NULL, retry_count=0, "
             + "next_execute_at=?, lease_expire_at=NULL, last_error=NULL, "
             + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
-            + "AND task_type=? AND task_stage=? AND status=?",
+            + "AND task_type=? AND task_stage=? AND status=? AND lease_token=?",
             AiResourceIndexTask.STAGE_LLM_ENHANCEMENT, STATUS_PENDING, clock.millis(),
             task.getTaskKey(), task.getRevision(), AiResourceIndexTask.TASK_TYPE,
-            task.getTaskStage(), STATUS_PROCESSING);
+            task.getTaskStage(), STATUS_PROCESSING, task.getLeaseToken());
         return updated == 1;
     }
     
@@ -209,9 +212,10 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             + "task_stage=?, status=?, task_result=NULL, retry_count=0, revision=revision+1, "
             + "next_execute_at=?, lease_expire_at=NULL, last_error=NULL, "
             + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND task_type=? AND revision=? "
-            + "AND task_stage=? AND status=?", payload, AiResourceIndexTask.STAGE_BASE_INDEX,
-            STATUS_PENDING, clock.millis(), task.getTaskKey(), AiResourceIndexTask.TASK_TYPE,
-            task.getRevision(), task.getTaskStage(), STATUS_PROCESSING);
+            + "AND task_stage=? AND status=? AND lease_token=?", payload,
+            AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PENDING, clock.millis(),
+            task.getTaskKey(), AiResourceIndexTask.TASK_TYPE, task.getRevision(),
+            task.getTaskStage(), STATUS_PROCESSING, task.getLeaseToken());
         return updated == 1;
     }
     
@@ -220,10 +224,11 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET status=?, "
             + "task_result=?, retry_count=0, "
             + "lease_expire_at=NULL, last_error=NULL, gmt_modified=CURRENT_TIMESTAMP "
-            + "WHERE task_key=? AND task_type=? AND revision=? AND task_stage=? AND status=?",
+            + "WHERE task_key=? AND task_type=? AND revision=? AND task_stage=? AND status=? "
+            + "AND lease_token=?",
             STATUS_COMPLETED, taskResult(enhancementFingerprint), task.getTaskKey(),
             AiResourceIndexTask.TASK_TYPE, task.getRevision(), task.getTaskStage(),
-            STATUS_PROCESSING);
+            STATUS_PROCESSING, task.getLeaseToken());
         return updated == 1;
     }
     
@@ -231,9 +236,9 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     public boolean remove(AiResourceIndexTask task) {
         int updated = getJdbcTemplate().update(
             "DELETE FROM ai_resource_task WHERE task_key=? AND task_type=? AND revision=? "
-                + "AND task_stage=? AND status=?",
+                + "AND task_stage=? AND status=? AND lease_token=?",
             task.getTaskKey(), AiResourceIndexTask.TASK_TYPE, task.getRevision(),
-            task.getTaskStage(), STATUS_PROCESSING);
+            task.getTaskStage(), STATUS_PROCESSING, task.getLeaseToken());
         return updated == 1;
     }
     
@@ -242,10 +247,10 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         int updated = getJdbcTemplate().update("UPDATE ai_resource_task SET status=?, "
             + "retry_count=retry_count+1, next_execute_at=?, lease_expire_at=NULL, "
             + "last_error=?, gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND revision=? "
-            + "AND task_type=? AND task_stage=? AND status=?",
+            + "AND task_type=? AND task_stage=? AND status=? AND lease_token=?",
             STATUS_PENDING, clock.millis() + retryDelayMillis, truncate(lastError),
             task.getTaskKey(), task.getRevision(), AiResourceIndexTask.TASK_TYPE,
-            task.getTaskStage(), STATUS_PROCESSING);
+            task.getTaskStage(), STATUS_PROCESSING, task.getLeaseToken());
         return updated == 1;
     }
     
@@ -253,20 +258,20 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     public void releaseSuperseded(AiResourceIndexTask task) {
         getJdbcTemplate().update("UPDATE ai_resource_task SET lease_expire_at=NULL, "
             + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND task_type=? "
-            + "AND revision<>? AND status=?", task.getTaskKey(), AiResourceIndexTask.TASK_TYPE,
-            task.getRevision(), STATUS_PENDING);
+            + "AND revision<>? AND status=? AND lease_token=?", task.getTaskKey(),
+            AiResourceIndexTask.TASK_TYPE, task.getRevision(), STATUS_PENDING,
+            task.getLeaseToken());
     }
     
     private int updateExistingLifecycleTask(String taskKey, String namespaceId,
         String taskPayload, long nowEpochMillis) {
         return getJdbcTemplate().update("UPDATE ai_resource_task SET namespace_id=?, "
-            + "task_payload=?, task_stage=?, "
-            + "lease_expire_at=CASE WHEN status=? THEN lease_expire_at ELSE NULL END, status=?, "
+            + "task_payload=?, task_stage=?, status=?, "
             + "task_result=NULL, retry_count=0, revision=revision+1, "
             + "next_execute_at=?, last_error=NULL, "
             + "gmt_modified=CURRENT_TIMESTAMP WHERE task_key=? AND task_type=?", namespaceId,
-            taskPayload, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PROCESSING, STATUS_PENDING,
-            nowEpochMillis, taskKey, AiResourceIndexTask.TASK_TYPE);
+            taskPayload, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PENDING, nowEpochMillis,
+            taskKey, AiResourceIndexTask.TASK_TYPE);
     }
     
     private int reopenCompletedReconciliationTask(String taskKey, String namespaceId,
@@ -305,8 +310,8 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
         long nowEpochMillis) {
         getJdbcTemplate().update("INSERT INTO ai_resource_task "
             + "(task_key, namespace_id, task_type, task_stage, status, task_payload, task_result, "
-            + "retry_count, revision, next_execute_at, lease_expire_at, last_error, gmt_create, "
-            + "gmt_modified) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, ?, NULL, NULL, "
+            + "retry_count, revision, next_execute_at, lease_token, lease_expire_at, last_error, "
+            + "gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, ?, 0, NULL, NULL, "
             + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", taskKey, namespaceId,
             AiResourceIndexTask.TASK_TYPE, AiResourceIndexTask.STAGE_BASE_INDEX, STATUS_PENDING,
             taskPayload, nowEpochMillis);
@@ -367,6 +372,7 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             applyPayload(task, rs.getString("task_payload"));
             task.setRetryCount(rs.getInt("retry_count"));
             task.setRevision(rs.getLong("revision"));
+            task.setLeaseToken(rs.getLong("lease_token"));
             return task;
         }
         

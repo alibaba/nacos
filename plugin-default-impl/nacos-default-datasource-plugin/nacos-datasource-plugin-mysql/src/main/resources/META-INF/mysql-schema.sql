@@ -309,6 +309,7 @@ CREATE TABLE `ai_resource_task` (
     `task_result` text COMMENT '任务结果，JSON文本',
     `retry_count` int NOT NULL DEFAULT 0 COMMENT '当前阶段重试次数',
     `revision` bigint(20) NOT NULL DEFAULT 1 COMMENT '任务修订号',
+    `lease_token` bigint(20) NOT NULL DEFAULT 0 COMMENT '租约令牌',
     `next_execute_at` bigint(20) NOT NULL COMMENT '最早执行时间，Unix Epoch毫秒',
     `lease_expire_at` bigint(20) DEFAULT NULL COMMENT '租约到期时间，Unix Epoch毫秒',
     `last_error` varchar(2000) DEFAULT NULL COMMENT '最近错误',

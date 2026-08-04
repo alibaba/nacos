@@ -43,6 +43,7 @@ class DerbyAiResourceTaskSchemaTest {
         assertTrue(schema.contains("task_payload CLOB"));
         assertTrue(schema.contains("task_result CLOB"));
         assertTrue(schema.contains("retry_count int"));
+        assertTrue(schema.contains("lease_token bigint"));
         assertTrue(schema.contains("next_execute_at bigint"));
         assertTrue(schema.contains("lease_expire_at bigint"));
         assertTrue(schema.contains("idx_ai_resource_task_due"));

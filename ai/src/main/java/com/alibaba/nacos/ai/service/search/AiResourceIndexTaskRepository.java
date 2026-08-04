@@ -45,13 +45,13 @@ public interface AiResourceIndexTaskRepository {
     List<AiResourceIndexTask> findDueTasks(int limit);
     
     /**
-     * Claim one task revision for exclusive processing for the given lease duration in
-     * milliseconds.
+     * Claim one task revision for exclusive processing with a new lease token for the given
+     * duration in milliseconds.
      */
     boolean claim(AiResourceIndexTask task, long leaseDurationMillis);
     
     /**
-     * Renew the lease held by one processing task revision for the given duration in
+     * Renew the lease identified by the task's lease token for the given duration in
      * milliseconds.
      */
     boolean renewLease(AiResourceIndexTask task, long leaseDurationMillis);
@@ -84,7 +84,7 @@ public interface AiResourceIndexTaskRepository {
     boolean retry(AiResourceIndexTask task, long retryDelayMillis, String lastError);
     
     /**
-     * Release a replacement revision that was scheduled while this revision was processing.
+     * Release a replacement revision only while it still carries this worker's lease token.
      */
     void releaseSuperseded(AiResourceIndexTask task);
 }

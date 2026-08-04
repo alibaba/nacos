@@ -325,6 +325,7 @@ CREATE TABLE ai_resource_task (
     task_result CLOB,
     retry_count NUMBER(10) DEFAULT 0 NOT NULL,
     revision NUMBER(20) DEFAULT 1 NOT NULL,
+    lease_token NUMBER(20) DEFAULT 0 NOT NULL,
     next_execute_at NUMBER(19) NOT NULL,
     lease_expire_at NUMBER(19) DEFAULT NULL,
     last_error VARCHAR2(2000) DEFAULT NULL,

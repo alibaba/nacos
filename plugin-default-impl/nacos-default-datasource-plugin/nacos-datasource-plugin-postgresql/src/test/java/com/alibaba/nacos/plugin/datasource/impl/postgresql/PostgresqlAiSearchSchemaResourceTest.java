@@ -40,6 +40,7 @@ class PostgresqlAiSearchSchemaResourceTest {
         assertTrue(mainSchema.contains("\"task_payload\" text"));
         assertTrue(mainSchema.contains("\"task_result\" text"));
         assertTrue(mainSchema.contains("\"retry_count\" int4"));
+        assertTrue(mainSchema.contains("\"lease_token\" int8"));
         assertTrue(mainSchema.contains("\"next_execute_at\" int8"));
         assertTrue(mainSchema.contains("\"lease_expire_at\" int8"));
         assertFalse(mainSchema.contains("\"next_execute_time\" timestamp(6)"));

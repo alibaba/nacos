@@ -49,6 +49,8 @@ public class AiResourceIndexTask {
     
     private long revision;
     
+    private long leaseToken;
+    
     public String getTaskKey() {
         return taskKey;
     }
@@ -127,5 +129,13 @@ public class AiResourceIndexTask {
     
     public void setRevision(long revision) {
         this.revision = revision;
+    }
+    
+    public long getLeaseToken() {
+        return leaseToken;
+    }
+    
+    public void setLeaseToken(long leaseToken) {
+        this.leaseToken = leaseToken;
     }
 }

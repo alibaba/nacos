@@ -650,6 +650,7 @@ CREATE TABLE "ai_resource_task" (
   "task_result" text,
   "retry_count" int4 NOT NULL DEFAULT 0,
   "revision" int8 NOT NULL DEFAULT 1,
+  "lease_token" int8 NOT NULL DEFAULT 0,
   "next_execute_at" int8 NOT NULL,
   "lease_expire_at" int8,
   "last_error" varchar(2000),

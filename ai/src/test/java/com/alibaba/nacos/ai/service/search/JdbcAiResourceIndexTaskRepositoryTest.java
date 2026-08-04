@@ -62,7 +62,8 @@ class JdbcAiResourceIndexTaskRepositoryTest {
             + "status varchar(16) NOT NULL, task_payload clob NOT NULL, task_result clob,"
             + "retry_count int NOT NULL, revision bigint NOT NULL,"
             + "next_execute_at bigint NOT NULL,"
-            + "lease_expire_at bigint, last_error varchar(2000),"
+            + "lease_token bigint NOT NULL DEFAULT 0, lease_expire_at bigint,"
+            + "last_error varchar(2000),"
             + "gmt_create timestamp NOT NULL, gmt_modified timestamp NOT NULL)");
         setCurrentEpochMillis(INITIAL_EPOCH_MILLIS);
     }
@@ -73,6 +74,7 @@ class JdbcAiResourceIndexTaskRepositoryTest {
         AiResourceIndexTask firstRevision = repository.findDueTasks(10).get(0);
         assertTrue(repository.claim(firstRevision, 60_000L));
         
+        repository.schedule("public", "skill", "avatar", false);
         repository.schedule("public", "skill", "avatar", false);
         assertFalse(repository.complete(firstRevision, "old-fingerprint"));
         assertFalse(repository.retry(firstRevision, 30_000L, "old failure"));
@@ -88,12 +90,33 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     }
     
     @Test
+    void staleWorkerShouldNotReleaseNewerWorkerLease() {
+        repository.schedule("public", "skill", "avatar", false);
+        AiResourceIndexTask staleWorker = repository.findDueTasks(10).get(0);
+        assertTrue(repository.claim(staleWorker, 1_000L));
+        repository.schedule("public", "skill", "avatar", false);
+        advanceTime(1_001L);
+        
+        AiResourceIndexTask currentWorker = repository.findDueTasks(10).get(0);
+        assertTrue(repository.claim(currentWorker, 60_000L));
+        repository.schedule("public", "skill", "avatar", false);
+        
+        repository.releaseSuperseded(staleWorker);
+        assertTrue(repository.findDueTasks(10).isEmpty());
+        assertTrue(repository.renewLease(currentWorker, 60_000L));
+        
+        repository.releaseSuperseded(currentWorker);
+        assertEquals(1, repository.findDueTasks(10).size());
+    }
+    
+    @Test
     void baseTaskShouldAdvanceAndRetainEnhancementCheckpoint() {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask baseTask = repository.findDueTasks(10).get(0);
         assertTrue(baseTask.isEnhancementRequested());
         assertTrue(repository.claim(baseTask, 60_000L));
-        assertEquals(2L, baseTask.getRevision());
+        assertEquals(1L, baseTask.getRevision());
+        assertEquals(1L, baseTask.getLeaseToken());
         assertTrue(repository.advanceToEnhancement(baseTask));
         
         AiResourceIndexTask enhancementTask = repository.findDueTasks(10).get(0);
@@ -140,7 +163,7 @@ class JdbcAiResourceIndexTaskRepositoryTest {
     }
     
     @Test
-    void expiredLeaseShouldBeClaimedByANewerRevision() {
+    void expiredLeaseShouldBeClaimedWithNewLeaseToken() {
         AiResourceIndexTask expired = scheduleEnhancementTask();
         assertTrue(repository.claim(expired, 1_000L));
         assertTrue(repository.findDueTasks(10).isEmpty());
@@ -149,7 +172,8 @@ class JdbcAiResourceIndexTaskRepositoryTest {
         AiResourceIndexTask takeover = repository.findDueTasks(10).get(0);
         assertTrue(repository.claim(takeover, 60_000L));
         
-        assertEquals(expired.getRevision() + 1, takeover.getRevision());
+        assertEquals(expired.getRevision(), takeover.getRevision());
+        assertEquals(expired.getLeaseToken() + 1, takeover.getLeaseToken());
         assertFalse(repository.complete(expired, "stale-fingerprint"));
         assertTrue(repository.complete(takeover, "fingerprint-v1"));
     }
