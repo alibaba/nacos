@@ -116,6 +116,11 @@ Version、`contentDigest`、任一 `sourceRevision` 发生变化时，Listener �
 替换结果。`getAll`、`selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent
 Calling 是 SDK 本地 helper，不增加远程操作。
 
+`AgentReference` 同时省略 `version` 和 `label` 时使用面向发布切换安全的默认语义：
+返回 latest 定义元数据，以及兼容任一当前在线版本的 Runtime Endpoint。显式
+`label=latest` 请求严格的 latest-only Runtime 地址池；精确 version 和自定义 label
+解析后仍保持精确语义。轮询订阅重复同一个 Discover Request，因此保持同样的区分。
+
 一个 Registration Batch 是该 SDK Publisher 在
 `(namespaceId, agentName, protocol)` 下的完整期望状态。Register 完整替换此前
 Batch 及其唯一的 `runtimeVersion` 和 `versionRange`，未提交的 Endpoint 会被删除。

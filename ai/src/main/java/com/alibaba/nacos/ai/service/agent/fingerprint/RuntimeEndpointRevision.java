@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.ai.service.agent.fingerprint;
 
+import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionComparator;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
@@ -26,6 +29,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -61,7 +67,7 @@ public final class RuntimeEndpointRevision {
      * @throws IllegalArgumentException when the projection is invalid
      */
     public static String compute(String namespaceId, String agentName, String protocol,
-        List<Endpoint> endpoints) {
+        List<AgentDiscoveryEndpoint> endpoints) {
         byte[] revisionBytes = revisionBytes(namespaceId, agentName, protocol, endpoints);
         long[] hash = MurmurHash3.hash128x64(revisionBytes, 0, revisionBytes.length, MURMUR_SEED);
         char[] value = new char[32];
@@ -71,7 +77,7 @@ public final class RuntimeEndpointRevision {
     }
     
     static byte[] revisionBytes(String namespaceId, String agentName, String protocol,
-        List<Endpoint> endpoints) {
+        List<AgentDiscoveryEndpoint> endpoints) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         AgentValidationUtils.validateProtocol(protocol);
@@ -82,13 +88,15 @@ public final class RuntimeEndpointRevision {
             throw new IllegalArgumentException(
                 "Runtime Endpoint projection exceeds " + MAX_ENDPOINTS + " items");
         }
-        Map<EndpointNaturalKey, Endpoint> canonicalEndpoints =
-            new TreeMap<EndpointNaturalKey, Endpoint>();
-        for (Endpoint endpoint : endpoints) {
-            Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
+        Map<EndpointNaturalKey, AgentDiscoveryEndpoint> canonicalEndpoints =
+            new TreeMap<EndpointNaturalKey, AgentDiscoveryEndpoint>();
+        for (AgentDiscoveryEndpoint endpoint : endpoints) {
+            Endpoint canonicalEndpoint = EndpointCanonicalizer.canonicalize(endpoint);
+            AgentDiscoveryEndpoint canonical = copyEndpoint(canonicalEndpoint);
             if (canonical.getHealthy() == null) {
                 throw new IllegalArgumentException("Runtime Endpoint healthy must not be null");
             }
+            canonical.setBindings(canonicalBindings(endpoint.getBindings()));
             EndpointNaturalKey key = EndpointNaturalKey.of(namespaceId, agentName, protocol,
                 canonical);
             if (canonicalEndpoints.put(key, canonical) != null) {
@@ -98,11 +106,11 @@ public final class RuntimeEndpointRevision {
         return frame(canonicalEndpoints);
     }
     
-    private static byte[] frame(Map<EndpointNaturalKey, Endpoint> endpoints) {
+    private static byte[] frame(Map<EndpointNaturalKey, AgentDiscoveryEndpoint> endpoints) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try (DataOutputStream output = new DataOutputStream(buffer)) {
             output.writeInt(endpoints.size());
-            for (Endpoint endpoint : endpoints.values()) {
+            for (AgentDiscoveryEndpoint endpoint : endpoints.values()) {
                 writeUtf8(output, endpoint.getUri());
                 writeUtf8(output, endpoint.getTransport());
                 output.writeInt(endpoint.getPriority());
@@ -110,11 +118,57 @@ public final class RuntimeEndpointRevision {
                 output.writeLong(Double.doubleToLongBits(weight));
                 writeMetadata(output, endpoint.getMetadata());
                 output.writeBoolean(endpoint.getHealthy());
+                writeBindings(output, endpoint.getBindings());
             }
         } catch (IOException e) {
             throw new IllegalStateException("Unable to frame Runtime Endpoint projection", e);
         }
         return buffer.toByteArray();
+    }
+    
+    private static List<RuntimeVersionBinding> canonicalBindings(
+        List<RuntimeVersionBinding> bindings) {
+        if (bindings == null || bindings.isEmpty()) {
+            throw new IllegalArgumentException("Runtime Endpoint bindings must not be empty");
+        }
+        List<RuntimeVersionBinding> result = new ArrayList<RuntimeVersionBinding>(bindings);
+        for (RuntimeVersionBinding binding : result) {
+            if (binding == null || binding.getRuntimeVersion() == null
+                || binding.getVersionRange() == null) {
+                throw new IllegalArgumentException("Runtime Endpoint binding must be complete");
+            }
+        }
+        Collections.sort(result, new Comparator<RuntimeVersionBinding>() {
+            
+            @Override
+            public int compare(RuntimeVersionBinding left, RuntimeVersionBinding right) {
+                int comparison = AgentVersionComparator.compare(left.getRuntimeVersion(),
+                    right.getRuntimeVersion());
+                return comparison == 0
+                    ? left.getVersionRange().compareTo(right.getVersionRange()) : comparison;
+            }
+        });
+        return result;
+    }
+    
+    private static void writeBindings(DataOutputStream output,
+        List<RuntimeVersionBinding> bindings) throws IOException {
+        output.writeInt(bindings.size());
+        for (RuntimeVersionBinding binding : bindings) {
+            writeUtf8(output, binding.getRuntimeVersion());
+            writeUtf8(output, binding.getVersionRange());
+        }
+    }
+    
+    private static AgentDiscoveryEndpoint copyEndpoint(Endpoint source) {
+        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+        result.setUri(source.getUri());
+        result.setTransport(source.getTransport());
+        result.setPriority(source.getPriority());
+        result.setWeight(source.getWeight());
+        result.setMetadata(source.getMetadata());
+        result.setHealthy(source.getHealthy());
+        return result;
     }
     
     private static void writeUtf8(DataOutputStream output, String value) throws IOException {

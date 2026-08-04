@@ -233,8 +233,13 @@ Rules:
 | `version` | No | Select one online exact version |
 | `label` | No | Resolve a label to one online version at request time |
 
-`version` and `label` are mutually exclusive. When both are absent, or when
-`label` is `latest`, the reference resolves the current latest version.
+`version` and `label` are mutually exclusive. Definition metadata always
+resolves to one exact online version. When both are absent, that definition is
+the current latest version, while Runtime Endpoint discovery uses every online
+version as its compatibility target set. Explicit `label=latest` is different:
+both definition metadata and Runtime Endpoints are restricted to the current
+latest version. An exact version or any other label also uses one resolved
+version for both parts.
 
 ### 3.6 `AgentDiscoveryFilter`
 
@@ -277,6 +282,13 @@ Context rules:
 
 Runtime endpoints do not use `endpointId`.
 
+A discovery result uses `AgentDiscoveryEndpoint`, which extends these Endpoint
+fields with `bindings[] { runtimeVersion, versionRange }`. The field is absent
+for `DECLARED` endpoints and is non-empty for every `RUNTIME` endpoint. It is
+the sorted, de-duplicated union of enabled publisher bindings that made the
+endpoint eligible for the current discovery target set. It exposes rollout
+provenance without publisher identity or liveness timestamps.
+
 ### 3.8 Endpoint Natural Key And Normalization
 
 The runtime endpoint natural key is:
@@ -312,7 +324,7 @@ Declared and runtime sources share one object:
 EndpointSet {
   source = DECLARED | RUNTIME
   sourceRevision
-  endpoints[]
+  endpoints[] AgentDiscoveryEndpoint
 }
 ```
 
@@ -342,7 +354,9 @@ management and source-order fields and contains resolved endpoint sets.
 
 Rules:
 
-- `version` is the online exact version resolved from `AgentReference`.
+- `version` is the online exact version supplying definition metadata. For an
+  omitted selector it is still the current latest version even though Runtime
+  Endpoints can serve multiple online versions.
 - One version has at most 16 calling interfaces. Protocols do not repeat.
 - Calling interfaces retain their order in the Agent version definition.
 - `nativeDescriptor` is any non-null JSON value.
@@ -363,13 +377,13 @@ Rules:
   endpoints.
 - A consumer compares the complete value and does not calculate it.
 
-Each `(namespaceId, agentName, version, protocol, source)` has one
-`sourceRevision`:
+Each discovery projection has one `sourceRevision`, scoped by namespace,
+Agent, definition version, protocol, source, and selector semantics:
 
 - It is an opaque equality token. It cannot be ordered or compared across
   scopes.
 - It changes when endpoint membership, URI, transport, priority, weight,
-  public metadata, or health changes.
+  public metadata, health, or returned Runtime binding provenance changes.
 - Heartbeat time, publisher count, or an internal storage revision does not by
   itself require a change.
 - An empty endpoint set still has a stable revision.
@@ -440,16 +454,21 @@ filter?: AgentDiscoveryFilter
 The Registry performs Discover in this order:
 
 1. Find `agentName` verbatim in the effective namespace.
-2. Resolve the target version using `version`, `label`, or latest.
-3. Verify visibility, Agent enabled state, and target online state.
-4. Load calling interfaces in version-definition order.
-5. Retain runtime publications whose `versionRange` contains the target exact
-   version.
-6. Exclude `enabled=false` runtime instances and retain both
+2. Resolve one definition version using `version`, `label`, or latest.
+3. Verify visibility, Agent enabled state, and definition-version online state.
+4. Load calling interfaces in definition-version order. These interfaces are
+   authoritative; protocols removed from latest metadata are not resurrected
+   by an older Runtime publication.
+5. Build the Runtime compatibility target set. When both `version` and `label`
+   are absent it contains every current online version. Otherwise it contains
+   only the exact resolved version, including explicit `label=latest`.
+6. Retain runtime bindings whose `versionRange` contains at least one target
+   version, and return the matching binding union on each endpoint.
+7. Exclude `enabled=false` runtime instances and retain both
    `healthy=true` and `healthy=false` instances.
-7. Aggregate matching contributions with the same public endpoint natural key.
-8. Apply the optional filter.
-9. Return a complete snapshot ordered by calling interface, source, priority,
+8. Aggregate matching contributions with the same public endpoint natural key.
+9. Apply the optional filter.
+10. Return a complete snapshot ordered by calling interface, source, priority,
    and stable natural key.
 
 The fixed shapes for an empty filtered result are:
@@ -703,7 +722,11 @@ coarse syntax of a version-range string and does not replace domain validation.
         "priority": 0,
         "weight": 1,
         "metadata": {"zone": "cn-hangzhou-h"},
-        "healthy": true
+        "healthy": true,
+        "bindings": [{
+          "runtimeVersion": "1.0.6",
+          "versionRange": "[1.0.0,2.0.0)"
+        }]
       }]
     }, {
       "source": "DECLARED",

@@ -19,9 +19,11 @@ package com.alibaba.nacos.api.ai.utils;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -273,17 +275,21 @@ class RadModelValidatorTest {
         AgentDiscoveryResult sortedResult = newValidDiscoveryResult();
         EndpointSet sortedRuntimeSet = sortedResult.getCallInterfaces().get(0).getEndpointSets()
             .get(0);
-        Endpoint first = newEndpoint("https://a.example.com:443/a2a", true);
-        Endpoint second = newEndpoint("https://b.example.com:443/a2a", true);
+        AgentDiscoveryEndpoint first =
+            newDiscoveryEndpoint("https://a.example.com:443/a2a", true, true);
+        AgentDiscoveryEndpoint second =
+            newDiscoveryEndpoint("https://b.example.com:443/a2a", true, true);
         sortedRuntimeSet.setEndpoints(Arrays.asList(first, second));
         assertDoesNotThrow(() -> RadModelValidator.validate(sortedResult));
         
         AgentDiscoveryResult unsortedResult = newValidDiscoveryResult();
         EndpointSet unsortedRuntimeSet = unsortedResult.getCallInterfaces().get(0)
             .getEndpointSets().get(0);
-        Endpoint higherPriority = newEndpoint("https://a.example.com:443/a2a", true);
+        AgentDiscoveryEndpoint higherPriority =
+            newDiscoveryEndpoint("https://a.example.com:443/a2a", true, true);
         higherPriority.setPriority(1);
-        Endpoint lowerPriority = newEndpoint("https://b.example.com:443/a2a", true);
+        AgentDiscoveryEndpoint lowerPriority =
+            newDiscoveryEndpoint("https://b.example.com:443/a2a", true, true);
         unsortedRuntimeSet.setEndpoints(Arrays.asList(higherPriority, lowerPriority));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(unsortedResult));
@@ -303,6 +309,48 @@ class RadModelValidatorTest {
             .setSourceRevision("runtime-revision");
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(invalidRuntimeRevision));
+    }
+    
+    @Test
+    void shouldValidateRuntimeDiscoveryBindings() {
+        AgentDiscoveryResult missingBindings = newValidDiscoveryResult();
+        missingBindings.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+            .setBindings(null);
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(missingBindings));
+        
+        AgentDiscoveryResult declaredBindings = newValidDiscoveryResult();
+        declaredBindings.getCallInterfaces().get(0).getEndpointSets().get(1).getEndpoints().get(0)
+            .setBindings(Collections.singletonList(newBinding("1.0.0", "[1.0.0]")));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(declaredBindings));
+        
+        AgentDiscoveryResult nonCanonicalRange = newValidDiscoveryResult();
+        nonCanonicalRange.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+            .setBindings(Collections.singletonList(newBinding("1.0.0", "[1.0.0,1.0.0]")));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(nonCanonicalRange));
+        
+        AgentDiscoveryResult excludedRuntimeVersion = newValidDiscoveryResult();
+        excludedRuntimeVersion.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints()
+            .get(0).setBindings(
+                Collections.singletonList(newBinding("2.0.0", "[1.0.0]")));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(excludedRuntimeVersion));
+        
+        AgentDiscoveryResult unsortedBindings = newValidDiscoveryResult();
+        unsortedBindings.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+            .setBindings(Arrays.asList(newBinding("2.0.0", "[2.0.0]"),
+                newBinding("1.0.0", "[1.0.0]")));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(unsortedBindings));
+        
+        AgentDiscoveryResult duplicateBindings = newValidDiscoveryResult();
+        duplicateBindings.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints()
+            .get(0).setBindings(Arrays.asList(newBinding("1.0.0", "[1.0.0]"),
+                newBinding("1.0.0", "[1.0.0]")));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(duplicateBindings));
     }
     
     @Test
@@ -470,13 +518,13 @@ class RadModelValidatorTest {
         runtimeSet.setSource(EndpointSource.RUNTIME);
         runtimeSet.setSourceRevision(RUNTIME_REVISION);
         runtimeSet.setEndpoints(Collections.singletonList(
-            newEndpoint("https://runtime.example.com:443/a2a", true)));
+            newDiscoveryEndpoint("https://runtime.example.com:443/a2a", true, true)));
         
         EndpointSet declaredSet = new EndpointSet();
         declaredSet.setSource(EndpointSource.DECLARED);
         declaredSet.setSourceRevision(CONTENT_DIGEST);
         declaredSet.setEndpoints(Collections.singletonList(
-            newEndpoint("https://declared.example.com:443/a2a", null)));
+            newDiscoveryEndpoint("https://declared.example.com:443/a2a", null, false)));
         
         AgentDiscoveryCallInterface callInterface = new AgentDiscoveryCallInterface();
         callInterface.setProtocol("a2a");
@@ -528,6 +576,29 @@ class RadModelValidatorTest {
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
         endpoint.setHealthy(healthy);
         return endpoint;
+    }
+    
+    private AgentDiscoveryEndpoint newDiscoveryEndpoint(String uri, Boolean healthy,
+        boolean runtime) {
+        Endpoint source = newEndpoint(uri, healthy);
+        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        endpoint.setUri(source.getUri());
+        endpoint.setTransport(source.getTransport());
+        endpoint.setPriority(source.getPriority());
+        endpoint.setWeight(source.getWeight());
+        endpoint.setMetadata(source.getMetadata());
+        endpoint.setHealthy(source.getHealthy());
+        if (runtime) {
+            endpoint.setBindings(Collections.singletonList(newBinding("1.0.0", "[1.0.0]")));
+        }
+        return endpoint;
+    }
+    
+    private RuntimeVersionBinding newBinding(String runtimeVersion, String versionRange) {
+        RuntimeVersionBinding result = new RuntimeVersionBinding();
+        result.setRuntimeVersion(runtimeVersion);
+        result.setVersionRange(versionRange);
+        return result;
     }
     
     private String repeat(char value, int count) {

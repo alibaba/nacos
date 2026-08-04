@@ -365,11 +365,12 @@ none remain. `ServiceStorage` may deduplicate completely identical Instances;
 this does not alter the public projection because identical Instance payload,
 bindings, enabled state, and health would aggregate into the same public item.
 
-RAD discovery first filters bindings for the target Version, then aggregates
-equal natural keys into one public Endpoint. A projection rebuild rejects
-inconsistent payloads visible after AP convergence. Therefore one successful
-target-Version projection never contains two different public payloads for the
-same natural key.
+RAD discovery first filters bindings against its compatibility target set, then
+aggregates equal natural keys into one public Endpoint. An omitted selector uses
+all online Versions as that set; an exact Version or any explicit label uses only
+the resolved Version. A projection rebuild rejects inconsistent payloads visible
+after AP convergence. Therefore one successful projection never contains two
+different public payloads for the same natural key.
 
 ### 4.5 Pre-registration And Lifecycle
 
@@ -532,39 +533,41 @@ Naming health-protection fallback.
 
 ## 6. Runtime Discovery Projection
 
-A RUNTIME Endpoint is eligible for one target discovery result only when:
+A RUNTIME Endpoint is eligible for one discovery result only when:
 
 1. the Agent exists, is visible, and is enabled;
-2. the target Version is online;
-3. the target Version has the same protocol CallInterface and permits the
+2. the definition Version is online;
+3. the definition Version has the same protocol CallInterface and permits the
    `RUNTIME` source;
-4. at least one effective binding contains the target Version; and
+4. at least one effective binding contains a Version in the selector's
+   compatibility target set; and
 5. the Naming Endpoint has `enabled=true`.
 
 An eligible Endpoint with `healthy=false` remains in RAD output. SDK
 `selectOneHealthy` filters it; get-all and watch retain it. A disabled Endpoint
 is absent.
 
-The projection uses the target Version's CallInterface for protocol version,
+The projection uses the definition Version's CallInterface for protocol version,
 descriptor, and endpoint-source order. Runtime contributions never override
 those definition fields; the legacy-only Naming protocol-version metadata is
 ignored by RAD.
 
 ## 7. Runtime Source Revision
 
-For each
-`(namespaceId, agentName, targetVersion, protocol, source=RUNTIME)`, the server
-generates an opaque `sourceRevision` after it:
+For each Runtime discovery projection, the server generates an opaque
+`sourceRevision` after it:
 
 1. reads the complete internal Naming Service projection from `ServiceStorage`;
-2. selects bindings that contain the target Version;
+2. selects bindings that contain at least one compatibility target Version;
 3. canonicalizes each Endpoint URI, validates and preserves transport,
    materializes effective `priority=0` and `weight=1`, and requires `healthy`;
 4. validates one canonical payload per natural key;
 5. removes `enabled=false` and retains both health states;
-6. sorts Endpoints by natural key and metadata keys by UTF-16 code-unit ordinal
+6. attaches the sorted, de-duplicated matching binding union to each enabled
+   Endpoint;
+7. sorts Endpoints by natural key and metadata keys by UTF-16 code-unit ordinal
    order; and
-7. computes MurmurHash3 x64 128 over the revision bytes defined below.
+8. computes MurmurHash3 x64 128 over the revision bytes defined below.
 
 Within one projection, natural-key order compares `normalizedHost` by UTF-16
 code-unit ordinal order, then `effectivePort` numerically, then transport by
@@ -579,12 +582,11 @@ murmur3-x64-128-v1:<32 lowercase hex>
 ```
 
 Revision input contains URI, transport, effective priority and weight, public
-Endpoint metadata, and `healthy`. It excludes runtimeVersion, versionRange,
-publisher identity and count, heartbeat time, last-updated time, and Naming
-internal revisions. Runtime Version and range do not enter the hash because the
-target projection has already filtered them. Range or enabled changes alter
-membership; health changes alter returned content. Both therefore advance the
-revision when the target projection changes.
+Endpoint metadata, `healthy`, and every returned `runtimeVersion` and canonical
+`versionRange` binding. It excludes publisher identity and count, heartbeat
+time, last-updated time, and Naming internal revisions. A binding or online
+compatibility-target change therefore advances the revision whenever it changes
+the discovery-visible projection, even if the endpoint payload is unchanged.
 
 Absent and empty public Endpoint metadata both use a metadata entry count of
 zero.
@@ -603,11 +605,12 @@ All nodes use seed `0` and the following fixed big-endian binary layout:
 | `weight` | Eight-byte IEEE-754 binary64 bits; negative zero is normalized to positive zero. |
 | metadata | Unsigned four-byte entry count, followed by each ordered key and value using the string encoding above. |
 | `healthy` | One byte: `0` for false and `1` for true. |
+| bindings | Unsigned four-byte binding count, followed by each ordered `runtimeVersion` and canonical `versionRange` using the string encoding above. |
 
 The empty set is exactly `uint32be(0)`. The Murmur result emits `h1` followed
 by `h2`, each as an unsigned eight-byte big-endian value, and then lowercase
-hexadecimal. These rules are also machine-readable in internal storage schema
-version 1.
+hexadecimal. These rules are also machine-readable in the internal storage
+schema.
 
 Naming `ServiceStorage` supplies the current cached Service projection. The
 Agent read path derives the public Endpoint set and its revision from that

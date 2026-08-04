@@ -35,8 +35,10 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -241,10 +243,11 @@ class AgentDiscoveryApplicationServiceTest {
             .thenReturn(row);
         when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(detail);
-        Endpoint runtimeEndpoint = endpoint("HTTPS://Runtime.Example.com/agent", "http", 0,
-            null, false);
+        AgentDiscoveryEndpoint runtimeEndpoint = discoveryEndpoint(
+            endpoint("HTTPS://Runtime.Example.com/agent", "http", 0, null, false), VERSION);
         when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
-            VERSION)).thenReturn(endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
+            Collections.singletonList(VERSION))).thenReturn(endpointSet(EndpointSource.RUNTIME,
+                RUNTIME_REVISION,
                 Collections.singletonList(runtimeEndpoint)));
         
         AgentDiscoveryResult first = service.discover(discoveryRequest(null, null, null));
@@ -261,7 +264,10 @@ class AgentDiscoveryApplicationServiceTest {
             Arrays.asList(a2a.getEndpointSets().get(0).getSource(),
                 a2a.getEndpointSets().get(1).getSource()));
         assertFalse(a2a.getEndpointSets().get(0).getEndpoints().get(0).getHealthy());
-        List<Endpoint> declared = a2a.getEndpointSets().get(1).getEndpoints();
+        assertEquals(VERSION, a2a.getEndpointSets().get(0).getEndpoints().get(0).getBindings()
+            .get(0).getRuntimeVersion());
+        List<AgentDiscoveryEndpoint> declared =
+            a2a.getEndpointSets().get(1).getEndpoints();
         assertEquals("https://a.example.com:443/agent", declared.get(0).getUri());
         assertEquals("https://b.example.com:443/agent", declared.get(1).getUri());
         assertEquals("https://z.example.com:443/agent", declared.get(2).getUri());
@@ -272,7 +278,40 @@ class AgentDiscoveryApplicationServiceTest {
             service.discover(discoveryRequest(null, null, null)).getVersion());
         verify(persistenceService).getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
         verify(runtimeRegistryService, times(2)).getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
-            "a2a", VERSION);
+            "a2a", Collections.singletonList(VERSION));
+    }
+    
+    @Test
+    void testDiscoverSeparatesDefaultOnlinePoolFromExplicitLatest() throws NacosException {
+        Agent agent = enabledAgent();
+        agent.getVersionCatalog().setOnlineVersions(Arrays.asList(
+            catalog(VERSION, null, "a2a"), catalog("1.0.0", null, "a2a")));
+        stubDiscover(agent, DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
+            Collections.singletonList(EndpointSource.RUNTIME), null)));
+        AgentDiscoveryEndpoint versionOne = discoveryEndpoint(
+            endpoint("https://v1.example.com/agent", "http", 0, null, true), "1.0.0");
+        AgentDiscoveryEndpoint versionTwo = discoveryEndpoint(
+            endpoint("https://v2.example.com/agent", "http", 0, null, true), VERSION);
+        when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Arrays.asList(VERSION, "1.0.0"))).thenReturn(endpointSet(EndpointSource.RUNTIME,
+                RUNTIME_REVISION, Arrays.asList(versionOne, versionTwo)));
+        when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION))).thenReturn(endpointSet(EndpointSource.RUNTIME,
+                "murmur3-x64-128-v1:11111111111111111111111111111111",
+                Collections.singletonList(versionTwo)));
+        
+        AgentDiscoveryResult defaultResult =
+            service.discover(discoveryRequest(null, null, null));
+        AgentDiscoveryResult latestResult =
+            service.discover(discoveryRequest(null, AiResourceConstants.LABEL_LATEST, null));
+        
+        assertEquals(VERSION, defaultResult.getVersion());
+        assertEquals(2, defaultResult.getCallInterfaces().get(0).getEndpointSets().get(0)
+            .getEndpoints().size());
+        assertEquals(1, latestResult.getCallInterfaces().get(0).getEndpointSets().get(0)
+            .getEndpoints().size());
+        assertEquals(VERSION, latestResult.getCallInterfaces().get(0).getEndpointSets().get(0)
+            .getEndpoints().get(0).getBindings().get(0).getRuntimeVersion());
     }
     
     @Test
@@ -305,7 +344,7 @@ class AgentDiscoveryApplicationServiceTest {
         
         assertEquals(1, result.getCallInterfaces().size());
         assertEquals(1, result.getCallInterfaces().get(0).getEndpointSets().size());
-        List<Endpoint> filtered =
+        List<AgentDiscoveryEndpoint> filtered =
             result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints();
         assertEquals(1, filtered.size());
         assertEquals("https://cn.example.com:443/agent", filtered.get(0).getUri());
@@ -374,6 +413,13 @@ class AgentDiscoveryApplicationServiceTest {
         NacosApiException infoError = assertThrows(NacosApiException.class,
             () -> service.discover(discoveryRequest(null, "stable", null)));
         assertEquals(NacosException.NOT_FOUND, infoError.getErrCode());
+        
+        Agent missingCatalog = enabledAgent();
+        missingCatalog.setVersionCatalog(null);
+        when(operationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(missingCatalog);
+        NacosApiException catalogError = assertThrows(NacosApiException.class,
+            () -> service.discover(discoveryRequest(null, null, null)));
+        assertEquals(NacosException.NOT_FOUND, catalogError.getErrCode());
     }
     
     @Test
@@ -482,6 +528,11 @@ class AgentDiscoveryApplicationServiceTest {
         result.setAgentName(AGENT_NAME);
         result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
         result.setVersionInfo(versionInfo);
+        AgentVersionCatalog versionCatalog = new AgentVersionCatalog();
+        versionCatalog.setLatestVersion(VERSION);
+        versionCatalog.setOnlineVersions(
+            Collections.singletonList(catalog(VERSION, null, "a2a")));
+        result.setVersionCatalog(versionCatalog);
         return result;
     }
     
@@ -542,11 +593,26 @@ class AgentDiscoveryApplicationServiceTest {
     }
     
     private EndpointSet endpointSet(EndpointSource source, String revision,
-        List<Endpoint> endpoints) {
+        List<AgentDiscoveryEndpoint> endpoints) {
         EndpointSet result = new EndpointSet();
         result.setSource(source);
         result.setSourceRevision(revision);
         result.setEndpoints(endpoints);
+        return result;
+    }
+    
+    private AgentDiscoveryEndpoint discoveryEndpoint(Endpoint source, String runtimeVersion) {
+        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+        result.setUri(source.getUri());
+        result.setTransport(source.getTransport());
+        result.setPriority(source.getPriority());
+        result.setWeight(source.getWeight());
+        result.setMetadata(source.getMetadata());
+        result.setHealthy(source.getHealthy());
+        RuntimeVersionBinding binding = new RuntimeVersionBinding();
+        binding.setRuntimeVersion(runtimeVersion);
+        binding.setVersionRange('[' + runtimeVersion + ']');
+        result.setBindings(Collections.singletonList(binding));
         return result;
     }
     

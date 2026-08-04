@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.client.ai.utils;
 
-import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -27,6 +30,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -268,11 +272,36 @@ class AgentModelUtilsTest {
         source.setVersion("1.0.0");
         source.setContentDigest(
             "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        RuntimeVersionBinding binding = new RuntimeVersionBinding();
+        binding.setRuntimeVersion("1.0.0");
+        binding.setVersionRange("[1.0.0]");
+        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        endpoint.setUri("http://localhost:80/agent");
+        endpoint.setTransport("http");
+        endpoint.setHealthy(true);
+        endpoint.setBindings(new ArrayList<RuntimeVersionBinding>(
+            Collections.singletonList(binding)));
+        EndpointSet endpointSet = new EndpointSet();
+        endpointSet.setSource(EndpointSource.RUNTIME);
+        endpointSet.setSourceRevision(
+            "murmur3-x64-128-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        endpointSet.setEndpoints(new ArrayList<AgentDiscoveryEndpoint>(
+            Collections.singletonList(endpoint)));
+        AgentDiscoveryCallInterface callInterface = new AgentDiscoveryCallInterface();
+        callInterface.setProtocol("a2a");
+        callInterface.setEndpointSets(Collections.singletonList(endpointSet));
+        source.setCallInterfaces(Collections.singletonList(callInterface));
         
         AgentDiscoveryResult result = AgentModelUtils.copyDiscoveryResult(source);
         
         assertNotSame(source, result);
         assertEquals("agent-a", result.getAgentName());
+        AgentDiscoveryEndpoint copiedEndpoint = result.getCallInterfaces().get(0)
+            .getEndpointSets().get(0).getEndpoints().get(0);
+        assertNotSame(endpoint, copiedEndpoint);
+        assertNotSame(endpoint.getBindings(), copiedEndpoint.getBindings());
+        binding.setRuntimeVersion("2.0.0");
+        assertEquals("1.0.0", copiedEndpoint.getBindings().get(0).getRuntimeVersion());
     }
     
     private AgentReference reference() {

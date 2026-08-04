@@ -35,8 +35,10 @@ import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
@@ -112,6 +114,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String TRANSPORT_HTTP = "http";
     
     private static final String LABEL_STABLE = "stable";
+
+    private static final String LABEL_LATEST = "latest";
     
     private static final long POLLING_TIMEOUT_MILLIS = 25000L;
     
@@ -588,9 +592,10 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
-        awaitEvent(latestListener, "definition-first Version 3 initially has no Runtime Endpoint",
+        awaitEvent(latestListener,
+            "definition-first Version 3 retains older online-Version Runtime Endpoints",
             result -> VERSION_3.equals(result.getVersion())
-                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+                && containsEndpoint(result, PROTOCOL_A2A, versionTwoEndpoint.getUri()));
         
         Endpoint versionThreeEndpoint = endpoint(randomPort(), "/v3", "version-three");
         service.registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
@@ -618,6 +623,102 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         service.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
             Collections.singletonList(deregistrationEndpoint(versionThreeEndpoint))));
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
+    }
+
+    @Test
+    void shouldSeparateDefaultRolloutPoolFromExplicitLatest() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService reader = createAiService();
+        AiService versionOnePublisher = createAiService();
+        AiService versionTwoPublisher = createAiService();
+        String agentName = randomServiceName("agent-rollout-pool");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("java-sdk-it"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+
+        Endpoint versionOneEndpoint = endpoint(randomPort(), "/v1", "version-one");
+        AgentEndpointRegistrationBatch versionOneRegistration = registration(agentName, VERSION,
+            PROTOCOL_A2A, Collections.singletonList(versionOneEndpoint));
+        versionOnePublisher.registerAgentEndpoints(versionOneRegistration);
+        addCleanup(() -> versionOnePublisher.deregisterAgentEndpoints(
+            deregistration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(versionOneEndpoint)))));
+        waitForEndpointCount(reader, reference(agentName, VERSION, null), PROTOCOL_A2A, 1);
+
+        AgentReference defaultReference = reference(agentName, null, null);
+        AgentReference latestReference = reference(agentName, null, LABEL_LATEST);
+        RecordingAgentListener defaultListener = new RecordingAgentListener();
+        RecordingAgentListener latestListener = new RecordingAgentListener();
+        AgentDiscoveryResult initialDefault =
+            reader.subscribeAgent(defaultReference, defaultListener);
+        AgentDiscoveryResult initialLatest =
+            reader.subscribeAgent(latestReference, latestListener);
+        addCleanup(() -> reader.unsubscribeAgent(defaultReference, defaultListener));
+        addCleanup(() -> reader.unsubscribeAgent(latestReference, latestListener));
+        assertEquals(VERSION, initialDefault.getVersion());
+        assertEquals(VERSION, initialLatest.getVersion());
+        assertBinding(initialDefault, versionOneEndpoint.getUri(), VERSION);
+        assertBinding(initialLatest, versionOneEndpoint.getUri(), VERSION);
+
+        createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
+        AgentDiscoveryResult defaultBeforeVersionTwoEndpoint = awaitEvent(defaultListener,
+            "omitted selector should retain Version 1 Endpoint after Version 2 publication",
+            result -> VERSION_2.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, versionOneEndpoint.getUri())
+                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 1);
+        AgentDiscoveryResult latestBeforeVersionTwoEndpoint = awaitEvent(latestListener,
+            "explicit latest should expose the empty Version 2 Runtime pool",
+            result -> VERSION_2.equals(result.getVersion())
+                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        assertBinding(defaultBeforeVersionTwoEndpoint, versionOneEndpoint.getUri(), VERSION);
+        assertFalse(runtimeSourceRevision(defaultBeforeVersionTwoEndpoint)
+            .equals(runtimeSourceRevision(latestBeforeVersionTwoEndpoint)));
+
+        Endpoint versionTwoEndpoint = endpoint(randomPort(), "/v2", "version-two");
+        AgentEndpointRegistrationBatch versionTwoRegistration = registration(agentName,
+            VERSION_2, PROTOCOL_A2A, Collections.singletonList(versionTwoEndpoint));
+        versionTwoPublisher.registerAgentEndpoints(versionTwoRegistration);
+        addCleanup(() -> versionTwoPublisher.deregisterAgentEndpoints(
+            deregistration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(versionTwoEndpoint)))));
+        AgentDiscoveryResult combinedDefault = awaitEvent(defaultListener,
+            "omitted selector should aggregate both online-Version Endpoints",
+            result -> VERSION_2.equals(result.getVersion())
+                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 2);
+        AgentDiscoveryResult latestOnly = awaitEvent(latestListener,
+            "explicit latest should include only the Version 2 Endpoint",
+            result -> VERSION_2.equals(result.getVersion())
+                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 1
+                && containsEndpoint(result, PROTOCOL_A2A, versionTwoEndpoint.getUri()));
+        assertBinding(combinedDefault, versionOneEndpoint.getUri(), VERSION);
+        assertBinding(combinedDefault, versionTwoEndpoint.getUri(), VERSION_2);
+        assertBinding(latestOnly, versionTwoEndpoint.getUri(), VERSION_2);
+        assertFalse(containsEndpoint(latestOnly, PROTOCOL_A2A, versionOneEndpoint.getUri()));
+
+        AgentDiscoveryResult exactVersionOne =
+            reader.discoverAgent(reference(agentName, VERSION, null));
+        assertEquals(1,
+            sourceEndpoints(exactVersionOne, PROTOCOL_A2A, EndpointSource.RUNTIME).size());
+        assertBinding(exactVersionOne, versionOneEndpoint.getUri(), VERSION);
+        assertFalse(containsEndpoint(exactVersionOne, PROTOCOL_A2A,
+            versionTwoEndpoint.getUri()));
+
+        maintainer.offline(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentName, VERSION));
+        AgentDiscoveryResult defaultAfterVersionOneOffline = awaitEvent(defaultListener,
+            "omitted selector should remove an Endpoint after its only Version goes offline",
+            result -> VERSION_2.equals(result.getVersion())
+                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 1
+                && containsEndpoint(result, PROTOCOL_A2A, versionTwoEndpoint.getUri()));
+        assertFalse(containsEndpoint(defaultAfterVersionOneOffline, PROTOCOL_A2A,
+            versionOneEndpoint.getUri()));
+        AgentDiscoveryResult latestAfterVersionOneOffline =
+            reader.discoverAgent(latestReference);
+        assertEquals(runtimeSourceRevision(latestOnly),
+            runtimeSourceRevision(latestAfterVersionOneOffline));
+        TimeUnit.MILLISECONDS.sleep(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL + 1000L);
+        assertNull(latestListener.events.poll(),
+            "offlining Version 1 must not duplicate an unchanged explicit-latest callback");
     }
     
     @Test
@@ -1217,11 +1318,42 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
                 if (source == endpointSet.getSource()) {
                     return endpointSet.getEndpoints() == null ? Collections.<Endpoint>emptyList()
-                        : endpointSet.getEndpoints();
+                        : new ArrayList<Endpoint>(endpointSet.getEndpoints());
                 }
             }
         }
         return Collections.emptyList();
+    }
+
+    private void assertBinding(AgentDiscoveryResult result, String uri,
+        String runtimeVersion) {
+        for (Endpoint endpoint :
+            sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME)) {
+            if (endpoint.getUri().equals(uri)) {
+                AgentDiscoveryEndpoint discoveryEndpoint = (AgentDiscoveryEndpoint) endpoint;
+                List<RuntimeVersionBinding> bindings = discoveryEndpoint.getBindings();
+                assertEquals(1, bindings.size(), result.toString());
+                assertEquals(runtimeVersion, bindings.get(0).getRuntimeVersion());
+                assertEquals("[" + runtimeVersion + "]", bindings.get(0).getVersionRange());
+                return;
+            }
+        }
+        fail("Runtime Endpoint binding is missing for " + uri + ": " + result);
+    }
+
+    private String runtimeSourceRevision(AgentDiscoveryResult result) {
+        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+            if (!PROTOCOL_A2A.equals(callInterface.getProtocol())) {
+                continue;
+            }
+            for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
+                if (EndpointSource.RUNTIME == endpointSet.getSource()) {
+                    return endpointSet.getSourceRevision();
+                }
+            }
+        }
+        fail("Runtime source revision is missing: " + result);
+        return null;
     }
     
     private boolean containsEndpoint(AgentDiscoveryResult result, String protocol, String uri) {

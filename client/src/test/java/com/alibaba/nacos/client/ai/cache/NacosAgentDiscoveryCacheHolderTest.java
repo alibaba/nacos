@@ -164,6 +164,28 @@ class NacosAgentDiscoveryCacheHolderTest {
     }
     
     @Test
+    void omittedAndExplicitLatestSelectorsHaveIndependentPollingRecords()
+        throws NacosException {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("2.0.0", "digest-a", "all-online"))
+            .thenReturn(result("2.0.0", "digest-a", "latest-only"));
+        TestListener listener = new TestListener(null);
+        AgentReference omitted = reference();
+        AgentReference explicitLatest = reference();
+        explicitLatest.setLabel("latest");
+        
+        cacheHolder.subscribe(omitted, null, listener);
+        cacheHolder.subscribe(explicitLatest, null, listener);
+        
+        ArgumentCaptor<AgentDiscoveryRequest> requests =
+            ArgumentCaptor.forClass(AgentDiscoveryRequest.class);
+        verify(clientProxy, times(2)).discoverAgent(requests.capture());
+        assertNull(requests.getAllValues().get(0).getReference().getLabel());
+        assertEquals("latest", requests.getAllValues().get(1).getReference().getLabel());
+        verify(pollingExecutor, times(2)).schedule(any(Runnable.class), eq(10L), any());
+    }
+    
+    @Test
     void nullFilterCollectionsUseCanonicalEmptyValues() throws NacosException {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(result("1.0.0", "digest-a", null));

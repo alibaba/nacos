@@ -636,12 +636,11 @@ Naming Instance。Runtime Endpoint 只由显式注销、publisher identity 失�
 Client redo 保存并重发完整发布批次，只重做结构、鉴权和单批次容量校验，不以
 Agent/Version/CallInterface 存在为前提。
 
-每个 `(namespaceId, agentName, targetVersion, protocol, source=RUNTIME)` 数据面投影维护一个
-opaque `sourceRevision`。服务端按以下顺序生成投影和 revision：
+每个 Runtime 数据面发现投影维护一个 opaque `sourceRevision`。服务端按以下顺序生成投影和 revision：
 
 1. 从 Naming `ServiceStorage` 缓存读取指定 protocol 的完整内部 Service 投影。
 2. 从每条 Instance 的 singular version/versionRange metadata 构建 binding，并保留
-   `targetVersion` 命中 `versionRange` 的实例。
+   至少命中一个兼容目标 Version 的 binding。
 3. 排除 `enabled=false`，保留 `healthy=true/false`。
 4. 按 canonical Endpoint 聚合 Naming 当前视图中的等价实例，并在查询结果中规范化、去重和排序
    `bindings[]`；服务端写路径不为此执行跨 publisher 扫描。
@@ -649,10 +648,10 @@ opaque `sourceRevision`。服务端按以下顺序生成投影和 revision：
 6. 对固定字段二进制编码计算 `MurmurHash3 x64 128`，输出
    `murmur3-x64-128-v1:<32 lowercase hex>`。
 
-revision 输入只包含 URI、transport、effective priority/weight、公开 Endpoint metadata 和 `healthy`。
-runtimeVersion、versionRange、ownerConnection、publisher 数量、心跳时间、lastUpdatedTime 以及
-Naming 内部 revision 均不进入哈希。versionRange 或 enabled 的变化通过目标投影的成员增删体现；healthy
-变化通过返回字段体现并推进 revision。调用方 Filter 在基础 sourceRevision 之后应用，因而可能产生安全的额外刷新，
+revision 输入包含 URI、transport、effective priority/weight、公开 Endpoint metadata、`healthy` 和
+返回的有序 `bindings[] {runtimeVersion, versionRange}`。ownerConnection、publisher 数量、心跳时间、
+lastUpdatedTime 以及 Naming 内部 revision 均不进入哈希。binding 或在线兼容目标集合变化时，只要发现可见
+投影发生变化就推进 revision。调用方 Filter 在基础 sourceRevision 之后应用，因而可能产生安全的额外刷新，
 但不会漏刷新。空集合也具有稳定 revision；冗余 publisher 变化未改变聚合投影时 revision 不变。
 
 Murmur3-128 只用于变化检测和缓存相等性，不用于身份、鉴权、CAS 防篡改或持久内容完整性。
@@ -775,7 +774,7 @@ Discover 输入由目标引用和可选 Filter 组成：
 
 | 对象 | 字段 | 规则 |
 |---|---|---|
-| `AgentReference` | `agentName/version?/label?` | 在当前请求 namespace 内引用 Agent；version 与 label 互斥，均缺失时使用 latest |
+| `AgentReference` | `agentName/version?/label?` | 在当前请求 namespace 内引用 Agent；version 与 label 互斥；均缺失时定义使用 latest、Runtime 聚合全部在线版本；显式 `label=latest` 为严格 latest-only |
 | `AgentDiscoveryFilter` | `protocols[]` | protocol allowlist；protocolVersion 非空时精确匹配 |
 |  | `transports[]` | transport allowlist |
 |  | `endpointSources[]` | `RUNTIME`、`DECLARED` allowlist |
@@ -795,7 +794,7 @@ AgentDiscoveryResult
     └── endpointSets[]
         ├── source = RUNTIME | DECLARED
         ├── sourceRevision
-        └── endpoints[] { uri, transport, priority, weight, metadata, healthy? }
+        └── endpoints[] { uri, transport, priority, weight, metadata, healthy?, bindings? }
 ```
 
 `healthy` 在 RUNTIME Endpoint 中必填并表示 Naming 健康保护前的原始状态，在 DECLARED Endpoint 中不存在。AgentDiscoveryResult 不返回
@@ -803,12 +802,15 @@ displayName、iconUrl、provider、目录字段或 extensions；这些信息属�
 
 Discover 固定执行以下逻辑：
 
-1. 将 `version`、`label` 或缺省的 latest 解析为精确 `version`。
+1. 将 `version`、`label` 或缺省值解析为提供定义元数据的精确 `version`。
 2. 校验可见性、Agent enabled 和 Version online。
 3. 按 Version 原始顺序读取全部 CallInterface，并按各自 endpointSourceOrder 获取来源。
-4. 对 RUNTIME 来源执行 `versionRange` 区间匹配并排除 `enabled=false`；保留 `healthy=true/false`，再应用可选 Filter。
-5. 每个允许且未被 Filter 排除的来源都返回 endpointSet；来源当前为空时返回空 endpoints 和 revision。
-6. `endpointSets` 按 AgentVersionContent 内部 endpointSourceOrder 的相对顺序输出，每个集合再按 priority 和稳定地址顺序输出；
+4. 对 RUNTIME 来源构建兼容目标集合：省略 version/label 时使用全部 online Version；显式 version、
+   自定义 label 或 `label=latest` 时只使用解析出的精确 Version。
+5. 保留 `versionRange` 命中至少一个兼容目标的 binding，聚合其 Endpoint 和 binding 来源，排除
+   `enabled=false`，保留 `healthy=true/false`，再应用可选 Filter。
+6. 每个允许且未被 Filter 排除的来源都返回 endpointSet；来源当前为空时返回空 endpoints 和 revision。
+7. `endpointSets` 按 AgentVersionContent 内部 endpointSourceOrder 的相对顺序输出，每个集合再按 priority 和稳定地址顺序输出；
    服务端不隐式选择唯一地址，也不因 healthy 排序改变
    原始集合。SDK 默认的 selectOneHealthy 先过滤 healthy，再应用 priority/weight；getAll 和订阅保留不健康项。
 
@@ -1130,7 +1132,7 @@ AgentDiscoveryResult。`versionCatalog` 是唯一资源级反范式化调用目�
 | `AgentOverview` | Agent row + VersionSummary page | 不保存，读取组合 |
 | `AgentVersionDetail` | Version row + Storage content | 不保存，读取组合 |
 | `RuntimeEndpointSnapshot` | Naming 完整运行时快照 | 不保存，读取投影 |
-| `AgentDiscoveryResult` | version content + DECLARED Endpoint + versionRange 区间匹配后的 RUNTIME Endpoint | 不保存，读取时组合 |
+| `AgentDiscoveryResult` | latest 或精确 version content + DECLARED Endpoint + 选择器目标集合匹配后的 RUNTIME Endpoint 与 bindings | 不保存，读取时组合 |
 
 #### 4.3.2 A2A Adapter 映射
 
@@ -1166,7 +1168,7 @@ A2A 是 RAD 的首个协议 Adapter：
 | AgentSpec 专用关系 | Agent 与 AgentSpec 生命周期独立；来源追踪使用通用资源关系，不增加 Agent 专用 sourceRef |
 | 额外接口字段 | 不增加 defaultInterfaceId、interfaceId、descriptorDigest |
 | Endpoint 随机 id | Endpoint 使用自然键，客户端不维护 endpointId |
-| Discovery 版本表达式 | AgentReference 只接受互斥的 `version` 或 `label`，均缺失表示 latest；不接受 SET/RANGE selector |
+| Discovery 版本表达式 | AgentReference 只接受互斥的 `version` 或 `label`；均缺失表示 latest 定义 + 全部 online Version 的 Runtime 兼容集合，显式 `label=latest` 表示严格 latest-only；不接受 SET/RANGE selector |
 | Runtime 版本范围 | 首版 `versionRange` 支持精确版本或一个连续区间，不支持离散集合和区间并集 |
 | 通用已发布同版本强制更新 | 首版所有 Agent API 均不提供；reviewed、online 和 offline Version 不可原地修改 |
 | contentToken | 每 Version 使用固定 Config key 和 contentDigest，不创建候选 blob 或指针切换 |
@@ -1320,7 +1322,8 @@ Request 和 Batch 的 `namespaceId` 由 SDK 复制对象后注入绑定值；不
 SDK 语义固定如下：
 
 1. 面向用户只有 `discoverAgent` 一个发现动作；无 Filter 和有 Filter 是同名重载。
-2. `subscribeAgent` 是 SDK 本地便利能力：周期执行相同的 Discover，目标首次不存在时返回 `null` 但保留
+2. `subscribeAgent` 是 SDK 本地便利能力：周期执行相同的 Discover；省略 version/label 时订阅 latest 定义和
+   全部在线版本的兼容 Endpoint，显式 `label=latest` 时只订阅 latest Endpoint。目标首次不存在时返回 `null` 但保留
    轮询，后续 `NOT_FOUND` 不终止订阅或投递空快照；目标出现，或 version/label/latest 解析结果、
    `contentDigest`、任一 `sourceRevision` 变化时，Listener 收到新的完整 `AgentDiscoveryResult`。
 3. Discover 和订阅排除 `enabled=false`，保留 `healthy=false`。`getAll`、`selectOneHealthy`、priority/weight
@@ -1392,7 +1395,7 @@ Discover 的 HTTP query 映射如下：
 |---|---|
 | 请求 namespace / AgentReference.agentName | `namespaceId` 可省略并使用默认 namespace；`agentName` 必填 |
 | AgentReference.version | `version` |
-| label | `label`；与 version 互斥；两者缺失表示 latest |
+| label | `label`；与 version 互斥；两者缺失表示 latest 定义 + 全部 online Runtime 兼容集合，显式 latest 表示严格 latest-only |
 | protocols[] | 重复 `protocol` |
 | protocolVersion | `protocolVersion` |
 | transports[] | 重复 `transport` |

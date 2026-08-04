@@ -813,6 +813,7 @@
         "weightEncoding",
         "metadataEncoding",
         "healthyEncoding",
+        "bindingsEncoding",
         "byteOrder",
         "longOrder",
         "endpointNormalization",
@@ -855,6 +856,9 @@
         },
         "healthyEncoding": {
           "const": "uint8-zero-or-one"
+        },
+        "bindingsEncoding": {
+          "const": "uint32be-entry-count-followed-by-runtime-version-and-range-strings"
         },
         "byteOrder": {
           "const": "BIG_ENDIAN"
@@ -921,8 +925,8 @@
         },
         "includedFields": {
           "type": "array",
-          "minItems": 6,
-          "maxItems": 6,
+          "minItems": 7,
+          "maxItems": 7,
           "prefixItems": [
             {
               "const": "uri"
@@ -941,14 +945,17 @@
             },
             {
               "const": "healthy"
+            },
+            {
+              "const": "bindings"
             }
           ],
           "items": false
         },
         "excludedFields": {
           "type": "array",
-          "minItems": 16,
-          "maxItems": 16,
+          "minItems": 13,
+          "maxItems": 13,
           "prefixItems": [
             {
               "const": "namespaceId"
@@ -958,15 +965,6 @@
             },
             {
               "const": "source"
-            },
-            {
-              "const": "runtimeVersion"
-            },
-            {
-              "const": "versionRange"
-            },
-            {
-              "const": "bindings"
             },
             {
               "const": "enabled"
@@ -1008,7 +1006,7 @@
           "const": "murmur3-x64-128-v1:"
         }
       },
-      "$comment": "For one namespaceId/agentName/targetVersion/protocol projection, construct a RuntimeVersionBinding from each Naming Instance's singular runtime Version and Version range metadata, retain contributions whose range matches targetVersion, aggregate publishers and query-time bindings by natural Endpoint key, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, and healthy as one byte 0 or 1. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Membership changes caused by Version-range matching or enabled state change the input set; those query control fields are not serialized into an included Endpoint."
+      "$comment": "For one Runtime discovery projection, construct a RuntimeVersionBinding from each Naming Instance's singular runtime Version and Version range metadata, retain contributions whose range matches at least one compatibility target Version, aggregate publishers and query-time bindings by natural Endpoint key, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal and bindings by runtime Version then canonical range. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, healthy as one byte 0 or 1, and bindings as uint32be count followed by runtimeVersion/versionRange string pairs. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Endpoint membership, health, and returned binding provenance are revision-visible."
     }
   }
 }

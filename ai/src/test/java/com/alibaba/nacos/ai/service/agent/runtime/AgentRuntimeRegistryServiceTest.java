@@ -300,6 +300,40 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void testRuntimeEndpointSetAggregatesBindingsAcrossSelectedVersions()
+        throws NacosException {
+        Endpoint versionOne = endpoint("https://v1.example.com/agent", "json-rpc");
+        Endpoint versionTwo = endpoint("https://v2.example.com/agent", "json-rpc");
+        Endpoint future = endpoint("https://v3.example.com/agent", "json-rpc");
+        Endpoint shared = endpoint("https://shared.example.com/agent", "json-rpc");
+        when(serviceStorage.getData(expectedService())).thenReturn(serviceInfo(10L,
+            instance(versionOne, "1.0.0", "[1.0.0]", true, true),
+            instance(versionTwo, "2.0.0", "[2.0.0]", true, true),
+            instance(future, "3.0.0", "[3.0.0]", true, true),
+            instance(shared, "1.0.0", "[1.0.0]", true, false),
+            instance(shared, "2.0.0", "[2.0.0]", true, true)));
+        
+        EndpointSet allOnline = registryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
+            PROTOCOL, Arrays.asList("1.0.0", "2.0.0"));
+        EndpointSet latestOnly = registryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
+            PROTOCOL, Collections.singletonList("2.0.0"));
+        
+        assertEquals(3, allOnline.getEndpoints().size());
+        assertEquals(2, allOnline.getEndpoints().get(0).getBindings().size());
+        assertEquals("1.0.0",
+            allOnline.getEndpoints().get(0).getBindings().get(0).getRuntimeVersion());
+        assertEquals("2.0.0",
+            allOnline.getEndpoints().get(0).getBindings().get(1).getRuntimeVersion());
+        assertTrue(allOnline.getEndpoints().get(0).getHealthy());
+        assertEquals(2, latestOnly.getEndpoints().size());
+        assertEquals("2.0.0",
+            latestOnly.getEndpoints().get(0).getBindings().get(0).getRuntimeVersion());
+        assertNotEquals(allOnline.getSourceRevision(), latestOnly.getSourceRevision());
+        assertFalse(allOnline.getEndpoints().stream()
+            .anyMatch(endpoint -> endpoint.getUri().contains("v3.example.com")));
+    }
+    
+    @Test
     void testRejectConflictingNamingProjection() {
         Endpoint first = endpoint("https://example.com/one", "json-rpc");
         Endpoint second = endpoint("https://example.com/two", "json-rpc");
@@ -312,6 +346,11 @@ class AgentRuntimeRegistryServiceTest {
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, null));
         
         assertEquals(NacosException.CONFLICT, exception.getErrCode());
+        
+        NacosApiException discoveryException = assertThrows(NacosApiException.class,
+            () -> registryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, PROTOCOL,
+                Arrays.asList("1.0.0", "2.0.0")));
+        assertEquals(NacosException.CONFLICT, discoveryException.getErrCode());
     }
     
     @Test
@@ -385,7 +424,16 @@ class AgentRuntimeRegistryServiceTest {
     void testRejectNullRuntimeEndpointSetVersion() {
         assertThrows(IllegalArgumentException.class,
             () -> registryService.getRuntimeEndpointSet(
-                NAMESPACE_ID, AGENT_NAME, PROTOCOL, null));
+                NAMESPACE_ID, AGENT_NAME, PROTOCOL, (String) null));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.getRuntimeEndpointSet(
+                NAMESPACE_ID, AGENT_NAME, PROTOCOL, (List<String>) null));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.getRuntimeEndpointSet(
+                NAMESPACE_ID, AGENT_NAME, PROTOCOL, Collections.<String>emptyList()));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.getRuntimeEndpointSet(
+                NAMESPACE_ID, AGENT_NAME, PROTOCOL, Collections.singletonList("latest")));
     }
     
     private AgentEndpointRegistrationBatch registration(String runtimeVersion,
