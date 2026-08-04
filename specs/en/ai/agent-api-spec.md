@@ -115,6 +115,7 @@ AiService extends AgentDiscoveryService, A2aService
 | Cancel polling subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
 | Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
+| Code-first publish | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` is a local SDK convenience rather than a server Watch or Push
 operation. The SDK periodically executes Discover with the same Reference and
@@ -134,13 +135,29 @@ removed. The SDK stores that complete batch as redo intent.
 `deregisterAgentEndpoints` remains a convenience method over natural keys. The
 SDK removes those keys from its expected batch and sends the complete remaining
 batch through Register. When no Endpoint remains, it sends a whole-publication
-deregistration. The initial implementation may
-omit a new generic Agent-definition publish method, but existing
-`A2aService.releaseAgentCard` remains functional through the compatibility
-adapter. A later Client SDK revision will provide an optional code-first Agent
-publish operation: `autoSubmit=false` creates a draft, and `autoSubmit=true`
-runs the ordinary submit Pipeline. It is not force-publish and endpoint
-registration never creates a definition implicitly.
+deregistration. Existing `A2aService.releaseAgentCard` remains functional
+through the compatibility adapter.
+
+`publishAgent` is an optional, namespace-bound definition-publication step.
+`AgentPublishRequest` reuses the Version content, `basedOnVersion`, author,
+change description, and initial Agent metadata fields from
+`AgentDraftCreateRequest`, and adds `autoSubmit`, whose default is `false`.
+The caller does not supply a namespace. The proxy copies the request, uses the
+SDK namespace, and never mutates the caller's object. `autoSubmit=false` only
+creates or returns an equivalent draft. `autoSubmit=true` runs the ordinary
+submit Pipeline after draft creation and returns the final observable
+`reviewing`, `reviewed`, or `online` Version. It is not force-publish and
+endpoint registration never creates a definition implicitly.
+
+Equivalent retries for the same namespace, Agent, and exact Version converge.
+A draft retry is idempotent. When an earlier `autoSubmit=true` request already
+advanced equivalent content to `reviewing`, `reviewed`, or `online`, the retry
+returns the existing Version. The same request may resume an existing draft by
+changing only `autoSubmit` to `true`. Different content, author, change
+description, or explicitly supplied initial metadata is a conflict.
+`autoSubmit=false` against an advanced Version, and either mode against an
+`offline` Version, returns illegal state or conflict. A submit failure does not
+compensate by deleting the created draft.
 
 ### 2.2 Transport Matrix
 
@@ -151,6 +168,7 @@ registration never creates a definition implicitly.
 | Server Watch and push | No | No |
 | Local SDK polling subscription | Reuses Discover | Reuses Discover |
 | Register and Deregister | Yes | Yes |
+| Code-first definition publish | Yes | Yes |
 | Publisher heartbeat | Yes | Uses the gRPC connection lifecycle |
 
 Polling subscriptions use the SDK-selected Discover transport and add no HTTP
@@ -166,6 +184,7 @@ repeated through HTTP.
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
+| POST | `/v3/client/ai/agents` | Form: `AgentPublishRequest`; complex fields are JSON strings | `Result<AgentVersionDetail>` |
 | POST | `/v3/client/ai/agents/endpoints` | Form: complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form: `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
@@ -199,6 +218,13 @@ POSTing the complete remainder; it uses DELETE only when that remainder is
 empty. A direct HTTP caller likewise owns its complete desired batch. The
 three-field DELETE Form is a binding object, not a replacement for the
 application-facing `AgentEndpointDeregistrationBatch` RAD model.
+
+Definition publication uses a dedicated Form rather than a JSON body.
+`provider`, `tags`, `extensions`, and `callInterfaces` are JSON strings; the
+remaining values are ordinary Form fields. The Form's single `toRequest()`
+call performs deserialization and validation, so the Controller does not call
+`validate()` separately. Persistent Agent/Version publication does not require
+the `X-Nacos-Client-Id` or `Request-Module` headers used by Endpoint publishers.
 
 ### 2.4 HTTP Publisher Identity And Liveness
 
@@ -272,6 +298,7 @@ path for an upgrading cluster in which that API is not yet available.
 |---|---|---|
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | Search and return a page of catalog entries |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | One Discover |
+| `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit` |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
 | `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
 
@@ -313,6 +340,7 @@ The target ability keys are:
 |---|---|---|
 | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search and Discover payloads |
 | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD endpoint publication payloads |
+| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server accepts generic code-first Agent publication payloads |
 
 Legacy `SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and
 `SDK_AGENT_REGISTRY` gate only the old A2A contract. Absence of a new ability

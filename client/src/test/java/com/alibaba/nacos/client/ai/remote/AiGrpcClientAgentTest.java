@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -30,9 +32,11 @@ import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -138,6 +142,35 @@ class AiGrpcClientAgentTest {
             (AgentDiscoveryRpcRequest) requests.get(1);
         assertSame(discovery, discoveryRpcRequest.getDiscoveryRequest());
         assertEquals("alice", discoveryRpcRequest.getHeader("identity"));
+    }
+    
+    @Test
+    void publishUsesTypedRequestAndDedicatedAbility() throws Exception {
+        support(AbilityKey.SERVER_AGENT_PUBLISH_V1);
+        AgentPublishRequest publication = new AgentPublishRequest();
+        publication.setAgentName("agent-a");
+        AgentVersionDetail expected = new AgentVersionDetail();
+        AgentPublishRpcResponse response = new AgentPublishRpcResponse();
+        response.setVersionDetail(expected);
+        when(rpcClient.request(any(AgentPublishRpcRequest.class))).thenReturn(response);
+        
+        assertSame(expected, client.publishAgent(publication));
+        ArgumentCaptor<AgentPublishRpcRequest> request =
+            ArgumentCaptor.forClass(AgentPublishRpcRequest.class);
+        verify(rpcClient).request(request.capture());
+        assertEquals("public", request.getValue().getNamespaceId());
+        assertSame(publication, request.getValue().getPublishRequest());
+        assertEquals("alice", request.getValue().getHeader("identity"));
+    }
+    
+    @Test
+    void publishRequiresExplicitServerAbility() {
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_PUBLISH_V1))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
+            assertThrows(NacosException.class,
+                () -> client.publishAgent(new AgentPublishRequest())).getErrCode());
     }
     
     @Test

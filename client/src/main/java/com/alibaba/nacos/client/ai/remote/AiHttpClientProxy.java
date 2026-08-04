@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
@@ -125,6 +127,32 @@ public class AiHttpClientProxy implements AiClientProxy {
         this.serverListManager = null;
         this.securityProxy = null;
         this.executorService = null;
+    }
+    
+    @Override
+    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+        Map<String, String> form = new HashMap<String, String>();
+        form.put("namespaceId", namespaceId);
+        form.put("agentName", request.getAgentName());
+        putOptional(form, "displayName", request.getDisplayName());
+        putOptional(form, "description", request.getDescription());
+        putOptional(form, "iconUrl", request.getIconUrl());
+        putJson(form, "provider", request.getProvider());
+        putJson(form, "tags", request.getTags());
+        putJson(form, "extensions", request.getExtensions());
+        form.put("version", request.getVersion());
+        putJson(form, "callInterfaces", request.getCallInterfaces());
+        putOptional(form, "author", request.getAuthor());
+        putOptional(form, "changeDescription", request.getChangeDescription());
+        putOptional(form, "basedOnVersion", request.getBasedOnVersion());
+        form.put("autoSubmit", String.valueOf(request.isAutoSubmit()));
+        String response = requestAgentApi(AGENT_CLIENT_PATH, AgentHttpMethod.POST,
+            Collections.<QueryParameter>emptyList(), form,
+            buildAgentResource(request.getAgentName()));
+        Result<AgentVersionDetail> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<AgentVersionDetail>>() {
+            });
+        return requireSuccess(result);
     }
     
     public AiHttpClientProxy(String namespaceId, NacosClientProperties properties)
@@ -392,6 +420,18 @@ public class AiHttpClientProxy implements AiClientProxy {
     private void addParameter(List<QueryParameter> parameters, String name, Object value) {
         if (value != null) {
             parameters.add(new QueryParameter(name, String.valueOf(value)));
+        }
+    }
+    
+    private void putOptional(Map<String, String> form, String name, String value) {
+        if (value != null) {
+            form.put(name, value);
+        }
+    }
+    
+    private void putJson(Map<String, String> form, String name, Object value) {
+        if (value != null) {
+            form.put(name, JsonUtils.toJson(value));
         }
     }
     

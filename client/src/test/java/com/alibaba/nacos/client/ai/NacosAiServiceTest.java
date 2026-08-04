@@ -32,6 +32,9 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -862,11 +865,33 @@ class NacosAiServiceTest {
         verify(agentDiscoveryCacheHolder).shutdown();
         verify(agentEndpointPublicationManager).shutdown();
         verify(mcpServerCacheHolder).shutdown();
+        verify(agentCardCacheHolder).shutdown();
         verify(promptCacheHolder).shutdown();
         verify(agentSpecCacheHolder).shutdown();
         verify(skillCacheHolder).shutdown();
         // null out so AfterEach doesn't run shutdown again
         nacosAiService = null;
+    }
+    
+    @Test
+    void publishAgentCopiesCallerRequestAndDelegates() throws Exception {
+        injectMocks();
+        AgentPublishRequest source = new AgentPublishRequest();
+        source.setAgentName("agent-a");
+        source.setVersion("1.0.0");
+        source.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
+        source.setTags(new ArrayList<String>(Collections.singletonList("assistant")));
+        AgentVersionDetail expected = new AgentVersionDetail();
+        when(aiClientProxy.publishAgent(any(AgentPublishRequest.class))).thenReturn(expected);
+        
+        assertEquals(expected, nacosAiService.publishAgent(source));
+        ArgumentCaptor<AgentPublishRequest> request =
+            ArgumentCaptor.forClass(AgentPublishRequest.class);
+        verify(aiClientProxy).publishAgent(request.capture());
+        assertNotNull(request.getValue());
+        assertEquals("assistant", request.getValue().getTags().get(0));
+        source.getTags().clear();
+        assertEquals("assistant", request.getValue().getTags().get(0));
     }
     
     @Test

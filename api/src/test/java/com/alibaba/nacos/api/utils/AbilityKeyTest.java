@@ -51,8 +51,9 @@ class AbilityKeyTest {
         enumMap.put(AbilityKey.SERVER_AGENT_CARD_V1, false);
         enumMap.put(AbilityKey.SERVER_AGENT_DISCOVERY_V1, false);
         enumMap.put(AbilityKey.SERVER_AGENT_ENDPOINT_V1, false);
+        enumMap.put(AbilityKey.SERVER_AGENT_PUBLISH_V1, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(8, stringBooleanMap.size());
+        assertEquals(9, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
@@ -61,6 +62,7 @@ class AbilityKeyTest {
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_CARD_V1.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_DISCOVERY_V1.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_ENDPOINT_V1.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_PUBLISH_V1.getName()));
         
         enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
         enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
@@ -69,8 +71,9 @@ class AbilityKeyTest {
         enumMap.put(AbilityKey.SERVER_AGENT_CARD_V1, true);
         enumMap.put(AbilityKey.SERVER_AGENT_DISCOVERY_V1, true);
         enumMap.put(AbilityKey.SERVER_AGENT_ENDPOINT_V1, true);
+        enumMap.put(AbilityKey.SERVER_AGENT_PUBLISH_V1, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(8, stringBooleanMap.size());
+        assertEquals(9, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
@@ -79,12 +82,13 @@ class AbilityKeyTest {
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_CARD_V1.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_DISCOVERY_V1.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_ENDPOINT_V1.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_PUBLISH_V1.getName()));
     }
     
     @Test
     void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
-        assertEquals(8, actual.size());
+        assertEquals(9, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
         assertEquals(4, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
@@ -94,7 +98,7 @@ class AbilityKeyTest {
     @Test
     void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
-        assertEquals(8, actual.size());
+        assertEquals(9, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
         assertEquals(4, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);

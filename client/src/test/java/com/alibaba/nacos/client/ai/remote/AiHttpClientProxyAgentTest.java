@@ -18,6 +18,10 @@ package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
@@ -140,6 +144,50 @@ class AiHttpClientProxyAgentTest {
         assertTrue(url.getValue().contains("pageSize=10"));
         assertNotNull(header.getValue().getValue(CLIENT_ID_HEADER));
         assertNull(header.getValue().getValue(HttpHeaderConsts.REQUEST_MODULE));
+    }
+    
+    @Test
+    void publishSerializesCompleteFormAndReturnsDetail() throws Exception {
+        AgentVersionDetail expected = new AgentVersionDetail();
+        expected.setAgentName("agent-a");
+        expected.setVersion("1.0.0");
+        doReturn(success(expected)).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        AgentPublishRequest request = new AgentPublishRequest();
+        request.setAgentName("agent-a");
+        request.setDisplayName("Agent A");
+        request.setDescription("description");
+        request.setIconUrl("https://example.com/icon.png");
+        AgentProvider provider = new AgentProvider();
+        provider.setName("Nacos");
+        request.setProvider(provider);
+        request.setTags(Collections.singletonList("assistant"));
+        request.setExtensions(Collections.<String, Object>singletonMap("region", "east"));
+        request.setVersion("1.0.0");
+        request.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
+        request.setAuthor("alice");
+        request.setChangeDescription("initial");
+        request.setAutoSubmit(true);
+        
+        AgentVersionDetail actual = proxy.publishAgent(request);
+        assertEquals("agent-a", actual.getAgentName());
+        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Header> header = ArgumentCaptor.forClass(Header.class);
+        ArgumentCaptor<Map> form = ArgumentCaptor.forClass(Map.class);
+        verify(restTemplate).postForm(url.capture(), header.capture(), form.capture(),
+            eq(String.class));
+        assertTrue(url.getValue().endsWith("/nacos/v3/client/ai/agents"));
+        assertEquals(Constants.AI.AI_MODULE,
+            header.getValue().getValue(HttpHeaderConsts.REQUEST_MODULE));
+        assertEquals("public", form.getValue().get("namespaceId"));
+        assertEquals("agent-a", form.getValue().get("agentName"));
+        assertEquals("Agent A", form.getValue().get("displayName"));
+        assertTrue(String.valueOf(form.getValue().get("provider")).contains("Nacos"));
+        assertTrue(String.valueOf(form.getValue().get("tags")).contains("assistant"));
+        assertTrue(String.valueOf(form.getValue().get("extensions")).contains("east"));
+        assertTrue(String.valueOf(form.getValue().get("callInterfaces")).startsWith("["));
+        assertEquals("true", form.getValue().get("autoSubmit"));
+        assertFalse(form.getValue().containsKey("basedOnVersion"));
     }
     
     @Test

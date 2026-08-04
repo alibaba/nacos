@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
@@ -44,6 +45,34 @@ import java.util.List;
 public final class AgentModelUtils {
     
     private AgentModelUtils() {
+    }
+    
+    /**
+     * Deep-copy and validate an Agent definition publication request.
+     *
+     * @param source caller-owned request
+     * @return isolated validated request
+     * @throws NacosException when the request is invalid
+     */
+    public static AgentPublishRequest copyPublishRequest(AgentPublishRequest source)
+        throws NacosException {
+        if (source == null) {
+            throw invalid("AgentPublishRequest must not be null.");
+        }
+        final AgentPublishRequest result;
+        try {
+            result = JsonUtils.toObj(JsonUtils.toJson(source), AgentPublishRequest.class);
+        } catch (RuntimeException e) {
+            throw invalid("AgentPublishRequest cannot be copied: " + e.getMessage());
+        }
+        validate(new Validation() {
+            
+            @Override
+            public void run() {
+                result.validate();
+            }
+        });
+        return result;
     }
     
     /**

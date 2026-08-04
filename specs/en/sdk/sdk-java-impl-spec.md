@@ -197,6 +197,16 @@ compatibility default bridges that report unsupported behavior until an
 implementation overrides them; the official Nacos implementation overrides the
 complete target surface.
 
+`AiService` directly provides the namespace-bound
+`publishAgent(AgentPublishRequest)` method and returns `AgentVersionDetail`.
+This new method uses the same compatibility default bridge. It does not belong
+to `AgentDiscoveryService`, because definition publication is not discovery.
+The official implementation copies the request, injects the SDK namespace, and
+creates a draft or runs the ordinary submit Pipeline according to
+`autoSubmit`, without mutating the caller's object. Equivalent retries,
+conflicts, and state convergence follow the
+[Agent API Spec](../ai/agent-api-spec.md).
+
 `AgentDiscoveryService` provides these namespace-bound methods:
 
 | Capability | Methods | Contract |
@@ -220,6 +230,14 @@ and the
 The inherited `A2aService` remains a compatibility facade. New Agent
 applications use `AgentDiscoveryService`; existing AgentCard calls continue
 through the A2A compatibility adapter.
+
+Legacy A2A Endpoint redo distinguishes desired intent by
+`(agentName, exactVersion)` inside a namespace-bound SDK and stores a defensive
+snapshot of Endpoint payloads. Legacy AgentCard subscription must correctly
+handle exact versions, latest-pointer changes, and resubscription from an
+existing cache entry after cancellation. `shutdown()` stops its polling tasks.
+Endpoint publication may precede Agent definition creation and never creates a
+definition implicitly.
 
 Resource semantics are defined by the [AI Registry Spec](../ai/ai-registry-spec.md),
 the [Agent API Spec](../ai/agent-api-spec.md), the

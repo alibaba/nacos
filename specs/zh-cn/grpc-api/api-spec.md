@@ -227,6 +227,7 @@ Payload 清单。
 | --- | --- | --- | --- |
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
+| `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | 代码式创建 Agent draft，并按 `autoSubmit` 可选执行普通 submit。 |
 | `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | 订阅或取消订阅 Agent Reference 和可选 Filter；订阅时返回不透明 `watchKey` 和当前完整结果。 |
 | `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK。 |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | 完整替换当前 Connection 对一个 Agent 和 Protocol 的 Runtime Endpoint Batch。 |

@@ -88,6 +88,12 @@ public enum AbilityKey {
         "Server whether support RAD Endpoint publication payloads", AbilityMode.SERVER),
     
     /**
+     * Negotiation key for generic code-first Agent publication payloads.
+     */
+    SERVER_AGENT_PUBLISH_V1("agentPublishV1",
+        "Server whether support generic Agent publication payloads", AbilityMode.SERVER),
+    
+    /**
      * For fuzzy watch naming or config.
      */
     SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config",

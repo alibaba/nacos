@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -36,6 +38,23 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author xiweng.yy
  */
 public interface AiService extends AgentDiscoveryService, A2aService {
+    
+    /**
+     * Publish one exact Agent Version from application code.
+     *
+     * <p>The AiService namespace is used automatically. By default this creates a draft;
+     * {@link AgentPublishRequest#isAutoSubmit()} requests the ordinary submit pipeline and never
+     * force-publishes a Version.</p>
+     *
+     * @param request Agent definition publication request
+     * @return resulting exact Version detail
+     * @throws NacosException when validation, publication, or submit fails
+     */
+    @Since("3.3.0")
+    default AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Agent publication is not implemented by this AiService.");
+    }
     
     /**
      * Get mcp server detail info for latest version.

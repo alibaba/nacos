@@ -144,6 +144,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
+        expectedEndpoint.setVersion("1.0.0");
         verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent", expectedEndpoint);
     }
     
@@ -166,6 +167,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
+        expectedEndpoint.setVersion("1.0.0");
         verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent",
             Collections.singletonList(expectedEndpoint));
     }
@@ -189,6 +191,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
+        expectedEndpoint.setVersion("1.0.0");
         verify(aiGrpcClient).doDeregisterAgentEndpoint("testAgent", expectedEndpoint);
     }
     
@@ -211,6 +214,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
+        expectedEndpoint.setVersion("1.0.0");
         verify(aiGrpcClient).doDeregisterAgentEndpoint("testAgent", expectedEndpoint);
     }
     
@@ -229,7 +233,7 @@ class AiRedoScheduledTaskTest {
         task.run();
         
         // Verify interactions
-        verify(aiGrpcRedoService).removeAgentEndpointForRedo("testAgent");
+        verify(aiGrpcRedoService).removeAgentEndpointForRedo("testAgent@@1.0.0");
     }
     
     @Test
@@ -287,6 +291,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
+        expectedEndpoint.setVersion("1.0.0");
         doThrow(new NacosException(500, "test")).when(aiGrpcClient)
             .doRegisterAgentEndpoint("testAgent", expectedEndpoint);
         
@@ -386,6 +391,7 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
         
         AgentEndpointWrapper wrapper =
             isBatch ? AgentEndpointWrapper.wrap(Collections.singletonList(endpoint))

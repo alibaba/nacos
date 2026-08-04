@@ -20,10 +20,12 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
@@ -94,6 +96,20 @@ class AgentClientParamExtractorTest {
         request.setRegistrationBatch(batch);
         ParamInfo actual = extract(request);
         assertEquals("register-ns", actual.getNamespaceId());
+        assertEquals("demo", actual.getAgentName());
+    }
+    
+    @Test
+    void testRpcPublishExtraction() throws Exception {
+        AgentPublishRpcRequest request = new AgentPublishRpcRequest();
+        request.setNamespaceId("publish-ns");
+        assertEquals("publish-ns", extract(request).getNamespaceId());
+        
+        AgentPublishRequest publication = new AgentPublishRequest();
+        publication.setAgentName("demo");
+        request.setPublishRequest(publication);
+        ParamInfo actual = extract(request);
+        assertEquals("publish-ns", actual.getNamespaceId());
         assertEquals("demo", actual.getAgentName());
     }
     

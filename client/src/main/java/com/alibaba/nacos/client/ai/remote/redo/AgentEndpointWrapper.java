@@ -18,8 +18,10 @@ package com.alibaba.nacos.client.ai.remote.redo;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -34,7 +36,7 @@ public class AgentEndpointWrapper {
     private final boolean isBatch;
     
     private AgentEndpointWrapper(Collection<AgentEndpoint> data, boolean isBatch) {
-        this.data = data;
+        this.data = copyEndpoints(data);
         this.isBatch = isBatch;
     }
     
@@ -62,6 +64,38 @@ public class AgentEndpointWrapper {
             throw new UnsupportedOperationException("Can't get batched data from single data.");
         }
         return data;
+    }
+    
+    /**
+     * Return the exact Agent Version shared by this wrapper's Endpoint payload.
+     *
+     * @return exact Version
+     */
+    public String getVersion() {
+        return data.iterator().next().getVersion();
+    }
+    
+    private static Collection<AgentEndpoint> copyEndpoints(Collection<AgentEndpoint> source) {
+        List<AgentEndpoint> result = new ArrayList<AgentEndpoint>(source.size());
+        for (AgentEndpoint endpoint : source) {
+            result.add(copyEndpoint(endpoint));
+        }
+        return Collections.unmodifiableList(result);
+    }
+    
+    private static AgentEndpoint copyEndpoint(AgentEndpoint source) {
+        AgentEndpoint result = new AgentEndpoint();
+        result.setTransport(source.getTransport());
+        result.setAddress(source.getAddress());
+        result.setPort(source.getPort());
+        result.setPath(source.getPath());
+        result.setSupportTls(source.isSupportTls());
+        result.setVersion(source.getVersion());
+        result.setProtocolVersion(source.getProtocolVersion());
+        result.setTenant(source.getTenant());
+        result.setProtocol(source.getProtocol());
+        result.setQuery(source.getQuery());
+        return result;
     }
     
     @Override

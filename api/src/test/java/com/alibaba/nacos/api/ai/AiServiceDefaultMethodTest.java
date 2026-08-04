@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -31,6 +32,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AiServiceDefaultMethodTest {
     
@@ -129,5 +132,12 @@ class AiServiceDefaultMethodTest {
     @Test
     void unsubscribeMcpServer() throws NacosException {
         aiService.unsubscribeMcpServer("", null);
+    }
+    
+    @Test
+    void publishAgentDefaultsToNotImplemented() {
+        NacosException exception = assertThrows(NacosException.class,
+            () -> aiService.publishAgent(new AgentPublishRequest()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
     }
 }

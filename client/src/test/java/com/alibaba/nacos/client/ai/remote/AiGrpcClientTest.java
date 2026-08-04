@@ -650,10 +650,11 @@ class AiGrpcClientTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
         aiGrpcClient.registerAgentEndpoint("ag", endpoint);
         verify(redoService).cachedAgentEndpointForRedo(org.mockito.ArgumentMatchers.eq("ag"),
             any());
-        verify(redoService).agentEndpointRegistered("ag");
+        verify(redoService).agentEndpointRegistered("ag", "1.0.0");
     }
     
     @Test
@@ -667,13 +668,15 @@ class AiGrpcClientTest {
         AgentEndpoint e1 = new AgentEndpoint();
         e1.setAddress("127.0.0.1");
         e1.setPort(8080);
+        e1.setVersion("1.0.0");
         AgentEndpoint e2 = new AgentEndpoint();
         e2.setAddress("127.0.0.1");
         e2.setPort(8081);
+        e2.setVersion("1.0.0");
         aiGrpcClient.registerAgentEndpoints("ag", Arrays.asList(e1, e2));
         verify(redoService).cachedAgentEndpointForRedo(org.mockito.ArgumentMatchers.eq("ag"),
             any());
-        verify(redoService).agentEndpointRegistered("ag");
+        verify(redoService).agentEndpointRegistered("ag", "1.0.0");
     }
     
     @Test
@@ -687,9 +690,10 @@ class AiGrpcClientTest {
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
         aiGrpcClient.deregisterAgentEndpoint("ag", endpoint);
-        verify(redoService).agentEndpointDeregister("ag");
-        verify(redoService).agentEndpointDeregistered("ag");
+        verify(redoService).agentEndpointDeregister("ag", "1.0.0");
+        verify(redoService).agentEndpointDeregistered("ag", "1.0.0");
     }
     
     @Test
@@ -703,6 +707,7 @@ class AiGrpcClientTest {
         AgentCardDetailInfo actual = aiGrpcClient.subscribeAgentCard("ag", null);
         assertEquals(cached, actual);
         verify(rpcClient, never()).request(any(QueryAgentCardRequest.class));
+        verify(agentCardCacheHolder).addAgentCardUpdateTask("ag", null);
     }
     
     @Test

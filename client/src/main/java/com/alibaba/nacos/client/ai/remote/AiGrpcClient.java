@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -43,6 +45,7 @@ import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
@@ -54,6 +57,7 @@ import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
@@ -186,6 +190,17 @@ public class AiGrpcClient implements AiClientProxy {
         this.executorService.scheduleWithFixedDelay(
             () -> securityProxy.login(nacosClientPropertiesView), 0,
             SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
+    }
+    
+    @Override
+    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_PUBLISH_V1, "Agent publication");
+        AgentPublishRpcRequest rpcRequest = new AgentPublishRpcRequest();
+        rpcRequest.setNamespaceId(namespaceId);
+        rpcRequest.setPublishRequest(request);
+        AgentPublishRpcResponse response =
+            requestToServer(rpcRequest, AgentPublishRpcResponse.class);
+        return response.getVersionDetail();
     }
     
     @Override
@@ -638,7 +653,7 @@ public class AiGrpcClient implements AiClientProxy {
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         request.setEndpoint(endpoint);
         requestToServer(request, AgentEndpointResponse.class);
-        redoService.agentEndpointRegistered(agentName);
+        redoService.agentEndpointRegistered(agentName, endpoint.getVersion());
     }
     
     /**
@@ -655,7 +670,8 @@ public class AiGrpcClient implements AiClientProxy {
         request.setAgentName(agentName);
         request.setEndpoints(endpoints);
         requestToServer(request, AgentEndpointResponse.class);
-        redoService.agentEndpointRegistered(agentName);
+        redoService.agentEndpointRegistered(agentName,
+            endpoints.iterator().next().getVersion());
     }
     
     /**
@@ -670,7 +686,7 @@ public class AiGrpcClient implements AiClientProxy {
         LOGGER.info("[{}] DE-REGISTER agent endpoint {} from agent {}", uuid, endpoint.toString(),
             agentName);
         checkServerAbilityOrThrow(AbilityKey.SERVER_AGENT_REGISTRY, "agent registry");
-        redoService.agentEndpointDeregister(agentName);
+        redoService.agentEndpointDeregister(agentName, endpoint.getVersion());
         doDeregisterAgentEndpoint(agentName, endpoint);
     }
     
@@ -689,7 +705,7 @@ public class AiGrpcClient implements AiClientProxy {
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
         request.setEndpoint(endpoint);
         requestToServer(request, AgentEndpointResponse.class);
-        redoService.agentEndpointDeregistered(agentName);
+        redoService.agentEndpointDeregistered(agentName, endpoint.getVersion());
     }
     
     /**
@@ -713,8 +729,8 @@ public class AiGrpcClient implements AiClientProxy {
                     throw e;
                 }
             }
-            agentCardCacheHolder.addAgentCardUpdateTask(agentName, version);
         }
+        agentCardCacheHolder.addAgentCardUpdateTask(agentName, version);
         return cachedAgentCard;
     }
     

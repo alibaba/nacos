@@ -59,4 +59,15 @@ class AgentCardChangedEventTest {
         assertEquals("agentX", event.getAgentName());
         assertEquals(CacheKeyUtils.LATEST_VERSION, event.getVersion());
     }
+    
+    @Test
+    void testExplicitRouteOverridesLatestFlag() {
+        AgentCardDetailInfo info = new AgentCardDetailInfo();
+        info.setName("agentX");
+        info.setLatestVersion(true);
+        info.setVersion("v4");
+        AgentCardChangedEvent event = new AgentCardChangedEvent(info, "v4");
+        assertEquals("v4", event.getVersion());
+        assertSame(info, event.getAgentCard());
+    }
 }

@@ -1980,6 +1980,20 @@ flowchart LR
 | 阻塞检查 | 已确认现有 Client HTTP/gRPC API、RAD model validator、Endpoint canonicalizer、HTTP Client lifecycle、gRPC connection listener 和 Agent 专用现有 redo 扩展点足以完成闭环；无需修改禁止范围。若实现中出现必须改变共享 Client runtime、HTTP common、Naming 或服务端数据面的情况，则立即暂停并提交维护者决策 |
 | 验收门禁 | 编码前完成 `AGENT_DISCOVERY_SDK_IT_SCENARIOS.md` 全操作/边界/故障/组合矩阵；新增或修改 production Java 可执行行 UT line coverage 100%；`api`、`client` Spotless、编译、相关单测和 JaCoCo XML 验证；Java SDK test-compile 与 10 个稳定 standalone IT 场景；与既有 13 个 AI SDK IT 联合回归；默认 JSON/Jackson 3 适配器、HTTP/gRPC 定向交叉验证，以及同一 SDK 进程跨真实 standalone 停服/重启的连接恢复、轮询、gRPC reconnect redo 和 HTTP `50404` replay 验证；最终 production diff 逐项复核白名单 |
 
+#### 当前阶段范围：通用 Agent SDK 代码式发布与普通 A2A Client 首版对齐
+
+| 项目 | 本阶段结论 |
+|---|---|
+| 阶段状态 | 契约和测试矩阵已冻结，进入最小实现 |
+| 规范依据 | Agent API Spec 第 2 章、A2A Agent Spec 第 4～5 章、SDK / Java SDK Implementation Specs、Client Local Cache And Redo Spec、HTTP/gRPC API Specs、API / Java SDK Integration Test Specs，以及本文第 5.2、6、7.1～7.2 节 |
+| 当前目标 | 在普通 `AiService` 增加 namespace-bound `publishAgent(AgentPublishRequest)`，支持 draft-only 与普通 Pipeline `autoSubmit`，并同时修复普通 `A2aService` 第一版必须具备的多 Version Endpoint redo、防御性 Payload 快照、exact/latest 订阅路由、Cache 命中后重新订阅和 shutdown 资源释放 |
+| 允许范围 | `api` 新增 Agent 发布 Request、HTTP/gRPC Binding、Response、ability key，并在 `AiService` 增加兼容 default bridge；`ai` 新增 Client Form、Controller 方法、Agent 专用发布编排 Service 和 gRPC Handler；`auth` 仅在现有通用 Agent Client Request 识别已足够时不修改，否则只允许最小 Agent Request 识别；`client.ai` 仅扩展 Agent HTTP/gRPC Proxy、Request 防御性复制，以及旧 A2A AgentCard Cache/Notifier/Endpoint redo/shutdown；对应生产类 UT、OpenAPI/Java SDK IT、定向重启测试、Specs 和本文 |
+| 禁止范围 | `ai_resource` / `ai_resource_version` 表、DAO、Repository、Mapper、通用 Resource/Version Manager、AI Storage SPI/provider；HTTP common、Naming 共享逻辑、公共 Client runtime/redo 抽象、Maintainer SDK、Console UI；不得实现服务端 Watch/Push、管理元数据订阅、本地选址 helper、force-publish、滚动升级、迁移、双读双写或顺手修复其他资源问题 |
+| 发布语义 | `autoSubmit=false` 只创建/返回等价 draft；`true` 创建后执行普通 submit，并允许对等价 draft 继续提交或对已完成的等价请求收敛返回。内容、作者、变更说明或显式首次元数据不同则冲突；已推进 Version 的 false 请求和 offline Version 拒绝；submit 失败不删除 draft。Endpoint 注册始终不创建定义 |
+| A2A 首版边界 | 保留旧 A2A gRPC compatibility facade，不新增旧 A2A HTTP 路径，不把管理 CRUD 移入普通 Client，不实现本地选址 helper。Endpoint 预注册是合法成功路径；不同 exact Version redo 不相互覆盖；订阅和 shutdown 必须可恢复、可释放 |
+| 阻塞检查 | 现有 `AgentOperationService` 的 draft/create/submit/get 原语、Agent 专用 Form 模式、通用 `AbstractAgentClientRequest` 参数提取和 `AiGrpcResourceParser` 已能承载主流程；若正确实现必须修改禁止范围，则立即停止编码并提交维护者决策 |
+| 验收门禁 | 编码前完成 `AGENT_PUBLISH_SDK_IT_SCENARIOS.md` 及 OpenAPI/Java SDK 覆盖登记；新增或修改 production Java 可执行行 UT line coverage 100%；相关模块 Spotless、编译、单测和 JaCoCo XML；HTTP/gRPC、draft/submit/retry/conflict、Admin/Console/RAD/legacy A2A 交叉 standalone IT；同一 SDK 发布两个旧 A2A exact Version Endpoint 后真实停服/重启验证两份 redo；最终 diff 逐项复核白名单 |
+
 #### 已完成阶段范围留痕：Console UI
 
 | 项目 | 本阶段结论 |
@@ -2151,7 +2165,8 @@ Console UI 场景矩阵：
   鉴权/审计、单批次容量、故障注入与性能基准；验证完整 Batch replacement、空 publication 注销、
   `ServiceStorage` 直读、查询期 bindings 聚合和 redo 恢复，并据 Naming cluster quota 确定是否需要更低的
   Agent publisher quota；完成文档、指标、日志和发布说明。
-- [ ] **后续增强**：在核心链路稳定后增加 Client SDK 通用 Agent 代码式发布及 `autoSubmit` 契约。
+- [ ] **通用 Agent SDK 代码式发布**：按当前阶段白名单增加 `publishAgent` 与 `autoSubmit`，并完成普通
+  A2A Client redo、订阅和 shutdown 首版对齐；完成实现、100% line UT、稳定 IT 与真实重启验证后勾选。
 - [ ] **AI Resource 条件更新增强**：统一设计 `ai_resource_version` 行级条件更新、AI Storage
   conditional create/replace/delete 和结果不确定恢复语义；内置 `nacos_config` 对接 Config CAS，
   并推动 Agent、Prompt、Skill、AgentSpec 共同迁移，分别处理单对象和多文件 generation。

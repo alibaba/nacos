@@ -45,5 +45,6 @@ class ServerAbilitiesTest {
         assertTrue(
             ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_DISCOVERY_V1));
         assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_ENDPOINT_V1));
+        assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_PUBLISH_V1));
     }
 }

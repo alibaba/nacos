@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
@@ -35,6 +37,15 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
  * @author nacos
  */
 public interface AiClientProxy extends Closeable {
+    
+    /**
+     * Publish one exact Agent definition Version.
+     *
+     * @param request isolated publication request
+     * @return resulting exact Version detail
+     * @throws NacosException when the transport request fails
+     */
+    AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException;
     
     /**
      * Search visible Agent catalog entries.

@@ -182,6 +182,18 @@ Reference 规范化保持精确 Version、Label 和 Latest 之间的区别。Fil
 后续契约；实现该契约前必须先更新 Agent API、能力位和传输 Payload，不能从本地轮询
 身份推导 Wire Watch state。
 
+### 8.4 旧 A2A 兼容恢复
+
+namespace-bound `A2aService` 的旧 Version-specific Endpoint Publication 使用
+`(agentName, exactVersion)` 作为本地 redo 身份；不同精确 Version 不得相互覆盖。Redo record
+保存 Endpoint 集合及其 URI、transport、metadata 等字段的防御性快照，调用方后续修改原始
+`AgentEndpoint` 或 Collection 不得改变重连意图。
+
+旧 AgentCard 订阅的 exact Version 和 latest 是不同本地身份。服务端返回的 Version 当前是否为
+latest 不能替代调用方订阅身份；一次变化必须通知所有受影响的 exact/latest key。当 latest 指向已
+缓存的精确 Version 时仍需产生 latest 变化。取消后使用已有 Cache 重新订阅必须重新启动轮询任务。
+SDK shutdown 必须停止旧 AgentCard Cache Holder 的全部轮询。
+
 ## 9. Shutdown
 
 SDK shutdown 必须清理内存 redo state、停止后台 retry task、关闭 transport client，并停止本地

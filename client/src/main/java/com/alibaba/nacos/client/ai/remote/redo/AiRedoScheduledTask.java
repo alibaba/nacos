@@ -127,7 +127,7 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                 aiGrpcClient.doDeregisterAgentEndpoint(agentName, endpoint);
                 break;
             case REMOVE:
-                getRedoService().removeAgentEndpointForRedo(agentName);
+                getRedoService().removeAgentEndpointForRedo(redoData.getKey());
                 break;
             default:
         }

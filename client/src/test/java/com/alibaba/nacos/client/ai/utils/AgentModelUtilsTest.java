@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
@@ -26,7 +28,10 @@ import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -47,6 +52,43 @@ class AgentModelUtilsTest {
         Constructor<AgentModelUtils> constructor = AgentModelUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         constructor.newInstance();
+    }
+    
+    @Test
+    void copyPublishRequestDeepCopiesAndValidates() throws NacosException {
+        AgentPublishRequest source = new AgentPublishRequest();
+        source.setAgentName("agent-a");
+        source.setVersion("1.0.0");
+        source.setCallInterfaces(new ArrayList<AgentCallInterface>(
+            Collections.singletonList(new AgentCallInterface())));
+        source.setTags(new ArrayList<String>(Collections.singletonList("assistant")));
+        source.setExtensions(new HashMap<String, Object>(
+            Collections.<String, Object>singletonMap("region", "east")));
+        source.setAutoSubmit(true);
+        
+        AgentPublishRequest result = AgentModelUtils.copyPublishRequest(source);
+        assertNotSame(source, result);
+        assertNotSame(source.getCallInterfaces(), result.getCallInterfaces());
+        assertNotSame(source.getTags(), result.getTags());
+        assertNotSame(source.getExtensions(), result.getExtensions());
+        assertEquals(true, result.isAutoSubmit());
+        source.getTags().clear();
+        assertEquals("assistant", result.getTags().get(0));
+        
+        assertThrows(NacosException.class, () -> AgentModelUtils.copyPublishRequest(null));
+        result.setCallInterfaces(null);
+        assertThrows(NacosException.class, () -> AgentModelUtils.copyPublishRequest(result));
+    }
+    
+    @Test
+    void copyPublishRequestMapsCopyFailure() {
+        AgentPublishRequest source = new AgentPublishRequest();
+        try (MockedStatic<JsonUtils> json = Mockito.mockStatic(JsonUtils.class)) {
+            json.when(() -> JsonUtils.toJson(source)).thenThrow(new IllegalStateException("boom"));
+            assertEquals(NacosException.INVALID_PARAM,
+                assertThrows(NacosException.class,
+                    () -> AgentModelUtils.copyPublishRequest(source)).getErrCode());
+        }
     }
     
     @Test

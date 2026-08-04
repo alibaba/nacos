@@ -36,6 +36,9 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,12 +88,57 @@ class NacosAgentCardCacheHolderTest {
     }
     
     @Test
+    void testLatestSnapshotPublishesExactAndLatestRoutes() throws InterruptedException {
+        RoutingSubscriber routing = new RoutingSubscriber(2);
+        NotifyCenter.registerSubscriber(routing);
+        try {
+            cacheHolder.processAgentCardDetailInfo(buildDetailInfo("route-agent", "1.0", true));
+            assertTrue(routing.latch.await(3, TimeUnit.SECONDS));
+            assertTrue(routing.versions.contains("1.0"));
+            assertTrue(routing.versions.contains(
+                com.alibaba.nacos.client.ai.utils.CacheKeyUtils.LATEST_VERSION));
+        } finally {
+            NotifyCenter.deregisterSubscriber(routing);
+        }
+    }
+    
+    @Test
+    void testLatestCanMoveToAlreadyCachedExactVersion() throws InterruptedException {
+        RoutingSubscriber warmup = new RoutingSubscriber(3);
+        NotifyCenter.registerSubscriber(warmup);
+        try {
+            cacheHolder.processAgentCardDetailInfo(buildDetailInfo("move-agent", "1.0", true));
+            cacheHolder.processAgentCardDetailInfo(buildDetailInfo("move-agent", "2.0", false));
+            assertTrue(warmup.latch.await(3, TimeUnit.SECONDS));
+        } finally {
+            NotifyCenter.deregisterSubscriber(warmup);
+        }
+        RoutingSubscriber routing = new RoutingSubscriber(1);
+        NotifyCenter.registerSubscriber(routing);
+        try {
+            cacheHolder.processAgentCardDetailInfo(buildDetailInfo("move-agent", "2.0", true));
+            assertTrue(routing.latch.await(3, TimeUnit.SECONDS));
+            assertEquals(Collections.singleton(
+                com.alibaba.nacos.client.ai.utils.CacheKeyUtils.LATEST_VERSION),
+                routing.versions);
+        } finally {
+            NotifyCenter.deregisterSubscriber(routing);
+        }
+    }
+    
+    @Test
     void testProcessSameAgentCardShouldNotPublishEvent() throws InterruptedException {
         AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
         first.setSupportedInterfaces(
             Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
-        cacheHolder.processAgentCardDetailInfo(first);
-        assertTrue(subscriber.latch.await(3, TimeUnit.SECONDS));
+        RoutingSubscriber warmup = new RoutingSubscriber(2);
+        NotifyCenter.registerSubscriber(warmup);
+        try {
+            cacheHolder.processAgentCardDetailInfo(first);
+            assertTrue(warmup.latch.await(3, TimeUnit.SECONDS));
+        } finally {
+            NotifyCenter.deregisterSubscriber(warmup);
+        }
         
         TestAgentCardSubscriber secondSubscriber = new TestAgentCardSubscriber();
         NotifyCenter.registerSubscriber(secondSubscriber);
@@ -321,6 +369,22 @@ class NacosAgentCardCacheHolderTest {
         assertTrue(cancel.get());
     }
     
+    @Test
+    void testShutdownCancelsTasksAndIsIdempotent() throws Exception {
+        cacheHolder.addAgentCardUpdateTask("test-agent", "1.0");
+        Map<String, ?> taskMap = readField(cacheHolder, "updateTaskMap");
+        ScheduledThreadPoolExecutor executor = readField(cacheHolder, "updaterExecutor");
+        cacheHolder.shutdown();
+        cacheHolder.shutdown();
+        assertTrue(taskMap.isEmpty());
+        assertTrue(executor.isShutdown());
+        
+        when(aiGrpcClient.getAgentCard(anyString(), anyString(), anyString()))
+            .thenReturn(buildDetailInfo("test-agent", "1.0", false));
+        newUpdater("test-agent", "1.0").run();
+        assertNotNull(cacheHolder.getAgentCard("test-agent", "1.0"));
+    }
+    
     private Runnable newUpdater(String agentName, String version) throws Exception {
         Class<?> updaterClass = Class.forName(
             "com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder$AgentCardUpdater");
@@ -362,6 +426,28 @@ class NacosAgentCardCacheHolderTest {
         @Override
         public void onEvent(AgentCardChangedEvent event) {
             lastEvent.set(event);
+            latch.countDown();
+        }
+        
+        @Override
+        public Class<? extends Event> subscribeType() {
+            return AgentCardChangedEvent.class;
+        }
+    }
+    
+    private static class RoutingSubscriber extends Subscriber<AgentCardChangedEvent> {
+        
+        final CountDownLatch latch;
+        
+        final Set<String> versions = Collections.synchronizedSet(new HashSet<String>());
+        
+        RoutingSubscriber(int expectedEvents) {
+            latch = new CountDownLatch(expectedEvents);
+        }
+        
+        @Override
+        public void onEvent(AgentCardChangedEvent event) {
+            versions.add(event.getVersion());
             latch.countDown();
         }
         
