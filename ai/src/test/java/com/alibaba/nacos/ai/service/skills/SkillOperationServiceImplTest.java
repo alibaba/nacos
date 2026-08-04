@@ -1424,6 +1424,12 @@ class SkillOperationServiceImplTest {
         lenient().when(mockFilter.adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ),
             anyString(), any())).thenReturn(
                 advisor);
+        lenient().when(mockFilter.validateVisibility(anyString(),
+            eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+            .thenReturn(ValidationResult.allow());
+        lenient().when(mockFilter.validateVisibility(anyString(),
+            eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+            .thenReturn(ValidationResult.allow());
         lenient().when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(mockFilter));
         setupRequestContext("userB");
