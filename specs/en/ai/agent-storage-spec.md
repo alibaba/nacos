@@ -705,12 +705,18 @@ The A2A adapter is the first consumer of this storage contract:
 | Runtime calling protocol | Canonical Agent protocol token `a2a`. |
 | Legacy endpoint transport and URI parts | Common Endpoint and reserved Naming metadata. |
 
-During the initial compatibility phase, old A2A runtime registration keeps its
-existing version-specific Naming layout. It must not be redirected to the new
-version-neutral Service until the A2A client or adapter can maintain and submit
-the complete desired batch for that Service. This prevents one legacy Version
-registration from overwriting another.
+The `CANONICAL` compatibility branch writes legacy A2A Runtime registrations to
+the common version-neutral Service. To preserve this specification's one
+complete singular-binding batch per publisher and Service rule, the adapter
+derives an internal child publisher for each
+`(original connection, namespaceId, agentName, exactVersion)`. Each child
+submits the complete batch for its exact Version, so Versions do not overwrite
+one another and the server does not perform read-merge-write. Disconnecting the
+original connection releases all children.
 
-The later cutover to the common Naming layout, historical Naming services,
-mixed-cluster dual-read or dual-write, rollback, and malformed historical
-identity handling belong to a separate rolling-upgrade and migration contract.
+The `LEGACY` branch keeps the historical version-specific Naming layout in full.
+The Beta `CANONICAL` branch does not dual-write the historical Service.
+Compatibility for Naming Gateway callers that depend directly on the legacy
+serviceName, mixed-cluster dual read or write, rollback, old-Service cleanup,
+and malformed historical identity handling belong to a separate post-Beta
+rolling-upgrade and migration contract.

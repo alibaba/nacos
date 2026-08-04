@@ -596,9 +596,12 @@ A2A Adapter 是本存储契约的首个使用方：
 | Runtime 调用 protocol | 规范 Agent protocol token `a2a`。 |
 | 旧 Endpoint transport 和 URI 部分 | 通用 Endpoint 和 Naming 保留 metadata。 |
 
-首个兼容阶段中，旧 A2A Runtime 注册继续使用现有的按 Version 划分 Naming layout。在 A2A 客户端
-或 Adapter 能够维护并提交新 Service 的完整期望批次之前，不得把旧注册直接重定向到新的
-Version-neutral Service，否则一个旧 Version 的注册会覆盖另一个 Version。
+`CANONICAL` 兼容分支把旧 A2A Runtime 注册写入公共 Version-neutral Service。为满足本规范
+“每个 publisher 对一个 Service 只有一份完整 singular binding 批次”的约束，Adapter 按
+`(原 connection, namespaceId, agentName, exactVersion)` 派生内部子 publisher。每个子 publisher
+提交该精确 Version 的完整批次，因此不同 Version 不会覆盖，也不需要服务端 read-merge-write；
+原 connection 断开时释放全部子 publisher。
 
-后续切换到公共 Naming layout、历史 Naming Service、混合集群双读或双写、回滚和异常历史身份处理
-属于独立的滚动升级与迁移契约。
+`LEGACY` 分支仍完整使用历史按 Version 划分的 Naming layout。Beta 的 `CANONICAL` 分支不向历史
+Service 双写。直接依赖旧 Naming serviceName 的 Gateway 调用方兼容、混合集群双读或双写、回滚、
+旧 Service 清理和异常历史身份处理属于独立的 Beta 后滚动升级与迁移契约。

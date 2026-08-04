@@ -49,6 +49,7 @@ import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
@@ -72,6 +73,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -110,6 +112,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String PROTOCOL_A2A = "a2a";
     
     private static final String PROTOCOL_MCP = "mcp";
+
+    private static final String AGENT_ENDPOINT_GROUP = "agent-endpoints";
     
     private static final String TRANSPORT_HTTP = "http";
     
@@ -135,7 +139,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     void shouldInteroperateWithLegacyA2aSdk() throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
         AiService service = createAiService();
-        String agentName = randomServiceName("agent-legacy-a2a");
+        NamingService namingService = createNamingService();
+        String agentName = randomLegacyUnencodedAgentName();
         AgentCard firstCard = legacyCompatibleAgentCard(agentName, VERSION,
             "legacy A2A SDK release");
 
@@ -175,9 +180,34 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyEndpoint));
         JsonNode consoleRuntime = getConsoleAgent(CONSOLE_AGENT_PATH + "/runtime-endpoints",
             agentName, VERSION);
-        assertEquals(0, consoleRuntime.get("runtimeEndpointSnapshot").get("items").size(),
-            "legacy exact-Version Naming Endpoints must remain isolated from the new Runtime "
-                + "Registry: " + consoleRuntime);
+        JsonNode versionOneRuntimeItems =
+            consoleRuntime.get("runtimeEndpointSnapshot").get("items");
+        assertEquals(1, versionOneRuntimeItems.size(), consoleRuntime.toString());
+        assertEquals(VERSION,
+            versionOneRuntimeItems.get(0).get("bindings").get(0).get("runtimeVersion")
+                .asText(), consoleRuntime.toString());
+        assertEquals("[" + VERSION + "]",
+            versionOneRuntimeItems.get(0).get("bindings").get(0).get("versionRange")
+                .asText(), consoleRuntime.toString());
+        AgentDiscoveryResult versionOneDiscovery =
+            service.discoverAgent(reference(agentName, VERSION, null));
+        assertBinding(versionOneDiscovery, legacyEndpointUri(legacyEndpoint), VERSION);
+        assertTrue(namingService.getAllInstances(agentName + "::" + VERSION,
+            AGENT_ENDPOINT_GROUP).isEmpty(),
+            "CANONICAL mode must not dual-write the historical Naming service");
+
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyVersionTwoEndpoint =
+            legacyEndpoint(VERSION_2);
+        service.registerAgentEndpoint(agentName, legacyVersionTwoEndpoint);
+        addCleanup(() -> service.deregisterAgentEndpoint(agentName, legacyVersionTwoEndpoint));
+        waitUntil("canonical Runtime query should expose the pre-registered Version 2 Endpoint",
+            () -> getConsoleAgent(CONSOLE_AGENT_PATH + "/runtime-endpoints", agentName,
+                VERSION_2).get("runtimeEndpointSnapshot").get("items").size() == 1);
+        JsonNode preRegisteredVersionTwo = getConsoleAgent(
+            CONSOLE_AGENT_PATH + "/runtime-endpoints", agentName, VERSION_2);
+        assertEquals(1,
+            preRegisteredVersionTwo.get("runtimeEndpointSnapshot").get("items").size(),
+            preRegisteredVersionTwo.toString());
 
         AgentCard duplicate = legacyCompatibleAgentCard(agentName, VERSION,
             "duplicate must not overwrite the online Version");
@@ -219,12 +249,24 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(agentName, legacyProjection.getName());
         assertEquals(VERSION_2, legacyProjection.getVersion());
         assertEquals("canonical Agent SDK publication", legacyProjection.getDescription());
+        waitUntil("legacy SERVICE query should expose the pre-registered Version 2 Endpoint",
+            () -> containsLegacyEndpoint(service.getAgentCard(agentName, VERSION_2,
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionTwoEndpoint));
         assertTrue(legacyLatestChanged.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
             "legacy latest subscription must observe a canonical Agent Version publication");
         assertNotNull(legacySubscription.get());
         assertEquals(VERSION_2, legacySubscription.get().getVersion());
-        assertEquals(VERSION_2,
-            service.discoverAgent(reference(agentName, null, null)).getVersion());
+        AgentDiscoveryResult defaultDiscovery =
+            service.discoverAgent(reference(agentName, null, null));
+        AgentDiscoveryResult latestDiscovery =
+            service.discoverAgent(reference(agentName, null, LABEL_LATEST));
+        assertEquals(VERSION_2, defaultDiscovery.getVersion());
+        assertBinding(defaultDiscovery, legacyEndpointUri(legacyEndpoint), VERSION);
+        assertBinding(defaultDiscovery, legacyEndpointUri(legacyVersionTwoEndpoint), VERSION_2);
+        assertEquals(VERSION_2, latestDiscovery.getVersion());
+        assertBinding(latestDiscovery, legacyEndpointUri(legacyVersionTwoEndpoint), VERSION_2);
+        assertFalse(containsEndpoint(latestDiscovery, PROTOCOL_A2A,
+            legacyEndpointUri(legacyEndpoint)));
         JsonNode updatedConsoleOverview = getConsoleAgent(CONSOLE_AGENT_PATH, agentName, null);
         assertEquals(VERSION_2,
             updatedConsoleOverview.get("agent").get("versionInfo").get("labels")
@@ -790,8 +832,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(grpcVersionOne)));
         httpService.registerAgentEndpoints(registration(agentName, VERSION, PROTOCOL_A2A,
             Collections.singletonList(httpVersionOne)));
-        waitForEndpointCount(grpcService, reference(agentName, VERSION, null), PROTOCOL_A2A, 2);
-        waitForEndpointCount(httpService, reference(agentName, VERSION, null), PROTOCOL_A2A, 2);
+        waitForEndpointCount(grpcService, reference(agentName, VERSION, null), PROTOCOL_A2A, 3);
+        waitForEndpointCount(httpService, reference(agentName, VERSION, null), PROTOCOL_A2A, 3);
         waitUntil("legacy Version 1 Endpoint should be visible before restart", () ->
             containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne));
@@ -825,8 +867,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                     httpService.discoverAgent(reference(agentName, VERSION, null));
                 return containsEndpoint(grpcResult, PROTOCOL_A2A, grpcVersionOne.getUri())
                     && containsEndpoint(grpcResult, PROTOCOL_A2A, httpVersionOne.getUri())
+                    && containsEndpoint(grpcResult, PROTOCOL_A2A,
+                        legacyEndpointUri(legacyVersionOne))
                     && containsEndpoint(httpResult, PROTOCOL_A2A, grpcVersionOne.getUri())
                     && containsEndpoint(httpResult, PROTOCOL_A2A, httpVersionOne.getUri())
+                    && containsEndpoint(httpResult, PROTOCOL_A2A,
+                        legacyEndpointUri(legacyVersionOne))
                     && containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
                         AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne);
             });
@@ -837,15 +883,17 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionTwo));
         awaitEvent(grpcLatestListener, "gRPC polling resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
-                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+                && containsEndpoint(result, PROTOCOL_A2A,
+                    legacyEndpointUri(legacyVersionTwo)));
         awaitEvent(httpLatestListener, "HTTP polling resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
-                && sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+                && containsEndpoint(result, PROTOCOL_A2A,
+                    legacyEndpointUri(legacyVersionTwo)));
         Endpoint grpcVersionTwo =
             endpoint(randomPort(), "/reconnect-grpc-v2", "grpc-after-restart");
         grpcService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(grpcVersionTwo)));
-        waitForEndpointCount(httpService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
+        waitForEndpointCount(httpService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 2);
         awaitEvent(grpcLatestListener,
             "gRPC polling observes the Version 2 gRPC Endpoint after reconnect",
             result -> VERSION_2.equals(result.getVersion())
@@ -858,7 +906,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             endpoint(randomPort(), "/reconnect-http-v2", "http-after-restart");
         httpService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(httpVersionTwo)));
-        waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 2);
+        waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 3);
         awaitEvent(grpcLatestListener,
             "gRPC polling observes both Version 2 Endpoints after reconnect",
             result -> VERSION_2.equals(result.getVersion())
@@ -895,6 +943,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(deregistrationEndpoint(grpcVersionTwo))));
         httpService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
             Collections.singletonList(deregistrationEndpoint(httpVersionTwo))));
+        waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
+        grpcService.deregisterAgentEndpoint(agentName, legacyVersionTwo);
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 0);
     }
     
@@ -1077,13 +1127,28 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
     private boolean containsLegacyEndpoint(AgentCardDetailInfo detail,
         com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint endpoint) {
-        String expectedUrl = "http://" + endpoint.getAddress() + ':' + endpoint.getPort()
-            + endpoint.getPath();
+        String expectedUrl = legacyEndpointUri(endpoint);
         return detail.getSupportedInterfaces() != null
             && detail.getSupportedInterfaces().stream()
                 .anyMatch(each -> expectedUrl.equals(each.getUrl())
                     && endpoint.getTransport().equals(each.getProtocolBinding())
                     && endpoint.getProtocolVersion().equals(each.getProtocolVersion()));
+    }
+
+    private String legacyEndpointUri(
+        com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint endpoint) {
+        return "http://" + endpoint.getAddress() + ':' + endpoint.getPort()
+            + endpoint.getPath();
+    }
+
+    private String randomLegacyUnencodedAgentName() {
+        String suffix = UUID.randomUUID().toString();
+        StringBuilder result = new StringBuilder("java-sdk-a2a-");
+        for (int i = 0; i < suffix.length(); i++) {
+            char each = suffix.charAt(i);
+            result.append(Character.isDigit(each) ? (char) ('g' + each - '0') : each);
+        }
+        return result.toString();
     }
     
     private AgentMaintainerService createAgentMaintainerService() throws NacosException {

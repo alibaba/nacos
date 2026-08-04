@@ -38,8 +38,8 @@ external Java clients against the standalone server.
 
 | Scenario group | Required assertions | Stable IT / focused test |
 | --- | --- | --- |
-| Endpoint pre-registration | Register a legacy exact-Version Endpoint before AgentCard release; definition query remains absent, then release makes SERVICE query expose the pre-registered Endpoint. | Java SDK IT |
-| Multi-Version redo | One SDK publishes Endpoints for two exact Versions, the real standalone server restarts, and both Version-specific publications recover. | Directed Java SDK IT |
+| Endpoint pre-registration | Register a legacy exact-Version Endpoint into the canonical Runtime Service before AgentCard release; definition query remains absent, then release makes both RAD and legacy SERVICE query expose the pre-registered Endpoint. | Java SDK IT |
+| Multi-Version redo | One SDK publishes legacy Endpoints for two exact Versions as independent canonical child publishers, the real standalone server restarts, and both Runtime bindings recover without overwriting the protocol-neutral publication on the parent connection. | Directed Java SDK IT |
 | Redo snapshot isolation | Mutating the caller's original Endpoint or collection after register does not change replay payload. | Focused client unit test |
 | Exact/latest routing | An exact subscription receives changes even when that Version is latest; latest receives a pointer move even if the target exact Version is already cached. | Stable Java SDK IT where deterministic plus cache/notifier unit tests |
 | Resubscribe | Unsubscribe and resubscribe with an already cached value restarts polling and observes a later change. | Stable Java SDK IT plus scheduling unit test |
@@ -50,7 +50,7 @@ external Java clients against the standalone server.
 | Workflow | Cross-checks |
 | --- | --- |
 | Generic SDK publishes A2A with `autoSubmit=true`, then RAD Search/Discover, Console/Admin, and legacy A2A read it | All projections share one canonical definition, exact Version, descriptor, declared Endpoint, and digest. |
-| Legacy Endpoint first, generic SDK definition second | Endpoint publication never creates definition; after definition publication the old SERVICE query resolves the exact legacy Endpoint while the protocol-neutral Runtime Registry remains intentionally separate. |
+| Legacy Endpoint first, generic SDK definition second | Endpoint publication never creates definition; after definition publication RAD and the old SERVICE query resolve the same exact canonical Runtime Endpoint and binding. |
 | Generic SDK publishes Version 1, registers runtime Endpoint, subscribes latest, publishes Version 2, and registers its Endpoint | Search, exact/latest Discover, polling subscription, legacy A2A query, and legacy subscription converge at each transition. |
 | HTTP publish plus gRPC discover, then gRPC publish plus HTTP discover | Definition state and error mapping are transport-equivalent and no Publisher heartbeat identity is required for persistent definition publication. |
 

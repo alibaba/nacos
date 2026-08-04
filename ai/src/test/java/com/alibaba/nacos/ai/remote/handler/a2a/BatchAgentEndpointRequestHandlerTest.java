@@ -17,6 +17,9 @@
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityModeResolver;
+import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
@@ -46,6 +49,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,6 +62,12 @@ class BatchAgentEndpointRequestHandlerTest {
     private AgentIdCodecHolder agentIdCodecHolder;
     
     @Mock
+    private A2aCompatibilityModeResolver compatibilityModeResolver;
+    
+    @Mock
+    private CanonicalA2aEndpointOperationService canonicalEndpointOperationService;
+    
+    @Mock
     private RequestMeta meta;
     
     private BatchAgentEndpointRequestHandler requestHandler;
@@ -67,7 +77,8 @@ class BatchAgentEndpointRequestHandlerTest {
     @BeforeEach
     void setUp() {
         requestHandler =
-            new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
+            new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder,
+                compatibilityModeResolver, canonicalEndpointOperationService);
         capturedInstances = null;
     }
     
@@ -170,6 +181,7 @@ class BatchAgentEndpointRequestHandlerTest {
         Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint1, endpoint2);
         request.setEndpoints(endpoints);
         
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         
@@ -199,6 +211,27 @@ class BatchAgentEndpointRequestHandlerTest {
         Instance instance2 = capturedInstances.get(1);
         assertEquals("2.2.2.2", instance2.getIp());
         assertEquals(9090, instance2.getPort());
+    }
+    
+    @Test
+    void handleCanonicalBatchRegisterEndpoint() throws NacosException {
+        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
+        request.setNamespaceId("public");
+        request.setAgentName("test");
+        AgentEndpoint endpoint = new AgentEndpoint();
+        endpoint.setAddress("127.0.0.1");
+        endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
+        request.setEndpoints(Arrays.asList(endpoint));
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
+        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        
+        AgentEndpointResponse response = requestHandler.handle(request, meta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        verify(canonicalEndpointOperationService).register("TEST_CONNECTION_ID", "public", "test",
+            request.getEndpoints());
+        verifyNoInteractions(clientOperationService, agentIdCodecHolder);
     }
     
     private void assertErrorResponse(AgentEndpointResponse response, int code, String message) {

@@ -17,6 +17,9 @@
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityModeResolver;
+import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
@@ -35,6 +38,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,6 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +60,12 @@ class AgentEndpointRequestHandlerTest {
     private AgentIdCodecHolder agentIdCodecHolder;
     
     @Mock
+    private A2aCompatibilityModeResolver compatibilityModeResolver;
+    
+    @Mock
+    private CanonicalA2aEndpointOperationService canonicalEndpointOperationService;
+    
+    @Mock
     private RequestMeta meta;
     
     private AgentEndpointRequestHandler requestHandler;
@@ -64,7 +75,8 @@ class AgentEndpointRequestHandlerTest {
     @BeforeEach
     void setUp() {
         requestHandler =
-            new AgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
+            new AgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder,
+                compatibilityModeResolver, canonicalEndpointOperationService);
         capturedInstance = null;
     }
     
@@ -112,6 +124,7 @@ class AgentEndpointRequestHandlerTest {
         endpoint.setVersion("1.0.0");
         request.setEndpoint(endpoint);
         request.setType("INVALID_TYPE");
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertErrorResponse(response, NacosException.INVALID_PARAM,
@@ -134,6 +147,7 @@ class AgentEndpointRequestHandlerTest {
         endpoint.setQuery("param1=value1&param2=value2");
         request.setEndpoint(endpoint);
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         // Mock the registerInstance method to capture the Instance argument
@@ -166,6 +180,7 @@ class AgentEndpointRequestHandlerTest {
         endpoint.setQuery("token=abc123");
         request.setEndpoint(endpoint);
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         // Mock the deregisterInstance method to capture the Instance argument
@@ -180,6 +195,51 @@ class AgentEndpointRequestHandlerTest {
         assertEquals(AiRemoteConstants.DE_REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
             eq("TEST_CONNECTION_ID"));
+    }
+    
+    @Test
+    void handleCanonicalRegisterAndDeregister() throws NacosException {
+        AgentEndpointRequest request = request(AiRemoteConstants.REGISTER_ENDPOINT);
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
+        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        
+        AgentEndpointResponse registerResponse = requestHandler.handle(request, meta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), registerResponse.getResultCode());
+        verify(canonicalEndpointOperationService).register("TEST_CONNECTION_ID", "public", "test",
+            Collections.singletonList(request.getEndpoint()));
+        verifyNoInteractions(clientOperationService, agentIdCodecHolder);
+        
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        AgentEndpointResponse deregisterResponse = requestHandler.handle(request, meta);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), deregisterResponse.getResultCode());
+        verify(canonicalEndpointOperationService).deregister("TEST_CONNECTION_ID", "public",
+            "test", "1.0.0");
+    }
+    
+    @Test
+    void handleCanonicalInvalidType() throws NacosException {
+        AgentEndpointRequest request = request("INVALID_TYPE");
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
+        
+        AgentEndpointResponse response = requestHandler.handle(request, meta);
+        
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
+    }
+    
+    private AgentEndpointRequest request(String type) {
+        AgentEndpointRequest result = new AgentEndpointRequest();
+        result.setNamespaceId("public");
+        result.setAgentName("test");
+        AgentEndpoint endpoint = new AgentEndpoint();
+        endpoint.setAddress("127.0.0.1");
+        endpoint.setPort(8080);
+        endpoint.setVersion("1.0.0");
+        result.setEndpoint(endpoint);
+        result.setType(type);
+        return result;
     }
     
     private void assertErrorResponse(AgentEndpointResponse response, int code, String message) {

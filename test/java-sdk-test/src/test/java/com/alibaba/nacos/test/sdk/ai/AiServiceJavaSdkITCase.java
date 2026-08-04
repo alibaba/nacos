@@ -136,7 +136,8 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> aiService.unsubscribeMcpServer(mcpName, version, listener));
         McpServerDetailInfo subscribed = aiService.subscribeMcpServer(mcpName, version, listener);
         assertEquals(mcpId, subscribed.getId(), subscribed.toString());
-        assertNotNull(callback.get(), "subscribe should invoke listener with current MCP detail");
+        waitUntil("subscribe should invoke listener with current MCP detail",
+                () -> callback.get() != null);
         assertEquals(mcpId, callback.get().getId(), callback.get().toString());
     }
 
@@ -298,7 +299,8 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> aiService.unsubscribeAgentCard(agentName, version, listener));
         AgentCardDetailInfo subscribed = aiService.subscribeAgentCard(agentName, version, listener);
         assertEquals(agentName, subscribed.getName(), subscribed.toString());
-        assertNotNull(callback.get(), "subscribe should invoke listener with current agent card");
+        waitUntil("subscribe should invoke listener with current agent card",
+                () -> callback.get() != null);
         assertEquals(agentName, callback.get().getName(), callback.get().toString());
     }
 

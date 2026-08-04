@@ -40,7 +40,7 @@ Watch request, Push payload, ACK, or Watch ability.
 
 | IT method | Scenario groups |
 | --- | --- |
-| `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration and SERVICE query, explicit isolation from the new Runtime Registry, canonical Version publication, and legacy latest-subscription convergence. |
+| `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration into the canonical Runtime Registry without Beta dual-write to the historical Naming service, Console Runtime Snapshot and legacy SERVICE query agreement, Version 2 pre-registration, omitted-selector multi-Version aggregation versus explicit-latest isolation, canonical Version publication, and legacy latest-subscription convergence. |
 | `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; explicit and mismatched namespace binding; namespace-isolated publication. |
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical natural-key partial deregistration, unknown/repeated no-op, final deregistration, and protocol isolation. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
@@ -53,7 +53,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same eleven stable workflows pass with both the default JSON adapter and
+The same twelve stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -213,12 +213,12 @@ continues only after the harness writes a restarted marker.
 
 | Phase | Operations and assertions | Coverage |
 | --- | --- | --- |
-| Initial server | Create and publish a legacy-compatible Version 1; pre-register legacy exact-Version Endpoints for Versions 1 and 2; register independent protocol-neutral gRPC and HTTP Endpoint Batches; Search, legacy SERVICE query, latest/exact Discover, and polling subscriptions agree. | Directed IT |
+| Initial server | Create and publish a legacy-compatible Version 1; pre-register legacy exact-Version Endpoints for Versions 1 and 2 into the canonical Runtime Service; register independent protocol-neutral gRPC and HTTP Endpoint Batches on the same SDK connection; Search, legacy SERVICE query, latest/exact Discover, Runtime bindings, and polling subscriptions agree without publication overwrite. | Directed IT |
 | Server unavailable | Keep the same gRPC and HTTP SDK instances and their local subscription/publication intent; both transports observe connection unavailability, but the client process stays alive and no local intent is deleted. | Directed IT + UT |
-| Same server restarted | The gRPC SDK reconnects and redoes its complete Batch. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Both legacy exact-Version Endpoint redo records recover independently. Polling over both transports resumes and converges. | Directed IT + UT |
-| Definition-first upgrade after reconnect | Create and publish Version 2 after its legacy Endpoint was already registered and recovered; legacy SERVICE query resolves it. Latest Discover and both subscriptions first observe Version 2 with an empty protocol-neutral Runtime set, then observe the gRPC Endpoint and finally the HTTP Endpoint. | Directed IT |
+| Same server restarted | The gRPC SDK reconnects and redoes its protocol-neutral complete Batch plus both legacy exact-Version publications. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Legacy child publishers are rebuilt on the new connection, Runtime bindings recover independently, and polling over both transports converges. | Directed IT + UT |
+| Endpoint-first upgrade after reconnect | Create and publish Version 2 after its legacy Endpoint was already registered and recovered; legacy SERVICE query, RAD Discover, and both subscriptions immediately resolve that canonical Runtime Endpoint. Later protocol-neutral gRPC and HTTP publishers add their independent contributions without replacing it. | Directed IT |
 | Exact and label checks after reconnect | Exact Version 1 remains resolvable, exact/latest Version 2 agree through both transports, and a moved custom label resolves Version 2. | Directed IT |
-| Cleanup | Unsubscribe both listeners, deregister both final publications, delete the Agent, and shut down clients while the restarted server remains usable for later IT. | Directed IT |
+| Cleanup | Unsubscribe both listeners, deregister both protocol-neutral final publications and the legacy Version 2 publication, verify the exact Runtime pool becomes empty, delete the Agent, and shut down clients while the restarted server remains usable for later IT. | Directed IT |
 
 The directed case has a bounded wait for both markers and every server/client
 convergence assertion. Missing harness coordination produces a skipped or
@@ -229,7 +229,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Workflow | Cross-checks | Coverage |
 | --- | --- | --- |
 | Maintainer creates and publishes an Agent, then SDK Search and Discover | Admin write is visible through both Client read operations. | IT |
-| Legacy A2A SDK releases an AgentCard and old exact-Version Endpoint, then Console, RAD, and legacy SERVICE reads inspect it; Maintainer publishes a complete A2A Version, then legacy A2A query and latest subscription read it | Legacy and protocol-neutral surfaces share the canonical Agent definition in both directions; duplicate release does not overwrite an online Version; old Endpoint data remains deliberately isolated in legacy exact-Version Naming and does not appear in the new Runtime Registry. | IT |
+| Legacy A2A SDK releases an AgentCard and old exact-Version Endpoints for Versions 1 and 2, then Console Runtime Snapshot, RAD, legacy SERVICE, and direct Naming reads inspect them; Maintainer publishes Version 2, then omitted/default and explicit-latest discovery compare pools | Legacy and protocol-neutral surfaces share the canonical Agent definition and Runtime Service; duplicate release does not overwrite an online Version; pre-registration does not create a definition; exact bindings survive independently; the historical Version-specific Naming service remains empty in Beta; omitted selection aggregates both online Versions while explicit latest contains only Version 2. | IT |
 | SDK pre-registers Endpoint, Maintainer creates/publishes Agent, SDK Discover | Pre-registration becomes visible without implicit definition creation. | IT |
 | Maintainer publishes Agent, SDK registers/replaces/partially deregisters/finally deregisters | Discover observes full replacement, remainder, and empty Runtime source in order. | IT |
 | Two SDK publishers register the same Endpoint, one deregisters, then the other deregisters | Aggregated visibility remains until the last contribution is removed. | IT |
