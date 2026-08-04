@@ -24,10 +24,14 @@ import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -329,8 +333,10 @@ class DefaultVisibilityAdvisorConverterTest {
     }
     
     @Test
-    void convertShouldStayAlwaysEmptyForOwnerPredicateWhenIdentityBlankEvenWithAuthorizedResources() {
-        // Anonymous callers are excluded from the authorization model: G must not rescue them.
+    void convertShouldUnionOwnerBranchWithAuthorizedResourcesWhenIdentityBlank() {
+        // Anonymous callers still get F AND (B OR G): the default visibility implementation
+        // never populates G for them in practice, but this generic converter must not force
+        // alwaysEmpty and discard G whenever a custom visibility plugin does supply one.
         QueryCondition condition = new QueryCondition();
         QueryAdvisor advisor = advisor(BaseVisibilityPredicate.OWNER);
         advisor.setAuthorizedPredicate(authorizedResources("skillA"));
@@ -338,7 +344,8 @@ class DefaultVisibilityAdvisorConverterTest {
         QueryCondition actual =
             converter.convert(condition, null, advisor, new VisibilityQueryContext());
         
-        assertTrue(actual.isAlwaysEmpty());
+        assertFalse(actual.isAlwaysEmpty());
+        assertEquals(List.of("skillA"), actual.getOrGroup().get("name"));
     }
     
     @Test
@@ -417,6 +424,94 @@ class DefaultVisibilityAdvisorConverterTest {
                 new VisibilityQueryContext());
         
         assertTrue(actual.isAlwaysEmpty());
+    }
+    
+    // ---- Issue #15603: full F AND (B OR G) matrix for the non-empty AuthorizedResources case ----
+    
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nonEmptyAuthorizedResourcesMatrix")
+    void convertShouldMatchFAndBOrGMatrix(String description, BaseVisibilityPredicate predicate,
+        String initialScope, String initialOwner, String identity, String expectedScope,
+        String expectedOwner, Map<String, Object> expectedOrGroup) {
+        QueryCondition condition = new QueryCondition();
+        condition.setScope(initialScope);
+        condition.setOwner(initialOwner);
+        QueryAdvisor advisor = advisor(predicate);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition actual =
+            converter.convert(condition, identity, advisor, new VisibilityQueryContext());
+        
+        assertFalse(actual.isAlwaysEmpty());
+        assertEquals(expectedScope, actual.getScope());
+        assertEquals(expectedOwner, actual.getOwner());
+        assertEquals(expectedOrGroup, actual.getOrGroup());
+    }
+    
+    private static Stream<Arguments> nonEmptyAuthorizedResourcesMatrix() {
+        return Stream.of(
+            Arguments.of("PUBLIC + scope=PUBLIC + G -> F", BaseVisibilityPredicate.PUBLIC,
+                VisibilityConstants.SCOPE_PUBLIC, null, "userA",
+                VisibilityConstants.SCOPE_PUBLIC, null, Map.of()),
+            Arguments.of("OWNER + owner=identity + G -> F", BaseVisibilityPredicate.OWNER,
+                null, "userA", "userA",
+                null, "userA", Map.of()),
+            Arguments.of("OWNER + blank identity + G -> F AND G", BaseVisibilityPredicate.OWNER,
+                null, null, null,
+                null, null, Map.of("name", List.of("skillA"))),
+            Arguments.of("PUBLIC_AND_OWNER + blank scope/owner + G -> F AND (P OR O OR G)",
+                BaseVisibilityPredicate.PUBLIC_AND_OWNER, null, null, "userA",
+                null, null,
+                orGroup("scope", VisibilityConstants.SCOPE_PUBLIC, "owner", "userA", "name",
+                    List.of("skillA"))),
+            Arguments.of(
+                "PUBLIC_AND_OWNER + blank scope, owner!=identity + G -> F AND (P OR G)",
+                BaseVisibilityPredicate.PUBLIC_AND_OWNER, null, "anotherUser", "userA",
+                null, "anotherUser",
+                orGroup("scope", VisibilityConstants.SCOPE_PUBLIC, "name", List.of("skillA"))),
+            Arguments.of("PUBLIC_AND_OWNER + scope=PUBLIC + G -> F",
+                BaseVisibilityPredicate.PUBLIC_AND_OWNER, VisibilityConstants.SCOPE_PUBLIC, null,
+                "userA", VisibilityConstants.SCOPE_PUBLIC, null, Map.of()),
+            Arguments.of("PUBLIC_AND_OWNER + owner=identity + G -> F",
+                BaseVisibilityPredicate.PUBLIC_AND_OWNER, null, "userA", "userA",
+                null, "userA", Map.of()));
+    }
+    
+    private static Map<String, Object> orGroup(Object... keyValuePairs) {
+        Map<String, Object> orGroup = new LinkedHashMap<>();
+        for (int i = 0; i < keyValuePairs.length; i += 2) {
+            orGroup.put((String) keyValuePairs[i], keyValuePairs[i + 1]);
+        }
+        return orGroup;
+    }
+    
+    @Test
+    void convertShouldProduceEquivalentResultWhetherScopeFilterIsAppliedBeforeOrAfterConversion() {
+        // F AND (B OR G) must hold regardless of when the caller's business filter F (here,
+        // scope=PUBLIC) is combined with the visibility conversion: pre-narrowing the incoming
+        // condition, or feeding an already-converted condition back in with the filter now
+        // applied, must converge on the same final query.
+        QueryAdvisor advisor = advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER);
+        advisor.setAuthorizedPredicate(authorizedResources("skillA"));
+        
+        QueryCondition filterAppliedBefore = new QueryCondition();
+        filterAppliedBefore.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        QueryCondition resultBefore =
+            converter.convert(filterAppliedBefore, "userA", advisor, new VisibilityQueryContext());
+        
+        QueryCondition unfiltered = new QueryCondition();
+        QueryCondition intermediate =
+            converter.convert(unfiltered, "userA", advisor, new VisibilityQueryContext());
+        intermediate.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        QueryCondition resultAfter =
+            converter.convert(intermediate, "userA", advisor, new VisibilityQueryContext());
+        
+        assertEquals(resultBefore.getScope(), resultAfter.getScope());
+        assertEquals(resultBefore.getOwner(), resultAfter.getOwner());
+        assertEquals(resultBefore.getOrGroup(), resultAfter.getOrGroup());
+        assertEquals(resultBefore.isAlwaysEmpty(), resultAfter.isAlwaysEmpty());
+        assertFalse(resultAfter.isAlwaysEmpty());
+        assertTrue(resultAfter.getOrGroup().isEmpty());
     }
     
     private AuthorizedResources authorizedResources(String... names) {

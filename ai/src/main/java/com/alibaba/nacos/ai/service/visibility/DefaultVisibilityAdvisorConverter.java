@@ -95,10 +95,12 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
     
     private BaseResolution resolveOwner(QueryCondition condition, String identity) {
         if (StringUtils.isBlank(identity)) {
-            // Anonymous callers are not part of the supported authorization model: an
-            // authorized-resource grant must never rescue a missing identity, so this is
-            // forced empty rather than merely "always false" (which G could rescue).
-            return BaseResolution.forcedEmpty();
+            // B (owner=identity) cannot be satisfied without an identity, so this branch of B
+            // is impossible -- but per the unified F AND (B OR G) model that no longer means the
+            // whole query is empty: G, when populated by a custom visibility plugin, may still
+            // match. The default visibility implementation never populates G for an anonymous
+            // caller, so this still degrades to alwaysEmpty in practice.
+            return BaseResolution.alwaysFalse();
         }
         if (StringUtils.isBlank(condition.getOwner())) {
             return BaseResolution.branches(singleBranch("owner", identity));
@@ -113,7 +115,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         if (StringUtils.isBlank(identity)) {
             return resolvePublic(condition);
         }
-        boolean scopeIsPublic = VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
+        boolean scopeIsPublic =
+            VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
         boolean hasScope = StringUtils.isNotBlank(condition.getScope());
         boolean ownerIsIdentity = identity.equals(condition.getOwner());
         boolean hasOwner = StringUtils.isNotBlank(condition.getOwner());
@@ -152,9 +155,6 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
             case ALWAYS_TRUE:
                 // B alone already guarantees a match. B OR G is still always true, so G cannot
                 // narrow it any further -- nothing else needs to be applied.
-                return;
-            case FORCED_EMPTY:
-                condition.setAlwaysEmpty(true);
                 return;
             case ALWAYS_FALSE:
                 // B alone can never match. B OR G collapses to G: keep G if it exists, otherwise
@@ -207,7 +207,6 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         private enum Kind {
             ALWAYS_TRUE,
             ALWAYS_FALSE,
-            FORCED_EMPTY,
             BRANCHES
         }
         
@@ -226,10 +225,6 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         
         static BaseResolution alwaysFalse() {
             return new BaseResolution(Kind.ALWAYS_FALSE, null);
-        }
-        
-        static BaseResolution forcedEmpty() {
-            return new BaseResolution(Kind.FORCED_EMPTY, null);
         }
         
         static BaseResolution branches(Map<String, Object> branches) {
