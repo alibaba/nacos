@@ -18,6 +18,9 @@ package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
+import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityModeResolver;
+import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.utils.AgentEndpointUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
@@ -69,11 +72,19 @@ public class BatchAgentEndpointRequestHandler
     
     private final AgentIdCodecHolder agentIdCodecHolder;
     
+    private final A2aCompatibilityModeResolver compatibilityModeResolver;
+    
+    private final CanonicalA2aEndpointOperationService canonicalEndpointOperationService;
+    
     public BatchAgentEndpointRequestHandler(
         EphemeralClientOperationServiceImpl clientOperationService,
-        AgentIdCodecHolder agentIdCodecHolder) {
+        AgentIdCodecHolder agentIdCodecHolder,
+        A2aCompatibilityModeResolver compatibilityModeResolver,
+        CanonicalA2aEndpointOperationService canonicalEndpointOperationService) {
         this.clientOperationService = clientOperationService;
         this.agentIdCodecHolder = agentIdCodecHolder;
+        this.compatibilityModeResolver = compatibilityModeResolver;
+        this.canonicalEndpointOperationService = canonicalEndpointOperationService;
     }
     
     @Override
@@ -87,6 +98,11 @@ public class BatchAgentEndpointRequestHandler
         AgentRequestUtil.fillNamespaceId(request);
         try {
             validateRequest(request);
+            if (A2aCompatibilityMode.CANONICAL == compatibilityModeResolver.resolve()) {
+                canonicalEndpointOperationService.register(meta.getConnectionId(),
+                    request.getNamespaceId(), request.getAgentName(), request.getEndpoints());
+                return response;
+            }
             List<Instance> instances =
                 AgentEndpointUtil.transferToInstances(request.getEndpoints());
             String version = request.getEndpoints().stream().findFirst().get().getVersion();

@@ -1428,6 +1428,11 @@ Request-Module: AI
 Client Header；携带已存在的 `X-Nacos-Client-Id` 时只续约 Client，不创建空 Client，也不续约
 其中的 Publisher。
 
+> **TODO（Beta 后）**：将全部 Nacos HTTP Client 请求统一为至少携带
+> `X-Nacos-Client-Id` 与 `X-Nacos-Namespace-Id`，使本身不含 Client/Namespace 参数的 API 也能
+> 建立稳定审计上下文。Beta 只保持当前 Agent 有状态请求的 `X-Nacos-Client-Id` 行为，不提前修改
+> HTTP common 或其他模块 Client。
+
 Registration Batch 是同一 publisher 对 `(namespaceId, agentName, protocol)` 的完整期望状态，并且整个
 Batch 只携带一组 runtimeVersion/versionRange；`versionRange` 缺失时规范化为 `[runtimeVersion]`，且
 runtimeVersion 必须命中该范围。服务端只对完整 Batch 做格式、版本范围、protocol、Endpoint、鉴权和
@@ -1602,10 +1607,10 @@ API 落地顺序并入第 7 章完整编码 TODO；本章只保留上述接口�
 
 ### 6.1 目标与边界
 
-本章描述标准 Agent 写路径切换后的目标兼容契约，不表示当前实现已经完成迁移。首阶段只建立新 RAD
-Runtime Registry；旧 A2A Endpoint Handler 继续使用当前带 exact Version 的 Naming serviceName 和旧
-`BatchInstancePublishInfo` replacement 语义，不写入新 `rad-<encodedAgentId>-<protocol>` Service，也不与
-新 RAD publication 混合。旧 Config/Naming 数据切换必须在后续兼容 Adapter 和滚动升级方案明确后单独进行。
+本章描述 Beta 标准 Agent 写路径切换后的兼容契约。定义和旧 A2A Runtime Endpoint 都由
+`nacos.ai.a2a.compatibility.mode` 选择完整分支：默认 `CANONICAL` 写入标准 Agent/RAD 模型，`LEGACY`
+完整保留原 Config 与 exact-Version Naming 实现，`AUTO` 保留未来单向切流入口。Beta 不提供滚动升级、
+历史数据迁移或双写；直接依赖历史 Naming serviceName 的 Gateway 调用方兼容在后续单独设计。
 
 切换后，存量 A2A API 保留原路径、Java 方法、gRPC Payload 和旧 DTO，但不再维护一套独立的
 AgentCard 持久模型。服务端在旧协议边界完成双向适配：
@@ -1614,8 +1619,9 @@ AgentCard 持久模型。服务端在旧协议边界完成双向适配：
 flowchart LR
     O["Old A2aService / gRPC / Admin / Console"] --> LA["LegacyA2aCompatibilityAdapter"]
     LA -->|"定义写入"| G["Agent Management Service"]
-    LA -.->|"后续 Endpoint 迁移阶段"| R["New Runtime Endpoint Registry / Naming"]
-    O -->|"首阶段 Endpoint 发布"| LN["Legacy version-specific Naming"]
+    O -->|"CANONICAL Endpoint 发布"| C["Exact-Version child publisher adapter"]
+    C --> R["Canonical RAD Runtime Naming Service"]
+    O -->|"LEGACY Endpoint 发布"| LN["Legacy version-specific Naming"]
     G --> AR["ai_resource + ai_resource_version + AI Storage"]
     R --> P
     LN --> P
@@ -1630,8 +1636,8 @@ flowchart LR
 3. 新 Agent/RAD API 不返回 AgentCard、`registrationType`、`setAsLatest` 等兼容字段。
 4. 兼容的是旧公开契约，不固化 Console remote 模式丢失 version、列表 root version 偏差等已知缺陷。
 5. 首版 Agent 调用协议只有 A2A，旧 A2A latest 与 Agent 通用 latest 使用同一个精确版本指针，不定义协议级 latest。
-6. 首阶段旧 Endpoint 请求保持旧 version-specific Naming 布局；切换到新 Runtime Service 前的历史数据、
-   混合集群双读双写、源切换和回滚时序统一放入第 8 章 TODO。
+6. `CANONICAL` 旧 Endpoint 请求进入标准 Runtime Service；`LEGACY` 原 Handler 和 version-specific
+   Naming 布局不修改。历史数据、Gateway 旧 serviceName 双写、混合集群切换与回滚统一放入第 8 章 TODO。
 7. 旧 API 新写入执行第 4 章统一的 AgentName、Version 和内容校验；不为异常输入增加改名、别名或兼容存储。
 8. 跨 `ai_resource`、AI Storage 和 Naming 的一致性属于新模型通用实现问题，不作为旧 A2A API 的专属兼容机制。
 
@@ -1708,48 +1714,45 @@ Maintainer `updateAgentCard(agentCard, namespaceId)` 重载保持缺省 true。
 第 4.2.3 节的统一 codec；不合法输入直接返回旧 API 形状的参数错误，不进行自动改名，因为改名会改变
 后续精确查询、Endpoint 绑定和鉴权身份，并引入别名碰撞。历史异常身份是否迁移或拒绝由第 8 章统一设计。
 
-### 6.4 旧 Endpoint API 的首阶段边界
+### 6.4 旧 Endpoint API 的 Beta 分支边界
 
-首阶段不把旧 Endpoint API 转换到新 RAD Runtime Registry。当前 single、batch 和 deregister
-继续以一个精确版本 Naming Service 为单位：
+旧 Endpoint API 的公开 gRPC Payload、校验、Redo 身份和替换语义保持不变，但由兼容模式选择物理写入：
 
-```text
-legacyNamingService =
-    (publisher identity, namespaceId, group=agent-endpoints,
-     serviceName=<legacyEncodedAgentName>::<exactVersion>)
-```
-
-| 旧操作 | 必须保留的语义 |
+| 模式 | Runtime 写入 |
 |---|---|
-| single register | 沿用旧 Handler，将当前 version-specific publication 替换为仅含该 Endpoint |
-| batch register | 所有 Endpoint version 必须相同；沿用旧 Handler 替换整个 version-specific batch |
-| deregister | 沿用旧 Handler 注销当前 connection 对该 version-specific Service 的整份 publication |
+| `CANONICAL` | `group=agent-endpoints`、`serviceName=rad-<encodedAgentId>-a2a`，每个 Instance 写入 exact `runtimeVersion` 与 `versionRange=[version]`。 |
+| `LEGACY` | 原 Handler、原 `<legacyEncodedAgentName>::<exactVersion>` Service 与原 Instance 转换完整保留。 |
+| `AUTO` | 未切换时等价 `LEGACY`；满足成员版本条件并单向切换后等价 `CANONICAL`。 |
 
-旧 Naming Instance 继续使用当前字段转换：
-
-| 旧 `AgentEndpoint` | 首阶段旧 Naming 语义 |
-|---|---|
-| `endpoint.version` | 继续进入 legacy version-specific serviceName，不写新 Runtime version metadata |
-| 固定调用协议 | 旧 serviceName 隐含 A2A；`endpoint.protocol` 仍是 URI scheme |
-| `protocol/supportTls/address/port/path/query` | 组装完整 Endpoint URI；HTTP + TLS 规范化为 HTTPS |
-| `transport` | Endpoint normalized transport |
-| `protocolVersion` | 按旧 metadata key 保存 |
-| `tenant` | 按旧 metadata key 保存 |
-
-因此首阶段调用链保持为：
+标准 Service 对一个 publisher 只能保存一份 singular binding 完整批次，而旧 SDK 按
+`(agentName, exactVersion)` 独立维护 Redo。`CANONICAL` Adapter 因此按
+`(原 connectionId, namespaceId, agentName, exactVersion)` 生成确定性的内部子 publisher：
 
 ```mermaid
 flowchart LR
-    L["Old AgentEndpoint request"] --> H["Existing A2A Endpoint Handler"]
-    H --> B["Legacy BatchInstancePublishInfo"]
-    B --> R["Legacy version-specific Naming Service"]
+    L["Old AgentEndpoint request"] --> H["Compatibility mode handler"]
+    H -->|"CANONICAL"| C["Exact-Version child publisher"]
+    C --> R["rad-encodedAgent-a2a"]
+    H -->|"LEGACY"| B["Existing legacy handler"]
+    B --> N["encodedAgent::exactVersion"]
 ```
 
-该阶段继续允许 AgentDefinition 创建前预注册，保留旧参数校验、连接断开清理和 Client redo 行为。
-后续若将旧 A2A Endpoint 切换到新 Runtime Service，必须先解决同一旧 publisher 同时发布多个 exactVersion
-与“新 Service 每个 publisher 只有一份单 binding 完整批次”的映射问题，并定义双读、切流和回滚；不得通过
-服务端 group-delete、读取旧 publisher 后增量 merge，或向 singular Instance metadata 塞 bindings 数组规避。
-这些内容放入第 8 章单独评审。
+| 旧操作 | `CANONICAL` 必须保留的语义 |
+|---|---|
+| single register | 当前 exact-Version 子 publication 完整替换为一个 Endpoint。 |
+| batch register | 所有 Endpoint version 必须相同；提交内容完整替换当前 exact-Version 子 publication。 |
+| deregister | 注销当前 connection 的 exact-Version 子 publication；其他 Version 不受影响。 |
+| connection disconnect | 释放该原 connection 派生的全部子 publisher，复用 Naming release、事件和 Distro。 |
+
+旧字段先组装为通用 Endpoint，再通过标准 Runtime mapper 生成 Naming Instance：固定 Agent protocol
+为 `a2a`，URI scheme 来自 `protocol/supportTls`，transport 原值经过标准 codec，exact Version 写入
+singular binding；`protocolVersion` 与 `tenant` 仅保留为旧反向投影 metadata。该路径继续允许
+AgentDefinition 创建前预注册，不隐式创建定义，也不使用服务端 group-delete、旧 publisher
+read-merge-write 或 singular Instance 上的 bindings 数组。
+
+Beta 默认 `CANONICAL` 只写标准 Service，不写旧 Service。旧 `LEGACY` 代码分支不改动，为未来按开关
+双写保留入口。若用户绕过 A2A API，直接使用 Naming Gateway 发现旧 serviceName，新发布 Endpoint
+在 Beta 中不可见；该兼容场景、双写时序、回滚与旧 Service 清理由第 8 章单独评审。
 
 ### 6.5 新模型反向投影为旧单条查询
 
@@ -1862,7 +1865,7 @@ flowchart LR
 |---|---|
 | 旧写新读 | release 首版/新版/同版 no-op、URL/SERVICE、setAsLatest、Admin 同版相同内容 no-op 与不同内容冲突 |
 | 新写旧读 | 通用 latest/exact、disable Agent 管控读取、各种非 online status 隐藏 |
-| Endpoint | 定义前预注册、single 替换、batch 替换、整 version-specific publication 注销、多 exactVersion 旧布局隔离 |
+| Endpoint | 定义前预注册、single 替换、batch 替换、整 exact-Version publication 注销、CANONICAL 子 publisher 多 Version 隔离、LEGACY 旧布局隔离 |
 | 查询投影 | URL、SERVICE Runtime 非空覆盖、空集回退、explicit type 不改响应 type、unhealthy 保留、disabled 排除 |
 | 列表与订阅 | accurate/blur、旧分页 DTO、version-list、latest/exact subscribe、不存在后出现、稳定去重 |
 | 校验、删除与审计 | 非法身份拒绝、latest 重选、删除 no-op、直接 online/删除/冲突拒绝审计 |
@@ -1974,20 +1977,20 @@ flowchart LR
 
 | 项目 | 本阶段结论 |
 |---|---|
-| 阶段状态 | 首版主动轮询范围已完成；10 个稳定 standalone Java SDK IT 同时通过默认 JSON 与 Jackson 3 适配器，并通过一次同时保留 gRPC、HTTP Publisher 与轮询订阅的真实单机停服/重启定向 IT |
+| 阶段状态 | 首版主动轮询及安全多 Version 默认发现均已完成并合入（PR #15624、#15644）；12 个稳定 standalone Java SDK IT 同时通过默认 JSON 与 Jackson 3 适配器，并通过一次同时保留 gRPC、HTTP Publisher、旧 A2A 多 Version Endpoint 与轮询订阅的真实单机停服/重启定向 IT |
 | 规范依据 | Agent API Spec 第 2 章、RAD Protocol Spec 第 3～7 章、Java SDK Implementation Spec 第 5.3 节、Client Ability Negotiation / Local Cache And Redo / Connection And Failover Specs、Java SDK Integration Test Spec，以及本文第 5.2、7.1～7.2 节 |
 | 当前目标 | 实现 `AgentDiscoveryService` 的 Search、Discover、本地 Discover 轮询订阅、HTTP/gRPC 完整 Endpoint Publication、局部注销后的全量替换、HTTP heartbeat 与 gRPC reconnect redo，并在 SDK 闭环完成后公开两个既有 Server ability key |
 | 允许范围 | `api` 仅新增 `AgentDiscoveryService`、Agent Discovery Listener/Event，并使 `AiService` 通过兼容 default bridge 继承该接口；`ServerAbilities` 仅启用既有 Discovery/Endpoint key；`client.ai` 仅增加或扩展 Agent 专用 transport、轮询、缓存、publication/redo 与生命周期实现；`test/java-sdk-test` 增加固定场景矩阵、Maintainer setup 依赖和 Agent Discovery SDK IT；增加上述 production 类的单元测试；同步直接相关中英文 Specs 与本文 |
 | 禁止范围 | `ai_resource` / `ai_resource_version`、DAO、Repository、Mapper、Resource/Version Manager、AI Storage、服务端 Agent Application Service 和 Runtime Registry；Naming Client/Manager/Distro、HTTP common、公共 Client runtime/redo 抽象、Console、旧 A2A Adapter；不得实现服务端 Watch/Push、Push ACK、通用 Agent 代码发布或顺手修复其他 SDK 问题 |
 | 已知问题 | 设计已经要求 `getAll`、`selectOneHealthy` 和 priority/weight 本地选址，但正式 Spec 尚未固定 Java helper 类型、方法签名及无健康/全零权重 fallback；该问题不阻塞 Search、Discover、轮询和 Endpoint Publication，本阶段只记录，不私自增加公开 helper API。未来服务端 Watch/Push 设计继续保留，但首版订阅只轮询 Discover。`AgentDiscoveryResult` 按 RAD 契约不包含 displayName、description、tags、provider 等管理元数据，轮询指纹也只包含解析 Version、`contentDigest` 和 Endpoint `sourceRevision`；因此未来若允许强制修改已发布 Agent 的管理元数据，Search 可在下次调用读取新值，但现有 Discover 订阅不会通知。该能力需要单独设计 Search/catalog 订阅或扩展 RAD Discover 契约，不在本阶段推断实现 |
 | 阻塞检查 | 已确认现有 Client HTTP/gRPC API、RAD model validator、Endpoint canonicalizer、HTTP Client lifecycle、gRPC connection listener 和 Agent 专用现有 redo 扩展点足以完成闭环；无需修改禁止范围。若实现中出现必须改变共享 Client runtime、HTTP common、Naming 或服务端数据面的情况，则立即暂停并提交维护者决策 |
-| 验收门禁 | 编码前完成 `AGENT_DISCOVERY_SDK_IT_SCENARIOS.md` 全操作/边界/故障/组合矩阵；新增或修改 production Java 可执行行 UT line coverage 100%；`api`、`client` Spotless、编译、相关单测和 JaCoCo XML 验证；Java SDK test-compile 与 10 个稳定 standalone IT 场景；与既有 13 个 AI SDK IT 联合回归；默认 JSON/Jackson 3 适配器、HTTP/gRPC 定向交叉验证，以及同一 SDK 进程跨真实 standalone 停服/重启的连接恢复、轮询、gRPC reconnect redo 和 HTTP `50404` replay 验证；最终 production diff 逐项复核白名单 |
+| 验收门禁 | 编码前完成 `AGENT_DISCOVERY_SDK_IT_SCENARIOS.md` 全操作/边界/故障/组合矩阵；新增或修改 production Java 可执行行 UT line coverage 100%；`api`、`client` Spotless、编译、相关单测和 JaCoCo XML 验证；Java SDK test-compile 与 12 个稳定 standalone IT 场景；与既有 AI SDK IT 联合回归；默认 JSON/Jackson 3 适配器、HTTP/gRPC 定向交叉验证，以及同一 SDK 进程跨真实 standalone 停服/重启的连接恢复、轮询、gRPC reconnect redo 和 HTTP `50404` replay 验证；最终 production diff 逐项复核白名单 |
 
-#### 当前阶段范围：通用 Agent SDK 代码式发布与普通 A2A Client 首版对齐
+#### 已完成阶段范围留痕：通用 Agent SDK 代码式发布与普通 A2A Client 首版对齐
 
 | 项目 | 本阶段结论 |
 |---|---|
-| 阶段状态 | 契约和测试矩阵已冻结，进入最小实现 |
+| 阶段状态 | 已完成并合入 `develop`（PR #15643）；通用 Agent 代码式发布、普通 `autoSubmit` 与旧 A2A Client 首版缺口已闭环 |
 | 规范依据 | Agent API Spec 第 2 章、A2A Agent Spec 第 4～5 章、SDK / Java SDK Implementation Specs、Client Local Cache And Redo Spec、HTTP/gRPC API Specs、API / Java SDK Integration Test Specs，以及本文第 5.2、6、7.1～7.2 节 |
 | 当前目标 | 在普通 `AiService` 增加 namespace-bound `publishAgent(AgentPublishRequest)`，支持 draft-only 与普通 Pipeline `autoSubmit`，并同时修复普通 `A2aService` 第一版必须具备的多 Version Endpoint redo、防御性 Payload 快照、exact/latest 订阅路由、Cache 命中后重新订阅和 shutdown 资源释放 |
 | 允许范围 | `api` 新增 Agent 发布 Request、HTTP/gRPC Binding、Response、ability key，并在 `AiService` 增加兼容 default bridge；`ai` 新增 Client Form、Controller 方法、Agent 专用发布编排 Service 和 gRPC Handler；`auth` 仅在现有通用 Agent Client Request 识别已足够时不修改，否则只允许最小 Agent Request 识别；`client.ai` 仅扩展 Agent HTTP/gRPC Proxy、Request 防御性复制，以及旧 A2A AgentCard Cache/Notifier/Endpoint redo/shutdown；对应生产类 UT、OpenAPI/Java SDK IT、定向重启测试、Specs 和本文 |
@@ -2014,15 +2017,15 @@ flowchart LR
 
 | 项目 | 本阶段结论 |
 |---|---|
-| 阶段状态 | 最小兼容闭环及真实 standalone 交叉验证已完成；历史数据迁移、旧 Endpoint 切流和滚动升级仍按禁止范围留待独立阶段 |
+| 阶段状态 | 定义兼容闭环已完成并合入（PR #15638）；本变更完成旧 A2A Endpoint 的 CANONICAL Runtime 切流。历史数据迁移、旧 Naming serviceName 双写和滚动升级仍延期 |
 | 规范依据 | A2A Agent Spec 第 3～5 章、Agent Management Spec 第 3～6 章、Agent API Spec 第 3～5 章、HTTP API / gRPC API / SDK / Java SDK Implementation Specs、API Integration Test / Java SDK Integration Test Specs，以及本文第 6、7.1～7.2 节 |
-| 当前目标 | 保持旧 A2A Admin、Console、Maintainer 和 Java SDK 的公开 path、Payload、错误与订阅方式不变，将旧 AgentCard 定义写入唯一 `type=agent` 事实源，并从通用 Agent metadata/online A2A Version 反向投影旧 DTO；旧 Endpoint API 与 SERVICE 查询继续使用旧 exact-version Naming 布局 |
-| 定义切流 | 增加 `nacos.ai.a2a.compatibility.mode`：当前默认 `CANONICAL`；`LEGACY` 完整保留旧 Config 定义实现；`AUTO` 从旧分支开始，全部已知成员版本不低于 3.3.0 后单向切到标准分支。三种模式均不做双读、双写、请求级 fallback 或数据迁移，旧 Endpoint Handler 始终保持 exact-version Naming 布局 |
-| 允许范围 | `ai.service.a2a` 的定义兼容适配、转换和查询投影；旧 A2A Admin/Console/gRPC binding 仅允许切换 Client release/read 语义；`AgentOperationService`、`AgentPersistenceService` 仅增加 Adapter 所必需的直接 online Version 创建、同内容恢复、latest 选择和 exact Version 删除原语；对应单元测试、OpenAPI IT、Java SDK IT、Maintainer SDK IT、覆盖登记及本文状态 |
-| 禁止范围 | `ai_resource` / `ai_resource_version` 表、DAO、Repository、Mapper、通用 Resource/Version Manager 与 AI Storage SPI/provider；HTTP common、通用参数绑定/异常映射、Naming Client/Manager/Distro/ServiceStorage；旧 A2A Endpoint handler、version-specific Naming 写布局、RAD Runtime Registry、公共 Java SDK/API 模型、Console UI、Watch/Push、历史 Config 数据迁移、双读双写和完整滚动升级实现 |
-| 已知问题 | 维护者已决定暂不迁移历史 A2A Config 定义；Adapter 启用后只认新的 Agent 事实源，旧 Config-only 定义不会自动出现。旧 SERVICE 投影仍读取 exact-version legacy Naming；新 Runtime Registry 的双读、迁移和回滚继续独立设计。Agent 管理元数据订阅问题也不在本阶段扩展 |
-| 阻塞检查 | 现有 Agent 专用 Resource/Version/Storage、catalog 派生、可见性、旧 exact-version `ServiceStorage` 和旧 SDK 轮询已足以完成主流程。通用 Resource 查询没有批量 Version-content 读取能力，旧列表只在候选页内采用有界并发投影，不修改共享 Repository/Storage 契约；若该边界仍无法正确验收，则暂停并提交维护者决策 |
-| 验收门禁 | 新增或修改 production Java 可执行行 UT line coverage 100%；相关模块 Spotless、编译、单测和 JaCoCo XML 验证；OpenAPI、Java SDK、Maintainer SDK 场景矩阵及覆盖登记同步；真实 standalone 交叉验证旧写新读、新写旧读、URL/SERVICE、latest/exact、订阅、删除和冲突；最终 production diff 逐项复核白名单 |
+| 当前目标 | 保持旧 A2A Admin、Console、Maintainer 和 Java SDK 的公开 path、Payload、错误、Redo 与订阅方式不变；CANONICAL 将 AgentCard 定义和旧 Endpoint 分别写入标准 Agent 与 RAD Runtime 事实源，并从标准模型反向投影旧 DTO |
+| 分支切流 | `nacos.ai.a2a.compatibility.mode` 默认 `CANONICAL`；`LEGACY` 完整保留旧 Config 定义、Endpoint Handler 和 exact-version Naming 布局；`AUTO` 从旧分支开始，成员条件满足后单向切换整套定义与 Endpoint 操作。三种模式均不做双读、双写、请求级 fallback 或数据迁移 |
+| 允许范围 | `ai.service.a2a` 的兼容适配、旧 Endpoint Handler 的模式路由、旧 Endpoint 到既有 RAD Runtime mapper 的转换、CANONICAL 查询投影；只增加按 exact Version 隔离且绑定原 gRPC connection 的内部子 publisher；对应 UT、Java SDK IT、覆盖登记、A2A/Storage Specs 与本文 |
+| 禁止范围 | `ai_resource` / `ai_resource_version` 表、DAO、Repository、Mapper、通用 Resource/Version Manager 与 AI Storage SPI/provider；HTTP common、Naming Client/Manager/Distro/ServiceStorage 生产逻辑；公共 Java SDK/API 模型、Console UI、Watch/Push、历史 Config/Naming 数据迁移、旧 Naming serviceName 双写和完整滚动升级实现 |
+| 已知问题 | Beta 的 CANONICAL 分支不写旧 Naming Service；直接使用 Naming Gateway 发现 `<legacyEncodedAgentName>::<exactVersion>` 的调用方看不到新发布。后续需设计可控双写、回滚和旧 Service 清理。历史 Config-only 定义也不自动迁移；Agent 管理元数据订阅仍延期 |
+| 阻塞检查 | Naming 已支持同一 Service 的多个独立 connection-based publisher，ClientData Distro 与连接释放可直接复用。按原 connection + namespace + Agent + exact Version 派生子 publisher，可保持旧 Redo 的多版本语义且无需 read-merge-write 或修改 Naming；若真实 IT 证明该边界不足，则停止扩大范围并提交维护者决策 |
+| 验收门禁 | 新增或修改 production Java 可执行行 UT line coverage 100%；Spotless、编译、聚焦单测和 JaCoCo XML；Java SDK 真实 standalone 验证 CANONICAL 旧发布可被新 Runtime/RAD 与旧 SERVICE 查询读取、多 Version 隔离、注销和断线重连，同时验证 LEGACY 仍只写旧布局；同步场景与覆盖登记 |
 
 旧 A2A Adapter 场景矩阵：
 
@@ -2036,15 +2039,17 @@ flowchart LR
 | 管理读取 | disabled Agent；latest/exact；目标 absent、非 online、非 A2A | Admin/Console/Maintainer 可读 disabled Agent；只返回 common latest 或 exact online A2A；其余保持旧 not-found/error contract，不猜测替代 Version |
 | Client 读取 | enabled/disabled Agent；latest/exact；显式 URL/SERVICE | disabled 对 Client 隐藏；latest 只读 common latest；显式 type 只改变本次 endpoint 投影，不改变响应保存的 registrationType |
 | URL 投影 | root/supported/additional interfaces；缺省或显式 URL | 从 nativeDescriptor/declared endpoints 返回规范化 Card，保留旧 DTO 的 registrationType/latestVersion |
-| SERVICE 投影 | legacy Naming 无实例、enabled/disabled、healthy/unhealthy、多实例、多 transport | 空集回退 DECLARED Card；过滤 enabled=false，保留 unhealthy；按 priority 和自然键稳定排序；覆盖 supported/additional/root preferred endpoint；不读取新 Runtime Registry |
+| CANONICAL Endpoint 写 | single/batch、同版替换、两个 exact Version、Endpoint 先于定义、注销一个 Version、connection 断开/重连 | 写入同一 `rad-<encodedAgentId>-a2a` Service；每版使用独立子 publisher 和 exact binding；版本互不覆盖；不生成定义；注销/断线只释放对应 publication；不写旧 Service |
+| LEGACY Endpoint 写 | single/batch/deregister、两个 exact Version | 完整沿用原 Handler、Instance 转换和 `<legacyEncodedAgentName>::<exactVersion>` Service；不写标准 Service |
+| SERVICE 投影 | CANONICAL/LEGACY；无实例、enabled/disabled、healthy/unhealthy、多实例、多 transport | 按所选完整分支读取；CANONICAL 从标准 Service 按目标 Version binding 过滤，LEGACY 读取旧精确 Service；空集回退 DECLARED Card；过滤 enabled=false，保留 unhealthy；按 priority 和自然键稳定排序 |
 | 列表 | accurate/blur、空名称、分页、disabled、无 online A2A、多 online A2A | 管理列表包含 disabled Agent，排除无 online A2A；按旧 DTO 稳定分页；Card 根字段来自 common latest，versionDetails 只列 online A2A |
 | 版本列表 | 多状态、多 Protocol、latest 重选 | 只返回 online A2A Version；时间/latest 标志与通用事实一致 |
 | 删除 | exact online/draft/reviewed/offline/absent；删除 latest；删除全部/absent | exact 任意状态删除且 absent no-op；删除 latest 后选择语义最大的 online；删除最后 Version 后按规范处理 Agent；全删不触碰旧 Endpoint Naming publication |
 | 订阅 | latest/exact、不存在后出现、同快照重复轮询、latest 切换、断线重连 | 继续复用旧 SDK QueryAgentCard 轮询；只在投影变化时通知；重连后读取同一 Agent 事实源，不新增服务端 Watch/Push |
-| 兼容交叉 | 旧 API 写→新 Admin/Console/RAD 读；新 Admin 写→旧 Admin/Console/SDK 读 | metadata、Version status、latest、nativeDescriptor 和 declared endpoints 双向一致；RAD Runtime 与旧 Endpoint Naming 保持各自边界 |
+| 兼容交叉 | CANONICAL 下旧 API 写→新 Runtime Snapshot/RAD/旧 SERVICE 读；新 Endpoint API 与旧 Endpoint API 同 connection；新 Admin 写→旧 Admin/Console/SDK 读 | 定义字段双向一致；旧 Endpoint 在标准 Runtime 可见；新旧 publication 使用独立 publisher 不互相覆盖；旧查询和 RAD 都按 Version 得到一致 Endpoint |
 | 校验与审计 | 非法 namespace/name/version/Card/interface/type；不可写；并发创建/删除/变更 | 保持旧公开错误码和鉴权；直接 online、删除、no-op/冲突均有可区分审计；并发不产生同 Version 内容覆盖 |
 
-本阶段验收结论：
+此前定义 Adapter 阶段验收结论（Endpoint CANONICAL 切流的新增结果在本阶段完成后另行补充）：
 
 - 6 个相关生产类的本次新增或修改可执行行 UT line coverage 为 100%；相关 6 个单元测试类共
   206 个用例全部通过。
@@ -2143,7 +2148,8 @@ Console UI 场景矩阵：
   Client/Publisher 分层活性，接入 `ClientManagerDelegate` 并复用 Naming ClientData Distro、完整 Snapshot、
   verify/repair、超时与服务端事件；AI 使用模块内 Distro Filter，不新增专用 Distro type/processor。
 - [x] **RAD 数据面服务**：本阶段实现 Search、Discover 的版本/label/latest 解析、内容缓存、来源过滤和
-  Runtime 聚合；服务端 Watch/Push 暂缓，不进入本阶段。
+  Runtime 聚合；省略 Version/Label 时返回 latest 定义并聚合全部 online Version 的兼容 Runtime
+  Endpoint，显式 `label=latest` 时只选择 latest Endpoint；服务端 Watch/Push 暂缓，不进入本阶段。
 - [x] **Client HTTP/gRPC API**：新增 v3 Client Controller、gRPC Payload/Handler、能力协商 wire key 与错误映射；
   实现 publisher 完整 Batch 覆盖注册、整 publication 注销和 HTTP heartbeat；本阶段不将尚未形成 SDK
   闭环的能力键加入 `ServerAbilities`。
@@ -2152,7 +2158,7 @@ Console UI 场景矩阵：
   全量重注册和重连恢复；将 Discovery/Endpoint 能力键加入 `ServerAbilities` 并实现客户端传输能力检查；
   保持 `AiService`/`A2aService` 二进制兼容。本地 `getAll` / `selectOneHealthy` helper 因公开类型与 fallback
   尚未形成正式 Spec，按本阶段已知问题继续独立待决，不阻塞首版完成。
-- [ ] **Agent 管理元数据订阅**：当前 Discover 快照及其轮询指纹不包含 displayName、description、tags、
+- [ ] **Agent 管理元数据订阅（Beta 延期）**：当前 Discover 快照及其轮询指纹不包含 displayName、description、tags、
   provider 等管理元数据。后续若开放 Admin 强制更新已发布 Agent 管理元数据的能力，需要独立评审
   Search/Catalog 订阅或扩展 RAD Discover 契约；本阶段只记录，不修改现有订阅行为。
 - [x] **Admin API + Maintainer SDK**：实现 Agent CRUD、Version draft/submit/publish/online/offline/label、
@@ -2162,20 +2168,36 @@ Console UI 场景矩阵：
 - [x] **Console UI**：实现版本/Protocol 页签、Runtime Snapshot 懒加载、无 `RUNTIME` 来源提示、
   Naming 页面跳转和只读 Runtime 体验。
 - [x] **旧 A2A API Adapter**：完成 AgentCard 写入、latest 兼容、URL/SERVICE 查询反向投影、订阅和
-  Console/Admin/Maintainer 兼容窗口；首阶段 Endpoint 继续使用旧 version-specific Naming 布局，后续切流
-  单独设计双读、迁移与回滚，不在新 Runtime Registry 中实现 group-delete 或 read-merge-write。
+  Console/Admin/Maintainer 兼容窗口；CANONICAL 将旧 Endpoint 按 exact-Version 内部子 publisher 写入
+  标准 RAD Service，LEGACY 原 Handler 与 version-specific Naming 布局保持不变；Beta 不实现旧
+  serviceName 双写、迁移或回滚，也不在新 Runtime Registry 中实现 group-delete 或 read-merge-write。
 - [ ] **测试与交付门禁**：补齐单元测试、OpenAPI IT、Java SDK IT、Maintainer SDK IT、兼容矩阵、覆盖登记、
   鉴权/审计、单批次容量、故障注入与性能基准；验证完整 Batch replacement、空 publication 注销、
   `ServiceStorage` 直读、查询期 bindings 聚合和 redo 恢复，并据 Naming cluster quota 确定是否需要更低的
   Agent publisher quota；完成文档、指标、日志和发布说明。
-- [ ] **通用 Agent SDK 代码式发布**：按当前阶段白名单增加 `publishAgent` 与 `autoSubmit`，并完成普通
-  A2A Client redo、订阅和 shutdown 首版对齐；完成实现、100% line UT、稳定 IT 与真实重启验证后勾选。
-- [ ] **AI Resource 条件更新增强**：统一设计 `ai_resource_version` 行级条件更新、AI Storage
+- [x] **通用 Agent SDK 代码式发布**：已增加 `publishAgent` 与普通 Pipeline `autoSubmit`，完成普通
+  A2A Client 多 Version redo、exact/latest 订阅、shutdown 释放、100% line UT、稳定 IT 与真实重启验证。
+- [ ] **AI Resource 条件更新增强（Beta 延期）**：统一设计 `ai_resource_version` 行级条件更新、AI Storage
   conditional create/replace/delete 和结果不确定恢复语义；内置 `nacos_config` 对接 Config CAS，
   并推动 Agent、Prompt、Skill、AgentSpec 共同迁移，分别处理单对象和多文件 generation。
 
-当前只保留 `LEGACY`、`CANONICAL` 与保守单向 `AUTO` 的定义实现入口；滚动升级、存量数据迁移、
-双读双写和完整混合集群行为不混入上述单版本实现，仍单独按第 8 章设计和验收。
+### 7.3 Beta 明确延期项
+
+以下增强均不进入 Beta，不得借本阶段顺手修改底层公共逻辑：
+
+- 服务端 RAD Watch/Push、Push ACK 与相关重连协议；Beta 保持客户端主动轮询 Discover。
+- Agent 管理元数据变化订阅，以及公开 `getAll` / `selectOneHealthy` 本地选址 helper。
+- 同 Version 管理强制更新、AI Resource/AI Storage 条件更新和跨存储 CAS。
+- 历史 A2A Config/Naming 数据迁移、混合集群滚动升级、双读、请求级 fallback 和回滚。
+- CANONICAL Endpoint 向旧 `<legacyEncodedAgentName>::<exactVersion>` Naming Service 的可控双写；
+  该项用于兼容直接通过 Naming Gateway 发现旧 serviceName 的调用方，实施时必须保留当前未经修改的
+  LEGACY 分支，并单独定义开关、时序和清理。
+- 全部 HTTP Client 请求统一携带 `X-Nacos-Client-Id` 与 `X-Nacos-Namespace-Id`。Beta 只保留当前
+  Agent 有状态请求的 Client Id；后续统一方案需覆盖本身没有 Client/Namespace 参数的 API 审计，且
+  不能在没有跨模块设计的情况下直接修改 HTTP common。
+
+当前只保留 `LEGACY`、`CANONICAL` 与保守单向 `AUTO` 的完整定义/Endpoint 实现入口；滚动升级、
+存量数据迁移、双读双写和完整混合集群行为不混入上述单版本实现，仍单独按第 8 章设计和验收。
 
 ## 8. 滚动升级设计 TODO
 
@@ -2183,6 +2205,8 @@ Console UI 场景矩阵：
 
 - 新旧 Server 和 Client 的能力协商与请求路由；
 - 旧新 Agent/Endpoint metadata 的双读、必要的双写、事实源切换及回滚界限；
+- 直接通过 Naming Gateway 发现旧 A2A serviceName 的调用方识别方式，以及 CANONICAL 向旧 Service
+  双写的开关、生命周期、故障降级和最终清理；
 - 混合集群中资源、版本、Runtime publication 和发现快照的时序与一致性；
 - 历史定义迁移的启用时机、完成标记、旧 Config 保留/清理和删除防复活；
 - 历史异常 AgentName/Version 的拒绝或转换策略，以及旧 Naming Endpoint 数据的读取、搬迁和清理。

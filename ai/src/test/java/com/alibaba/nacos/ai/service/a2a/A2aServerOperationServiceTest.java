@@ -17,8 +17,8 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
+import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -69,7 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -95,23 +95,18 @@ class A2aServerOperationServiceTest {
     @Mock
     private ServiceStorage serviceStorage;
     
-    @Mock
-    private AgentIdCodecHolder agentIdCodecHolder;
-    
     private A2aServerOperationService service;
     
     @BeforeEach
     void setUp() {
         Executor directExecutor = Runnable::run;
-        service = new A2aServerOperationService(agentOperationService, serviceStorage,
-            agentIdCodecHolder, directExecutor);
-        when(agentIdCodecHolder.encode(anyString())).thenReturn("encoded-agent");
+        service =
+            new A2aServerOperationService(agentOperationService, serviceStorage, directExecutor);
     }
     
     @Test
     void testPublicConstructor() {
-        assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage,
-            agentIdCodecHolder));
+        assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage));
     }
     
     @Test
@@ -390,24 +385,35 @@ class A2aServerOperationServiceTest {
         ServiceInfo serviceInfo = new ServiceInfo();
         Instance disabled = instance("10.0.0.9", 9000, "HTTP+JSON", null, null, true);
         disabled.setEnabled(false);
-        Instance grpc = instance("10.0.0.1", 8001, "GRPC", null, "bad", false);
+        Instance grpc = instance("10.0.0.1", 8001, "GRPC", null, null, false);
+        grpc.setMetadata(new PriorityReadMetadata(grpc.getMetadata(), ""));
         Instance websocket = instance("10.0.0.2", 8002, "WEBSOCKET", "0.2", null, true);
         Instance json = instance("10.0.0.3", 8003, "HTTP+JSON", "0.3", "5", true);
-        serviceInfo.setHosts(Arrays.asList(disabled, json, websocket, grpc));
+        Instance invalidPriority =
+            instance("10.0.0.5", 8005, "SSE", "0.3", "1", true);
+        invalidPriority.setMetadata(
+            new PriorityReadMetadata(invalidPriority.getMetadata(), "invalid"));
+        Instance otherVersion = instance(SECOND_VERSION, "10.0.0.4", 8004, "HTTP+JSON",
+            "0.4", "1", true);
+        serviceInfo.setHosts(Arrays.asList(disabled, json, websocket, grpc, invalidPriority,
+            otherVersion));
         when(serviceStorage.getData(any(Service.class))).thenReturn(serviceInfo);
         
         AgentCardDetailInfo result =
             service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, "service");
         
         assertEquals("SERVICE", result.getRegistrationType());
-        assertEquals(3, result.getSupportedInterfaces().size());
+        assertEquals(4, result.getSupportedInterfaces().size());
         assertEquals("HTTP+JSON", result.getPreferredTransport());
         assertTrue(result.getUrl().contains("10.0.0.3:8003"));
-        assertEquals(3, result.getAdditionalInterfaces().size());
+        assertEquals(4, result.getAdditionalInterfaces().size());
         AgentInterface grpcInterface = result.getSupportedInterfaces().stream()
             .filter(each -> "GRPC".equals(each.getProtocolBinding())).findFirst().orElseThrow();
         assertEquals("0.3", grpcInterface.getProtocolVersion());
         assertFalse(grpc.isHealthy());
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        verify(serviceStorage).getData(serviceCaptor.capture());
+        assertEquals("rad-research-agent-a2a", serviceCaptor.getValue().getName());
     }
     
     @Test
@@ -581,6 +587,26 @@ class A2aServerOperationServiceTest {
         return result;
     }
     
+    private static final class PriorityReadMetadata extends HashMap<String, String> {
+        
+        private static final long serialVersionUID = -7775134594016802544L;
+        
+        private final String readValue;
+        
+        private PriorityReadMetadata(Map<String, String> source, String readValue) {
+            super(source);
+            this.readValue = readValue;
+        }
+        
+        @Override
+        public String get(Object key) {
+            if (Constants.Agent.AGENT_ENDPOINT_PRIORITY_KEY.equals(key)) {
+                return readValue;
+            }
+            return super.get(key);
+        }
+    }
+    
     private AgentInterface interfaceOf(String url, String transport, String protocolVersion) {
         AgentInterface result = new AgentInterface();
         result.setUrl(url);
@@ -656,21 +682,20 @@ class A2aServerOperationServiceTest {
     
     private Instance instance(String ip, int port, String transport, String protocolVersion,
         String priority, boolean healthy) {
-        Instance result = new Instance();
-        result.setIp(ip);
-        result.setPort(port);
-        result.setEnabled(true);
-        result.setHealthy(healthy);
-        Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY, transport);
-        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY, "http");
-        if (protocolVersion != null) {
-            metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, protocolVersion);
-        }
+        return instance(VERSION, ip, port, transport, protocolVersion, priority, healthy);
+    }
+    
+    private Instance instance(String version, String ip, int port, String transport,
+        String protocolVersion, String priority, boolean healthy) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setUri("http://" + ip + ':' + port);
+        endpoint.setTransport(transport);
         if (priority != null) {
-            metadata.put(Constants.Agent.AGENT_ENDPOINT_PRIORITY_KEY, priority);
+            endpoint.setPriority(Integer.valueOf(priority));
         }
-        result.setMetadata(metadata);
+        Instance result = AgentRuntimeEndpointMapper.toLegacyA2aInstance(endpoint, version,
+            protocolVersion, null);
+        result.setHealthy(healthy);
         return result;
     }
     

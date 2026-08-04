@@ -17,8 +17,9 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
+import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
+import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -71,9 +72,9 @@ import java.util.concurrent.ExecutorService;
 /**
  * Compatibility adapter between legacy A2A surfaces and the canonical Agent model.
  *
- * <p>AgentCard definitions are written only through {@link AgentOperationService}. Legacy
- * Version-specific Naming services remain the sole Runtime source for old SERVICE queries during
- * this phase.</p>
+ * <p>AgentCard definitions are written only through {@link AgentOperationService}. Canonical
+ * SERVICE queries project exact-Version-compatible endpoints from the shared RAD Runtime Naming
+ * service.</p>
  *
  * @author Nacos
  */
@@ -98,22 +99,18 @@ public class A2aServerOperationService implements A2aOperationService {
     
     private final ServiceStorage serviceStorage;
     
-    private final AgentIdCodecHolder agentIdCodecHolder;
-    
     private final Executor projectionExecutor;
     
     @Autowired
     public A2aServerOperationService(AgentOperationService agentOperationService,
-        ServiceStorage serviceStorage, AgentIdCodecHolder agentIdCodecHolder) {
-        this(agentOperationService, serviceStorage, agentIdCodecHolder, PROJECTION_EXECUTOR);
+        ServiceStorage serviceStorage) {
+        this(agentOperationService, serviceStorage, PROJECTION_EXECUTOR);
     }
     
     A2aServerOperationService(AgentOperationService agentOperationService,
-        ServiceStorage serviceStorage, AgentIdCodecHolder agentIdCodecHolder,
-        Executor projectionExecutor) {
+        ServiceStorage serviceStorage, Executor projectionExecutor) {
         this.agentOperationService = agentOperationService;
         this.serviceStorage = serviceStorage;
-        this.agentIdCodecHolder = agentIdCodecHolder;
         this.projectionExecutor = projectionExecutor;
     }
     
@@ -319,7 +316,7 @@ public class A2aServerOperationService implements A2aOperationService {
         AgentCardDetailInfo result = toLegacyCard(callInterface, agentName, targetVersion,
             storedType);
         if (AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE.equals(queryType)) {
-            injectLegacyRuntime(result, callInterface, namespaceId);
+            injectRuntimeEndpoints(result, callInterface, namespaceId);
         }
         if (targetVersion.equals(latestVersion(agent))) {
             result.setLatestVersion(Boolean.TRUE);
@@ -490,10 +487,9 @@ public class A2aServerOperationService implements A2aOperationService {
         }
     }
     
-    private void injectLegacyRuntime(AgentCardDetailInfo card,
+    private void injectRuntimeEndpoints(AgentCardDetailInfo card,
         AgentCallInterface callInterface, String namespaceId) {
-        String serviceName =
-            agentIdCodecHolder.encode(card.getName()) + "::" + card.getVersion();
+        String serviceName = RadServiceNameComposer.compose(card.getName(), A2A_PROTOCOL);
         Service service =
             Service.newService(namespaceId, Constants.Agent.AGENT_ENDPOINT_GROUP, serviceName);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
@@ -502,7 +498,8 @@ public class A2aServerOperationService implements A2aOperationService {
         }
         List<Instance> hosts = new ArrayList<Instance>();
         for (Instance instance : serviceInfo.getHosts()) {
-            if (instance != null && instance.isEnabled()) {
+            if (instance != null && instance.isEnabled()
+                && AgentRuntimeEndpointMapper.supportsVersion(instance, card.getVersion())) {
                 hosts.add(instance);
             }
         }

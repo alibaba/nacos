@@ -114,6 +114,50 @@ public final class AgentRuntimeEndpointMapper {
     }
     
     /**
+     * Convert one legacy A2A Endpoint into the canonical Runtime Naming layout.
+     *
+     * <p>The legacy protocol version and tenant remain compatibility-only reserved metadata.
+     * They are intentionally excluded from the public RAD Endpoint metadata and revision.</p>
+     *
+     * @param endpoint public Endpoint converted from the legacy A2A model
+     * @param runtimeVersion exact legacy Agent Version
+     * @param protocolVersion optional legacy A2A protocol version
+     * @param tenant optional legacy A2A tenant
+     * @return Naming instance in the canonical Runtime layout
+     */
+    public static Instance toLegacyA2aInstance(Endpoint endpoint, String runtimeVersion,
+        String protocolVersion, String tenant) {
+        Instance result = toInstance(endpoint, runtimeVersion, null);
+        if (protocolVersion != null && !protocolVersion.isEmpty()) {
+            result.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY,
+                protocolVersion);
+        }
+        if (tenant != null && !tenant.isEmpty()) {
+            result.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, tenant);
+        }
+        validateLegacyMetadata(result.getMetadata());
+        validateCompleteMetadata(result.getMetadata());
+        return result;
+    }
+    
+    /**
+     * Test whether one canonical Runtime Naming instance supports an exact Agent Version.
+     *
+     * @param instance canonical Runtime Naming instance
+     * @param version exact Agent Version
+     * @return {@code true} when any persisted binding contains the Version
+     */
+    public static boolean supportsVersion(Instance instance, String version) {
+        RuntimeEndpointSnapshotItem item = fromInstance(instance, 0L);
+        for (RuntimeVersionBinding binding : item.getBindings()) {
+            if (RuntimeVersionRangeSupport.contains(binding.getVersionRange(), version)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
      * Convert one Naming ServiceStorage instance into a Runtime Endpoint contribution.
      *
      * @param instance Naming instance with operational metadata already applied

@@ -142,6 +142,38 @@ class AgentRuntimeEndpointMapperTest {
     }
     
     @Test
+    void testWriteLegacyA2aMetadataAndMatchVersion() {
+        Endpoint endpoint = endpoint("https://example.com/agent", "HTTP+JSON");
+        Instance instance = AgentRuntimeEndpointMapper.toLegacyA2aInstance(endpoint, "1.0.0",
+            "0.3", "tenant-a");
+        
+        assertEquals("0.3", instance.getMetadata().get(
+            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        assertEquals("tenant-a", instance.getMetadata().get(
+            Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
+        assertTrue(AgentRuntimeEndpointMapper.supportsVersion(instance, "1.0.0"));
+        assertFalse(AgentRuntimeEndpointMapper.supportsVersion(instance, "2.0.0"));
+        
+        Instance withoutOptionalMetadata = AgentRuntimeEndpointMapper.toLegacyA2aInstance(
+            endpoint, "1.0.0", "", null);
+        assertFalse(withoutOptionalMetadata.getMetadata().containsKey(
+            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        assertFalse(withoutOptionalMetadata.getMetadata().containsKey(
+            Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
+    }
+    
+    @Test
+    void testRejectInvalidLegacyA2aMetadataOnWrite() {
+        Endpoint endpoint = endpoint("https://example.com/agent", "HTTP+JSON");
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentRuntimeEndpointMapper.toLegacyA2aInstance(endpoint, "1.0.0",
+                "bad version", null));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentRuntimeEndpointMapper.toLegacyA2aInstance(endpoint, "1.0.0", null,
+                repeat('t', 257)));
+    }
+    
+    @Test
     void testMappedSnapshotItemDoesNotShareNamingMetadata() {
         Instance instance = validInstance();
         instance.getMetadata().put("region", "cn-hangzhou");
