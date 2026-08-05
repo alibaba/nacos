@@ -97,20 +97,38 @@ nacos.plugin.visibility.type=nacos
 列出资源的 API 或存储适配层必须组合这两部分，且不得泄漏私有资源。
 
 默认领域集成会在执行 count 和分页查询前，将 `QueryAdvisor` 转换为仓储层
-`QueryCondition`。基础谓词映射如下：
+`QueryCondition`。设 `F` 为调用方在传入 `QueryCondition` 上已有的业务筛选条件
+（例如请求中显式指定的 `scope` 或 `owner`），`B` 为解析后的 `BaseVisibilityPredicate`，
+`G` 为 `name IN AuthorizedResources`。转换器必须生成：
 
-| 谓词 | 查询行为 |
-|------|----------|
-| `ALL` | 不追加可见性条件。 |
-| `PUBLIC` | 限制为 `scope=PUBLIC`；如果调用方请求了冲突 scope，则返回空集。 |
-| `OWNER` | 限制为 `owner=identity`；如果身份为空或 owner 冲突，则返回空集。 |
-| `PUBLIC_AND_OWNER` | 限制为 `scope=PUBLIC OR owner=identity`；匿名调用方退化为仅公开资源。 |
+```text
+最终查询 = F AND (B OR G)
+```
+
+`B` 需要独立于 `G` 单独求解，结果只会是三种之一：恒成立、恒不成立，或一组 OR 分支。
+基础谓词的求解规则如下：
+
+| 谓词 | `B` 的求解结果 |
+|------|----------------|
+| `ALL` | 恒成立；不追加可见性条件。 |
+| `PUBLIC` | 当 `scope=PUBLIC` 时成立；当调用方的业务筛选与公开 scope 冲突时恒不成立。 |
+| `OWNER` | 当 `owner=identity` 时成立；当身份为空，或调用方的业务筛选与该身份作为 owner 冲突时恒不成立。 |
+| `PUBLIC_AND_OWNER` | 当 `scope=PUBLIC OR owner=identity` 时成立；匿名调用方退化为 `PUBLIC` 的求解规则。仅当调用方的业务筛选同时将 scope 和 owner 固定为与两个分支都冲突的值时才恒不成立。 |
+
+只有在 `B` 求解完成后，才能与 `G` 取并集：`B` 恒成立时 `G` 不再重要（`B OR G` 仍然恒
+成立）；`B` 恒不成立时 `B OR G` 会退化为只剩 `G`；`B` 为 OR 分支时，`G` 会作为额外的一
+条 OR 分支与之并列。这一并集运算必须在化简为具体的 `QueryCondition` 形态（硬字段、
+OR 分组，或 `alwaysEmpty`）之前完成：如果在得知 `G` 之前就把 `B` 提前折叠进查询条件，
+可能会把本应的并集悄悄变成交集，或者在 `F AND G` 原本仍可能匹配的情况下，把整个查询
+错误地标记为 `alwaysEmpty`。
 
 调用方提交的 owner、scope 等业务筛选必须先进入基础 `QueryCondition`，再应用
-`QueryAdvisor`。转换器负责生成两者的交集或判定空集；资源类型不得在转换后重新设置这些
-字段并覆盖插件生成的可见性约束。
+`QueryAdvisor`：这些筛选条件既用于构成 `F`，也用于在转换器决定生成 OR 分组还是退化为
+`alwaysEmpty` 之前，裁剪掉 `B` 中已经恒成立或已经不可能成立的分支。资源类型不得在转换
+后重新设置这些字段并覆盖插件生成的可见性约束。
 
-如果 `AuthorizedResources` 被填充，它应作为与基础谓词并列的 OR 分支加入查询。默认
+如果 `AuthorizedResources` 被填充，`G` 会按照上述并集规则作为与 `B` 并列的 OR 分支加入
+查询（当 `B` 本身恒不成立时则取代 `B`）——`G` 不会仅仅因为 `B` 无法独立成立而被丢弃。默认
 可见性实现会从当前鉴权插件管理的显式授权中填充该列表。存储态写授权会隐式包含读权限，
 而只读授权仅影响读/列表查询。
 

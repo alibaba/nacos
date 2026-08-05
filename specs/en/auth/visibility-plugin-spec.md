@@ -106,24 +106,46 @@ The API or storage adapter that lists resources must combine both parts without
 leaking private resources.
 
 The default domain integration converts `QueryAdvisor` to repository `QueryCondition`
-before count and page queries run. The base predicate maps as follows:
+before count and page queries run. Let `F` be the caller-supplied business filters already
+present on the incoming `QueryCondition` (for example an explicit `scope` or `owner` filter
+from the request), `B` be the resolved `BaseVisibilityPredicate`, and `G` be
+`name IN AuthorizedResources`. The converter must produce:
 
-| Predicate | Query behavior |
+```text
+final query = F AND (B OR G)
+```
+
+`B` is resolved on its own, independently of `G`, into one of: always satisfied, never
+satisfied, or a set of OR branches. The base predicate resolves as follows:
+
+| Predicate | `B` resolution |
 |-----------|----------------|
-| `ALL` | Add no visibility condition. |
-| `PUBLIC` | Restrict to `scope=PUBLIC`, or empty result if the caller requested a conflicting scope. |
-| `OWNER` | Restrict to `owner=identity`, or empty result if identity is absent or conflicts. |
-| `PUBLIC_AND_OWNER` | Restrict to `scope=PUBLIC OR owner=identity`; anonymous callers degrade to public-only. |
+| `ALL` | Always satisfied; adds no visibility condition. |
+| `PUBLIC` | Satisfied when `scope=PUBLIC`; never satisfied when the caller's business filter conflicts with a public scope. |
+| `OWNER` | Satisfied when `owner=identity`; never satisfied when identity is absent, or when the caller's business filter conflicts with the identity as owner. |
+| `PUBLIC_AND_OWNER` | Satisfied when `scope=PUBLIC OR owner=identity`; anonymous callers degrade to the `PUBLIC` resolution. Never satisfied only when the caller's business filter fixes both scope and owner to values that conflict with both branches. |
 
-Caller-supplied business filters such as owner and scope must be present in the
-base `QueryCondition` before `QueryAdvisor` is applied. The converter produces
-their intersection or an empty result; resource-type implementations must not
-reset those fields after conversion and overwrite plugin visibility constraints.
+Only after `B` is resolved is it unioned with `G`: an always-satisfied `B` makes `G`
+irrelevant (`B OR G` is still always satisfied), a never-satisfied `B` collapses `B OR G`
+down to `G` alone, and OR-branch resolutions add `G` as one more OR branch alongside them.
+This union must happen before any simplification into a concrete `QueryCondition` shape (a
+hard field, an OR group, or `alwaysEmpty`): resolving `B` into the condition first, before
+`G` is known, can silently turn a union into an intersection, or mark the whole query
+`alwaysEmpty` even though `F AND G` could still match.
 
-If `AuthorizedResources` is populated, it is added as an OR branch with the base
-predicate. The default visibility implementation populates this list from
-plugin-owned explicit grants stored by the selected auth plugin. Stored write
-grants imply read visibility, while read grants only affect read/list queries.
+Caller-supplied business filters such as owner and scope must be present in the base
+`QueryCondition` before `QueryAdvisor` is applied: they are used both to compute `F` and to
+prune branches of `B` that are already satisfied or already impossible, before the converter
+decides whether to emit an OR group or fall back to `alwaysEmpty`. Resource-type
+implementations must not reset those fields after conversion and overwrite plugin visibility
+constraints.
+
+If `AuthorizedResources` is populated, `G` is added as an OR branch alongside `B` (or in
+place of `B` when `B` alone is never satisfied), per the union above -- it is never dropped
+merely because `B` could not independently be satisfied. The default visibility
+implementation populates this list from plugin-owned explicit grants stored by the selected
+auth plugin. Stored write grants imply read visibility, while read grants only affect
+read/list queries.
 
 ## Plugin State And Configuration
 

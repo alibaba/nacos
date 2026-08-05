@@ -30,6 +30,18 @@ import java.util.Map;
 /**
  * Default converter from advisor to table query condition.
  *
+ * <p>Let {@code F} be the business filters already present on the incoming {@link QueryCondition},
+ * {@code B} be the {@link BaseVisibilityPredicate}, and {@code G} be {@code name IN authorizedResources}.
+ * The query this converter must produce is {@code F AND (B OR G)}.
+ *
+ * <p>To do that correctly, {@code B} is first resolved into a self-contained {@link BaseResolution}
+ * (always true / always false / a set of OR branches) without touching the condition. Only afterwards
+ * is that resolution unioned with {@code G} and, only then, simplified into a concrete
+ * {@link QueryCondition} shape (a hard field, an OR group, or {@code alwaysEmpty}). This ordering
+ * matters: if {@code B} were collapsed into the condition before {@code G} is known, the union with
+ * {@code G} could silently turn into an AND, or an impossible {@code B} could mark the whole query
+ * {@code alwaysEmpty} even though {@code F AND G} could still match.
+ *
  * @author nacos
  */
 public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConverter {
@@ -43,61 +55,65 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
             return result;
         }
         BaseVisibilityPredicate base = advisor.getBasePredicate();
-        switch (base) {
-            case ALL:
-                break;
-            case PUBLIC:
-                applyPublic(result);
-                break;
-            case OWNER:
-                applyOwner(result, identity);
-                break;
-            case PUBLIC_AND_OWNER:
-            default:
-                applyPublicAndOwner(result, identity);
-                break;
-        }
-        // Explicitly authorized names are added as an OR branch so storage can page and count
-        // the complete visible set instead of filtering a fetched page in memory.
+        BaseResolution resolution = resolveBase(base, result, identity);
+        
         List<String> authorized =
             advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
                 .getResources();
-        if (authorized != null && !authorized.isEmpty()) {
+        boolean hasAuthorized = authorized != null && !authorized.isEmpty();
+        if (hasAuthorized) {
             result.setAuthorizedResourceNames(authorized);
-            result.putOrGroup("name", authorized);
         }
-        simplifyOrGroup(result);
+        applyResolution(result, resolution, hasAuthorized ? authorized : null);
         return result;
     }
     
-    private void applyPublic(QueryCondition condition) {
-        if (StringUtils.isBlank(condition.getScope())) {
-            condition.setScope(VisibilityConstants.SCOPE_PUBLIC);
-            return;
-        }
-        if (!VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope())) {
-            condition.setAlwaysEmpty(true);
+    private BaseResolution resolveBase(BaseVisibilityPredicate base, QueryCondition condition,
+        String identity) {
+        switch (base) {
+            case ALL:
+                return BaseResolution.alwaysTrue();
+            case PUBLIC:
+                return resolvePublic(condition);
+            case OWNER:
+                return resolveOwner(condition, identity);
+            case PUBLIC_AND_OWNER:
+            default:
+                return resolvePublicAndOwner(condition, identity);
         }
     }
     
-    private void applyOwner(QueryCondition condition, String identity) {
+    private BaseResolution resolvePublic(QueryCondition condition) {
+        if (StringUtils.isBlank(condition.getScope())) {
+            return BaseResolution.branches(singleBranch("scope", VisibilityConstants.SCOPE_PUBLIC));
+        }
+        if (VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope())) {
+            return BaseResolution.alwaysTrue();
+        }
+        return BaseResolution.alwaysFalse();
+    }
+    
+    private BaseResolution resolveOwner(QueryCondition condition, String identity) {
         if (StringUtils.isBlank(identity)) {
-            condition.setAlwaysEmpty(true);
-            return;
+            // B (owner=identity) cannot be satisfied without an identity, so this branch of B
+            // is impossible -- but per the unified F AND (B OR G) model that no longer means the
+            // whole query is empty: G, when populated by a custom visibility plugin, may still
+            // match. The default visibility implementation never populates G for an anonymous
+            // caller, so this still degrades to alwaysEmpty in practice.
+            return BaseResolution.alwaysFalse();
         }
         if (StringUtils.isBlank(condition.getOwner())) {
-            condition.setOwner(identity);
-            return;
+            return BaseResolution.branches(singleBranch("owner", identity));
         }
-        if (!identity.equals(condition.getOwner())) {
-            condition.setAlwaysEmpty(true);
+        if (identity.equals(condition.getOwner())) {
+            return BaseResolution.alwaysTrue();
         }
+        return BaseResolution.alwaysFalse();
     }
     
-    private void applyPublicAndOwner(QueryCondition condition, String identity) {
+    private BaseResolution resolvePublicAndOwner(QueryCondition condition, String identity) {
         if (StringUtils.isBlank(identity)) {
-            applyPublic(condition);
-            return;
+            return resolvePublic(condition);
         }
         boolean scopeIsPublic =
             VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
@@ -105,19 +121,58 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         boolean ownerIsIdentity = identity.equals(condition.getOwner());
         boolean hasOwner = StringUtils.isNotBlank(condition.getOwner());
         if (scopeIsPublic || ownerIsIdentity) {
-            return;
+            return BaseResolution.alwaysTrue();
         }
         // this condition means scope != public and owner != identity.
-        // it conflicts with visibility `public or owner is identity`, so it must be always empty
+        // it conflicts with visibility `public or owner is identity`, so this branch of B is
+        // impossible -- but that no longer means the whole query is empty, since G may still match.
         if (hasScope && hasOwner) {
-            condition.setAlwaysEmpty(true);
-            return;
+            return BaseResolution.alwaysFalse();
         }
+        Map<String, Object> branches = new LinkedHashMap<>();
         if (!hasScope) {
-            condition.putOrGroup("scope", VisibilityConstants.SCOPE_PUBLIC);
+            branches.put("scope", VisibilityConstants.SCOPE_PUBLIC);
         }
         if (!hasOwner) {
-            condition.putOrGroup("owner", identity);
+            branches.put("owner", identity);
+        }
+        return BaseResolution.branches(branches);
+    }
+    
+    private Map<String, Object> singleBranch(String field, Object value) {
+        Map<String, Object> branch = new LinkedHashMap<>();
+        branch.put(field, value);
+        return branch;
+    }
+    
+    /**
+     * Union the resolved base predicate {@code B} with {@code G} (authorized resource names,
+     * or {@code null}/empty when there are none) and collapse the result into the condition.
+     */
+    private void applyResolution(QueryCondition condition, BaseResolution resolution,
+        List<String> authorized) {
+        switch (resolution.getKind()) {
+            case ALWAYS_TRUE:
+                // B alone already guarantees a match. B OR G is still always true, so G cannot
+                // narrow it any further -- nothing else needs to be applied.
+                return;
+            case ALWAYS_FALSE:
+                // B alone can never match. B OR G collapses to G: keep G if it exists, otherwise
+                // the whole predicate is empty.
+                if (authorized != null) {
+                    condition.putOrGroup("name", authorized);
+                } else {
+                    condition.setAlwaysEmpty(true);
+                }
+                return;
+            case BRANCHES:
+            default:
+                Map<String, Object> combined = new LinkedHashMap<>(resolution.getBranches());
+                if (authorized != null) {
+                    combined.put("name", authorized);
+                }
+                condition.setOrGroup(combined);
+                simplifyOrGroup(condition);
         }
     }
     
@@ -140,6 +195,48 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         if ("owner".equals(key) && StringUtils.isBlank(condition.getOwner())) {
             condition.setOwner(String.valueOf(value));
             condition.setOrGroup(new LinkedHashMap<>());
+        }
+    }
+    
+    /**
+     * Self-contained resolution of the base visibility predicate {@code B}, computed independently
+     * of {@code G} so the two can be unioned correctly before any simplification happens.
+     */
+    private static final class BaseResolution {
+        
+        private enum Kind {
+            ALWAYS_TRUE,
+            ALWAYS_FALSE,
+            BRANCHES
+        }
+        
+        private final Kind kind;
+        
+        private final Map<String, Object> branches;
+        
+        private BaseResolution(Kind kind, Map<String, Object> branches) {
+            this.kind = kind;
+            this.branches = branches;
+        }
+        
+        static BaseResolution alwaysTrue() {
+            return new BaseResolution(Kind.ALWAYS_TRUE, null);
+        }
+        
+        static BaseResolution alwaysFalse() {
+            return new BaseResolution(Kind.ALWAYS_FALSE, null);
+        }
+        
+        static BaseResolution branches(Map<String, Object> branches) {
+            return new BaseResolution(Kind.BRANCHES, branches);
+        }
+        
+        Kind getKind() {
+            return kind;
+        }
+        
+        Map<String, Object> getBranches() {
+            return branches;
         }
     }
 }
