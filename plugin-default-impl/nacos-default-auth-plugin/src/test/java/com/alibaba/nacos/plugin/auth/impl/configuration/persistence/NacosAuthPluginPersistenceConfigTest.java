@@ -41,6 +41,7 @@ class NacosAuthPluginPersistenceConfigTest {
         NacosAuthPluginEmbeddedStorageConfig config = new NacosAuthPluginEmbeddedStorageConfig();
         DatabaseOperate databaseOperate = mock(DatabaseOperate.class);
         
+        assertNotNull(config.authRowMapperManager());
         assertTrue(config.permissionPersistService(
             databaseOperate) instanceof EmbeddedPermissionPersistServiceImpl);
         assertTrue(

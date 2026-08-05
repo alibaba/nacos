@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.configuration.persistence;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
+import com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager;
 import com.alibaba.nacos.plugin.auth.impl.persistence.EmbeddedPermissionPersistServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.persistence.EmbeddedRolePersistServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.persistence.EmbeddedUserPersistServiceImpl;
@@ -35,6 +36,11 @@ import org.springframework.context.annotation.Conditional;
  */
 @Conditional(value = {ConditionOnEmbeddedStorage.class, ConditionOnInnerDatasource.class})
 public class NacosAuthPluginEmbeddedStorageConfig {
+    
+    @Bean
+    public AuthRowMapperManager authRowMapperManager() {
+        return new AuthRowMapperManager();
+    }
     
     @Bean
     public PermissionPersistService permissionPersistService(DatabaseOperate databaseOperate) {
