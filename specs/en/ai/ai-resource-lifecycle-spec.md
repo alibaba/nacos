@@ -141,6 +141,12 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
   that version.
 - Deleting a resource should remove metadata, all version rows, and all
   type-owned storage.
+- Resource deletion must load every Version storage descriptor before mutating
+  metadata. Storage cleanup must route through the provider persisted in each
+  descriptor and attempt every referenced content object.
+- Metadata and Version rows must be deleted only after all referenced storage
+  content is cleaned successfully. If any cleanup fails, the delete operation
+  must report failure and preserve the rows and descriptors needed for retry.
 - Delete operations should be idempotent only when the public API contract says
   missing resources are success.
 - Deleting an online version should update `onlineCnt` or labels when the type

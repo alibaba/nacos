@@ -32,6 +32,7 @@ import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecContentDigestUtils;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
+import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
@@ -284,7 +285,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         resourceManager.deleteResourceWithVersions(namespaceId, agentSpecName,
             RESOURCE_TYPE_AGENTSPEC,
-            v -> deleteAgentSpecStorageForVersion(namespaceId, agentSpecName, v.getVersion()));
+            v -> deleteAgentSpecStorageForVersion(namespaceId, agentSpecName, v.getVersion(),
+                v.getStorage()));
     }
     
     @Override
@@ -911,7 +913,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
-            v -> deleteAgentSpecStorageForVersion(namespaceId, name, v.getVersion()));
+            v -> deleteAgentSpecStorageForVersion(namespaceId, name, v.getVersion(),
+                v.getStorage()));
     }
     
     /**
@@ -1449,14 +1452,15 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      * then deletes the main config file itself.
      */
     private void deleteAgentSpecStorageForVersion(String namespaceId, String agentSpecName,
-        String version)
+        String version, String storageJson)
         throws NacosException {
         // Step 1: Read main config first to get the resource reference list
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-            namespaceId,
+        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
             NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
+        NacosException firstFailure = null;
         if (mainBytes != null) {
             // Step 2: Delete each resource file
             AgentSpecMainConfig mainConfig =
@@ -1467,14 +1471,29 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                     String path = NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
                         resourceRef.getType(),
                         resourceRef.getName());
-                    StorageKey resourceKey =
-                        NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-                            namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                            agentSpecName, version,
-                            path);
-                    storageRouter.route(resourceKey).delete(resourceKey);
+                    StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                        namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        agentSpecName, version,
+                        path);
+                    try {
+                        storageRouter.route(resourceKey).delete(resourceKey);
+                    } catch (Exception e) {
+                        NacosException failure = e instanceof NacosException ? (NacosException) e
+                            : new NacosException(NacosException.SERVER_ERROR,
+                                "Failed to delete AgentSpec storage: " + agentSpecName + '@'
+                                    + version,
+                                e);
+                        if (firstFailure == null) {
+                            firstFailure = failure;
+                        } else {
+                            firstFailure.addSuppressed(failure);
+                        }
+                    }
                 }
             }
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
         }
         // Step 3: Delete the main config file itself
         storageRouter.route(mainKey).delete(mainKey);

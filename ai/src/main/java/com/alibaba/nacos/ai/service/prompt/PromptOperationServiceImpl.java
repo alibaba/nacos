@@ -36,6 +36,7 @@ import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.PromptVersionUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
@@ -268,7 +269,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
         resourceManager.doDeleteDraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
-            v -> deletePromptStorageForVersion(namespaceId, promptKey, v.getVersion()));
+            v -> deletePromptStorageForVersion(namespaceId, promptKey, v));
     }
     
     @Override
@@ -445,19 +446,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             VisibilityHelper.checkWritableResource(meta);
         }
         
-        // Delete all version storage content
         List<AiResourceVersion> allVersions = loadAllVersionRows(namespaceId, promptKey);
-        for (AiResourceVersion v : allVersions) {
-            if (v == null) {
-                continue;
-            }
-            try {
-                deletePromptStorageForVersion(namespaceId, promptKey, v.getVersion());
-            } catch (Exception e) {
-                LOGGER.warn("Failed to delete storage for prompt version: {}@{}", promptKey,
-                    v.getVersion(), e);
-            }
-        }
         
         // Delete legacy latest mirror in nacos-ai-prompt group
         deleteLegacyLatestMirror(namespaceId, promptKey);
@@ -471,9 +460,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         }
         promptDataMigrationTask.cleanupLegacyConfig(namespaceId, promptKey, versionStrings);
         
-        // Delete DB rows
-        resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-        resourceManager.deleteMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        resourceManager.deleteResourceWithVersions(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            v -> deletePromptStorageForVersion(namespaceId, promptKey, v));
         schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
@@ -481,14 +469,19 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
-    private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {
+    private void deleteLegacyLatestMirror(String namespaceId, String promptKey)
+        throws NacosException {
         try {
             final String latestDataId = PromptVersionUtils.buildDataId(promptKey);
             configOperationService.deleteConfig(latestDataId, Constants.Prompt.PROMPT_GROUP,
                 namespaceId, null, null,
                 "nacos", null);
         } catch (Exception e) {
-            LOGGER.warn("Failed to delete legacy latest mirror for prompt: {}", promptKey, e);
+            if (e instanceof NacosException) {
+                throw (NacosException) e;
+            }
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Failed to delete legacy latest mirror for prompt: " + promptKey, e);
         }
     }
     
@@ -738,7 +731,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             return;
         }
         if (StringUtils.isBlank(newLatest)) {
-            deleteLegacyLatestMirror(namespaceId, promptKey);
+            try {
+                deleteLegacyLatestMirror(namespaceId, promptKey);
+            } catch (NacosException e) {
+                LOGGER.warn("Failed to delete latest mirror for prompt: {}", promptKey, e);
+            }
             return;
         }
         try {
@@ -794,16 +791,31 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     private void deletePromptStorageForVersion(String namespaceId, String promptKey,
-        String version) {
-        try {
-            String provider = resolvePromptStorageProvider();
-            StorageKey storageKey =
-                NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-                    RESOURCE_TYPE_PROMPT, promptKey, version,
-                    PromptUtils.PROMPT_MAIN_DATA_ID);
-            storageRouter.route(storageKey).delete(storageKey);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to delete prompt storage: {}@{}", promptKey, version, e);
+        AiResourceVersion version) throws NacosException {
+        String provider = AiResourceVersionStorageJsonUtil.requireProvider(version.getStorage());
+        List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(version.getStorage());
+        NacosException firstFailure = null;
+        for (String file : files) {
+            try {
+                StorageKey storageKey =
+                    NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+                        RESOURCE_TYPE_PROMPT, promptKey, version.getVersion(), file);
+                storageRouter.route(storageKey).delete(storageKey);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to delete prompt storage: " + promptKey + '@'
+                            + version.getVersion(),
+                        e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
+                }
+            }
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
         }
     }
     

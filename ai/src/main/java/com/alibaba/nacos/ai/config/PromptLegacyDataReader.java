@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.List;
 
@@ -72,6 +73,7 @@ public interface PromptLegacyDataReader {
      * @param promptKey   prompt key
      * @param versions    version strings to clean up
      */
-    default void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions) {
+    default void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions)
+        throws NacosException {
     }
 }

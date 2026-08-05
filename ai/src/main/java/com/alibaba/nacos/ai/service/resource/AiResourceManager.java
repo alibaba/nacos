@@ -1417,21 +1417,52 @@ public class AiResourceManager {
      */
     public void deleteResourceWithVersions(String namespaceId, String name, String type,
         VersionStorageDeleter storageDeleter) throws NacosException {
-        aiResourcePersistService.delete(namespaceId, name, type);
-        Page<AiResourceVersion> versions =
-            aiResourceVersionPersistService.list(namespaceId, name, type, null, 1, 200);
-        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, name, type);
-        if (versions != null && versions.getPageItems() != null) {
-            for (AiResourceVersion v : versions.getPageItems()) {
-                if (v == null || StringUtils.isBlank(v.getVersion())) {
-                    continue;
+        List<AiResourceVersion> versions = listAllVersions(namespaceId, name, type);
+        NacosException firstFailure = null;
+        for (AiResourceVersion v : versions) {
+            String version = v == null ? "unknown" : v.getVersion();
+            try {
+                if (v == null || StringUtils.isBlank(version)) {
+                    throw new NacosException(NacosException.SERVER_ERROR,
+                        "AI resource Version row is invalid: " + name);
                 }
                 storageDeleter.deleteStorage(v);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to delete AI resource storage: " + name + '@' + version, e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
+                }
             }
         }
+        if (firstFailure != null) {
+            throw firstFailure;
+        }
+        aiResourcePersistService.delete(namespaceId, name, type);
+        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, name, type);
         AiResourceTraceService.logSuccess(type, name, null,
             AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+    
+    private List<AiResourceVersion> listAllVersions(String namespaceId, String name, String type) {
+        List<AiResourceVersion> result = new ArrayList<>();
+        int pageNo = 1;
+        while (true) {
+            Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name,
+                type, null, pageNo, VERSION_SCAN_PAGE_SIZE);
+            if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
+                return result;
+            }
+            result.addAll(page.getPageItems());
+            if (page.getPageItems().size() < VERSION_SCAN_PAGE_SIZE) {
+                return result;
+            }
+            pageNo++;
+        }
     }
     
     /**

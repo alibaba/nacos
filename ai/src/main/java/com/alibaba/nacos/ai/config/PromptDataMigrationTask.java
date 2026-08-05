@@ -336,7 +336,8 @@ public class PromptDataMigrationTask implements ApplicationListener<ApplicationR
      * @param promptKey   prompt key
      * @param versions    version strings to clean up
      */
-    public void cleanupLegacyConfig(String namespaceId, String promptKey, List<String> versions) {
+    public void cleanupLegacyConfig(String namespaceId, String promptKey, List<String> versions)
+        throws NacosException {
         PromptLegacyDataReader reader = resolveLegacyDataReader();
         if (reader == null) {
             return;
