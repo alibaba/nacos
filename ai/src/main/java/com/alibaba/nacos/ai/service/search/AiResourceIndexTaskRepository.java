@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.model.search.AiResourceIndexTask;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -29,27 +28,63 @@ import java.util.List;
 public interface AiResourceIndexTaskRepository {
     
     /**
-     * Coalesce a resource change into one pending task.
+     * Coalesce a resource change and its enhancement intent into one pending task.
      */
-    void schedule(String namespaceId, String resourceType, String resourceName);
+    void schedule(String namespaceId, String resourceType, String resourceName,
+        boolean enhancementRequested);
     
     /**
-     * Find tasks whose retry or lease time has elapsed.
+     * Coalesce an inconsistent-index repair while preserving active task intent.
+     */
+    void scheduleReconciliation(String namespaceId, String resourceType, String resourceName,
+        boolean enhancementRequested);
+    
+    /**
+     * Find search-index tasks whose execution or lease time has elapsed.
      */
     List<AiResourceIndexTask> findDueTasks(int limit);
     
     /**
-     * Claim one task revision for exclusive processing.
+     * Claim one task revision for exclusive processing with a new lease token for the given
+     * duration in milliseconds.
      */
-    boolean claim(AiResourceIndexTask task, Timestamp leaseUntil);
+    boolean claim(AiResourceIndexTask task, long leaseDurationMillis);
     
     /**
-     * Complete the claimed revision.
+     * Renew the lease identified by the task's lease token for the given duration in
+     * milliseconds.
      */
-    void complete(AiResourceIndexTask task);
+    boolean renewLease(AiResourceIndexTask task, long leaseDurationMillis);
     
     /**
-     * Retain the claimed revision for a later retry.
+     * Advance a completed base-index revision to durable enhancement.
      */
-    void retry(AiResourceIndexTask task, Timestamp nextRetryTime, String lastError);
+    boolean advanceToEnhancement(AiResourceIndexTask task);
+    
+    /**
+     * Restart the claimed task revision from the base-index stage.
+     *
+     * @return {@code false} when the claimed revision has already been superseded
+     */
+    boolean restartFromBase(AiResourceIndexTask task, boolean enhancementRequested);
+    
+    /**
+     * Retain a completed checkpoint for the claimed stage and revision.
+     */
+    boolean complete(AiResourceIndexTask task, String enhancementFingerprint);
+    
+    /**
+     * Remove a completed deletion task.
+     */
+    boolean remove(AiResourceIndexTask task);
+    
+    /**
+     * Retain the claimed revision for a retry after the given delay in milliseconds.
+     */
+    boolean retry(AiResourceIndexTask task, long retryDelayMillis, String lastError);
+    
+    /**
+     * Release a replacement revision only while it still carries this worker's lease token.
+     */
+    void releaseSuperseded(AiResourceIndexTask task);
 }

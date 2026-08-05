@@ -116,7 +116,7 @@ class PluginTypeTest {
     @DisplayName("test AI_VECTOR enum values")
     void testAiVectorEnumValues() {
         assertEquals("ai-vector", PluginType.AI_VECTOR.getType());
-        assertEquals("AI ARD vector index plugin", PluginType.AI_VECTOR.getDescription());
+        assertEquals("AI resource vector index plugin", PluginType.AI_VECTOR.getDescription());
         assertEquals(PluginExecutionMode.ROUTED, PluginType.AI_VECTOR.getExecutionMode());
         assertFalse(PluginType.AI_VECTOR.isCritical());
     }

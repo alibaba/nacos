@@ -221,10 +221,13 @@ Search 接受固定版本 OpenAPI 定义的全部 federation 值：`auto`、`ref
 未传值时默认为 `auto`。在尚未配置上游 Registry 时，三种模式都执行本地检索；
 `referrals` 返回空 referrals 数组，而不是拒绝请求。
 
-`GET /agents` filter 支持以 `AND` 连接、值使用单引号包裹的等值表达式，以及
-`createdAfter > '2026-01-01T00:00:00Z'` 这类时间比较。解析必须感知引号边界。
-不支持的操作符、错误的引号、未知字段和旧分隔符语法必须返回 ARD invalid-argument，
-不能只解析其中一部分。
+`GET /agents` filter 支持以 `AND` 连接、值使用单引号包裹的等值表达式，以及使用 ISO
+date 或 instant 的时间比较，例如 `createdAfter > '2026-01-01'` 和
+`createdAfter > '2026-01-01T00:00:00Z'`。解析必须感知引号边界。Search 和 explore
+filter 接受语法合法的点分字段路径，包括固定 OpenAPI 中的
+`trustManifest.attestations.type` 示例；路径对应的值不存在时不匹配任何条目。不支持的
+扩展字段路径分段可以使用任意非空、非空白且不含点号的属性名。不支持的操作符、错误的
+引号、非法字段路径语法和旧分隔符语法必须返回 ARD invalid-argument，不能只解析其中一部分。
 
 Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
 字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，
@@ -246,15 +249,17 @@ Explore facet 必须在可见性、当前版本和请求过滤后，对完整的
 任务以 namespace、resource type 和 resource name 为键。Consumer 重新读取标准资源状态，
 替换或删除关系索引，再使所选向量索引收敛。只有已配置的两类索引均完成收敛，任务才算完成。
 
-失败任务保留 attempt count、next retry time、lease 和 last error 等重试状态。周期性
-reconciliation 用于发现遗漏的生命周期事件，并分别校验关系索引与向量索引状态。只记录
-日志并吞掉索引异常不构成一致性机制，仅依靠启动 backfill 也不充分。
+失败任务回到 `pending`，并保留 retry count、Unix Epoch 毫秒形式的 next execution 与
+lease 截止点，以及 last error。周期性 reconciliation 用于发现遗漏的生命周期事件，并
+分别校验关系索引与向量索引状态。只记录日志并吞掉索引异常不构成一致性机制，仅依靠启动
+backfill 也不充分。
 
-`ai_resource_search_index_task` 保存合并后的任务 revision 与重试状态。任务完成和重试更新
-都必须带 revision 条件，避免旧租约结束时误删并发产生的新变更。向量替换期间，关系
-document 保持 `pending`，检索只读取 `enabled` document；Vector Provider 完成替换后，
-Consumer 才启用关系 document。Reconciliation 还需要比较 embedding model、向量文档数量与关系 chunks，
-并调度缺失、部分写入、过期、模型不一致及孤儿索引。
+`ai_resource_task` 保存合并后的 `search_index` 任务 revision、版本化 Payload 和 Result，
+以及重试状态。任务完成和重试更新都必须带 revision 条件，避免旧租约结束时误删并发产生的
+新变更。向量替换期间，关系 document 保持 `pending`，检索只读取 `enabled` document；
+Vector Provider 完成替换后，Consumer 才启用关系 document。Reconciliation 还需要比较
+embedding model、向量文档数量与关系 chunks，并调度缺失、部分写入、过期、模型不一致及
+孤儿索引。
 
 ### 6.5 一致性测试
 

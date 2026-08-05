@@ -79,9 +79,10 @@ Consumer 对瞬时失败执行有界退避重试。周期性 reconciliation 用�
 文档。实现需要暴露 reconciliation 所需的健康状态和已索引 identity 信息，但不能向协议
 适配器泄漏 Provider 专属类型。
 
-`isResourceVersionReady(...)` 用于比较当前 embedding model、期望的关系 chunk 数量和
-Provider 中的已索引文档。该方法是带默认实现的可选兼容方法，已有 Provider 不会因此失去
-二进制兼容；支持精确 reconciliation 的 Provider 应覆盖该方法。默认 PostgreSQL Provider
+`isResourceVersionReady(...)` 用于比较当前 embedding model、期望的关系 document
+标识、关系 chunk 数量和 Provider 中的已索引文档。包含 document 标识的新重载默认委托
+给原方法，已有 Provider 不会因此失去兼容性；支持精确 reconciliation 的 Provider 应覆盖
+该方法。默认 PostgreSQL Provider
 在单个本地数据源事务内完成资源版本替换。
 
 ## 6. 安全与运维

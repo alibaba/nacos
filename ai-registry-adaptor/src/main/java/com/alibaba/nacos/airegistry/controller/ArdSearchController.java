@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.airegistry.controller;
 
-import com.alibaba.nacos.ai.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.airegistry.annotation.ArdApi;
+import com.alibaba.nacos.airegistry.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;

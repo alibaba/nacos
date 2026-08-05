@@ -264,10 +264,16 @@ registry is configured, all three modes execute local search; `referrals`
 returns an empty referrals array rather than rejecting the request.
 
 The `GET /agents` filter parser supports single-quoted equality expressions
-joined by `AND` and timestamp comparisons such as
-`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Unsupported
-operators, malformed quoting, unknown fields, and legacy delimiter syntax fail
-with the ARD invalid-argument response instead of being partially interpreted.
+joined by `AND` and timestamp comparisons using either an ISO date or instant,
+such as `createdAfter > '2026-01-01'` or
+`createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Search and
+explore filters accept syntactically valid dot-separated field paths, including
+the pinned OpenAPI example `trustManifest.attestations.type`; a path whose
+value is absent matches no entries. Extension field-path segments may contain
+arbitrary non-whitespace property names but cannot be empty or contain a dot.
+Unsupported operators, malformed quoting, invalid field-path syntax, and
+legacy delimiter syntax fail with the ARD invalid-argument response instead
+of being partially interpreted.
 
 Catalog identifiers use deterministic, injective, schema-safe encoding for
 every Nacos-derived URN segment. Namespaces and resource names containing
@@ -298,20 +304,21 @@ re-reads canonical state, replaces or deletes the relational index, then
 converges the selected vector index. A task is complete only after both
 configured indexes have converged.
 
-Failures retain retry state, including attempt count, next retry time, lease,
-and the last error. Periodic reconciliation detects missed lifecycle events and
-independently verifies relational and vector state. Logging and swallowing an
-indexing exception is not a consistency mechanism, and startup backfill alone
-is not sufficient.
+Failures return to `pending` and retain retry count, the Unix Epoch millisecond
+next-execution and lease deadlines, and the last error. Periodic reconciliation
+detects missed lifecycle events and independently verifies relational and
+vector state. Logging and swallowing an indexing exception is not a consistency
+mechanism, and startup backfill alone is not sufficient.
 
-`ai_resource_search_index_task` stores the coalesced task revision and retry
-state. Completion and retry updates are revision-conditional so a concurrent
-canonical change cannot be lost when an older lease finishes. While vector
-replacement is in progress, the relational document remains `pending`; search
-only reads `enabled` documents. The consumer enables the document after the vector
-provider confirms replacement. Reconciliation also compares the embedding
-model and vector document count with the relational chunks, and schedules
-missing, partial, stale, wrong-model, and orphaned indexes.
+`ai_resource_task` stores the coalesced `search_index` task revision,
+versioned payload and result, and retry state. Completion and retry updates are
+revision-conditional so a concurrent canonical change cannot be lost when an
+older lease finishes. While vector replacement is in progress, the relational
+document remains `pending`; search only reads `enabled` documents. The
+consumer enables the document after the vector provider confirms replacement.
+Reconciliation also compares the embedding model and vector document count
+with the relational chunks, and schedules missing, partial, stale, wrong-model,
+and orphaned indexes.
 
 ### 6.5 Conformance
 

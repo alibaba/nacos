@@ -551,6 +551,31 @@ class McpServerOperationServiceTest {
     }
     
     @Test
+    void getMcpServerDetailWithoutVersionUsesLatestPublishedVersion() throws NacosException {
+        String id = mockId();
+        McpServerVersionInfo versionInfo = mockServerVersionInfo(id);
+        versionInfo.setLatestPublishedVersion("1.0.1");
+        versionInfo.setVersions(List.of(mockVersion("1.0.1"), mockVersion("1.0.3")));
+        McpServerStorageInfo storageInfo =
+            mockStorageInfo(id, false, false, AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+        storageInfo.setVersion("1.0.1");
+        storageInfo.setVersionDetail(mockVersion("1.0.1"));
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
+            mockConfigQueryChainResponse(versionInfo), mockConfigQueryChainResponse(storageInfo));
+        
+        McpServerDetailInfo actual =
+            serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        
+        assertEquals("1.0.1", actual.getVersion());
+        ArgumentCaptor<ConfigQueryChainRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService, times(2)).handle(requestCaptor.capture());
+        assertEquals(McpConfigUtils.formatServerSpecInfoDataId(id, "1.0.1"),
+            requestCaptor.getAllValues().get(1).getDataId());
+    }
+    
+    @Test
     void getMcpServerDetailByIdNotFoundWithVersion() throws NacosException {
         String id = mockId();
         ConfigQueryChainResponse versionDataResponse =

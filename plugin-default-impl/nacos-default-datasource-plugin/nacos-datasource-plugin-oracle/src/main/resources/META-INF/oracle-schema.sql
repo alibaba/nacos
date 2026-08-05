@@ -313,22 +313,25 @@ CREATE INDEX idx_search_chunk_resource ON ai_resource_search_chunk(namespace_id,
 CREATE INDEX idx_search_chunk_type_status ON ai_resource_search_chunk(namespace_id, resource_type, status);
 
 /******************************************/
-/*   表名称 = ai_resource_search_index_task  */
+/*   表名称 = ai_resource_task  */
 /******************************************/
-CREATE TABLE ai_resource_search_index_task (
+CREATE TABLE ai_resource_task (
     task_key VARCHAR2(64) PRIMARY KEY,
     namespace_id VARCHAR2(128) DEFAULT '' NOT NULL,
-    resource_type VARCHAR2(32) NOT NULL,
-    resource_name VARCHAR2(256) NOT NULL,
-    status VARCHAR2(32) NOT NULL,
-    attempt_count NUMBER(10) DEFAULT 0 NOT NULL,
+    task_type VARCHAR2(64) NOT NULL,
+    task_stage VARCHAR2(32) NOT NULL,
+    status VARCHAR2(16) NOT NULL,
+    task_payload CLOB NOT NULL,
+    task_result CLOB,
+    retry_count NUMBER(10) DEFAULT 0 NOT NULL,
     revision NUMBER(20) DEFAULT 1 NOT NULL,
-    next_retry_time TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
-    lease_until TIMESTAMP DEFAULT NULL,
+    lease_token NUMBER(20) DEFAULT 0 NOT NULL,
+    next_execute_at NUMBER(19) NOT NULL,
+    lease_expire_at NUMBER(19) DEFAULT NULL,
     last_error VARCHAR2(2000) DEFAULT NULL,
     gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
 );
 
-CREATE INDEX idx_search_task_due ON ai_resource_search_index_task(status, next_retry_time);
-CREATE INDEX idx_search_task_lease ON ai_resource_search_index_task(status, lease_until);
+CREATE INDEX idx_ai_resource_task_due ON ai_resource_task(task_type, status, next_execute_at);
+CREATE INDEX idx_ai_resource_task_lease ON ai_resource_task(task_type, status, lease_expire_at);

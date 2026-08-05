@@ -34,7 +34,20 @@ class PostgresqlAiSearchSchemaResourceTest {
         
         assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_search_document\""));
         assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_search_chunk\""));
-        assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_search_index_task\""));
+        assertTrue(mainSchema.contains("CREATE TABLE \"ai_resource_task\""));
+        assertTrue(mainSchema.contains("\"task_type\" varchar(64)"));
+        assertTrue(mainSchema.contains("\"task_stage\" varchar(32)"));
+        assertTrue(mainSchema.contains("\"task_payload\" text"));
+        assertTrue(mainSchema.contains("\"task_result\" text"));
+        assertTrue(mainSchema.contains("\"retry_count\" int4"));
+        assertTrue(mainSchema.contains("\"lease_token\" int8"));
+        assertTrue(mainSchema.contains("\"next_execute_at\" int8"));
+        assertTrue(mainSchema.contains("\"lease_expire_at\" int8"));
+        assertFalse(mainSchema.contains("\"next_execute_time\" timestamp(6)"));
+        assertFalse(mainSchema.contains("\"lease_until\" timestamp(6)"));
+        assertFalse(mainSchema.contains("\"resource_type\" varchar(32) NOT NULL,"
+            + System.lineSeparator() + "  \"resource_name\" varchar(256) NOT NULL,"
+            + System.lineSeparator() + "  \"task_stage\" varchar(32)"));
         assertFalse(mainSchema.contains("CREATE EXTENSION IF NOT EXISTS vector"));
         assertFalse(mainSchema.contains("\"ai_resource_search_embedding_pg\""));
         assertFalse(mainSchema.contains("\"embedding\" vector"));

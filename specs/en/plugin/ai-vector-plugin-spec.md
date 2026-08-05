@@ -98,10 +98,11 @@ affected documents. An implementation must expose enough health and indexed
 identity information for reconciliation without exposing provider-specific
 types to protocol adaptors.
 
-`isResourceVersionReady(...)` compares the configured embedding model and
-expected relational chunk count with one provider's indexed documents. It is
-an optional compatibility method with a default implementation for existing
-providers. Providers that support precise reconciliation should override it.
+`isResourceVersionReady(...)` compares the configured embedding model,
+expected relational document identity, and expected relational chunk count
+with one provider's indexed documents. The document-aware overload delegates
+to the original method by default for existing providers. Providers that
+support precise reconciliation should override it.
 The default PostgreSQL provider performs resource-version replacement in one
 local datasource transaction.
 

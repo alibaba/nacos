@@ -110,6 +110,14 @@ public class AiResourceVectorIndexRouter implements AiResourceVectorIndex, Dispo
     }
     
     @Override
+    public boolean isResourceVersionReady(String namespaceId, String resourceType,
+        String resourceName, String resourceVersion, String embeddingModel,
+        long expectedDocumentId, int expectedDocumentCount) {
+        return delegate().isResourceVersionReady(namespaceId, resourceType, resourceName,
+            resourceVersion, embeddingModel, expectedDocumentId, expectedDocumentCount);
+    }
+    
+    @Override
     public List<AiResourceVectorHit> search(String namespaceId, String embeddingModel,
         double[] queryVector, List<String> resourceTypes, int limit) {
         return delegate().search(namespaceId, embeddingModel, queryVector, resourceTypes, limit);

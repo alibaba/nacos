@@ -18,14 +18,21 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link OpenAiCompatibleResourceIndexEnhancementService}.
@@ -33,6 +40,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author nacos
  */
 class OpenAiCompatibleResourceIndexEnhancementServiceTest {
+    
+    @AfterEach
+    void tearDown() {
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENABLED);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MAX_ITEMS);
+    }
     
     @Test
     void systemPromptShouldFollowRetrievalEnrichmentContract() {
@@ -129,5 +145,54 @@ class OpenAiCompatibleResourceIndexEnhancementServiceTest {
             service.chatEndpoint("https://example.com/compatible-mode/v1/chat/completions"));
         assertEquals("https://example.com/custom",
             service.chatEndpoint("https://example.com/custom"));
+    }
+    
+    @Test
+    void fingerprintShouldTrackOutputConfigurationButExcludeCredentials() {
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT,
+            "https://example.com/v1/");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL, "model-v1");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY, "key-one");
+        OpenAiCompatibleResourceIndexEnhancementService service =
+            new OpenAiCompatibleResourceIndexEnhancementService();
+        
+        String initial = service.fingerprint();
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT,
+            "https://example.com/v1");
+        assertEquals(initial, service.fingerprint());
+        
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY, "key-two");
+        assertEquals(initial, service.fingerprint());
+        
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL, "model-v2");
+        assertFalse(initial.equals(service.fingerprint()));
+    }
+    
+    @Test
+    void resultShouldRecordConfigurationUsedByTheRequest() throws Exception {
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENABLED, "true");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT,
+            "https://example.com/v1");
+        System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL, "model-v1");
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(
+            "{\"choices\":[{\"message\":{\"content\":\"{\\\"summary\\\":\\\"summary\\\"}\"}}]}");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenAnswer(invocation -> {
+                System.setProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL,
+                    "model-v2");
+                return response;
+            });
+        OpenAiCompatibleResourceIndexEnhancementService service =
+            new OpenAiCompatibleResourceIndexEnhancementService(httpClient);
+        String requestedFingerprint = service.fingerprint();
+        
+        AiResourceIndexEnhancementResult result = service.enhanceWithResult(
+            new AiResourceSearchDocument(), List.of(), List.of());
+        
+        assertEquals(requestedFingerprint, result.getFingerprint());
+        assertFalse(requestedFingerprint.equals(service.fingerprint()));
     }
 }

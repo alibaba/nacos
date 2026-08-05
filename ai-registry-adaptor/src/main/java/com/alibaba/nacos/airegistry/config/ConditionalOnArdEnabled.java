@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.config;
+package com.alibaba.nacos.airegistry.config;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

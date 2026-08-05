@@ -17,15 +17,19 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexContentLoaderImpl;
-import com.alibaba.nacos.ai.service.search.AiResourceIndexServiceImpl;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceServiceImpl;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexServiceImpl;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexTaskRepository;
 import com.alibaba.nacos.ai.service.search.HashingAiResourceEmbeddingService;
-import com.alibaba.nacos.ai.service.search.JdbcAiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.JdbcAiResourceIndexTaskRepository;
+import com.alibaba.nacos.ai.service.search.JdbcAiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.OpenAiCompatibleResourceIndexEnhancementService;
-import com.alibaba.nacos.ai.service.search.vector.AiResourceVectorIndexRouter;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.service.search.vector.AiResourceVectorIndexRouter;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -38,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link ConditionalOnAiResourceSearchEnabled}.
@@ -78,6 +83,24 @@ class ConditionalOnAiResourceSearchEnabledTest {
             context.refresh();
             
             assertNotNull(context.getBean(HashingAiResourceEmbeddingService.class));
+        }
+    }
+    
+    @Test
+    void shouldConstructTaskConsumerWhenExplicitlyEnabled() {
+        try (AnnotationConfigApplicationContext context = newContext(
+            Collections.singletonMap(Constants.ARD_ENABLED_KEY, "true"))) {
+            context.registerBean(AiResourceIndexTaskRepository.class,
+                () -> mock(AiResourceIndexTaskRepository.class));
+            context.registerBean(AiResourceIndexService.class,
+                () -> mock(AiResourceIndexService.class));
+            context.registerBean(McpServerOperationService.class,
+                () -> mock(McpServerOperationService.class));
+            context.register(AiResourceIndexTaskConsumer.class);
+            EnvUtil.setEnvironment(context.getEnvironment());
+            context.refresh();
+            
+            assertNotNull(context.getBean(AiResourceIndexTaskConsumer.class));
         }
     }
     

@@ -33,8 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: create persists an MCP server with stdio server specification, tools, resources, and a
- *     generated ID; detail can be queried by ID and by name; update adds a new latest version; list supports accurate
- *     and blur name filters; delete removes the server.</li>
+ *     generated ID; detail can be queried by ID and by name; update adds published and draft versions while an omitted
+ *     version resolves the latest published version; list supports accurate and blur name filters; delete removes the
+ *     server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
  *     version, and invalid custom ID are rejected with HTTP 400.</li>
@@ -73,6 +74,20 @@ public class McpAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertMcpDetail(latest, mcpName, "1.1.0", "updated MCP server", toolName + "_v2",
                 resourceName + "_v2");
         assertEquals(2, latest.get("allVersions").size(), latest.toString());
+
+        Map<String, String> draftForm = mcpServerForm(mcpName, "1.2.0", "draft MCP server",
+                toolName + "_draft", resourceName + "_draft");
+        draftForm.put("latest", "false");
+        JsonNode draftUpdated = putFormOk(ADMIN_MCP_PATH, draftForm);
+        assertEquals("ok", draftUpdated.get("data").asText(), draftUpdated.toString());
+
+        JsonNode latestAfterDraft = getJsonOk(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, null, null)).get("data");
+        assertMcpDetail(latestAfterDraft, mcpName, "1.1.0", "updated MCP server", toolName + "_v2",
+                resourceName + "_v2");
+        assertEquals(3, latestAfterDraft.get("allVersions").size(), latestAfterDraft.toString());
+        JsonNode draft = getJsonOk(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, null, "1.2.0")).get("data");
+        assertMcpDetail(draft, mcpName, "1.2.0", "draft MCP server", toolName + "_draft",
+                resourceName + "_draft");
 
         JsonNode accurateList = getJsonOk(ADMIN_MCP_LIST_PATH, Query.newInstance()
                 .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)

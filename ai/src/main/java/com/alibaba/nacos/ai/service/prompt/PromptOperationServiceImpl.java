@@ -353,7 +353,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
-        schedulePromptIndexRebuild(namespaceId, promptKey, version);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
     @Override
@@ -367,7 +367,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         } catch (Exception e) {
             LOGGER.warn("Failed to refresh latest mirror for prompt: {}", promptKey, e);
         }
-        schedulePromptIndexRebuild(namespaceId, promptKey, version);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
     @Override
@@ -396,9 +396,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             resourceInfo.getLabels() == null ? null : resourceInfo.getLabels().get(LABEL_LATEST);
         syncLatestMirrorIfChanged(namespaceId, promptKey, oldLatest, newLatest);
         if (online) {
-            schedulePromptIndexRebuild(namespaceId, promptKey, version);
+            schedulePromptIndexMaintenance(namespaceId, promptKey);
         } else {
-            schedulePromptVersionIndexDeletion(namespaceId, promptKey, version);
+            schedulePromptIndexMaintenance(namespaceId, promptKey);
         }
     }
     
@@ -407,7 +407,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         throws NacosException {
         resourceManager.validateAndUpdateLabels(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
             labels);
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
     @Override
@@ -419,7 +419,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_BIZ_TAGS, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
     @Override
@@ -431,7 +431,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
             AiResourceTraceService.OP_UPDATE_DESCRIPTION, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
-        rebuildLatestArdPromptIndex(namespaceId, promptKey);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
     @Override
@@ -474,23 +474,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Delete DB rows
         resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         resourceManager.deleteMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-        schedulePromptIndexDeletion(namespaceId, promptKey);
+        schedulePromptIndexMaintenance(namespaceId, promptKey);
     }
     
-    private void schedulePromptIndexRebuild(String namespaceId, String promptKey, String version) {
-        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
-    }
-    
-    private void rebuildLatestArdPromptIndex(String namespaceId, String promptKey) {
-        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
-    }
-    
-    private void schedulePromptIndexDeletion(String namespaceId, String promptKey) {
-        resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
-    }
-    
-    private void schedulePromptVersionIndexDeletion(String namespaceId, String promptKey,
-        String version) {
+    private void schedulePromptIndexMaintenance(String namespaceId, String promptKey) {
         resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE_PROMPT, promptKey);
     }
     
