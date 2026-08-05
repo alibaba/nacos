@@ -134,7 +134,7 @@ Skill 元数据和版本使用 `ai_resource` 与 `ai_resource_version`。Skill �
 AI 存储保存。默认存储为 `nacos_config`，但它只是实现后端。
 
 每个版本必须在 `ai_resource_version` 的存储描述中持久化存储 provider。读取和删除必须
-按该版本已持久化的 provider 路由。Skill 存储 provider 配置只控制新写入，不得重定向已有
+按该版本已持久化的 provider 路由。有效 AI Resource 存储 provider 配置只控制新写入，不得重定向已有
 版本。缺少 `provider` 的历史存储描述归属于 `nacos_config`。
 
 Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 Skill 元数据派生的

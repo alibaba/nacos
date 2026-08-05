@@ -45,6 +45,11 @@ and resource references before writing a version.
 AgentSpec uses the standard `ai_resource` and `ai_resource_version` model. It
 uses AI storage for `manifest.json` and resource files.
 
+Each version descriptor persists its selected storage provider. Reads, draft
+replacements, and deletes use that persisted provider, while the effective
+provider configuration selects only new versions. A legacy descriptor without
+a provider uses `nacos_config`.
+
 Unlike Skill, AgentSpec does not maintain a separate manifest index. Version
 metadata and storage pointers are authoritative.
 

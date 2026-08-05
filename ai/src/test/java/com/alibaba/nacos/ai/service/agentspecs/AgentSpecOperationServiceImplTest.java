@@ -92,6 +92,9 @@ class AgentSpecOperationServiceImplTest {
     private AiResourceStorage storage;
     
     @Mock
+    private AiResourceStorage externalStorage;
+    
+    @Mock
     private AiResourcePersistService aiResourcePersistService;
     
     @Mock
@@ -114,7 +117,9 @@ class AgentSpecOperationServiceImplTest {
         EnvUtil.setEnvironment(new StandardEnvironment());
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
+        lenient().when(externalStorage.type()).thenReturn("external");
         AiResourceStorageRouter.join(storage);
+        AiResourceStorageRouter.join(externalStorage);
         PublishPipelineManager pipelineManager = TestAiPipelineSupport.newManager(false,
             List.of(), List.of());
         PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(
@@ -797,14 +802,17 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion vRow = new AiResourceVersion();
         vRow.setVersion("v1");
         vRow.setStatus("online");
+        vRow.setStorage("{\"provider\":\"external\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
             .thenReturn(vRow);
         String mainJson = "{\"name\":\"my-agentspec\",\"description\":\"desc\",\"resources\":[]}";
-        when(storage.get(any(StorageKey.class)))
+        when(externalStorage.get(any(StorageKey.class)))
             .thenReturn(mainJson.getBytes(StandardCharsets.UTF_8));
         AgentSpec result = service.getAgentSpecVersionDetail(namespaceId, name, "v1");
         assertNotNull(result);
         assertEquals("my-agentspec", result.getName());
+        verify(externalStorage).get(argThat(key -> "external".equals(key.getProvider())));
+        verify(storage, never()).get(any(StorageKey.class));
     }
     
     @Test
@@ -1125,7 +1133,7 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion vRow = new AiResourceVersion();
         vRow.setVersion("v2");
         vRow.setStatus("draft");
-        vRow.setStorage("{\"provider\":\"nacos_config\","
+        vRow.setStorage("{\"provider\":\"external\","
             + "\"scope\":\"test-ns:my-agentspec:v2\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
             .thenReturn(vRow);
@@ -1137,7 +1145,12 @@ class AgentSpecOperationServiceImplTest {
         draft.setDescription("updated desc");
         service.updateDraft(namespaceId, draft);
         verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq(name),
-            eq("agentspec"), eq("v2"), anyString(), eq("updated desc"));
+            eq("agentspec"), eq("v2"), argThat(storageJson -> storageJson.contains(
+                "\"provider\":\"external\"")),
+            eq("updated desc"));
+        verify(externalStorage).save(argThat(key -> "external".equals(key.getProvider())),
+            any(byte[].class));
+        verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
     }
     
     @Test
@@ -1183,7 +1196,7 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion vRow = new AiResourceVersion();
         vRow.setVersion("v2");
         vRow.setStatus("draft");
-        vRow.setStorage("{\"provider\":\"nacos_config\","
+        vRow.setStorage("{\"provider\":\"external\","
             + "\"scope\":\"test-ns:my-agentspec:v2\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
             .thenReturn(vRow);
@@ -1193,6 +1206,8 @@ class AgentSpecOperationServiceImplTest {
         service.deleteDraft(namespaceId, name);
         verify(aiResourceVersionPersistService).delete(eq(namespaceId), eq(name), eq("agentspec"),
             eq("v2"));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())));
+        verify(storage, never()).delete(any(StorageKey.class));
     }
     
     @Test

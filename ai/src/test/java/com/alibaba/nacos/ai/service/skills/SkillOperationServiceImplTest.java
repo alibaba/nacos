@@ -2457,6 +2457,7 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         vRow.setVersion("v1");
         vRow.setStatus("draft");
+        vRow.setStorage("{\"provider\":\"external\",\"files\":[\"SKILL.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq("v1")))
             .thenReturn(vRow);
@@ -2471,7 +2472,11 @@ class SkillOperationServiceImplTest {
         skillOperationService.updateDraft(namespaceId, draft, null);
         verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq(skillName),
             anyString(),
-            eq("v1"), anyString());
+            eq("v1"), argThat(storageJson -> storageJson.contains(
+                "\"provider\":\"external\"")));
+        verify(externalStorage).save(argThat(key -> "external".equals(key.getProvider())),
+            any(byte[].class));
+        verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
     }
     
     @Test
