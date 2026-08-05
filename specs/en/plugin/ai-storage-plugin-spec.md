@@ -48,7 +48,7 @@ Storage implementations are created by `AiResourceStorageBuilder`.
 | Builder method | Requirement |
 |----------------|-------------|
 | `type()` | Stable storage provider type. |
-| `build()` | Build an `AiResourceStorage`. |
+| `build()` | Build an `AiResourceStorage`, or return null when an optional provider is not statically configured for discovery. |
 
 The storage service implements:
 
@@ -143,24 +143,33 @@ built-in `ai-storage:nacos_config` provider is the default backend and a
 critical plugin required by server AI capabilities, so it cannot be disabled
 through plugin management while the server depends on it.
 
-The following properties select a provider for an AI resource domain:
+The following property selects the provider for new writes across all AI
+resource domains:
 
 ```properties
-nacos.ai.prompt.storage.provider=nacos_config
-nacos.ai.skill.storage.provider=nacos_config
-nacos.ai.agentspec.storage.provider=nacos_config
-nacos.ai.agent.storage.provider=nacos_config
+nacos.ai.storage.provider=nacos_config
 ```
 
-They are domain routing policy, not private configuration definitions owned by
+For compatibility, the following existing domain properties remain supported:
+
+```properties
+nacos.ai.prompt.storage.provider=
+nacos.ai.skill.storage.provider=
+nacos.ai.agentspec.storage.provider=
+nacos.ai.agent.storage.provider=
+```
+
+A non-blank domain property overrides the global property for that domain. If
+neither is configured, the domain uses `nacos_config`. These properties are
+domain routing policy, not private configuration definitions owned by
 `ai-storage:nacos_config`.
 
-When the AI module is active, all providers selected independently for Prompt, Skill, AgentSpec,
-and Agent are required implementations of this critical routed type. The same provider may satisfy
-multiple domains. Before startup succeeds, every distinct selected provider must be discovered and
-enabled; a different available provider is not a valid fallback. When the AI module is disabled by
-function mode or `nacos.extension.ai.enabled=false`, AI storage is inactive and does not impose a
-startup requirement.
+When the AI module is active, every effective provider selected after applying the precedence above
+is a required implementation of this critical routed type. Before startup succeeds, every distinct
+selected provider must be discovered and enabled; a different available provider is not a valid
+fallback. When the AI module is disabled by function mode or
+`nacos.extension.ai.enabled=false`, AI storage is inactive and does not impose a startup
+requirement.
 
 AI storage implementations are built from Spring-managed services during context refresh, so this
 type does not participate in pre-refresh critical validation. The unified plugin manager performs

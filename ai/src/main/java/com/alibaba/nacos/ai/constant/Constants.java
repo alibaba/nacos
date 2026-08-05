@@ -35,6 +35,11 @@ public class Constants {
     
     public static final String ARD_ENABLED_KEY = "nacos.ai.ard.enabled";
     
+    /**
+     * Selects the default AI Resource storage provider for new writes.
+     */
+    public static final String AI_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.storage.provider";
+    
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
     public static final String MCP_LIST_SEARCH_BLUR = "blur";
@@ -130,7 +135,7 @@ public class Constants {
         public static final String RESOURCE_TYPE_AGENT = "agent";
         
         /**
-         * Selects the AI Storage provider for Agent Version content.
+         * Compatibility override for the Agent storage provider.
          */
         public static final String AGENT_STORAGE_PROVIDER_CONFIG_KEY =
             "nacos.ai.agent.storage.provider";
