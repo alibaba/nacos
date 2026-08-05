@@ -24,6 +24,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -37,6 +38,8 @@ class DumpConfigHandlerTest {
     
     private MockedStatic<EnvUtil> envUtilMockedStatic;
     
+    private DumpService dumpService;
+    
     @BeforeEach
     void setUp() {
         configCacheServiceMockedStatic =
@@ -45,6 +48,7 @@ class DumpConfigHandlerTest {
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(
             "nacos.config.cache.type", "nacos"))
             .thenReturn("nacos");
+        dumpService = Mockito.mock(DumpService.class);
     }
     
     @AfterEach
@@ -162,22 +166,43 @@ class DumpConfigHandlerTest {
     }
     
     @Test
-    void testOnEvent() {
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.remove("d", "g", "ns"))
-            .thenReturn(true);
-        
+    void testOnEventQueuesFormalDumpByKey() {
         ConfigDumpEvent event = ConfigDumpEvent.builder()
             .dataId("d").group("g").namespaceId("ns")
             .lastModifiedTs(100L).handleIp("1.1.1.1")
             .remove(true).build();
         
-        DumpConfigHandler handler = new DumpConfigHandler();
-        handler.onEvent(event);
+        new DumpConfigHandler(dumpService).onEvent(event);
+        
+        ArgumentCaptor<DumpRequest> requestCaptor = ArgumentCaptor.forClass(DumpRequest.class);
+        Mockito.verify(dumpService).dump(requestCaptor.capture());
+        DumpRequest request = requestCaptor.getValue();
+        assertEquals("d", request.getDataId());
+        assertEquals("g", request.getGroup());
+        assertEquals("ns", request.getTenant());
+        assertEquals(100L, request.getLastModifiedTs());
+        assertEquals("1.1.1.1", request.getSourceIp());
+    }
+    
+    @Test
+    void testOnEventQueuesGrayDumpByKey() {
+        ConfigDumpEvent event = ConfigDumpEvent.builder()
+            .dataId("d").group("g").namespaceId("ns")
+            .grayName("gray1").grayRule("rule")
+            .content("content").lastModifiedTs(100L)
+            .encryptedDataKey("edk").handleIp("1.1.1.1")
+            .remove(false).build();
+        
+        new DumpConfigHandler(dumpService).onEvent(event);
+        
+        ArgumentCaptor<DumpRequest> requestCaptor = ArgumentCaptor.forClass(DumpRequest.class);
+        Mockito.verify(dumpService).dump(requestCaptor.capture());
+        assertEquals("gray1", requestCaptor.getValue().getGrayName());
     }
     
     @Test
     void testSubscribeType() {
-        DumpConfigHandler handler = new DumpConfigHandler();
+        DumpConfigHandler handler = new DumpConfigHandler(dumpService);
         assertEquals(ConfigDumpEvent.class, handler.subscribeType());
     }
 }

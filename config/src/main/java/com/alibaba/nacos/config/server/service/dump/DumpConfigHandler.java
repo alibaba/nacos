@@ -32,6 +32,17 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
  */
 public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
     
+    private final DumpService dumpService;
+    
+    /**
+     * Creates a dump event handler.
+     *
+     * @param dumpService dump service used to enqueue keyed dump tasks
+     */
+    public DumpConfigHandler(DumpService dumpService) {
+        this.dumpService = dumpService;
+    }
+    
     /**
      * trigger config dump event.
      *
@@ -108,7 +119,11 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
     
     @Override
     public void onEvent(ConfigDumpEvent event) {
-        configDump(event);
+        DumpRequest dumpRequest =
+            DumpRequest.create(event.getDataId(), event.getGroup(), event.getNamespaceId(),
+                event.getLastModifiedTs(), event.getHandleIp());
+        dumpRequest.setGrayName(event.getGrayName());
+        dumpService.dump(dumpRequest);
     }
     
     @Override
