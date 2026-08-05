@@ -57,7 +57,7 @@ public interface AiService extends AgentDiscoveryService, A2aService {
     }
     
     /**
-     * Get mcp server detail info for latest version.
+     * Get mcp server detail info for the latest published version.
      *
      * @param mcpName name of mcp server
      * @return detail information of MCP server
@@ -72,7 +72,7 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * Get mcp server detail info.
      *
      * @param mcpName name of MCP name
-     * @param version version of MCP, if null, will get the latest version
+     * @param version version of MCP, if null, will get the latest published version
      * @return detail information of MCP server
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */

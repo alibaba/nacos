@@ -164,10 +164,15 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> cleanupMcpServer(configService, mcpId, secondVersion));
         assertEquals(mcpId, secondReleaseId);
 
-        McpServerDetailInfo latest = aiService.getMcpServer(mcpName);
-        assertEquals(secondVersion, latest.getVersionDetail().getVersion(), latest.toString());
-        assertTrue(containsMcpVersion(latest, firstVersion), latest.toString());
-        assertTrue(containsMcpVersion(latest, secondVersion), latest.toString());
+        McpServerDetailInfo latestPublished = aiService.getMcpServer(mcpName);
+        assertEquals(firstVersion, latestPublished.getVersionDetail().getVersion(),
+                latestPublished.toString());
+        assertTrue(containsMcpVersion(latestPublished, firstVersion), latestPublished.toString());
+        assertTrue(containsMcpVersion(latestPublished, secondVersion), latestPublished.toString());
+
+        McpServerDetailInfo explicitSecondVersion = aiService.getMcpServer(mcpName, secondVersion);
+        assertEquals(secondVersion, explicitSecondVersion.getVersionDetail().getVersion(),
+                explicitSecondVersion.toString());
 
         NacosException unsupportedEndpoint = assertThrows(NacosException.class,
                 () -> aiService.registerMcpServerEndpoint(mcpName, LOCALHOST, endpointPort,
