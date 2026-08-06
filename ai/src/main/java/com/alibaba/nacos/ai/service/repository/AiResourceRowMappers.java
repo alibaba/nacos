@@ -18,52 +18,80 @@ package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * Row mappers for ai_resource and ai_resource_version.
  */
-final class AiResourceRowMappers {
+@Component
+public final class AiResourceRowMappers {
     
-    private AiResourceRowMappers() {
+    static final RowMapper<AiResource> AI_RESOURCE_ROW_MAPPER = new AiResourceRowMapper();
+    
+    static final RowMapper<AiResourceVersion> AI_RESOURCE_VERSION_ROW_MAPPER =
+        new AiResourceVersionRowMapper();
+    
+    static {
+        RowMapperManager.registerRowMapper(
+            AI_RESOURCE_ROW_MAPPER.getClass().getCanonicalName(), AI_RESOURCE_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+            AI_RESOURCE_VERSION_ROW_MAPPER.getClass().getCanonicalName(),
+            AI_RESOURCE_VERSION_ROW_MAPPER);
     }
     
-    static final RowMapper<AiResource> AI_RESOURCE_ROW_MAPPER = (rs, rowNum) -> {
-        AiResource r = new AiResource();
-        r.setId(rs.getLong("id"));
-        r.setGmtCreate(rs.getTimestamp("gmt_create"));
-        r.setGmtModified(rs.getTimestamp("gmt_modified"));
-        r.setName(rs.getString("name"));
-        r.setType(rs.getString("type"));
-        r.setDesc(rs.getString("c_desc"));
-        r.setStatus(rs.getString("status"));
-        r.setNamespaceId(rs.getString("namespace_id"));
-        r.setBizTags(rs.getString("biz_tags"));
-        r.setExt(rs.getString("ext"));
-        r.setFrom(rs.getString("c_from"));
-        r.setVersionInfo(rs.getString("version_info"));
-        r.setMetaVersion(rs.getLong("meta_version"));
-        r.setScope(rs.getString("scope"));
-        r.setOwner(rs.getString("owner"));
-        r.setDownloadCount(rs.getLong("download_count"));
-        return r;
-    };
+    public AiResourceRowMappers() {
+    }
     
-    static final RowMapper<AiResourceVersion> AI_RESOURCE_VERSION_ROW_MAPPER = (rs, rowNum) -> {
-        AiResourceVersion v = new AiResourceVersion();
-        v.setId(rs.getLong("id"));
-        v.setGmtCreate(rs.getTimestamp("gmt_create"));
-        v.setGmtModified(rs.getTimestamp("gmt_modified"));
-        v.setType(rs.getString("type"));
-        v.setAuthor(rs.getString("author"));
-        v.setName(rs.getString("name"));
-        v.setDesc(rs.getString("c_desc"));
-        v.setStatus(rs.getString("status"));
-        v.setVersion(rs.getString("version"));
-        v.setNamespaceId(rs.getString("namespace_id"));
-        v.setStorage(rs.getString("storage"));
-        v.setPublishPipelineInfo(rs.getString("publish_pipeline_info"));
-        v.setDownloadCount(rs.getLong("download_count"));
-        return v;
-    };
+    private static final class AiResourceRowMapper implements RowMapper<AiResource> {
+        
+        @Override
+        public AiResource mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+            AiResource result = new AiResource();
+            result.setId(resultSet.getLong("id"));
+            result.setGmtCreate(resultSet.getTimestamp("gmt_create"));
+            result.setGmtModified(resultSet.getTimestamp("gmt_modified"));
+            result.setName(resultSet.getString("name"));
+            result.setType(resultSet.getString("type"));
+            result.setDesc(resultSet.getString("c_desc"));
+            result.setStatus(resultSet.getString("status"));
+            result.setNamespaceId(resultSet.getString("namespace_id"));
+            result.setBizTags(resultSet.getString("biz_tags"));
+            result.setExt(resultSet.getString("ext"));
+            result.setFrom(resultSet.getString("c_from"));
+            result.setVersionInfo(resultSet.getString("version_info"));
+            result.setMetaVersion(resultSet.getLong("meta_version"));
+            result.setScope(resultSet.getString("scope"));
+            result.setOwner(resultSet.getString("owner"));
+            result.setDownloadCount(resultSet.getLong("download_count"));
+            return result;
+        }
+    }
+    
+    private static final class AiResourceVersionRowMapper
+        implements RowMapper<AiResourceVersion> {
+        
+        @Override
+        public AiResourceVersion mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+            AiResourceVersion result = new AiResourceVersion();
+            result.setId(resultSet.getLong("id"));
+            result.setGmtCreate(resultSet.getTimestamp("gmt_create"));
+            result.setGmtModified(resultSet.getTimestamp("gmt_modified"));
+            result.setType(resultSet.getString("type"));
+            result.setAuthor(resultSet.getString("author"));
+            result.setName(resultSet.getString("name"));
+            result.setDesc(resultSet.getString("c_desc"));
+            result.setStatus(resultSet.getString("status"));
+            result.setVersion(resultSet.getString("version"));
+            result.setNamespaceId(resultSet.getString("namespace_id"));
+            result.setStorage(resultSet.getString("storage"));
+            result.setPublishPipelineInfo(resultSet.getString("publish_pipeline_info"));
+            result.setDownloadCount(resultSet.getLong("download_count"));
+            return result;
+        }
+    }
 }

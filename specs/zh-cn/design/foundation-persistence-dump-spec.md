@@ -142,6 +142,10 @@ Repository operation
 启用分布式嵌入式存储时，读路径使用 CP read。启动 dump 可以设置阻塞读上下文，让节点等到已有可读数据
 后再重建服务缓存。
 
+分布式嵌入式读请求必须在执行 JDBC 前校验其声明的结果目标。基于 mapper 的查询只能使用已注册到
+持久化 RowMapper 注册表中的类名；标量查询只能使用显式白名单中的基础结果类型，并从固定 Class 常量
+解析，禁止根据请求内容动态加载类。结果目标缺失、未知或与 query type 不匹配时，必须使读请求失败。
+
 Snapshot 规则由[CP 一致性规范](foundation-cp-consistency-spec.md)定义。嵌入式存储必须提供足够
 snapshot 数据，使本地 Derby state 可以在重启或成员变化后重建。
 
