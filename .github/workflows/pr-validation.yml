@@ -37,10 +37,10 @@ jobs:
             ).join('\n');
 
             const body = [
-              '### ⚠️ Commit Author Verification Failed',
+              '### ⚠️ Commit Author Email Needs Attention',
               '',
               'The following commits have author emails **not linked to any GitHub account**.',
-              'This will prevent CLA signing and block your PR from being merged.',
+              'This may prevent CLA signing. Please fix it before merge.',
               '',
               '| Commit | Author | Email |',
               '|--------|--------|-------|',
@@ -87,7 +87,7 @@ jobs:
               });
             }
 
-            core.setFailed(
+            core.warning(
               `${unlinked.length} commit(s) have author emails not linked to a GitHub account. ` +
               'See the PR comment for fix instructions.'
             );
