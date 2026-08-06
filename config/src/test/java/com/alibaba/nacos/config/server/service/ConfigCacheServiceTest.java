@@ -402,6 +402,8 @@ class ConfigCacheServiceTest {
             ConfigCacheService.getGrayLastModifiedTs(groupKey, grayName));
         assertEquals(0,
             ConfigCacheService.getGrayLastModifiedTs(groupKey, "noGray"));
+        assertEquals(0,
+            ConfigCacheService.getGrayLastModifiedTs("noKey", grayName));
         
         ConfigCacheService.remove(dataId, group, tenant);
     }
