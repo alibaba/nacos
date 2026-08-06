@@ -401,6 +401,9 @@ class ConfigCacheServiceTest {
             ConfigCacheService.getGrayLastModifiedTs(groupKey, grayName));
         assertEquals(0,
             ConfigCacheService.getGrayLastModifiedTs(groupKey, "noGray"));
+        // Non-existent group key must not throw NPE; should return 0 like siblings.
+        assertEquals(0,
+            ConfigCacheService.getGrayLastModifiedTs("noKey", grayName));
         
         ConfigCacheService.remove(dataId, group, tenant);
     }

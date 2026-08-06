@@ -493,7 +493,7 @@ public class ConfigCacheService {
     
     public static long getGrayLastModifiedTs(String groupKey, String grayName) {
         CacheItem item = CACHE.get(groupKey);
-        if (item.getConfigCacheGray() == null || !item.getConfigCacheGray().containsKey(grayName)) {
+        if (item == null || item.getConfigCacheGray() == null || !item.getConfigCacheGray().containsKey(grayName)) {
             return 0;
         }
         ConfigCache configCacheGray = item.getConfigCacheGray().get(grayName);
