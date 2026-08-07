@@ -38,7 +38,7 @@ public class StsCredentialHolder {
     
     private static final StsCredentialHolder INSTANCE = new StsCredentialHolder();
     
-    private StsCredential stsCredential;
+    private volatile StsCredential stsCredential;
     
     private StsCredentialHolder() {
     }
