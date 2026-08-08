@@ -435,6 +435,7 @@
     "selectVersion": "选择版本",
     "inputSchema": "输入参数",
     "outputSchema": "输出参数",
+    "nullable": "Nullable",
     "noDescription": "暂无描述",
     "allVersions": "所有版本",
     "latestVersion": "最新",

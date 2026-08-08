@@ -110,4 +110,127 @@ describe('swagger2Tools', () => {
     expect(template.requestTemplate.argsToUrlParam).toBeUndefined();
     expect(template.argsPosition).toEqual({ filter: 'query' });
   });
+
+  it('converts nullable response fields into JSON Schema union types', () => {
+    const openapi = {
+      openapi: '3.0.3',
+      paths: {
+        '/pets/{id}': {
+          get: {
+            operationId: 'getPet',
+            responses: {
+              200: {
+                description: 'ok',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      required: ['id'],
+                      properties: {
+                        id: { type: 'integer' },
+                        nickname: {
+                          type: 'string',
+                          nullable: true,
+                          description: 'Optional nickname',
+                        },
+                        score: { type: 'number', nullable: false },
+                        unspecified: { nullable: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const result = transformToolsFromConfig(extractToolsFromOpenAPI(openapi));
+
+    expect(result.tools[0].outputSchema).toEqual({
+      type: 'object',
+      required: ['id'],
+      properties: {
+        id: { type: 'integer' },
+        nickname: {
+          type: ['string', 'null'],
+          description: 'Optional nickname',
+        },
+        score: { type: 'number' },
+        unspecified: { type: 'string' },
+      },
+    });
+  });
+
+  it('converts nullable response fields recursively in objects, arrays, and alternatives', () => {
+    const openapi = {
+      openapi: '3.0.3',
+      paths: {
+        '/profiles': {
+          get: {
+            operationId: 'listProfiles',
+            responses: {
+              200: {
+                description: 'ok',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        profile: {
+                          type: 'object',
+                          nullable: true,
+                          properties: {
+                            aliases: {
+                              type: 'array',
+                              items: { type: 'string', nullable: true },
+                            },
+                            contact: {
+                              oneOf: [
+                                { type: 'string', nullable: true },
+                                { type: 'object', properties: { id: { type: 'integer' } } },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const result = transformToolsFromConfig(extractToolsFromOpenAPI(openapi));
+    const profile = result.tools[0].outputSchema?.properties.profile;
+
+    expect(profile.type).toEqual(['object', 'null']);
+    expect(profile.properties.aliases.items.type).toEqual(['string', 'null']);
+    expect(profile.properties.contact.oneOf).toEqual([
+      { type: ['string', 'null'] },
+      { type: 'object', properties: { id: { type: 'integer' } } },
+    ]);
+  });
+
+  it('does not add an output schema when a successful response has no schema', () => {
+    const openapi = {
+      openapi: '3.0.3',
+      paths: {
+        '/health': {
+          get: {
+            operationId: 'health',
+            responses: { 204: { description: 'no content' } },
+          },
+        },
+      },
+    };
+
+    const result = transformToolsFromConfig(extractToolsFromOpenAPI(openapi));
+
+    expect(result.tools[0]).not.toHaveProperty('outputSchema');
+  });
 });

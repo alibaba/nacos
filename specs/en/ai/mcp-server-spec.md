@@ -44,6 +44,19 @@ An MCP Server describes an MCP-compatible server and may include:
 MCP Server versions should be independently queryable. When a version is not
 specified, runtime query resolves the latest published version.
 
+### 2.1 Tool Output Schema Compatibility
+
+An MCP tool `outputSchema` is a JSON Schema. Nacos must preserve valid JSON
+Schema type declarations instead of narrowing the `type` keyword to a single
+string. A nullable response property may use a union containing one base type
+and `null`, for example `{"type": ["string", "null"]}`.
+
+Console output-schema editing must preserve this representation when loading
+and saving a tool. When importing an OpenAPI 3 response schema, an explicitly
+typed property with `nullable: true` must be converted to the equivalent JSON
+Schema union. This representation is additive metadata and does not change the
+tool invocation or response forwarding contract for existing consumers.
+
 MCP Registry-compatible discovery is not part of the canonical MCP resource
 contract. It is exposed by the optional
 [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md), which maps Nacos MCP

@@ -18,6 +18,7 @@ interface RawTool {
   args: ToolArg[];
   requestTemplate: any;
   responseTemplate: any;
+  outputSchema?: Record<string, any>;
 }
 
 interface McpConfig {
@@ -112,6 +113,72 @@ function normalizeSchema(schema: any): Record<string, any> {
   return result;
 }
 
+function convertOpenApiNullable(
+  schema: Record<string, any>,
+  sourceSchema: Record<string, any> = schema
+): Record<string, any> {
+  if (schema.properties && typeof schema.properties === 'object') {
+    for (const [name, propertySchema] of Object.entries(schema.properties)) {
+      const sourceProperty = sourceSchema.properties?.[name] || propertySchema;
+      schema.properties[name] = convertOpenApiNullable(
+        propertySchema as Record<string, any>,
+        sourceProperty
+      );
+    }
+  }
+
+  if (schema.items && typeof schema.items === 'object') {
+    schema.items = convertOpenApiNullable(schema.items, sourceSchema.items || schema.items);
+  }
+
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    schema.additionalProperties = convertOpenApiNullable(
+      normalizeSchema(schema.additionalProperties),
+      sourceSchema.additionalProperties || schema.additionalProperties
+    );
+  }
+
+  for (const keyword of ['oneOf', 'anyOf'] as const) {
+    if (Array.isArray(schema[keyword])) {
+      schema[keyword] = schema[keyword].map((item: any, index: number) =>
+        convertOpenApiNullable(normalizeSchema(item), sourceSchema[keyword]?.[index] || item)
+      );
+    }
+  }
+
+  if (sourceSchema.nullable === true && sourceSchema.type !== undefined) {
+    const types = Array.isArray(schema.type) ? [...schema.type] : [schema.type];
+    if (!types.includes('null')) {
+      types.push('null');
+    }
+    schema.type = types;
+  }
+  delete schema.nullable;
+  return schema;
+}
+
+function findSuccessResponse(operation: any) {
+  if (!operation.responses) return null;
+  for (const [code, response] of Object.entries(operation.responses)) {
+    if (code.startsWith('2') && response) {
+      return response as any;
+    }
+  }
+  return null;
+}
+
+function createOutputSchema(operation: any) {
+  const successResponse = findSuccessResponse(operation);
+  if (!successResponse?.content) return undefined;
+
+  for (const mediaType of Object.values(successResponse.content) as any[]) {
+    if (mediaType?.schema) {
+      return convertOpenApiNullable(normalizeSchema(mediaType.schema), mediaType.schema);
+    }
+  }
+  return undefined;
+}
+
 function applySchemaToArg(arg: ToolArg, schema: any) {
   const normalized = normalizeSchema(schema);
   arg.schema = normalized;
@@ -170,6 +237,7 @@ export function extractToolsFromOpenAPI(openapi: any): McpConfig {
         if (pathItem[method]) {
           const tool = convertOperation(path, method, pathItem[method], openapi.servers);
           tool.responseTemplate = createResponseTemplate(pathItem[method]);
+          tool.outputSchema = createOutputSchema(pathItem[method]);
           mcpConfig.tools.push(tool);
         }
       }
@@ -289,15 +357,7 @@ function createRequestTemplate(path: string, method: string, operation: any, ser
 }
 
 function createResponseTemplate(operation: any) {
-  let successResponse: any = null;
-  if (operation.responses) {
-    for (const [code, resp] of Object.entries(operation.responses)) {
-      if (code.startsWith('2') && resp) {
-        successResponse = resp;
-        break;
-      }
-    }
-  }
+  const successResponse = findSuccessResponse(operation);
 
   if (!successResponse || !successResponse.content || Object.keys(successResponse.content).length === 0) {
     return {};
@@ -422,6 +482,7 @@ export function transformToolsFromConfig(config: McpConfig) {
       ),
       required: tool.args.filter((a) => a.required).map((a) => a.name),
     },
+    ...(tool.outputSchema ? { outputSchema: cloneValue(tool.outputSchema) } : {}),
   }));
 
   // Process argsPosition -> requestTemplate mapping
