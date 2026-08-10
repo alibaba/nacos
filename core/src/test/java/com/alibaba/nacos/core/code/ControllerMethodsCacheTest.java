@@ -148,6 +148,18 @@ class ControllerMethodsCacheTest {
     }
     
     @Test
+    void getMethodWithEncodedRequestSpecificContextPath() throws Exception {
+        cache.initClassMethod(Collections.singleton(TestController.class));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/n%61cos/api/get");
+        request.setContextPath("/n%61cos");
+        request.setRequestURI("/n%61cos/api/get");
+        request.setParameter("required", "yes");
+        Method method = cache.getMethod(request);
+        assertNotNull(method);
+        assertEquals("get", method.getName());
+    }
+    
+    @Test
     void ambiguousMappingThrowsIllegalStateException() {
         cache.initClassMethod(Collections.singleton(AmbiguousController.class));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/nacos/ambig/same");
