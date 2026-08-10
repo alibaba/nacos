@@ -32,7 +32,7 @@ public abstract class Connection implements Requester {
     
     private String connectionId;
     
-    private boolean abandon = false;
+    private volatile boolean abandon = false;
     
     protected RpcClient.ServerInfo serverInfo;
     
