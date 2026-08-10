@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @deprecated only used for a smooth rolling upgrade; it will be removed in Nacos 4.0.0
  */
 @Component
-@Deprecated(since = "3.3.0", forRemoval = true)
+@Deprecated(since = "3.2.4", forRemoval = true)
 public class JRaftAuthUpgradeCoordinator {
     
     static final String STATE_FILE_NAME = "jraft-auth-enforced.state";
