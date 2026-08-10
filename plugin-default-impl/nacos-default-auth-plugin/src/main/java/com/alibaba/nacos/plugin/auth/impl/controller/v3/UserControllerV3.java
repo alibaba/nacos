@@ -302,18 +302,21 @@ public class UserControllerV3 {
         String authSystemType = getServerAuthConfig().getNacosAuthSystemType();
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authSystemType)
             || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authSystemType)) {
-            
-            NacosUser user = iAuthenticationManager.authenticate(request);
-            
-            response.addHeader(AuthConstants.AUTHORIZATION_HEADER,
-                AuthConstants.TOKEN_PREFIX + user.getToken());
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put(Constants.ACCESS_TOKEN, user.getToken());
-            result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
-            result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
-            result.put(Constants.USERNAME, user.getUserName());
-            return result;
+            try {
+                NacosUser user = iAuthenticationManager.authenticate(request);
+
+                response.addHeader(AuthConstants.AUTHORIZATION_HEADER,
+                    AuthConstants.TOKEN_PREFIX + user.getToken());
+
+                Map<String, Object> result = new HashMap<>();
+                result.put(Constants.ACCESS_TOKEN, user.getToken());
+                result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
+                result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
+                result.put(Constants.USERNAME, user.getUserName());
+                return result;
+            } catch (AccessException | RuntimeException e) {
+                return Result.failure(HttpStatus.UNAUTHORIZED.value(), "Login failed", null);
+            }
         }
         return Result.failure(ErrorCode.ILLEGAL_STATE.getCode(),
             "Current Nacos auth plugin type is not `nacos` or `nacos-ldap`, don't support login API.",
