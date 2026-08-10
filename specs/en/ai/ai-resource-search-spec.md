@@ -93,6 +93,11 @@ must not create the pgvector extension or an embedding table.
 Canonical resource writes remain authoritative. Search documents and chunks
 are derived state and may be rebuilt.
 
+Canonical resource identity fields and task-control fields use exact,
+case-sensitive comparison consistent with canonical resource storage. Keyword
+matching remains case-insensitive through locale-stable query normalization;
+it must not depend on a datasource-specific case-insensitive table collation.
+
 ## 6. Consistency
 
 Replacing one resource version's relational document and chunks is atomic.

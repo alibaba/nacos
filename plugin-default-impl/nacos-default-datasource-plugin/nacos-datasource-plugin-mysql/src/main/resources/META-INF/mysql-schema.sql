@@ -268,7 +268,7 @@ CREATE TABLE `ai_resource_search_document` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_search_document_resource_version` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
     KEY `idx_search_document_type_status` (`namespace_id`,`resource_type`,`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索文档表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源检索文档表';
 
 /******************************************/
 /*   表名称 = ai_resource_search_chunk       */
@@ -294,7 +294,7 @@ CREATE TABLE `ai_resource_search_chunk` (
     KEY `idx_search_chunk_hash` (`chunk_hash`),
     KEY `idx_search_chunk_resource` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
     KEY `idx_search_chunk_type_status` (`namespace_id`,`resource_type`,`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源检索分片表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源检索分片表';
 
 /******************************************/
 /*   表名称 = ai_resource_task  */
@@ -318,4 +318,4 @@ CREATE TABLE `ai_resource_task` (
     PRIMARY KEY (`task_key`),
     KEY `idx_ai_resource_task_due` (`task_type`,`status`,`next_execute_at`),
     KEY `idx_ai_resource_task_lease` (`task_type`,`status`,`lease_expire_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源持久化异步任务表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源持久化异步任务表';
