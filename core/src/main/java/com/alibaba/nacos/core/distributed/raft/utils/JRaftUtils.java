@@ -24,6 +24,8 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
+import com.alibaba.nacos.core.distributed.raft.auth.NacosJRaftServerInterceptor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosReadRequestProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosWriteRequestProcessor;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -38,6 +40,7 @@ import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
+import com.alipay.sofa.jraft.rpc.impl.GrpcServer;
 import com.alipay.sofa.jraft.rpc.impl.MarshallerRegistry;
 import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 
@@ -58,7 +61,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("all")
 public class JRaftUtils {
     
-    public static RpcServer initRpcServer(JRaftServer server, PeerId peerId) {
+    public static RpcServer initRpcServer(JRaftServer server, PeerId peerId,
+        JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator) {
         GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
         raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(),
@@ -81,6 +85,11 @@ public class JRaftUtils {
             Response.getDefaultInstance());
         
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
+        boolean interceptorAdded = ((GrpcServer) rpcServer).addServerInterceptor(
+            new NacosJRaftServerInterceptor(jRaftAuthUpgradeCoordinator));
+        if (!interceptorAdded) {
+            throw new IllegalStateException("Failed to install JRaft authentication interceptor");
+        }
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
             RaftExecutor.getRaftCliServiceExecutor());
         

@@ -59,8 +59,12 @@ clients created by `ClusterRpcClientProxy` also carry the label:
 RemoteConstants.LABEL_SOURCE = RemoteConstants.LABEL_SOURCE_CLUSTER
 ```
 
-Internal RPC is therefore not a separate protocol family. It is a restricted
-source, auth, and handler discipline on top of the remote layer.
+Most internal RPC is therefore not a separate protocol family. It is a
+restricted source, auth, and handler discipline on top of the remote layer.
+The built-in JRaft CP transport is the exception: it uses JRaft's native gRPC
+messages and processors instead of the Nacos `Payload` and `RequestHandler`
+model, but it remains an inner server-to-server API and follows the server
+identity rules in this spec.
 
 The model is:
 
@@ -138,6 +142,10 @@ Rules:
 - namespace validation, parameter extraction, TPS control, and other request
   filters should be declared on handlers when the domain requires them.
 
+`InnerApiAuthEnabled` is only a compatibility gate for rolling upgrades from
+2.x to 3.x. It is deprecated for removal in Nacos 3.4.0; permanent inner API
+server-identity validation must not depend on this temporary component.
+
 Known request filter concerns include:
 
 | Filter concern | Typical annotation or path | Rule |
@@ -146,6 +154,27 @@ Known request filter concerns include:
 | Parameter validation | `@ExtractorManager.Extractor` | Reuse shared parameter extraction and validation. |
 | Namespace validation | `@NamespaceValidation` | Validate namespace existence where resource identity contains namespace. |
 | TPS control | `@TpsControl` | Register and enforce stable control points for cluster traffic. |
+
+JRaft native gRPC authentication follows transport-specific rules:
+
+- every new JRaft client attaches the configured Nacos server identity through
+  gRPC `CallCredentials`;
+- a gRPC `ServerInterceptor` validates the credentials before any Raft, CLI,
+  snapshot, read, or write processor executes;
+- this path does not introduce a Nacos `RequestHandler` or payload wrapper;
+- the credential reuses `nacos.core.auth.server.identity.key` and
+  `nacos.core.auth.server.identity.value` and is required independently of the
+  public API auth switch;
+- fixed lowercase metadata names `nacos-server-identity-key` and
+  `nacos-server-identity-value` carry the configured key and value, so an
+  operator-defined identity key is not interpreted as a gRPC metadata name;
+- logs must never print the identity value;
+- rolling-upgrade compatibility and enforcement transition rules are owned by
+  the [CP Consistency Spec](foundation-cp-consistency-spec.md).
+
+The credential is request authentication, not transport confidentiality. A
+plaintext JRaft channel remains observable and replayable to an on-path actor;
+deployments that require those protections must secure the transport boundary.
 
 ## 6. Payload Registration
 
@@ -212,6 +241,9 @@ Those retry rules belong to the Config and Naming consistency specs.
   spec explicitly says so.
 - Source labels, connection existence, or member membership alone are not
   authorization. Inner requests must use server identity and the auth filter.
+- JRaft member capability metadata is an upgrade signal, not an identity or
+  authorization proof. JRaft request admission depends on the credential
+  validated by the server interceptor.
 - `ClusterRpcClientProxy` must remain transport-oriented. It must not own
   Config, Naming, AI, or plugin payload semantics.
 - Domain payloads must not depend on unbounded request body size, blocking

@@ -120,6 +120,47 @@ Implementation timeouts are operational defaults, not public API guarantees.
 Domain specs must not expose JRaft timeout values as user-visible correctness
 contracts unless a domain API explicitly defines them.
 
+### JRaft Transport Authentication
+
+JRaft native gRPC is an inner server-to-server transport. New JRaft clients
+always attach the configured Nacos server identity through gRPC
+`CallCredentials`, and the server always validates it in a
+`ServerInterceptor` before dispatching to a JRaft processor.
+
+Rolling upgrade uses a temporary two-state transition:
+
+```text
+COMPATIBLE -> ENFORCED
+```
+
+In `COMPATIBLE`, missing or invalid credentials are rate-limited and logged but
+the request continues, because an old member cannot attach credentials. Each
+new member publishes the temporary `supportJraftAuth=true` capability. After
+every member in the complete membership view reports the capability, the local
+server automatically and irreversibly enters `ENFORCED`. In `ENFORCED`, a
+missing or invalid credential is rejected with gRPC `UNAUTHENTICATED` before
+processor execution.
+
+The transition is monotonic. Member additions, removals, or metadata updates
+must not return an enforced process to compatibility. Runtime enforcement is
+latched before writing `{nacos.home}/data/jraft-auth-enforced.state`; a marker
+write failure must not delay enforcement and must be retried by later scheduled
+checks. A server that finds the state file on restart enforces authentication
+immediately. The state file contains no server identity or member data and is
+not an operator rollback switch.
+
+Capability discovery, compatible admission, transition, and state-file handling
+belong to one isolated compatibility component. That component is deprecated
+from its introduction, documents removal in Nacos 4.0.0, and must not own the
+permanent credential parser or validator. Nacos 4.0.0 removes the component and
+always enforces JRaft server identity.
+
+After enforcement, a mixed-version rolling downgrade to members without JRaft
+credentials is not lossless or guaranteed available. Old clients cannot call
+new enforced servers, so leader election, replication, ReadIndex, leader
+forwarding, snapshots, and CLI operations may fail depending on group leader
+and quorum placement.
+
 ## 6. Current CP Consumers
 
 | Group | Owner | Purpose |

@@ -166,6 +166,12 @@ The common auth flow is:
 Server-internal requests may also require the configured server identity key and
 value before normal request handling continues.
 
+JRaft native gRPC is such a server-internal transport even though it does not
+use a Nacos `RequestHandler`. Its client transports server identity through
+gRPC `CallCredentials`, and its server validates the identity in a
+`ServerInterceptor`. Public Open API auth being disabled must not bypass JRaft
+server identity after the cluster has entered enforced mode.
+
 ## Resource Permission Names
 
 Nacos permissions are evaluated against resources derived from the
