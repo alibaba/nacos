@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
+import com.alibaba.nacos.api.plugin.PluginTypePolicy;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -62,6 +64,12 @@ class VisibilityPluginTypePolicyTest {
         assertFalse(policy.isPluginEnabledByDefault("custom", configuration));
         configuration.setProperty("nacos.plugin.visibility.custom.enabled", "true");
         assertTrue(policy.isPluginEnabledByDefault("custom", configuration));
+    }
+    
+    @Test
+    void testPolicyIsRegisteredInCore() {
+        assertTrue(NacosServiceLoader.load(PluginTypePolicy.class).stream()
+            .anyMatch(each -> each instanceof VisibilityPluginTypePolicy));
     }
     
     private static class MapConfiguration implements PluginTypeConfiguration {

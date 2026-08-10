@@ -14,27 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
-import com.alibaba.nacos.api.plugin.PluginProvider;
-import com.alibaba.nacos.api.plugin.PluginType;
-
-import java.util.Map;
-
-/**
- * Visibility plugin provider implementation.
- *
- * @author xiweng.yy
- */
-public class VisibilityPluginProvider implements PluginProvider<VisibilityService> {
+public class SpiBrokenVisibilityService extends SpiLoadedVisibilityService {
     
-    @Override
-    public PluginType getPluginType() {
-        return PluginType.VISIBILITY;
-    }
-    
-    @Override
-    public Map<String, VisibilityService> getAllPlugins() {
-        return VisibilityPluginManager.getInstance().getAllPlugins();
+    public SpiBrokenVisibilityService() {
+        throw new IllegalStateException("broken visibility service");
     }
 }

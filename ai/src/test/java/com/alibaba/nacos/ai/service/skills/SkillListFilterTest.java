@@ -30,7 +30,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

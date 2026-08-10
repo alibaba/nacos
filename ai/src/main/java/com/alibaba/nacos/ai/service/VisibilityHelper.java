@@ -22,12 +22,12 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
-import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
