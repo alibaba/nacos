@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftProtocol;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,9 +37,11 @@ import java.util.concurrent.Callable;
 public class ConsistencyConfiguration {
     
     @Bean(value = "strongAgreementProtocol")
-    public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager) throws Exception {
+    public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager,
+        JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator) throws Exception {
         final CPProtocol protocol =
-            getProtocol(CPProtocol.class, () -> new JRaftProtocol(memberManager));
+            getProtocol(CPProtocol.class,
+                () -> new JRaftProtocol(memberManager, jRaftAuthUpgradeCoordinator));
         return protocol;
     }
     

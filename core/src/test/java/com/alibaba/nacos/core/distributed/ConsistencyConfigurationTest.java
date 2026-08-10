@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed;
 
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -42,7 +43,8 @@ class ConsistencyConfigurationTest {
     @Test
     void testStrongAgreementProtocolReturnsProtocol() throws Exception {
         ConsistencyConfiguration config = new ConsistencyConfiguration();
-        CPProtocol protocol = config.strongAgreementProtocol(memberManager);
+        CPProtocol protocol = config.strongAgreementProtocol(memberManager,
+            mock(JRaftAuthUpgradeCoordinator.class));
         assertNotNull(protocol);
     }
     

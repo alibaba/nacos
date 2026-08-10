@@ -25,6 +25,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
@@ -54,10 +55,12 @@ import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.Endpoint;
 import com.google.protobuf.Message;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -69,6 +72,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -106,6 +110,9 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JRaftServerTest {
     
+    @TempDir
+    private static Path temporaryDirectory;
+    
     private final String groupId = "test_group";
     
     private PeerId peerId1;
@@ -122,6 +129,9 @@ class JRaftServerTest {
     
     @Mock
     private RequestProcessor4CP mockProcessor4CP;
+    
+    @Mock
+    private JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator;
     
     @Mock
     private CliClientServiceImpl cliClientServiceMock;
@@ -152,6 +162,13 @@ class JRaftServerTest {
     @BeforeAll
     static void beforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
+        EnvUtil.setNacosHomePath(temporaryDirectory.toString());
+    }
+    
+    @AfterAll
+    static void afterClass() {
+        EnvUtil.setNacosHomePath(null);
+        EnvUtil.setEnvironment(null);
     }
     
     @BeforeEach
@@ -162,7 +179,7 @@ class JRaftServerTest {
             Collections.singletonList(Member.builder().ip("1.1.1.1").port(7848).build());
         config.setMembers("1.1.1.1:7848", ProtocolManager.toCPMembersInfo(initEvent));
         
-        server = new JRaftServer() {
+        server = new JRaftServer(jRaftAuthUpgradeCoordinator) {
             
             @Override
             boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
@@ -593,7 +610,7 @@ class JRaftServerTest {
     /** When isStarted is false, createMultiRaftGroup only adds to processors and returns. */
     @Test
     void testCreateMultiRaftGroupWhenNotStartedOnlyAddsProcessors() throws Exception {
-        JRaftServer notStartedServer = new JRaftServer();
+        JRaftServer notStartedServer = new JRaftServer(jRaftAuthUpgradeCoordinator);
         notStartedServer.init(config);
         Field multiRaftGroupField = JRaftServer.class.getDeclaredField("multiRaftGroup");
         multiRaftGroupField.setAccessible(true);
@@ -637,13 +654,15 @@ class JRaftServerTest {
             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
             jraftUtilsMock
-                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class),
+                    any(JRaftAuthUpgradeCoordinator.class)))
                 .thenReturn(mockRpcServer);
             serverSpy.start();
             assertTrue((Boolean) ReflectionTestUtils.getField(serverSpy, "isStarted"));
             verify(serverSpy).createMultiRaftGroup(anyCollection());
             jraftUtilsMock
-                .verify(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)));
+                .verify(() -> JRaftUtils.initRpcServer(any(JRaftServer.class),
+                    any(PeerId.class), any(JRaftAuthUpgradeCoordinator.class)));
         }
     }
     
@@ -657,7 +676,8 @@ class JRaftServerTest {
             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
             jraftUtilsMock
-                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class),
+                    any(JRaftAuthUpgradeCoordinator.class)))
                 .thenThrow(cause);
             JRaftException ex = assertThrows(JRaftException.class, () -> server.start());
             assertTrue(ex.getCause() == cause);
@@ -676,7 +696,8 @@ class JRaftServerTest {
             MockedStatic<JRaftUtils> jraftUtilsMock = mockStatic(JRaftUtils.class)) {
             nodeManagerMock.when(NodeManager::getInstance).thenReturn(mockNodeManager);
             jraftUtilsMock
-                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class)))
+                .when(() -> JRaftUtils.initRpcServer(any(JRaftServer.class), any(PeerId.class),
+                    any(JRaftAuthUpgradeCoordinator.class)))
                 .thenReturn(mockRpcServer);
             assertThrows(RuntimeException.class, () -> server.start());
             assertFalse((Boolean) ReflectionTestUtils.getField(server, "isStarted"));
@@ -737,7 +758,7 @@ class JRaftServerTest {
     /** invokeToLeader when no leader throws NoLeaderException. */
     @Test
     void testInvokeToLeaderWhenNoLeaderThrowsNoLeaderException() throws Exception {
-        JRaftServer serverWithNoLeader = new JRaftServer() {
+        JRaftServer serverWithNoLeader = new JRaftServer(jRaftAuthUpgradeCoordinator) {
             
             @Override
             protected PeerId getLeader(String raftGroupId) {

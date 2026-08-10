@@ -33,6 +33,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
@@ -108,9 +109,10 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
     
     private ServerMemberManager memberManager;
     
-    public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
+    public JRaftProtocol(ServerMemberManager memberManager,
+        JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator) throws Exception {
         this.memberManager = memberManager;
-        this.raftServer = new JRaftServer();
+        this.raftServer = new JRaftServer(jRaftAuthUpgradeCoordinator);
         this.jRaftMaintainService = new JRaftMaintainService(raftServer);
     }
     

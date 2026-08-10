@@ -39,14 +39,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     This class is only working during upgrading step for 2.x to 3.x. After nacos cluster upgrade to 3.x, this class will stop working.
  *     It will cause the downgrade from 3.x to 2.x is not smoothly(lossless).
  * </p>
- * <p>
- *     The support will be removed after 3.x not support upgrading from 2.x to 3.x in community.
- *     It might be 3.1.0 or 3.2.0, depend on community's decision.
- * </p>
- *
  * @author xiweng.yy
+ * @deprecated only used for a smooth rolling upgrade from 2.x to 3.x; it will be removed in
+ *     Nacos 3.4.0
  */
 @Component
+@Deprecated(since = "3.0.0", forRemoval = true)
 public class InnerApiAuthEnabled {
     
     private final ServerMemberManager serverMemberManager;

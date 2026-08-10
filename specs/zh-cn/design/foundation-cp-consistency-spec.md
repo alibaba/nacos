@@ -104,6 +104,36 @@ JRaft 是当前使用的多 group CP 运行时。
 实现中的超时是运维默认值，不是公开 API 保证。除非领域 API 明确声明，领域规范不得把 JRaft
 超时值暴露为用户可见正确性契约。
 
+### JRaft 传输鉴权
+
+JRaft 原生 gRPC 是服务端间 inner transport。新版本 JRaft client 始终通过 gRPC
+`CallCredentials` 携带配置的 Nacos server identity，服务端始终在分发给 JRaft processor 前通过
+`ServerInterceptor` 校验。
+
+滚动升级使用临时两态迁移：
+
+```text
+COMPATIBLE -> ENFORCED
+```
+
+`COMPATIBLE` 状态下，缺失或错误 credential 会被限频记录，但请求继续执行，因为旧 member 无法携带
+credential。每个新 member 发布临时能力 `supportJraftAuth=true`。完整 member 视图中的所有 member
+都上报该能力后，本机自动且不可逆地进入 `ENFORCED`。在 `ENFORCED` 中，缺失或错误 credential
+会在 processor 执行前以 gRPC `UNAUTHENTICATED` 拒绝。
+
+状态迁移是单向的。Member 新增、删除或元数据更新不得使已强制的进程回到兼容状态。运行态必须先锁存
+强制鉴权，再写入 `{nacos.home}/data/jraft-auth-enforced.state`；状态文件写入失败不得延迟强制鉴权，
+后续定时检查必须持续重试。服务端重启发现该文件时必须立即强制鉴权。状态文件不包含 server identity
+或 member 数据，也不是运维回退开关。
+
+能力发现、兼容放行、状态迁移和状态文件处理必须由一个独立兼容组件拥有。该组件从引入时即标记废弃，
+Javadoc 明确在 Nacos 4.0.0 删除，并且不得拥有永久 credential 解析或校验逻辑。Nacos 4.0.0 删除该
+组件后始终强制 JRaft server identity。
+
+进入强制状态后，向不携带 JRaft credential 的旧版本做混合滚动降级不保证无损或可用。旧 client
+不能调用已强制的新 server，leader 所在位置和 group quorum 分布可能导致选主、复制、ReadIndex、
+leader 转发、snapshot 和 CLI 操作失败。
+
 ## 6. 当前 CP 使用方
 
 | Group | 归属 | 用途 |
