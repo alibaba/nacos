@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.v2;
 
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,6 +78,8 @@ class HealthCheckTaskV2Test {
     @Mock
     private HealthCheckProcessorV2Delegate processorDelegate;
     
+    private NamingMetadataManager metadataManager;
+    
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(HealthCheckTaskV2.class, "switchDomain", null);
@@ -83,8 +87,10 @@ class HealthCheckTaskV2Test {
         ApplicationUtils.injectContext(context);
         when(context.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
-        when(context.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
+        metadataManager = new NamingMetadataManager();
+        when(context.getBean(NamingMetadataManager.class)).thenReturn(metadataManager);
         when(context.getBean(HealthCheckProcessorV2Delegate.class)).thenReturn(processorDelegate);
+        when(instancePublishInfo.getCluster()).thenReturn("cluster");
         healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
         EnvUtil.setEnvironment(new MockEnvironment());
     }
@@ -145,23 +151,45 @@ class HealthCheckTaskV2Test {
     
     @Test
     void testDoHealthCheckProcessesEnabledService() {
-        when(ipPortBasedClient.getAllPublishedService()).thenReturn(returnService());
-        when(service.getGroupedServiceName()).thenReturn("group@@service");
+        Service publishedService = Service.newService("public", "group", "service", false);
+        metadataManager.updateServiceMetadata(publishedService, new ServiceMetadata());
+        when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.singletonList(publishedService));
         when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
-        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(instancePublishInfo);
+        when(ipPortBasedClient.getInstancePublishInfo(publishedService))
+            .thenReturn(instancePublishInfo);
         healthCheckTaskV2.setCancelled(true);
         
         healthCheckTaskV2.doHealthCheck();
         
-        verify(processorDelegate).process(eq(healthCheckTaskV2), eq(service), any());
+        verify(processorDelegate).process(eq(healthCheckTaskV2), eq(publishedService), any());
+    }
+    
+    @Test
+    void testDoHealthCheckSkipsServiceWithoutMetadata() {
+        Service publishedService = Service.newService("public", "group", "service", false);
+        when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.singletonList(publishedService));
+        when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
+        when(ipPortBasedClient.getInstancePublishInfo(publishedService))
+            .thenReturn(instancePublishInfo);
+        healthCheckTaskV2.setCancelled(true);
+        
+        healthCheckTaskV2.doHealthCheck();
+        
+        verify(processorDelegate, never()).process(eq(healthCheckTaskV2),
+            eq(publishedService), any());
     }
     
     @Test
     void testDoHealthCheckCatchesProcessorFailure() {
-        when(ipPortBasedClient.getAllPublishedService()).thenReturn(returnService());
-        when(service.getGroupedServiceName()).thenReturn("group@@service");
+        Service publishedService = Service.newService("public", "group", "service", false);
+        metadataManager.updateServiceMetadata(publishedService, new ServiceMetadata());
+        when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Collections.singletonList(publishedService));
         when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
-        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(instancePublishInfo);
+        when(ipPortBasedClient.getInstancePublishInfo(publishedService))
+            .thenReturn(instancePublishInfo);
         when(context.getBean(HealthCheckProcessorV2Delegate.class))
             .thenThrow(new RuntimeException("failed"));
         healthCheckTaskV2.setCancelled(true);

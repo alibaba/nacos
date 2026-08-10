@@ -114,9 +114,13 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
             for (Service each : client.getAllPublishedService()) {
                 if (switchDomain.isHealthCheckEnabled(each.getGroupedServiceName())) {
                     InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
-                    ClusterMetadata metadata = getClusterMetadata(each, instancePublishInfo);
+                    Optional<ClusterMetadata> metadata =
+                        getClusterMetadata(each, instancePublishInfo);
+                    if (!metadata.isPresent()) {
+                        continue;
+                    }
                     ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class).process(this,
-                        each, metadata);
+                        each, metadata.get());
                     if (Loggers.EVT_LOG.isDebugEnabled()) {
                         Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}",
                             client.getClientId());
@@ -173,15 +177,15 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         doHealthCheck();
     }
     
-    private ClusterMetadata getClusterMetadata(Service service,
+    private Optional<ClusterMetadata> getClusterMetadata(Service service,
         InstancePublishInfo instancePublishInfo) {
         Optional<ServiceMetadata> serviceMetadata = metadataManager.getServiceMetadata(service);
         if (!serviceMetadata.isPresent()) {
-            return new ClusterMetadata();
+            return Optional.empty();
         }
         String cluster = instancePublishInfo.getCluster();
         ClusterMetadata result = serviceMetadata.get().getClusters().get(cluster);
-        return null == result ? new ClusterMetadata() : result;
+        return Optional.of(null == result ? new ClusterMetadata() : result);
     }
     
     public long getCheckRtNormalized() {
