@@ -19,8 +19,10 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Load Beans for {@link com.alibaba.nacos.sys.env.DeploymentType#CONSOLE} type.
@@ -32,8 +34,9 @@ import org.springframework.context.annotation.Configuration;
 public class ConsoleDeploymentConfig {
     
     @Bean
-    public ControllerMethodsCache controllerMethodsCache() {
-        return new ControllerMethodsCache();
+    public ControllerMethodsCache controllerMethodsCache(
+        ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider) {
+        return new ControllerMethodsCache(handlerMappingProvider);
     }
     
     @Bean

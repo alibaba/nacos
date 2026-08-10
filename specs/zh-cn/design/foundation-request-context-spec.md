@@ -80,6 +80,19 @@ filter 顺序规则：
 - 当 filter 拥有拒绝逻辑时，filter 异常应转换为统一异常或 result 模型。未预期的基础设施失败
   可以抛出给全局异常处理。
 
+HTTP Controller 方法解析规则：
+
+- 在 Spring MVC 分发前解析 Controller 方法的组件必须复用当前 Spring MVC 的
+  `RequestMappingHandlerMapping`。鉴权与分发必须基于同一个 Servlet request、请求级
+  context path 和路径匹配配置选择同一个 Controller 方法。
+- 字面量 path parameter、单次或多次百分号编码、重复空 segment、dot segment、非法编码、
+  非法 UTF-8、控制字符、Unicode 分隔符近似字符、absolute-form request target 和编码后的
+  路径分隔符，不得由鉴权流程使用独立的归一化算法处理。
+- query parameter 不参与 Controller 路径匹配。
+- 可通过 `nacos.core.auth.controller-method-cache.legacy-enabled=true` 临时降级到旧注解缓存
+  解析器。旧解析器从 3.3.0 起废弃，计划在 3.4.0 移除，且可能与 Spring MVC 路径匹配结果
+  不一致，因此默认必须关闭。
+
 ## 4. gRPC 请求过滤模型
 
 gRPC 业务请求由 `GrpcRequestAcceptor` 接收，解析为 `Request` 对象，匹配到 `RequestHandler`，
