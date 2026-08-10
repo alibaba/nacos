@@ -79,6 +79,9 @@ Core HTTP filter responsibilities:
 - `HttpRequestContextFilter` initializes and clears `RequestContext`.
 - `AuthFilter`, `AuthAdminFilter`, and console auth filters process
   `@Secured` APIs and write `AuthContext` when auth is evaluated.
+- Filters that resolve controller metadata from a request path must parse the
+  request URI and context path consistently before removing the context path,
+  including when either value contains percent-encoded characters.
 - `NacosHttpTpsFilter` checks `@TpsControl` points through the Control plugin
   manager for HTTP v1/v2 Config and Naming paths.
 - `ParamCheckerFilter` extracts structured parameters through

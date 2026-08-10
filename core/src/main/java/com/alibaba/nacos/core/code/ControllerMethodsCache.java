@@ -99,8 +99,9 @@ public class ControllerMethodsCache {
     
     private String resolveContextPath(HttpServletRequest request) {
         String requestContextPath = request.getContextPath();
-        return StringUtils.isEmpty(requestContextPath) ? EnvUtil.getContextPath()
+        String contextPath = StringUtils.isEmpty(requestContextPath) ? EnvUtil.getContextPath()
             : requestContextPath;
+        return StringUtils.isEmpty(contextPath) ? contextPath : getPath(contextPath);
     }
     
     private String stripContextPath(String path, String contextPath) {
@@ -115,8 +116,12 @@ public class ControllerMethodsCache {
     }
     
     private String getPath(HttpServletRequest request) {
+        return getPath(request.getRequestURI());
+    }
+    
+    private String getPath(String uri) {
         try {
-            return new URI(request.getRequestURI()).getPath();
+            return new URI(uri).getPath();
         } catch (URISyntaxException e) {
             LOGGER.error("parse request to path error", e);
             throw new NacosRuntimeException(NacosException.NOT_FOUND, "Invalid URI");

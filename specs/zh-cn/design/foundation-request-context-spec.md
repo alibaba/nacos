@@ -65,6 +65,8 @@ HTTP filter 是由 Nacos web 配置和领域模块注册的 servlet filter。
 - `HttpRequestContextFilter` 初始化并清理 `RequestContext`。
 - `AuthFilter`、`AuthAdminFilter` 和控制台鉴权 filter 处理 `@Secured` API，并在执行鉴权时写入
   `AuthContext`。
+- filter 根据请求路径定位 controller 元数据时，必须在移除 context path 前使用一致的方式解析
+  request URI 和 context path，包括任一值包含百分号编码字符的情况。
 - `NacosHttpTpsFilter` 对 HTTP v1/v2 Config 和 Naming 路径，通过 Control 插件 manager 检查
   `@TpsControl` 点位。
 - `ParamCheckerFilter` 通过 `ExtractorManager` 提取结构化参数，并使用当前激活的 `ParamChecker`
