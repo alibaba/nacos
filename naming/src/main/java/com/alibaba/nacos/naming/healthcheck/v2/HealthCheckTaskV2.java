@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2;
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -177,7 +178,9 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         InstancePublishInfo instancePublishInfo) {
         Optional<ServiceMetadata> serviceMetadata = metadataManager.getServiceMetadata(service);
         if (!serviceMetadata.isPresent()) {
-            return new ClusterMetadata();
+            ClusterMetadata metadata = new ClusterMetadata();
+            metadata.setHealthyCheckType(HealthCheckType.NONE.name());
+            return metadata;
         }
         String cluster = instancePublishInfo.getCluster();
         ClusterMetadata result = serviceMetadata.get().getClusters().get(cluster);
