@@ -143,6 +143,12 @@ class ServerMemberManagerTest {
     }
     
     @Test
+    void testSelfReportsJRaftAuthenticationCapability() {
+        assertEquals(Boolean.TRUE, serverMemberManager.getSelf()
+            .getExtendVal(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH));
+    }
+    
+    @Test
     void testUpdateNonBasicExtendInfoMember() {
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build();
         newMember.setExtendVal("naming", "test");

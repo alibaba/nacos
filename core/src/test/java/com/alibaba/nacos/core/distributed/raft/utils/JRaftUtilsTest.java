@@ -20,6 +20,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RouteTable;
@@ -70,6 +71,9 @@ class JRaftUtilsTest {
     
     @Mock
     private JRaftServer server;
+    
+    @Mock
+    private JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator;
     
     private MockedStatic<ApplicationUtils> applicationUtilsMock;
     private MockedStatic<RouteTable> routeTableMock;
@@ -270,7 +274,8 @@ class JRaftUtilsTest {
         RpcServer rpcServer = null;
         try {
             PeerId peerId = PeerId.parsePeer("127.0.0.1:18080");
-            rpcServer = JRaftUtils.initRpcServer(server, peerId);
+            rpcServer = JRaftUtils.initRpcServer(server, peerId,
+                jRaftAuthUpgradeCoordinator);
             assertNotNull(rpcServer);
         } finally {
             shutdownRpcServerQuietly(rpcServer);

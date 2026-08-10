@@ -53,7 +53,10 @@ Cluster gRPC Server 使用 `cluster` 来源标签。`ClusterRpcClientProxy` 创�
 RemoteConstants.LABEL_SOURCE = RemoteConstants.LABEL_SOURCE_CLUSTER
 ```
 
-因此内部 RPC 不是独立的协议族，而是在远程层之上施加来源、鉴权和 handler 约束的一类调用纪律。
+大部分内部 RPC 不是独立的协议族，而是在远程层之上施加来源、鉴权和 handler 约束的一类调用纪律。
+内置 JRaft CP 传输是例外：它使用 JRaft 原生 gRPC message 和 processor，而不是 Nacos
+`Payload` 与 `RequestHandler` 模型，但仍属于服务端间 inner API，并遵循本文的 server identity
+规则。
 
 模型如下：
 
@@ -113,6 +116,9 @@ Handler 拥有请求语义。远程基础层拥有 dispatch、来源检查、请
 - 公开 API 鉴权关闭，不代表可以跳过必要的 inner server identity 校验；
 - 领域需要 namespace 校验、参数提取、TPS control 等能力时，应在 handler 上声明对应 filter。
 
+`InnerApiAuthEnabled` 只用于从 2.x 滚动升级至 3.x 的兼容窗口，并标记为在 Nacos 3.4.0 删除；
+永久的 inner API server identity 校验不得依赖该临时组件。
+
 已知请求 filter 关注点包括：
 
 | Filter 关注点 | 典型注解或路径 | 规则 |
@@ -121,6 +127,23 @@ Handler 拥有请求语义。远程基础层拥有 dispatch、来源检查、请
 | 参数校验 | `@ExtractorManager.Extractor` | 复用共享参数提取和校验。 |
 | Namespace 校验 | `@NamespaceValidation` | 当资源身份包含 namespace 时校验 namespace 存在性。 |
 | TPS Control | `@TpsControl` | 为集群流量注册并执行稳定 control 点。 |
+
+JRaft 原生 gRPC 鉴权遵循以下传输规则：
+
+- 所有新版本 JRaft client 都通过 gRPC `CallCredentials` 携带配置的 Nacos server identity；
+- gRPC `ServerInterceptor` 在任何 Raft、CLI、snapshot、read 或 write processor 执行前校验
+  credential；
+- 该路径不引入 Nacos `RequestHandler` 或 payload 包裹；
+- credential 复用 `nacos.core.auth.server.identity.key` 和
+  `nacos.core.auth.server.identity.value`，且不受公开 API 鉴权开关影响；
+- 使用固定的小写 metadata 名称 `nacos-server-identity-key` 和
+  `nacos-server-identity-value` 承载配置的 key 与 value，避免将用户配置的 identity key
+  直接解释为 gRPC metadata 名称；
+- 日志不得输出 identity value；
+- 滚动升级兼容和强制状态迁移规则由[CP 一致性规范](foundation-cp-consistency-spec.md)定义。
+
+该 credential 只提供请求身份校验，不提供传输机密性。明文 JRaft 链路仍可能被链路中间方观察或
+重放；需要相应保护的部署必须同时保护传输边界。
 
 ## 6. Payload 注册
 
@@ -174,6 +197,8 @@ Cluster RPC 调用方必须定义自己的重试或补偿行为。
 
 - 除非接口规范显式声明，内部 RPC 不是公开 HTTP、SDK 或 open gRPC API。
 - 来源标签、连接存在性或 member 关系本身不是鉴权。Inner request 必须使用服务端身份和 auth filter。
+- JRaft member 能力元数据只是升级信号，不是身份或授权证明。JRaft 请求准入取决于 server
+  interceptor 校验的 credential。
 - `ClusterRpcClientProxy` 必须保持传输职责，不应拥有 Config、Naming、AI 或插件 payload 语义。
 - 领域 payload 不应依赖无限制 request body、阻塞 callback，或在关键 remote 线程上执行慢速远端 IO。
 - 当内部 payload 的兼容字段影响滚动升级行为时，应在领域层记录。

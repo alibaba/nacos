@@ -55,6 +55,7 @@ Nacos Server member 由 `Member` 表示。`Member` 继承公开的 `NacosMember`
 | `abilities` | 由 member 上报的服务端能力表，包括 remote、config 和 naming 能力。 |
 | `failAccessCnt` | 本地临时失败计数，用于把 member 从 suspicious 推进到 down。 |
 | `grpcReportEnabled` | 混合版本 member 上报的兼容标记，不是新的语义能力。 |
+| `supportJraftAuth` | 临时滚动升级能力，表示 member 能发送和校验 JRaft server identity credential；它不是身份凭据。 |
 
 Member 身份规则：
 
@@ -106,6 +107,10 @@ Lookup 选择规则：
 `ServerMemberManager.update(Member)` 用于更新已存在 member 的元数据/状态。它不得新增未知 member。
 如果更新改变基础元数据，则发布以该 member 为 trigger 的 `MembersChangeEvent`。
 
+临时 `supportJraftAuth` 元数据只能由真正实现该能力的本机 member 设置，address lookup 不得为远端
+member 推断该值。它需要参与基础元数据变化检测，使经过鉴权的 member report 能收敛能力视图。
+使用方可以通过全量 member 视图完成滚动升级迁移，但不得把该字段作为请求身份或授权证据。
+
 ## 5. Member Ready 与健康观测
 
 本机 ready 由 `ServerMemberManager.setSelfReady` 设置。它会将本机 member 标记为 `UP`，把本机
@@ -155,6 +160,7 @@ Member 健康是本地对服务端 peer 的观测。它不能替代 AP/CP 协议
 - 除非通过 `MembersChangeEvent` 刷新，否则不要长期缓存 member list；
 - 除非领域规范明确声明，否则不要把 member 顺序视为领域分片规则；
 - 不要把领域归属写入 `Member.extendInfo`。
+- 升级使用方一旦锁存某项安全能力，不得因为后续 member 新增、删除或更新而关闭该能力。
 
 ## 8. 相关规范
 

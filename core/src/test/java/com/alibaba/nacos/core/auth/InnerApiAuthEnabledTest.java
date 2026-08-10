@@ -32,6 +32,7 @@ import org.springframework.mock.env.MockEnvironment;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -63,6 +64,14 @@ class InnerApiAuthEnabledTest {
     @Test
     void testIsEnabledInitiallyFalse() {
         assertFalse(innerApiAuthEnabled.isEnabled());
+    }
+    
+    @Test
+    void testDeprecatedForRemoval() {
+        assertTrue(InnerApiAuthEnabled.class.isAnnotationPresent(Deprecated.class));
+        Deprecated deprecated = InnerApiAuthEnabled.class.getAnnotation(Deprecated.class);
+        assertTrue(deprecated.forRemoval());
+        assertEquals("3.0.0", deprecated.since());
     }
     
     @Test
