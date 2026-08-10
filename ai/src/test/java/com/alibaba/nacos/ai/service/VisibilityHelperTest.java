@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
-import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;

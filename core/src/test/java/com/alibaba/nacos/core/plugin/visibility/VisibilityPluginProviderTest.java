@@ -14,37 +14,43 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
 import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.api.plugin.PluginProvider;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.StandardEnvironment;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VisibilityPluginProviderTest {
     
     private VisibilityPluginProvider provider;
     
-    private ConfigurableEnvironment cachedEnvironment;
+    private boolean initialized;
     
     @BeforeEach
-    void setUp() {
-        cachedEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new StandardEnvironment());
+    void setUp() throws Exception {
         provider = new VisibilityPluginProvider();
+        Field field = VisibilityPluginManager.class.getDeclaredField("initialized");
+        field.setAccessible(true);
+        initialized = (Boolean) field.get(VisibilityPluginManager.getInstance());
+        field.set(VisibilityPluginManager.getInstance(), true);
     }
     
     @AfterEach
-    void tearDown() {
-        EnvUtil.setEnvironment(cachedEnvironment);
+    void tearDown() throws Exception {
+        Field field = VisibilityPluginManager.class.getDeclaredField("initialized");
+        field.setAccessible(true);
+        field.set(VisibilityPluginManager.getInstance(), initialized);
     }
     
     @Test
@@ -59,5 +65,11 @@ class VisibilityPluginProviderTest {
     void testGetAllPlugins() {
         Map<String, VisibilityService> plugins = provider.getAllPlugins();
         assertNotNull(plugins);
+    }
+    
+    @Test
+    void testProviderIsRegisteredInCore() {
+        assertTrue(NacosServiceLoader.load(PluginProvider.class).stream()
+            .anyMatch(each -> each instanceof VisibilityPluginProvider));
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Visibility plugin type policy.
+ * Server-side visibility plugin type policy.
  *
  * @author Nacos
  */

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -176,7 +179,7 @@ class VisibilityPluginManagerTest {
         initMethod.invoke(manager);
         
         Method propertiesMethod = VisibilityPluginManager.class.getDeclaredMethod(
-            "resolveServiceProperties", Properties.class, String.class);
+            "resolveLegacyServiceProperties", Properties.class, String.class);
         propertiesMethod.setAccessible(true);
         Properties result = (Properties) propertiesMethod.invoke(manager, new Properties(),
             "custom");

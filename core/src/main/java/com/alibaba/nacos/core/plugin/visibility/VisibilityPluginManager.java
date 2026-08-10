@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.spi;
+package com.alibaba.nacos.core.plugin.visibility;
 
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.PluginRegistryUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manager for loading and accessing {@link VisibilityService} implementations.
+ * Server-side manager for loading and accessing {@link VisibilityService} implementations.
  *
  * @author xiweng.yy
  */
@@ -105,23 +106,9 @@ public class VisibilityPluginManager {
                 PluginType.VISIBILITY.getType(), serviceName, service, LOGGER);
             return;
         }
-        if (!service.isConfigurable()) {
-            Properties serviceProperties = resolveServiceProperties(allProperties, serviceName);
-            if (!serviceProperties.isEmpty()) {
-                LOGGER.warn(
-                    "[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
-                        + "init(Properties) configuration. Declare configuration definitions to use "
-                        + "unified plugin configuration.",
-                    service.getClass(), serviceName);
-            }
-            try {
-                service.init(serviceProperties);
-            } catch (Throwable ex) {
-                LOGGER.warn(
-                    "[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, skip.",
-                    service.getClass(), serviceName, ex);
-                return;
-            }
+        if (!service.isConfigurable() && !initializeLegacyService(service, allProperties,
+            serviceName)) {
+            return;
         }
         if (PluginRegistryUtils.registerFirst(visibilityServiceMap,
             PluginType.VISIBILITY.getType(), serviceName, service, LOGGER)) {
@@ -130,7 +117,47 @@ public class VisibilityPluginManager {
         }
     }
     
-    private Properties resolveServiceProperties(Properties allProperties, String serviceName) {
+    /**
+     * Initialize a legacy visibility implementation from server properties.
+     *
+     * @param service visibility service
+     * @param allProperties all server properties
+     * @param serviceName visibility service name
+     * @return whether initialization succeeded
+     * @deprecated implement {@code PluginConfigSpec} through {@link VisibilityService} instead.
+     *     Planned for removal in Nacos 4.0.0.
+     */
+    @Deprecated
+    private boolean initializeLegacyService(VisibilityService service, Properties allProperties,
+        String serviceName) {
+        Properties serviceProperties = resolveLegacyServiceProperties(allProperties, serviceName);
+        if (!serviceProperties.isEmpty()) {
+            LOGGER.warn("[VisibilityPluginManager] VisibilityService({}:{}) uses deprecated "
+                + "init(Properties) configuration. Declare configuration definitions to use "
+                + "unified plugin configuration.", service.getClass(), serviceName);
+        }
+        try {
+            service.init(serviceProperties);
+            return true;
+        } catch (Throwable ex) {
+            LOGGER.warn("[VisibilityPluginManager] Initialize VisibilityService({}:{}) failed, "
+                + "skip.", service.getClass(), serviceName, ex);
+            return false;
+        }
+    }
+    
+    /**
+     * Resolve legacy properties for one visibility implementation.
+     *
+     * @param allProperties all server properties
+     * @param serviceName visibility service name
+     * @return legacy service properties without the implementation prefix
+     * @deprecated legacy {@code init(Properties)} configuration is planned for removal in Nacos
+     *     4.0.0.
+     */
+    @Deprecated
+    private Properties resolveLegacyServiceProperties(Properties allProperties,
+        String serviceName) {
         Properties result = new Properties();
         if (allProperties.isEmpty()) {
             return result;

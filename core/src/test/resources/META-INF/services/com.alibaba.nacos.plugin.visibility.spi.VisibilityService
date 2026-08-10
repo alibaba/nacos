@@ -14,4 +14,5 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginTypePolicy
+com.alibaba.nacos.core.plugin.visibility.SpiBrokenVisibilityService
+com.alibaba.nacos.core.plugin.visibility.SpiLoadedVisibilityService

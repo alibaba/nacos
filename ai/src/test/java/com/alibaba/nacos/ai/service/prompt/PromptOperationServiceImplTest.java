@@ -43,7 +43,7 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

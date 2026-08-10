@@ -33,9 +33,10 @@ public interface VisibilityService extends PluginConfigSpec {
     /**
      * Initialize service with external properties.
      *
-     * <p>Property source is managed by {@link VisibilityPluginManager}. Default no-op keeps backward compatibility
-     * for existing SPI implementations. The manager does not invoke this callback when the service declares
-     * configurable items; those services are initialized through unified plugin configuration.</p>
+     * <p>Property source is managed by the Nacos server plugin runtime. Default no-op keeps backward
+     * compatibility for existing SPI implementations. The server does not invoke this callback when
+     * the service declares configurable items; those services are initialized through unified plugin
+     * configuration.</p>
      *
      * @param properties service-specific properties
      * @deprecated declare configuration definitions and use the unified configuration lifecycle

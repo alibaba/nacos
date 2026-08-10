@@ -36,7 +36,7 @@ import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
-import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
