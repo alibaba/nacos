@@ -30,6 +30,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;
@@ -406,6 +407,62 @@ class DistributedDatabaseOperateImplTest {
         assertTrue(response.getSuccess());
         assertEquals(42, SerializeFactory.getDefault().deserialize(response.getData().toByteArray(),
             Integer.class));
+    }
+    
+    @Test
+    void testOnRequestRejectsUnsupportedBasicResultType() throws Exception {
+        SelectRequest selectRequest = SelectRequest.builder()
+            .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
+            .sql("SELECT 1")
+            .className(Runtime.class.getCanonicalName())
+            .build();
+        ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest)))
+            .build();
+        
+        Response response = impl.onRequest(readRequest);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("Unsupported basic result type"));
+        Mockito.verifyNoInteractions(jdbcTemplate);
+    }
+    
+    @Test
+    void testOnRequestAcceptsRegisteredRowMapper() throws Exception {
+        SelectRequest selectRequest = SelectRequest.builder()
+            .queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS)
+            .sql("SELECT 1")
+            .args(new Object[0])
+            .className(RowMapperManager.MAP_ROW_MAPPER.getClass().getCanonicalName())
+            .build();
+        ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest)))
+            .build();
+        
+        Response response = impl.onRequest(readRequest);
+        
+        assertTrue(response.getSuccess());
+        Mockito.verify(jdbcTemplate).queryForObject(Mockito.eq("SELECT 1"),
+            Mockito.<Object[]>any(), Mockito.same(RowMapperManager.MAP_ROW_MAPPER));
+    }
+    
+    @Test
+    void testOnRequestRejectsUnregisteredRowMapper() throws Exception {
+        SelectRequest selectRequest = SelectRequest.builder()
+            .queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS)
+            .sql("SELECT 1")
+            .args(new Object[0])
+            .className("com.alibaba.nacos.UnknownRowMapper")
+            .build();
+        ReadRequest readRequest = ReadRequest.newBuilder().setGroup("nacos_config")
+            .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(selectRequest)))
+            .build();
+        
+        Response response = impl.onRequest(readRequest);
+        
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("Unregistered row mapper"));
+        Mockito.verifyNoInteractions(jdbcTemplate);
     }
     
     @Test
