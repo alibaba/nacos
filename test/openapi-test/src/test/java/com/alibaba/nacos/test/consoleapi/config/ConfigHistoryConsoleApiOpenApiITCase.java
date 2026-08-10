@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: publish and republish create history rows, history list is newest first, detail returns
  *     selected historical content, previous returns current config's latest historical content, and namespace config
- *     listing exposes the current config identity.</li>
+ *     listing exposes the current config identity, with storage IDs represented as JSON strings.</li>
  *     <li>Boundary/validation: page size larger than the controller cap is accepted, {@code pageNo}/{@code pageSize},
  *     {@code dataId}, {@code groupName}, {@code nid}, and {@code namespaceId} are validated.</li>
  *     <li>Exception/error handling: missing, absent, and identity-mismatched history queries return controlled v3
@@ -54,6 +54,7 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
 
         JsonNode currentConfig = queryConfig(dataId, groupName, "").get("data");
         assertConfigDetail(currentConfig, dataId, groupName, DEFAULT_NAMESPACE, secondContent, DEFAULT_TYPE);
+        assertTrue(currentConfig.get("id").isTextual(), currentConfig.toString());
 
         JsonNode historyPage = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 1000)).get("data");
@@ -62,6 +63,8 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
         assertEquals(2, historyPage.get("pageItems").size(), historyPage.toString());
         JsonNode newestHistory = historyPage.get("pageItems").get(0);
         JsonNode oldestHistory = historyPage.get("pageItems").get(1);
+        assertTrue(newestHistory.get("id").isTextual(), newestHistory.toString());
+        assertTrue(oldestHistory.get("id").isTextual(), oldestHistory.toString());
         assertEquals(dataId, newestHistory.get("dataId").asText(), newestHistory.toString());
         assertEquals(groupName, newestHistory.get("groupName").asText(), newestHistory.toString());
         assertTrue(newestHistory.get("opType").asText().trim().startsWith("U"), newestHistory.toString());
@@ -82,6 +85,7 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
         JsonNode namespaceConfigs = getJsonOk(CONSOLE_HISTORY_CONFIGS_PATH,
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)).get("data");
         JsonNode namespaceConfig = assertArrayContainsConfig(namespaceConfigs, dataId, groupName);
+        assertTrue(namespaceConfig.get("id").isTextual(), namespaceConfig.toString());
         assertEquals(DEFAULT_TYPE, namespaceConfig.get("type").asText(), namespaceConfig.toString());
 
         assertError(getRaw(CONSOLE_HISTORY_PATH, configQuery("wrong-" + dataId, groupName, "")

@@ -39,6 +39,9 @@ namespaceId -> groupName -> dataId
 该操作也必须继续受请求中归一化后的 `namespaceId` 约束；存储 ID 不能作为绕过 namespace 身份的
 全局资源令牌。
 
+Config 存储 ID 出现在 JSON 响应中时，必须序列化为十进制字符串，而不是 JSON number，避免无法安全
+表示 64 位整数的客户端丢失精度。
+
 克隆操作同时涉及源身份和目标身份。当克隆请求通过存储 ID 选择源配置时，这些 ID 只能在归一化后的
 源 namespace 内解析。目标 namespace 只决定克隆配置写入的位置，不得授权或隐含跨 namespace
 读取源配置。

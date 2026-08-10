@@ -94,7 +94,8 @@ namespace inputs are expected to use `public`, and beta/tag gray behavior is
 verified through the current gray model. Batch delete and export-by-id scenarios
 verify that storage IDs remain scoped by the requested namespace, and clone
 scenarios verify that storage IDs are resolved only within the requested source
-namespace before writing to the target namespace. Removed pre-3.0 compatibility
+namespace before writing to the target namespace. Config, history, and capacity
+responses also verify that storage IDs remain JSON strings. Removed pre-3.0 compatibility
 migration paths, including empty-tenant storage migration and legacy
 `config_info_beta` / `config_info_tag` old-table migration, are not counted as
 missing OpenAPI IT coverage.
