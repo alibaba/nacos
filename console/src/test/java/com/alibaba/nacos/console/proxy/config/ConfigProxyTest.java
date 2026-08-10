@@ -24,12 +24,10 @@ import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.config.server.auth.ConfigCloneSourceReadPermissionChecker;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
-import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,14 +46,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,9 +79,6 @@ public class ConfigProxyTest {
     @Mock
     private ConfigHandler configHandler;
     
-    @Mock
-    private ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker;
-    
     private ConfigProxy configProxy;
     
     @Mock
@@ -94,7 +86,7 @@ public class ConfigProxyTest {
     
     @BeforeEach
     public void setUp() {
-        configProxy = new ConfigProxy(configHandler, configCloneSourceReadPermissionChecker);
+        configProxy = new ConfigProxy(configHandler);
     }
     
     @Test
@@ -307,8 +299,6 @@ public class ConfigProxyTest {
                 configBeansList, policy, srcIp, requestIpApp);
         
         assertEquals(expected, actual);
-        verify(configCloneSourceReadPermissionChecker, times(1))
-            .checkSourceReadPermission(sourceNamespaceId);
         verify(configHandler, times(1)).cloneConfig(srcUser, sourceNamespaceId,
             targetNamespaceId, configBeansList, policy, srcIp, requestIpApp);
     }
@@ -326,8 +316,6 @@ public class ConfigProxyTest {
                 SameConfigPolicy.ABORT, CLIENT_IP, "testApp");
         
         assertEquals(expected, actual);
-        verify(configCloneSourceReadPermissionChecker, times(1))
-            .checkSourceReadPermission(targetNamespaceId);
     }
     
     @Test
@@ -335,16 +323,16 @@ public class ConfigProxyTest {
         String sourceNamespaceId = "sourceNamespace";
         String targetNamespaceId = "targetNamespace";
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
-        doThrow(new AccessException("authorization failed"))
-            .when(configCloneSourceReadPermissionChecker)
-            .checkSourceReadPermission(sourceNamespaceId);
         
-        assertThrows(AccessException.class,
-            () -> configProxy.cloneConfig(SRC_USER, sourceNamespaceId, targetNamespaceId,
-                configBeansList, SameConfigPolicy.ABORT, CLIENT_IP, "testApp"));
+        Result<Map<String, Object>> expected = Result.success(new HashMap<>());
+        when(configHandler.cloneConfig(SRC_USER, sourceNamespaceId, targetNamespaceId,
+            configBeansList, SameConfigPolicy.ABORT, CLIENT_IP, "testApp")).thenReturn(expected);
         
-        verify(configHandler, never()).cloneConfig(any(), any(), any(), any(), any(), any(),
-            any());
+        Result<Map<String, Object>> actual =
+            configProxy.cloneConfig(SRC_USER, sourceNamespaceId, targetNamespaceId,
+                configBeansList, SameConfigPolicy.ABORT, CLIENT_IP, "testApp");
+        
+        assertEquals(expected, actual);
     }
     
     @Test
