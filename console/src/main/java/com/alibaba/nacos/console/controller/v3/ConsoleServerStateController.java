@@ -19,12 +19,16 @@ package com.alibaba.nacos.console.controller.v3;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.v2.SupportedLanguage;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.ServerStateProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,6 +61,8 @@ public class ConsoleServerStateController {
      */
     @Since("3.0.0")
     @GetMapping("/state")
+    @Secured(resource = "/v3/console/server/state", action = ActionTypes.READ,
+        signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public ResponseEntity<Map<String, String>> serverState() throws NacosException {
         Map<String, String> serverState = serverStateProxy.getServerState();
         return ResponseEntity.ok().body(serverState);
@@ -88,6 +94,8 @@ public class ConsoleServerStateController {
      */
     @Since("3.0.0")
     @GetMapping("/guide")
+    @Secured(resource = "/v3/console/server/guide", action = ActionTypes.READ,
+        signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<String> getConsoleUiGuide() {
         String guideInformation = serverStateProxy.getConsoleUiGuide();
         return Result.success(guideInformation);
