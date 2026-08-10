@@ -19,12 +19,13 @@ package com.alibaba.nacos.console.config;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 class ConsoleDeploymentConfigTest {
     
     @Test
     void controllerMethodsCache() {
-        assertNotNull(new ConsoleDeploymentConfig().controllerMethodsCache());
+        assertNotNull(new ConsoleDeploymentConfig().controllerMethodsCache(mock()));
     }
     
     @Test
