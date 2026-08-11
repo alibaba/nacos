@@ -132,10 +132,15 @@ abstract class AuthITCase {
 
     protected void grantReadPermission(TestIdentity identity, String resource)
             throws Exception {
+        grantPermission(identity, resource, "r");
+    }
+
+    protected void grantPermission(TestIdentity identity, String resource, String action)
+            throws Exception {
         assertSuccess(postForm(SERVER_BASE_URL, PERMISSION_PATH, adminToken,
-                params("role", identity.role(), "resource", resource, "action", "r")));
+                params("role", identity.role(), "resource", resource, "action", action)));
         cleanupActions.add(() -> deleteForm(SERVER_BASE_URL, PERMISSION_PATH, adminToken,
-                params("role", identity.role(), "resource", resource, "action", "r")));
+                params("role", identity.role(), "resource", resource, "action", action)));
     }
 
     protected void addCleanup(CleanupAction action) {
@@ -225,6 +230,16 @@ abstract class AuthITCase {
         return execute(builder.build());
     }
 
+    protected Response request(RequestMethod method, String baseUrl, String path, String token)
+            throws Exception {
+        return switch (method) {
+            case GET -> get(baseUrl, path, token);
+            case POST -> postForm(baseUrl, path, token, Map.of());
+            case PUT -> putForm(baseUrl, path, token, Map.of());
+            case DELETE -> deleteForm(baseUrl, path, token, Map.of());
+        };
+    }
+
     protected void assertDenied(Response response) {
         assertEquals(403, response.status(), response.body());
         JsonNode root = JacksonUtils.toObj(response.body());
@@ -283,6 +298,13 @@ abstract class AuthITCase {
     }
 
     protected record TestIdentity(String username, String role, String token) {
+    }
+
+    protected enum RequestMethod {
+        GET,
+        POST,
+        PUT,
+        DELETE
     }
 
     @FunctionalInterface
