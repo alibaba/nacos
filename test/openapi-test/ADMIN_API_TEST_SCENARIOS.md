@@ -42,6 +42,15 @@ force-publish endpoints. AgentSpec parser tests additionally verify plural
 path recognition, namespace-range list semantics, and draft target resolution
 from `agentSpecCard.name`.
 
+## AI Resource Deletion Failure Coverage
+
+The Agent, AgentSpec, Prompt, and Skill rows cover successful deletion and
+post-delete absence. Storage-provider failure, multi-file partial failure,
+persisted-provider routing, and deletion beyond one storage page are covered by
+focused service tests because the standalone profile has no storage
+fault-injection provider. The service tests verify that cleanup errors reach the
+API layer and resource/version descriptors remain available for retry.
+
 ## Config
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |

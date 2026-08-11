@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -224,27 +225,37 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
     }
     
     @Override
-    public void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions) {
-        deleteConfigSilently(namespaceId, PromptDataIdUtils.buildDescriptorDataId(promptKey));
-        deleteConfigSilently(namespaceId,
-            PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey));
+    public void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions)
+        throws NacosException {
+        List<String> dataIds = new ArrayList<>();
+        dataIds.add(PromptDataIdUtils.buildDescriptorDataId(promptKey));
+        dataIds.add(PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey));
         if (versions != null) {
             for (String version : versions) {
-                deleteConfigSilently(namespaceId,
-                    PromptDataIdUtils.buildVersionDataId(promptKey, version));
+                dataIds.add(PromptDataIdUtils.buildVersionDataId(promptKey, version));
             }
+        }
+        NacosException firstFailure = null;
+        for (String dataId : dataIds) {
+            try {
+                configOperationService.deleteConfig(dataId, PROMPT_GROUP, namespaceId, null, null,
+                    "nacos", null);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to clean up legacy prompt config: " + dataId, e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
+                }
+            }
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
         }
         LOGGER.info("Cleaned up legacy config for prompt '{}' in namespace '{}'", promptKey,
             namespaceId);
-    }
-    
-    private void deleteConfigSilently(String namespaceId, String dataId) {
-        try {
-            configOperationService.deleteConfig(dataId, PROMPT_GROUP, namespaceId, null, null,
-                "nacos", null);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to cleanup legacy config '{}': {}", dataId, e.getMessage());
-        }
     }
     
     // ========== Legacy Config JSON structures (for deserialization only) ==========

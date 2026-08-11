@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -61,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,6 +72,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -2567,29 +2570,76 @@ class AiResourceManagerTest {
     // ---- deleteResourceWithVersions ----
     
     @Test
-    void deleteResourceWithVersionsShouldDeleteAll() throws NacosException {
-        Page<AiResourceVersion> page = new Page<>();
+    void deleteResourceWithVersionsShouldScanAllPagesBeforeDeletingRows()
+        throws NacosException {
+        Page<AiResourceVersion> firstPage = new Page<>();
+        List<AiResourceVersion> firstPageItems = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            AiResourceVersion version = new AiResourceVersion();
+            version.setVersion("v" + i);
+            firstPageItems.add(version);
+        }
+        firstPage.setPageItems(firstPageItems);
+        Page<AiResourceVersion> secondPage = new Page<>();
+        AiResourceVersion lastVersion = new AiResourceVersion();
+        lastVersion.setVersion("v500");
+        secondPage.setPageItems(List.of(lastVersion));
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            isNull(), eq(1), eq(500)))
+            .thenReturn(firstPage);
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+            isNull(), eq(2), eq(500)))
+            .thenReturn(secondPage);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        manager.deleteResourceWithVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter);
+        
+        InOrder order = inOrder(aiResourceVersionPersistService, deleter,
+            aiResourcePersistService);
+        order.verify(aiResourceVersionPersistService).list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            null, 1, 500);
+        order.verify(aiResourceVersionPersistService).list(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            null, 2, 500);
+        order.verify(deleter, times(501)).deleteStorage(any());
+        order.verify(aiResourcePersistService).delete(NAMESPACE_ID, "res", RESOURCE_TYPE);
+        order.verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res",
+            RESOURCE_TYPE);
+    }
+    
+    @Test
+    void deleteResourceWithVersionsShouldKeepRowsAndAttemptRemainingStorageOnFailure()
+        throws NacosException {
         AiResourceVersion v1 = new AiResourceVersion();
         v1.setVersion("v1");
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("v2");
+        Page<AiResourceVersion> page = new Page<>();
         page.setPageItems(List.of(v1, v2));
         when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
-            isNull(), eq(1), eq(200)))
+            isNull(), eq(1), eq(500)))
             .thenReturn(page);
         AiResourceManager.VersionStorageDeleter deleter =
             mock(AiResourceManager.VersionStorageDeleter.class);
-        manager.deleteResourceWithVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter);
-        verify(aiResourcePersistService).delete(NAMESPACE_ID, "res", RESOURCE_TYPE);
-        verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res",
-            RESOURCE_TYPE);
-        verify(deleter, times(2)).deleteStorage(any());
+        NacosException storageFailure =
+            new NacosException(NacosException.SERVER_ERROR, "storage delete failed");
+        doThrow(storageFailure).when(deleter).deleteStorage(v1);
+        
+        NacosException actual = assertThrows(NacosException.class,
+            () -> manager.deleteResourceWithVersions(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                deleter));
+        
+        assertSame(storageFailure, actual);
+        verify(deleter).deleteStorage(v2);
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
+        verify(aiResourceVersionPersistService, never()).deleteByNameAndType(anyString(),
+            anyString(), anyString());
     }
     
     @Test
     void deleteResourceWithVersionsShouldHandleNullPage() throws NacosException {
         when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
-            isNull(), eq(1), eq(200)))
+            isNull(), eq(1), eq(500)))
             .thenReturn(null);
         AiResourceManager.VersionStorageDeleter deleter =
             mock(AiResourceManager.VersionStorageDeleter.class);

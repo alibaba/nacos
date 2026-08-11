@@ -1947,12 +1947,12 @@ class AgentPersistenceServiceTest {
         verify(versionPersistService).deleteByNameAndType(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT);
         InOrder order = inOrder(resourcePersistService, versionPersistService, storageService);
+        order.verify(storageService, times(101))
+            .delete(any(AgentVersionStorageDescriptor.class));
         order.verify(resourcePersistService).delete(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT);
         order.verify(versionPersistService).deleteByNameAndType(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT);
-        order.verify(storageService, times(101))
-            .delete(any(AgentVersionStorageDescriptor.class));
     }
     
     @Test
@@ -1979,7 +1979,7 @@ class AgentPersistenceServiceTest {
     }
     
     @Test
-    void testDeleteAgentStopsBeforeVersionAndStorageCleanupWhenResourceDeleteMisses()
+    void testDeleteAgentReportsResourceDeleteMissAfterStorageCleanup()
         throws NacosException {
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
@@ -1993,13 +1993,13 @@ class AgentPersistenceServiceTest {
             () -> service.deleteAgent(NAMESPACE_ID, AGENT_NAME));
         
         assertServerError(exception);
+        verify(storageService).delete(any(AgentVersionStorageDescriptor.class));
         verify(versionPersistService, never()).deleteByNameAndType(anyString(), anyString(),
             anyString());
-        verify(storageService, never()).delete(any(AgentVersionStorageDescriptor.class));
     }
     
     @Test
-    void testDeleteAgentDoesNotDeleteStorageWhenVersionRowsAreNotDeleted()
+    void testDeleteAgentReportsVersionRowFailureAfterStorageCleanup()
         throws NacosException {
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
@@ -2015,7 +2015,7 @@ class AgentPersistenceServiceTest {
             () -> service.deleteAgent(NAMESPACE_ID, AGENT_NAME));
         
         assertServerError(exception);
-        verify(storageService, never()).delete(any(AgentVersionStorageDescriptor.class));
+        verify(storageService).delete(any(AgentVersionStorageDescriptor.class));
     }
     
     @Test
@@ -2032,6 +2032,9 @@ class AgentPersistenceServiceTest {
         assertServerError(exception);
         assertSame(storageFailure, exception.getCause());
         assertEquals(0, storageFailure.getSuppressed().length);
+        verify(resourcePersistService, never()).delete(anyString(), anyString(), anyString());
+        verify(versionPersistService, never()).deleteByNameAndType(anyString(), anyString(),
+            anyString());
     }
     
     @Test
@@ -2054,6 +2057,9 @@ class AgentPersistenceServiceTest {
         assertSame(firstFailure, exception.getCause());
         assertEquals(1, firstFailure.getSuppressed().length);
         assertSame(secondFailure, firstFailure.getSuppressed()[0]);
+        verify(resourcePersistService, never()).delete(anyString(), anyString(), anyString());
+        verify(versionPersistService, never()).deleteByNameAndType(anyString(), anyString(),
+            anyString());
     }
     
     @Test
@@ -2604,10 +2610,12 @@ class AgentPersistenceServiceTest {
         when(versionPersistService.list(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT, null, 1, 100))
             .thenReturn(versionPage(rows, rows.size(), 1));
-        when(resourcePersistService.delete(NAMESPACE_ID, AGENT_NAME,
+        org.mockito.Mockito.lenient().when(resourcePersistService.delete(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(1);
-        when(versionPersistService.deleteByNameAndType(NAMESPACE_ID, AGENT_NAME,
-            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(rows.size());
+        org.mockito.Mockito.lenient()
+            .when(versionPersistService.deleteByNameAndType(NAMESPACE_ID, AGENT_NAME,
+                Constants.Agent.RESOURCE_TYPE_AGENT))
+            .thenReturn(rows.size());
     }
     
     private void stubPrepare() throws NacosException {

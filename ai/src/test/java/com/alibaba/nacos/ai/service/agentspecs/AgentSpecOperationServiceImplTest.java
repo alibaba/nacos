@@ -77,6 +77,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -933,6 +934,8 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion v1 = new AiResourceVersion();
         v1.setVersion("v1");
         v1.setStatus("online");
+        v1.setStorage("{\"provider\":\"nacos_config\","
+            + "\"scope\":\"test-ns:my-agentspec:v1\"}");
         Page<AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(List.of(v1));
         when(aiResourceVersionPersistService.list(eq(namespaceId), eq(name), eq("agentspec"),
@@ -942,6 +945,47 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourceVersionPersistService).deleteByNameAndType(eq(namespaceId), eq(name),
             eq("agentspec"));
         verify(aiResourcePersistService).delete(eq(namespaceId), eq(name), eq("agentspec"));
+    }
+    
+    @Test
+    void testDeleteAgentSpecShouldAttemptAllPersistedProviderResourcesAndKeepRowsOnFailure()
+        throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(namespaceId, name, "agentspec")).thenReturn(meta);
+        AiResourceStorage persistedStorage = mock(AiResourceStorage.class);
+        when(persistedStorage.type()).thenReturn("persisted-provider");
+        AiResourceStorageRouter.join(persistedStorage);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus("online");
+        version.setStorage("{\"provider\":\"persisted-provider\","
+            + "\"scope\":\"test-ns:my-agentspec:v1\"}");
+        Page<AiResourceVersion> versionPage = new Page<>();
+        versionPage.setPageItems(List.of(version));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(name), eq("agentspec"),
+            isNull(), eq(1), anyInt())).thenReturn(versionPage);
+        when(persistedStorage.get(any(StorageKey.class))).thenReturn(("{\"resources\":["
+            + "{\"name\":\"one\",\"type\":\"file\"},"
+            + "{\"name\":\"two\",\"type\":\"file\"}]}")
+            .getBytes(StandardCharsets.UTF_8));
+        NacosException storageFailure =
+            new NacosException(NacosException.SERVER_ERROR, "storage delete failed");
+        doThrow(storageFailure).doNothing().when(persistedStorage)
+            .delete(any(StorageKey.class));
+        
+        assertThrows(NacosException.class, () -> service.deleteAgentSpec(namespaceId, name));
+        
+        verify(persistedStorage, times(2)).delete(any(StorageKey.class));
+        verify(storage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService, never()).deleteByNameAndType(anyString(),
+            anyString(), anyString());
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
     }
     
     @Test
@@ -1081,6 +1125,8 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion vRow = new AiResourceVersion();
         vRow.setVersion("v2");
         vRow.setStatus("draft");
+        vRow.setStorage("{\"provider\":\"nacos_config\","
+            + "\"scope\":\"test-ns:my-agentspec:v2\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
             .thenReturn(vRow);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
@@ -1137,6 +1183,8 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion vRow = new AiResourceVersion();
         vRow.setVersion("v2");
         vRow.setStatus("draft");
+        vRow.setStorage("{\"provider\":\"nacos_config\","
+            + "\"scope\":\"test-ns:my-agentspec:v2\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
             .thenReturn(vRow);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),

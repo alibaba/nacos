@@ -119,6 +119,14 @@ deterministic publish pipeline that can create those states. Service tests also
 verify that a terminal result marked `historical=true` remains an idempotent
 `reviewing` submit because it belongs to a previous review cycle.
 
+AI Agent, AgentSpec, Prompt, and Skill deletion success and post-delete absence
+remain covered by the existing Admin and Console rows. Storage-provider failure,
+multi-file partial failure, persisted-provider routing, and deletion of more
+than one storage page are covered by focused service tests because the
+standalone suite has no storage fault-injection provider and cannot safely seed
+those failure states. Those tests verify that the HTTP service reports the
+cleanup error and retains the resource/version descriptors for retry.
+
 Agent Admin definition creation is counted in the existing Agent Admin and
 Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
 creates missing Agent metadata together with the first draft; the removed root

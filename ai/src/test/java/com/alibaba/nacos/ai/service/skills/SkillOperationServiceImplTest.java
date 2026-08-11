@@ -97,6 +97,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
@@ -228,6 +229,8 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("v1");
+        v1.setStorage("{\"provider\":\"nacos_config\","
+            + "\"scope\":\"test-namespace:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
         vPage.setPageItems(List.of(v1));
         when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(),
             isNull(), anyInt(), anyInt())).thenReturn(vPage);
@@ -238,6 +241,44 @@ class SkillOperationServiceImplTest {
         // Then
         verify(manifestService).delete(anyString(), anyString());
         verify(aiResourcePersistService).delete(eq(namespaceId), eq(skillName), anyString());
+    }
+    
+    @Test
+    void testDeleteSkillShouldAttemptAllPersistedProviderFilesAndKeepRowsOnFailure()
+        throws NacosException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(namespaceId, skillName, "skill")).thenReturn(meta);
+        AiResourceStorage persistedStorage = mock(AiResourceStorage.class);
+        when(persistedStorage.type()).thenReturn("persisted-provider");
+        AiResourceStorageRouter.join(persistedStorage);
+        com.alibaba.nacos.ai.model.AiResourceVersion version =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v1");
+        version.setStorage("{\"provider\":\"persisted-provider\","
+            + "\"scope\":\"test-namespace:test-skill:v1\","
+            + "\"files\":[\"SKILL.md\",\"references/doc.md\"]}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versionPage = new Page<>();
+        versionPage.setPageItems(List.of(version));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), eq("skill"),
+            isNull(), eq(1), anyInt())).thenReturn(versionPage);
+        NacosException storageFailure =
+            new NacosException(NacosException.SERVER_ERROR, "storage delete failed");
+        doThrow(storageFailure).doNothing().when(persistedStorage)
+            .delete(any(StorageKey.class));
+        
+        assertThrows(NacosException.class,
+            () -> skillOperationService.deleteSkill(namespaceId, skillName));
+        
+        verify(persistedStorage, times(2)).delete(any(StorageKey.class));
+        verify(storage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService, never()).deleteByNameAndType(anyString(),
+            anyString(), anyString());
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
     }
     
     @Test

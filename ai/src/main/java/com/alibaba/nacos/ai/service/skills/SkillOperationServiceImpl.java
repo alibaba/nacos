@@ -36,6 +36,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
@@ -1920,16 +1921,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void deleteSkillStorageForVersion(String namespaceId, String skillName, String version,
         String storageJson)
         throws NacosException {
-        List<String> files = parseStorageFiles(storageJson);
-        if (files == null || files.isEmpty()) {
-            return;
-        }
-        String provider = resolveSkillStorageProvider();
+        List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        NacosException firstFailure = null;
         for (String filePath : files) {
-            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-                skillName, version,
-                filePath);
-            storageRouter.route(key).delete(key);
+            try {
+                StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                    namespaceId, skillName, version, filePath);
+                storageRouter.route(key).delete(key);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to delete Skill storage: " + skillName + '@' + version, e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
+                }
+            }
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
         }
     }
     
