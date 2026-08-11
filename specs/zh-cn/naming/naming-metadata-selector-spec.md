@@ -136,6 +136,10 @@ Service metadata、cluster metadata 和 instance metadata 操作通过 CP metada
 可能在运行时 client 消失后临时存活。过期元数据清理会在所属 service 或 instance 脱离达到配置
 过期窗口后移除元数据。
 
+instance metadata 由 instance identity 标识，而非由发布它的 client 标识。client 断开本身并不
+代表 instance 脱离：同一个 instance 可能已被另一个 client 重新注册。因此清理前必须确认该
+instance 已不再注册于其 service，若 instance 仍在注册中，则应保留元数据并停止跟踪该过期记录。
+
 运行时元数据跟随运行时 publisher 生命周期。运维态元数据跟随元数据持久化路径，并可以在恢复后
 覆盖运行时元数据。
 

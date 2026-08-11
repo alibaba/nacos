@@ -155,6 +155,13 @@ through the CP metadata path. Metadata may outlive runtime clients temporarily.
 Expired metadata cleanup removes metadata after its owning service or instance
 becomes detached for the configured expiration window.
 
+Instance metadata is identified by the instance identity, not by the publishing
+client. The disconnection of a client does not by itself detach the instance:
+the same instance may have been re-registered by another client. Cleanup must
+therefore confirm that the instance is no longer registered in its service
+before the metadata is removed, and must stop tracking the expired record when
+the instance is still registered.
+
 Runtime metadata follows the lifecycle of the runtime publisher. Operational
 metadata follows the metadata persistence path and may overlay runtime metadata
 after recovery.
