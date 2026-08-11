@@ -319,7 +319,7 @@ class PromptOperationServiceImplTest {
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
         AiResourceVersion draft = createVersionRow("0.0.1", "draft");
-        draft.setStorage("{\"provider\":\"external\"}");
+        draft.setStorage("{\"provider\":\"external\",\"files\":[\"content.json\"]}");
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
             .thenReturn(draft);
         when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L),
