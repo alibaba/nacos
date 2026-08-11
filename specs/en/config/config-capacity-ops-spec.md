@@ -97,6 +97,10 @@ least one of `namespaceId` or `groupName` must be provided. If the capacity
 record does not exist, the server may initialize it and then return the effective
 capacity with defaults applied.
 
+If the response exposes the capacity record's persistence ID, that ID must be a
+decimal JSON string rather than a JSON number so that clients retain its exact
+64-bit value.
+
 Capacity API is a management API and must not be exposed through runtime Client
 SDK surfaces.
 

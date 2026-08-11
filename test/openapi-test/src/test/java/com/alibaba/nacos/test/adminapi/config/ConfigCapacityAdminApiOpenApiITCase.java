@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: updating group capacity persists quota and size limits that can be queried through the
- *     capacity detail API.</li>
+ *     capacity detail API, with the persistence ID represented as a JSON string.</li>
  *     <li>Boundary/validation: at least one of {@code groupName}/{@code namespaceId} is required, and at least one
  *     capacity value is required for update. The success case uses an isolated random group; there is no public delete
  *     endpoint for capacity rows.</li>
@@ -52,6 +52,7 @@ public class ConfigCapacityAdminApiOpenApiITCase extends ConfigAdminApiBaseITCas
         
         JsonNode capacity = getJsonOk(ADMIN_CAPACITY_PATH,
                 Query.newInstance().addParam("groupName", groupName)).get("data");
+        assertTrue(capacity.get("id").isTextual(), capacity.toString());
         assertEquals(101, capacity.get("quota").asInt(), capacity.toString());
         assertEquals(1024, capacity.get("maxSize").asInt(), capacity.toString());
         assertEquals(8, capacity.get("maxAggrCount").asInt(), capacity.toString());

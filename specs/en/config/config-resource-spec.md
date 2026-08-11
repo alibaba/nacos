@@ -42,6 +42,10 @@ the operation must remain scoped by the normalized request `namespaceId`;
 storage IDs must not become global resource tokens that bypass namespace
 identity.
 
+When a Config storage ID is exposed in a JSON response, it must be serialized as
+a decimal string rather than a JSON number. This preserves the exact value for
+clients whose numeric representation cannot safely retain 64-bit integers.
+
 Clone operations involve both source and target identities. When a clone request
 selects source configs by storage ID, those IDs must be resolved only inside the
 normalized source namespace. The target namespace controls only where cloned
