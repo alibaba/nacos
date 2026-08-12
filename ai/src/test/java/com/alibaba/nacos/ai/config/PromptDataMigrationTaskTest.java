@@ -418,28 +418,19 @@ class PromptDataMigrationTaskTest {
             return resp;
         });
         
-        // Version already exists in DB — DB insert should be skipped, but storage write still happens
+        // Version already exists in DB — both storage write and DB insert should be skipped
         AiResourceVersion existingVersion = new AiResourceVersion();
         existingVersion.setVersion("0.0.1");
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, RESOURCE_TYPE_PROMPT, "0.0.1"))
             .thenReturn(existingVersion);
         
-        // readVersionContent uses configInfoPersistService.findConfigAllInfo
-        PromptVersionInfo versionContent = new PromptVersionInfo();
-        versionContent.setPromptKey(PROMPT_KEY);
-        versionContent.setVersion("0.0.1");
-        versionContent.setTemplate("Hello");
-        ConfigAllInfo versionConfigAllInfo = new ConfigAllInfo();
-        versionConfigAllInfo.setContent(JacksonUtils.toJson(versionContent));
-        when(configInfoPersistService.findConfigAllInfo(any(), eq(PROMPT_GROUP), eq(NS)))
-            .thenReturn(versionConfigAllInfo);
-        
         task.onApplicationEvent(createRootContextEvent());
         
         // Meta should still be inserted
         verify(aiResourcePersistService, timeout(ASYNC_TIMEOUT)).insert(any(AiResource.class));
-        // Storage write still happens (idempotent overwrite)
-        verify(storage, timeout(ASYNC_TIMEOUT)).save(any(StorageKey.class), any(byte[].class));
+        // Existing version storage must not be redirected or overwritten by the current provider
+        verify(storage, after(ASYNC_TIMEOUT).never()).save(any(StorageKey.class),
+            any(byte[].class));
         // But version DB insert should be skipped
         verify(aiResourceVersionPersistService, after(ASYNC_TIMEOUT).never())
             .insert(any(AiResourceVersion.class));

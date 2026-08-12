@@ -105,6 +105,12 @@ The default storage implementation is Nacos Config based, but Config is only a
 storage backend here. AI resource content stored through `nacos_config` must not
 be treated as user-owned Config resources.
 
+Each version must persist its selected storage provider in
+`AiResourceVersion.storage`. The effective provider configuration selects the
+provider only when a new version is written. Reads, draft replacements, and
+deletes for an existing version must route through its persisted provider. A
+legacy storage descriptor without a provider belongs to `nacos_config`.
+
 Storage extension behavior is defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md). Database dialect
 behavior is defined by the [Data Source Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md).

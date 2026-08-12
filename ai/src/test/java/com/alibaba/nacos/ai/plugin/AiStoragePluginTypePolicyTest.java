@@ -39,7 +39,9 @@ class AiStoragePluginTypePolicyTest {
     void testTypeAndDiagnostics() {
         assertEquals(PluginType.AI_STORAGE, policy.getPluginType());
         assertFalse(policy.supportsPreRefreshValidation());
-        assertTrue(policy.getActivationDescription().contains("Prompt"));
+        assertTrue(policy.getActivationDescription().contains("AI Resource"));
+        assertTrue(policy.getSelectionProperty()
+            .contains(Constants.AI_STORAGE_PROVIDER_CONFIG_KEY));
         assertTrue(policy.getSelectionProperty()
             .contains(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY));
         assertTrue(policy.getSelectionProperty()
@@ -84,8 +86,31 @@ class AiStoragePluginTypePolicyTest {
     }
     
     @Test
+    void testGlobalRequiredProvider() {
+        MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty(Constants.AI_STORAGE_PROVIDER_CONFIG_KEY, " external ");
+        policy.initialize(configuration);
+        
+        assertEquals(Set.of("external"), policy.getRequiredPluginNames(configuration));
+    }
+    
+    @Test
+    void testResourceOverrideAndGlobalFallback() {
+        MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty(Constants.AI_STORAGE_PROVIDER_CONFIG_KEY, "global-store");
+        configuration.setProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
+            "prompt-store");
+        policy.initialize(configuration);
+        
+        assertEquals(Set.of("global-store", "prompt-store"),
+            policy.getRequiredPluginNames(configuration));
+    }
+    
+    @Test
     void testRequiredProvidersByResourceDomain() {
         MapConfiguration configuration = new MapConfiguration();
+        configuration.setProperty(Constants.AI_STORAGE_PROVIDER_CONFIG_KEY,
+            "global-store");
         configuration.setProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
             " prompt-store ");
         configuration.setProperty(Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
@@ -102,6 +127,7 @@ class AiStoragePluginTypePolicyTest {
         assertTrue(required.contains("skill-store"));
         assertTrue(required.contains("agentspec-store"));
         assertTrue(required.contains("agent-store"));
+        assertFalse(required.contains("global-store"));
         configuration.setProperty(Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
             "changed-store");
         assertFalse(policy.getRequiredPluginNames(configuration).contains("changed-store"));

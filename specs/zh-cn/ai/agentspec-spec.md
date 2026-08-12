@@ -43,6 +43,10 @@ AgentSpec upload 接收 ZIP 包。解析器必须先校验 manifest 和资源引
 AgentSpec 使用标准 `ai_resource` 和 `ai_resource_version` 模型。它通过 AI 存储保存
 `manifest.json` 和资源文件。
 
+每个版本描述都持久化选定的存储 provider。读取、draft 覆盖和删除使用已持久化的
+provider，有效 provider 配置只选择新版本。缺少 provider 的历史描述使用
+`nacos_config`。
+
 不同于 Skill，AgentSpec 不维护独立 manifest index。版本元数据和存储指针是事实来源。
 
 ## 4. 生命周期

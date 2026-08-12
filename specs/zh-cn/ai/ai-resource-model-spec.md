@@ -100,6 +100,10 @@ Labels 不得指向 draft 或 reviewing 版本。运行时客户端可以通过�
 默认存储实现基于 Nacos Config，但 Config 在这里只是存储后端。通过
 `nacos_config` 保存的 AI 内容不应被视为用户拥有的 Config 资源。
 
+每个版本必须在 `AiResourceVersion.storage` 中持久化选定的存储 provider。有效 provider
+配置只在写入新版本时选择 provider；已有版本的读取、draft 覆盖和删除必须按已持久化的
+provider 路由。缺少 provider 的历史存储描述归属于 `nacos_config`。
+
 存储扩展行为由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。数据库
 方言行为由 [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)定义。
 
