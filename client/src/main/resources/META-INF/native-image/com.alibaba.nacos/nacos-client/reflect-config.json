@@ -1354,6 +1354,10 @@
     "name":"com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolverProvider"
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.internal.JndiResourceResolverFactory",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.internal.PickFirstLoadBalancerProvider"
   },
   {
@@ -1467,8 +1471,17 @@
     ]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultFileRegion"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.epoll.NativeDatagramPacketArray$NativeDatagramPacket"
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel",
     "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.unix.PeerCredentials"
   },
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder",
