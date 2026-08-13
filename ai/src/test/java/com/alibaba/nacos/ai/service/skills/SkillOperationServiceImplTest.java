@@ -456,6 +456,8 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         version.setVersion("v3");
         version.setStatus("draft");
+        version.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
             .thenReturn(meta);
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-skill"), anyString(),
@@ -470,6 +472,8 @@ class SkillOperationServiceImplTest {
             eq("v3"), anyString());
         verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
             && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())
+            && key.getKey().endsWith(":references/old.md")));
     }
     
     @Test
@@ -2545,7 +2549,8 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         vRow.setVersion("v1");
         vRow.setStatus("draft");
-        vRow.setStorage("{\"provider\":\"external\",\"files\":[\"SKILL.md\"]}");
+        vRow.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq("v1")))
             .thenReturn(vRow);
@@ -2564,7 +2569,52 @@ class SkillOperationServiceImplTest {
                 "\"provider\":\"external\"")));
         verify(externalStorage).save(argThat(key -> "external".equals(key.getProvider())),
             any(byte[].class));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())
+            && key.getKey().endsWith(":references/old.md")));
+        verify(externalStorage, never())
+            .delete(argThat(key -> key.getKey().endsWith(":SKILL.md")));
         verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
+    }
+    
+    @Test
+    void testUpdateDraftKeepsStorageDescriptorWhenRemovedFileDeletionFails() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        vRow.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "delete failed"))
+            .when(externalStorage)
+            .delete(argThat(key -> key.getKey().endsWith(":references/old.md")));
+        
+        Skill draft = new Skill();
+        draft.setName(skillName);
+        draft.setDescription("updated desc");
+        draft.setSkillMd("---\nname: my-skill\ndescription: updated desc\n---\n\nbody");
+        
+        assertThrows(NacosException.class,
+            () -> skillOperationService.updateDraft(namespaceId, draft, null));
+        verify(aiResourceVersionPersistService, never()).updateStorage(anyString(), anyString(),
+            anyString(), anyString(), anyString());
+        verify(aiResourceVersionPersistService, never()).updateStorageAndDesc(anyString(),
+            anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
     }
     
     @Test

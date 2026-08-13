@@ -111,6 +111,13 @@ fields `succeeded` and `failed`, plus per-item `success`, `errorCode`, and
 `errorMessage` in `results`. Contract-only field changes do not alter the
 scenario-row totals above.
 
+Skill draft update and upload-overwrite rows on both Admin and Console surfaces
+create content with a resource file, replace the draft without that file, and
+verify that query/download results no longer expose it. Deletion through the
+persisted storage provider and descriptor retention when cleanup fails are
+covered by focused service tests because backing storage objects and injected
+provider failures are not externally observable in the standalone API suite.
+
 Skill, Prompt, and AgentSpec submit scenarios retry submit when the standalone
 environment leaves the target in `reviewing`, proving the HTTP operation is
 idempotent and does not require a new draft. Resubmitting a `reviewed` version

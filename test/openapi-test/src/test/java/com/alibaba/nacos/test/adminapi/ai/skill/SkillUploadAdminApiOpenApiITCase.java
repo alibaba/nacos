@@ -36,7 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Scenario coverage:
  * <ul>
  *     <li>Expected capability: single ZIP upload creates a draft from {@code SKILL.md} plus resource files, precheck
- *     reports existing-draft overwrite target, overwrite updates an editing draft, and batch upload reports successful skill
+ *     reports existing-draft overwrite target, overwrite replaces the complete draft and removes omitted resource files,
+ *     and batch upload reports successful skill
  *     folders with persisted content.</li>
  *     <li>Boundary/validation: namespace defaults to public; precheck accepts only the archive and namespace; upload
  *     selects the first available version from SKILL.md version, SKILL.md metadata.version, _meta.json, targetVersion,
@@ -85,10 +86,10 @@ public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         HttpResponse overwritten = postMultipartRaw(ADMIN_SKILL_PATH + "/upload",
                 uploadQuery(true, "9.9.9", "openapi overwrite"), "file", skillName + ".zip",
                 "application/zip",
-                buildSkillZip(skillName, "1.0.0", "Overwritten body.", "overwritten guide"));
+                buildSkillZip(skillName, "1.0.0", "Overwritten body.", null));
         assertUploadSuccess(overwritten, skillName);
         assertSkillContent(getJsonOk(ADMIN_SKILL_VERSION_PATH, skillVersionQuery(skillName, "1.0.0"))
-                .get("data"), skillName, "1.0.0", "Overwritten body.", "overwritten guide");
+                .get("data"), skillName, "1.0.0", "Overwritten body.", null);
 
         postFormOk(ADMIN_SKILL_PATH + "/force-publish", skillPublishForm(skillName, "1.0.0"));
         assertEquals("ok", postFormOk(ADMIN_SKILL_PATH + "/offline",
