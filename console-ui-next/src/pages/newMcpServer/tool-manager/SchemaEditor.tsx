@@ -17,13 +17,19 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import {
+  getPrimarySchemaType,
+  isNullableSchemaType,
+  setSchemaNullable,
+  setSchemaPrimaryType,
+  SUPPORTED_SCHEMA_TYPES,
+} from '@/utils/json-schema';
+import type { JsonSchemaType, SupportedSchemaType } from '@/utils/json-schema';
 
-const SCHEMA_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
-type SchemaType = (typeof SCHEMA_TYPES)[number];
 const MAX_DEPTH = 5;
 
 export interface JsonSchemaProperty {
-  type?: string;
+  type?: JsonSchemaType;
   description?: string;
   properties?: Record<string, JsonSchemaProperty>;
   items?: JsonSchemaProperty;
@@ -42,6 +48,7 @@ interface SchemaEditorProps {
   value: JsonSchema;
   onChange: (schema: JsonSchema) => void;
   readOnly?: boolean;
+  allowNullable?: boolean;
 }
 
 interface PropertyRowProps {
@@ -50,6 +57,7 @@ interface PropertyRowProps {
   required: boolean;
   depth: number;
   readOnly: boolean;
+  allowNullable: boolean;
   onNameChange: (oldName: string, newName: string) => boolean;
   onSchemaChange: (name: string, schema: JsonSchemaProperty) => void;
   onRequiredChange: (name: string, required: boolean) => void;
@@ -62,6 +70,7 @@ function PropertyRow({
   required,
   depth,
   readOnly,
+  allowNullable,
   onNameChange,
   onSchemaChange,
   onRequiredChange,
@@ -71,7 +80,8 @@ function PropertyRow({
   const [open, setOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const skipCommitRef = useRef(false);
-  const type = (schema.type || 'string') as SchemaType;
+  const type = getPrimarySchemaType(schema.type);
+  const nullable = isNullableSchemaType(schema.type);
   const hasChildren = type === 'object' || type === 'array';
   const canExpand = hasChildren && depth < MAX_DEPTH;
 
@@ -99,7 +109,11 @@ function PropertyRow({
   }, [draftName, name, onNameChange]);
 
   const handleTypeChange = (newType: string) => {
-    const updated: JsonSchemaProperty = { ...schema, type: newType };
+    const primaryType = newType as SupportedSchemaType;
+    const updated: JsonSchemaProperty = {
+      ...schema,
+      type: setSchemaPrimaryType(schema.type, primaryType),
+    };
     if (newType === 'object') {
       updated.properties = updated.properties || {};
       delete updated.items;
@@ -247,13 +261,26 @@ function PropertyRow({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SCHEMA_TYPES.map((st) => (
+            {SUPPORTED_SCHEMA_TYPES.map((st) => (
               <SelectItem key={st} value={st} className="text-sm">
                 {t(`mcp.type${st.charAt(0).toUpperCase() + st.slice(1)}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        {/* Nullable */}
+        {allowNullable && (
+          <div className="w-16 shrink-0 flex justify-center">
+            <Checkbox
+              checked={nullable}
+              onCheckedChange={(v) =>
+                onSchemaChange(name, { ...schema, type: setSchemaNullable(schema.type, !!v) })
+              }
+              disabled={readOnly}
+            />
+          </div>
+        )}
 
         {/* Required */}
         <Checkbox
@@ -298,6 +325,7 @@ function PropertyRow({
                 required={childRequired?.includes(childName) || false}
                 depth={depth + 1}
                 readOnly={readOnly}
+                allowNullable={allowNullable}
                 onNameChange={handleChildNameChange}
                 onSchemaChange={handleChildSchemaChange}
                 onRequiredChange={handleChildRequiredChange}
@@ -322,7 +350,12 @@ function PropertyRow({
   );
 }
 
-export default function SchemaEditor({ value, onChange, readOnly = false }: SchemaEditorProps) {
+export default function SchemaEditor({
+  value,
+  onChange,
+  readOnly = false,
+  allowNullable = false,
+}: SchemaEditorProps) {
   const { t } = useTranslation();
   const properties = value.properties || {};
   const requiredArr = value.required || [];
@@ -399,6 +432,7 @@ export default function SchemaEditor({ value, onChange, readOnly = false }: Sche
         <div className="w-5 shrink-0" />
         <div className="w-36 shrink-0">Name</div>
         <div className="w-28 shrink-0">Type</div>
+        {allowNullable && <div className="w-16 shrink-0 text-center">{t('mcp.nullable')}</div>}
         <div className="w-12 shrink-0 text-center">Req</div>
         <div className="flex-1">Description</div>
       </div>
@@ -411,6 +445,7 @@ export default function SchemaEditor({ value, onChange, readOnly = false }: Sche
           required={requiredArr.includes(name)}
           depth={0}
           readOnly={readOnly}
+          allowNullable={allowNullable}
           onNameChange={handleNameChange}
           onSchemaChange={handleSchemaChange}
           onRequiredChange={handleRequiredChange}

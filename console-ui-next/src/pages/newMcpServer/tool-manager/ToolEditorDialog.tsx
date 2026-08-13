@@ -262,7 +262,7 @@ export default function ToolEditorDialog({
 
           {/* Output Schema */}
           <TabsContent value="output">
-            <SchemaEditor value={outputSchema} onChange={setOutputSchema} />
+            <SchemaEditor value={outputSchema} onChange={setOutputSchema} allowNullable />
           </TabsContent>
 
           {/* Annotations */}

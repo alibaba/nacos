@@ -42,6 +42,16 @@ MCP Server 描述一个 MCP 兼容服务端，可以包含：
 
 MCP Server 版本应可独立查询。未指定版本时，运行时查询解析最新发布版本。
 
+### 2.1 Tool 出参 Schema 兼容性
+
+MCP Tool 的 `outputSchema` 是 JSON Schema。Nacos 必须保留合法的 JSON Schema 类型声明，
+不能把 `type` 关键字限制为单个字符串。可空的响应字段可以使用一个基础类型与 `null` 组成的
+联合类型，例如 `{"type": ["string", "null"]}`。
+
+控制台加载和保存 Tool 时必须保留该表示。导入 OpenAPI 3 响应 Schema 时，具有明确类型且
+配置了 `nullable: true` 的字段必须转换为等价的 JSON Schema 联合类型。该表示属于新增元数据，
+不会改变现有消费者的 Tool 调用或响应透传契约。
+
 MCP Registry 兼容发现能力不属于标准 MCP resource 契约本身。它由可选的
 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)暴露，将 Nacos MCP resources
 映射为 MCP Registry 响应形态以兼容社区客户端。

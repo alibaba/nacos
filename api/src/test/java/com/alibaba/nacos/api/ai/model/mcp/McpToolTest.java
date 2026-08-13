@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,8 +52,8 @@ class McpToolTest extends BasicRequestTest {
         Map<String, Object> outputSchema = new HashMap<>();
         outputSchema.put("type", "object");
         Map<String, Object> outputProperties = new HashMap<>();
-        Map<String, String> resultSchema = new HashMap<>();
-        resultSchema.put("type", "string");
+        Map<String, Object> resultSchema = new HashMap<>();
+        resultSchema.put("type", Arrays.asList("string", "null"));
         resultSchema.put("description", "Result");
         outputProperties.put("result", resultSchema);
         outputSchema.put("properties", outputProperties);
@@ -84,6 +86,7 @@ class McpToolTest extends BasicRequestTest {
         
         assertTrue(json.contains("\"outputSchema\":{"));
         assertTrue(json.contains("\"result\":{"));
+        assertTrue(json.contains("\"type\":[\"string\",\"null\"]"));
         assertTrue(json.contains("\"description\":\"Result\""));
         
         // Verify _meta field serialization
@@ -105,7 +108,7 @@ class McpToolTest extends BasicRequestTest {
         String json = "{\"name\":\"testTool\",\"description\":\"A test tool for MCP\","
             + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\","
             + "\"description\":\"Parameter A\"}}},"
-            + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":\"string\","
+            + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":[\"string\",\"null\"],"
             + "\"description\":\"Result\"}}},"
             + "\"_meta\":{\"hint\":\"This is a test tool\",\"version\":1},"
             + "\"annotations\":{\"title\":\"Test Tool Title\",\"readOnlyHint\":true,"
@@ -130,6 +133,8 @@ class McpToolTest extends BasicRequestTest {
         Map<String, Object> outProps =
             (Map<String, Object>) result.getOutputSchema().get("properties");
         assertNotNull(outProps.get("result"));
+        Map<String, Object> resultSchema = (Map<String, Object>) outProps.get("result");
+        assertEquals(Arrays.asList("string", "null"), (List<String>) resultSchema.get("type"));
         
         // Verify _meta field deserialization
         assertNotNull(result.getMeta());

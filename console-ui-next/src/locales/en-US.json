@@ -435,6 +435,7 @@
     "selectVersion": "Select Version",
     "inputSchema": "Input Schema",
     "outputSchema": "Output Schema",
+    "nullable": "Nullable",
     "noDescription": "No description",
     "allVersions": "All Versions",
     "latestVersion": "Latest",
