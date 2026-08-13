@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The history config info mapper.
@@ -136,12 +137,13 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of getting the next history config detail of the history config.
      */
     default MapperResult getNextHistoryInfo(MapperContext context) {
+        Object grayName = context.getWhereParameter(FieldConstant.GRAY_NAME);
+        boolean filterByGrayName = StringUtils.isNotBlank(Objects.toString(grayName, null));
         String sql =
             "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,"
                 + "gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND publish_type = ? "
-                + (StringUtils.isBlank(context.getContextParameter(FieldConstant.GRAY_NAME)) ? ""
-                    : "AND gray_name = ? ")
+                + (filterByGrayName ? "AND gray_name = ? " : "")
                 + "AND nid > ? ORDER BY nid LIMIT 1";
         
         List<Object> paramList = CollectionUtils.list(
@@ -150,8 +152,8 @@ public interface HistoryConfigInfoMapper extends Mapper {
             context.getWhereParameter(FieldConstant.TENANT_ID),
             context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
             context.getWhereParameter(FieldConstant.NID));
-        if (!StringUtils.isEmpty(context.getContextParameter(FieldConstant.GRAY_NAME))) {
-            paramList.add(4, context.getWhereParameter(FieldConstant.GRAY_NAME));
+        if (filterByGrayName) {
+            paramList.add(4, grayName);
         }
         
         return new MapperResult(sql, paramList);

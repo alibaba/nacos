@@ -91,6 +91,12 @@ Mapper 实现必须提供 repository 操作需要的基础 CRUD SQL 和表级专
 legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部署仍需要这些迁移，应作为升级
 前置动作完成，而不是服务端运行时 mapper 的职责。
 
+mapper 接口可以为某个操作提供 `default` SQL。这些 default 实现使用 MySQL 兼容语法编写，
+包括 `LIMIT` 之类的行数限制子句。如果某个方言对应的数据库不接受该语法，必须覆写所有受影响
+的操作；直接继承 default 不会导致启动失败，而是在查询时报语法错误。default 实现读取可选
+过滤值时，必须从 repository 实际写入的那个 `MapperContext` map 中读取，从而保证可选谓词与
+其绑定参数始终成对出现。
+
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
 缺少数据源或表 mapper 是启动或操作错误，而不是空结果。
 
