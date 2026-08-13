@@ -83,6 +83,29 @@ public final class AiResourceVersionStorageJsonUtil {
     }
     
     /**
+     * Resolve the provider from a version storage descriptor, using the given default for legacy
+     * descriptors that do not contain a provider.
+     *
+     * @param storageJson version storage descriptor
+     * @param defaultProvider provider for legacy descriptors
+     * @return persisted provider, or the default provider when missing
+     * @throws NacosException when the descriptor or provider value is invalid
+     */
+    public static String resolveProvider(String storageJson, String defaultProvider)
+        throws NacosException {
+        Map<String, Object> descriptor = requireDescriptor(storageJson);
+        Object provider = descriptor.get("provider");
+        if (provider == null || provider instanceof String
+            && StringUtils.isBlank((String) provider)) {
+            return defaultProvider;
+        }
+        if (!(provider instanceof String)) {
+            throw invalidDescriptor("provider is invalid");
+        }
+        return ((String) provider).trim();
+    }
+    
+    /**
      * Read the persisted file list from a version storage descriptor.
      *
      * @param storageJson version storage descriptor

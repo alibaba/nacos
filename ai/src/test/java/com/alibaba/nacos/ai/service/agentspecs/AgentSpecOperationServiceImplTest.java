@@ -1211,6 +1211,35 @@ class AgentSpecOperationServiceImplTest {
     }
     
     @Test
+    void testDeleteDraftShouldUseNacosConfigForLegacyDescriptor() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v2");
+        version.setStatus("draft");
+        version.setStorage("{\"scope\":\"test-ns:my-agentspec:v2\"}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
+            .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
+            eq(1L), any())).thenReturn(true);
+        
+        service.deleteDraft(namespaceId, name);
+        
+        verify(storage).delete(argThat(key -> "nacos_config".equals(key.getProvider())));
+        verify(externalStorage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService).delete(namespaceId, name, "agentspec", "v2");
+    }
+    
+    @Test
     void testDeleteDraftNoEditingReturnsEarly() throws NacosException {
         String namespaceId = "test-ns";
         String name = "my-agentspec";
