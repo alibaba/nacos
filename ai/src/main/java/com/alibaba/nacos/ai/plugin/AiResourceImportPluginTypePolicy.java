@@ -130,6 +130,8 @@ public class AiResourceImportPluginTypePolicy implements PluginTypePolicy {
         result.put("skills-well-known",
             "nacos.plugin.ai.importer.skills.well-known.enabled");
         result.put("skills-sh", "nacos.plugin.ai.importer.skills.skills-sh.enabled");
+        result.put("skills-sh-authenticated",
+            "nacos.plugin.ai.importer.skills.skills-sh.enabled");
         return Collections.unmodifiableMap(result);
     }
     
