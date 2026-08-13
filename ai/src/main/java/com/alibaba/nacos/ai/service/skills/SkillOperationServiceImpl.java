@@ -1964,7 +1964,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String storageJson)
         throws NacosException {
         List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(storageJson);
-        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(storageJson,
+            STORAGE_PROVIDER_NACOS_CONFIG);
         deleteSkillStorageFiles(namespaceId, skillName, version, provider, files);
     }
     

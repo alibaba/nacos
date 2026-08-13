@@ -1486,7 +1486,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String version, String storageJson)
         throws NacosException {
         // Step 1: Read main config first to get the resource reference list
-        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(storageJson,
+            STORAGE_PROVIDER_NACOS_CONFIG);
         StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
             NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
