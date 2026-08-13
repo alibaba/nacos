@@ -108,6 +108,15 @@ duplicates or legacy beta/tag gray tables. Such migration, if needed for a
 pre-3.0 deployment, is an upgrade prerequisite rather than a server runtime
 mapper responsibility.
 
+Mapper interfaces may supply `default` SQL for an operation. Such defaults are
+written in MySQL-compatible syntax, including row-limiting clauses such as
+`LIMIT`. A dialect whose database does not accept that syntax must override
+every affected operation; inheriting the default produces a syntax error at
+query time rather than a startup failure. Mapper defaults must also read
+optional filter values from the same `MapperContext` map the repository writes
+them to, so an optional predicate and its bound parameter are always emitted
+together.
+
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
 operation error, not an empty result.
