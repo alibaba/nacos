@@ -128,6 +128,31 @@ class HistoryConfigInfoMapperByOracleTest {
     }
     
     @Test
+    void testGetNextHistoryInfoWithGrayName() {
+        Object dataId = "dataId";
+        Object groupId = "groupId";
+        Object tenantId = "tenantId";
+        Object grayName = "beta";
+        Object nid = 100L;
+        
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.GRAY_NAME, grayName);
+        context.putWhereParameter(FieldConstant.NID, nid);
+        
+        MapperResult mapperResult = historyConfigInfoMapperByOracle.getNextHistoryInfo(context);
+        assertEquals(
+            "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,"
+                + "gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND publish_type = ? "
+                + "AND gray_name = ? AND nid > ? ORDER BY nid FETCH FIRST 1 ROWS ONLY",
+            mapperResult.getSql());
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId, publishType, grayName, nid},
+            mapperResult.getParamList().toArray());
+    }
+    
+    @Test
     void testGetTableName() {
         String tableName = historyConfigInfoMapperByOracle.getTableName();
         assertEquals(TableConstant.HIS_CONFIG_INFO, tableName);
