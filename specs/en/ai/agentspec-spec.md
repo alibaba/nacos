@@ -50,6 +50,14 @@ replacements, and deletes use that persisted provider, while the effective
 provider configuration selects only new versions. A legacy descriptor without
 a provider uses `nacos_config`.
 
+Updating or overwriting a draft replaces the complete AgentSpec package.
+Replacement resource files are written first. Resource files referenced by the
+previous `manifest.json` but omitted from the replacement package must then be
+deleted through the version's persisted provider before the replacement
+`manifest.json` and storage descriptor are persisted. If cleanup fails, the
+update must fail and retain the previous manifest and descriptor so cleanup can
+be retried.
+
 Unlike Skill, AgentSpec does not maintain a separate manifest index. Version
 metadata and storage pointers are authoritative.
 

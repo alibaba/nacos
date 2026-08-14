@@ -47,6 +47,11 @@ AgentSpec 使用标准 `ai_resource` 和 `ai_resource_version` 模型。它通�
 provider，有效 provider 配置只选择新版本。缺少 provider 的历史描述使用
 `nacos_config`。
 
+更新或覆盖 draft 会替换完整 AgentSpec 包。服务端先写入替换包中的资源文件，再通过该版本
+持久化的 provider 删除旧 `manifest.json` 引用但替换包已省略的资源文件，最后持久化新的
+`manifest.json` 和存储描述。清理失败时更新必须失败，并保留旧 manifest 和存储描述以便
+重试清理。
+
 不同于 Skill，AgentSpec 不维护独立 manifest index。版本元数据和存储指针是事实来源。
 
 ## 4. 生命周期
