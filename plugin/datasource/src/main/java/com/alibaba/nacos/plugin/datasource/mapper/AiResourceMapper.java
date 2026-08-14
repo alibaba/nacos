@@ -129,7 +129,7 @@ public interface AiResourceMapper extends Mapper {
             return;
         }
         if (likeMatch) {
-            where.and().like(field, value);
+            where.and().like(field, value, getLikeEscapeClause());
         } else {
             where.and().eq(field, value);
         }

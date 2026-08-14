@@ -30,4 +30,9 @@ public abstract class AbstractMapperByOracle extends AbstractMapper {
     public String getFunction(String functionName) {
         return TrustedOracleFunctionEnum.getFunctionByName(functionName);
     }
+    
+    @Override
+    public String getLikeEscapeClause() {
+        return LIKE_ESCAPE_CLAUSE;
+    }
 }

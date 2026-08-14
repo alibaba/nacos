@@ -117,6 +117,17 @@ optional filter values from the same `MapperContext` map the repository writes
 them to, so an optional predicate and its bound parameter are always emitted
 together.
 
+Fuzzy search parameters escape the `_` wildcard with a backslash before they are
+bound, so `LIKE` predicates are dialect-sensitive as well. MySQL and PostgreSQL
+treat the backslash as the default `LIKE` escape character, while Derby and
+Oracle have no default escape character and match the backslash literally, so an
+inherited predicate silently returns no row instead of failing. A dialect
+without a default escape character must therefore report its escape clause
+through `Mapper#getLikeEscapeClause()`, and every `LIKE ?` bound to such a
+parameter, in both mapper defaults and dialect overrides, must append that
+clause. The clause must not be hardcoded in shared defaults, because the string
+literal accepted for the escape character differs between databases.
+
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
 operation error, not an empty result.

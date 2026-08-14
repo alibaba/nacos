@@ -97,6 +97,13 @@ mapper 接口可以为某个操作提供 `default` SQL。这些 default 实现�
 过滤值时，必须从 repository 实际写入的那个 `MapperContext` map 中读取，从而保证可选谓词与
 其绑定参数始终成对出现。
 
+模糊查询参数在绑定前会用反斜杠转义 `_` 通配符，因此 `LIKE` 谓词同样与方言相关。MySQL 与
+PostgreSQL 默认把反斜杠当作 `LIKE` 的转义字符，而 Derby 与 Oracle 没有默认转义字符，会把
+反斜杠按字面量匹配，导致继承而来的谓词不报错却查不到任何行。因此，没有默认转义字符的方言
+必须通过 `Mapper#getLikeEscapeClause()` 声明自己的转义子句；凡是绑定了此类参数的
+`LIKE ?`，无论位于 mapper default 还是方言覆写中，都必须追加该子句。该子句不得在共享
+default 中硬编码，因为各数据库能接受的转义字符字面量写法并不相同。
+
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
 缺少数据源或表 mapper 是启动或操作错误，而不是空结果。
 
