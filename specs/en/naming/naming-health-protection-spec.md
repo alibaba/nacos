@@ -85,6 +85,13 @@ checker types may be registered through the health checker registry.
 Active health checks should only change health state when the responsible
 server performs the check and the service health check switch allows it.
 
+The instance address used by an active health check must be a plain host. The
+instance IP field must not carry user information, a port, a path, query
+parameters, or a fragment. A processor must validate the address at runtime
+before making a network request. If address parsing fails or extra URL
+components are present, the check must fail without making a network request to
+that address. IPv6 syntax separators are not extra URL components.
+
 ### 3.2 Manual Health Update
 
 Manual instance health update is allowed for instances of persistent services
