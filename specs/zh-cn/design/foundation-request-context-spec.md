@@ -91,7 +91,8 @@ HTTP Controller 方法解析规则：
 - query parameter 不参与 Controller 路径匹配。
 - 可通过 `nacos.core.auth.controller-method-cache.legacy-enabled=true` 临时降级到旧注解缓存
   解析器。旧解析器从 3.3.0 起废弃，计划在 3.4.0 移除，且可能与 Spring MVC 路径匹配结果
-  不一致，因此默认必须关闭。
+  不一致，因此默认必须关闭。启用旧解析器时，必须在移除 context path 前使用一致的方式解析
+  request URI 和 context path，包括任一值包含百分号编码字符的情况。
 
 ## 4. gRPC 请求过滤模型
 

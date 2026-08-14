@@ -122,6 +122,20 @@ class ControllerMethodsCacheTest {
     }
     
     @Test
+    void getMethodFromLegacyResolverWithEncodedContextPath() throws Exception {
+        ObjectProvider<RequestMappingHandlerMapping> provider = mock(ObjectProvider.class);
+        ControllerMethodsCache springCache = new ControllerMethodsCache(provider);
+        springCache.initClassMethod(Collections.singleton(TestController.class));
+        System.setProperty(ControllerMethodsCache.LEGACY_RESOLVER_ENABLED, "true");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/n%61cos/api/get");
+        request.setContextPath("/n%61cos");
+        request.setRequestURI("/n%61cos/api/get");
+        request.setParameter("required", "yes");
+        
+        assertEquals("get", springCache.getMethod(request).getName());
+    }
+    
+    @Test
     void getMethodReturnsNullWhenNoMapping() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/nacos/v1/cs/configs");
         request.setRequestURI("/nacos/v1/cs/configs");
