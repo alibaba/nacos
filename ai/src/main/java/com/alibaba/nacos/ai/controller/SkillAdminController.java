@@ -184,6 +184,7 @@ public class SkillAdminController {
      * @param request     HTTP servlet request
      * @param namespaceId namespace ID
      * @param commitMsg   version-level commit message
+     * @param autoPublishIfNew whether to publish the first uploaded version automatically
      * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
@@ -199,6 +200,8 @@ public class SkillAdminController {
         @RequestParam(value = "targetVersion", required = false) String targetVersion,
         @RequestParam(value = "commitMsg", required = false) String commitMsg,
         @RequestParam(value = "uploadAction", required = false) String uploadAction,
+        @RequestParam(value = "autoPublishIfNew", required = false,
+            defaultValue = "false") boolean autoPublishIfNew,
         @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
@@ -209,6 +212,7 @@ public class SkillAdminController {
             .targetVersion(targetVersion)
             .commitMsg(commitMsg)
             .uploadAction(uploadAction)
+            .autoPublishIfNew(autoPublishIfNew)
             .build();
         String skillName = skillOperationService.uploadSkillFromZip(uploadRequest);
         return Result.success(skillName);

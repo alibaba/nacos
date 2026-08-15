@@ -188,7 +188,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<UploadVersionCandidate> uploadVersions = resolveUploadVersionCandidates(skill,
             request.getTargetVersion());
         return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersions,
-            request.isOverwrite(), request.getUploadAction(), request.getCommitMsg());
+            request.isOverwrite(), request.getUploadAction(), request.getCommitMsg(),
+            request.isAutoPublishIfNew());
     }
     
     @Override
@@ -335,7 +336,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 }
                 List<UploadVersionCandidate> uploadVersions =
                     resolveUploadVersionCandidates(skill, null);
-                doUploadSingleSkill(namespaceId, skill, uploadVersions, overwrite, null, null);
+                doUploadSingleSkill(namespaceId, skill, uploadVersions, overwrite, null, null,
+                    false);
                 result.addResult(BatchUploadItemResult.success(skillName));
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
@@ -377,7 +379,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private String doUploadSingleSkill(String namespaceId, Skill skill,
         List<UploadVersionCandidate> uploadVersions,
-        boolean overwrite, String uploadAction, String commitMsg) throws NacosException {
+        boolean overwrite, String uploadAction, String commitMsg, boolean autoPublishIfNew)
+        throws NacosException {
         String name = skill.getName();
         validateSkillNameByParamChecker(name);
         
@@ -386,26 +389,31 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             checkWritableUploadResource(meta);
         }
         String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersions);
+        String result;
         if (StringUtils.isBlank(uploadAction)) {
             if (overwrite) {
-                return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, false,
+                result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, false,
+                    commitMsg);
+            } else {
+                result = createUploadedSkillDraft(namespaceId, skill, targetVersion, meta,
                     commitMsg);
             }
-            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_CREATE_DRAFT.equals(uploadAction)) {
-            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
+        } else if (SkillUploadPrecheckResult.ACTION_CREATE_DRAFT.equals(uploadAction)) {
+            result = createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
+        } else if (SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT.equals(uploadAction)) {
+            result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_DELETE_DRAFT_AND_CREATE.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
+        } else if (SkillUploadPrecheckResult.ACTION_DELETE_DRAFT_AND_CREATE.equals(uploadAction)) {
+            result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
+        } else {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
         }
-        throw new NacosApiException(NacosException.INVALID_PARAM,
-            ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
+        if (meta == null && autoPublishIfNew) {
+            forcePublish(namespaceId, name, targetVersion, true);
+        }
+        return result;
     }
     
     private void checkWritableUploadResource(AiResource meta) throws NacosException {
