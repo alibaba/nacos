@@ -128,6 +128,14 @@ parameter, in both mapper defaults and dialect overrides, must append that
 clause. The clause must not be hardcoded in shared defaults, because the string
 literal accepted for the escape character differs between databases.
 
+Declaring the escape clause also constrains the caller: once a `LIKE` predicate
+declares an escape character, the bound parameter must escape that character
+itself before escaping `_`, otherwise a search value containing a literal
+backslash forms an invalid escape sequence and the database rejects the whole
+query (Oracle `ORA-01424`, Derby `SQLSTATE 22025`). Every producer of a fuzzy
+search parameter must apply the same escaping order: the escape character `\`
+first, then `_`, and finally the Nacos wildcard `*` to `%`.
+
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
 operation error, not an empty result.

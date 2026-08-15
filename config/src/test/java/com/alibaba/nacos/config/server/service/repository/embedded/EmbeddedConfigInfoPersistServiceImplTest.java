@@ -943,6 +943,30 @@ class EmbeddedConfigInfoPersistServiceImplTest {
     }
     
     @Test
+    void testGenerateLikeArgumentEscapesUnderscoreWithoutWildcard() {
+        assertEquals("nacos\\_test", embeddedConfigInfoPersistService.generateLikeArgument(
+            "nacos_test"));
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesBackslash() {
+        assertEquals("%C:\\\\path%", embeddedConfigInfoPersistService.generateLikeArgument(
+            "*C:\\path*"));
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesTrailingBackslash() {
+        assertEquals("%trail\\\\%", embeddedConfigInfoPersistService.generateLikeArgument(
+            "*trail\\*"));
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesBackslashBeforeUnderscore() {
+        assertEquals("%a\\\\\\_b%", embeddedConfigInfoPersistService.generateLikeArgument(
+            "*a\\_b*"));
+    }
+    
+    @Test
     void testAddConfigInfoAtomicWithNullAdvanceInfoAndEncryptedKey() {
         ConfigInfo configInfo = new ConfigInfo("dataId", "group", null, null, "content");
         

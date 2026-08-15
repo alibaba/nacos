@@ -137,14 +137,18 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public String generateLikeArgument(String s) {
+        String escapeCharacter = "\\";
+        if (s.contains(escapeCharacter)) {
+            s = s.replace(escapeCharacter, "\\\\");
+        }
         String underscore = "_";
         if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
+            s = s.replace(underscore, "\\_");
         }
-        String fuzzySearchSign = "\\*";
+        String fuzzySearchSign = "*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
-            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+            return s.replace(fuzzySearchSign, sqlLikePercentSign);
         } else {
             return s;
         }
