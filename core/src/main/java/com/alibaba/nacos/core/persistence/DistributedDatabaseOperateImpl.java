@@ -76,6 +76,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -154,6 +155,16 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
      * The data import operation is dedicated key, which ACTS as an identifier.
      */
     private static final String DATA_IMPORT_KEY = "00--0-data_import-0--00";
+
+    private static final Map<String, Class<?>> BASIC_RESULT_TYPES;
+
+    static {
+        Map<String, Class<?>> resultTypes = new HashMap<>(3);
+        resultTypes.put(Integer.class.getCanonicalName(), Integer.class);
+        resultTypes.put(Long.class.getCanonicalName(), Long.class);
+        resultTypes.put(String.class.getCanonicalName(), String.class);
+        BASIC_RESULT_TYPES = Collections.unmodifiableMap(resultTypes);
+    }
     
     private final ServerMemberManager memberManager;
     
@@ -477,29 +488,30 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             selectRequest = serializer.deserialize(request.getData().toByteArray(), SelectRequest.class);
             LoggerUtils.printIfDebugEnabled(LOGGER, "getData info : selectRequest : {}", selectRequest);
             sqlLimiter.doLimitForSelectRequest(selectRequest);
-            final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
             final byte type = selectRequest.getQueryType();
             switch (type) {
                 case QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS:
-                    data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
+                    data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
+                            getRequiredRowMapper(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS:
                     data = queryOne(jdbcTemplate, selectRequest.getSql(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                            getBasicResultType(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS:
                     data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                            getBasicResultType(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS:
-                    data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
+                    data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
+                            getRequiredRowMapper(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS:
                     data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs());
                     break;
                 case QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS:
                     data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                            getBasicResultType(selectRequest.getClassName()));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported data query categories");
@@ -513,6 +525,22 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         } finally {
             readLock.unlock();
         }
+    }
+
+    static RowMapper<Object> getRequiredRowMapper(String className) {
+        RowMapper<Object> result = RowMapperManager.getRowMapper(className);
+        if (result == null) {
+            throw new IllegalArgumentException("Unregistered row mapper");
+        }
+        return result;
+    }
+
+    static Class<?> getBasicResultType(String className) {
+        Class<?> result = className == null ? null : BASIC_RESULT_TYPES.get(className);
+        if (result == null) {
+            throw new IllegalArgumentException("Unsupported basic result type");
+        }
+        return result;
     }
     
     @Override
