@@ -12,6 +12,12 @@ import { useNamespaceStore } from '@/stores/namespace-store';
 import { CONFIG_TYPES } from '@/types/config';
 import type { ConflictPolicy, ConfigCloneItem } from '@/types/config';
 import { configApi } from '@/api/config';
+import {
+  buildCloneItems,
+  normalizeCloneItems,
+  updateCloneItemField,
+} from './clone-items';
+import type { CloneItemField } from './clone-items';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +99,7 @@ export default function ConfigurationManagementPage() {
   // Clone state
   const [cloneTargetNamespace, setCloneTargetNamespace] = useState('');
   const [clonePolicy, setClonePolicy] = useState<ConflictPolicy>('ABORT');
+  const [cloneItems, setCloneItems] = useState<ConfigCloneItem[]>([]);
   const [cloning, setCloning] = useState(false);
 
   // Local state for search inputs
@@ -276,20 +283,33 @@ export default function ConfigurationManagementPage() {
   };
 
   // Clone
+  const openCloneDialog = () => {
+    setCloneTargetNamespace('');
+    setClonePolicy('ABORT');
+    setCloneItems(buildCloneItems(configs, selectedIds));
+    setCloneDialogOpen(true);
+  };
+
+  const handleCloneItemChange = (cfgId: string, field: CloneItemField, value: string) => {
+    setCloneItems((items) => updateCloneItemField(items, cfgId, field, value));
+  };
+
   const handleClone = async () => {
     if (!cloneTargetNamespace) {
       toast.error(t('config.noTargetNamespace'));
       return;
     }
     if (selectedIds.size === 0 || !currentNamespace) return;
+    if (cloneItems.some((item) => !item.dataId.trim())) {
+      toast.error(t('config.dataIdRequired'));
+      return;
+    }
+    if (cloneItems.some((item) => !item.group.trim())) {
+      toast.error(t('config.groupRequired'));
+      return;
+    }
 
-    const cloneItems: ConfigCloneItem[] = configs
-      .filter((c) => c.id && selectedIds.has(c.id))
-      .map((c) => ({
-        cfgId: c.id!,
-        dataId: c.dataId,
-        group: c.groupName,
-      }));
+    const cloneItemsToSubmit = normalizeCloneItems(cloneItems);
 
     setCloning(true);
     try {
@@ -299,12 +319,13 @@ export default function ConfigurationManagementPage() {
           targetNamespaceId: cloneTargetNamespace,
           policy: clonePolicy,
         },
-        cloneItems
+        cloneItemsToSubmit
       );
       toast.success(t('config.cloneSuccess'));
       setCloneDialogOpen(false);
       setCloneTargetNamespace('');
       setClonePolicy('ABORT');
+      setCloneItems([]);
       clearSelection();
     } catch {
       // Error toast handled by interceptor
@@ -491,11 +512,7 @@ export default function ConfigurationManagementPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              setCloneTargetNamespace('');
-              setClonePolicy('ABORT');
-              setCloneDialogOpen(true);
-            }}
+            onClick={openCloneDialog}
             className="gap-1"
           >
             <Copy className="h-3.5 w-3.5" />
@@ -796,7 +813,7 @@ export default function ConfigurationManagementPage() {
 
       {/* Clone Dialog */}
       <Dialog open={cloneDialogOpen} onOpenChange={setCloneDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('config.cloneTitle')}</DialogTitle>
           </DialogHeader>
@@ -858,10 +875,28 @@ export default function ConfigurationManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedConfigs.map((config) => (
-                    <TableRow key={config.id}>
-                      <TableCell className="pl-4 font-medium">{config.dataId}</TableCell>
-                      <TableCell>{config.groupName}</TableCell>
+                  {cloneItems.map((item) => (
+                    <TableRow key={item.cfgId}>
+                      <TableCell className="pl-4">
+                        <Input
+                          aria-label="Data ID"
+                          value={item.dataId}
+                          onChange={(event) =>
+                            handleCloneItemChange(item.cfgId, 'dataId', event.target.value)
+                          }
+                          className="min-w-[220px]"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          aria-label="Group"
+                          value={item.group}
+                          onChange={(event) =>
+                            handleCloneItemChange(item.cfgId, 'group', event.target.value)
+                          }
+                          className="min-w-[160px]"
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -872,7 +907,7 @@ export default function ConfigurationManagementPage() {
             <Button variant="outline" onClick={() => setCloneDialogOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleClone} disabled={!cloneTargetNamespace || cloning}>
+            <Button onClick={handleClone} disabled={!cloneTargetNamespace || cloneItems.length === 0 || cloning}>
               {cloning ? '...' : t('config.startClone')}
             </Button>
           </DialogFooter>

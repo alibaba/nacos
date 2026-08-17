@@ -63,6 +63,8 @@ public class ParamCheckRule {
     
     public String skillNamePatternString = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$";
     
+    public String skillSearchNamePatternString = "^[a-z0-9-]+$";
+    
     public int maxSkillNameLength = 64;
     
     public String mcpNamePatternString = "^[a-zA-Z0-9-_\\/\\.]+$";

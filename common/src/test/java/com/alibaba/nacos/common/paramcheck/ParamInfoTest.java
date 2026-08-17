@@ -161,4 +161,13 @@ class ParamInfoTest {
         paramInfo.setSkillName("skill-123");
         assertEquals("skill-123", paramInfo.getSkillName());
     }
+    
+    @Test
+    @DisplayName("Getter and setter for skillSearchName should work correctly")
+    void testSkillSearchNameGetterSetter() {
+        ParamInfo paramInfo = new ParamInfo();
+        assertNull(paramInfo.getSkillSearchName());
+        paramInfo.setSkillSearchName("skill-");
+        assertEquals("skill-", paramInfo.getSkillSearchName());
+    }
 }

@@ -31,6 +31,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -151,6 +152,7 @@ public class ConsoleSkillController {
     @Since("3.2.1")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @ExtractorManager.Extractor(httpExtractor = SkillListHttpParamExtractor.class)
     public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
         AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();

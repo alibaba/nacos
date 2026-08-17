@@ -77,9 +77,12 @@ export interface McpToolMeta {
   templates?: {
     'json-go-template'?: {
       requestTemplate?: Record<string, unknown>;
-      responseTemplate?: Record<string, unknown>;
       argsPosition?: Record<string, string>;
+      responseTemplate?: Record<string, unknown>;
+      errorResponseTemplate?: string;
+      [key: string]: unknown;
     };
+    [key: string]: unknown;
   };
   transparentAuth?: boolean;
   securitySchemeId?: string;

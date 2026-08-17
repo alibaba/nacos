@@ -1199,6 +1199,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         if (!CollectionUtils.isEmpty(ids)) {
             context.putWhereParameter(FieldConstant.IDS, ids);
+            if (tenant != null) {
+                context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+            }
         } else {
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
@@ -1218,6 +1221,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         if (CollectionUtils.isEmpty(configAllInfos)) {
             return configAllInfos;
+        }
+        if (!CollectionUtils.isEmpty(ids) && tenant != null) {
+            configAllInfos = configAllInfos.stream()
+                .filter(configAllInfo -> StringUtils.equals(tenantTmp, configAllInfo.getTenant()))
+                .collect(Collectors.toList());
         }
         for (ConfigAllInfo configAllInfo : configAllInfos) {
             List<String> configTagList =

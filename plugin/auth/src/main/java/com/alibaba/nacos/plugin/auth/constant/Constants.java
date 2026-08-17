@@ -79,6 +79,8 @@ public class Constants {
         public static final String REMOTE_IP = "remote_ip";
         
         public static final String IDENTITY_CONTEXT = "identity_context";
+        
+        public static final String SERVER_IDENTITY = "server_identity";
     }
     
     public static class Tag {
