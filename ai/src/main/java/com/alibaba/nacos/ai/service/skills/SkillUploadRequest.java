@@ -35,6 +35,8 @@ public class SkillUploadRequest {
     
     private String uploadAction;
     
+    private boolean autoPublishIfNew;
+    
     private String skillName;
     
     private String description;
@@ -69,6 +71,10 @@ public class SkillUploadRequest {
     
     public String getUploadAction() {
         return uploadAction;
+    }
+    
+    public boolean isAutoPublishIfNew() {
+        return autoPublishIfNew;
     }
     
     public String getSkillName() {
@@ -121,6 +127,11 @@ public class SkillUploadRequest {
         
         public Builder uploadAction(String uploadAction) {
             request.uploadAction = uploadAction;
+            return this;
+        }
+        
+        public Builder autoPublishIfNew(boolean autoPublishIfNew) {
+            request.autoPublishIfNew = autoPublishIfNew;
             return this;
         }
         

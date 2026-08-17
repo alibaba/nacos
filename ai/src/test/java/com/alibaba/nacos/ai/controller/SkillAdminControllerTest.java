@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -39,9 +40,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.ArgumentCaptor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -58,6 +61,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -160,6 +164,25 @@ class SkillAdminControllerTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(SKILL_ADMIN_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
             "Required parameter 'skillName' type String is not present");
+    }
+    
+    @Test
+    void testUploadSkillWithAutoPublishIfNew() throws Exception {
+        when(skillOperationService.uploadSkillFromZip(any(SkillUploadRequest.class)))
+            .thenReturn("test-skill");
+        MockMultipartFile file = new MockMultipartFile("file", "skill.zip",
+            "application/zip", new byte[] {1, 2, 3});
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.multipart(SKILL_ADMIN_PATH + "/upload")
+                .file(file).param("autoPublishIfNew", "true"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        ArgumentCaptor<SkillUploadRequest> captor =
+            ArgumentCaptor.forClass(SkillUploadRequest.class);
+        verify(skillOperationService).uploadSkillFromZip(captor.capture());
+        assertTrue(captor.getValue().isAutoPublishIfNew());
     }
     
     @Test
