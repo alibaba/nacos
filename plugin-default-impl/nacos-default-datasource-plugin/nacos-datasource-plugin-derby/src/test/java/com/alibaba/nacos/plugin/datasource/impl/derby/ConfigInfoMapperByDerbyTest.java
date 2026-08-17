@@ -31,6 +31,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigInfoMapperByDerbyTest {
     
@@ -254,6 +255,14 @@ class ConfigInfoMapperByDerbyTest {
             mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
         
+    }
+    
+    @Test
+    void testFindAllConfigInfo4ExportDeclaresLikeEscape() {
+        context.putWhereParameter(FieldConstant.IDS, null);
+        context.putWhereParameter(FieldConstant.DATA_ID, "data\\_id");
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
+        assertTrue(mapperResult.getSql().contains(" AND data_id LIKE ? ESCAPE '\\' "));
     }
     
     @Test

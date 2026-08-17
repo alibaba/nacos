@@ -123,19 +123,20 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle
             "SELECT DISTINCT a.id FROM config_info a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id");
         
-        idQuery.like("a.tenant_id", tenant);
+        String escapeClause = getLikeEscapeClause();
+        idQuery.like("a.tenant_id", tenant, escapeClause);
         
         if (StringUtils.isNotBlank(dataId)) {
-            idQuery.and().like("a.data_id", dataId);
+            idQuery.and().like("a.data_id", dataId, escapeClause);
         }
         if (StringUtils.isNotBlank(group)) {
-            idQuery.and().like("a.group_id", group);
+            idQuery.and().like("a.group_id", group, escapeClause);
         }
         if (StringUtils.isNotBlank(appName)) {
             idQuery.and().eq("a.app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            idQuery.and().like("a.content", content);
+            idQuery.and().like("a.content", content, escapeClause);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
             idQuery.and().startParentheses();
@@ -143,7 +144,7 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle
                 if (i != 0) {
                     idQuery.or();
                 }
-                idQuery.like("b.tag_name", tagArr[i]);
+                idQuery.like("b.tag_name", tagArr[i], escapeClause);
             }
             idQuery.endParentheses();
         }

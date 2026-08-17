@@ -31,7 +31,12 @@ public interface AiResourcePersistService {
     
     /**
      * Convert a search argument that may contain Nacos wildcard ({@code *}) to SQL LIKE syntax ({@code %}).
-     * Also escapes the SQL single-char wildcard ({@code _}) with backslash.
+     * Also escapes the escape character ({@code \}) itself and the SQL single-char wildcard ({@code _}),
+     * so the produced argument stays valid for the {@code ESCAPE '\'} clause declared by the mappers.
+     *
+     * <p>The escape character must be doubled before {@code _} is escaped, otherwise a literal backslash
+     * in the search value would start an invalid escape sequence and the database would reject the query
+     * (Oracle {@code ORA-01424}, Derby {@code SQLSTATE 22025}).</p>
      *
      * <p>Aligned with {@code ConfigInfoPersistService#generateLikeArgument}.</p>
      *
@@ -39,14 +44,18 @@ public interface AiResourcePersistService {
      * @return the SQL-safe LIKE argument, e.g. {@code %keyword%}
      */
     default String generateLikeArgument(String s) {
+        String escapeCharacter = "\\";
+        if (s.contains(escapeCharacter)) {
+            s = s.replace(escapeCharacter, "\\\\");
+        }
         String underscore = "_";
         if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
+            s = s.replace(underscore, "\\_");
         }
-        String fuzzySearchSign = "\\*";
+        String fuzzySearchSign = "*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
-            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+            return s.replace(fuzzySearchSign, sqlLikePercentSign);
         } else {
             return s;
         }

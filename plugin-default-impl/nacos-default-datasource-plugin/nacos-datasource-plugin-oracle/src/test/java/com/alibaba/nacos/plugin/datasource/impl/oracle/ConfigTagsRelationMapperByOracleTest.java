@@ -92,6 +92,30 @@ class ConfigTagsRelationMapperByOracleTest {
     }
     
     @Test
+    void testFindConfigInfoLike4PageCountRowsDeclaresLikeEscape() {
+        MapperResult mapperResult =
+            configTagsRelationMapperByOracle.findConfigInfoLike4PageCountRows(context);
+        String sql = mapperResult.getSql();
+        assertTrue(sql.contains("a.tenant_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.data_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.group_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.content LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("b.tag_name LIKE ? ESCAPE '\\'"));
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageFetchRowsDeclaresLikeEscape() {
+        MapperResult mapperResult =
+            configTagsRelationMapperByOracle.findConfigInfoLike4PageFetchRows(context);
+        String sql = mapperResult.getSql();
+        assertTrue(sql.contains("a.tenant_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.data_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.group_id LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("a.content LIKE ? ESCAPE '\\'"));
+        assertTrue(sql.contains("b.tag_name LIKE ? ESCAPE '\\'"));
+    }
+    
+    @Test
     void testGetTableName() {
         String tableName = configTagsRelationMapperByOracle.getTableName();
         assertEquals(TableConstant.CONFIG_TAGS_RELATION, tableName);

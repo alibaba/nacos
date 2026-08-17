@@ -27,6 +27,11 @@ import java.util.List;
 public interface Mapper {
     
     /**
+     * The LIKE escape clause for the dialects which have no default escape character.
+     */
+    String LIKE_ESCAPE_CLAUSE = "ESCAPE '\\' ";
+    
+    /**
      * The select method contains columns and where params.
      * @param columns The columns
      * @param where The where params
@@ -91,4 +96,19 @@ public interface Mapper {
      * @return function
      */
     String getFunction(String functionName);
+    
+    /**
+     * Get the LIKE escape clause required by the datasource of this mapper.
+     *
+     * <p>Fuzzy search parameters escape the {@code _} wildcard with a backslash, which only works
+     * out of the box on the datasource treating the backslash as the default LIKE escape
+     * character, such as MySQL and PostgreSQL. The datasource without such a default, such as
+     * Derby and Oracle, MUST override this method to declare the escape character explicitly,
+     * otherwise the backslash is matched literally and no row is returned.</p>
+     *
+     * @return The escape clause appended after {@code LIKE ?}, empty if no escape clause is needed
+     */
+    default String getLikeEscapeClause() {
+        return "";
+    }
 }

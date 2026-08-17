@@ -2299,4 +2299,32 @@ class ExternalConfigInfoPersistServiceImplTest {
         assertEquals("data%", result);
     }
     
+    @Test
+    void testGenerateLikeArgumentEscapesUnderscoreWithoutWildcard() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "nacos_test");
+        assertEquals("nacos\\_test", result);
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesBackslash() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "*C:\\path*");
+        assertEquals("%C:\\\\path%", result);
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesTrailingBackslash() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "*trail\\*");
+        assertEquals("%trail\\\\%", result);
+    }
+    
+    @Test
+    void testGenerateLikeArgumentEscapesBackslashBeforeUnderscore() {
+        String result = externalConfigInfoPersistService.generateLikeArgument(
+            "*a\\_b*");
+        assertEquals("%a\\\\\\_b%", result);
+    }
+    
 }
