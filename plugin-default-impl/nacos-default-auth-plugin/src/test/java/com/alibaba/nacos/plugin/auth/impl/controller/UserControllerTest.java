@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -34,6 +35,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -134,6 +137,20 @@ class UserControllerTest {
         String actualString = actual.toString();
         assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
         assertTrue(actualString.contains("\"globalAdmin\":false"));
+    }
+    
+    @Test
+    void testLoginWithInvalidCredentials() throws Exception {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
+        when(authenticationManager.authenticate(request))
+            .thenThrow(new AccessException("authentication detail"));
+        
+        Object actual = userController.login("nacos", "bad", response, request);
+        
+        assertTrue(actual instanceof ResponseEntity);
+        ResponseEntity<?> result = (ResponseEntity<?>) actual;
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+        assertEquals(AuthConstants.INVALID_CREDENTIALS_MESSAGE, result.getBody());
     }
     
     @Test
