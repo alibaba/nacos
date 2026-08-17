@@ -44,6 +44,8 @@ Current intentional response-shape exceptions:
 - Streaming copilot endpoints return Server-Sent Events.
 - Health readiness may return HTTP 500 with a `Result<String>` body when not
   ready.
+- Default-auth v1 and v3 login success returns the legacy flat token object,
+  while credential failures return HTTP 403 with a generic plain-text body.
 - Some legacy or operational endpoints may return plain text. These should be
   kept only when confirmed as compatibility behavior.
 

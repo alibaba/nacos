@@ -49,6 +49,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -473,6 +474,21 @@ class UserControllerV3Test {
         assertTrue(actualString.contains("\"globalAdmin\":false"));
         assertEquals(AuthConstants.TOKEN_PREFIX + "ldap-token",
             response.getHeader(AuthConstants.AUTHORIZATION_HEADER));
+    }
+    
+    @Test
+    void testLoginWithInvalidCredentials() throws AccessException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
+        when(iAuthenticationManager.authenticate(request))
+            .thenThrow(new AccessException("authentication detail"));
+        
+        Object actual = userControllerV3.login(new MockHttpServletResponse(), request);
+        
+        assertTrue(actual instanceof ResponseEntity);
+        ResponseEntity<?> result = (ResponseEntity<?>) actual;
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+        assertEquals(AuthConstants.INVALID_CREDENTIALS_MESSAGE, result.getBody());
     }
     
     @Test

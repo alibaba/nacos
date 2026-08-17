@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -94,8 +95,13 @@ public class UserController {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
             || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            
-            NacosUser user = iAuthenticationManager.authenticate(request);
+            NacosUser user;
+            try {
+                user = iAuthenticationManager.authenticate(request);
+            } catch (AccessException ignored) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(AuthConstants.INVALID_CREDENTIALS_MESSAGE);
+            }
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER,
                 AuthConstants.TOKEN_PREFIX + user.getToken());

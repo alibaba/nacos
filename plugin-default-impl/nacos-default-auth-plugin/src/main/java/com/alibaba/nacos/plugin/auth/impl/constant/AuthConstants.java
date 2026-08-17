@@ -42,6 +42,9 @@ public class AuthConstants {
     
     public static final String PARAM_PASSWORD = "password";
     
+    public static final String INVALID_CREDENTIALS_MESSAGE =
+        "User not found! Please check user exist or password is right!";
+    
     /**
      * Console resource name prefix.
      *
