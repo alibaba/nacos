@@ -29,3 +29,20 @@ describe('Config editor namespace switching', () => {
     expect(CONFIG_EDITOR_SOURCE).toContain('redirectToConfigList(true);');
   });
 });
+
+describe('Config editor compact layout', () => {
+  it('uses responsive horizontal form rows for primary fields', () => {
+    expect(CONFIG_EDITOR_SOURCE).toContain("md:grid-cols-[4rem_minmax(0,1fr)]");
+    expect(CONFIG_EDITOR_SOURCE).toContain('<Card className="gap-3 py-4">');
+    expect(CONFIG_EDITOR_SOURCE).toContain('rows={2}');
+  });
+
+  it('keeps application and tags in collapsed advanced options', () => {
+    expect(CONFIG_EDITOR_SOURCE).toContain(
+      'const [advancedOpen, setAdvancedOpen] = useState(false);',
+    );
+    expect(CONFIG_EDITOR_SOURCE).toContain('<Collapsible open={advancedOpen}');
+    expect(CONFIG_EDITOR_SOURCE).toContain("t('config.advancedOptions')");
+    expect(CONFIG_EDITOR_SOURCE).toContain('space-y-4 px-4 pb-4 pt-3');
+  });
+});
