@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Copy, Check, FileText, Hash, AppWindow, User, Globe, Zap, Clock, Shield } from 'lucide-react';
+import {
+  AppWindow,
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Clock,
+  Copy,
+  FileText,
+  Globe,
+  Hash,
+  Shield,
+  User,
+  Zap,
+} from 'lucide-react';
 
 import { useHistoryStore } from '@/stores/history-store';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
@@ -10,6 +23,11 @@ import type { ConfigHistoryDetail } from '@/types/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 export default function HistoryDetailPage() {
   const { t } = useTranslation();
@@ -25,6 +43,7 @@ export default function HistoryDetailPage() {
     useHistoryStore();
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [metadataOpen, setMetadataOpen] = useState(false);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -111,7 +130,7 @@ export default function HistoryDetailPage() {
   };
 
   /** Inline copyable text with refined hover interaction */
-  const CopyableText = ({ text, field, mono }: { text: string; field: string; mono?: boolean }) => (
+  const renderCopyableText = (text: string, field: string, mono = false) => (
     <span className="group/copy inline-flex items-center gap-1.5 max-w-full">
       <span className={`truncate ${mono ? 'font-mono text-[13px] tracking-tight' : ''}`}>{text}</span>
       <button
@@ -167,7 +186,7 @@ export default function HistoryDetailPage() {
   const grayRule = getGrayRule();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-5 px-6 pb-6 pt-2">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={handleBack}>
@@ -177,10 +196,11 @@ export default function HistoryDetailPage() {
       </div>
 
       {/* Metadata Card */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
+      <Collapsible open={metadataOpen} onOpenChange={setMetadataOpen} asChild>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
           {/* Hero identity banner — Data ID + Group prominently displayed with op-type-tinted bg */}
-          <div className="px-6 py-5 border-b border-border/60">
+          <div className="px-6 py-4 border-b border-border/60">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 flex flex-wrap items-start gap-x-10 gap-y-3">
                 {/* Data ID */}
@@ -190,7 +210,7 @@ export default function HistoryDetailPage() {
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.dataId')}</span>
                   </div>
                   <div className="text-base font-semibold tracking-tight break-all leading-snug">
-                    <CopyableText text={historyDetail.dataId} field="dataId" />
+                    {renderCopyableText(historyDetail.dataId, 'dataId')}
                   </div>
                 </div>
                 {/* Group */}
@@ -200,19 +220,29 @@ export default function HistoryDetailPage() {
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.group')}</span>
                   </div>
                   <div className="text-base font-semibold tracking-tight break-all">
-                    <CopyableText text={historyDetail.groupName} field="group" />
+                    {renderCopyableText(historyDetail.groupName, 'group')}
                   </div>
                 </div>
               </div>
-              {/* Op Type badge — visually prominent pill */}
-              <span className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getOpTypeBadgeClass(historyDetail.opType)}`}>
-                {getOpTypeLabel(historyDetail.opType)}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Op Type badge — visually prominent pill */}
+                <span className={`inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getOpTypeBadgeClass(historyDetail.opType)}`}>
+                  {getOpTypeLabel(historyDetail.opType)}
+                </span>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    {metadataOpen ? t('config.collapseMetadata') : t('config.expandMetadata')}
+                    <ChevronDown
+                      className={`ml-1.5 h-4 w-4 transition-transform ${metadataOpen ? 'rotate-180' : ''}`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
             </div>
           </div>
 
           {/* Metadata grid */}
-          <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <CollapsibleContent className="grid grid-cols-1 gap-4 px-6 pb-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Namespace */}
             <div className="flex items-start gap-3">
               <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -269,7 +299,7 @@ export default function HistoryDetailPage() {
               <div className="min-w-0 overflow-hidden">
                 <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.md5')}</div>
                 <div className="text-sm">
-                  <CopyableText text={historyDetail.md5} field="md5" mono />
+                  {renderCopyableText(historyDetail.md5, 'md5', true)}
                 </div>
               </div>
             </div>
@@ -298,9 +328,10 @@ export default function HistoryDetailPage() {
                 </div>
               </>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
 
       {/* Content Card */}
       <Card>
@@ -312,7 +343,7 @@ export default function HistoryDetailPage() {
             value={historyDetail.content || ''}
             language={historyDetail.type || 'text'}
             readOnly
-            height="350px"
+            height="max(420px, calc(100vh - 320px))"
           />
         </CardContent>
       </Card>
