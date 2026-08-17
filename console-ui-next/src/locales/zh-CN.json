@@ -467,6 +467,8 @@
     "versionPlaceholder": "例如: 1.0.0",
     "descriptionPlaceholder": "描述该 MCP Server 的功能",
     "securitySchemeId": "方案 ID",
+    "securitySchemeRequired": "启用透传认证时必须填写方案 ID",
+    "clientSecuritySchemeRequired": "启用透传认证时必须填写客户端安全方案",
     "securitySchemeType": "认证类型",
     "schemeBasic": "Basic",
     "schemeBearer": "Bearer",
