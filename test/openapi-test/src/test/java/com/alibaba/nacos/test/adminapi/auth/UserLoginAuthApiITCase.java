@@ -57,7 +57,7 @@ public class UserLoginAuthApiITCase extends OpenApiBaseITCase {
 
     @Test
     void testLoginResponseCompatibility() throws Exception {
-        String username = "openapi_it_login_" + UUID.randomUUID();
+        String username = "login_it_" + UUID.randomUUID();
         createUser(username);
 
         HttpResponse v3Success = waitForLoginSuccess(V3_LOGIN_PATH, username);
