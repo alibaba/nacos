@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { mergeJsonTemplateFields, parseArgsPosition } from '../tool-template-utils';
+import {
+  mergeJsonTemplateFields,
+  mergeToolSecurityConfig,
+  parseArgsPosition,
+  readToolSecurityConfig,
+} from '../tool-template-utils';
 
 describe('parseArgsPosition', () => {
   it.each(['query', 'path', 'header', 'cookie', 'body'])(
@@ -155,5 +160,90 @@ describe('mergeJsonTemplateFields', () => {
 
   it('removes empty template containers', () => {
     expect(mergeJsonTemplateFields({ 'json-go-template': { argsPosition: {} } }, {})).toBeUndefined();
+  });
+});
+
+describe('tool security config', () => {
+  it('reads runtime security fields from the json template', () => {
+    expect(
+      readToolSecurityConfig({
+        templates: {
+          'json-go-template': {
+            requestTemplate: { security: { id: 'backend-auth' } },
+            security: { id: 'client-auth', passthrough: true },
+          },
+        },
+      })
+    ).toEqual({
+      transparentAuth: true,
+      securitySchemeId: 'backend-auth',
+      clientSecuritySchemeId: 'client-auth',
+    });
+  });
+
+  it('reads legacy editor-only fields for unsaved compatibility', () => {
+    expect(
+      readToolSecurityConfig({
+        transparentAuth: true,
+        securitySchemeId: 'legacy-backend',
+        clientSecuritySchemeId: 'legacy-client',
+      })
+    ).toEqual({
+      transparentAuth: true,
+      securitySchemeId: 'legacy-backend',
+      clientSecuritySchemeId: 'legacy-client',
+    });
+  });
+
+  it('writes runtime security fields and preserves template extensions', () => {
+    expect(
+      mergeToolSecurityConfig(
+        {
+          'json-go-template': {
+            requestTemplate: { method: 'GET', extension: true },
+            responseTemplate: { body: '{{ .data }}' },
+          },
+          'other-template': { keep: true },
+        },
+        {
+          transparentAuth: true,
+          securitySchemeId: 'backend-auth',
+          clientSecuritySchemeId: 'client-auth',
+        }
+      )
+    ).toEqual({
+      'json-go-template': {
+        requestTemplate: {
+          method: 'GET',
+          extension: true,
+          security: { id: 'backend-auth' },
+        },
+        responseTemplate: { body: '{{ .data }}' },
+        security: { id: 'client-auth', passthrough: true },
+      },
+      'other-template': { keep: true },
+    });
+  });
+
+  it('removes passthrough config without removing backend authentication', () => {
+    expect(
+      mergeToolSecurityConfig(
+        {
+          'json-go-template': {
+            requestTemplate: { security: { id: 'backend-auth' } },
+            security: { id: 'client-auth', passthrough: true },
+          },
+        },
+        {
+          transparentAuth: false,
+          securitySchemeId: '',
+          clientSecuritySchemeId: '',
+        }
+      )
+    ).toEqual({
+      'json-go-template': {
+        requestTemplate: { security: { id: 'backend-auth' } },
+      },
+    });
   });
 });
