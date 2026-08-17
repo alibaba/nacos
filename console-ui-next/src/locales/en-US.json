@@ -486,6 +486,8 @@
     "versionPlaceholder": "e.g. 1.0.0",
     "descriptionPlaceholder": "Describe the MCP Server functionality",
     "securitySchemeId": "Scheme ID",
+    "securitySchemeRequired": "Scheme ID is required when passthrough authentication is enabled",
+    "clientSecuritySchemeRequired": "Client security scheme is required when passthrough authentication is enabled",
     "securitySchemeType": "Auth Type",
     "schemeBasic": "Basic",
     "schemeBearer": "Bearer",
