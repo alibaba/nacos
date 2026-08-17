@@ -187,6 +187,22 @@ auth implementations, including [RAM](ram-auth-plugin-spec.md) and
 [OIDC](oidc-auth-plugin-spec.md), are documented as Java Client SDK extensions
 in the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md).
 
+### Login Response Compatibility
+
+Successful default-auth login responses from `/v3/auth/user/login` and the
+legacy v1 login routes remain a flat token object containing `accessToken`,
+`tokenTtl`, `globalAdmin`, and `username`. They are not wrapped in `Result<T>`
+because released Java clients parse this flat shape directly.
+
+An unknown username, an incorrect password, or blank credentials must produce
+the same HTTP 403 status and the same generic
+`User not found! Please check user exist or password is right!` response body.
+The HTTP status and response body must not disclose whether the username exists.
+Unknown-user authentication does not perform a password hash comparison, so
+arbitrary usernames cannot force the server to execute the CPU-intensive
+password encoder. Unexpected user storage or token issuance failures are
+operational errors and must not be converted into credential failures.
+
 ## RBAC Storage Model
 
 The default plugin stores:

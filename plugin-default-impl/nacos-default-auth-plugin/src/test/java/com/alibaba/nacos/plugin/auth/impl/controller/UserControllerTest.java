@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
@@ -39,6 +40,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
@@ -138,6 +141,20 @@ class UserControllerTest {
         String actualString = actual.toString();
         assertTrue(actualString.contains("accessToken=1234567890"));
         assertTrue(actualString.contains("globalAdmin=false"));
+    }
+    
+    @Test
+    void testLoginWithInvalidCredentials() throws Exception {
+        when(serverAuthConfig.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
+        when(authenticationManager.authenticate(request))
+            .thenThrow(new AccessException("authentication detail"));
+        
+        Object actual = userController.login("nacos", "bad", response, request);
+        
+        assertTrue(actual instanceof ResponseEntity);
+        ResponseEntity<?> result = (ResponseEntity<?>) actual;
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+        assertEquals(AuthConstants.INVALID_CREDENTIALS_MESSAGE, result.getBody());
     }
     
     @Test

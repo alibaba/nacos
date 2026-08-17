@@ -58,14 +58,15 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | Client OpenAPI | 11 | 11 | 0 | 0 | 100.00% | 100.00% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
-| Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 81 | 67 | 11 | 3 | 82.72% | 89.51% |
+| Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
+| Total | 81 | 67 | 12 | 2 | 82.72% | 90.12% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
 shared runtime/storage state, require publish-pipeline plugin data, require a
-data-plane publisher binding not yet present in standalone IT, or require an
-external LLM provider.
+data-plane publisher binding not yet present in standalone IT, require an
+external LLM provider, or belong to the remaining default-auth user management
+operations outside the covered login contract.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently

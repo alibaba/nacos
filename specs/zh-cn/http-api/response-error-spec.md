@@ -42,6 +42,8 @@ V3 JSON 响应默认使用 `com.alibaba.nacos.api.model.v2.Result<T>`：
 - Copilot 流式端点返回 Server-Sent Events。
 - 健康检查 readiness 在未就绪时可以返回 HTTP 500，并携带
   `Result<String>` 响应体。
+- 默认鉴权 v1 和 v3 登录成功时返回遗留的平铺 token 对象，凭据错误时返回 HTTP 403
+  和通用纯文本响应体。
 - 部分遗留或运维端点可以返回纯文本。只有在确认属于兼容行为后，才应保留。
 
 ## 3. 错误处理
