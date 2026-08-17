@@ -197,11 +197,11 @@ because released Java clients parse this flat shape directly.
 An unknown username, an incorrect password, or blank credentials must produce
 the same HTTP 403 status and the same generic
 `User not found! Please check user exist or password is right!` response body.
-The response must not disclose whether the username exists.
-Unknown-user authentication performs a dummy password hash comparison so its
-password-check path is comparable to the wrong-password path. Unexpected user
-storage or token issuance failures are operational errors and must not be
-converted into credential failures.
+The HTTP status and response body must not disclose whether the username exists.
+Unknown-user authentication does not perform a password hash comparison, so
+arbitrary usernames cannot force the server to execute the CPU-intensive
+password encoder. Unexpected user storage or token issuance failures are
+operational errors and must not be converted into credential failures.
 
 ## RBAC Storage Model
 

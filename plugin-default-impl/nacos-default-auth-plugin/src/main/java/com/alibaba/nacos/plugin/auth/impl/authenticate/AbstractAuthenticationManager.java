@@ -42,9 +42,6 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     private static final String INVALID_CREDENTIALS_MESSAGE =
         "User not found! Please check user exist or password is right!";
     
-    private static final String DUMMY_ENCODED_PASSWORD =
-        "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXYxhzTmjWGJ21T.WX8thVsw0K2mO";
-    
     protected NacosUserService userDetailsService;
     
     protected TokenManagerDelegate jwtTokenManager;
@@ -69,12 +66,10 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
             nacosUserDetails =
                 (NacosUserDetails) userDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException ignored) {
-            // Use the dummy password below so unknown users follow the same password-check path.
+            throw new AccessException(INVALID_CREDENTIALS_MESSAGE);
         }
-        String encodedPassword = nacosUserDetails == null
-            ? DUMMY_ENCODED_PASSWORD : nacosUserDetails.getPassword();
-        boolean passwordMatches = PasswordEncoderUtil.matches(rawPassword, encodedPassword);
-        if (nacosUserDetails == null || !passwordMatches) {
+        if (nacosUserDetails == null
+            || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
             throw new AccessException(INVALID_CREDENTIALS_MESSAGE);
         }
         return new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));

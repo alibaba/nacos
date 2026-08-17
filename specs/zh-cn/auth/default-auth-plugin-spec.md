@@ -155,9 +155,9 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 包装，因为已发布的 Java 客户端会直接解析这一平铺结构。
 
 用户名不存在、密码错误或凭据为空时，必须返回相同的 HTTP 403 状态和相同的通用
-`User not found! Please check user exist or password is right!` 响应体，不得泄露用户名是否
-存在。未知用户认证必须执行一次虚拟密码哈希比对，使密码检查路径与密码错误路径接近。
-用户存储或 token 签发的非预期故障属于运行异常，不得转换为凭据错误。
+`User not found! Please check user exist or password is right!` 响应体，HTTP 状态和响应体不得
+泄露用户名是否存在。未知用户认证不执行密码哈希比对，避免攻击者使用任意用户名迫使服务端执行高 CPU
+开销的密码编码操作。用户存储或 token 签发的非预期故障属于运行异常，不得转换为凭据错误。
 
 ## RBAC 存储模型
 
