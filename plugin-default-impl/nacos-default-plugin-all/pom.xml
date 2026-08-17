@@ -109,6 +109,19 @@
                 <version>3.1.0</version>
                 <executions>
                     <execution>
+                        <id>clean-distribution-plugins</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete dir="${project.basedir}/../../distribution/plugins"/>
+                                <mkdir dir="${project.basedir}/../../distribution/plugins"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-db-schema-sql-to-distribution-conf</id>
                         <phase>package</phase>
                         <goals>

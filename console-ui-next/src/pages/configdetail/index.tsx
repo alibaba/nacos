@@ -2,7 +2,23 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ArrowLeft, Pencil, History, Trash2, Copy, Check, Clock, FileText, Hash, Tag, AppWindow, AlignLeft } from 'lucide-react';
+import {
+  AlignLeft,
+  AppWindow,
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Clock,
+  Copy,
+  FileText,
+  Hash,
+  History,
+  Maximize2,
+  Minimize2,
+  Pencil,
+  Tag,
+  Trash2,
+} from 'lucide-react';
 
 import { useConfigStore } from '@/stores/config-store';
 import { configApi } from '@/api/config';
@@ -11,6 +27,11 @@ import { MonacoEditor } from '@/components/config/MonacoEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +51,8 @@ export default function ConfigDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [metadataOpen, setMetadataOpen] = useState(false);
+  const [contentFullscreen, setContentFullscreen] = useState(false);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -50,6 +73,26 @@ export default function ConfigDetailPage() {
       clearCurrentConfig();
     };
   }, [dataId, group, namespace, fetchConfig, clearCurrentConfig]);
+
+  useEffect(() => {
+    if (!contentFullscreen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContentFullscreen(false);
+      }
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contentFullscreen]);
 
   const handleBack = () => {
     navigate(buildConfigListPathFromDetail(searchParams));
@@ -73,7 +116,7 @@ export default function ConfigDetailPage() {
       });
       toast.success(t('config.deleteSuccess'));
       navigate('/configurationManagement');
-    } catch (error) {
+    } catch {
       toast.error(t('common.failed'));
     } finally {
       setDeleting(false);
@@ -158,7 +201,7 @@ export default function ConfigDetailPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-5 px-6 pb-6 pt-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -184,124 +227,150 @@ export default function ConfigDetailPage() {
       </div>
 
       {/* Info Card */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          {/* Hero identity banner — Data ID prominently displayed with type-tinted bg */}
-          <div className="px-6 py-5 border-b border-border/60">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1 flex flex-wrap items-start gap-x-10 gap-y-3">
-                {/* Data ID */}
+      <Collapsible open={metadataOpen} onOpenChange={setMetadataOpen} asChild>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {/* Hero identity banner — Data ID prominently displayed with type-tinted bg */}
+            <div className="px-6 py-4 border-b border-border/60">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 flex flex-wrap items-start gap-x-10 gap-y-3">
+                  {/* Data ID */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.dataId')}</span>
+                    </div>
+                    <div className="text-base font-semibold tracking-tight break-all leading-snug">
+                      <CopyableText text={currentConfig.dataId} field="dataId" />
+                    </div>
+                  </div>
+                  {/* Group */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Hash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.group')}</span>
+                    </div>
+                    <div className="text-base font-semibold tracking-tight break-all">
+                      <CopyableText text={currentConfig.groupName} field="group" />
+                    </div>
+                  </div>
+                </div>
+                {/* Type badge — visually prominent pill */}
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={`inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getTypeBadgeClass(currentConfig.type)}`}>
+                    {currentConfig.type?.toUpperCase() || 'TEXT'}
+                  </span>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                      {metadataOpen ? t('config.collapseMetadata') : t('config.expandMetadata')}
+                      <ChevronDown
+                        className={`ml-1.5 h-4 w-4 transition-transform ${metadataOpen ? 'rotate-180' : ''}`}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+            </div>
+
+            {/* Metadata grid — structured two-column layout */}
+            <CollapsibleContent className="grid grid-cols-1 gap-4 px-6 pb-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* App Name */}
+              <div className="flex items-start gap-3">
+                <AppWindow className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.dataId')}</span>
-                  </div>
-                  <div className="text-base font-semibold tracking-tight break-all leading-snug">
-                    <CopyableText text={currentConfig.dataId} field="dataId" />
-                  </div>
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.appName')}</div>
+                  <div className="text-sm">{currentConfig.appName || '-'}</div>
                 </div>
-                {/* Group */}
+              </div>
+
+              {/* Tags */}
+              <div className="flex items-start gap-3">
+                <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Hash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('config.group')}</span>
+                  <div className="text-xs font-medium text-muted-foreground mb-1">{t('config.tags')}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentConfig.configTags
+                      ? currentConfig.configTags.split(',').filter(Boolean).map((tag, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-inset ring-border/50">
+                            {tag.trim()}
+                          </span>
+                        ))
+                      : <span className="text-sm text-muted-foreground">-</span>
+                    }
                   </div>
-                  <div className="text-base font-semibold tracking-tight break-all">
-                    <CopyableText text={currentConfig.groupName} field="group" />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="flex items-start gap-3 sm:col-span-2 lg:col-span-1">
+                <AlignLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.description')}</div>
+                  <div className="text-sm leading-relaxed">{currentConfig.desc || '-'}</div>
+                </div>
+              </div>
+
+              {/* Divider spanning full width */}
+              <div className="sm:col-span-2 lg:col-span-3 border-t border-dashed border-border/60" />
+
+              {/* MD5 */}
+              <div className="flex items-start gap-3">
+                <Hash className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.md5')}</div>
+                  <div className="text-sm">
+                    <CopyableText text={currentConfig.md5} field="md5" mono />
                   </div>
                 </div>
               </div>
-              {/* Type badge — visually prominent pill */}
-              <span className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-bold tracking-wide shadow-sm ${getTypeBadgeClass(currentConfig.type)}`}>
-                {currentConfig.type?.toUpperCase() || 'TEXT'}
-              </span>
-            </div>
-          </div>
 
-          {/* Metadata grid — structured two-column layout */}
-          <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* App Name */}
-            <div className="flex items-start gap-3">
-              <AppWindow className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.appName')}</div>
-                <div className="text-sm">{currentConfig.appName || '-'}</div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="flex items-start gap-3">
-              <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground mb-1">{t('config.tags')}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {currentConfig.configTags
-                    ? currentConfig.configTags.split(',').filter(Boolean).map((tag, i) => (
-                        <span key={i} className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-inset ring-border/50">
-                          {tag.trim()}
-                        </span>
-                      ))
-                    : <span className="text-sm text-muted-foreground">-</span>
-                  }
+              {/* Create Time */}
+              <div className="flex items-start gap-3">
+                <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.createTime')}</div>
+                  <div className="text-sm tabular-nums">{formatTime(currentConfig.createTime)}</div>
                 </div>
               </div>
-            </div>
 
-            {/* Description */}
-            <div className="flex items-start gap-3 sm:col-span-2 lg:col-span-1">
-              <AlignLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.description')}</div>
-                <div className="text-sm leading-relaxed">{currentConfig.desc || '-'}</div>
-              </div>
-            </div>
-
-            {/* Divider spanning full width */}
-            <div className="sm:col-span-2 lg:col-span-3 border-t border-dashed border-border/60" />
-
-            {/* MD5 */}
-            <div className="flex items-start gap-3">
-              <Hash className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0 overflow-hidden">
-                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.md5')}</div>
-                <div className="text-sm">
-                  <CopyableText text={currentConfig.md5} field="md5" mono />
+              {/* Modify Time */}
+              <div className="flex items-start gap-3">
+                <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.modifyTime')}</div>
+                  <div className="text-sm tabular-nums">{formatTime(currentConfig.modifyTime)}</div>
                 </div>
               </div>
-            </div>
-
-            {/* Create Time */}
-            <div className="flex items-start gap-3">
-              <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.createTime')}</div>
-                <div className="text-sm tabular-nums">{formatTime(currentConfig.createTime)}</div>
-              </div>
-            </div>
-
-            {/* Modify Time */}
-            <div className="flex items-start gap-3">
-              <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('config.modifyTime')}</div>
-                <div className="text-sm tabular-nums">{formatTime(currentConfig.modifyTime)}</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
 
       {/* Content Card */}
-      <Card>
-        <CardHeader>
+      <Card className={contentFullscreen
+        ? 'fixed inset-0 z-50 flex flex-col rounded-none border-0 bg-background'
+        : ''}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>{t('config.content')}</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setContentFullscreen(!contentFullscreen)}
+          >
+            {contentFullscreen
+              ? <Minimize2 className="mr-2 h-4 w-4" />
+              : <Maximize2 className="mr-2 h-4 w-4" />}
+            {contentFullscreen ? t('config.exitFullscreen') : t('config.viewFullscreen')}
+          </Button>
         </CardHeader>
-        <CardContent className="p-6 pt-0">
+        <CardContent className={contentFullscreen ? 'min-h-0 flex-1 p-6 pt-0' : 'p-6 pt-0'}>
           <MonacoEditor
             value={currentConfig.content || ''}
             language={(currentConfig.type as ConfigType) || 'text'}
             readOnly
-            height="350px"
+            height={contentFullscreen ? '100%' : 'max(420px, calc(100vh - 320px))'}
+            className={contentFullscreen ? 'h-full' : undefined}
           />
         </CardContent>
       </Card>
