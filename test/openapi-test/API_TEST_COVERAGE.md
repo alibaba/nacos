@@ -158,9 +158,10 @@ Config definition layout; legacy SERVICE Runtime lookup remains a separate
 exact-Version Naming concern.
 
 The legacy MCP Console import validation and execute endpoints remain covered
-by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
-They are deprecated and planned for removal in Nacos 3.4.0; the managed
-`/v3/console/ai/import/*` flow is covered separately by
+by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and
+`API_DEPRECATED` responses use the shared
+`nacos.core.api.compatibility.enabled` gate. They are planned for removal in
+Nacos 3.4.0; the managed `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
 
 MCP Admin detail coverage verifies the version-selection contract: when a

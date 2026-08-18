@@ -148,7 +148,38 @@ to `config_info_gray`, are treated as removed compatibility behavior. Operators
 that upgrade from versions before 3.0 must complete the affected data migration
 before upgrading when they used the default namespace or beta gray release.
 
-## 9. Legacy HTTP API Adapter
+## 9. Deprecated V3 API Gate
+
+A small set of deprecated v3 APIs pending removal is disabled by default:
+
+| Deprecated API | Canonical replacement |
+| --- | --- |
+| `GET /v3/admin/ai/pipelines` | `GET /v3/admin/ai/pipelines/list` |
+| `GET /v3/admin/ai/pipelines/{pipelineId}` | `GET /v3/admin/ai/pipelines/detail?pipelineId={pipelineId}` |
+| `GET /v3/console/ai/pipelines` | `GET /v3/console/ai/pipelines/list` |
+| `GET /v3/console/ai/pipelines/{pipelineId}` | `GET /v3/console/ai/pipelines/detail?pipelineId={pipelineId}` |
+| `POST /v3/console/ai/mcp/import/validate` | `POST /v3/console/ai/import/validate` |
+| `POST /v3/console/ai/mcp/import/execute` | `POST /v3/console/ai/import/execute` |
+
+Disabled endpoints return HTTP `410 Gone` with the `API_DEPRECATED` result code
+and identify their canonical replacement. Operators may temporarily reopen all
+of these endpoints during migration with:
+
+```properties
+nacos.core.api.compatibility.enabled=true
+```
+
+The switch is intentionally shared and applies only to APIs that explicitly use
+the v3 compatibility gate. It does not replace the audience-specific switches
+owned by `nacos-api-legacy-adapter`. Authentication and authorization still
+apply to reopened endpoints.
+
+The former `nacos.ai.resource.import.legacy-mcp-api-enabled` property is no
+longer recognized. Legacy MCP direct URL import additionally requires
+`nacos.ai.resource.import.allow-user-url=true`; operators should prefer managed
+source configuration instead.
+
+## 10. Legacy HTTP API Adapter
 
 Starting with the Nacos 3.2.0 line, legacy v1 and v2 HTTP APIs are no longer
 part of the default Nacos server distribution. They are a separate compatibility
@@ -169,7 +200,7 @@ Rules:
 Domain specs should mention legacy v1/v2 behavior only as migration context or
 when a current compatibility path depends on it.
 
-## 10. Legacy A2A Agent Facades
+## 11. Legacy A2A Agent Facades
 
 The canonical Agent model uses `type=agent`, protocol-neutral versions, and RAD
 discovery. Historical A2A AgentCard surfaces are compatibility-only and are
@@ -189,7 +220,7 @@ the Agent Management and RAD contracts. Historical data and mixed-server
 rolling upgrade are a separate migration plan and do not extend the API window
 by themselves.
 
-## 11. Related Specs
+## 12. Related Specs
 
 - [HTTP API Spec](../http-api/api-spec.md)
 - [V3 API Surface](../http-api/v3-api-surface.md)

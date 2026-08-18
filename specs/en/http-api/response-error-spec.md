@@ -65,6 +65,9 @@ v3 errors:
 | data access, servlet, or IO failures | 500 | `DATA_ACCESS_ERROR` |
 | unhandled exceptions | 500 | generic failure |
 
+Deprecated v3 APIs that use the shared compatibility gate return HTTP `410 Gone`
+with `API_DEPRECATED` while `nacos.core.api.compatibility.enabled` is false.
+
 ## 4. Exception Handler Convergence
 
 Nacos-owned v3 HTTP APIs should converge on `@NacosApi` and

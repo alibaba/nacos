@@ -251,3 +251,8 @@ REST 风格 API 替代。这些旧端点应视为废弃兼容 API：
 兼容端点可以在过渡期内继续保留，但面向用户的文档应以新 API 作为主要契约。
 废弃端点只应出现在兼容章节中，并按照
 [兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)提供迁移说明。
+
+旧 Pipeline base-path list、path-variable detail 端点，以及
+`POST /v3/console/ai/mcp/import/{validate|execute}` 默认关闭，返回 HTTP `410 Gone` 和
+`API_DEPRECATED`。运维人员可以通过 `nacos.core.api.compatibility.enabled=true` 临时重新开启全部
+显式接入门禁的 v3 兼容 API。旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 参数不再读取。

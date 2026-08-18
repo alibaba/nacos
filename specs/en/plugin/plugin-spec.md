@@ -414,10 +414,15 @@ deployments, examples, tests, and plugin implementations must use only the canon
 | `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | The standard module key remains authoritative and defaults to enabled. |
 | `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` or unified plugin state | Migrate old built-in source state keys to managed implementation state. |
 | `nacos.plugin.ai.importer.*` item configuration | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | Migrate display, description, limits, and endpoint inputs to the managed source identity. |
-| `nacos.ai.resource.import.legacy-mcp-api-enabled` and `nacos.ai.resource.import.allow-user-url` | Unified `/v3/{admin|console}/ai/import/*` APIs and managed source endpoint configuration | These switches and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
+| `nacos.ai.resource.import.allow-user-url` | Managed source endpoint configuration | Direct user URL compatibility and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
 | `ConfigChangeConfigs` property bridge | Definitions and callbacks on `ConfigChangePluginService` | Old binary plugins without definitions continue receiving legacy properties during the 3.x window. |
 | `VisibilityService.init(Properties)` | Definitions and callbacks inherited from `PluginConfigSpec` | The unified lifecycle applies effective item-key maps before visibility execution. |
 | `CustomEnvironmentPluginManager.join(...)` | Environment SPI discovery through the `PRE_CONTEXT` initializer | Environment implementations must be discoverable before Spring environment customization begins. |
+
+The former `nacos.ai.resource.import.legacy-mcp-api-enabled` input is no longer
+recognized. Deprecated MCP import APIs now use the shared
+`nacos.core.api.compatibility.enabled` gate documented by the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 For each configuration-key row, a canonical key that is present wins even when its value is empty;
 fallback occurs only when the canonical key is absent. Removing these inputs at their planned

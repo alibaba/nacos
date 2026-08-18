@@ -62,6 +62,9 @@ v3 错误：
 | 数据访问、Servlet 或 IO 失败 | 500 | `DATA_ACCESS_ERROR` |
 | 未处理异常 | 500 | 通用失败 |
 
+接入共享兼容门禁的废弃 v3 API 在 `nacos.core.api.compatibility.enabled=false` 时返回
+HTTP `410 Gone` 和 `API_DEPRECATED`。
+
 ## 4. ExceptionHandler 收敛
 
 Nacos 自有的 v3 HTTP API 应收敛到 `@NacosApi` 和

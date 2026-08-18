@@ -357,10 +357,14 @@ normalized full key 冲突。管理器在归一化前复制 definition 元数据
 | `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | 标准模块 key 保持权威，默认开启。 |
 | `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` 或统一 plugin state | 把旧内置 source 状态 key 迁移到受管实现状态。 |
 | `nacos.plugin.ai.importer.*` item 配置 | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | 把 display、description、limits 和 endpoint 输入迁移到受管 source 身份。 |
-| `nacos.ai.resource.import.legacy-mcp-api-enabled` 和 `nacos.ai.resource.import.allow-user-url` | 统一 `/v3/{admin|console}/ai/import/*` API 和受管 source endpoint 配置 | 这些开关和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
+| `nacos.ai.resource.import.allow-user-url` | 受管 source endpoint 配置 | 用户 URL 直接导入兼容和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
 | `ConfigChangeConfigs` property bridge | `ConfigChangePluginService` 上的 definitions 和 callbacks | 3.x 窗口内，没有 definitions 的旧二进制插件继续接收历史 properties。 |
 | `VisibilityService.init(Properties)` | 从 `PluginConfigSpec` 继承的 definitions 和 callbacks | 统一生命周期在 visibility 执行前应用 effective item-key map。 |
 | `CustomEnvironmentPluginManager.join(...)` | 通过 `PRE_CONTEXT` initializer 发现 Environment SPI | Environment 实现必须在 Spring environment 定制开始前可被发现。 |
+
+旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 输入不再识别。废弃 MCP Import API 改用
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)定义的共享
+`nacos.core.api.compatibility.enabled` 门禁。
 
 对于表中的配置 key，只要标准 key 存在就优先，即使其值为空；只有标准 key 不存在时才回退
 旧输入。在各自计划版本移除这些输入时，也会同时移除对应迁移 WARN 和仅兼容代码路径。

@@ -39,8 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     name filters; delete removes the server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
- *     version, invalid custom ID, and legacy import request field omissions are rejected with HTTP 400. The legacy
- *     import endpoints remain covered through Nacos 3.3.x and are planned for removal in 3.4.0.
+ *     version and invalid custom ID are rejected with HTTP 400. The legacy import endpoints return HTTP 410 by
+ *     default, remain available behind the shared compatibility switch through Nacos 3.3.x, and are planned for
+ *     removal in 3.4.0.
  *     Console currently accepts {@code resourceSpecification} but does not persist it because the controller does
  *     not parse resources.
  *     </li>
@@ -148,7 +149,7 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     @Test
-    public void testImportToolsAndImportRequestValidationErrors() throws Exception {
+    public void testImportToolsAndLegacyImportCompatibilityGate() throws Exception {
         HttpResponse unsupportedTransport = getRaw(CONSOLE_MCP_IMPORT_TOOLS_PATH, Query.newInstance()
                 .addParam("transportType", "stdio").addParam("baseUrl", "http://127.0.0.1:1")
                 .addParam("endpoint", "/mcp"));
@@ -159,25 +160,10 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertTrue(root.get("message").asText().contains("Unsupported transport type"),
                 unsupportedTransport.body());
 
-        assertError(postRaw(CONSOLE_MCP_IMPORT_VALIDATE_PATH, Query.newInstance()
-                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("data", "{}")), 400,
-                ErrorCode.PARAMETER_MISSING, "importType");
-        assertError(postRaw(CONSOLE_MCP_IMPORT_VALIDATE_PATH, Query.newInstance()
-                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("importType", "json")), 400,
-                ErrorCode.PARAMETER_MISSING, "data");
-        assertError(postRaw(CONSOLE_MCP_IMPORT_VALIDATE_PATH, Query.newInstance()
-                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("importType", "invalid")
-                .addParam("data", "{}")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                "json, url, file");
-
-        assertError(postRaw(CONSOLE_MCP_IMPORT_EXECUTE_PATH, Query.newInstance()
-                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("data", "{}")
-                .addParam("skipInvalid", "true")), 400, ErrorCode.PARAMETER_MISSING,
-                "importType");
-        assertError(postRaw(CONSOLE_MCP_IMPORT_EXECUTE_PATH, Query.newInstance()
-                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("importType", "invalid")
-                .addParam("data", "{}").addParam("overrideExisting", "true")), 400,
-                ErrorCode.PARAMETER_VALIDATE_ERROR, "json, url, file");
+        assertError(postRaw(CONSOLE_MCP_IMPORT_VALIDATE_PATH, Query.newInstance()), 410,
+                ErrorCode.API_DEPRECATED, "POST /v3/console/ai/import/validate");
+        assertError(postRaw(CONSOLE_MCP_IMPORT_EXECUTE_PATH, Query.newInstance()), 410,
+                ErrorCode.API_DEPRECATED, "POST /v3/console/ai/import/execute");
     }
 
 }

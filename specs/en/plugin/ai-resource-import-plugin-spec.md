@@ -341,16 +341,21 @@ marketplace or registry import flow.
 The compatibility endpoints are deprecated, remain available only through
 Nacos 3.3.x, and are planned for removal in Nacos 3.4.0. They are disabled by
 default. Operators may reopen them temporarily with
-`nacos.ai.resource.import.legacy-mcp-api-enabled=true` while clients migrate to
+`nacos.core.api.compatibility.enabled=true` while clients migrate to
 `/v3/{admin|console}/ai/import/*`.
+
+The former `nacos.ai.resource.import.legacy-mcp-api-enabled` property is no
+longer recognized. The shared compatibility switch also reopens other
+explicitly gated deprecated v3 APIs, as defined by the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 For legacy `importType=url`, the request must not use a user-provided URL as a
 network target by default. It may be interpreted as a `sourceId` when it matches
 an enabled source. Otherwise the request should fail with a migration message.
 Legacy direct URL import may only be enabled by explicit operator configuration
 for controlled deployments by setting
-`nacos.ai.resource.import.allow-user-url=true` together with the legacy API
-switch.
+`nacos.ai.resource.import.allow-user-url=true` together with
+`nacos.core.api.compatibility.enabled=true`.
 
 Legacy `importType=json` and `importType=file` may be mapped to built-in local
 importers because they do not require server-side network access.
