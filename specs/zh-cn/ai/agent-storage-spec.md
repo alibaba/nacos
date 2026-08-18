@@ -524,7 +524,8 @@ Endpoint set 及其 revision，不维护第二份投影缓存。
 
 | 读取 | 读取事实 | AI Storage 读取 |
 | --- | --- | :---: |
-| 管控 Agent 列表或 RAD Search | `ai_resource` page。 | 否 |
+| 管控 Agent 列表 | `ai_resource` page。 | 否 |
+| RAD 或通用 Agent Search | 当前 Agent Search document；未 READY 的 RAD `AUTO/SCAN` 使用兼容扫描。 | 否 |
 | Agent overview | Resource 和有界 Version-row page。 | 否 |
 | 精确 Version detail | 一行 Version。 | 一次 |
 | Runtime Endpoint Snapshot | 一个 protocol 的完整内部 `ServiceStorage` 投影；可选 binding filter。 | 否 |
@@ -536,6 +537,7 @@ Endpoint set 及其 revision，不维护第二份投影缓存。
 | 创建或更新 draft | AI Storage 固定 key 和 Version row。 | Pointer、bytes、size 和 digest 一致。 |
 | Publish、online、offline、delete、label/latest | Version row 和 Resource 摘要。 | 重建派生目录。 |
 | Runtime register、Publisher heartbeat、deregister | Naming Client 运行时状态。 | 不写 AI Resource 或 Storage。 |
+| Agent 目录或 Version 生命周期提交 | `ai_resource_task` 中合并的 `search_index` revision。 | 异步重读事实并重建派生索引。 |
 
 缓存校验值跟随事实：
 
@@ -562,6 +564,17 @@ Agent、Prompt、Skill 和 AgentSpec 统一采用。
 Storage 写入成功但元数据写入失败时，形成可观测的不完整操作，并通过重试或孤儿内容清理处理。
 Digest 不一致时不得返回未校验内容。`versionCatalog` 和 Resource Version 摘要是可重建
 派生数据；其一致性不得下放给 Storage provider。
+
+Agent Search 投影同样是可重建派生状态。每个 `(namespaceId, agentName)` 最多存在一个当前
+document，其 `resourceVersion` 为 common latest 指向的精确 online Version，并包含完整、确定性
+排序的 online Version 目录、`protocols` 和 `artifactKinds` facets、projection version 与
+source digest。Source digest 由 canonical Agent metadata、Version 目录、common latest、latest
+Version `contentDigest`、artifactKinds 和 projection version 计算，不以修改时间作为唯一依据。
+
+关系 document、chunks 和内嵌 facets 在一个事务中完整替换。索引不保存 Runtime Endpoint、健康、
+Publisher、心跳或 Runtime revision。Backfill/Reconciliation 通过资源类型处理器按有界 resource-key
+批次扫描，并按 `(agent, projectionVersion)` 维护集群 readiness；具体任务、lease 和读模式语义由
+[AI 资源检索规范](ai-resource-search-spec.md)定义。
 
 ## 9. 容量与安全
 

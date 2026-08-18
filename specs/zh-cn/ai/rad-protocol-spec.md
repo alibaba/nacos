@@ -392,6 +392,22 @@ Search 必须：
 
 `pageNo` 缺省为 `1`，`pageSize` 缺省为 `20` 且最大为 `100`。
 
+Search 复用 [AI 资源检索规范](ai-resource-search-spec.md)定义的共享 Search Core，并将
+请求固定为 `resourceType=agent`：
+
+- `agentNameContains` 映射为大小写敏感的 `LITERAL_CONTAINS`，其中 `%`、`_` 和 escape
+  char 均为普通字符；
+- `tagsAll` 映射为大小写敏感的 `EXACT_ALL`；
+- `protocolsAny` 映射为大小写敏感的 `EXACT_ANY`；
+- 多类 filter 使用 AND 组合；过滤、可见性和当前性校验都必须在 total 和页截断前完成；
+- Agent 的完整 online Version 目录来自当前 Search document，Runtime Endpoint、健康状态、
+  Publisher 和心跳不进入 Search 索引或响应。
+
+`nacos.ai.rad.search.mode` 可以选择 `AUTO`、`INDEX` 或 `SCAN`。首次 Agent projection
+Backfill 未 READY 时，`AUTO` 使用完整旧扫描路径，`INDEX` 明确返回 service unavailable；
+READY 后 `AUTO` 以进程内 sticky 方式切换到索引。索引调用失败不得按请求回退，单次请求也
+不得混合两条路径。三种模式必须保持本节的过滤、排序、total、分页、可见性和版本目录结果等价。
+
 ## 5. Discover
 
 `AgentDiscoveryRequest` 包含：

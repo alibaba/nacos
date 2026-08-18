@@ -160,3 +160,31 @@ or the full surface selection.
 
 Minimum validation for documentation-only IT registry changes is license and
 format checks for the affected module.
+
+## 9. AI Resource Search And Agent Scenarios
+
+When shared Search Core, Agent projection, or ARD Agent representation changes,
+the OpenAPI IT scenario matrix covers at least:
+
+- RAD and resource-specific Search still use the base index when ARD is disabled
+  and `nacos.ai.resource.search.enabled=true`;
+- Agent-name literal contains, tag ALL, protocol ANY, combined AND, case rules,
+  literal `%`, `_`, and `\\`, first/middle/last/out-of-range pages, and correct
+  totals;
+- bounded convergence after create, metadata update, Version
+  publish/online/offline/delete, and latest/label changes;
+- Endpoint register/deregister/heartbeat changes Discover only and does not
+  change the catalog Search document;
+- equivalent results before and after `AUTO` readiness without mixing,
+  explicit failure for unready `INDEX`, and the compatibility path for `SCAN`;
+- generic Search restricted to Agent, AgentSpec, Skill, Prompt, or MCP matches
+  the corresponding resource-specific Search eligibility, visibility, and
+  currentness; and
+- ARD pure-A2A, multi-protocol, and A2A-only-on-an-older-online-Version type
+  filtering, primary representation, stable identifier,
+  representation-specific artifact URL, offline/digest invalidation, and
+  Runtime-state exclusion.
+
+Tests of asynchronous indexing use only bounded polling of public API results;
+they do not depend on a fixed sleep, internal database rows, or task execution
+order.

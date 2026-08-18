@@ -140,6 +140,13 @@ AI 存储保存。默认存储为 `nacos_config`，但它只是实现后端。
 Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 Skill 元数据派生的
 索引，不应成为生命周期状态的事实来源。
 
+Skill 参与通用 AI Resource Search，并提供固定 `resourceType=skill` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 document/chunk/facet、
+当前性、可见性和分页，不得把 manifest 或既有管理列表当作第二套 Search 索引。Skill handler
+投影 latest online Version 的名称、description、tags 和可检索 manifest 内容；包内脚本、
+credential 和未声明的二进制内容不进入检索 chunk。通用 Search 只指定 Skill 时与专用 Search
+候选资格一致。
+
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 
 ## 5. 生命周期

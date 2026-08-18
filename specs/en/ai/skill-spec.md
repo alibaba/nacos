@@ -178,6 +178,16 @@ Skill also maintains a lightweight manifest for client-side discovery. The
 manifest is an index derived from Skill metadata and must not become the source
 of truth for lifecycle state.
 
+Skill participates in generic AI Resource Search and provides a
+resource-specific Search facade with `resourceType=skill` fixed. Both reuse the
+document/chunk/facet, currentness, visibility, and pagination semantics from
+the [AI Resource Search Spec](ai-resource-search-spec.md); neither the manifest
+nor an existing management list becomes a second Search index. The Skill
+handler projects the latest online Version's name, description, tags, and
+searchable manifest content. Package scripts, credentials, and undeclared
+binary content do not enter search chunks. Generic Search restricted to Skill
+has the same candidate eligibility as resource-specific Search.
+
 Storage extension rules are defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).
 

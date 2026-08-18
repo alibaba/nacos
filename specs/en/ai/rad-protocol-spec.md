@@ -441,6 +441,28 @@ Search MUST:
 
 `pageNo` defaults to `1`; `pageSize` defaults to `20` and is at most `100`.
 
+Search reuses the shared Search Core defined by the
+[AI Resource Search Spec](ai-resource-search-spec.md) and fixes the request to
+`resourceType=agent`:
+
+- `agentNameContains` maps to case-sensitive `LITERAL_CONTAINS`, where `%`,
+  `_`, and the escape character are all literals;
+- `tagsAll` maps to case-sensitive `EXACT_ALL`;
+- `protocolsAny` maps to case-sensitive `EXACT_ANY`;
+- different filter categories combine with AND, and filtering, visibility,
+  and currentness checks all occur before totals and page truncation; and
+- the complete online-Version catalog comes from the current Search document,
+  while Runtime Endpoints, health, Publishers, and heartbeats enter neither the
+  Search index nor its response.
+
+`nacos.ai.rad.search.mode` selects `AUTO`, `INDEX`, or `SCAN`. Before the first
+Agent projection Backfill is READY, `AUTO` uses the complete legacy scan path
+and `INDEX` returns service unavailable explicitly. After readiness, `AUTO`
+switches stickily in-process to the index. An index-call failure does not cause
+per-request fallback, and one request never mixes the two paths. All three
+modes preserve this section's filtering, ordering, total, pagination,
+visibility, and version-catalog results.
+
 ## 5. Discover
 
 `AgentDiscoveryRequest` contains:

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nacos.io/schemas/ai/agent/0.2.0/agent-artifact.schema.json",
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
+  "title": "Nacos Agent Artifact 0.2.0",
+  "description": "Version-pinned, protocol-neutral Agent definition returned as application/vnd.nacos.ai-agent+json.",
+  "x-status": "experimental",
+  "x-schema-version": "0.2.0",
+  "x-entrypoints": {
+    "NacosAgentArtifact": "#/$defs/NacosAgentArtifact"
+  },
+  "$defs": {
+    "NacosAgentArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "agentName",
+        "version",
+        "contentDigest",
+        "callInterfaces"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.0"
+        },
+        "agentName": {
+          "$ref": "../0.1.0/agent-management.schema.json#/$defs/AgentName"
+        },
+        "version": {
+          "$ref": "../0.1.0/agent-management.schema.json#/$defs/AgentVersion"
+        },
+        "contentDigest": {
+          "$ref": "../0.1.0/agent-management.schema.json#/$defs/ContentDigest"
+        },
+        "callInterfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "../0.1.0/agent-management.schema.json#/$defs/AgentCallInterface"
+          }
+        }
+      }
+    }
+  }
+}
