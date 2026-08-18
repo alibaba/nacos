@@ -24,6 +24,8 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationBu
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationRequest;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationResult;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Page;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Sort;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -209,7 +211,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         query.setNamespaceId(context.namespaceId);
         query.setText(context.text);
         query.setResourceTypes(context.resourceTypes);
-        query.setFilters(domainFilters(context.filter));
+        query.setPredicates(domainPredicates(context.filter));
         query.setCursor(context.pageToken);
         query.setLimit(context.pageSize);
         if (context instanceof ListContext) {
@@ -226,19 +228,24 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return query;
     }
     
-    private Map<String, List<String>> domainFilters(Map<String, List<String>> filters) {
-        Map<String, List<String>> result = new LinkedHashMap<>();
+    private List<Predicate> domainPredicates(Map<String, List<String>> filters) {
+        List<Predicate> result = new ArrayList<>();
         for (Map.Entry<String, List<String>> filter : filters.entrySet()) {
             String key = filter.getKey();
             if ("version".equals(key)) {
-                result.put("resourceVersion", filter.getValue());
+                key = "resourceVersion";
             } else if ("metadata.resourceType".equals(key)) {
-                result.put("resourceType", filter.getValue());
+                key = "resourceType";
             } else if (!"type".equals(key) && !"publisher".equals(key)
                 && !"publisherId".equals(key) && !"source".equals(key)
                 && !key.startsWith("trustManifest.")) {
-                result.put(key, filter.getValue());
+                key = filter.getKey();
+            } else {
+                continue;
             }
+            PredicateOperator operator = "displayName".equals(key)
+                ? PredicateOperator.LITERAL_CONTAINS : PredicateOperator.EXACT_ANY;
+            result.add(new Predicate(key, operator, filter.getValue(), false));
         }
         return result;
     }

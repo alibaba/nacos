@@ -37,7 +37,7 @@ public class AiVectorPluginTypePolicy implements PluginTypePolicy {
     
     @Override
     public boolean isActive(PluginTypeConfiguration configuration) {
-        return configuration.getBooleanProperty(Constants.ARD_ENABLED_KEY, false);
+        return configuration.getBooleanProperty(Constants.AI_RESOURCE_SEARCH_ENABLED_KEY, true);
     }
     
     @Override

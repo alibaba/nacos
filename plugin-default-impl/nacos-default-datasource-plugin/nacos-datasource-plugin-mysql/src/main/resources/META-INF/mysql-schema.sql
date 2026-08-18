@@ -267,7 +267,7 @@ CREATE TABLE `ai_resource_search_document` (
     `generate_mode` varchar(32) NOT NULL COMMENT '生成模式',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_search_document_resource_version` (`namespace_id`,`resource_type`,`resource_name`,`resource_version`),
-    KEY `idx_search_document_type_status` (`namespace_id`,`resource_type`,`status`)
+    KEY `idx_search_document_type_status` (`namespace_id`,`resource_type`,`status`,`resource_name`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='AI资源检索文档表';
 
 /******************************************/

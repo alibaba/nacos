@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.oracle;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,19 +25,14 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MySqlAiResourceSearchSchemaResourceTest {
+class OracleAiResourceSearchSchemaResourceTest {
     
     @Test
-    void testAiResourceSearchTablesUseCaseSensitiveCollation() throws IOException {
-        String schema = readResource("META-INF/mysql-schema.sql");
-        assertTrue(schema.contains(
-            "COLLATE=utf8mb4_bin COMMENT='AI资源检索文档表'"));
-        assertTrue(schema.contains(
-            "COLLATE=utf8mb4_bin COMMENT='AI资源检索分片表'"));
-        assertTrue(schema.contains(
-            "COLLATE=utf8mb4_bin COMMENT='AI资源持久化异步任务表'"));
-        assertTrue(schema.contains("KEY `idx_search_document_type_status` "
-            + "(`namespace_id`,`resource_type`,`status`,`resource_name`,`id`)"));
+    void testDocumentIndexSupportsResourceKeyScan() throws IOException {
+        String schema = readResource("META-INF/oracle-schema.sql");
+        assertTrue(schema.contains("CREATE INDEX idx_search_document_type_status ON "
+            + "ai_resource_search_document(namespace_id, resource_type, status, "
+            + "resource_name, id)"));
     }
     
     private String readResource(String resourceName) throws IOException {
