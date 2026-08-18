@@ -17,15 +17,17 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.model.search.AiResourceIndexTask;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexTaskRepository;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,9 +56,6 @@ class AiResourceIndexTaskConsumerTest {
     @Mock
     private AiResourceIndexService indexBuildService;
     
-    @Mock
-    private McpServerOperationService mcpServerOperationService;
-    
     private AiResourceIndexTaskConsumer consumer;
     
     @AfterEach
@@ -77,7 +76,7 @@ class AiResourceIndexTaskConsumerTest {
         when(indexBuildService.isEnhancementRequested()).thenReturn(true);
         when(taskRepository.advanceToEnhancement(task)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -85,6 +84,17 @@ class AiResourceIndexTaskConsumerTest {
         verify(taskRepository).advanceToEnhancement(task);
         verify(taskRepository, never()).complete(eq(task), any());
         verify(taskRepository, never()).retry(eq(task), anyLong(), any());
+    }
+    
+    @Test
+    void productionConstructorShouldNotRequireResourceSpecificDependencies() {
+        ConfigurableEnvironment previous = EnvUtil.getEnvironment();
+        try {
+            EnvUtil.setEnvironment(new StandardEnvironment());
+            consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService);
+        } finally {
+            EnvUtil.setEnvironment(previous);
+        }
     }
     
     @Test
@@ -97,7 +107,7 @@ class AiResourceIndexTaskConsumerTest {
             .thenReturn(true);
         when(taskRepository.complete(task, null)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -115,7 +125,7 @@ class AiResourceIndexTaskConsumerTest {
         lenient().when(indexBuildService.isEnhancementRequested()).thenReturn(true);
         when(taskRepository.complete(task, null)).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -136,7 +146,7 @@ class AiResourceIndexTaskConsumerTest {
             any(BooleanSupplier.class))).thenReturn("fingerprint-v1");
         when(taskRepository.complete(task, "fingerprint-v1")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -153,7 +163,7 @@ class AiResourceIndexTaskConsumerTest {
             .when(indexBuildService).rebuildLatestAiResource("public", "skill", "avatar");
         when(taskRepository.retry(task, 5_000L, "vector unavailable")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -175,7 +185,7 @@ class AiResourceIndexTaskConsumerTest {
                 any(BooleanSupplier.class));
         when(taskRepository.retry(task, 1_800_000L, "llm unavailable")).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -192,7 +202,7 @@ class AiResourceIndexTaskConsumerTest {
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -214,7 +224,7 @@ class AiResourceIndexTaskConsumerTest {
         when(indexBuildService.enhanceLatestAiResource(eq("public"), eq("skill"), eq("avatar"),
             any(BooleanSupplier.class))).thenReturn(null);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -236,7 +246,7 @@ class AiResourceIndexTaskConsumerTest {
         when(taskRepository.claim(eq(first), anyLong())).thenReturn(true);
         when(taskRepository.renewLease(eq(first), anyLong())).thenReturn(true);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, queued::add, 1);
+            queued::add, 1);
         
         consumer.consume();
         
@@ -253,7 +263,7 @@ class AiResourceIndexTaskConsumerTest {
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
         when(taskRepository.renewLease(eq(task), anyLong())).thenReturn(false);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
@@ -264,19 +274,19 @@ class AiResourceIndexTaskConsumerTest {
     }
     
     @Test
-    void shouldDeleteMcpIndexWhenCanonicalResourceIsGone() throws Exception {
+    void shouldRemoveAnyResourceTaskWhenCanonicalProjectionIsGone() throws Exception {
         AiResourceIndexTask task = task();
         task.setResourceType("mcp");
         when(taskRepository.findDueTasks(100)).thenReturn(List.of(task));
         when(taskRepository.claim(eq(task), anyLong())).thenReturn(true);
-        doThrow(new NacosException(NacosException.NOT_FOUND, "not found"))
-            .when(mcpServerOperationService).getMcpServerDetail("public", "avatar", null, null);
+        when(indexBuildService.rebuildLatestAiResource("public", "mcp", "avatar"))
+            .thenReturn(false);
         consumer = new AiResourceIndexTaskConsumer(taskRepository, indexBuildService,
-            mcpServerOperationService, Runnable::run);
+            Runnable::run);
         
         consumer.consume();
         
-        verify(indexBuildService).deleteResource("public", "mcp", "avatar");
+        verify(indexBuildService).rebuildLatestAiResource("public", "mcp", "avatar");
         verify(taskRepository).remove(task);
     }
     

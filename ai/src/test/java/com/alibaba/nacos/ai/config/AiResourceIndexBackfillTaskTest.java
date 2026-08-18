@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -61,6 +62,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -256,6 +258,31 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     @Test
+    void shouldContinueAfterOneResourceProjectionFails() throws Exception {
+        AiResource first = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "first", "1.0.0");
+        AiResource second = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "second", "1.0.0");
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 1, 100))
+            .thenReturn(page(List.of(first, second)));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "first",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenThrow(new IllegalStateException("projection failure"));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "second",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(second, "1.0.0"));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "second");
+        verify(indexMaintenanceService, never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "first");
+        verifyMarkerReleased();
+    }
+    
+    @Test
     void shouldScheduleWhenVectorDocumentsAreIncomplete() throws Exception {
         AiResource skill = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
             "vector-stale", "1.0.0");
@@ -299,6 +326,66 @@ class AiResourceIndexBackfillTaskTest {
         
         verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
             PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "deleted-skill");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldKeepCanonicalEntryAndSkipTransientExistenceFailure() throws Exception {
+        AiResourceSearchDocument stored = new AiResourceSearchDocument();
+        stored.setId(1L);
+        stored.setNamespaceId(PUBLIC_NAMESPACE);
+        stored.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        stored.setResourceName("stored-skill");
+        AiResourceSearchDocument uncertain = new AiResourceSearchDocument();
+        uncertain.setId(2L);
+        uncertain.setNamespaceId(PUBLIC_NAMESPACE);
+        uncertain.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
+        uncertain.setResourceName("uncertain-mcp");
+        when(repository.scanEntries(eq(PUBLIC_NAMESPACE), anyList(), eq(0L), eq(100)))
+            .thenAnswer(invocation -> {
+                List<?> resourceTypes = invocation.getArgument(1);
+                if (resourceTypes.contains(Constants.Skills.RESOURCE_TYPE_SKILL)) {
+                    return List.of(stored);
+                }
+                if (resourceTypes.contains(AiResourceConstants.RESOURCE_TYPE_MCP)) {
+                    return List.of(uncertain);
+                }
+                return Collections.emptyList();
+            });
+        when(resourceManager.findMeta(PUBLIC_NAMESPACE, "stored-skill",
+            Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+                "stored-skill", "1.0.0"));
+        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, "uncertain-mcp",
+            null, null)).thenThrow(new NacosException(NacosException.SERVER_ERROR,
+                "temporary failure"));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, after(ASYNC_TIMEOUT).never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "stored-skill");
+        verify(indexMaintenanceService, never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP, "uncertain-mcp");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldRecordRejectedReconciliationWithoutStoppingBackfill() throws Exception {
+        AiResource rejected = resource(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "rejected", "1.0.0");
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 1, 100))
+            .thenReturn(page(List.of(rejected)));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "rejected",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(rejected, "1.0.0"));
+        when(indexMaintenanceService.scheduleReconciliation(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "rejected")).thenReturn(false);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "rejected");
         verifyMarkerReleased();
     }
     

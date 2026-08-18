@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchChunk;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
+import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -83,6 +84,9 @@ class AiResourceIndexServiceImplTest {
     
     @Mock
     private AiResourceIndexContentLoader contentLoader;
+    
+    @Mock
+    private McpServerOperationService mcpServerOperationService;
     
     @Test
     void rebuildAiResourceShouldPersistEntryChunksAndVectors() throws Exception {
@@ -170,8 +174,7 @@ class AiResourceIndexServiceImplTest {
     
     @Test
     void rebuildAiResourceShouldPersistSkillContentChunksWithoutLlm() throws Exception {
-        final AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        final AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta());
         when(resourceManager.findVersion("public", "api-helper",
@@ -246,9 +249,21 @@ class AiResourceIndexServiceImplTest {
     }
     
     @Test
+    void rebuildAiResourceWithoutVersionShouldRemoveMissingLatestProjection() throws Exception {
+        AiResourceIndexServiceImpl service = service();
+        
+        service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+            "missing", null);
+        
+        verify(repository).deleteByResource("public", Constants.Skills.RESOURCE_TYPE_SKILL,
+            "missing");
+        verify(repository, never()).deleteByResourceVersion(any(), any(), any(), any());
+        verify(repository, never()).replaceEntry(any(), anyList());
+    }
+    
+    @Test
     void enhanceLatestAiResourceShouldReplaceEnhancedChunksAndFullVectorIndex() throws Exception {
-        final AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        final AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         AiResource meta = meta();
         AiResourceVersion version = version(AiResourceConstants.VERSION_STATUS_ONLINE);
         AiResourceSearchDocument entry = new AiResourceSearchDocument();
@@ -319,8 +334,7 @@ class AiResourceIndexServiceImplTest {
     
     @Test
     void enhanceLatestAiResourceShouldRequestBaseRebuildWhenEntryIsStale() throws Exception {
-        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         AiResourceSearchDocument entry = new AiResourceSearchDocument();
         entry.setResourceVersion("0.9.0");
         when(repository.findEntry("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"))
@@ -335,9 +349,18 @@ class AiResourceIndexServiceImplTest {
     }
     
     @Test
+    void enhanceLatestAiResourceShouldIgnoreMissingIndexEntry() throws Exception {
+        AiResourceIndexServiceImpl service = service();
+        
+        assertFalse(service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "missing"));
+        
+        verify(resourceManager, never()).findMeta(any(), any(), any());
+    }
+    
+    @Test
     void enhancementShouldNotPersistAfterTaskOwnershipIsLost() throws Exception {
-        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         AiResourceSearchDocument entry = new AiResourceSearchDocument();
         entry.setId(10L);
         entry.setResourceVersion("1.0.0");
@@ -366,8 +389,7 @@ class AiResourceIndexServiceImplTest {
     
     @Test
     void rebuildMcpServerShouldPersistToolContentChunks() throws Exception {
-        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(resourceManager,
-            repository, embeddingService, vectorIndex, enhancementService, contentLoader);
+        AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         McpServerDetailInfo mcpServer = mcpServer();
         when(repository.replaceEntry(any(AiResourceSearchDocument.class), anyList()))
             .thenAnswer(invocation -> {
@@ -381,7 +403,10 @@ class AiResourceIndexServiceImplTest {
                 return chunks;
             });
         
-        service.rebuildMcpServer("public", mcpServer);
+        when(mcpServerOperationService.getMcpServerDetail("public", "mcp-avatar", null, null))
+            .thenReturn(mcpServer);
+        service.rebuildLatestAiResource("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+            "mcp-avatar");
         
         ArgumentCaptor<List<AiResourceSearchChunk>> chunksCaptor =
             ArgumentCaptor.forClass(List.class);
@@ -410,8 +435,19 @@ class AiResourceIndexServiceImplTest {
     }
     
     private AiResourceIndexServiceImpl service() {
-        return new AiResourceIndexServiceImpl(resourceManager, repository, embeddingService,
-            vectorIndex);
+        return service(AiResourceIndexEnhancementService.NOOP,
+            AiResourceIndexContentLoader.NOOP);
+    }
+    
+    private AiResourceIndexServiceImpl service(
+        AiResourceIndexEnhancementService indexEnhancementService,
+        AiResourceIndexContentLoader indexContentLoader) {
+        AiResourceSearchTypeHandlerRegistry registry =
+            new AiResourceSearchTypeHandlerRegistry(List.of(
+                new StoredAiResourceSearchTypeHandler(resourceManager, indexContentLoader),
+                new McpAiResourceSearchTypeHandler(mcpServerOperationService)));
+        return new AiResourceIndexServiceImpl(repository, embeddingService, vectorIndex,
+            indexEnhancementService, registry);
     }
     
     private AiResource meta() {
@@ -454,6 +490,7 @@ class AiResourceIndexServiceImplTest {
         mcpServer.setDescription("MCP server for avatar videos");
         mcpServer.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
         mcpServer.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
+        mcpServer.setEnabled(true);
         mcpServer.setVersionDetail(versionDetail);
         mcpServer.setToolSpec(toolSpec);
         return mcpServer;
