@@ -34,13 +34,15 @@ class AiVectorPluginTypePolicyTest {
     private final AiVectorPluginTypePolicy policy = new AiVectorPluginTypePolicy();
     
     @Test
-    void shouldBeActiveOnlyWhenArdIsEnabled() {
+    void shouldFollowSharedSearchCoreActivation() {
         MapConfiguration configuration = new MapConfiguration();
         
         assertEquals(PluginType.AI_VECTOR, policy.getPluginType());
-        assertFalse(policy.isActive(configuration));
-        configuration.setProperty(Constants.ARD_ENABLED_KEY, "true");
         assertTrue(policy.isActive(configuration));
+        configuration.setProperty(Constants.ARD_ENABLED_KEY, "false");
+        assertTrue(policy.isActive(configuration));
+        configuration.setProperty(Constants.AI_RESOURCE_SEARCH_ENABLED_KEY, "false");
+        assertFalse(policy.isActive(configuration));
         assertEquals(AiResourceVectorIndexRouter.KEY_VECTOR_PROVIDER,
             policy.getSelectionProperty());
     }

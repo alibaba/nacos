@@ -36,6 +36,12 @@ public class Constants {
     public static final String ARD_ENABLED_KEY = "nacos.ai.ard.enabled";
     
     /**
+     * Enables the protocol-neutral AI Resource Search runtime.
+     */
+    public static final String AI_RESOURCE_SEARCH_ENABLED_KEY =
+        "nacos.ai.resource.search.enabled";
+    
+    /**
      * Selects the default AI Resource storage provider for new writes.
      */
     public static final String AI_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.storage.provider";

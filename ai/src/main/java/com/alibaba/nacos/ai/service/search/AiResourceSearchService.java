@@ -75,6 +75,8 @@ public class AiResourceSearchService {
     
     private static final int DEFAULT_MAX_RECALL_CANDIDATES = 10000;
     
+    private static final int DEFAULT_NUMBERED_PAGE_SIZE = 20;
+    
     private static final String CURSOR_DOCUMENT_ID = "documentId";
     
     private static final String KEY_RANKING_ENHANCED_ENABLED =
@@ -189,6 +191,55 @@ public class AiResourceSearchService {
         List<RankedEntry> candidates = new ArrayList<>(selected);
         candidates.sort(listComparator(query));
         return boundedPage(candidates, query);
+    }
+    
+    /**
+     * List one numbered page in stable resource-key order.
+     *
+     * <p>Eligibility checks happen before the total and offset are calculated. The scan retains
+     * only the requested page and a total counter.</p>
+     *
+     * @param query canonical discovery query with numbered-page settings
+     * @return numbered page over the complete eligible result set
+     * @throws NacosException when canonical resource lookup fails
+     */
+    public NumberedPage numberedList(Query query) throws NacosException {
+        long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
+        long totalCount = 0L;
+        List<AiResourceSearchResult> items =
+            new ArrayList<>(Math.min(query.getPageSize(), ENTRY_SCAN_BATCH_SIZE));
+        String afterResourceType = null;
+        String afterResourceName = null;
+        long afterId = 0L;
+        while (true) {
+            List<AiResourceSearchDocument> batch = repository.scanEnabledEntriesByResourceKey(
+                query.getNamespaceId(), query.getResourceTypes(), afterResourceType,
+                afterResourceName, afterId, ENTRY_SCAN_BATCH_SIZE);
+            if (batch == null || batch.isEmpty()) {
+                break;
+            }
+            for (AiResourceSearchDocument document : batch) {
+                if (!matches(query, document) || !validateCurrentResource(document)) {
+                    continue;
+                }
+                if (totalCount >= offset && items.size() < query.getPageSize()) {
+                    items.add(toResult(new RankedEntry(document, 0D)));
+                }
+                totalCount++;
+            }
+            AiResourceSearchDocument last = batch.get(batch.size() - 1);
+            validateResourceKeyScanAdvance(last, afterResourceType, afterResourceName, afterId);
+            afterResourceType = last.getResourceType();
+            afterResourceName = last.getResourceName();
+            afterId = last.getId();
+            if (batch.size() < ENTRY_SCAN_BATCH_SIZE) {
+                break;
+            }
+        }
+        long pageCount = totalCount / query.getPageSize()
+            + (totalCount % query.getPageSize() == 0 ? 0 : 1);
+        int pagesAvailable = (int) Math.min(Integer.MAX_VALUE, pageCount);
+        return new NumberedPage(items, totalCount, query.getPageNumber(), pagesAvailable);
     }
     
     /**
@@ -495,12 +546,24 @@ public class AiResourceSearchService {
                 return false;
             }
         }
+        for (Predicate predicate : query.getPredicates()) {
+            if (predicate != null
+                && !matchesPredicate(predicate, fieldValues(entry, predicate.getField()))) {
+                return false;
+            }
+        }
         return true;
     }
     
     private List<String> fieldValues(AiResourceSearchDocument entry, String field) {
+        if (field == null) {
+            return Collections.emptyList();
+        }
         if ("displayName".equals(field)) {
             return singleton(entry.getDisplayName());
+        }
+        if ("resourceName".equals(field)) {
+            return singleton(entry.getResourceName());
         }
         if ("resourceType".equals(field)) {
             return singleton(entry.getResourceType());
@@ -533,6 +596,48 @@ public class AiResourceSearchService {
         for (String expectedValue : expected) {
             if (contains ? containsIgnoreCase(actual, expectedValue)
                 : equalsIgnoreCase(actual, expectedValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean matchesPredicate(Predicate predicate, List<String> actual) {
+        if (predicate == null || predicate.getValues().isEmpty()) {
+            return true;
+        }
+        if (actual == null || actual.isEmpty()) {
+            return false;
+        }
+        if (PredicateOperator.EXACT_ALL == predicate.getOperator()) {
+            for (String expected : predicate.getValues()) {
+                if (!matchesExpected(actual, expected, PredicateOperator.EXACT_ANY,
+                    predicate.isCaseSensitive())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (String expected : predicate.getValues()) {
+            if (matchesExpected(actual, expected, predicate.getOperator(),
+                predicate.isCaseSensitive())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean matchesExpected(List<String> actual, String expected,
+        PredicateOperator operator, boolean caseSensitive) {
+        for (String value : actual) {
+            if (value == null || expected == null) {
+                continue;
+            }
+            String comparedValue = caseSensitive ? value : normalize(value);
+            String comparedExpected = caseSensitive ? expected : normalize(expected);
+            if (PredicateOperator.LITERAL_CONTAINS == operator
+                ? comparedValue.contains(comparedExpected)
+                : comparedValue.equals(comparedExpected)) {
                 return true;
             }
         }
@@ -639,6 +744,24 @@ public class AiResourceSearchService {
             throw new IllegalStateException("AI resource index scan did not advance");
         }
         return last.getId();
+    }
+    
+    private void validateResourceKeyScanAdvance(AiResourceSearchDocument last,
+        String previousResourceType, String previousResourceName, long previousId) {
+        if (last.getId() == null || last.getResourceType() == null
+            || last.getResourceName() == null) {
+            throw new IllegalStateException("AI resource key scan returned an incomplete anchor");
+        }
+        if (previousResourceType == null) {
+            return;
+        }
+        int typeComparison = last.getResourceType().compareTo(previousResourceType);
+        int nameComparison = typeComparison == 0
+            ? last.getResourceName().compareTo(previousResourceName) : 0;
+        if (typeComparison < 0 || typeComparison == 0 && nameComparison < 0
+            || typeComparison == 0 && nameComparison == 0 && last.getId() <= previousId) {
+            throw new IllegalStateException("AI resource key scan did not advance");
+        }
     }
     
     private AiResourceSearchResult toResult(RankedEntry candidate) {
@@ -863,6 +986,8 @@ public class AiResourceSearchService {
         
         private Map<String, List<String>> filters = Collections.emptyMap();
         
+        private List<Predicate> predicates = Collections.emptyList();
+        
         private String cursor;
         
         private int limit;
@@ -874,6 +999,10 @@ public class AiResourceSearchService {
         private Instant createdAfter;
         
         private Instant updatedAfter;
+        
+        private int pageNumber = 1;
+        
+        private int pageSize = DEFAULT_NUMBERED_PAGE_SIZE;
         
         public String getNamespaceId() {
             return namespaceId;
@@ -906,6 +1035,14 @@ public class AiResourceSearchService {
         
         public void setFilters(Map<String, List<String>> filters) {
             this.filters = filters == null ? Collections.emptyMap() : filters;
+        }
+        
+        public List<Predicate> getPredicates() {
+            return predicates;
+        }
+        
+        public void setPredicates(List<Predicate> predicates) {
+            this.predicates = predicates == null ? Collections.emptyList() : predicates;
         }
         
         public String getCursor() {
@@ -955,6 +1092,88 @@ public class AiResourceSearchService {
         public void setUpdatedAfter(Instant updatedAfter) {
             this.updatedAfter = updatedAfter;
         }
+        
+        public int getPageNumber() {
+            return pageNumber;
+        }
+        
+        public void setPageNumber(int pageNumber) {
+            this.pageNumber = Math.max(1, pageNumber);
+        }
+        
+        public int getPageSize() {
+            return pageSize;
+        }
+        
+        public void setPageSize(int pageSize) {
+            this.pageSize = Math.max(1, pageSize);
+        }
+    }
+    
+    /**
+     * Protocol-neutral structured predicate.
+     */
+    public static class Predicate {
+        
+        private String field;
+        
+        private PredicateOperator operator = PredicateOperator.EXACT_ANY;
+        
+        private List<String> values = Collections.emptyList();
+        
+        private boolean caseSensitive;
+        
+        public Predicate() {
+        }
+        
+        public Predicate(String field, PredicateOperator operator, List<String> values,
+            boolean caseSensitive) {
+            this.field = field;
+            setOperator(operator);
+            setValues(values);
+            this.caseSensitive = caseSensitive;
+        }
+        
+        public String getField() {
+            return field;
+        }
+        
+        public void setField(String field) {
+            this.field = field;
+        }
+        
+        public PredicateOperator getOperator() {
+            return operator;
+        }
+        
+        public void setOperator(PredicateOperator operator) {
+            this.operator = operator == null ? PredicateOperator.EXACT_ANY : operator;
+        }
+        
+        public List<String> getValues() {
+            return values;
+        }
+        
+        public void setValues(List<String> values) {
+            this.values = values == null ? Collections.emptyList() : values;
+        }
+        
+        public boolean isCaseSensitive() {
+            return caseSensitive;
+        }
+        
+        public void setCaseSensitive(boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+        }
+    }
+    
+    /**
+     * Supported structured predicate operators.
+     */
+    public enum PredicateOperator {
+        EXACT_ANY,
+        EXACT_ALL,
+        LITERAL_CONTAINS
     }
     
     /**
@@ -986,6 +1205,44 @@ public class AiResourceSearchService {
         
         public String getNextCursor() {
             return nextCursor;
+        }
+    }
+    
+    /**
+     * Canonical numbered discovery page.
+     */
+    public static class NumberedPage {
+        
+        private final List<AiResourceSearchResult> items;
+        
+        private final long totalCount;
+        
+        private final int pageNumber;
+        
+        private final int pagesAvailable;
+        
+        public NumberedPage(List<AiResourceSearchResult> items, long totalCount, int pageNumber,
+            int pagesAvailable) {
+            this.items = items;
+            this.totalCount = totalCount;
+            this.pageNumber = pageNumber;
+            this.pagesAvailable = pagesAvailable;
+        }
+        
+        public List<AiResourceSearchResult> getItems() {
+            return items;
+        }
+        
+        public long getTotalCount() {
+            return totalCount;
+        }
+        
+        public int getPageNumber() {
+            return pageNumber;
+        }
+        
+        public int getPagesAvailable() {
+            return pagesAvailable;
         }
     }
     

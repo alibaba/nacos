@@ -596,7 +596,9 @@ CREATE UNIQUE INDEX "uk_search_document_resource_version" ON "ai_resource_search
 CREATE INDEX "idx_search_document_type_status" ON "ai_resource_search_document" USING btree (
   "namespace_id",
   "resource_type",
-  "status"
+  "status",
+  "resource_name",
+  "id"
 );
 
 -- ----------------------------

@@ -284,7 +284,7 @@ CREATE TABLE ai_resource_search_document (
     CONSTRAINT uk_search_document_res_ver UNIQUE (namespace_id, resource_type, resource_name, resource_version)
 );
 
-CREATE INDEX idx_search_document_type_status ON ai_resource_search_document(namespace_id, resource_type, status);
+CREATE INDEX idx_search_document_type_status ON ai_resource_search_document(namespace_id, resource_type, status, resource_name, id);
 
 /******************************************/
 /*   表名称 = ai_resource_search_chunk       */
