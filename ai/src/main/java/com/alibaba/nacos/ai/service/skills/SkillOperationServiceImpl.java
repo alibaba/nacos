@@ -75,9 +75,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -928,6 +930,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skill.getName(), editing, false);
         String provider = parseStorageProvider(draftVersion.getStorage());
         List<String> files = writeSkillToStorage(namespaceId, skill, editing, provider);
+        deleteRemovedSkillStorageFiles(namespaceId, skill.getName(), editing,
+            draftVersion.getStorage(), provider, files);
         String storageJson = buildStorageJson(namespaceId, skill.getName(), editing, files,
             SkillContentDigestUtils.computeContentMd5(skill), provider);
         if (StringUtils.isNotBlank(commitMsg)) {
@@ -1272,6 +1276,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         String provider = parseStorageProvider(draftVersion.getStorage());
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing, provider);
+        deleteRemovedSkillStorageFiles(namespaceId, name, editing, draftVersion.getStorage(),
+            provider, files);
         String storageJson = buildStorageJson(namespaceId, name, editing, files,
             SkillContentDigestUtils.computeContentMd5(draftSkill), provider);
         if (StringUtils.isNotBlank(commitMsg)) {
@@ -1958,7 +1964,33 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String storageJson)
         throws NacosException {
         List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(storageJson);
-        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(storageJson,
+            STORAGE_PROVIDER_NACOS_CONFIG);
+        deleteSkillStorageFiles(namespaceId, skillName, version, provider, files);
+    }
+    
+    /**
+     * Delete files that were present in the previous draft but omitted from its replacement.
+     */
+    private void deleteRemovedSkillStorageFiles(String namespaceId, String skillName,
+        String version,
+        String storageJson, String provider, List<String> retainedFiles) throws NacosException {
+        List<String> previousFiles = parseStorageFiles(storageJson);
+        if (previousFiles == null || previousFiles.isEmpty()) {
+            return;
+        }
+        Set<String> retainedFileSet = new HashSet<>(retainedFiles);
+        List<String> removedFiles = new ArrayList<>();
+        for (String filePath : previousFiles) {
+            if (!retainedFileSet.contains(filePath)) {
+                removedFiles.add(filePath);
+            }
+        }
+        deleteSkillStorageFiles(namespaceId, skillName, version, provider, removedFiles);
+    }
+    
+    private void deleteSkillStorageFiles(String namespaceId, String skillName, String version,
+        String provider, List<String> files) throws NacosException {
         NacosException firstFailure = null;
         for (String filePath : files) {
             try {

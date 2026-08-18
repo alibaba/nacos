@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
@@ -334,11 +335,14 @@ class AgentSpecOperationServiceImplTest {
         AiResourceVersion version = new AiResourceVersion();
         version.setVersion("v2");
         version.setStatus("draft");
+        version.setStorage("{\"provider\":\"external\","
+            + "\"scope\":\"public:测试坐席:v2\"}");
         when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString()))
             .thenReturn(meta);
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq("测试坐席"), anyString(),
             eq("v2")))
             .thenReturn(version);
+        when(externalStorage.get(any(StorageKey.class))).thenReturn(previousMainContent());
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), eq("agentspec"),
             eq(2L), any()))
             .thenReturn(true);
@@ -356,6 +360,8 @@ class AgentSpecOperationServiceImplTest {
                 && "[\"design\",\"ux\"]".equals(resource.getBizTags())));
         verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
             && "测试坐席".equals(inserted.getName()) && "v2".equals(inserted.getVersion())));
+        verify(externalStorage).delete(argThat(this::isRemovedResourceKey));
+        verify(storage, never()).delete(any(StorageKey.class));
     }
     
     @Test
@@ -1137,6 +1143,7 @@ class AgentSpecOperationServiceImplTest {
             + "\"scope\":\"test-ns:my-agentspec:v2\"}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
             .thenReturn(vRow);
+        when(externalStorage.get(any(StorageKey.class))).thenReturn(previousMainContent());
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L), any()))
             .thenReturn(true);
@@ -1150,7 +1157,43 @@ class AgentSpecOperationServiceImplTest {
             eq("updated desc"));
         verify(externalStorage).save(argThat(key -> "external".equals(key.getProvider())),
             any(byte[].class));
+        verify(externalStorage).delete(argThat(this::isRemovedResourceKey));
         verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
+        verify(storage, never()).delete(any(StorageKey.class));
+    }
+    
+    @Test
+    void testUpdateDraftCleanupFailureShouldRetainPreviousStorage() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v2");
+        version.setStatus("draft");
+        version.setStorage("{\"provider\":\"external\","
+            + "\"scope\":\"test-ns:my-agentspec:v2\"}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
+            .thenReturn(version);
+        when(externalStorage.get(any(StorageKey.class))).thenReturn(previousMainContent());
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "delete failed"))
+            .when(externalStorage).delete(argThat(this::isRemovedResourceKey));
+        AgentSpec draft = new AgentSpec();
+        draft.setName(name);
+        draft.setDescription("updated desc");
+        
+        assertThrows(NacosException.class, () -> service.updateDraft(namespaceId, draft));
+        
+        verify(aiResourceVersionPersistService, never()).updateStorageAndDesc(anyString(),
+            anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(externalStorage, never()).save(any(StorageKey.class), any(byte[].class));
     }
     
     @Test
@@ -1208,6 +1251,35 @@ class AgentSpecOperationServiceImplTest {
             eq("v2"));
         verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())));
         verify(storage, never()).delete(any(StorageKey.class));
+    }
+    
+    @Test
+    void testDeleteDraftShouldUseNacosConfigForLegacyDescriptor() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString()))
+            .thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v2");
+        version.setStatus("draft");
+        version.setStorage("{\"scope\":\"test-ns:my-agentspec:v2\"}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
+            .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
+            eq(1L), any())).thenReturn(true);
+        
+        service.deleteDraft(namespaceId, name);
+        
+        verify(storage).delete(argThat(key -> "nacos_config".equals(key.getProvider())));
+        verify(externalStorage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService).delete(namespaceId, name, "agentspec", "v2");
     }
     
     @Test
@@ -1581,6 +1653,18 @@ class AgentSpecOperationServiceImplTest {
             + "\"tags\":[\"design\",\"ux\"],"
             + "\"worker\":{\"suggested_name\":\"测试坐席\"}}";
         return createZipBytes("manifest.json", manifest);
+    }
+    
+    private byte[] previousMainContent() {
+        return "{\"resources\":[{\"name\":\"old.md\",\"type\":\"docs\"}]}"
+            .getBytes(StandardCharsets.UTF_8);
+    }
+    
+    private boolean isRemovedResourceKey(StorageKey key) {
+        String removedPath = NacosConfigAiResourceStorage.getAgentSpecResourceFilePath("docs",
+            "old.md");
+        return key != null && "external".equals(key.getProvider())
+            && key.getKey().endsWith(':' + removedPath);
     }
     
     private byte[] createValidZipBytesWithAgents() throws IOException {

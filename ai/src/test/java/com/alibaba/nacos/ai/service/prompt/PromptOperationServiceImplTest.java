@@ -333,6 +333,25 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
+    void testDeleteDraftShouldUseNacosConfigForLegacyDescriptor() throws NacosException {
+        AiResource meta =
+            createMeta(PROMPT_KEY, 1L, "{\"labels\":{},\"editingVersion\":\"0.0.1\"}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        AiResourceVersion draft = createVersionRow("0.0.1", "draft");
+        draft.setStorage("{\"files\":[\"content.json\"]}");
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+            .thenReturn(draft);
+        when(aiResourcePersistService.updateMetaCas(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), eq(1L),
+            any(AiResource.class))).thenReturn(true);
+        
+        service.deleteDraft(NS, PROMPT_KEY);
+        
+        verify(storage).delete(argThat(key -> "nacos_config".equals(key.getProvider())));
+        verify(externalStorage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService).delete(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1");
+    }
+    
+    @Test
     void testDeleteDraftShouldDoNothingWhenNoEditing() throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);

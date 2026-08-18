@@ -807,7 +807,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private void deletePromptStorageForVersion(String namespaceId, String promptKey,
         AiResourceVersion version) throws NacosException {
-        String provider = AiResourceVersionStorageJsonUtil.requireProvider(version.getStorage());
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(version.getStorage(),
+            NacosConfigAiResourceStorage.TYPE);
         List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(version.getStorage());
         NacosException firstFailure = null;
         for (String file : files) {

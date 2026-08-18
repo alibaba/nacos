@@ -574,6 +574,10 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(skillMd.contains("version: " + version), skillMd);
         assertTrue(skillMd.contains(body), skillMd);
         JsonNode resource = findSkillResource(data.get("resource"), "references", "guide.md");
+        if (guideContent == null) {
+            assertTrue(resource.isMissingNode(), data.toString());
+            return;
+        }
         assertNotNull(resource, data.toString());
         assertEquals("guide.md", resource.get("name").asText(), data.toString());
         assertEquals("references", resource.get("type").asText(), data.toString());
@@ -614,14 +618,21 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(skillMd.contains("name: " + skillName), skillMd);
         assertTrue(skillMd.contains("version: " + version), skillMd);
         assertTrue(skillMd.contains(body), skillMd);
-        assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
+        if (guideContent == null) {
+            assertFalse(entries.containsKey(skillName + "/references/guide.md"),
+                    entries.keySet().toString());
+        } else {
+            assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
+        }
     }
 
     protected byte[] buildSkillZip(String skillName, String version, String body,
             String guideContent) throws Exception {
         Map<String, String> entries = new LinkedHashMap<>();
         entries.put("SKILL.md", skillMarkdown(skillName, version, body));
-        entries.put("references/guide.md", guideContent);
+        if (guideContent != null) {
+            entries.put("references/guide.md", guideContent);
+        }
         return zipEntries(entries);
     }
 
@@ -949,12 +960,14 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         card.put("name", skillName);
         card.put("description", "skill admin openapi integration test");
         card.put("skillMd", skillMarkdown(skillName, null, body));
-        Map<String, Object> guide = new LinkedHashMap<>();
-        guide.put("name", "guide.md");
-        guide.put("type", "references");
-        guide.put("content", guideContent);
         Map<String, Object> resources = new LinkedHashMap<>();
-        resources.put("references::guide.md", guide);
+        if (guideContent != null) {
+            Map<String, Object> guide = new LinkedHashMap<>();
+            guide.put("name", "guide.md");
+            guide.put("type", "references");
+            guide.put("content", guideContent);
+            resources.put("references::guide.md", guide);
+        }
         card.put("resource", resources);
         return JacksonUtils.toJson(card);
     }

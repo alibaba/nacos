@@ -62,8 +62,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -1273,38 +1275,75 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         long uniformId, String persistedStorage) throws NacosException {
         String provider = persistedStorage == null ? resolveStorageProvider()
             : parseStorageProvider(persistedStorage);
-        saveAgentSpecFilesConcurrently(provider, namespaceId, agentSpec, version, uniformId);
+        if (persistedStorage == null) {
+            saveAgentSpecFilesConcurrently(provider, namespaceId, agentSpec, version, uniformId,
+                true);
+        } else {
+            replaceAgentSpecFiles(provider, namespaceId, agentSpec, version, uniformId);
+        }
         return buildStorageJson(namespaceId, agentSpec.getName(), version, provider);
     }
     
+    private void replaceAgentSpecFiles(String provider, String namespaceId, AgentSpec agentSpec,
+        String version, long uniformId) throws NacosException {
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpec.getName(), version,
+            NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
+        byte[] previousMainContent = storageRouter.route(mainKey).get(mainKey);
+        List<String> previousResourcePaths = parseAgentSpecResourcePaths(previousMainContent);
+        Set<String> retainedResourcePaths = new HashSet<>();
+        if (agentSpec.getResource() != null) {
+            for (AgentSpecResource resource : agentSpec.getResource().values()) {
+                retainedResourcePaths.add(
+                    NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resource.getType(),
+                        resource.getName()));
+            }
+        }
+        
+        saveAgentSpecFilesConcurrently(provider, namespaceId, agentSpec, version, uniformId,
+            false);
+        List<String> removedResourcePaths = new ArrayList<>();
+        for (String resourcePath : previousResourcePaths) {
+            if (!retainedResourcePaths.contains(resourcePath)) {
+                removedResourcePaths.add(resourcePath);
+            }
+        }
+        deleteAgentSpecStorageFiles(namespaceId, agentSpec.getName(), version, provider,
+            removedResourcePaths);
+        storageRouter.route(mainKey).save(mainKey, buildMainContent(agentSpec, uniformId));
+    }
+    
     /**
-     * Persist AgentSpec main config (manifest.json) and all resource files concurrently.
+     * Persist AgentSpec files concurrently. The main config is included for new versions and
+     * excluded while replacement resource files are staged before old-file cleanup.
      *
-     * <p>Each file (main + N resources) is submitted to {@link ExecutorUtils#getAgentSpecStorageIoExecutor()}
-     * and waited on via {@link CompletableFuture#allOf}. Underlying {@link NacosException}s thrown from
-     * individual save tasks are unwrapped from {@link CompletionException} and rethrown to keep the
-     * original exception semantics aligned with the previous serial implementation.</p>
+     * <p>Each selected file is submitted to {@link ExecutorUtils#getAgentSpecStorageIoExecutor()}
+     * and waited on via {@link CompletableFuture#allOf}. Underlying {@link NacosException}s thrown
+     * from individual save tasks are unwrapped from {@link CompletionException} and rethrown.</p>
      */
     private void saveAgentSpecFilesConcurrently(String provider, String namespaceId,
-        AgentSpec agentSpec, String version, long uniformId) throws NacosException {
+        AgentSpec agentSpec, String version, long uniformId, boolean includeMainConfig)
+        throws NacosException {
         String agentSpecName = agentSpec.getName();
         Executor executor = ExecutorUtils.getAgentSpecStorageIoExecutor();
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
         
-        // 1) Main config file (manifest.json)
-        byte[] mainContent = buildMainContent(agentSpec, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
-            NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
-        tasks.add(CompletableFuture.runAsync(() -> {
-            try {
-                storageRouter.route(mainKey).save(mainKey, mainContent);
-            } catch (NacosException e) {
-                throw new CompletionException(e);
-            }
-        }, executor));
+        if (includeMainConfig) {
+            byte[] mainContent = buildMainContent(agentSpec, uniformId);
+            StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                agentSpecName, version,
+                NacosConfigAiResourceStorage.getMainFilePath(
+                    AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
+            tasks.add(CompletableFuture.runAsync(() -> {
+                try {
+                    storageRouter.route(mainKey).save(mainKey, mainContent);
+                } catch (NacosException e) {
+                    throw new CompletionException(e);
+                }
+            }, executor));
+        }
         
-        // 2) Resource files (each carries a uniformId for consistency tracking)
         if (agentSpec.getResource() != null && !agentSpec.getResource().isEmpty()) {
             for (Map.Entry<String, AgentSpecResource> entry : agentSpec.getResource().entrySet()) {
                 AgentSpecResource resource = entry.getValue();
@@ -1334,6 +1373,23 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
             throw ex;
         }
+    }
+    
+    private static List<String> parseAgentSpecResourcePaths(byte[] mainContent) {
+        List<String> resourcePaths = new ArrayList<>();
+        if (mainContent == null) {
+            return resourcePaths;
+        }
+        AgentSpecMainConfig mainConfig = JacksonUtils.toObj(
+            new String(mainContent, StandardCharsets.UTF_8), AgentSpecMainConfig.class);
+        if (mainConfig.getResources() == null) {
+            return resourcePaths;
+        }
+        for (AgentSpecResourceRef resourceRef : mainConfig.getResources()) {
+            resourcePaths.add(NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
+                resourceRef.getType(), resourceRef.getName()));
+        }
+        return resourcePaths;
     }
     
     /**
@@ -1486,48 +1542,42 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String version, String storageJson)
         throws NacosException {
         // Step 1: Read main config first to get the resource reference list
-        String provider = AiResourceVersionStorageJsonUtil.requireProvider(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(storageJson,
+            STORAGE_PROVIDER_NACOS_CONFIG);
         StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
             NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
+        List<String> resourcePaths = parseAgentSpecResourcePaths(mainBytes);
+        deleteAgentSpecStorageFiles(namespaceId, agentSpecName, version, provider, resourcePaths);
+        // Step 3: Delete the main config file itself
+        storageRouter.route(mainKey).delete(mainKey);
+    }
+    
+    private void deleteAgentSpecStorageFiles(String namespaceId, String agentSpecName,
+        String version, String provider, List<String> resourcePaths) throws NacosException {
         NacosException firstFailure = null;
-        if (mainBytes != null) {
-            // Step 2: Delete each resource file
-            AgentSpecMainConfig mainConfig =
-                JacksonUtils.toObj(new String(mainBytes, StandardCharsets.UTF_8),
-                    AgentSpecMainConfig.class);
-            if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-                for (AgentSpecResourceRef resourceRef : mainConfig.getResources()) {
-                    String path = NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
-                        resourceRef.getType(),
-                        resourceRef.getName());
-                    StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
-                        namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
-                        agentSpecName, version,
-                        path);
-                    try {
-                        storageRouter.route(resourceKey).delete(resourceKey);
-                    } catch (Exception e) {
-                        NacosException failure = e instanceof NacosException ? (NacosException) e
-                            : new NacosException(NacosException.SERVER_ERROR,
-                                "Failed to delete AgentSpec storage: " + agentSpecName + '@'
-                                    + version,
-                                e);
-                        if (firstFailure == null) {
-                            firstFailure = failure;
-                        } else {
-                            firstFailure.addSuppressed(failure);
-                        }
-                    }
+        for (String resourcePath : resourcePaths) {
+            StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                agentSpecName, version, resourcePath);
+            try {
+                storageRouter.route(resourceKey).delete(resourceKey);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to delete AgentSpec storage: " + agentSpecName + '@' + version,
+                        e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
                 }
             }
         }
         if (firstFailure != null) {
             throw firstFailure;
         }
-        // Step 3: Delete the main config file itself
-        storageRouter.route(mainKey).delete(mainKey);
     }
     
     // ---- Inner classes ----

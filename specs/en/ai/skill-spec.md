@@ -174,6 +174,13 @@ provider. The effective AI Resource storage provider controls new writes only an
 must not redirect existing versions. A legacy descriptor without `provider`
 belongs to `nacos_config`.
 
+Updating or overwriting a draft replaces the complete Skill package content.
+After the replacement files are written, files referenced by the previous
+storage descriptor but omitted from the replacement package must be deleted
+through the version's persisted provider before the replacement descriptor is
+persisted. If cleanup fails, the update must fail and retain the previous
+descriptor so that cleanup can be retried.
+
 Skill also maintains a lightweight manifest for client-side discovery. The
 manifest is an index derived from Skill metadata and must not become the source
 of truth for lifecycle state.

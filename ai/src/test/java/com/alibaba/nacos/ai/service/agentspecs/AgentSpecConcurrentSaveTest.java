@@ -226,8 +226,8 @@ class AgentSpecConcurrentSaveTest {
         long uniformId) throws Exception {
         Method method = AgentSpecOperationServiceImpl.class
             .getDeclaredMethod("saveAgentSpecFilesConcurrently", String.class, String.class,
-                AgentSpec.class, String.class, long.class);
+                AgentSpec.class, String.class, long.class, boolean.class);
         method.setAccessible(true);
-        method.invoke(service, storage.type(), namespaceId, agentSpec, version, uniformId);
+        method.invoke(service, storage.type(), namespaceId, agentSpec, version, uniformId, true);
     }
 }
