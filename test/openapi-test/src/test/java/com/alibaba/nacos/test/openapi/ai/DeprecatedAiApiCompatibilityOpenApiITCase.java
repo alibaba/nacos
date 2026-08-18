@@ -161,12 +161,17 @@ public class DeprecatedAiApiCompatibilityOpenApiITCase {
     
     private void assertGone(HttpRestResult<String> response, String replacement) {
         assertError(response, 410, ErrorCode.API_DEPRECATED);
-        assertTrue(response.getData().contains(replacement), response.getData());
+        assertTrue(responseBody(response).contains(replacement), responseBody(response));
     }
     
     private void assertError(HttpRestResult<String> response, int httpCode, ErrorCode errorCode) {
-        assertEquals(httpCode, response.getCode(), response.getData());
-        JsonNode root = JacksonUtils.toObj(response.getData());
-        assertEquals(errorCode.getCode().intValue(), root.get("code").asInt(), response.getData());
+        String responseBody = responseBody(response);
+        assertEquals(httpCode, response.getCode(), responseBody);
+        JsonNode root = JacksonUtils.toObj(responseBody);
+        assertEquals(errorCode.getCode().intValue(), root.get("code").asInt(), responseBody);
+    }
+    
+    private String responseBody(HttpRestResult<String> response) {
+        return response.getData() == null ? response.getMessage() : response.getData();
     }
 }
