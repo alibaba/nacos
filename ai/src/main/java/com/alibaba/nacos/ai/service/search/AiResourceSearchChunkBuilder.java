@@ -232,9 +232,6 @@ public class AiResourceSearchChunkBuilder {
     }
     
     private List<String> toStringList(Object value) {
-        if (value == null) {
-            return Collections.emptyList();
-        }
         if (value instanceof Collection) {
             List<String> result = new ArrayList<>();
             for (Object each : (Collection<?>) value) {

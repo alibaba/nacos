@@ -38,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -146,6 +147,66 @@ class McpAiResourceSearchTypeHandlerTest {
     }
     
     @Test
+    void projectShouldHandleEveryOptionalCollectionAndVersionFallback() throws Exception {
+        McpServerDetailInfo optional = detail(true);
+        optional.setCapabilities(Collections.emptyList());
+        ServerVersionDetail blankVersion = new ServerVersionDetail();
+        blankVersion.setVersion(" ");
+        blankVersion.setIs_latest(true);
+        optional.setVersionDetail(blankVersion);
+        optional.setVersion("fallback-version");
+        McpTool blankTool = new McpTool();
+        blankTool.setInputSchema(Collections.emptyMap());
+        blankTool.setOutputSchema(Collections.emptyMap());
+        McpToolSpecification optionalTools = new McpToolSpecification();
+        optionalTools.setTools(List.of(blankTool));
+        optional.setToolSpec(optionalTools);
+        Map<String, Object> blankResource = new LinkedHashMap<>();
+        blankResource.put("name", " ");
+        blankResource.put("description", null);
+        McpResourceSpecification optionalResources = new McpResourceSpecification();
+        optionalResources.setResources(List.of(blankResource));
+        optional.setResourceSpec(optionalResources);
+        when(mcpServerOperationService.getMcpServerDetail("public", "optional", null, null))
+            .thenReturn(optional);
+        
+        AiResourceIndexProjection projection = handler().project("public",
+            AiResourceConstants.RESOURCE_TYPE_MCP, "optional", null);
+        
+        assertEquals("fallback-version", projection.getDocument().getResourceVersion());
+        assertEquals(3, projection.getEnhancementContents().size());
+        
+        McpServerDetailInfo nullLists = detail(true);
+        McpToolSpecification nullTools = new McpToolSpecification();
+        nullTools.setTools(null);
+        nullLists.setToolSpec(nullTools);
+        McpResourceSpecification nullResources = new McpResourceSpecification();
+        nullResources.setResources(null);
+        nullResources.setResourceTemplates(null);
+        nullLists.setResourceSpec(nullResources);
+        when(mcpServerOperationService.getMcpServerDetail("public", "null-lists", null, null))
+            .thenReturn(nullLists);
+        assertEquals(1, handler().project("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+            "null-lists", null).getEnhancementContents().size());
+        
+        McpServerDetailInfo emptyTools = detail(true);
+        McpToolSpecification emptyToolSpec = new McpToolSpecification();
+        emptyToolSpec.setTools(Collections.emptyList());
+        emptyTools.setToolSpec(emptyToolSpec);
+        when(mcpServerOperationService.getMcpServerDetail("public", "empty-tools", null, null))
+            .thenReturn(emptyTools);
+        assertEquals(1, handler().project("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+            "empty-tools", null).getEnhancementContents().size());
+        
+        McpServerDetailInfo inactive = detail(true);
+        inactive.setStatus(AiConstants.Mcp.MCP_STATUS_DEPRECATED);
+        when(mcpServerOperationService.getMcpServerDetail("public", "inactive", null, null))
+            .thenReturn(inactive);
+        assertNull(handler().project("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+            "inactive", null));
+    }
+    
+    @Test
     void scanShouldReturnBoundedMcpSources() {
         McpServerBasicInfo valid = basic("mcp", "MCP", "1.0.0");
         when(mcpServerOperationService.listMcpServerWithPage("public", null,
@@ -234,6 +295,23 @@ class McpAiResourceSearchTypeHandlerTest {
     }
     
     @Test
+    void isCurrentShouldRejectDisabledInactiveAndVersionlessMcp() throws Exception {
+        AiResourceSearchDocument document = document();
+        McpServerDetailInfo disabled = detail(true);
+        disabled.setEnabled(false);
+        McpServerDetailInfo inactive = detail(true);
+        inactive.setStatus(AiConstants.Mcp.MCP_STATUS_DEPRECATED);
+        McpServerDetailInfo versionless = detail(true);
+        versionless.setVersionDetail(null);
+        when(mcpServerOperationService.getMcpServerDetail("public", "mcp-research",
+            "Research MCP", "1.0.0")).thenReturn(disabled, inactive, versionless);
+        
+        assertFalse(handler().isCurrent(document));
+        assertFalse(handler().isCurrent(document));
+        assertFalse(handler().isCurrent(document));
+    }
+    
+    @Test
     void existsShouldMapNotFoundAndPropagateUnexpectedFailure() throws Exception {
         when(mcpServerOperationService.getMcpServerDetail("public", "mcp", null, null))
             .thenReturn(detail(true));
@@ -243,12 +321,37 @@ class McpAiResourceSearchTypeHandlerTest {
         when(mcpServerOperationService.getMcpServerDetail("public", "missing", null, null))
             .thenThrow(new NacosException(NacosException.NOT_FOUND, "missing"));
         assertFalse(handler().exists("public", AiResourceConstants.RESOURCE_TYPE_MCP, "missing"));
+        when(mcpServerOperationService.getMcpServerDetail("public", "empty", null, null))
+            .thenReturn(null);
+        assertFalse(handler().exists("public", AiResourceConstants.RESOURCE_TYPE_MCP, "empty"));
         when(mcpServerOperationService.getMcpServerDetail("public", "failed", null, null))
             .thenThrow(new NacosException(NacosException.SERVER_ERROR, "failed"));
         assertThrows(NacosException.class, () -> handler().exists("public",
             AiResourceConstants.RESOURCE_TYPE_MCP, "failed"));
         assertEquals(List.of(AiResourceConstants.RESOURCE_TYPE_MCP),
             List.copyOf(handler().resourceTypes()));
+    }
+    
+    @Test
+    void isCurrentShouldHandleNullDetailAndJsonNullMetadata() throws Exception {
+        AiResourceSearchDocument document = document();
+        document.setMetadata("null");
+        when(mcpServerOperationService.getMcpServerDetail("public", "mcp-research", null,
+            "1.0.0")).thenReturn(null);
+        assertFalse(handler().isCurrent(document));
+    }
+    
+    @Test
+    void projectShouldBoundLargeMcpContent() throws Exception {
+        McpServerDetailInfo detail = detail(true);
+        detail.setDescription(String.join("", Collections.nCopies(13000, "x")));
+        when(mcpServerOperationService.getMcpServerDetail("public", "large", null, null))
+            .thenReturn(detail);
+        
+        AiResourceIndexProjection projection = handler().project("public",
+            AiResourceConstants.RESOURCE_TYPE_MCP, "large", null);
+        
+        assertEquals(12000, projection.getEnhancementContents().get(0).getText().length());
     }
     
     private McpAiResourceSearchTypeHandler handler() {

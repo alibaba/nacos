@@ -279,7 +279,8 @@ class ArdSearchServiceImplTest {
         
         ArdSearchResponse response = service.search(requestWithFilters("api",
             List.of(filter("metadata.resourceType", List.of("skill")),
-                filter("metadata.inputTypes", "json"))));
+                filter("metadata.inputTypes", "json"), filter("version", "1.0.0"),
+                filter("displayName", "api"))));
         
         assertEquals(1, response.getResults().size());
     }
