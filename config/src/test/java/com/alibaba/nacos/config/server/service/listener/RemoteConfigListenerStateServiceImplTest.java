@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.notify.HttpClientManager;
 import com.alibaba.nacos.core.cluster.Member;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -193,7 +195,7 @@ class RemoteConfigListenerStateServiceImplTest {
         when(memberManager.allMembersWithoutSelf())
             .thenReturn(Collections.emptyList());
         ConfigListenerInfo result =
-            service.getListenerStateByIp("1.2.3.4");
+            service.getListenerStateByIp("1.2.3.4", "ns");
         assertNotNull(result);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP,
             result.getQueryType());
@@ -220,8 +222,33 @@ class RemoteConfigListenerStateServiceImplTest {
             .get(anyString(), any(), any(), eq(String.class));
         
         ConfigListenerInfo result =
-            service.getListenerStateByIp("1.2.3.4");
+            service.getListenerStateByIp("1.2.3.4", "ns");
         assertNotNull(result);
         assertEquals("md5val", result.getListenersStatus().get("gk1"));
+    }
+    
+    @Test
+    void testGetListenerStateByIpPassesNamespaceIdToRemoteQuery() throws Exception {
+        Member member = new Member();
+        member.setIp("10.0.0.1");
+        member.setPort(8848);
+        List<Member> members = new ArrayList<>();
+        members.add(member);
+        when(memberManager.allMembersWithoutSelf()).thenReturn(members);
+        
+        ConfigListenerInfo info = new ConfigListenerInfo();
+        info.setListenersStatus(new HashMap<>());
+        Result<ConfigListenerInfo> apiResult = Result.success(info);
+        String json = JacksonUtils.toJson(apiResult);
+        HttpRestResult<String> restResult = new HttpRestResult<>();
+        restResult.setCode(200);
+        restResult.setData(json);
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+        doReturn(restResult).when(nacosRestTemplate)
+            .get(anyString(), any(), queryCaptor.capture(), eq(String.class));
+        
+        service.getListenerStateByIp("1.2.3.4", "ns1");
+        
+        assertEquals("ns1", queryCaptor.getValue().getValue("namespaceId"));
     }
 }

@@ -78,10 +78,10 @@ class ConfigListenerStateDelegateTest {
     void testGetListenerStateByIpWithoutAggregation() {
         ConfigListenerInfo localInfo = new ConfigListenerInfo();
         localInfo.setListenersStatus(new HashMap<>());
-        when(localService.getListenerStateByIp("1.2.3.4"))
+        when(localService.getListenerStateByIp("1.2.3.4", "ns"))
             .thenReturn(localInfo);
         ConfigListenerInfo result =
-            delegate.getListenerStateByIp("1.2.3.4", false);
+            delegate.getListenerStateByIp("1.2.3.4", "ns", false);
         assertNotNull(result);
         verifyNoInteractions(remoteService);
     }
@@ -92,13 +92,13 @@ class ConfigListenerStateDelegateTest {
         localInfo.setListenersStatus(new HashMap<>());
         ConfigListenerInfo remoteInfo = new ConfigListenerInfo();
         remoteInfo.setListenersStatus(new HashMap<>());
-        when(localService.getListenerStateByIp("1.2.3.4"))
+        when(localService.getListenerStateByIp("1.2.3.4", "ns"))
             .thenReturn(localInfo);
-        when(remoteService.getListenerStateByIp("1.2.3.4"))
+        when(remoteService.getListenerStateByIp("1.2.3.4", "ns"))
             .thenReturn(remoteInfo);
         ConfigListenerInfo result =
-            delegate.getListenerStateByIp("1.2.3.4", true);
+            delegate.getListenerStateByIp("1.2.3.4", "ns", true);
         assertNotNull(result);
-        verify(remoteService).getListenerStateByIp("1.2.3.4");
+        verify(remoteService).getListenerStateByIp("1.2.3.4", "ns");
     }
 }

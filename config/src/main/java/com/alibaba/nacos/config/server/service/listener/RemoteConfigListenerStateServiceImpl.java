@@ -81,8 +81,9 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
     }
     
     @Override
-    public ConfigListenerInfo getListenerStateByIp(String ip) {
-        Query query = Query.newInstance().addParam("ip", ip).addParam("aggregation", false);
+    public ConfigListenerInfo getListenerStateByIp(String ip, String namespaceId) {
+        Query query = Query.newInstance().addParam("ip", ip).addParam("namespaceId", namespaceId)
+            .addParam("aggregation", false);
         Header header = buildHeader();
         ConfigListenerInfo result = new ConfigListenerInfo();
         result.setListenersStatus(new HashMap<>(16));
