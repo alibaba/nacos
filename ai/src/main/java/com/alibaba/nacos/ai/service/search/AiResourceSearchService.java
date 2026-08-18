@@ -17,17 +17,11 @@
 package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
-import com.alibaba.nacos.ai.constant.AiResourceConstants;
-import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -35,6 +29,7 @@ import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -98,9 +93,7 @@ public class AiResourceSearchService {
     
     private static final Map<String, Double> CHUNK_TYPE_WEIGHTS = chunkTypeWeights();
     
-    private final AiResourceManager resourceManager;
-    
-    private final McpServerOperationService mcpServerOperationService;
+    private final AiResourceSearchTypeHandlerRegistry typeHandlerRegistry;
     
     private final AiResourceSearchRepository repository;
     
@@ -108,14 +101,24 @@ public class AiResourceSearchService {
     
     private final AiResourceVectorIndex vectorIndex;
     
-    public AiResourceSearchService(AiResourceManager resourceManager,
-        McpServerOperationService mcpServerOperationService, AiResourceSearchRepository repository,
+    @Autowired
+    public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
+        AiResourceSearchRepository repository,
         AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
-        this.resourceManager = resourceManager;
-        this.mcpServerOperationService = mcpServerOperationService;
+        this.typeHandlerRegistry = typeHandlerRegistry;
         this.repository = repository;
         this.embeddingService = embeddingService;
         this.vectorIndex = vectorIndex;
+    }
+    
+    public AiResourceSearchService(AiResourceManager resourceManager,
+        McpServerOperationService mcpServerOperationService, AiResourceSearchRepository repository,
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
+        this(new AiResourceSearchTypeHandlerRegistry(List.of(
+            new StoredAiResourceSearchTypeHandler(resourceManager,
+                AiResourceIndexContentLoader.NOOP),
+            new McpAiResourceSearchTypeHandler(mcpServerOperationService))), repository,
+            embeddingService, vectorIndex);
     }
     
     /**
@@ -537,49 +540,7 @@ public class AiResourceSearchService {
     }
     
     private boolean validateCurrentResource(AiResourceSearchDocument entry) throws NacosException {
-        return AiResourceConstants.RESOURCE_TYPE_MCP.equals(entry.getResourceType())
-            ? validateMcp(entry) : validateAiResource(entry);
-    }
-    
-    private boolean validateAiResource(AiResourceSearchDocument entry) throws NacosException {
-        AiResource meta = resourceManager.findMeta(entry.getNamespaceId(),
-            entry.getResourceName(), entry.getResourceType());
-        if (meta == null
-            || !AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-            return false;
-        }
-        try {
-            resourceManager.ensureReadableOrNotFound(meta,
-                entry.getResourceType() + " not found: " + entry.getResourceName());
-        } catch (NacosException e) {
-            return false;
-        }
-        String latestVersion = AiResourceManager.resolveVersion(meta, null,
-            AiResourceConstants.LABEL_LATEST);
-        if (!entry.getResourceVersion().equals(latestVersion)) {
-            return false;
-        }
-        AiResourceVersion version = resourceManager.findVersion(entry.getNamespaceId(),
-            entry.getResourceName(), entry.getResourceType(), entry.getResourceVersion());
-        return version != null
-            && AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(version.getStatus());
-    }
-    
-    private boolean validateMcp(AiResourceSearchDocument entry) {
-        Map<String, Object> metadata = parseMap(entry.getMetadata());
-        String mcpServerId = firstNotBlank(stringValue(metadata.get("mcpServerId")),
-            entry.getResourceName());
-        String mcpName = stringValue(metadata.get("mcpName"));
-        try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
-                entry.getNamespaceId(), mcpServerId, mcpName, entry.getResourceVersion());
-            ServerVersionDetail versionDetail = detail.getVersionDetail();
-            return detail.isEnabled()
-                && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())
-                && versionDetail != null && Boolean.TRUE.equals(versionDetail.getIs_latest());
-        } catch (NacosException e) {
-            return false;
-        }
+        return typeHandlerRegistry.isCurrent(entry);
     }
     
     private Comparator<RankedEntry> relevanceComparator() {
@@ -869,14 +830,6 @@ public class AiResourceSearchService {
     
     private boolean isAfter(Timestamp value, Instant threshold) {
         return value != null && threshold != null && value.toInstant().isAfter(threshold);
-    }
-    
-    private String stringValue(Object value) {
-        return value == null ? null : String.valueOf(value);
-    }
-    
-    private String firstNotBlank(String first, String second) {
-        return StringUtils.isNotBlank(first) ? first : second;
     }
     
     private static Map<String, Double> chunkTypeWeights() {

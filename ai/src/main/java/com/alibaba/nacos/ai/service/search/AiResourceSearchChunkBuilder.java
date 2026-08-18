@@ -103,6 +103,27 @@ public class AiResourceSearchChunkBuilder {
     }
     
     /**
+     * Build deterministic source chunks with a type selected by a resource type handler.
+     */
+    public List<AiResourceSearchChunk> buildSourceContentChunks(AiResourceSearchDocument entry,
+        List<AiResourceIndexEnhancementContent> contents, String chunkType) {
+        if (contents == null || contents.isEmpty() || StringUtils.isBlank(chunkType)) {
+            return Collections.emptyList();
+        }
+        List<AiResourceSearchChunk> chunks = new ArrayList<>();
+        for (AiResourceIndexEnhancementContent content : contents) {
+            if (content == null) {
+                continue;
+            }
+            for (String text : skillMarkdownSearchTextExtractor.extract(content.getText())) {
+                addChunk(chunks, entry, chunkType, text, sourceContentMetadata(content.getPath(),
+                    sourceContentType(chunkType)));
+            }
+        }
+        return dedupeByHash(chunks);
+    }
+    
+    /**
      * Build chunks from optional AI-generated index enhancement text.
      */
     public List<AiResourceSearchChunk> buildEnhancementChunks(AiResourceSearchDocument entry,

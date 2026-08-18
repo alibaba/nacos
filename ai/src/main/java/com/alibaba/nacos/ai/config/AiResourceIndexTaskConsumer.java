@@ -16,13 +16,10 @@
 
 package com.alibaba.nacos.ai.config;
 
-import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.search.AiResourceIndexTask;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexTaskRepository;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
@@ -76,8 +73,6 @@ public class AiResourceIndexTaskConsumer
     
     private final AiResourceIndexService indexBuildService;
     
-    private final McpServerOperationService mcpServerOperationService;
-    
     private final Executor enhancementExecutor;
     
     private final Semaphore enhancementSlots;
@@ -88,26 +83,22 @@ public class AiResourceIndexTaskConsumer
     
     @Autowired
     public AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
-        AiResourceIndexService indexBuildService,
-        McpServerOperationService mcpServerOperationService) {
-        this(taskRepository, indexBuildService, mcpServerOperationService,
+        AiResourceIndexService indexBuildService) {
+        this(taskRepository, indexBuildService,
             ExecutorUtils.getAiResourceIndexEnhancementExecutor(),
             ExecutorUtils.getAiResourceIndexEnhancementConcurrency());
     }
     
     AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
-        AiResourceIndexService indexBuildService,
-        McpServerOperationService mcpServerOperationService, Executor enhancementExecutor) {
-        this(taskRepository, indexBuildService, mcpServerOperationService, enhancementExecutor, 1);
+        AiResourceIndexService indexBuildService, Executor enhancementExecutor) {
+        this(taskRepository, indexBuildService, enhancementExecutor, 1);
     }
     
     AiResourceIndexTaskConsumer(AiResourceIndexTaskRepository taskRepository,
-        AiResourceIndexService indexBuildService,
-        McpServerOperationService mcpServerOperationService, Executor enhancementExecutor,
+        AiResourceIndexService indexBuildService, Executor enhancementExecutor,
         int enhancementConcurrency) {
         this.taskRepository = taskRepository;
         this.indexBuildService = indexBuildService;
-        this.mcpServerOperationService = mcpServerOperationService;
         this.enhancementExecutor = enhancementExecutor;
         this.enhancementSlots = new Semaphore(enhancementConcurrency);
         this.pollExecutor = newScheduler("nacos-ai-resource-index-poll-%d");
@@ -249,52 +240,15 @@ public class AiResourceIndexTaskConsumer
     }
     
     private boolean convergeBase(AiResourceIndexTask task) throws NacosException {
-        if (AiResourceConstants.RESOURCE_TYPE_MCP.equals(task.getResourceType())) {
-            return convergeMcpBase(task);
-        }
         return indexBuildService.rebuildLatestAiResource(task.getNamespaceId(),
             task.getResourceType(),
             task.getResourceName());
     }
     
-    private boolean convergeMcpBase(AiResourceIndexTask task) throws NacosException {
-        try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
-                task.getNamespaceId(), task.getResourceName(), null, null);
-            if (detail == null) {
-                indexBuildService.deleteResource(task.getNamespaceId(),
-                    AiResourceConstants.RESOURCE_TYPE_MCP, task.getResourceName());
-                return false;
-            }
-            return indexBuildService.rebuildMcpServer(task.getNamespaceId(), detail);
-        } catch (NacosException e) {
-            if (e.getErrCode() != NacosException.NOT_FOUND) {
-                throw e;
-            }
-            indexBuildService.deleteResource(task.getNamespaceId(),
-                AiResourceConstants.RESOURCE_TYPE_MCP, task.getResourceName());
-            return false;
-        }
-    }
-    
     private String convergeEnhancement(AiResourceIndexTask task, TaskLease lease)
         throws Exception {
-        if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(task.getResourceType())) {
-            return indexBuildService.enhanceLatestAiResource(task.getNamespaceId(),
-                task.getResourceType(), task.getResourceName(), lease::isOwned);
-        }
-        try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
-                task.getNamespaceId(), task.getResourceName(), null, null);
-            return detail == null ? null
-                : indexBuildService.enhanceMcpServer(task.getNamespaceId(), detail,
-                    lease::isOwned);
-        } catch (NacosException e) {
-            if (e.getErrCode() != NacosException.NOT_FOUND) {
-                throw e;
-            }
-            return null;
-        }
+        return indexBuildService.enhanceLatestAiResource(task.getNamespaceId(),
+            task.getResourceType(), task.getResourceName(), lease::isOwned);
     }
     
     private long retryDelaySeconds(AiResourceIndexTask task) {
