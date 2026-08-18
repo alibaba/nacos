@@ -80,6 +80,9 @@ class AiResourceIndexProjectionBuilderTest {
         assertTrue(invalidMetadata.getFacets().isEmpty());
         assertTrue(invalidMetadata.getChunks().stream()
             .anyMatch(chunk -> "content".equals(chunk.getChunkType())));
+        document.setMetadata("null");
+        assertTrue(new AiResourceIndexProjectionBuilder().build(document, null, null)
+            .getFacets().isEmpty());
         assertThrows(NullPointerException.class,
             () -> new AiResourceIndexProjection(null, null, null, null));
     }

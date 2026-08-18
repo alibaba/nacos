@@ -333,6 +333,6 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     }
     
     private String limit(String text, int maxLength) {
-        return text == null || text.length() <= maxLength ? text : text.substring(0, maxLength);
+        return text.length() <= maxLength ? text : text.substring(0, maxLength);
     }
 }

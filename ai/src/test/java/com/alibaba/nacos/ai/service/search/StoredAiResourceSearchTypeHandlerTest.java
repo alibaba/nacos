@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +86,22 @@ class StoredAiResourceSearchTypeHandlerTest {
     }
     
     @Test
+    void projectShouldUseNoopContentLoaderWhenDependencyIsAbsent() {
+        AiResource resource = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "skill", "1.0.0");
+        when(resourceManager.findMeta("public", "skill", AiResourceConstants.RESOURCE_TYPE_SKILL))
+            .thenReturn(resource);
+        when(resourceManager.findVersion("public", "skill",
+            AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0")).thenReturn(version("skill",
+                AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0",
+                AiResourceConstants.VERSION_STATUS_ONLINE));
+        StoredAiResourceSearchTypeHandler handler =
+            new StoredAiResourceSearchTypeHandler(resourceManager, null);
+        
+        assertTrue(handler.project("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "skill", null).getEnhancementContents().isEmpty());
+    }
+    
+    @Test
     void projectShouldBuildExactPromptAndTolerateContentFailure() throws Exception {
         String resourceType = NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
         AiResource resource = resource(resourceType, "prompt", "2.0.0");
@@ -128,6 +145,25 @@ class StoredAiResourceSearchTypeHandlerTest {
                 AiResourceConstants.VERSION_STATUS_DRAFT));
         assertNull(handler.project("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
             "offline", null));
+        
+        AiResource missingVersion = resource(AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "missing-version", "1.0.0");
+        when(resourceManager.findMeta("public", "missing-version",
+            AiResourceConstants.RESOURCE_TYPE_SKILL)).thenReturn(missingVersion);
+        assertNull(handler.project("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "missing-version", null));
+        
+        AiResource disabled = resource(AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "disabled", "1.0.0");
+        disabled.setStatus(AiResourceConstants.META_STATUS_DISABLE);
+        when(resourceManager.findMeta("public", "disabled",
+            AiResourceConstants.RESOURCE_TYPE_SKILL)).thenReturn(disabled);
+        when(resourceManager.findVersion("public", "disabled",
+            AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version("disabled", AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0",
+                AiResourceConstants.VERSION_STATUS_ONLINE));
+        assertNull(handler.project("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "disabled", null));
     }
     
     @Test
@@ -135,7 +171,7 @@ class StoredAiResourceSearchTypeHandlerTest {
         AiResource valid = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "valid", "1.0.0");
         AiResource broken = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "broken", "1.0.0");
         when(resourceManager.listMetaByType("public", AiResourceConstants.RESOURCE_TYPE_SKILL,
-            null, null, 1, 2)).thenReturn(page(List.of(valid, broken)));
+            null, null, 1, 3)).thenReturn(page(Arrays.asList(null, valid, broken)));
         when(resourceManager.findVersion("public", "valid",
             AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0"))
             .thenReturn(version("valid", AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0",
@@ -145,12 +181,13 @@ class StoredAiResourceSearchTypeHandlerTest {
             .thenThrow(new IllegalStateException("broken source"));
         
         AiResourceIndexSourcePage result = handler().scan("public",
-            AiResourceConstants.RESOURCE_TYPE_SKILL, 1, 2);
+            AiResourceConstants.RESOURCE_TYPE_SKILL, 1, 3);
         
         assertTrue(result.hasMore());
-        assertEquals(2, result.getItems().size());
-        assertTrue(result.getItems().get(0).getProjection() != null);
-        assertEquals("broken source", result.getItems().get(1).getFailure().getMessage());
+        assertEquals(3, result.getItems().size());
+        assertNull(result.getItems().get(0).getProjection());
+        assertTrue(result.getItems().get(1).getProjection() != null);
+        assertEquals("broken source", result.getItems().get(2).getFailure().getMessage());
         assertTrue(handler().scan("public", "agent", 1, 2).getItems().isEmpty());
         assertTrue(handler().scan("public", NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
             1, 2).getItems().isEmpty());
@@ -205,6 +242,13 @@ class StoredAiResourceSearchTypeHandlerTest {
             .thenReturn(version("offline", AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0",
                 AiResourceConstants.VERSION_STATUS_DRAFT));
         assertFalse(handler().isCurrent(document("offline",
+            AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0")));
+        
+        AiResource missingVersion = resource(AiResourceConstants.RESOURCE_TYPE_SKILL,
+            "missing-version", "1.0.0");
+        when(resourceManager.findMeta("public", "missing-version",
+            AiResourceConstants.RESOURCE_TYPE_SKILL)).thenReturn(missingVersion);
+        assertFalse(handler().isCurrent(document("missing-version",
             AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0")));
     }
     

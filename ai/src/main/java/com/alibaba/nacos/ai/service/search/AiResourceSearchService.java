@@ -603,10 +603,10 @@ public class AiResourceSearchService {
     }
     
     private boolean matchesPredicate(Predicate predicate, List<String> actual) {
-        if (predicate == null || predicate.getValues().isEmpty()) {
+        if (predicate.getValues().isEmpty()) {
             return true;
         }
-        if (actual == null || actual.isEmpty()) {
+        if (actual.isEmpty()) {
             return false;
         }
         if (PredicateOperator.EXACT_ALL == predicate.getOperator()) {

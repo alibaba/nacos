@@ -29,6 +29,17 @@ import java.util.Collection;
 public interface AiResourceSearchTypeHandler {
     
     /**
+     * Projection contract generation used for durable readiness.
+     *
+     * <p>Handlers that are not guarded by a compatibility read-path switch return {@code 0}.</p>
+     *
+     * @return projection generation, or {@code 0} when readiness is not required
+     */
+    default int projectionVersion() {
+        return 0;
+    }
+    
+    /**
      * Resource types owned by this handler.
      *
      * @return non-empty resource type collection

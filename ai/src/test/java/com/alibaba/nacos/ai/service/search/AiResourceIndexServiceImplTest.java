@@ -40,9 +40,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -292,9 +294,13 @@ class AiResourceIndexServiceImplTest {
         when(repository.listChunks(10L)).thenReturn(List.of(baseChunk));
         when(enhancementService.enhanceWithResult(any(AiResourceSearchDocument.class), anyList(),
             anyList())).thenReturn(new AiResourceIndexEnhancementResult(
-                List.of(new AiResourceIndexEnhancementChunk(
-                    AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT,
-                    "参数表格 parameter table", "{\"source\":\"llm\"}")),
+                List.of(
+                    new AiResourceIndexEnhancementChunk(
+                        AiResourceSearchConstants.CHUNK_TYPE_DESCRIPTION,
+                        "must not persist as an enhancement", null),
+                    new AiResourceIndexEnhancementChunk(
+                        AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT,
+                        "参数表格 parameter table", "{\"source\":\"llm\"}")),
                 "fingerprint-v1"));
         when(repository.replaceEnhancementChunks(any(AiResourceSearchDocument.class), anyList()))
             .thenAnswer(invocation -> {
@@ -341,6 +347,9 @@ class AiResourceIndexServiceImplTest {
             .thenReturn(entry);
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
         
         assertFalse(service.enhanceLatestAiResource("public",
             Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"));
@@ -385,6 +394,112 @@ class AiResourceIndexServiceImplTest {
         assertNull(result);
         verify(repository, never()).replaceEnhancementChunks(any(), anyList());
         verify(vectorIndex, never()).replaceResourceVersion(any(), any(), any(), any(), anyList());
+    }
+    
+    @Test
+    void enhancementShouldStopAtEachLaterOwnershipBoundary() throws Exception {
+        AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
+        AiResourceSearchDocument entry = enhancementEntry();
+        prepareEnhancement(entry);
+        when(vectorIndex.available()).thenReturn(true);
+        AtomicInteger beforePersistenceChecks = new AtomicInteger();
+        String beforePersistence = service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
+            () -> beforePersistenceChecks.incrementAndGet() == 1);
+        assertNull(beforePersistence);
+        verify(repository, never()).replaceEnhancementChunks(any(), anyList());
+        
+        org.mockito.Mockito.reset(repository, resourceManager, enhancementService, contentLoader,
+            vectorIndex);
+        entry = enhancementEntry();
+        prepareEnhancement(entry);
+        when(vectorIndex.available()).thenReturn(true);
+        when(repository.replaceEnhancementChunks(entry, Collections.emptyList()))
+            .thenReturn(Collections.emptyList());
+        AtomicInteger beforeVectorChecks = new AtomicInteger();
+        String beforeVector = service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
+            () -> beforeVectorChecks.incrementAndGet() <= 2);
+        assertNull(beforeVector);
+        verify(repository).replaceEnhancementChunks(entry, Collections.emptyList());
+        verify(vectorIndex, never()).replaceResourceVersion(any(), any(), any(), any(), anyList());
+    }
+    
+    @Test
+    void enhancementShouldRejectUnavailableService() {
+        AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
+        AiResourceSearchDocument entry = enhancementEntry();
+        when(repository.findEntry("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"))
+            .thenReturn(entry);
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(enhancementService.ready()).thenReturn(false);
+        
+        assertThrows(IllegalStateException.class, () -> service.enhanceLatestAiResource("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"));
+    }
+    
+    @Test
+    void missingHandlerAndNoopEnhancementShouldUseSafeFallbacks() throws Exception {
+        AiResourceSearchTypeHandlerRegistry emptyRegistry =
+            new AiResourceSearchTypeHandlerRegistry(Collections.emptyList());
+        AiResourceIndexServiceImpl service = new AiResourceIndexServiceImpl(repository,
+            embeddingService, vectorIndex, null, emptyRegistry);
+        
+        assertFalse(service.isEnhancementRequested());
+        assertEquals(AiResourceIndexEnhancementService.NOOP.fingerprint(),
+            service.enhancementFingerprint());
+        service.rebuildAiResource("public", "unknown", "missing", "1.0.0");
+        assertFalse(service.rebuildLatestAiResource("public", "unknown", "missing"));
+        AiResourceSearchDocument entry = enhancementEntry();
+        when(repository.findEntry("public", "unknown", "indexed")).thenReturn(entry);
+        assertFalse(service.enhanceLatestAiResource("public", "unknown", "indexed"));
+        verify(repository).deleteByResourceVersion("public", "unknown", "missing", "1.0.0");
+        verify(repository).deleteByResource("public", "unknown", "missing");
+    }
+    
+    @Test
+    void deletionShouldValidateKeysAndRemoveRelationalAndVectorState() {
+        AiResourceIndexServiceImpl service = service();
+        service.deleteResource("public", "skill", null);
+        service.deleteResourceVersion("public", "skill", "name", null);
+        verify(repository, never()).deleteByResource(any(), any(), any());
+        verify(repository, never()).deleteByResourceVersion(any(), any(), any(), any());
+        when(vectorIndex.available()).thenReturn(true);
+        
+        service.deleteResource("public", "skill", "name");
+        service.deleteResourceVersion("public", "skill", "name", "1.0.0");
+        
+        verify(vectorIndex).deleteByResource("public", "skill", "name");
+        verify(repository).deleteByResource("public", "skill", "name");
+        verify(vectorIndex).deleteByResourceVersion("public", "skill", "name", "1.0.0");
+        verify(repository).deleteByResourceVersion("public", "skill", "name", "1.0.0");
+    }
+    
+    @Test
+    void rebuildShouldAllowVectorIndexWithNoPersistedChunks() throws Exception {
+        AiResourceIndexServiceImpl service = service();
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(vectorIndex.available()).thenReturn(true);
+        when(repository.replaceEntry(any(), anyList())).thenAnswer(invocation -> {
+            AiResourceSearchDocument entry = invocation.getArgument(0);
+            entry.setId(1L);
+            return Collections.emptyList();
+        });
+        
+        service.rebuildAiResource("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper",
+            "1.0.0");
+        
+        verify(vectorIndex).replaceResourceVersion("public",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper", "1.0.0",
+            Collections.emptyList());
     }
     
     @Test
@@ -448,6 +563,31 @@ class AiResourceIndexServiceImplTest {
                 new McpAiResourceSearchTypeHandler(mcpServerOperationService)));
         return new AiResourceIndexServiceImpl(repository, embeddingService, vectorIndex,
             indexEnhancementService, registry);
+    }
+    
+    private AiResourceSearchDocument enhancementEntry() {
+        AiResourceSearchDocument result = new AiResourceSearchDocument();
+        result.setId(10L);
+        result.setNamespaceId("public");
+        result.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        result.setResourceName("api-helper");
+        result.setResourceVersion("1.0.0");
+        return result;
+    }
+    
+    private void prepareEnhancement(AiResourceSearchDocument entry) throws Exception {
+        when(repository.findEntry("public", Constants.Skills.RESOURCE_TYPE_SKILL, "api-helper"))
+            .thenReturn(entry);
+        when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(meta());
+        when(resourceManager.findVersion("public", "api-helper",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(AiResourceConstants.VERSION_STATUS_ONLINE));
+        when(enhancementService.ready()).thenReturn(true);
+        when(repository.listChunks(10L)).thenReturn(Collections.emptyList());
+        when(enhancementService.enhanceWithResult(any(), anyList(), anyList()))
+            .thenReturn(new AiResourceIndexEnhancementResult(Collections.emptyList(),
+                "fingerprint-v1"));
     }
     
     private AiResource meta() {

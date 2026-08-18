@@ -367,12 +367,71 @@ class JdbcAiResourceIndexTaskRepositoryTest {
             .contains("Failed to decode AI resource task"));
     }
     
+    @Test
+    void shouldDetectUnfinishedTasksForExactResourceTypeAcrossPages() {
+        for (int i = 0; i < 100; i++) {
+            insertTask(String.format("%03d", i), "skill", "skill-" + i,
+                JdbcAiResourceIndexTaskRepository.STATUS_PENDING);
+        }
+        insertTask("zzz-agent", "agent", "agent-a",
+            JdbcAiResourceIndexTaskRepository.STATUS_PROCESSING);
+        
+        assertTrue(repository.hasUnfinishedTasks("agent"));
+        assertTrue(repository.hasUnfinishedTasks("skill"));
+        assertFalse(repository.hasUnfinishedTasks("prompt"));
+    }
+    
+    @Test
+    void shouldIgnoreCompletedAndOtherTaskTypesForReadiness() {
+        insertTask("completed-agent", "agent", "agent-a",
+            JdbcAiResourceIndexTaskRepository.STATUS_COMPLETED);
+        jdbcTemplate.update("INSERT INTO ai_resource_task "
+            + "(task_key, namespace_id, task_type, task_stage, status, task_payload, "
+            + "task_result, retry_count, revision, next_execute_at, lease_token, "
+            + "lease_expire_at, last_error, gmt_create, gmt_modified) "
+            + "VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, ?, 0, NULL, NULL, "
+            + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", "other-agent", "public",
+            "other-task", "stage", JdbcAiResourceIndexTaskRepository.STATUS_PENDING,
+            JacksonUtils.toJson(new AiResourceIndexTaskPayload("agent", "agent-a", false)),
+            currentEpochMillis);
+        
+        assertFalse(repository.hasUnfinishedTasks("agent"));
+    }
+    
+    @Test
+    void shouldTreatMalformedUnfinishedTaskAsNotReady() {
+        jdbcTemplate.update("INSERT INTO ai_resource_task "
+            + "(task_key, namespace_id, task_type, task_stage, status, task_payload, "
+            + "task_result, retry_count, revision, next_execute_at, lease_token, "
+            + "lease_expire_at, last_error, gmt_create, gmt_modified) "
+            + "VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, ?, 0, NULL, NULL, "
+            + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", "malformed", "public",
+            AiResourceIndexTask.TASK_TYPE, AiResourceIndexTask.STAGE_BASE_INDEX,
+            JdbcAiResourceIndexTaskRepository.STATUS_PENDING, "not-json",
+            currentEpochMillis);
+        
+        assertTrue(repository.hasUnfinishedTasks("agent"));
+    }
+    
     private AiResourceIndexTask scheduleEnhancementTask() {
         repository.schedule("public", "skill", "avatar", true);
         AiResourceIndexTask baseTask = repository.findDueTasks(10).get(0);
         assertTrue(repository.claim(baseTask, 60_000L));
         assertTrue(repository.advanceToEnhancement(baseTask));
         return repository.findDueTasks(10).get(0);
+    }
+    
+    private void insertTask(String taskKey, String resourceType, String resourceName,
+        String status) {
+        jdbcTemplate.update("INSERT INTO ai_resource_task "
+            + "(task_key, namespace_id, task_type, task_stage, status, task_payload, "
+            + "task_result, retry_count, revision, next_execute_at, lease_token, "
+            + "lease_expire_at, last_error, gmt_create, gmt_modified) "
+            + "VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 1, ?, 0, NULL, NULL, "
+            + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", taskKey, "public",
+            AiResourceIndexTask.TASK_TYPE, AiResourceIndexTask.STAGE_BASE_INDEX, status,
+            JacksonUtils.toJson(new AiResourceIndexTaskPayload(resourceType, resourceName, false)),
+            currentEpochMillis);
     }
     
     private void advanceTime(long millis) {

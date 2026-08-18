@@ -70,7 +70,13 @@ class AiResourceSearchTypeHandlerRegistryTest {
                 List.of(new TestHandler(Collections.emptyList(), true))));
         assertThrows(IllegalStateException.class,
             () -> new AiResourceSearchTypeHandlerRegistry(
+                List.of(new TestHandler(null, true))));
+        assertThrows(IllegalStateException.class,
+            () -> new AiResourceSearchTypeHandlerRegistry(
                 List.of(new TestHandler(List.of(" "), true))));
+        TestHandler repeated = new TestHandler(Arrays.asList("skill", "skill"), true);
+        assertSame(repeated,
+            new AiResourceSearchTypeHandlerRegistry(List.of(repeated)).get("skill"));
     }
     
     private static class TestHandler implements AiResourceSearchTypeHandler {

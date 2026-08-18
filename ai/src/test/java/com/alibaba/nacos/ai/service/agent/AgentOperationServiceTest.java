@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
@@ -99,6 +100,9 @@ class AgentOperationServiceTest {
     @Mock
     private PublishPipelineExecutor publishPipelineExecutor;
     
+    @Mock
+    private AiResourceIndexMaintenanceService indexMaintenanceService;
+    
     private AgentOperationService service;
     
     private MockedStatic<VisibilityHelper> visibilityHelper;
@@ -110,6 +114,7 @@ class AgentOperationServiceTest {
         service =
             new AgentOperationService(persistenceService, resourceManager,
                 publishPipelineExecutor);
+        service.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         visibilityHelper = org.mockito.Mockito.mockStatic(VisibilityHelper.class);
         visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("alice");
         visibilityHelper.when(VisibilityHelper::resolveClientIp).thenReturn("127.0.0.1");
@@ -180,6 +185,8 @@ class AgentOperationServiceTest {
         assertEquals("alice", draftCaptor.getValue().getAuthor());
         verify(resourceManager).findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT);
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
     }
     
     @Test
@@ -224,6 +231,8 @@ class AgentOperationServiceTest {
         assertSame(expected, service.createDraft(NAMESPACE_ID, request));
         
         visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
         verify(persistenceService).createInitialDraft(any(Agent.class),
             any(AgentVersionDetail.class));
         verify(persistenceService, never()).createDraft(eq(NAMESPACE_ID), eq(AGENT_NAME),
@@ -266,6 +275,26 @@ class AgentOperationServiceTest {
         verify(resourceManager).ensureReadableOrNotFound(meta,
             "Agent not found: " + AGENT_NAME);
         visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+    }
+    
+    @Test
+    void testIndexSchedulingFailureDoesNotRollbackCommittedAgentUpdate() throws NacosException {
+        AiResource meta = meta(null, null);
+        Agent replacement = new Agent();
+        replacement.setNamespaceId(NAMESPACE_ID);
+        replacement.setAgentName(AGENT_NAME);
+        Agent updated = new Agent();
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        when(persistenceService.tryUpdateAgent(replacement, meta)).thenReturn(updated);
+        doThrow(new IllegalStateException("task store unavailable"))
+            .when(indexMaintenanceService).schedule(NAMESPACE_ID,
+                Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        service.setAiResourceIndexMaintenanceService(null);
+        
+        assertSame(updated, service.updateAgent(replacement));
     }
     
     @Test
@@ -446,6 +475,8 @@ class AgentOperationServiceTest {
             org.mockito.Mockito.times(4));
         verify(persistenceService).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
         verify(persistenceService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
     }
     
     @Test
@@ -865,6 +896,8 @@ class AgentOperationServiceTest {
             null, null);
         verify(persistenceService).synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME, null, null,
             null, null);
+        verify(indexMaintenanceService, org.mockito.Mockito.times(2)).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
     }
     
     @Test
@@ -877,6 +910,8 @@ class AgentOperationServiceTest {
             null, null)).thenReturn(updated);
         
         assertSame(updated, service.updateLabels(NAMESPACE_ID, AGENT_NAME, labels));
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
     }
     
     @Test
@@ -898,6 +933,8 @@ class AgentOperationServiceTest {
             agentCaptor.getValue().getStatus());
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE,
             versionCaptor.getValue().getStatus());
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
         assertSame(request.getCallInterfaces(), versionCaptor.getValue().getCallInterfaces());
         assertEquals(request.getAuthor(), versionCaptor.getValue().getAuthor());
         assertEquals(request.getChangeDescription(),
