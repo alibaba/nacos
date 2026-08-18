@@ -246,6 +246,7 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertFalse(found.isMissingNode(), page.toString());
         assertEquals(skillName, found.get("name").asText(), found.toString());
         assertNotNull(found.get("labels"), found.toString());
+        assertEquals(skillName, found.get("frontMatter").get("name").asText(), found.toString());
     }
 
     private void assertSkillVersionStatus(String skillName, String version, String status)

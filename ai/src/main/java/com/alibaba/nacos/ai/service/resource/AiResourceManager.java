@@ -121,7 +121,7 @@ public class AiResourceManager {
      * @param type              resource type
      * @param initialExpected   initial expected metaVersion
      * @param newValue          the mutable value carrier whose fields are written on each attempt
-     * @param onConflictRefresh (newValue, latestMeta) → refresh non-target fields
+     * @param onConflictRefresh (newValue, latestMeta) 鈫?refresh non-target fields
      * @return the outcome of the loop
      */
     CasResult doCasLoop(String namespaceId, String name, String type, long initialExpected,
@@ -304,6 +304,32 @@ public class AiResourceManager {
                 nv.setExt(latest.getExt());
                 nv.setVersionInfo(latest.getVersionInfo());
             });
+    }
+    
+    /**
+     * CAS-update description and ext fields of a resource meta row.
+     */
+    public void bumpMetaDescriptionAndExt(String namespaceId, AiResource meta, String description,
+        String ext) throws NacosException {
+        if (meta == null || meta.getMetaVersion() == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "Meta version missing");
+        }
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(description);
+        newValue.setBizTags(meta.getBizTags());
+        newValue.setExt(ext);
+        newValue.setVersionInfo(meta.getVersionInfo());
+        CasResult result =
+            doCasLoop(namespaceId, meta.getName(), meta.getType(), meta.getMetaVersion(),
+                newValue,
+                (nv, latest) -> {
+                    nv.setStatus(latest.getStatus());
+                    nv.setBizTags(latest.getBizTags());
+                    nv.setVersionInfo(latest.getVersionInfo());
+                });
+        handleStrictCasResult(result);
     }
     
     /**
@@ -831,6 +857,17 @@ public class AiResourceManager {
     public void insertBootstrapMeta(String namespaceId, String name, String type,
         String description,
         String bizTags, String owner, String from, String version, String storageJson) {
+        insertBootstrapMeta(namespaceId, name, type, description, bizTags, owner, from, version,
+            storageJson, null);
+    }
+    
+    /**
+     * Create both an online version row and a meta row for bootstrap (built-in) resources.
+     */
+    public void insertBootstrapMeta(String namespaceId, String name, String type,
+        String description,
+        String bizTags, String owner, String from, String version, String storageJson,
+        String ext) {
         insertVersionRow(namespaceId, name, type, owner, AiResourceConstants.VERSION_STATUS_ONLINE,
             version, description, storageJson);
         
@@ -847,6 +884,7 @@ public class AiResourceManager {
         meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
         meta.setDesc(description);
         meta.setBizTags(bizTags);
+        meta.setExt(ext);
         meta.setOwner(owner);
         meta.setFrom(from);
         meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
@@ -1277,6 +1315,17 @@ public class AiResourceManager {
         String description,
         String bizTags, String version, AiResource existedMeta, boolean isNew)
         throws NacosException {
+        initOrUpdateMetaForDraft(namespaceId, name, type, description, bizTags, version,
+            existedMeta, isNew, existedMeta == null ? null : existedMeta.getExt());
+    }
+    
+    /**
+     * Create a new meta row or CAS-update the editing pointer and ext on an existing one.
+     */
+    public void initOrUpdateMetaForDraft(String namespaceId, String name, String type,
+        String description, String bizTags, String version, AiResource existedMeta, boolean isNew,
+        String ext)
+        throws NacosException {
         if (isNew) {
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
             String defaultScope = VisibilityHelper.resolveDefaultScopeForCreate(type);
@@ -1287,6 +1336,7 @@ public class AiResourceManager {
             meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
             meta.setDesc(description);
             meta.setBizTags(bizTags);
+            meta.setExt(ext);
             meta.setOwner(currentUser);
             meta.setScope(defaultScope);
             ResourceVersionInfo info = new ResourceVersionInfo();
@@ -1311,6 +1361,7 @@ public class AiResourceManager {
                 if (syncDescription) {
                     newValue.setDesc(description);
                 }
+                newValue.setExt(ext);
             });
         }
     }
@@ -1318,7 +1369,7 @@ public class AiResourceManager {
     /**
      * Resolve the base version to copy from when creating a draft.
      *
-     * <p>Priority: explicit basedOnVersion → "latest" label → highest semver → highest vN.
+     * <p>Priority: explicit basedOnVersion 鈫?"latest" label 鈫?highest semver 鈫?highest vN.
      * Returns {@code null} if no version exists yet.</p>
      *
      * @throws NacosApiException if an explicit basedOnVersion was given but cannot be resolved

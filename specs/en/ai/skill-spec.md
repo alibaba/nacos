@@ -178,6 +178,21 @@ Skill also maintains a lightweight manifest for client-side discovery. The
 manifest is an index derived from Skill metadata and must not become the source
 of truth for lifecycle state.
 
+Admin and console Skill list responses may include `frontMatter`, which is the
+YAML frontmatter parsed from `SKILL.md` of the current display version. The
+display version is `latest` when an online version exists; otherwise it may be
+the current editing or reviewing version. This display frontmatter and its
+corresponding version are cached in `ai_resource.ext` so list APIs can be served
+from the single paginated `ai_resource` query without per-item version-table or
+storage reads.
+
+The cache must be updated by lifecycle transitions that change the display
+version, including bootstrap, publish, draft deletion, and redraft. Draft
+creation or draft update must not expose unpublished frontmatter while a
+`latest` online version exists. Existing rows that do not yet contain the cache
+may return `frontMatter = null` until a lifecycle transition or bootstrap repair
+backfills the metadata; list APIs must not lazily backfill by querying each item.
+
 Storage extension rules are defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).
 

@@ -129,6 +129,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
     
+    private static final String EXT_FRONT_MATTER_KEY = "frontMatter";
+    
+    private static final String EXT_FRONT_MATTER_VERSION_KEY = "frontMatterVersion";
+    
     private static final String SCOPE_SKILL = "skill";
     
     private static final Pattern SHORT_SEMVER_VERSION_PATTERN =
@@ -457,6 +461,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
             LOGGER.info("Skip built-in skill bootstrap because skill already exists: {}",
                 skillName);
+            refreshDisplayMetadataCache(namespaceId, skillName);
             return;
         }
         
@@ -472,7 +477,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String storageJson = buildStorageJson(namespaceId, skillName, version, files,
             SkillContentDigestUtils.computeContentMd5(skill), provider);
         resourceManager.insertBootstrapMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson);
+            skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson,
+            buildSkillMetaExt(null, version, skill));
         
         // Step 5: Initialize index manifest for client discovery
         SkillIndexManifest manifest = new SkillIndexManifest();
@@ -937,7 +943,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson);
         }
-        resourceManager.bumpMetaDescription(namespaceId, meta, skill.getDescription());
+        refreshDisplayMetadataCache(namespaceId, skill.getName(), editing, skill);
     }
     
     /**
@@ -1131,6 +1137,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setWritable(VisibilityHelper.canWriteResource(meta));
             if (versionInfo != null) {
                 item.setLabels(versionInfo.getLabels());
+                item.setFrontMatter(parseFrontMatterFromExt(meta.getExt()));
                 item.setEditingVersion(versionInfo.getEditingVersion());
                 item.setReviewingVersion(versionInfo.getReviewingVersion());
                 item.setOnlineCnt(versionInfo.getOnlineCnt());
@@ -1282,7 +1289,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 storageJson);
         }
-        resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
+        refreshDisplayMetadataCache(namespaceId, name, editing, draftSkill);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing,
             AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -1297,6 +1304,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, name, v.getVersion(),
                 v.getStorage()));
+        refreshDisplayMetadataCache(namespaceId, name);
     }
     
     /**
@@ -1380,6 +1388,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         throws NacosException {
         AiResourceVersion v =
             resourceManager.doSystemPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
@@ -1396,6 +1405,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Step 1: Update version status to online, clear reviewing pointer in meta
         AiResourceVersion v =
             resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
         
         // Step 2: Write version's file list to index manifest (for client discovery)
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
@@ -1413,6 +1423,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         boolean updateLatestLabel) throws NacosException {
         AiResourceVersion v =
             resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
+        refreshDisplayMetadataCache(namespaceId, name, version, v);
         
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
@@ -1424,6 +1435,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void redraft(String namespaceId, String name, String version) throws NacosException {
         resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_SKILL, version);
+        refreshDisplayMetadataCache(namespaceId, name);
     }
     
     /**
@@ -1617,8 +1629,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 SkillContentDigestUtils.computeContentMd5(skill), provider));
         
         // 3) create or update meta for editingVersion
+        boolean draftIsDisplayVersion = isNewSkill || !hasLatestLabel(existedMeta);
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, version, existedMeta, isNewSkill);
+            draftIsDisplayVersion ? skill.getDescription() : null, null, version, existedMeta,
+            isNewSkill,
+            draftIsDisplayVersion
+                ? buildSkillMetaExt(existedMeta == null ? null : existedMeta.getExt(), version,
+                    skill)
+                : existedMeta == null ? null : existedMeta.getExt());
+        if (!isNewSkill && !draftIsDisplayVersion) {
+            refreshDisplayMetadataCache(namespaceId, skillName, version, skill);
+        }
     }
     
     /**
@@ -1948,6 +1969,121 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         if (frontMatter.containsKey("description")) {
             skill.setDescription(frontMatter.get("description"));
+        }
+    }
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName)
+        throws NacosException {
+        refreshDisplayMetadataCache(namespaceId, skillName, null, (Skill) null);
+    }
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName,
+        String knownVersion, Skill knownSkill) throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            return;
+        }
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        String displayVersion = resolveDisplayVersion(info);
+        if (StringUtils.isBlank(displayVersion)) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, meta.getDesc(),
+                buildSkillMetaExt(meta.getExt(), null, null));
+            return;
+        }
+        if (displayVersion.equals(knownVersion) && knownSkill != null) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta,
+                knownSkill.getDescription(), buildSkillMetaExt(meta.getExt(), displayVersion,
+                    knownSkill));
+            return;
+        }
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, skillName,
+            RESOURCE_TYPE_SKILL, displayVersion);
+        refreshDisplayMetadataCache(namespaceId, skillName, displayVersion, versionRow);
+    }
+    
+    private void refreshDisplayMetadataCache(String namespaceId, String skillName, String version,
+        AiResourceVersion versionRow) throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            return;
+        }
+        if (versionRow == null) {
+            resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta, meta.getDesc(),
+                buildSkillMetaExt(meta.getExt(), null, null));
+            return;
+        }
+        Skill displaySkill = loadSkillFromStorage(namespaceId, skillName, version,
+            versionRow.getStorage());
+        resourceManager.bumpMetaDescriptionAndExt(namespaceId, meta,
+            displaySkill.getDescription(), buildSkillMetaExt(meta.getExt(), version,
+                displaySkill));
+    }
+    
+    private static String resolveDisplayVersion(ResourceVersionInfo info) {
+        if (info == null) {
+            return null;
+        }
+        Map<String, String> labels = info.getLabels();
+        if (labels != null && StringUtils.isNotBlank(
+            labels.get(AiResourceConstants.LABEL_LATEST))) {
+            return labels.get(AiResourceConstants.LABEL_LATEST);
+        }
+        if (StringUtils.isNotBlank(info.getEditingVersion())) {
+            return info.getEditingVersion();
+        }
+        return info.getReviewingVersion();
+    }
+    
+    private static boolean hasLatestLabel(AiResource meta) {
+        if (meta == null) {
+            return false;
+        }
+        ResourceVersionInfo info = AiResourceManager.parseVersionInfo(meta.getVersionInfo());
+        if (info == null || info.getLabels() == null) {
+            return false;
+        }
+        return StringUtils.isNotBlank(info.getLabels().get(AiResourceConstants.LABEL_LATEST));
+    }
+    
+    private static String buildSkillMetaExt(String currentExt, String version, Skill skill) {
+        Map<String, Object> ext = parseExt(currentExt);
+        Map<String, String> frontMatter = skill == null ? null
+            : SkillZipParser.parseYamlFrontMatterFromMarkdown(skill.getSkillMd());
+        if (frontMatter == null || frontMatter.isEmpty()) {
+            ext.remove(EXT_FRONT_MATTER_KEY);
+            ext.remove(EXT_FRONT_MATTER_VERSION_KEY);
+        } else {
+            ext.put(EXT_FRONT_MATTER_KEY, new LinkedHashMap<>(frontMatter));
+            ext.put(EXT_FRONT_MATTER_VERSION_KEY, version);
+        }
+        return ext.isEmpty() ? null : JacksonUtils.toJson(ext);
+    }
+    
+    private static Map<String, String> parseFrontMatterFromExt(String extJson) {
+        Map<String, Object> ext = parseExt(extJson);
+        Object frontMatter = ext.get(EXT_FRONT_MATTER_KEY);
+        if (!(frontMatter instanceof Map)) {
+            return null;
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        ((Map<?, ?>) frontMatter).forEach((key, value) -> {
+            if (key != null && value != null) {
+                result.put(String.valueOf(key), String.valueOf(value));
+            }
+        });
+        return result.isEmpty() ? null : result;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseExt(String extJson) {
+        if (StringUtils.isBlank(extJson)) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> ext = JacksonUtils.toObj(extJson, Map.class);
+            return ext == null ? new LinkedHashMap<>() : new LinkedHashMap<>(ext);
+        } catch (Exception ignored) {
+            return new LinkedHashMap<>();
         }
     }
     

@@ -116,6 +116,19 @@ class SkillSummaryTest extends BasicRequestTest {
     }
     
     @Test
+    @DisplayName("test getter and setter for frontMatter")
+    void testGetterAndSetterForFrontMatter() {
+        SkillSummary summary = new SkillSummary();
+        Map<String, String> frontMatter = new HashMap<>();
+        frontMatter.put("name", "testSkill");
+        frontMatter.put("description", "Test skill description");
+        summary.setFrontMatter(frontMatter);
+        assertNotNull(summary.getFrontMatter());
+        assertEquals("testSkill", summary.getFrontMatter().get("name"));
+        assertEquals("Test skill description", summary.getFrontMatter().get("description"));
+    }
+    
+    @Test
     @DisplayName("test getter and setter for editingVersion")
     void testGetterAndSetterForEditingVersion() {
         SkillSummary summary = new SkillSummary();
@@ -157,6 +170,7 @@ class SkillSummaryTest extends BasicRequestTest {
         summary.setEnable(true);
         summary.setOnlineCnt(2);
         summary.setDownloadCount(500L);
+        summary.setFrontMatter(Map.of("name", "testSkill", "description", "Test"));
         
         String json = mapper.writeValueAsString(summary);
         assertNotNull(json);
@@ -166,6 +180,8 @@ class SkillSummaryTest extends BasicRequestTest {
         assertTrue(json.contains("\"enable\":true"));
         assertTrue(json.contains("\"onlineCnt\":2"));
         assertTrue(json.contains("\"downloadCount\":500"));
+        assertTrue(json.contains("\"frontMatter\":{\""));
+        assertTrue(json.contains("\"description\":\"Test\""));
     }
     
     @Test
@@ -173,7 +189,8 @@ class SkillSummaryTest extends BasicRequestTest {
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testSkill\",\"description\":\"Test\","
             + "\"owner\":\"admin\",\"enable\":true,\"bizTags\":\"[\\\"tag1\\\"]\",\"from\":\"local\","
-            + "\"scope\":\"PUBLIC\",\"onlineCnt\":2,\"downloadCount\":100}";
+            + "\"scope\":\"PUBLIC\",\"frontMatter\":{\"name\":\"testSkill\"},\"onlineCnt\":2,"
+            + "\"downloadCount\":100}";
         
         SkillSummary summary = mapper.readValue(json, SkillSummary.class);
         assertNotNull(summary);
@@ -184,6 +201,7 @@ class SkillSummaryTest extends BasicRequestTest {
         assertTrue(summary.isEnable());
         assertEquals("local", summary.getFrom());
         assertEquals("PUBLIC", summary.getScope());
+        assertEquals("testSkill", summary.getFrontMatter().get("name"));
         assertEquals(2, summary.getOnlineCnt());
         assertEquals(100L, summary.getDownloadCount());
     }
