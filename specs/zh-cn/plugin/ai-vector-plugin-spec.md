@@ -28,7 +28,9 @@ PostgreSQL 实现由 `nacos-default-ai-vector-plugin` 提供。
 向量索引是可选能力。AI 资源检索运行时未激活或者没有可用 Vector Provider 时，不能阻止
 Nacos 启动、标准 AI 资源写入或关键词检索。通过
 `nacos.ai.resource.search.vector.provider` 选择 Provider，Provider 专属配置由各实现负责。
-当前版本只有 ARD 一个消费者，因此 `nacos.ai.ard.enabled=false` 时该运行时也不激活。
+Vector Provider 由 `nacos.ai.resource.search.enabled` 控制的共享 Search Core 使用；RAD、ARD、
+通用 AI Resource Search 和资源专用 Search 都可以消费该能力。`nacos.ai.ard.enabled` 只控制
+ARD 协议端点，不得单独决定 Vector Provider 的激活状态。
 
 ## 2. Provider 生命周期
 
@@ -99,4 +101,5 @@ SPI 变更必须保持插件模块 Java 8 兼容，并遵循 Nacos 插件兼容�
 
 SPI 契约测试覆盖 Provider 选择、no-op fallback、幂等 replace/delete、限定范围的搜索和
 生命周期清理。默认 PostgreSQL 实现还需要测试 Schema 隔离、关闭向量能力时不依赖
-pgvector、Provider 内部事务替换，以及模拟向量失败后的 reconciliation。
+pgvector、共享 Search Core 开启而 ARD 关闭时仍可供其他消费者使用、Provider 内部事务替换，
+以及模拟向量失败后的 reconciliation。

@@ -88,6 +88,18 @@ requires persistent endpoint visibility.
 - gRPC payloads include query, release, and endpoint registration requests as
   defined by the [gRPC API Spec](../grpc-api/api-spec.md).
 
+MCP participates in generic AI Resource Search and provides a
+resource-specific Search facade with `resourceType=mcp` fixed. Both reuse the
+same index and Query Planner from the
+[AI Resource Search Spec](ai-resource-search-spec.md); a Config-backed name
+list does not remain a separate full-text search engine. The MCP handler may
+project server name, description, tools, resources, and public tags. Endpoint
+credentials, runtime instances, and sensitive authentication metadata do not
+enter search chunks. Before migration to canonical AI Resource storage, the
+handler may read compatibility storage but produces the same canonical
+projection. Generic Search restricted to MCP has the same candidate
+eligibility as resource-specific Search.
+
 ## 5. Current Compatibility Storage
 
 Current MCP implementation stores MCP metadata through Config-shaped records

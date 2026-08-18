@@ -53,6 +53,17 @@ a provider uses `nacos_config`.
 Unlike Skill, AgentSpec does not maintain a separate manifest index. Version
 metadata and storage pointers are authoritative.
 
+AgentSpec participates in generic AI Resource Search and provides a
+resource-specific Search facade with `resourceType=agentspec` fixed. Both reuse
+the document/chunk/facet, currentness, visibility, and pagination semantics
+from the [AI Resource Search Spec](ai-resource-search-spec.md). The AgentSpec
+handler projects the latest online Version's name, description, business tags,
+public dependencies, and capability descriptions. Resource content containing
+credentials or private runtime values does not enter chunks. The existing
+keyword-paged Client Search migrates to this facade and must not filter again
+after shared-index pagination. Generic Search restricted to AgentSpec has the
+same candidate eligibility as resource-specific Search.
+
 ## 4. Lifecycle
 
 AgentSpec follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md):

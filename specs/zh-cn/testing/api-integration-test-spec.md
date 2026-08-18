@@ -142,3 +142,20 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
 服务可用时，应运行相关 Failsafe IT 选择或对应 API 面的全量选择。
 
 仅修改 IT 覆盖索引文档时，最低验证要求是受影响模块的 license 和格式检查。
+
+## 9. AI Resource Search 与 Agent 场景
+
+共享 Search Core、Agent projection 或 ARD Agent 表示变更时，OpenAPI IT 场景矩阵至少覆盖：
+
+- ARD 关闭但 `nacos.ai.resource.search.enabled=true` 时，RAD 和资源专用 Search 仍可使用基础索引；
+- Agent 名称 literal contains、Tag ALL、Protocol ANY、组合 AND、大小写及 `%`、`_`、`\\`
+  字面量，首/中/尾/越界页与正确 total；
+- 创建、metadata 更新、Version publish/online/offline/delete、latest/label 变化后的有界等待收敛；
+- Endpoint register/deregister/heartbeat 只改变 Discover，不改变目录 Search document；
+- `AUTO` readiness 前后结果等价且不混合，`INDEX` 未 READY 明确失败，`SCAN` 始终走兼容路径；
+- 通用 Search 指定单一 Agent、AgentSpec、Skill、Prompt 或 MCP 时，与对应资源专用 Search 的候选
+  资格、可见性和当前性结果一致；
+- ARD 纯 A2A、多协议和只有旧 online Version 支持 A2A 的 type filter、primary 表示、稳定
+  identifier、representation-specific Artifact URL、offline/digest 失效和 Runtime 状态排除。
+
+测试异步索引时只允许有界轮询公开 API 可见结果，不得依赖固定 sleep、数据库内部行或任务执行顺序。

@@ -176,6 +176,16 @@ gRPC 写入不得盲目通过 HTTP 重试。
 Search query 名称与 RAD 字段相同。重复 `tagsAll` 取 AND，重复 `protocolsAny` 取 OR；
 `agentNameContains` 是大小写敏感的 literal substring。
 
+Agent Search 是共享 Search Core 上固定 `resourceType=agent` 的资源专用 Facade，不维护第二套
+索引或在索引分页后执行二次业务过滤。`agentNameContains`、`tagsAll` 和 `protocolsAny` 必须
+在 total 与分页截断前转换为 [AI 资源检索规范](ai-resource-search-spec.md)的类型化 predicate。
+通用 AI Resource Search 只查询 Agent 时，候选资格、可见性和当前性必须与本 API 一致；响应 DTO、
+排序和 numbered page 仍遵循 RAD。
+
+`nacos.ai.rad.search.mode=INDEX` 且 Agent projection 未 READY 时，HTTP 和 gRPC Binding 返回
+明确的 service unavailable 等价错误；`AUTO` 在 readiness 前使用完整旧扫描，READY 后使用索引。
+Binding 不暴露当前物理路径，也不得因索引调用失败在一次请求内降级或混合结果。
+
 Discover 直接映射 `agentName`、`version` 和 `label`。重复 Filter 参数为 `protocol`、
 `transport` 和 `endpointSource`，`protocolVersion` 为单值。`metadataSelector` 使用一个
 URL encoded JSON object，而不是动态 `metadata.<key>` 参数名。

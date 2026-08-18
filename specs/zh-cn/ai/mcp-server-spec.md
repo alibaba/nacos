@@ -79,6 +79,13 @@ endpoint 可见性时，应使用非临时服务/实例行为。
 - gRPC payload 包含查询、发布和 endpoint 注册请求，详见
   [gRPC API 规范](../grpc-api/api-spec.md)。
 
+MCP 参与通用 AI Resource Search，并提供固定 `resourceType=mcp` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的同一索引和 Query Planner，
+不能继续把 Config-backed 名称列表作为独立的全文搜索引擎。MCP handler 可以投影 server name、
+description、tools、resources 和公开 tags；endpoint credential、运行时 instance 和敏感 auth
+metadata 不进入检索 chunk。迁移到标准 AI Resource 前，handler 可以读取兼容存储，但必须生成相同
+的标准 projection。通用 Search 只指定 MCP 时与专用 Search 候选资格一致。
+
 ## 5. 当前兼容存储
 
 当前 MCP 实现通过 Config 形态记录保存 MCP 元数据，并通过 Naming service 表达

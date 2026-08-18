@@ -152,3 +152,26 @@ Java SDK ITs intentionally use the dedicated `java-sdk-integration-test` Maven
 profile. The generic `integration-test` profile is reserved for HTTP API IT
 workflows and must not accidentally run SDK tests that depend on SDK gRPC
 connection readiness or optional server abilities.
+
+## 8. AI Resource Search And Agent Scenarios
+
+When public AI SDK Search or Agent behavior changes, Java SDK IT covers at
+least:
+
+- a real SDK client performing Agent single-condition, combined-predicate,
+  numbered-page, and default-namespace queries;
+- equivalent Agent catalog results over HTTP and gRPC for the same facts and
+  transport selection;
+- bounded convergence after Agent publish/online/offline/latest transitions,
+  while Endpoint operations change Discover only;
+- matching eligibility between generic single-type Search and
+  resource-specific Agent, AgentSpec, Skill, Prompt, and MCP Search;
+- the same Search contract for supported client transport
+  `AUTO/HTTP/GRPC`, with a controlled exception when ability negotiation rejects
+  a transport; and
+- SDK shutdown, reconnect, and redo neither duplicate catalog-index writes nor
+  expose Runtime Endpoints in Search results.
+
+Protocol conformance for ARD artifacts remains covered by OpenAPI/adaptor IT.
+Java SDK IT validates only observable catalog and Discover behavior through
+public SDK contracts.

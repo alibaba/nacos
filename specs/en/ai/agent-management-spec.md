@@ -261,6 +261,23 @@ Agent metadata, Agent Version definitions, and Runtime Endpoints do not own one
 another's lifecycle. Deleting or disabling an Agent definition changes its
 read projection but does not delete still-live runtime publisher state.
 
+An Agent catalog Search document is rebuildable derived state, not another
+fact source. The following successful commits schedule one coalesced
+`search_index` task by `(namespaceId, agent, agentName)`: Agent creation,
+directory metadata or governance updates, Version publish/online/offline/delete,
+common-latest or custom-label changes, canonical definition changes through the
+legacy A2A facade, and Agent deletion. The task re-reads current facts and
+projects common latest plus the complete online-Version catalog; consecutive
+changes advance only the task revision.
+
+Runtime Endpoint registration/deregistration, Publisher heartbeat, health
+state, and Runtime revision do not schedule this task and never enter the Agent
+catalog index. Scheduling failure does not roll back an already successful
+Agent lifecycle operation. Durable task retry and Reconciliation converge as
+defined by the [AI Resource Search Spec](ai-resource-search-spec.md). Deleting
+the derived document is the correct index result when the Agent is absent,
+disabled, or has no online Version.
+
 ## 5. Call Interfaces And Declared Endpoints
 
 ### 5.1 AgentCallInterface

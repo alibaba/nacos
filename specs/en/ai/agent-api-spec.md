@@ -200,6 +200,21 @@ Search query names equal RAD field names. Repeated `tagsAll` values use AND;
 repeated `protocolsAny` values use OR. `agentNameContains` is a literal,
 case-sensitive substring.
 
+Agent Search is a resource-specific facade over shared Search Core with
+`resourceType=agent` fixed. It maintains no second index and performs no
+secondary business filtering after index pagination. `agentNameContains`,
+`tagsAll`, and `protocolsAny` are converted to typed predicates from the
+[AI Resource Search Spec](ai-resource-search-spec.md) before totals and page
+truncation. When generic AI Resource Search queries only Agent, its candidate
+eligibility, visibility, and currentness match this API; the response DTO,
+ordering, and numbered-page contract continue to follow RAD.
+
+When `nacos.ai.rad.search.mode=INDEX` and the Agent projection is not READY,
+the HTTP and gRPC bindings return equivalent explicit service-unavailable
+errors. `AUTO` uses the complete legacy scan before readiness and the index
+after readiness. A binding does not expose the selected physical path and does
+not downgrade or mix results within one request after an index-call failure.
+
 Discover maps `agentName`, `version`, and `label` directly. Repeated filter
 parameters are `protocol`, `transport`, and `endpointSource`.
 `protocolVersion` is singular. `metadataSelector` is one URL-encoded JSON

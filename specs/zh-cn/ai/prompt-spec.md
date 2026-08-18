@@ -61,6 +61,12 @@ Prompt。如果 md5 与当前版本内容 md5 一致，服务端可以返回 not
 
 订阅应报告 Prompt 变更，但不应向运行时客户端暴露宽范围管理列表能力。
 
+Prompt 参与通用 AI Resource Search，并提供固定 `resourceType=prompt` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的同一索引和 Query Planner。
+Prompt handler 只投影调用方可见、enabled、latest 可解析到 online Version 的名称、description、
+业务 tags 和适合检索的模板说明；模板中可能出现的 credential、secret 默认值和运行时参数值不得进入
+chunk。通用 Search 只指定 Prompt 时与专用 Search 的候选资格、可见性和当前性一致。
+
 ## 5. 存储
 
 Prompt 在每个版本的存储描述中持久化选定的 provider。已有版本的操作使用已持久化的

@@ -49,6 +49,13 @@ provider，有效 provider 配置只选择新版本。缺少 provider 的历史�
 
 不同于 Skill，AgentSpec 不维护独立 manifest index。版本元数据和存储指针是事实来源。
 
+AgentSpec 参与通用 AI Resource Search，并提供固定 `resourceType=agentspec` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 document/chunk/facet、
+当前性、可见性和分页。AgentSpec handler 投影 latest online Version 的名称、description、业务
+tags、公开依赖和能力说明；嵌入 credential 或私有运行时值的资源内容不得进入 chunk。现有按 keyword
+分页的 Client Search 必须逐步切换为该 Facade，不能在共享索引分页后再次过滤。通用 Search 只指定
+AgentSpec 时与专用 Search 候选资格一致。
+
 ## 4. 生命周期
 
 AgentSpec 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)：

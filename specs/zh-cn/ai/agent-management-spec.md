@@ -232,6 +232,17 @@ online Version，就必须存在且仅存在一个有效的 `latestVersion`，�
 Agent 元数据、Agent Version 定义和 Runtime Endpoint 之间不互相拥有生命周期。删除或
 disable Agent 定义会改变读取投影，但不会删除仍然活跃的运行时 publisher 状态。
 
+Agent 目录 Search document 是可重建派生状态，不是新的事实源。以下成功提交会按
+`(namespaceId, agent, agentName)` 调度一个合并的 `search_index` 任务：创建 Agent、目录
+metadata 或治理字段更新、Version publish/online/offline/delete、common latest 或自定义
+label 变化、legacy A2A facade 产生 canonical 定义变化，以及 Agent 删除。任务重新读取最新事实，
+投影 common latest 和全部 online Version 的目录；连续变化只推进任务 revision。
+
+Runtime Endpoint register/deregister、Publisher heartbeat、健康状态和 Runtime revision 不得调度
+该任务，也不得写入 Agent 目录索引。调度失败不回滚已经成功的 Agent 生命周期操作，持久任务重试和
+Reconciliation 按 [AI 资源检索规范](ai-resource-search-spec.md)最终收敛。Agent 不存在、disabled
+或没有 online Version 时，正确的索引结果是删除派生文档。
+
 ## 5. CallInterface 与 Declared Endpoint
 
 ### 5.1 AgentCallInterface
