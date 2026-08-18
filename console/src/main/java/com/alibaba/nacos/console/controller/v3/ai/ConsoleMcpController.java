@@ -42,6 +42,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -244,6 +245,7 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerImportValidationResult> validateImport(McpImportForm mcpImportForm)
         throws NacosException {
+        CompatibilityHelper.check("POST /v3/console/ai/import/validate");
         mcpImportForm.validate();
         McpServerImportRequest request = convertToImportRequest(mcpImportForm);
         McpServerImportValidationResult result =
@@ -263,6 +265,7 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerImportResponse> executeImport(McpImportForm mcpImportForm)
         throws NacosException {
+        CompatibilityHelper.check("POST /v3/console/ai/import/execute");
         mcpImportForm.validate();
         McpServerImportRequest request = convertToImportRequest(mcpImportForm);
         McpServerImportResponse response =

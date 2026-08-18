@@ -25,14 +25,18 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -43,8 +47,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,11 +61,20 @@ class ConsoleMcpControllerTest {
     
     private MockMvc mockMvc;
     
+    private MockEnvironment environment;
+    
     @BeforeEach
     void setUp() {
-        EnvUtil.setEnvironment(new StandardEnvironment());
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         mockMvc = MockMvcBuilders.standaloneSetup(
-            new ConsoleMcpController(mcpProxy)).build();
+            new ConsoleMcpController(mcpProxy))
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
@@ -144,7 +159,21 @@ class ConsoleMcpControllerTest {
     }
     
     @Test
-    void testValidateImport() throws Exception {
+    void testValidateImportDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/import/validate")
+                .param("namespaceId", "nacos-default-mcp")
+                .param("importType", "json")
+                .param("data", "[{\"name\":\"test-server\"}]"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response, "POST /v3/console/ai/import/validate");
+        verifyNoInteractions(mcpProxy);
+    }
+    
+    @Test
+    void testValidateImportWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         McpServerImportValidationResult validationResult =
             new McpServerImportValidationResult();
         when(mcpProxy.validateImport(anyString(), any())).thenReturn(validationResult);
@@ -166,7 +195,21 @@ class ConsoleMcpControllerTest {
     }
     
     @Test
-    void testExecuteImport() throws Exception {
+    void testExecuteImportDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/import/execute")
+                .param("namespaceId", "nacos-default-mcp")
+                .param("importType", "json")
+                .param("data", "[{\"name\":\"test-server\"}]"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response, "POST /v3/console/ai/import/execute");
+        verifyNoInteractions(mcpProxy);
+    }
+    
+    @Test
+    void testExecuteImportWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         McpServerImportResponse importResponse = new McpServerImportResponse();
         when(mcpProxy.executeImport(anyString(), any())).thenReturn(importResponse);
         
@@ -184,5 +227,15 @@ class ConsoleMcpControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertNotNull(result.getData());
+    }
+    
+    private void assertDeprecated(MockHttpServletResponse response, String alternative)
+        throws Exception {
+        assertEquals(HttpStatus.GONE.value(), response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.API_DEPRECATED.getCode(), result.getCode());
+        assertTrue(result.getData().contains(alternative));
     }
 }
