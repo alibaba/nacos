@@ -118,7 +118,33 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 以及 Config beta/tag 旧表向 `config_info_gray` 的迁移，视为已移除兼容行为。从 3.0 之前版本
 升级时，如果使用过默认 namespace 或 beta 灰度发布，运维侧必须先完成相关数据迁移再升级。
 
-## 9. Legacy HTTP API Adapter
+## 9. 废弃 V3 API 门禁
+
+以下少量待移除的废弃 v3 API 默认关闭：
+
+| 废弃 API | 标准替代 API |
+| --- | --- |
+| `GET /v3/admin/ai/pipelines` | `GET /v3/admin/ai/pipelines/list` |
+| `GET /v3/admin/ai/pipelines/{pipelineId}` | `GET /v3/admin/ai/pipelines/detail?pipelineId={pipelineId}` |
+| `GET /v3/console/ai/pipelines` | `GET /v3/console/ai/pipelines/list` |
+| `GET /v3/console/ai/pipelines/{pipelineId}` | `GET /v3/console/ai/pipelines/detail?pipelineId={pipelineId}` |
+| `POST /v3/console/ai/mcp/import/validate` | `POST /v3/console/ai/import/validate` |
+| `POST /v3/console/ai/mcp/import/execute` | `POST /v3/console/ai/import/execute` |
+
+关闭时，端点返回 HTTP `410 Gone` 和 `API_DEPRECATED` 结果码，并说明对应的标准替代 API。
+运维人员可以在迁移窗口内通过以下配置临时重新开启全部这些端点：
+
+```properties
+nacos.core.api.compatibility.enabled=true
+```
+
+该开关有意设计为共享开关，只作用于显式接入 v3 兼容门禁的 API，不替代
+`nacos-api-legacy-adapter` 按 API 受众维护的兼容开关。重新开启端点后，原有认证和鉴权仍然生效。
+
+旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 参数不再识别。旧 MCP 直接 URL 导入还必须
+额外设置 `nacos.ai.resource.import.allow-user-url=true`；运维侧应优先使用受管 source 配置。
+
+## 10. Legacy HTTP API Adapter
 
 从 Nacos 3.2.0 版本线开始，legacy v1 和 v2 HTTP API 不再属于默认 Nacos server 发行包。它们是由
 [nacos-api-legacy-adapter](https://github.com/nacos-group/nacos-api-legacy-adapter)提供的独立兼容面。
@@ -134,7 +160,7 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 
 领域规范只应在迁移上下文中提及 legacy v1/v2 行为，或在当前兼容路径依赖它时进行说明。
 
-## 10. 旧 A2A Agent Facade
+## 11. 旧 A2A Agent Facade
 
 标准 Agent 模型使用 `type=agent`、协议无关 Version 和 RAD 发现。历史 A2A AgentCard
 表面仅用于兼容，并按照 [A2A Agent 规范](../ai/a2a-agent-spec.md)在服务端边界适配。
@@ -148,7 +174,7 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 不得只向这些 facade 增加新能力。新增开发以 Agent Management 和 RAD 契约为目标。
 历史数据与混合 Server 滚动升级使用独立迁移方案，本身不延长 API 兼容窗口。
 
-## 11. 相关规范
+## 12. 相关规范
 
 - [HTTP API 规范](../http-api/api-spec.md)
 - [V3 API 范围](../http-api/v3-api-surface.md)

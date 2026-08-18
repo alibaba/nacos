@@ -279,3 +279,10 @@ user-facing documentation should describe the new APIs as the primary contract.
 Deprecated endpoints should be documented only in compatibility sections with
 migration guidance, following the
 [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
+
+The legacy Pipeline base-path list and path-variable detail endpoints, together
+with `POST /v3/console/ai/mcp/import/{validate|execute}`, are disabled by default.
+They return HTTP `410 Gone` with `API_DEPRECATED`. Operators may temporarily
+reopen all explicitly gated v3 compatibility endpoints with
+`nacos.core.api.compatibility.enabled=true`. The former
+`nacos.ai.resource.import.legacy-mcp-api-enabled` property is no longer read.

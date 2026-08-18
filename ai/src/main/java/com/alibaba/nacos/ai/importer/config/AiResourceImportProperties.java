@@ -40,16 +40,6 @@ public class AiResourceImportProperties {
     public static final String LEGACY_ENABLED_PROPERTY = "nacos.ai.resource.import.enabled";
     
     /**
-     * Compatibility switch for the legacy MCP import API.
-     *
-     * @deprecated migrate to the unified {@code /v3/{admin|console}/ai/import/*} APIs. Planned
-     *     for removal in Nacos 3.4.0.
-     */
-    @Deprecated
-    public static final String LEGACY_MCP_API_ENABLED_PROPERTY =
-        "nacos.ai.resource.import.legacy-mcp-api-enabled";
-    
-    /**
      * Compatibility switch allowing user URLs through the legacy MCP import API.
      *
      * @deprecated configure a managed AI resource import source endpoint instead. Planned for
@@ -60,8 +50,6 @@ public class AiResourceImportProperties {
         "nacos.ai.resource.import.allow-user-url";
     
     private boolean enabled = true;
-    
-    private boolean legacyMcpImportApiEnabled;
     
     private boolean allowUserUrl;
     
@@ -84,8 +72,6 @@ public class AiResourceImportProperties {
         Properties values = properties == null ? new Properties() : properties;
         AiResourceImportProperties result = new AiResourceImportProperties();
         result.setEnabled(resolveEnabled(values));
-        result.setLegacyMcpImportApiEnabled(getBoolean(values,
-            LEGACY_MCP_API_ENABLED_PROPERTY, false));
         result.setAllowUserUrl(getBoolean(values, ALLOW_USER_URL_PROPERTY, false));
         return result;
     }
@@ -121,30 +107,6 @@ public class AiResourceImportProperties {
     
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-    
-    /**
-     * Whether the legacy MCP import API is enabled.
-     *
-     * @return whether the legacy API is enabled
-     * @deprecated migrate clients to the unified AI resource import APIs. Planned for removal in
-     *     Nacos 3.4.0.
-     */
-    @Deprecated
-    public boolean isLegacyMcpImportApiEnabled() {
-        return legacyMcpImportApiEnabled;
-    }
-    
-    /**
-     * Set whether the legacy MCP import API is enabled.
-     *
-     * @param legacyMcpImportApiEnabled whether the legacy API is enabled
-     * @deprecated migrate clients to the unified AI resource import APIs. Planned for removal in
-     *     Nacos 3.4.0.
-     */
-    @Deprecated
-    public void setLegacyMcpImportApiEnabled(boolean legacyMcpImportApiEnabled) {
-        this.legacyMcpImportApiEnabled = legacyMcpImportApiEnabled;
     }
     
     /**
