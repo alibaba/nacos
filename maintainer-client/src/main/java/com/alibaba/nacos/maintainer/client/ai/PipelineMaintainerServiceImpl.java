@@ -31,6 +31,7 @@ import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +62,14 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
             return parseResultFromHttp(executeSyncHttpRequest(httpRequest), typeReference);
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND) {
-                return getPipelineDetailLegacy(pipelineId, typeReference);
+                try {
+                    return getPipelineDetailLegacy(pipelineId, typeReference);
+                } catch (NacosException legacyException) {
+                    if (legacyException.getErrCode() == HttpURLConnection.HTTP_GONE) {
+                        throw e;
+                    }
+                    throw legacyException;
+                }
             }
             throw e;
         }

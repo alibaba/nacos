@@ -168,6 +168,19 @@ class PipelineMaintainerServiceImplTest {
         assertEquals("legacy", result.getData().getExecutionId());
     }
     
+    @Test
+    void getPipelineDetailPreservesCanonical404WhenLegacyApiIsGone() throws NacosException {
+        doThrow(new NacosException(NacosException.NOT_FOUND, "pipeline not found"))
+            .doThrow(new NacosException(java.net.HttpURLConnection.HTTP_GONE, "API deprecated"))
+            .when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> pipelineMaintainerService.getPipelineDetail("missing"));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        assertEquals("pipeline not found", exception.getErrMsg());
+    }
+    
     // ========== Additional Tests for Coverage ==========
     
     @Test
