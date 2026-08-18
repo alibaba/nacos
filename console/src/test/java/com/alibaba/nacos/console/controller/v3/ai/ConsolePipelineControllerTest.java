@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.PipelineProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +33,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -39,9 +42,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,15 +62,20 @@ class ConsolePipelineControllerTest {
     
     private MockMvc mockMvc;
     
+    private MockEnvironment environment;
+    
     @BeforeEach
     void setUp() {
-        EnvUtil.setEnvironment(new StandardEnvironment());
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         mockMvc =
-            MockMvcBuilders.standaloneSetup(new ConsolePipelineController(pipelineProxy)).build();
+            MockMvcBuilders.standaloneSetup(new ConsolePipelineController(pipelineProxy))
+                .setControllerAdvice(new NacosApiExceptionHandler()).build();
     }
     
     @AfterEach
     void tearDown() {
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
@@ -101,7 +111,19 @@ class ConsolePipelineControllerTest {
     }
     
     @Test
-    void listPipelinesLegacyBasePathStillWorks() throws Exception {
+    void listPipelinesLegacyBasePathDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(CONSOLE_BASE).param("resourceType", "SKILL")
+                .param("pageNo", "1").param("pageSize", "10"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response, "GET /v3/console/ai/pipelines/list");
+        verifyNoInteractions(pipelineProxy);
+    }
+    
+    @Test
+    void listPipelinesLegacyBasePathWorksWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         Page<PipelineExecution> page = new Page<>();
         when(pipelineProxy.listPipelines(anyString(), isNull(), isNull(), isNull(), anyInt(),
             anyInt()))
@@ -117,7 +139,19 @@ class ConsolePipelineControllerTest {
     }
     
     @Test
-    void getPipelineLegacyPathVariableStillWorks() throws Exception {
+    void getPipelineLegacyPathVariableDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(CONSOLE_BASE + "/legacy-id"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response,
+            "GET /v3/console/ai/pipelines/detail?pipelineId={pipelineId}");
+        verifyNoInteractions(pipelineProxy);
+    }
+    
+    @Test
+    void getPipelineLegacyPathVariableWorksWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         PipelineExecution execution = new PipelineExecution();
         execution.setExecutionId("legacy-id");
         when(pipelineProxy.getPipeline("legacy-id")).thenReturn(execution);
@@ -129,5 +163,15 @@ class ConsolePipelineControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("legacy-id", result.getData().getExecutionId());
+    }
+    
+    private void assertDeprecated(MockHttpServletResponse response, String alternative)
+        throws Exception {
+        assertEquals(HttpStatus.GONE.value(), response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.API_DEPRECATED.getCode(), result.getCode());
+        assertTrue(result.getData().contains(alternative));
     }
 }

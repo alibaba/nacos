@@ -342,15 +342,17 @@ validate 和 execute 端点应通过兼容 adapter 路由到统一导入管理�
 在构建 MCP Server schema 时，从用户自有 MCP runtime endpoint 拉取 tools 的辅助能力，不属于
 AI 资源市场或 registry 导入流程。
 
-兼容端点默认关闭。运维可以在迁移窗口期通过
-`nacos.ai.resource.import.legacy-mcp-api-enabled=true` 临时重新开启，客户端应迁移到
-`/v3/{admin|console}/ai/import/*`。
+兼容端点默认关闭。运维可以在迁移窗口期通过 `nacos.core.api.compatibility.enabled=true`
+临时重新开启，客户端应迁移到 `/v3/{admin|console}/ai/import/*`。
+
+旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 参数不再识别。共享兼容开关还会重新开启其他
+显式接入门禁的废弃 v3 API，具体范围由[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)定义。
 
 对于旧的 `importType=url`，请求默认不得把用户传入 URL 作为网络目标。当 `data` 匹配已启用
 source 时，可以按 `sourceId` 解释；否则应失败并提示迁移到
 `nacos.ai.resource.import.sources` 配置。旧的直接 URL 导入只能由运维同时开启
-`nacos.ai.resource.import.legacy-mcp-api-enabled=true` 和
-`nacos.ai.resource.import.allow-user-url=true` 后用于受控部署。
+`nacos.core.api.compatibility.enabled=true` 和 `nacos.ai.resource.import.allow-user-url=true`
+后用于受控部署。
 
 旧的 `importType=json` 和 `importType=file` 可以映射为内置本地 importer，因为它们不需要服务端
 发起网络访问。
