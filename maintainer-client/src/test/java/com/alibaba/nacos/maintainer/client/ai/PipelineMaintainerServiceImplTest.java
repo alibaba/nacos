@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -163,6 +164,19 @@ class PipelineMaintainerServiceImplTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("legacy", result.getData().get("executionId").asText());
+    }
+    
+    @Test
+    void getPipelineDetailPreservesCanonical404WhenLegacyApiIsGone() throws NacosException {
+        doThrow(new NacosException(NacosException.NOT_FOUND, "pipeline not found"))
+            .doThrow(new NacosException(HttpURLConnection.HTTP_GONE, "API deprecated"))
+            .when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> pipelineMaintainerService.getPipelineDetail("missing"));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        assertEquals("pipeline not found", exception.getErrMsg());
     }
     
     // ========== Additional Tests for Coverage ==========
