@@ -95,30 +95,30 @@ class AiResourceImportPluginTypePolicyTest {
     void testLegacySkillsShStateEnablesAuthenticatedImporter() {
         MapConfiguration configuration = new MapConfiguration();
         configuration.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
-
+        
         assertTrue(policy.isPluginEnabledByDefault("skills-sh-authenticated", configuration));
     }
-
+    
     @Test
     void testCanonicalAuthenticatedImporterStateOverridesLegacyState() {
         MapConfiguration configuration = new MapConfiguration();
         configuration.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "false");
         configuration.setProperty(
             "nacos.plugin.ai-resource-import.skills-sh-authenticated.enabled", "true");
-
+        
         assertTrue(policy.isPluginEnabledByDefault("skills-sh-authenticated", configuration));
     }
-
+    
     @Test
     void testCanonicalAuthenticatedImporterFalseIsNotOverriddenByLegacyTrue() {
         MapConfiguration configuration = new MapConfiguration();
         configuration.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled", "true");
         configuration.setProperty(
             "nacos.plugin.ai-resource-import.skills-sh-authenticated.enabled", "false");
-
+        
         assertFalse(policy.isPluginEnabledByDefault("skills-sh-authenticated", configuration));
     }
-
+    
     @Test
     void testLegacySkillsShStateEmitsMigrationWarningForAuthenticatedImporter() {
         Logger logger =
@@ -130,22 +130,22 @@ class AiResourceImportPluginTypePolicyTest {
             MapConfiguration configuration = new MapConfiguration();
             configuration.setProperty("nacos.plugin.ai.importer.skills.skills-sh.enabled",
                 "true");
-
+            
             assertTrue(policy.isPluginEnabledByDefault("skills-sh-authenticated", configuration));
-            assertTrue(appender.list.stream().anyMatch(event ->
-                event.getFormattedMessage().contains("Legacy AI resource import plugin state key")
-                    && event.getFormattedMessage()
+            assertTrue(appender.list.stream().anyMatch(event -> event.getFormattedMessage()
+                .contains("Legacy AI resource import plugin state key")
+                && event.getFormattedMessage()
                     .contains("nacos.plugin.ai-resource-import.skills-sh-authenticated.enabled")));
         } finally {
             logger.detachAppender(appender);
             appender.stop();
         }
     }
-
+    
     private static class MapConfiguration implements PluginTypeConfiguration {
-
+        
         private final Map<String, String> properties = new HashMap<>();
-
+        
         void setProperty(String key, String value) {
             properties.put(key, value);
         }
