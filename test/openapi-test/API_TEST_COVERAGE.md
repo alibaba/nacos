@@ -178,7 +178,11 @@ latest published version, while the draft remains queryable by its explicit
 version.
 
 RAD Agent Client coverage is split into three rows. Search/Discover validates
-the online catalog and discovery projection. Definition publication validates
+the online catalog and discovery projection. The Search scenario is reusable
+against `AUTO`, `INDEX`, and `SCAN`: it tolerates only the documented temporary
+INDEX-readiness 503, then verifies literal and case-sensitive filters, stable
+numbered pagination, complete online-Version catalog changes, and Runtime
+Endpoint non-indexing. Definition publication validates
 draft-only and `autoSubmit` workflows, idempotent retry/resume, direct and
 inherited Versions, validation/conflict handling, namespace isolation, and
 cross-surface canonical projections. Endpoint publication validates the

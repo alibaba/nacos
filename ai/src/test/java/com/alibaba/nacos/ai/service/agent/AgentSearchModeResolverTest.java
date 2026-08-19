@@ -1,0 +1,103 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.service.agent;
+
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.search.AgentSearchIndexProjector;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchReadinessService;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.springframework.beans.factory.ObjectProvider;
+
+import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class AgentSearchModeResolverTest {
+    
+    @Test
+    void shouldParseConfiguredModes() {
+        assertEquals(AgentSearchMode.AUTO, AgentSearchMode.parse(null));
+        assertEquals(AgentSearchMode.AUTO, AgentSearchMode.parse("  "));
+        assertEquals(AgentSearchMode.INDEX, AgentSearchMode.parse(" index "));
+        assertEquals(AgentSearchMode.SCAN, AgentSearchMode.parse("scan"));
+        assertThrows(IllegalArgumentException.class, () -> AgentSearchMode.parse("unknown"));
+    }
+    
+    @Test
+    void shouldAlwaysUseExplicitScanWithoutReadinessLookup() throws NacosException {
+        AiResourceSearchReadinessService readiness = mock(AiResourceSearchReadinessService.class);
+        AgentSearchModeResolver resolver = new AgentSearchModeResolver(readiness, () -> "SCAN");
+        
+        assertEquals(AgentSearchMode.SCAN, resolver.resolve());
+        verify(readiness, never()).isReady(any(), anyInt());
+    }
+    
+    @Test
+    void shouldRequireReadinessForExplicitIndex() throws NacosException {
+        AiResourceSearchReadinessService readiness = mock(AiResourceSearchReadinessService.class);
+        when(readiness.isReady(Constants.Agent.RESOURCE_TYPE_AGENT,
+            AgentSearchIndexProjector.PROJECTION_VERSION)).thenReturn(false, true);
+        AgentSearchModeResolver resolver = new AgentSearchModeResolver(readiness, () -> "INDEX");
+        
+        NacosException unavailable = assertThrows(NacosException.class, resolver::resolve);
+        assertEquals(503, unavailable.getErrCode());
+        assertEquals(AgentSearchMode.INDEX, resolver.resolve());
+    }
+    
+    @Test
+    void shouldSwitchAutoToIndexStickily() throws NacosException {
+        AiResourceSearchReadinessService readiness = mock(AiResourceSearchReadinessService.class);
+        when(readiness.isReady(Constants.Agent.RESOURCE_TYPE_AGENT,
+            AgentSearchIndexProjector.PROJECTION_VERSION)).thenReturn(false, true, false);
+        AgentSearchModeResolver resolver = new AgentSearchModeResolver(readiness, () -> "AUTO");
+        
+        assertEquals(AgentSearchMode.SCAN, resolver.resolve());
+        assertEquals(AgentSearchMode.INDEX, resolver.resolve());
+        assertEquals(AgentSearchMode.INDEX, resolver.resolve());
+        verify(readiness, times(2)).isReady(Constants.Agent.RESOURCE_TYPE_AGENT,
+            AgentSearchIndexProjector.PROJECTION_VERSION);
+    }
+    
+    @Test
+    void shouldUseEnvironmentAndNoopReadinessInProductionConstructor() {
+        @SuppressWarnings("unchecked")
+        ObjectProvider<AiResourceSearchReadinessService> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable(any())).thenAnswer(invocation -> {
+            Supplier<?> fallback = invocation.getArgument(0);
+            return fallback.get();
+        });
+        try (MockedStatic<EnvUtil> env = mockStatic(EnvUtil.class)) {
+            env.when(() -> EnvUtil.getProperty(Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY,
+                AgentSearchMode.AUTO.name())).thenReturn("INDEX");
+            AgentSearchModeResolver resolver = new AgentSearchModeResolver(provider);
+            NacosException unavailable = assertThrows(NacosException.class, resolver::resolve);
+            assertEquals(503, unavailable.getErrCode());
+        }
+    }
+}

@@ -120,6 +120,7 @@ public class AgentSearchIndexProjector {
         result.put("resourceVersion", latest.getVersion());
         putIfPresent(result, "iconUrl", agent.getIconUrl());
         putIfPresent(result, "provider", agent.getProvider());
+        result.put("tags", agent.getTags());
         result.put("protocols", protocols);
         result.put("artifactKinds", artifactKinds);
         result.put("versionCatalog", agent.getVersionCatalog());

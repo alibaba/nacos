@@ -136,6 +136,11 @@ public class Constants {
         public static final String ADMIN_PATH = "/v3/admin/ai/agents";
         
         /**
+         * Selects the RAD Agent Search read path.
+         */
+        public static final String RAD_SEARCH_MODE_CONFIG_KEY = "nacos.ai.rad.search.mode";
+        
+        /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
          */
         public static final String RESOURCE_TYPE_AGENT = "agent";

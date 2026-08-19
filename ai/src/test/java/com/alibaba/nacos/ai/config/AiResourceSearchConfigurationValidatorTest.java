@@ -60,6 +60,21 @@ class AiResourceSearchConfigurationValidatorTest {
         assertTrue(message.contains(Constants.AI_RESOURCE_SEARCH_ENABLED_KEY));
     }
     
+    @Test
+    void shouldValidateRadSearchMode() {
+        assertDoesNotThrow(() -> refresh(Map.of(
+            Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY, "auto")));
+        assertDoesNotThrow(() -> refresh(Map.of(
+            Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY, " INDEX ")));
+        assertDoesNotThrow(() -> refresh(Map.of(
+            Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY, "SCAN")));
+        
+        BeanCreationException exception = assertThrows(BeanCreationException.class,
+            () -> refresh(Map.of(Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY, "invalid")));
+        assertTrue(exception.getMostSpecificCause().getMessage()
+            .contains(Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY));
+    }
+    
     private void refresh(Map<String, Object> properties) {
         try (AnnotationConfigApplicationContext context =
             new AnnotationConfigApplicationContext()) {
