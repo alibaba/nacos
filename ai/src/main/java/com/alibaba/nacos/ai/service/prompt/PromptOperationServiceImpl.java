@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
@@ -55,6 +56,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -635,7 +637,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public PromptMetaInfo getPromptDetail(String namespaceId, String promptKey)
         throws NacosException {
-        AiResource meta = requireMeta(namespaceId, promptKey);
+        AiResource meta = requireReadableMeta(namespaceId, promptKey);
         PromptVersionInfoPojo versionInfo = requireVersionInfo(meta);
         
         PromptMetaInfo detail = new PromptMetaInfo();
@@ -681,7 +683,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public PromptVersionInfo getPromptVersionDetail(String namespaceId, String promptKey,
         String version)
         throws NacosException {
-        requireMeta(namespaceId, promptKey);
+        requireReadableMeta(namespaceId, promptKey);
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "version is required");
@@ -726,9 +728,13 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 .generateLikeArgument(Constants.ALL_PATTERN + bizTags + Constants.ALL_PATTERN)
             : null;
         
-        Page<AiResource> metaPage =
-            resourceManager.listMetaByType(namespaceId, RESOURCE_TYPE_PROMPT, nameLike,
-                bizTagsLike, pageNo, pageSize);
+        QueryCondition queryCondition =
+            resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_PROMPT, nameLike,
+                bizTagsLike, VisibilityConstants.ACTION_READ);
+        if (queryCondition.isAlwaysEmpty()) {
+            return AiResourceManager.buildEmptyPage(pageNo);
+        }
+        Page<AiResource> metaPage = resourceManager.listMeta(queryCondition, pageNo, pageSize);
         
         List<PromptMetaSummary> items = new ArrayList<>();
         if (metaPage != null && metaPage.getPageItems() != null) {
@@ -768,7 +774,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public Page<PromptVersionSummary> listPromptVersions(String namespaceId, String promptKey,
         int pageNo,
         int pageSize) throws NacosException {
-        requireMeta(namespaceId, promptKey);
+        requireReadableMeta(namespaceId, promptKey);
         
         Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, promptKey,
             RESOURCE_TYPE_PROMPT, null, pageNo, pageSize);
@@ -806,11 +812,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version,
         String label)
         throws NacosException {
-        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-        if (meta == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Prompt not found: " + promptKey);
-        }
+        AiResource meta = requireReadableMeta(namespaceId, promptKey);
         
         PromptVersionInfoPojo info = requireVersionInfo(meta);
         String resolved = resolveClientVersion(info, version, label);
@@ -946,6 +948,13 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Prompt not found: " + promptKey);
         }
+        return meta;
+    }
+    
+    private AiResource requireReadableMeta(String namespaceId, String promptKey)
+        throws NacosException {
+        AiResource meta = requireMeta(namespaceId, promptKey);
+        resourceManager.ensureReadableOrNotFound(meta, "Prompt not found: " + promptKey);
         return meta;
     }
     
