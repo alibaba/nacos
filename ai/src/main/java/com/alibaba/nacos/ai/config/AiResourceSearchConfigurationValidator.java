@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.agent.AgentSearchMode;
 import jakarta.annotation.PostConstruct;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,14 @@ public class AiResourceSearchConfigurationValidator {
         if (ardEnabled && !searchEnabled) {
             throw new IllegalStateException("`" + Constants.ARD_ENABLED_KEY
                 + "=true` requires `" + Constants.AI_RESOURCE_SEARCH_ENABLED_KEY + "=true`");
+        }
+        String radSearchMode = environment.getProperty(
+            Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY, AgentSearchMode.AUTO.name());
+        try {
+            AgentSearchMode.parse(radSearchMode);
+        } catch (IllegalArgumentException ignored) {
+            throw new IllegalStateException("`" + Constants.Agent.RAD_SEARCH_MODE_CONFIG_KEY
+                + "` must be AUTO, INDEX, or SCAN");
         }
     }
 }

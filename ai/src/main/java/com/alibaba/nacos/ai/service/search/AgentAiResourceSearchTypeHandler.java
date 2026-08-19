@@ -129,10 +129,7 @@ public class AgentAiResourceSearchTypeHandler implements AiResourceSearchTypeHan
                 "Agent not found: " + document.getResourceName());
             AiResourceIndexProjection expected = projectAgent(document.getNamespaceId(),
                 document.getResourceName(), meta, document.getResourceVersion());
-            return expected != null && Objects.equals(document.getResourceVersion(),
-                expected.getDocument().getResourceVersion())
-                && Objects.equals(document.getSourceDigest(),
-                    expected.getDocument().getSourceDigest());
+            return expected != null && matchesProjection(document, expected.getDocument());
         } catch (NacosException e) {
             return false;
         }
@@ -168,5 +165,23 @@ public class AgentAiResourceSearchTypeHandler implements AiResourceSearchTypeHan
     private boolean isEnabled(AiResource resource) {
         return resource != null && AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(
             resource.getStatus());
+    }
+    
+    private boolean matchesProjection(AiResourceSearchDocument actual,
+        AiResourceSearchDocument expected) {
+        return Objects.equals(actual.getNamespaceId(), expected.getNamespaceId())
+            && Objects.equals(actual.getResourceType(), expected.getResourceType())
+            && Objects.equals(actual.getResourceName(), expected.getResourceName())
+            && Objects.equals(actual.getResourceVersion(), expected.getResourceVersion())
+            && Objects.equals(actual.getDisplayName(), expected.getDisplayName())
+            && Objects.equals(actual.getDescription(), expected.getDescription())
+            && Objects.equals(actual.getTags(), expected.getTags())
+            && Objects.equals(actual.getCapabilities(), expected.getCapabilities())
+            && Objects.equals(actual.getRepresentativeQueries(),
+                expected.getRepresentativeQueries())
+            && Objects.equals(actual.getMetadata(), expected.getMetadata())
+            && Objects.equals(actual.getSourceDigest(), expected.getSourceDigest())
+            && Objects.equals(actual.getStatus(), expected.getStatus())
+            && Objects.equals(actual.getGenerateMode(), expected.getGenerateMode());
     }
 }

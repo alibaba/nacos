@@ -51,9 +51,10 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
+| `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same twelve stable workflows pass with both the default JSON adapter and
+The same thirteen stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -84,7 +85,7 @@ is never stopped.
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
 | Search with only default page inputs | Enabled visible Agents with an online latest Version are returned in stable pages. | IT |
-| Search by literal `agentNameContains` | Only literal contains matches are returned. | IT |
+| Search by literal `agentNameContains` | Only case-sensitive literal contains matches are returned; `%`, `_`, and `\` are not interpreted as datastore wildcards. | OpenAPI IT + Java SDK IT |
 | Search by multiple `tagsAll` | Every returned Agent contains all requested tags. | IT |
 | Search by multiple `protocolsAny` | Every returned Agent contains at least one requested protocol. | IT |
 | Combine name, tags, protocols, and pagination | Filters compose with AND semantics except `protocolsAny`, and page metadata is correct. | IT |
@@ -133,6 +134,8 @@ Endpoint, and replacement across an already-online Version.
 | Omitted-selector subscription through a latest change | It receives latest metadata immediately but keeps older online-version Endpoints until their Versions go offline. | IT + UT |
 | Explicit-latest subscription through Endpoint replacement and Version changes | It switches strictly to the new latest pool, including an intentionally empty interval, and suppresses unchanged polls. | IT + UT |
 | Search after multiple online Versions | One catalog entry lists all online Versions in descending SemVer order and reports the current latest. | IT |
+| Register or deregister Runtime Endpoints without changing definitions | Search catalog fields and Version membership remain unchanged because Runtime Endpoints are not indexed. | OpenAPI IT + Java SDK IT |
+| Take one of two online Versions offline, then take the final Version offline | The catalog first converges to the remaining Version, then the Agent leaves Search entirely. | OpenAPI IT + Java SDK IT |
 | Publication range spans multiple Versions | Every matching exact/latest Discover sees the shared Endpoint; a nonmatching Version does not. | IT + UT |
 | Offline and then bring the current latest online while another Version remains online | Search/Discover follow the server-managed recalculated latest without changing publisher intent. | IT |
 
@@ -237,6 +240,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Subscription starts before Agent creation, then definition and Runtime Endpoint appear | Listener receives complete snapshots only when the public fingerprint changes. | IT |
 | Subscription is removed, then definition or Runtime Endpoint changes | No post-unsubscribe callback occurs. | IT |
 | Same workflow through gRPC and explicit HTTP clients | Query shapes and publication semantics are transport-equivalent. | IT |
+| Maintainer publishes three Agents, then gRPC and HTTP SDKs page/filter the catalog while one Agent gains a Version, receives a Runtime Endpoint, and is taken offline Version by Version | Both transports return the same stable order and complete catalog; typed filters compose identically, Endpoint publication does not alter Search, and lifecycle projection converges without stale Versions. | IT |
 | Public and custom namespace workflows run together | Search, Discover, subscription, and publication never cross namespaces. | IT |
 | Version 1 online + Version 2 Endpoint pre-registration + Version 2 publish | Search, latest/exact/label Discover, and subscriptions agree at every transition. | IT |
 | Version 1 online + Version 2 publish before Endpoint registration + independent Version 2 publisher | Omitted selection preserves the rollout pool across the transition, explicit latest observes only Version 2, and both polling subscriptions converge without duplicate callbacks. | IT |

@@ -288,6 +288,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedAgent(maintainer, customNamespace, customName,
             Arrays.asList("java-sdk-it", "blue"), Collections.singletonList(PROTOCOL_A2A), false);
         AiService customService = createAiService(customNamespace, null);
+        waitForSearchTotal(defaultService, targetName, 1);
+        waitForSearchTotal(defaultService, decoyName, 1);
+        waitForSearchTotal(customService, customName, 1);
         
         AgentSearchRequest request = new AgentSearchRequest();
         request.setAgentNameContains(targetName);
@@ -978,6 +981,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
             Arrays.asList("java-sdk-it", "transport"), Collections.singletonList(PROTOCOL_A2A),
             false);
+        waitForSearchTotal(grpcService, agentName, 1);
+        waitForSearchTotal(httpService, agentName, 1);
         
         AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(agentName);
@@ -1002,6 +1007,80 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(endpoint))));
         waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
+    }
+
+    @Test
+    void shouldKeepSearchProjectionLifecyclePaginationAndTransportParity() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService grpcService = createAiService();
+        AiService httpService =
+            createAiService(Constants.DEFAULT_NAMESPACE_ID, AiConstants.AI_TRANSPORT_MODE_HTTP);
+        String stem = randomServiceName("agent-search-projection");
+        String agentA = stem + "-A";
+        String agentB = stem + "-B";
+        String agentC = stem + "-C";
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentA,
+            Arrays.asList("java-sdk-it", "shared", "blue"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentB,
+            Arrays.asList("java-sdk-it", "shared", "blue"),
+            Collections.singletonList(PROTOCOL_MCP), false);
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentC,
+            Arrays.asList("java-sdk-it", "other"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+
+        waitForSearchTotal(grpcService, stem, 3);
+        waitForSearchTotal(httpService, stem, 3);
+        AgentSearchRequest combined = new AgentSearchRequest();
+        combined.setAgentNameContains(stem);
+        combined.setTagsAll(Arrays.asList("shared", "blue"));
+        combined.setProtocolsAny(Arrays.asList(PROTOCOL_MCP, "jsonrpc"));
+        Page<AgentCatalogEntry> grpcCombined = grpcService.searchAgents(combined);
+        Page<AgentCatalogEntry> httpCombined = httpService.searchAgents(combined);
+        assertEquals(1, grpcCombined.getTotalCount());
+        assertEquals(agentB, grpcCombined.getPageItems().get(0).getAgentName());
+        assertEquals(agentB, httpCombined.getPageItems().get(0).getAgentName());
+
+        List<String> expectedOrder = Arrays.asList(agentA, agentB, agentC);
+        assertEquals(expectedOrder, searchNamesByPage(grpcService, stem));
+        assertEquals(expectedOrder, searchNamesByPage(httpService, stem));
+        AgentSearchRequest wrongCase = new AgentSearchRequest();
+        wrongCase.setAgentNameContains(stem + "-b");
+        assertEquals(0, grpcService.searchAgents(wrongCase).getTotalCount());
+        assertEquals(0, httpService.searchAgents(wrongCase).getTotalCount());
+
+        AgentCatalogEntry beforeEndpoint = waitForCatalog(grpcService, agentB, VERSION, 1);
+        Endpoint endpoint = endpoint(randomPort(), "/search-projection", "search-projection");
+        httpService.registerAgentEndpoints(
+            registration(agentB, PROTOCOL_MCP, Collections.singletonList(endpoint)));
+        waitForEndpointCount(grpcService, agentB, PROTOCOL_MCP, 1);
+        AgentCatalogEntry afterEndpoint = waitForCatalog(httpService, agentB, VERSION, 1);
+        assertSameCatalog(beforeEndpoint, afterEndpoint);
+
+        createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentB, VERSION_2);
+        AgentCatalogEntry grpcVersionTwo =
+            waitForCatalog(grpcService, agentB, VERSION_2, 2);
+        AgentCatalogEntry httpVersionTwo =
+            waitForCatalog(httpService, agentB, VERSION_2, 2);
+        assertSameCatalog(grpcVersionTwo, httpVersionTwo);
+        assertEquals(VERSION_2, grpcVersionTwo.getVersions().get(0).getVersion());
+        assertTrue(grpcVersionTwo.getVersions().get(0).getProtocols().contains(PROTOCOL_A2A));
+        assertEquals(VERSION, grpcVersionTwo.getVersions().get(1).getVersion());
+        assertTrue(grpcVersionTwo.getVersions().get(1).getProtocols().contains(PROTOCOL_MCP));
+
+        maintainer.offline(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentB, VERSION));
+        AgentCatalogEntry grpcOnlyVersionTwo =
+            waitForCatalog(grpcService, agentB, VERSION_2, 1);
+        AgentCatalogEntry httpOnlyVersionTwo =
+            waitForCatalog(httpService, agentB, VERSION_2, 1);
+        assertSameCatalog(grpcOnlyVersionTwo, httpOnlyVersionTwo);
+        assertEquals(VERSION_2, grpcOnlyVersionTwo.getVersions().get(0).getVersion());
+
+        maintainer.offline(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentB, VERSION_2));
+        waitForSearchAbsent(grpcService, agentB);
+        waitForSearchAbsent(httpService, agentB);
     }
     
     @Test
@@ -1443,6 +1522,62 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             }
         }
         return null;
+    }
+
+    private void waitForSearchTotal(AiService service, String nameContains, int expected)
+        throws Exception {
+        waitUntilLong("Search should converge to " + expected + " Agents for " + nameContains,
+            () -> {
+                AgentSearchRequest request = new AgentSearchRequest();
+                request.setAgentNameContains(nameContains);
+                return service.searchAgents(request).getTotalCount() == expected;
+            });
+    }
+
+    private AgentCatalogEntry waitForCatalog(AiService service, String agentName,
+        String latestVersion, int versionCount) throws Exception {
+        AtomicReference<AgentCatalogEntry> result = new AtomicReference<>();
+        waitUntilLong("Search catalog should converge for " + agentName, () -> {
+            AgentCatalogEntry entry = searchOne(service, agentName);
+            result.set(entry);
+            return entry != null && latestVersion.equals(entry.getLatestVersion())
+                && entry.getVersions() != null && entry.getVersions().size() == versionCount;
+        });
+        return result.get();
+    }
+
+    private void waitForSearchAbsent(AiService service, String agentName) throws Exception {
+        waitUntilLong("Agent with no online Version should leave Search: " + agentName,
+            () -> searchOne(service, agentName) == null);
+    }
+
+    private List<String> searchNamesByPage(AiService service, String nameContains)
+        throws NacosException {
+        List<String> result = new ArrayList<>();
+        for (int pageNo = 1; pageNo <= 4; pageNo++) {
+            AgentSearchRequest request = new AgentSearchRequest();
+            request.setAgentNameContains(nameContains);
+            request.setPageNo(pageNo);
+            request.setPageSize(1);
+            Page<AgentCatalogEntry> page = service.searchAgents(request);
+            assertEquals(3, page.getTotalCount());
+            assertEquals(3, page.getPagesAvailable());
+            for (AgentCatalogEntry entry : page.getPageItems()) {
+                result.add(entry.getAgentName());
+            }
+        }
+        return result;
+    }
+
+    private void assertSameCatalog(AgentCatalogEntry expected, AgentCatalogEntry actual) {
+        assertEquals(expected.getAgentName(), actual.getAgentName());
+        assertEquals(expected.getDisplayName(), actual.getDisplayName());
+        assertEquals(expected.getDescription(), actual.getDescription());
+        assertEquals(expected.getIconUrl(), actual.getIconUrl());
+        assertEquals(expected.getTags(), actual.getTags());
+        assertEquals(expected.getLatestVersion(), actual.getLatestVersion());
+        assertEquals(JacksonUtils.toJson(expected.getVersions()),
+            JacksonUtils.toJson(actual.getVersions()));
     }
     
     private boolean searchUnavailable(AiService service, String agentName) {

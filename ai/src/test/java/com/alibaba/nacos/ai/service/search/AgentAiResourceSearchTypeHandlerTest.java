@@ -197,7 +197,10 @@ class AgentAiResourceSearchTypeHandlerTest {
         assertTrue(handler.isCurrent(document));
         document.setSourceDigest("stale");
         assertFalse(handler.isCurrent(document));
-        verify(resourceManager, times(2)).ensureReadableOrNotFound(meta,
+        document.setSourceDigest("digest");
+        document.setMetadata("corrupt");
+        assertFalse(handler.isCurrent(document));
+        verify(resourceManager, times(3)).ensureReadableOrNotFound(meta,
             "Agent not found: " + AGENT_NAME);
     }
     
