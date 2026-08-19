@@ -83,6 +83,38 @@ class RoleSearchLikeEscapeDerbyTest {
         assertEquals("na_cos/ro_le", matched.get(0));
     }
     
+    @Test
+    void testFindRolesLikeRoleNameTreatsUnderscoreAsLiteralLikeThePagedSearch()
+        throws SQLException {
+        List<String> matched = new ArrayList<>();
+        DatabaseOperate databaseOperate = Mockito.mock(DatabaseOperate.class);
+        Mockito.when(databaseOperate.queryMany(Mockito.anyString(), Mockito.any(Object[].class),
+            Mockito.eq(String.class))).thenAnswer(invocation -> {
+                matched.addAll(queryRoles(invocation.getArgument(0), invocation.getArgument(1)));
+                return matched;
+            });
+        
+        new EmbeddedRolePersistServiceImpl(databaseOperate).findRolesLikeRoleName("ro_le");
+        
+        assertEquals(1, matched.size());
+        assertEquals("ro_le", matched.get(0));
+    }
+    
+    private List<String> queryRoles(String sql, Object[] args) throws SQLException {
+        List<String> rows = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    rows.add(resultSet.getString("role"));
+                }
+            }
+        }
+        return rows;
+    }
+    
     private List<String> executeSearch(String username, String role) {
         List<String> matched = new ArrayList<>();
         serviceExecutingOnDerby(matched).findRolesLike4Page(username, role, 1, 10);

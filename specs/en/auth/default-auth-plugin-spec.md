@@ -207,6 +207,11 @@ escape character on some databases, so the embedded storage declares
 immediately follows, so a query combining several fuzzy filters MUST repeat the
 clause after every one of them.
 
+The rule applies to every fuzzy entry point of a resource, not only to the paged
+search. The name searches backing the console autocompletion (`findRoleNames`,
+`findUserNames`) MUST escape their argument the same way the paged searches do,
+so that one keyword selects the same rows in both.
+
 ## Permission Resource Format
 
 Default resource permissions use:

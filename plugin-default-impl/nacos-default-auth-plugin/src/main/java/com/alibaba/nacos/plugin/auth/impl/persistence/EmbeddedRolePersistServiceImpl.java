@@ -149,7 +149,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     public List<String> findRolesLikeRoleName(String role) {
         String sql =
             "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
-        return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
+        return databaseOperate.queryMany(sql,
+            new String[] {"%" + generateLikeArgument(role) + "%"}, String.class);
     }
     
     @Override

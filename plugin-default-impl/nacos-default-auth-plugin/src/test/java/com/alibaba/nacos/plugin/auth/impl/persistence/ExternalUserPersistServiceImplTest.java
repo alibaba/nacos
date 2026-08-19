@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -148,6 +149,17 @@ class ExternalUserPersistServiceImplTest {
         List<String> username = externalUserPersistService.findUserLikeUsername("username");
         
         assertEquals(0, username.size());
+    }
+    
+    @Test
+    void testFindUserLikeUsernameEscapesTheUnderscoreWildcard() {
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        
+        externalUserPersistService.findUserLikeUsername("na_me");
+        
+        Mockito.verify(jdbcTemplate)
+            .queryForList(any(String.class), args.capture(), eq(String.class));
+        assertEquals("%na\\_me%", args.getValue()[0]);
     }
     
     @Test

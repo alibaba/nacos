@@ -163,7 +163,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ?";
         List<String> users = this.jt.queryForList(sql,
-            new String[] {String.format("%%%s%%", username)}, String.class);
+            new String[] {String.format("%%%s%%", generateLikeArgument(username))}, String.class);
         return users;
     }
     

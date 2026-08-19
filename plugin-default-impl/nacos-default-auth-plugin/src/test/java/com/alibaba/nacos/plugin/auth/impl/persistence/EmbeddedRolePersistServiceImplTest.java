@@ -98,6 +98,17 @@ class EmbeddedRolePersistServiceImplTest {
     }
     
     @Test
+    void testFindRolesLikeRoleNameEscapesTheUnderscoreWildcard() {
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        
+        embeddedRolePersistService.findRolesLikeRoleName("ro_le");
+        
+        Mockito.verify(databaseOperate)
+            .queryMany(any(String.class), args.capture(), eq(String.class));
+        assertEquals("%ro\\_le%", args.getValue()[0]);
+    }
+    
+    @Test
     void testFindRolesLikeAndGenerateLikeArgument() {
         assertEquals("ro\\_le%", embeddedRolePersistService.generateLikeArgument("ro_le*"));
         assertEquals("plain", embeddedRolePersistService.generateLikeArgument("plain"));
