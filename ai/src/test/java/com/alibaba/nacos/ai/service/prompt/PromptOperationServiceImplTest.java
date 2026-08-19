@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
@@ -38,10 +39,16 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +71,9 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -121,6 +130,7 @@ class PromptOperationServiceImplTest {
     
     @BeforeEach
     void setUp() {
+        RequestContextHolder.removeContext();
         EnvUtil.setEnvironment(new StandardEnvironment());
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
@@ -148,6 +158,7 @@ class PromptOperationServiceImplTest {
     
     @AfterEach
     void tearDown() {
+        RequestContextHolder.removeContext();
         if (visibilityManagerStatic != null) {
             visibilityManagerStatic.close();
         }
@@ -699,6 +710,20 @@ class PromptOperationServiceImplTest {
     }
     
     @Test
+    void testGetPromptDetailDeniedByReadFilterShouldReturnNotFound() {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
+            .thenReturn(createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}"));
+        mockDeniedReadVisibility();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.getPromptDetail(NS, PROMPT_KEY));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        verify(aiResourceVersionPersistService, never()).list(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE), any(), anyInt(), anyInt());
+    }
+    
+    @Test
     void testGetPromptVersionDetailSuccessfully() throws NacosException {
         AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
@@ -716,6 +741,22 @@ class PromptOperationServiceImplTest {
         assertEquals("0.0.1", result.getVersion());
     }
     
+    @Test
+    void testGetPromptVersionDetailDeniedByReadFilterShouldReturnNotFound()
+        throws NacosException {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
+            .thenReturn(createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}"));
+        mockDeniedReadVisibility();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.getPromptVersionDetail(NS, PROMPT_KEY, "0.0.1"));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        verify(aiResourceVersionPersistService, never())
+            .find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1");
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
     // ========== listPrompts / listPromptVersions ==========
     
     @Test
@@ -726,7 +767,7 @@ class PromptOperationServiceImplTest {
         AiResource r =
             createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
         metaPage.setPageItems(Collections.singletonList(r));
-        when(aiResourcePersistService.list(eq(NS), eq(PROMPT_TYPE), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(any(QueryCondition.class), eq(1), eq(10)))
             .thenReturn(metaPage);
         
         Page<PromptMetaSummary> result = service.listPrompts(NS, null, null, null, 1, 10);
@@ -735,6 +776,53 @@ class PromptOperationServiceImplTest {
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getPageItems().size());
         assertEquals(PROMPT_KEY, result.getPageItems().get(0).getPromptKey());
+    }
+    
+    @Test
+    void testListPromptsShouldApplyVisibilityQueryAdvice() throws NacosException {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.PUBLIC);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ),
+            anyString(), any())).thenReturn(advisor);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(Collections.emptyList());
+        when(aiResourcePersistService.list(any(QueryCondition.class), eq(2), eq(5)))
+            .thenReturn(metaPage);
+        
+        service.listPrompts(NS, null, null, null, 2, 5);
+        
+        ArgumentCaptor<QueryCondition> conditionCaptor =
+            ArgumentCaptor.forClass(QueryCondition.class);
+        verify(aiResourcePersistService).list(conditionCaptor.capture(), eq(2), eq(5));
+        assertEquals(NS, conditionCaptor.getValue().getNamespaceId());
+        assertEquals(PROMPT_TYPE, conditionCaptor.getValue().getType());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, conditionCaptor.getValue().getScope());
+        verify(visibilityService).adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ),
+            anyString(), any());
+    }
+    
+    @Test
+    void testListPromptsShouldReturnEmptyPageWhenVisibilityQueryIsEmpty()
+        throws NacosException {
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.OWNER);
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ),
+            anyString(), any())).thenReturn(advisor);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        
+        Page<PromptMetaSummary> result =
+            service.listPrompts(NS, null, null, null, 3, 10);
+        
+        assertEquals(3, result.getPageNumber());
+        assertEquals(0, result.getTotalCount());
+        assertTrue(result.getPageItems().isEmpty());
+        verify(aiResourcePersistService, never()).list(any(QueryCondition.class), anyInt(),
+            anyInt());
     }
     
     @Test
@@ -755,6 +843,20 @@ class PromptOperationServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getTotalCount());
         assertEquals("0.0.1", result.getPageItems().get(0).getVersion());
+    }
+    
+    @Test
+    void testListPromptVersionsDeniedByReadFilterShouldReturnNotFound() {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
+            .thenReturn(createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}"));
+        mockDeniedReadVisibility();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.listPromptVersions(NS, PROMPT_KEY, 1, 10));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        verify(aiResourceVersionPersistService, never()).list(eq(NS), eq(PROMPT_KEY),
+            eq(PROMPT_TYPE), any(), eq(1), eq(10));
     }
     
     // ========== queryPrompt (Client) ==========
@@ -793,6 +895,21 @@ class PromptOperationServiceImplTest {
         assertEquals("0.0.1", result.getVersion());
     }
     
+    @Test
+    void testQueryPromptDeniedByReadFilterShouldReturnNotFound() throws NacosException {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
+            .thenReturn(createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"}}"));
+        mockDeniedReadVisibility();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.queryPrompt(NS, PROMPT_KEY, null, null));
+        
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+        verify(aiResourceVersionPersistService, never())
+            .find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1");
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
     // ========== downloadPromptVersion ==========
     
     @Test
@@ -821,6 +938,21 @@ class PromptOperationServiceImplTest {
             assertEquals(NS, published.getNamespaceId());
             assertEquals(PROMPT_KEY, published.getName());
             assertEquals("0.0.1", published.getVersion());
+        }
+    }
+    
+    @Test
+    void testDownloadPromptVersionDeniedByReadFilterShouldNotPublishEvent() {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE))
+            .thenReturn(createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}"));
+        mockDeniedReadVisibility();
+        
+        try (MockedStatic<NotifyCenter> notifyCenterStatic = mockStatic(NotifyCenter.class)) {
+            NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> service.downloadPromptVersion(NS, PROMPT_KEY, "0.0.1"));
+            
+            assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+            notifyCenterStatic.verifyNoInteractions();
         }
     }
     
@@ -862,6 +994,15 @@ class PromptOperationServiceImplTest {
         row.setStatus(status);
         row.setAuthor("-");
         return row;
+    }
+    
+    private void mockDeniedReadVisibility() {
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        when(visibilityService.validateVisibility(anyString(),
+            eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+            .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
     }
     
     private void mockStorageGet(byte[] content) throws NacosException {
