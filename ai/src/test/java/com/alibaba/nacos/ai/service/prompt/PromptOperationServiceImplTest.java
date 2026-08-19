@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
@@ -133,6 +134,7 @@ class PromptOperationServiceImplTest {
     
     @BeforeEach
     void setUp() {
+        RequestContextHolder.removeContext();
         EnvUtil.setEnvironment(new StandardEnvironment());
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
@@ -160,6 +162,7 @@ class PromptOperationServiceImplTest {
     
     @AfterEach
     void tearDown() {
+        RequestContextHolder.removeContext();
         if (visibilityManagerStatic != null) {
             visibilityManagerStatic.close();
         }
