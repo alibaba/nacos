@@ -45,6 +45,11 @@ public class ConsoleDeploymentConfig {
         return new SelectorManager();
     }
     
+    @Bean
+    public ConsoleAuthPluginInitializer consoleAuthPluginInitializer() {
+        return new ConsoleAuthPluginInitializer();
+    }
+    
     /**
      * Provide the config clone source read permission checker for standalone console deployment.
      *

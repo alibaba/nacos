@@ -90,6 +90,13 @@ and clears the token cache. Changing token expiration also clears the wrapper
 cache so the next token request uses the accepted runtime lifetime; tokens
 already returned to clients remain valid until their signed expiration.
 
+In an independently deployed Console, the Console-local auth initializer applies the built-in
+`auth:nacos` configuration from `STATIC > DEFAULT` before requests are accepted. This initializes
+the stable `TokenManagerDelegate` with its concrete token managers. All configurable auth
+implementations are applied because identity providers such as LDAP continue to consume token and
+authorization infrastructure owned by `auth:nacos`; only the selected implementation receives the
+optional startup lifecycle callback.
+
 The `ldap` implementation also implements `PluginConfigSpec` and is registered
 as configurable plugin `auth:ldap`. Its canonical configuration prefix is
 `nacos.plugin.auth.ldap.`.

@@ -16,12 +16,21 @@
 
 package com.alibaba.nacos.console.config;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 class ConsoleDeploymentConfigTest {
+    
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner();
+    
+    @AfterEach
+    void tearDown() {
+        System.clearProperty("nacos.deployment.type");
+    }
     
     @Test
     void controllerMethodsCache() {
@@ -31,5 +40,17 @@ class ConsoleDeploymentConfigTest {
     @Test
     void selectorManager() {
         assertNotNull(new ConsoleDeploymentConfig().selectorManager());
+    }
+    
+    @Test
+    void consoleAuthPluginInitializer() {
+        assertNotNull(new ConsoleDeploymentConfig().consoleAuthPluginInitializer());
+    }
+    
+    @Test
+    void doNotRegisterConsoleDeploymentBeansForMergedDeployment() {
+        contextRunner.withUserConfiguration(ConsoleDeploymentConfig.class)
+            .run(context -> context.assertThat().doesNotHaveBean(ConsoleDeploymentConfig.class)
+                .doesNotHaveBean(ConsoleAuthPluginInitializer.class));
     }
 }

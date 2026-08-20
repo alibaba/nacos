@@ -221,6 +221,16 @@ Rules:
 - the auth plugin token secret used by Console login and token verification must
   be configured consistently with the selected auth plugin behavior.
 
+An independently deployed Console must initialize its local auth plugin runtime before accepting
+requests. It applies `STATIC > DEFAULT` configuration to every configurable auth implementation so
+shared auth infrastructure remains available, and starts plugin-owned resources only for the
+selected implementation. A missing selected implementation is a startup error. This Console-local
+lifecycle must not start the Core plugin manager or access Server-owned plugin state,
+runtime-persisted configuration, local-only overrides, storage, or cluster synchronization.
+
+Static configuration refresh may reapply auth fields declared `RUNTIME`. Auth selection, token
+secrets, and other `RESTART` fields retain their startup values until the Console restarts.
+
 Console auth is part of the shared auth model and must follow the
 [Authorization Spec](../http-api/authorization-spec.md).
 
