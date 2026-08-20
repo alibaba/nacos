@@ -131,14 +131,30 @@ class ArdSearchControllerTest {
     void artifactShouldReturnTypedBody() throws NacosException {
         ArdSearchController controller = controller();
         ArdArtifact artifact = new ArdArtifact("application/ai-skill+md", "# Demo");
-        when(ardArtifactService.get("public", "skill", "demo", "1.0.0", null))
+        when(ardArtifactService.get("public", "skill", "demo", "1.0.0", null, null, null))
             .thenReturn(artifact);
         
         ResponseEntity<Object> response = controller.artifact("public", "skill", "demo",
-            "1.0.0", null);
+            "1.0.0", null, null, null);
         
         assertEquals("# Demo", response.getBody());
         assertEquals("application/ai-skill+md", response.getHeaders().getContentType().toString());
+    }
+    
+    @Test
+    void artifactShouldForwardAgentIntegrityParameters() throws NacosException {
+        ArdSearchController controller = controller();
+        ArdArtifact artifact = new ArdArtifact(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            "agent");
+        when(ardArtifactService.get("public", "agent", "demo", "1.0.0", null,
+            "sha256:digest", "nacos-agent")).thenReturn(artifact);
+        
+        ResponseEntity<Object> response = controller.artifact("public", "agent", "demo",
+            "1.0.0", null, "sha256:digest", "nacos-agent");
+        
+        assertEquals("agent", response.getBody());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            response.getHeaders().getContentType().toString());
     }
     
     @Test

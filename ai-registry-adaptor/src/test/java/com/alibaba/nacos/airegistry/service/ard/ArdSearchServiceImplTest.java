@@ -27,6 +27,10 @@ import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandler;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandlerRegistry;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexSourcePage;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -69,6 +73,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -248,8 +254,8 @@ class ArdSearchServiceImplTest {
     void searchShouldApplyStructuredMetadataFilters() throws Exception {
         ArdSearchServiceImpl service = service();
         when(vectorIndex.available()).thenReturn(false);
-        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill", "prompt", "mcp")),
-            eq(10001)))
+        when(repository.searchChunks(eq("public"), eq("api"),
+            eq(List.of("agent", "skill", "prompt", "mcp")), eq(10001)))
             .thenReturn(List.of(hit(100L, 1.0D)));
         when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
@@ -335,6 +341,130 @@ class ArdSearchServiceImplTest {
         request.setPageToken("broken-token");
         
         assertThrows(NacosException.class, () -> service.search(request));
+    }
+    
+    @Test
+    void searchShouldSelectDeterministicAgentRepresentationWithoutDuplicatingIdentifier()
+        throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument agent = agentEntry(400L, "research-agent",
+            List.of("a2a-agent-card", "nacos-agent"), "nacos-agent");
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("research"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(400L, 1.0D, "research-agent")));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(agent));
+        
+        ArdSearchResponse defaultResponse = service.search(request("research", Map.of()));
+        ArdSearchResponse a2aResponse = service.search(request("research",
+            Map.of("type", (Object) ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD)));
+        ArdSearchResponse nacosResponse = service.search(request("research",
+            Map.of("type", (Object) ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT)));
+        
+        assertEquals(1, defaultResponse.getResults().size());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            defaultResponse.getResults().get(0).getType());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD,
+            a2aResponse.getResults().get(0).getType());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            nacosResponse.getResults().get(0).getType());
+        assertEquals(defaultResponse.getResults().get(0).getIdentifier(),
+            a2aResponse.getResults().get(0).getIdentifier());
+        assertTrue(defaultResponse.getResults().get(0).getUrl().contains(
+            "contentDigest=sha256%3Aresearch-agent"));
+        assertTrue(defaultResponse.getResults().get(0).getUrl().endsWith(
+            "representation=nacos-agent"));
+        assertTrue(a2aResponse.getResults().get(0).getUrl().endsWith(
+            "representation=a2a-agent-card"));
+    }
+    
+    @Test
+    void searchShouldPreferA2aForPureA2aAndFilterUnavailableRepresentation() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument pureA2a = agentEntry(401L, "pure-a2a",
+            List.of("a2a-agent-card", "nacos-agent"), "a2a-agent-card");
+        AiResourceSearchDocument custom = agentEntry(402L, "custom-agent",
+            List.of("nacos-agent"), "nacos-agent");
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("agent"), eq(List.of("agent")),
+            eq(10001))).thenReturn(List.of(hit(401L, 1.0D), hit(402L, 0.9D)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(pureA2a, custom));
+        
+        ArdSearchResponse defaultResponse = service.search(request("agent",
+            Map.of("metadata.resourceType", (Object) "agent")));
+        ArdSearchResponse a2aResponse = service.search(request("agent",
+            Map.of("type", (Object) ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD)));
+        
+        assertEquals(2, defaultResponse.getResults().size());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD,
+            resultByName(defaultResponse, "pure-a2a").getType());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            resultByName(defaultResponse, "custom-agent").getType());
+        assertEquals(1, a2aResponse.getResults().size());
+        assertEquals("pure-a2a", a2aResponse.getResults().get(0).getDisplayName());
+    }
+    
+    @Test
+    void searchShouldKeepNonAgentResourcesWhenMediaTypeFilterIsMixed() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument agent = agentEntry(403L, "a2a-agent",
+            List.of("a2a-agent-card", "nacos-agent"), "a2a-agent-card");
+        AiResourceSearchDocument skill = entry(404L, "research-skill");
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("research"),
+            eq(List.of("agent", "skill")), eq(10001)))
+            .thenReturn(List.of(hit(403L, 1.0D), hit(404L, 0.9D)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(agent, skill));
+        
+        ArdSearchResponse response = service.search(request("research", Map.of("type",
+            (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD,
+                ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE))));
+        
+        assertEquals(2, response.getResults().size());
+        assertTrue(response.getResults().stream().map(ArdSearchResult::getType)
+            .anyMatch(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD::equals));
+        assertTrue(response.getResults().stream().map(ArdSearchResult::getType)
+            .anyMatch(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE::equals));
+    }
+    
+    @Test
+    void searchShouldResolveLegacyAgentRepresentationMetadata() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument pureA2a = agentEntry(405L, "legacy-a2a",
+            Map.of("artifactKinds", List.of("a2a-agent-card", "nacos-agent"),
+                "latestProtocols", "A2A"));
+        AiResourceSearchDocument custom = agentEntry(406L, "legacy-custom",
+            Map.of("artifactKinds", List.of("nacos-agent")));
+        AiResourceSearchDocument invalidPrimary = agentEntry(407L, "legacy-primary",
+            Map.of("artifactKinds", List.of("nacos-agent"),
+                "primaryArtifactKind", "a2a-agent-card"));
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("legacy"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(405L, 1.0D), hit(406L, 0.9D), hit(407L, 0.8D)));
+        when(repository.findEntriesByIds(anyCollection()))
+            .thenReturn(List.of(pureA2a, custom, invalidPrimary));
+        
+        ArdSearchResponse response = service.search(request("legacy", Map.of()));
+        
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD,
+            resultByName(response, "legacy-a2a").getType());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            resultByName(response, "legacy-custom").getType());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            resultByName(response, "legacy-primary").getType());
+    }
+    
+    @Test
+    void searchShouldRejectAgentWithoutArtifactRepresentation() {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument agent = agentEntry(408L, "invalid-agent",
+            Map.of("artifactKinds", List.of(), "primaryArtifactKind", "nacos-agent"));
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks(eq("public"), eq("invalid"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(408L, 1.0D)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(agent));
+        
+        assertThrows(IllegalStateException.class,
+            () -> service.search(request("invalid", Map.of())));
     }
     
     @Test
@@ -448,6 +578,77 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void exploreShouldCountAgentBySelectedPrimaryRepresentation() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument pureA2a = agentEntry(410L, "pure-a2a",
+            List.of("a2a-agent-card", "nacos-agent"), "a2a-agent-card");
+        AiResourceSearchDocument multiProtocol = agentEntry(411L, "multi-agent",
+            List.of("a2a-agent-card", "nacos-agent"), "nacos-agent");
+        AiResourceSearchDocument skill = entry(412L, "helper-skill");
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill", "prompt", "mcp"),
+            0L, 500)).thenReturn(List.of(pureA2a, multiProtocol, skill));
+        
+        ArdExploreResponse response = service.explore(exploreRequest("public", Map.of(),
+            List.of(facet("type", 10, 1))));
+        
+        Map<String, Integer> counts = response.getFacets().get("type").getBuckets().stream()
+            .collect(java.util.stream.Collectors.toMap(
+                ArdExploreResponse.FacetBucket::getValue,
+                ArdExploreResponse.FacetBucket::getCount));
+        assertEquals(1, counts.get(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD));
+        assertEquals(1, counts.get(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT));
+        assertEquals(1, counts.get(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE));
+    }
+    
+    @Test
+    void exploreShouldCountAllMatchingAgentsAsExplicitA2aRepresentation() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument pureA2a = agentEntry(413L, "pure-a2a",
+            List.of("a2a-agent-card", "nacos-agent"), "a2a-agent-card");
+        AiResourceSearchDocument multiProtocol = agentEntry(414L, "multi-agent",
+            List.of("a2a-agent-card", "nacos-agent"), "nacos-agent");
+        when(repository.scanEnabledEntries("public", List.of("agent"), 0L, 500))
+            .thenReturn(List.of(pureA2a, multiProtocol));
+        
+        ArdExploreResponse response = service.explore(exploreRequest("public",
+            Map.of("type", (Object) ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD),
+            List.of(facet("type", 10, 1))));
+        
+        assertEquals(1, response.getFacets().get("type").getBuckets().size());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_A2A_AGENT_CARD,
+            response.getFacets().get("type").getBuckets().get(0).getValue());
+        assertEquals(2, response.getFacets().get("type").getBuckets().get(0).getCount());
+    }
+    
+    @Test
+    void exploreShouldFallbackUnknownAgentRepresentationAndLimitTiedTypeFacet()
+        throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument missingPrimary = agentEntry(415L, "missing-primary",
+            Map.of("artifactKinds", List.of("nacos-agent")));
+        AiResourceSearchDocument unknownPrimary = agentEntry(416L, "unknown-primary",
+            Map.of("artifactKinds", List.of("nacos-agent"),
+                "primaryArtifactKind", "unknown"));
+        AiResourceSearchDocument skillOne = entry(417L, "skill-one");
+        AiResourceSearchDocument skillTwo = entry(418L, "skill-two");
+        AiResourceSearchDocument prompt = entry(419L, "prompt-one");
+        prompt.setResourceType(AiResourceConstants.RESOURCE_TYPE_PROMPT);
+        prompt.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "prompt")));
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
+            .thenReturn(List.of(missingPrimary, unknownPrimary, skillOne, skillTwo, prompt));
+        
+        ArdExploreResponse response = service.explore(exploreRequest("public", Map.of(),
+            List.of(facet("type", 1, 1), facet("publisher", 10, 1))));
+        
+        assertEquals(1, response.getFacets().get("type").getBuckets().size());
+        assertEquals(2, response.getFacets().get("type").getBuckets().get(0).getCount());
+        assertEquals(3, response.getFacets().get("type").getOtherCount());
+        assertEquals(1, response.getFacets().get("publisher").getBuckets().size());
+        assertEquals(5, response.getFacets().get("publisher").getBuckets().get(0).getCount());
+    }
+    
+    @Test
     void listShouldFilterOrderAndPageEntries() throws Exception {
         ArdSearchServiceImpl service = service();
         when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
@@ -490,7 +691,8 @@ class ArdSearchServiceImplTest {
     @Test
     void catalogShouldExposeRegistryAndLocalEntries() throws Exception {
         ArdSearchServiceImpl service = service();
-        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -507,12 +709,31 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void catalogShouldExposeOneEntryForEachLogicalAgent() throws Exception {
+        ArdSearchServiceImpl service = serviceWithAllResourcesCurrent();
+        AiResourceSearchDocument agent = agentEntry(420L, "research-agent",
+            List.of("a2a-agent-card", "nacos-agent"), "nacos-agent");
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill", "prompt", "mcp"),
+            0L, 500)).thenReturn(List.of(agent));
+        
+        ArdCatalog catalog = service.catalog("public");
+        
+        assertEquals(2, catalog.getEntries().size());
+        assertEquals(ArdProtocolConstants.MEDIA_TYPE_NACOS_AGENT,
+            catalog.getEntries().get(1).getType());
+        assertTrue(catalog.getEntries().get(1).getUrl().contains(
+            "representation=nacos-agent"));
+        assertCatalogSchemaValid(catalog);
+    }
+    
+    @Test
     void catalogShouldNotTruncateAfterOneHundredEntries() throws Exception {
         List<AiResourceSearchDocument> documents = new ArrayList<>();
         for (long id = 1L; id <= 101L; id++) {
             documents.add(entry(id, "skill-" + id));
         }
-        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(documents);
         when(repository.findEntriesByIds(anyCollection())).thenAnswer(invocation -> {
             Collection<Long> ids = invocation.getArgument(0);
@@ -558,7 +779,8 @@ class ArdSearchServiceImplTest {
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
         EnvUtil.setContextPath("/nacos");
         ArdSearchServiceImpl service = service();
-        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(entry()));
         when(resourceManager.findMeta("public", "api-helper", Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(meta("1.0.0"));
@@ -609,7 +831,8 @@ class ArdSearchServiceImplTest {
     
     @Test
     void catalogIdentifiersShouldBeSchemaValidAndCollisionSafe() throws Exception {
-        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(entry(201L, "a/b"), entry(202L, "a?b"),
                 entry(203L, "技能 名称")));
         when(
@@ -635,7 +858,8 @@ class ArdSearchServiceImplTest {
         mcp.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         mcp.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "mcp", "mcpName",
             "avatar-server")));
-        when(repository.scanEnabledEntries("public", List.of("skill", "prompt", "mcp"), 0L, 500))
+        when(repository.scanEnabledEntries("public",
+            List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(prompt, mcp));
         when(resourceManager.findMeta("public", "avatar prompt",
             AiResourceConstants.RESOURCE_TYPE_PROMPT)).thenReturn(meta("avatar prompt",
@@ -671,6 +895,14 @@ class ArdSearchServiceImplTest {
         AiResourceSearchService searchService = new AiResourceSearchService(
             resourceManager, mcpServerOperationService, repository, embeddingService,
             vectorIndex);
+        return new ArdSearchServiceImpl(searchService);
+    }
+    
+    private ArdSearchServiceImpl serviceWithAllResourcesCurrent() {
+        AiResourceSearchTypeHandlerRegistry registry =
+            new AiResourceSearchTypeHandlerRegistry(List.of(new AlwaysCurrentHandler()));
+        AiResourceSearchService searchService = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex);
         return new ArdSearchServiceImpl(searchService);
     }
     
@@ -798,6 +1030,33 @@ class ArdSearchServiceImplTest {
         return entry;
     }
     
+    private AiResourceSearchDocument agentEntry(long id, String resourceName,
+        List<String> artifactKinds, String primaryArtifactKind) {
+        return agentEntry(id, resourceName, Map.of("artifactKinds", artifactKinds,
+            "primaryArtifactKind", primaryArtifactKind));
+    }
+    
+    private AiResourceSearchDocument agentEntry(long id, String resourceName,
+        Map<String, Object> representationMetadata) {
+        AiResourceSearchDocument entry = entry(id, resourceName);
+        entry.setResourceType(Constants.Agent.RESOURCE_TYPE_AGENT);
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("namespaceId", "public");
+        metadata.put("resourceType", "agent");
+        metadata.put("resourceName", resourceName);
+        metadata.put("resourceVersion", "1.0.0");
+        metadata.put("contentDigest", "sha256:" + resourceName);
+        metadata.putAll(representationMetadata);
+        entry.setMetadata(JacksonUtils.toJson(metadata));
+        return entry;
+    }
+    
+    private ArdSearchResult resultByName(ArdSearchResponse response, String displayName) {
+        return response.getResults().stream()
+            .filter(result -> displayName.equals(result.getDisplayName())).findFirst()
+            .orElseThrow();
+    }
+    
     private AiResource meta(String latestVersion) {
         return meta("api-helper", latestVersion);
     }
@@ -825,5 +1084,35 @@ class ArdSearchServiceImplTest {
         version.setVersion(versionValue);
         version.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
         return version;
+    }
+    
+    private static final class AlwaysCurrentHandler implements AiResourceSearchTypeHandler {
+        
+        @Override
+        public Collection<String> resourceTypes() {
+            return List.of("agent", "skill", "prompt", "mcp");
+        }
+        
+        @Override
+        public AiResourceIndexProjection project(String namespaceId, String resourceType,
+            String resourceName, String version) {
+            return null;
+        }
+        
+        @Override
+        public AiResourceIndexSourcePage scan(String namespaceId, String resourceType, int pageNo,
+            int pageSize) {
+            return null;
+        }
+        
+        @Override
+        public boolean isCurrent(AiResourceSearchDocument document) {
+            return true;
+        }
+        
+        @Override
+        public boolean exists(String namespaceId, String resourceType, String resourceName) {
+            return true;
+        }
     }
 }

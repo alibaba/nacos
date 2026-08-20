@@ -89,8 +89,11 @@ class AgentSearchIndexProjectorTest {
         assertEquals(2000L, document.getGmtModified().getTime());
         assertEquals(64, document.getSourceDigest().length());
         assertEquals(List.of("a2a", "acme-rpc"), metadata.get("protocols"));
+        assertEquals(List.of("a2a", "acme-rpc"), metadata.get("latestProtocols"));
         assertEquals(List.of("a2a-agent-card", "nacos-agent"),
             metadata.get("artifactKinds"));
+        assertEquals("nacos-agent", metadata.get("primaryArtifactKind"));
+        assertEquals("sha256:content", metadata.get("contentDigest"));
         assertEquals(1, metadata.get("projectionVersion"));
         assertTrue(metadata.containsKey("provider"));
         assertTrue(capabilities.containsAll(List.of("a2a", "acme-rpc", "streaming",
@@ -128,6 +131,7 @@ class AgentSearchIndexProjectorTest {
         assertEquals("research-agent", projection.getDocument().getDisplayName());
         assertEquals(1000L, projection.getDocument().getGmtModified().getTime());
         assertEquals(List.of("nacos-agent"), metadata.get("artifactKinds"));
+        assertEquals("nacos-agent", metadata.get("primaryArtifactKind"));
         assertEquals(Collections.emptyList(), projection.getEnhancementContents());
         assertFalse(metadata.containsKey("provider"));
         assertFalse(metadata.containsKey("owner"));
@@ -151,6 +155,8 @@ class AgentSearchIndexProjectorTest {
         assertEquals(List.of("a2a"), metadata.get("protocols"));
         assertEquals(List.of("a2a-agent-card", "nacos-agent"),
             metadata.get("artifactKinds"));
+        assertEquals(List.of("a2a"), metadata.get("latestProtocols"));
+        assertEquals("a2a-agent-card", metadata.get("primaryArtifactKind"));
         assertEquals(1, projection.getEnhancementContents().size());
     }
     
@@ -159,7 +165,7 @@ class AgentSearchIndexProjectorTest {
         Agent agent = agent();
         AgentVersionDetail latest = latest();
         AgentCallInterface brokenA2a = callInterface("a2a", null);
-        AgentCallInterface validA2a = callInterface("a2a", a2aCard());
+        AgentCallInterface validA2a = callInterface("A2A", a2aCard());
         AgentCallInterface brokenCustom = callInterface("custom", new FailingDescriptor());
         AgentCallInterface emptyCustom = callInterface("empty", null);
         latest.setCallInterfaces(Arrays.asList(brokenA2a, validA2a, brokenCustom, emptyCustom));
@@ -170,6 +176,7 @@ class AgentSearchIndexProjectorTest {
         
         assertEquals(List.of("a2a-agent-card", "nacos-agent"),
             metadata.get("artifactKinds"));
+        assertEquals("nacos-agent", metadata.get("primaryArtifactKind"));
         assertEquals(1, projection.getEnhancementContents().size());
     }
     
@@ -195,7 +202,9 @@ class AgentSearchIndexProjectorTest {
         Map<String, Object> metadata = JacksonUtils.toObj(
             withoutCatalog.getDocument().getMetadata(), MAP_TYPE);
         assertEquals(Collections.emptyList(), metadata.get("protocols"));
+        assertEquals(Collections.emptyList(), metadata.get("latestProtocols"));
         assertEquals(List.of("nacos-agent"), metadata.get("artifactKinds"));
+        assertEquals("nacos-agent", metadata.get("primaryArtifactKind"));
         assertTrue(withoutCatalog.getEnhancementContents().isEmpty());
         
         AgentVersionCatalog catalog = catalog();

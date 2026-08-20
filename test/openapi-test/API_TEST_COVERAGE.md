@@ -72,7 +72,9 @@ the covered login contract.
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
 has three covered scenario rows and one partial row; the remaining gap is a
-live standalone-adaptor conformance suite.
+live standalone-adaptor conformance suite. Its in-module contract coverage now
+also includes singular Agent catalog entries, A2A/Nacos representation selection
+and filtering, and exact Version/digest Agent artifact retrieval.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the

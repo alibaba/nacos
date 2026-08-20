@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.utils.AgentRequestUtil;
+import com.alibaba.nacos.ai.service.agent.AgentArtifactBuilder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentExtension;
@@ -53,10 +53,6 @@ public class AgentSearchIndexProjector {
     
     public static final int PROJECTION_VERSION = 1;
     
-    static final String ARTIFACT_KIND_A2A_AGENT_CARD = "a2a-agent-card";
-    
-    static final String ARTIFACT_KIND_NACOS_AGENT = "nacos-agent";
-    
     private static final String A2A_PROTOCOL = "a2a";
     
     private static final int MAX_AGENT_CONTENT_CHARS = 12000;
@@ -75,17 +71,19 @@ public class AgentSearchIndexProjector {
         if (agent == null || latest == null) {
             throw new IllegalArgumentException("Agent and latest Version must not be null");
         }
-        AgentCard a2aCard = findValidA2aCard(agent.getAgentName(), latest);
+        AgentCard a2aCard = AgentArtifactBuilder.findA2aAgentCard(agent.getAgentName(), latest);
         List<String> protocols = collectProtocols(agent.getVersionCatalog());
+        List<String> latestProtocols = collectLatestProtocols(latest);
         List<String> artifactKinds = artifactKinds(a2aCard);
         AiResourceSearchDocument document = buildDocument(agent, latest, protocols,
-            artifactKinds, a2aCard);
+            latestProtocols, artifactKinds, a2aCard);
         return projectionBuilder.build(document, buildContents(latest, a2aCard),
             AiResourceSearchConstants.CHUNK_TYPE_AGENT_CONTENT);
     }
     
     private AiResourceSearchDocument buildDocument(Agent agent, AgentVersionDetail latest,
-        List<String> protocols, List<String> artifactKinds, AgentCard a2aCard) {
+        List<String> protocols, List<String> latestProtocols, List<String> artifactKinds,
+        AgentCard a2aCard) {
         AiResourceSearchDocument result = new AiResourceSearchDocument();
         result.setNamespaceId(agent.getNamespaceId());
         result.setResourceType(Constants.Agent.RESOURCE_TYPE_AGENT);
@@ -99,7 +97,7 @@ public class AgentSearchIndexProjector {
         result.setRepresentativeQueries(JacksonUtils.toJson(
             representativeQueries(agent, a2aCard)));
         result.setMetadata(JacksonUtils.toJson(metadata(agent, latest, protocols,
-            artifactKinds)));
+            latestProtocols, artifactKinds)));
         result.setSourceDigest(sourceDigest(agent, latest, artifactKinds));
         result.setStatus(AiResourceSearchConstants.STATUS_ENABLED);
         result.setGenerateMode(AiResourceSearchConstants.GENERATE_MODE_AUTO);
@@ -112,7 +110,7 @@ public class AgentSearchIndexProjector {
     }
     
     private Map<String, Object> metadata(Agent agent, AgentVersionDetail latest,
-        List<String> protocols, List<String> artifactKinds) {
+        List<String> protocols, List<String> latestProtocols, List<String> artifactKinds) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("namespaceId", agent.getNamespaceId());
         result.put("resourceType", Constants.Agent.RESOURCE_TYPE_AGENT);
@@ -122,7 +120,10 @@ public class AgentSearchIndexProjector {
         putIfPresent(result, "provider", agent.getProvider());
         result.put("tags", agent.getTags());
         result.put("protocols", protocols);
+        result.put("latestProtocols", latestProtocols);
         result.put("artifactKinds", artifactKinds);
+        result.put("primaryArtifactKind", primaryArtifactKind(latestProtocols, artifactKinds));
+        result.put("contentDigest", latest.getContentDigest());
         result.put("versionCatalog", agent.getVersionCatalog());
         putIfPresent(result, "scope", agent.getScope());
         putIfPresent(result, "owner", agent.getOwner());
@@ -146,13 +147,35 @@ public class AgentSearchIndexProjector {
         return new ArrayList<>(result);
     }
     
+    private List<String> collectLatestProtocols(AgentVersionDetail latest) {
+        if (latest.getCallInterfaces() == null) {
+            return Collections.emptyList();
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
+            if (callInterface != null) {
+                addIfNotBlank(result, callInterface.getProtocol());
+            }
+        }
+        return new ArrayList<>(result);
+    }
+    
     private List<String> artifactKinds(AgentCard a2aCard) {
         List<String> result = new ArrayList<>();
         if (a2aCard != null) {
-            result.add(ARTIFACT_KIND_A2A_AGENT_CARD);
+            result.add(AgentArtifactBuilder.ARTIFACT_KIND_A2A_AGENT_CARD);
         }
-        result.add(ARTIFACT_KIND_NACOS_AGENT);
+        result.add(AgentArtifactBuilder.ARTIFACT_KIND_NACOS_AGENT);
         return result;
+    }
+    
+    private String primaryArtifactKind(List<String> latestProtocols,
+        List<String> artifactKinds) {
+        if (latestProtocols.size() == 1 && A2A_PROTOCOL.equalsIgnoreCase(latestProtocols.get(0))
+            && artifactKinds.contains(AgentArtifactBuilder.ARTIFACT_KIND_A2A_AGENT_CARD)) {
+            return AgentArtifactBuilder.ARTIFACT_KIND_A2A_AGENT_CARD;
+        }
+        return AgentArtifactBuilder.ARTIFACT_KIND_NACOS_AGENT;
     }
     
     private List<String> capabilities(AgentVersionDetail latest, AgentCard card) {
@@ -231,7 +254,8 @@ public class AgentSearchIndexProjector {
         }
         int index = 0;
         for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
-            if (callInterface != null && !A2A_PROTOCOL.equals(callInterface.getProtocol())) {
+            if (callInterface != null && !A2A_PROTOCOL.equalsIgnoreCase(
+                callInterface.getProtocol())) {
                 addContent(result, "agent-" + index + '-' + callInterface.getProtocol()
                     + ".json", descriptorText(callInterface.getNativeDescriptor()));
             }
@@ -275,29 +299,6 @@ public class AgentSearchIndexProjector {
         } catch (RuntimeException e) {
             return null;
         }
-    }
-    
-    private AgentCard findValidA2aCard(String agentName, AgentVersionDetail latest) {
-        if (latest.getCallInterfaces() == null) {
-            return null;
-        }
-        for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
-            if (callInterface == null || !A2A_PROTOCOL.equals(callInterface.getProtocol())) {
-                continue;
-            }
-            try {
-                AgentCard card = JacksonUtils.toObj(
-                    JacksonUtils.toJson(callInterface.getNativeDescriptor()), AgentCard.class);
-                AgentRequestUtil.validateAgentCard(card);
-                if (agentName.equals(card.getName()) && latest.getVersion().equals(
-                    card.getVersion())) {
-                    return card;
-                }
-            } catch (Exception ignored) {
-                // An invalid A2A descriptor is not a complete A2A representation.
-            }
-        }
-        return null;
     }
     
     private String sourceDigest(Agent agent, AgentVersionDetail latest,

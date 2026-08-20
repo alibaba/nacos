@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
@@ -104,6 +105,9 @@ class AgentSpecOperationServiceImplTest {
     @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
     
+    @Mock
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService;
+    
     private AgentSpecOperationServiceImpl service;
     
     private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
@@ -130,6 +134,7 @@ class AgentSpecOperationServiceImplTest {
             publishPipelineExecutor,
             new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                 pipelineExecutionRepository));
+        service.setAiResourceIndexMaintenanceService(resourceIndexMaintenanceService);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.empty());
@@ -362,6 +367,7 @@ class AgentSpecOperationServiceImplTest {
             && "测试坐席".equals(inserted.getName()) && "v2".equals(inserted.getVersion())));
         verify(externalStorage).delete(argThat(this::isRemovedResourceKey));
         verify(storage, never()).delete(any(StorageKey.class));
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec", "测试坐席");
     }
     
     @Test
@@ -431,6 +437,8 @@ class AgentSpecOperationServiceImplTest {
         service.updateScope(namespaceId, agentSpecName, "PUBLIC");
         verify(aiResourcePersistService).updateScope(namespaceId, agentSpecName, "agentspec",
             "PUBLIC");
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec",
+            agentSpecName);
     }
     
     @Test
@@ -467,6 +475,31 @@ class AgentSpecOperationServiceImplTest {
     }
     
     @Test
+    void updateScopeShouldNotFailWhenIndexSchedulingFails() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString()))
+            .thenReturn(meta);
+        when(aiResourcePersistService.updateScope(eq(namespaceId), eq(agentSpecName),
+            eq("agentspec"), eq("PUBLIC"))).thenReturn(true);
+        doThrow(new IllegalStateException("index unavailable")).when(
+            resourceIndexMaintenanceService).schedule(namespaceId, "agentspec", agentSpecName);
+        service.setAiResourceIndexMaintenanceService(null);
+        service.setAgentSpecStorageReader(null);
+        service.setAgentSpecStorageReader(mock(AgentSpecStorageReader.class));
+        service.setAiResourceIndexMaintenanceService(resourceIndexMaintenanceService);
+        
+        service.updateScope(namespaceId, agentSpecName, "PUBLIC");
+        
+        verify(aiResourcePersistService).updateScope(namespaceId, agentSpecName, "agentspec",
+            "PUBLIC");
+    }
+    
+    @Test
     void testUpdateBizTagsSuccess() throws NacosException {
         String namespaceId = "test-ns";
         String agentSpecName = "my-agentspec";
@@ -489,6 +522,8 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName),
             eq("agentspec"), eq(1L),
             argThat(resource -> resource != null && "[\"finance\"]".equals(resource.getBizTags())));
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec",
+            agentSpecName);
     }
     
     @Test
@@ -600,6 +635,8 @@ class AgentSpecOperationServiceImplTest {
                 Map<?, ?> labels = (Map<?, ?>) info.get("labels");
                 return version.equals(labels.get(AiResourceConstants.LABEL_LATEST));
             }));
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec",
+            agentSpecName);
     }
     
     @Test
@@ -1427,6 +1464,7 @@ class AgentSpecOperationServiceImplTest {
         service.updateLabels(namespaceId, name, labels);
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L), any());
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec", name);
     }
     
     @Test
@@ -1449,6 +1487,7 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L),
             argThat(resource -> "enable".equals(resource.getStatus())));
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec", name);
     }
     
     @Test
@@ -1471,6 +1510,7 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"),
             eq(1L),
             argThat(resource -> "disable".equals(resource.getStatus())));
+        verify(resourceIndexMaintenanceService).schedule(namespaceId, "agentspec", name);
     }
     
     // ===== Semver versioning and targetVersion tests =====
