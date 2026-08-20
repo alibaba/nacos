@@ -547,7 +547,7 @@ public class AiResourceSearchService {
             }
         }
         for (Predicate predicate : query.getPredicates()) {
-            if (predicate != null
+            if (predicate != null && predicate.appliesTo(entry.getResourceType())
                 && !matchesPredicate(predicate, fieldValues(entry, predicate.getField()))) {
                 return false;
             }
@@ -967,6 +967,8 @@ public class AiResourceSearchService {
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_SKILL_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_PROMPT_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_MCP_CONTENT, 0.7D);
+        weights.put(AiResourceSearchConstants.CHUNK_TYPE_AGENT_CONTENT, 0.7D);
+        weights.put(AiResourceSearchConstants.CHUNK_TYPE_AGENTSPEC_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_METADATA_IO, 0.6D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_METADATA_RISK, 0.5D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_NOT_FOR, 0.4D);
@@ -1123,15 +1125,23 @@ public class AiResourceSearchService {
         
         private boolean caseSensitive;
         
+        private List<String> applicableResourceTypes = Collections.emptyList();
+        
         public Predicate() {
         }
         
         public Predicate(String field, PredicateOperator operator, List<String> values,
             boolean caseSensitive) {
+            this(field, operator, values, caseSensitive, Collections.emptyList());
+        }
+        
+        public Predicate(String field, PredicateOperator operator, List<String> values,
+            boolean caseSensitive, List<String> applicableResourceTypes) {
             this.field = field;
             setOperator(operator);
             setValues(values);
             this.caseSensitive = caseSensitive;
+            setApplicableResourceTypes(applicableResourceTypes);
         }
         
         public String getField() {
@@ -1164,6 +1174,20 @@ public class AiResourceSearchService {
         
         public void setCaseSensitive(boolean caseSensitive) {
             this.caseSensitive = caseSensitive;
+        }
+        
+        public List<String> getApplicableResourceTypes() {
+            return applicableResourceTypes;
+        }
+        
+        public void setApplicableResourceTypes(List<String> applicableResourceTypes) {
+            this.applicableResourceTypes = applicableResourceTypes == null
+                ? Collections.emptyList() : applicableResourceTypes;
+        }
+        
+        private boolean appliesTo(String resourceType) {
+            return applicableResourceTypes.isEmpty()
+                || applicableResourceTypes.contains(resourceType);
         }
     }
     

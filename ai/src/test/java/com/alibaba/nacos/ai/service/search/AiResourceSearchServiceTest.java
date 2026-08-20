@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -262,6 +263,33 @@ class AiResourceSearchServiceTest {
     }
     
     @Test
+    void listShouldScopeRepresentationPredicateToAgentResources() throws Exception {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        when(registry.isCurrent(any())).thenReturn(true);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex);
+        AiResourceSearchDocument agent = entry(1L, "agent-a");
+        agent.setResourceType("agent");
+        agent.setMetadata(JacksonUtils.toJson(
+            Map.of("artifactKinds", List.of("a2a-agent-card", "nacos-agent"))));
+        AiResourceSearchDocument skill = entry(2L, "skill-a");
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill"), 0L, 500))
+            .thenReturn(List.of(agent, skill));
+        Query query = listQuery();
+        query.setResourceTypes(List.of("agent", "skill"));
+        Predicate predicate = new Predicate("metadata.artifactKinds",
+            PredicateOperator.EXACT_ANY, List.of("a2a-agent-card"), false,
+            List.of("agent"));
+        query.setPredicates(List.of(predicate));
+        
+        assertEquals(2, service.list(query).getItems().size());
+        predicate.setValues(List.of("unknown"));
+        assertEquals(1, service.list(query).getItems().size());
+        assertEquals("skill-a", service.list(query).getItems().get(0).getResourceName());
+    }
+    
+    @Test
     void predicatesShouldRejectMissingFieldsMissingValuesAndNullTokens() throws Exception {
         AiResourceSearchService service = new AiResourceSearchService(resourceManager,
             mcpServerOperationService, repository, embeddingService, vectorIndex);
@@ -467,10 +495,12 @@ class AiResourceSearchServiceTest {
         predicate.setOperator(null);
         predicate.setValues(null);
         predicate.setCaseSensitive(true);
+        predicate.setApplicableResourceTypes(null);
         assertEquals("resourceName", predicate.getField());
         assertEquals(PredicateOperator.EXACT_ANY, predicate.getOperator());
         assertTrue(predicate.getValues().isEmpty());
         assertTrue(predicate.isCaseSensitive());
+        assertTrue(predicate.getApplicableResourceTypes().isEmpty());
         
         NumberedPage page = new NumberedPage(Collections.emptyList(), 3L, 2, 4);
         assertTrue(page.getItems().isEmpty());
