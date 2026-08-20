@@ -61,8 +61,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         if (!authPluginService.isPresent()) {
             return result;
         }
-        // According to RFC2616, HTTP header and URI is case-insensitive, so use tree map with CASE_INSENSITIVE_ORDER
-        // to match the identity key and save the real key in map value.
+        // Match incoming identity names case-insensitively and retain the canonical name declared by the auth plugin.
         Map<String, String> identityNames = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (String each : authPluginService.get().identityNames()) {
             identityNames.put(each, each);
@@ -78,7 +77,8 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         while (headerEnu.hasMoreElements()) {
             String paraName = headerEnu.nextElement();
             if (identityNames.containsKey(paraName)) {
-                result.setParameter(identityNames.get(paraName), request.getHeader(paraName));
+                result.setRequestIdentityParameter(identityNames.get(paraName),
+                    request.getHeader(paraName));
             }
         }
     }
@@ -89,7 +89,8 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         while (paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();
             if (identityNames.containsKey(paraName)) {
-                result.setParameter(identityNames.get(paraName), request.getParameter(paraName));
+                result.setRequestIdentityParameter(identityNames.get(paraName),
+                    request.getParameter(paraName));
             }
         }
     }
