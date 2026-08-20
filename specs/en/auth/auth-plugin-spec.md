@@ -112,6 +112,17 @@ loaded but disabled by plugin state, it must not be used for auth decisions.
 - Auth result metadata such as authenticated username, user id, or global admin
   marker.
 
+Protocol identity builders must separately record the canonical names of
+identity parameters that were actually extracted from the request. These names
+must not include transport-derived fields or metadata later added by an auth
+plugin. HTTP identity names are matched case-insensitively, while the canonical
+spelling declared by `AuthPluginService.identityNames()` is retained.
+
+Components that forward caller credentials may only forward the recorded
+request identity parameters. They must not enumerate or forward every value in
+`IdentityContext`, because the context also contains trusted transport and auth
+result metadata.
+
 Identity names are part of the plugin contract. Server and client plugin
 implementations must agree on those names.
 

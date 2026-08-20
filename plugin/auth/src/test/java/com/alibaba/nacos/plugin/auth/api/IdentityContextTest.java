@@ -19,9 +19,13 @@ package com.alibaba.nacos.plugin.auth.api;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IdentityContextTest {
     
@@ -55,5 +59,19 @@ class IdentityContextTest {
         assertThrows(IllegalArgumentException.class, () -> {
             identityContext.getParameter(TEST, null);
         });
+    }
+    
+    @Test
+    void testRequestIdentityParameter() {
+        identityContext.setRequestIdentityParameter("accessToken", "token");
+        identityContext.setParameter("identity_id", "user");
+        
+        Set<String> requestIdentityNames = identityContext.getRequestIdentityNames();
+        assertEquals(1, requestIdentityNames.size());
+        assertTrue(requestIdentityNames.contains("accessToken"));
+        assertEquals("token", identityContext.getParameter("accessToken"));
+        assertFalse(requestIdentityNames.contains("identity_id"));
+        assertThrows(UnsupportedOperationException.class,
+            () -> requestIdentityNames.add("anotherIdentity"));
     }
 }

@@ -176,9 +176,16 @@ Console 存在两个安全方向：
 - 只读 Console API 也必须声明读权限，除非它们被明确设计为公开健康检查、静态资源、初始化或
   展示端点；
 - 进入 Console 的浏览器请求不得被当作 server identity 请求信任；
-- 独立 Console 到 Server 的调用在启用 server identity 时必须携带配置的 server identity；
+- 独立 Console 代表已认证运维人员调用 Server 时，必须使用当前鉴权插件声明的标准名称，透传
+  identity builder 记录的全部非空请求身份字段；
+- `IdentityContext` 中的传输层派生字段和鉴权结果元数据不得透传；
+- 至少透传一个请求身份字段时不得同时携带配置的 server identity，使目标 Server 能够认证该
+  运维人员并校验其权限；
+- 无可用的非空请求身份字段时，独立 Console 到 Server 的调用在启用 server identity 时必须
+  降级使用配置的 server identity；
 - `nacos.core.auth.server.identity.key` 和 `nacos.core.auth.server.identity.value` 必须在独立
   Console 和目标 Nacos Server 部署之间保持一致；
+- 使用运维人员身份透传时，目标 Server 必须开启 Admin API 鉴权并使用兼容的鉴权插件；
 - Console 登录和 token 校验所需的 auth plugin token secret 必须与所选鉴权插件行为保持一致。
 
 Console 鉴权属于共享鉴权模型，必须遵循[鉴权规范](../http-api/authorization-spec.md)。
