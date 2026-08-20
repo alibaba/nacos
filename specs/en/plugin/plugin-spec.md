@@ -196,6 +196,15 @@ deferred loading must not independently instantiate its implementations while it
 predicate is false. Final configuration and runtime participation must follow the unified result
 before the server becomes available.
 
+An independently deployed Console has no Core application context and therefore does not start the
+regular core plugin manager. Before the Console starts accepting requests, a Console-local auth
+initializer must discover the `AuthPluginService` instances already loaded by the auth domain,
+resolve `STATIC > DEFAULT`, validate and apply every configurable auth implementation, and invoke
+`PluginStartupLifecycle` only for the selected auth implementation. The selected implementation
+must exist; otherwise Console startup fails explicitly. This limited lifecycle does not load other
+plugin types and does not own plugin state, runtime-persisted configuration, local-only overrides,
+storage, or cluster synchronization.
+
 Plugin startup must be deterministic:
 
 - A plugin type and name pair must map to one runtime plugin instance.
@@ -641,6 +650,12 @@ pre-context implementation is defensively copied and exposed as `RESTART`, with
 a warning containing only the plugin ID and item key. Runtime config APIs,
 persisted or local-only restoration, and `ServerConfigChangeEvent` refresh must
 not update pre-context plugins.
+
+The independently deployed Console auth lifecycle is another restricted source variant. It keeps
+an accepted static snapshot for each configurable auth implementation and resolves only
+`STATIC > DEFAULT`. A `ServerConfigChangeEvent` may refresh fields declared `RUNTIME`; fields
+declared `RESTART`, including auth plugin selection and token secrets, keep their startup value.
+Console must not read or update the Server-owned runtime-persisted or local-only plugin sources.
 
 The `STATIC` resolver keeps an accepted per-plugin snapshot instead of reading
 live environment values independently for every detail query. Startup captures

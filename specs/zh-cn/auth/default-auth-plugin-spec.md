@@ -73,6 +73,11 @@ restart-only 密钥构建。开启 token 缓存时，在同一个基础 manager 
 切回基础 manager，并清空 token 缓存。token 过期时间变化时也会清空包装缓存，使下一次
 取 token 使用新的运行时有效期；已经返回给客户端的 token 仍按签名中的原过期时间有效。
 
+独立部署 Console 时，Console 本地 auth initializer 会在开始接收请求前，从
+`STATIC > DEFAULT` 对内置 `auth:nacos` 应用配置，使稳定的 `TokenManagerDelegate` 完成具体
+token manager 初始化。LDAP 等身份提供方仍消费 `auth:nacos` 持有的 token 和授权基础设施，
+因此所有可配置鉴权实现都要执行 apply，只有当前选中实现接收可选的启动生命周期回调。
+
 `ldap` 实现同样实现 `PluginConfigSpec`，并以可配置插件 `auth:ldap` 注册。其 canonical
 配置前缀为 `nacos.plugin.auth.ldap.`。
 

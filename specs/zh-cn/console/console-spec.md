@@ -181,6 +181,15 @@ Console 存在两个安全方向：
   Console 和目标 Nacos Server 部署之间保持一致；
 - Console 登录和 token 校验所需的 auth plugin token secret 必须与所选鉴权插件行为保持一致。
 
+独立部署的 Console 必须在开始接收请求前初始化本地鉴权插件运行环境。它对所有可配置鉴权实现
+应用 `STATIC > DEFAULT` 配置，以保证共享鉴权基础设施可用，但只为当前选中实现启动插件持有的
+运行资源。选中的实现不存在属于启动错误。该 Console 本地生命周期不得启动 Core 插件管理器，
+也不得访问由 Server 持有的插件 state、runtime-persisted 配置、local-only override、storage
+或集群同步能力。
+
+静态配置刷新可以重新应用声明为 `RUNTIME` 的鉴权字段。鉴权插件选择、token secret 和其他
+`RESTART` 字段在 Console 重启前保持启动值。
+
 Console 鉴权属于共享鉴权模型，必须遵循[鉴权规范](../http-api/authorization-spec.md)。
 
 ## 9. 功能开关
