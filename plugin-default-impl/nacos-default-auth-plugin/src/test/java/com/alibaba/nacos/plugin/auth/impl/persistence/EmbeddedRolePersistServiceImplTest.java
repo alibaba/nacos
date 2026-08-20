@@ -23,6 +23,7 @@ import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -97,6 +98,17 @@ class EmbeddedRolePersistServiceImplTest {
     }
     
     @Test
+    void testFindRolesLikeRoleNameEscapesTheUnderscoreWildcard() {
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        
+        embeddedRolePersistService.findRolesLikeRoleName("ro_le");
+        
+        Mockito.verify(databaseOperate)
+            .queryMany(any(String.class), args.capture(), eq(String.class));
+        assertEquals("%ro\\_le%", args.getValue()[0]);
+    }
+    
+    @Test
     void testFindRolesLikeAndGenerateLikeArgument() {
         assertEquals("ro\\_le%", embeddedRolePersistService.generateLikeArgument("ro_le*"));
         assertEquals("plain", embeddedRolePersistService.generateLikeArgument("plain"));
@@ -117,6 +129,23 @@ class EmbeddedRolePersistServiceImplTest {
     }
     
     @Test
+    void testFindRolesLike4PageEscapesEveryLikePredicate() {
+        AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
+        EmbeddedRolePersistServiceImpl service = serviceWithHelper(helper);
+        ArgumentCaptor<String> countSql = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> fetchSql = ArgumentCaptor.forClass(String.class);
+        
+        service.findRolesLike4Page("na_cos", "ro_le", 1, 10);
+        
+        Mockito.verify(helper)
+            .fetchPage(countSql.capture(), fetchSql.capture(), any(), eq(1), eq(10), any());
+        assertEquals("SELECT count(*) FROM roles WHERE 1 = 1 AND username LIKE ? ESCAPE '\\' "
+            + "AND role LIKE ? ESCAPE '\\'", normalizeSql(countSql.getValue()));
+        assertEquals("SELECT role, username FROM roles WHERE 1 = 1 AND username LIKE ? ESCAPE '\\' "
+            + "AND role LIKE ? ESCAPE '\\'", normalizeSql(fetchSql.getValue()));
+    }
+    
+    @Test
     void testGetRolesReturnsEmptyPageWhenHelperReturnsNull() {
         AuthPaginationHelper<RoleInfo> helper = Mockito.mock(AuthPaginationHelper.class);
         EmbeddedRolePersistServiceImpl service = serviceWithHelper(helper);
@@ -126,6 +155,10 @@ class EmbeddedRolePersistServiceImplTest {
         
         assertEquals(0, result.getTotalCount());
         assertEquals(Collections.emptyList(), result.getPageItems());
+    }
+    
+    private String normalizeSql(String sql) {
+        return sql.replaceAll("\\s+", " ").trim();
     }
     
     private EmbeddedRolePersistServiceImpl serviceWithHelper(

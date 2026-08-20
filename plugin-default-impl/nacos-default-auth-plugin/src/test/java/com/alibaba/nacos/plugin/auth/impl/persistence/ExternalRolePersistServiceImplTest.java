@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -127,6 +128,17 @@ class ExternalRolePersistServiceImplTest {
         List<String> role = externalRolePersistService.findRolesLikeRoleName("role");
         
         assertEquals(0, role.size());
+    }
+    
+    @Test
+    void testFindRolesLikeRoleNameEscapesTheUnderscoreWildcard() {
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        
+        externalRolePersistService.findRolesLikeRoleName("ro_le");
+        
+        Mockito.verify(jdbcTemplate)
+            .queryForList(any(String.class), args.capture(), eq(String.class));
+        assertEquals("%ro\\_le%", args.getValue()[0]);
     }
     
     @Test
