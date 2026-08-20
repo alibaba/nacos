@@ -43,6 +43,8 @@ Nacos 使用 `RequestContextHolder` 和 `RequestContext` 作为进程内请求�
   `AuthContext` 和具名扩展上下文。
 - `BasicContext` 记录协议、请求目标、编码、app、user agent 和远端/source 地址信息。
 - 当鉴权过滤器执行后，`AuthContext` 记录 API 类型、解析出的 identity、resource 和鉴权结果。
+- 解析出的 identity 必须把实际从请求提取的身份字段标准名称与传输层派生字段、插件补充元数据分开
+  记录；HTTP 身份字段名称按大小写不敏感方式匹配。
 - 扩展上下文可以增加运行时元数据，但不得重新定义标准字段，也不得保存持久领域状态。
 - 上下文仅属于运行时。它不是持久化数据，不是集群复制 payload，也不会自动传播到异步任务；如果
   组件需要跨线程使用，必须显式复制必要字段。

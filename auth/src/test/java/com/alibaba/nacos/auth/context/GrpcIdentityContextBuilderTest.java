@@ -32,7 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,5 +78,8 @@ class GrpcIdentityContextBuilderTest {
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
         assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));
+        assertTrue(actual.getRequestIdentityNames().contains(IDENTITY_TEST_KEY));
+        assertFalse(actual.getRequestIdentityNames().contains(Constants.Identity.REMOTE_IP));
     }
+    
 }
