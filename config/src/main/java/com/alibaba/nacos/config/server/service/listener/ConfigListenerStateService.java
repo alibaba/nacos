@@ -38,8 +38,9 @@ public interface ConfigListenerStateService {
     /**
      * Get config listener state by listener ip.
      *
-     * @param ip    listener ip
+     * @param ip            listener ip
+     * @param namespaceId   namespace id of config
      * @return      listener config information, include dataId, groupName, namespaceId and config md5
      */
-    ConfigListenerInfo getListenerStateByIp(String ip);
+    ConfigListenerInfo getListenerStateByIp(String ip, String namespaceId);
 }

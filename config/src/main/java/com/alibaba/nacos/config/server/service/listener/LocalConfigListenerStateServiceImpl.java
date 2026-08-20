@@ -79,7 +79,7 @@ public class LocalConfigListenerStateServiceImpl implements ConfigListenerStateS
     }
     
     @Override
-    public ConfigListenerInfo getListenerStateByIp(String ip) {
+    public ConfigListenerInfo getListenerStateByIp(String ip, String namespaceId) {
         // long polling listeners for 1.x client TODO removed after 3.x not support 1.x client.
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
         // rpc listeners for upper 2.x client.

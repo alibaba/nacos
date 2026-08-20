@@ -76,7 +76,7 @@ class ListenerControllerV3Test {
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", "test", true))
             .thenReturn(sampleResult);
         
         MockHttpServletRequestBuilder builder =
@@ -98,7 +98,7 @@ class ListenerControllerV3Test {
     @Test
     void testGetAllSubClientConfigByIpEmptyListeners() throws Exception {
         ConfigListenerInfo sampleResult = new ConfigListenerInfo();
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", null, true))
             .thenReturn(sampleResult);
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
@@ -115,7 +115,7 @@ class ListenerControllerV3Test {
         map.put("dataId+group+ns1", "md5a");
         map.put("dataId+group+ns2", "md5b");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", "ns1", true))
             .thenReturn(sampleResult);
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
@@ -132,7 +132,7 @@ class ListenerControllerV3Test {
         Map<String, String> map = new HashMap<>();
         map.put("dataId+group+tenant", "md5");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", null, true))
             .thenReturn(sampleResult);
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
@@ -153,7 +153,7 @@ class ListenerControllerV3Test {
         Map<String, String> map = new HashMap<>();
         map.put("dataId+group", "md5");
         sampleResult.setListenersStatus(map);
-        when(configListenerStateDelegate.getListenerStateByIp("localhost", true))
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", null, true))
             .thenReturn(sampleResult);
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)

@@ -160,7 +160,7 @@ class LocalConfigListenerStateServiceImplTest {
         when(configChangeListenContext.getListenKeys("conn-1"))
             .thenReturn(listenKeys);
         
-        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4");
+        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4", "ns");
         assertNotNull(result);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, result.getQueryType());
         assertEquals("md5-1", result.getListenersStatus().get("gk1"));
@@ -181,7 +181,7 @@ class LocalConfigListenerStateServiceImplTest {
         when(configChangeListenContext.getListenKeys("conn-1"))
             .thenReturn(null);
         
-        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4");
+        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4", "ns");
         assertNotNull(result);
         assertEquals(0, result.getListenersStatus().size());
     }
@@ -195,7 +195,7 @@ class LocalConfigListenerStateServiceImplTest {
         when(connectionManager.getConnectionByIp("1.2.3.4"))
             .thenReturn(Collections.emptyList());
         
-        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4");
+        ConfigListenerInfo result = service.getListenerStateByIp("1.2.3.4", "ns");
         assertNotNull(result);
         assertEquals(0, result.getListenersStatus().size());
     }
