@@ -50,6 +50,9 @@ Context rules:
   and remote/source address information.
 - `AuthContext` records API type, parsed identity, resource, and auth result
   when an auth filter has executed.
+- Parsed identity records the canonical names of identity parameters actually
+  extracted from the request separately from transport-derived and
+  plugin-enriched metadata. HTTP identity names are matched case-insensitively.
 - Extension contexts may add runtime metadata, but must not redefine standard
   fields or store durable domain state.
 - Context is runtime-only. It is not persisted, not a cluster replication

@@ -213,11 +213,22 @@ Rules:
   intentionally public health, static asset, bootstrap, or presentation
   endpoints;
 - incoming browser requests must not be trusted as server identity requests;
-- independent Console-to-Server calls must carry the configured server identity
-  when server identity is enabled;
+- independent Console-to-Server calls for an authenticated operator must
+  forward every non-blank request identity parameter recorded by the identity
+  builder, using the canonical name declared by the selected auth plugin;
+- transport-derived fields and auth result metadata in `IdentityContext` must
+  not be forwarded;
+- when at least one request identity parameter is forwarded, the call must not
+  also carry the configured server identity, so the target Server authenticates
+  and authorizes the operator;
+- when no non-blank request identity parameter is available, independent
+  Console-to-Server calls must fall back to the configured server identity when
+  server identity is enabled;
 - `nacos.core.auth.server.identity.key` and
   `nacos.core.auth.server.identity.value` must match between independent Console
   and the target Nacos Server deployment;
+- the target Server must enable Admin API authentication and use a compatible
+  auth plugin when operator identity forwarding is used;
 - the auth plugin token secret used by Console login and token verification must
   be configured consistently with the selected auth plugin behavior.
 
