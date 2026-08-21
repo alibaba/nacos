@@ -18,7 +18,6 @@ package com.alibaba.nacos.test.consoleapi.ai.mcp;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.consoleapi.ai.AiConsoleApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for MCP console OpenAPI {@code /v3/console/ai/mcp}.
@@ -41,13 +39,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
  *     version and invalid custom ID are rejected with HTTP 400. The legacy import endpoints return HTTP 410 by
  *     default, remain available behind the shared compatibility switch through Nacos 3.3.x, and are planned for
- *     removal in 3.4.0.
+ *     removal in 3.4.0. MCP runtime tool import has a separate scenario class because its outbound-network policy is
+ *     independent from MCP resource CRUD.
  *     Console currently accepts {@code resourceSpecification} but does not persist it because the controller does
  *     not parse resources.
  *     </li>
  *     <li>Exception/error handling: duplicate create returns conflict, absent server returns the MCP not-found result
- *     envelope, malformed JSON is rejected as a controlled validation error, and unsupported MCP tool import
- *     transports return a wrapped failure instead of an unhandled exception.</li>
+ *     envelope, and malformed JSON is rejected as a controlled validation error.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -149,17 +147,7 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     @Test
-    public void testImportToolsAndLegacyImportCompatibilityGate() throws Exception {
-        HttpResponse unsupportedTransport = getRaw(CONSOLE_MCP_IMPORT_TOOLS_PATH, Query.newInstance()
-                .addParam("transportType", "stdio").addParam("baseUrl", "http://127.0.0.1:1")
-                .addParam("endpoint", "/mcp"));
-        assertEquals(200, unsupportedTransport.code(), unsupportedTransport.body());
-        JsonNode root = JacksonUtils.toObj(unsupportedTransport.body());
-        assertEquals(ErrorCode.SERVER_ERROR.getCode(), root.get("code").asInt(),
-                unsupportedTransport.body());
-        assertTrue(root.get("message").asText().contains("Unsupported transport type"),
-                unsupportedTransport.body());
-
+    public void testLegacyImportCompatibilityGate() throws Exception {
         assertError(postRaw(CONSOLE_MCP_IMPORT_VALIDATE_PATH, Query.newInstance()), 410,
                 ErrorCode.API_DEPRECATED, "POST /v3/console/ai/import/validate");
         assertError(postRaw(CONSOLE_MCP_IMPORT_EXECUTE_PATH, Query.newInstance()), 410,

@@ -56,8 +56,12 @@ export default function ImportMcpToolsDialog({
         authToken: authToken.trim() || undefined,
       });
 
-      const result = response as unknown as { data: McpTool[] };
-      const tools: McpTool[] = result.data || [];
+      if (response.code !== 0) {
+        toast.error(response.message || t('mcp.importToolsFailed'));
+        return;
+      }
+
+      const tools: McpTool[] = response.data || [];
 
       if (tools.length === 0) {
         toast.error(t('mcp.noHealthyInstance'));

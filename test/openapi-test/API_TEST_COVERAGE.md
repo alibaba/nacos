@@ -57,15 +57,15 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Client OpenAPI | 11 | 10 | 1 | 0 | 90.91% | 95.45% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
-| Console API | 28 | 24 | 4 | 0 | 85.71% | 92.86% |
+| Console API | 29 | 24 | 5 | 0 | 82.76% | 91.38% |
 | Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
-| Total | 81 | 65 | 14 | 2 | 80.25% | 88.89% |
+| Total | 82 | 65 | 15 | 2 | 79.27% | 88.41% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
 shared runtime/storage state, require publish-pipeline plugin data, require a
 data-plane publisher binding not yet present in standalone IT, require an
-external LLM provider, require authenticated multi-identity AI resource
+external MCP runtime or LLM provider, require authenticated multi-identity AI resource
 visibility scenarios, or belong to the remaining default-auth user management operations outside
 the covered login contract.
 
@@ -173,6 +173,17 @@ by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and
 `nacos.core.api.compatibility.enabled` gate. They are planned for removal in
 Nacos 3.4.0; the managed `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
+
+`McpToolsImportConsoleApiOpenApiITCase` verifies that
+`GET /v3/console/ai/mcp/importToolsFromMcp` rejects private or local targets by
+default with an explicit private-allowlist message, without opening a network
+connection. The standalone suite also covers its required endpoint parameter
+and unsupported transport response. Public-target protocol success,
+operator-approved private-target success, and optional token forwarding remain
+an end-to-end gap because they require an external MCP runtime and controlled
+server configuration. The operator switch, public-target policy, IP/CIDR
+matching, DNS multi-address rejection, endpoint-origin enforcement, and invalid
+configuration are verified by focused Console module tests.
 
 MCP Admin detail coverage verifies the version-selection contract: when a
 newer draft exists after a published version, an omitted `version` resolves the

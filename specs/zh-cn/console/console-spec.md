@@ -163,10 +163,11 @@ Console Controller
 
 ## 8. 安全边界
 
-Console 存在两个安全方向：
+Console 存在三个安全方向：
 
 1. 浏览器或运维人员访问 Console API；
-2. 独立 Console 进程访问 Nacos Server。
+2. 独立 Console 进程访问 Nacos Server；
+3. Console 进程访问显式配置或由请求选择的外部系统。
 
 规则：
 
@@ -176,6 +177,11 @@ Console 存在两个安全方向：
 - 只读 Console API 也必须声明读权限，除非它们被明确设计为公开健康检查、静态资源、初始化或
   展示端点；
 - 进入 Console 的浏览器请求不得被当作 server identity 请求信任；
+- Console API 不得把请求选择的 URL 直接变成不受限制的服务端网络目标。
+  `GET /v3/console/ai/mcp/importToolsFromMcp` 默认允许公网目标，并可通过
+  `nacos.console.ai.mcp.import.enabled` 关闭；目标解析得到的每一个私网或本地地址都必须命中运维通过
+  `nacos.console.ai.mcp.import.allowed-private-addresses` 配置的 IP/CIDR 白名单，endpoint 必须保持为
+  已校验 base URL 下的相对地址，非法配置必须按拒绝处理，并且不得跟随重定向；
 - 独立 Console 代表已认证运维人员调用 Server 时，必须使用当前鉴权插件声明的标准名称，透传
   identity builder 记录的全部非空请求身份字段；
 - `IdentityContext` 中的传输层派生字段和鉴权结果元数据不得透传；
