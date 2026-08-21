@@ -66,6 +66,8 @@ Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的同�
 Prompt handler 只投影调用方可见、enabled、latest 可解析到 online Version 的名称、description、
 业务 tags 和适合检索的模板说明；模板中可能出现的 credential、secret 默认值和运行时参数值不得进入
 chunk。通用 Search 只指定 Prompt 时与专用 Search 的候选资格、可见性和当前性一致。
+Client Facade 为 `GET /v3/client/ai/prompt/search`；它接受 `query`、可重复的
+`tagsAll`、`pageNo` 和 `pageSize`，并返回 `Page<PromptMetaSummary>`。
 
 ## 5. 存储
 

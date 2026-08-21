@@ -86,6 +86,8 @@ public class Constants {
         public static final String AI_TYPE_AGENT_SPEC = "agentSpec";
         
         public static final String AI_TYPE_ARD = "ard";
+        
+        public static final String AI_TYPE_RESOURCE = "resource";
     }
     
     public static class Identity {

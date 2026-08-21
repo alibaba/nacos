@@ -31,6 +31,7 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_ARD;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_MCP;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_PROMPT;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_RESOURCE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_SKILL;
 
 /**
@@ -51,6 +52,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     public static final String PROMPT_PATH = "/ai/prompt";
     
     public static final String AGENT_SPEC_PATH = "/ai/agentspecs";
+    
+    public static final String AI_RESOURCE_PATH = "/ai/resources";
     
     private static final String AGENT_SPEC_LIST_PATH = AGENT_SPEC_PATH + "/list";
     
@@ -87,6 +90,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             return getPromptName(request);
         } else if (isAgentSpecPath(url)) {
             return getAgentSpecName(request);
+        } else if (isAiResourcePath(url)) {
+            return StringUtils.EMPTY;
         } else if (url.contains(ARD_PATH)) {
             return getArdResourceName(request);
         }
@@ -157,6 +162,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
         } else if (isAgentSpecPath(url)) {
             properties.setProperty(AI_TYPE, AI_TYPE_AGENT_SPEC);
+        } else if (isAiResourcePath(url)) {
+            properties.setProperty(AI_TYPE, AI_TYPE_RESOURCE);
         } else if (url.contains(ARD_PATH)) {
             properties.setProperty(AI_TYPE, AI_TYPE_ARD);
         }
@@ -169,6 +176,10 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
     private boolean isAgentSpecPath(String url) {
         return containsCompletePath(url, AGENT_SPEC_PATH);
+    }
+    
+    private boolean isAiResourcePath(String url) {
+        return containsCompletePath(url, AI_RESOURCE_PATH);
     }
     
     private boolean containsCompletePath(String url, String path) {

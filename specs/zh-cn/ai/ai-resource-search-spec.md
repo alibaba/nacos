@@ -81,6 +81,41 @@ resource type，并可以使用类型专用 predicate 和权重。通用 Search 
 时，其候选资格、可见性和当前性结果必须与对应资源专用 Search 一致。跨类型 Search 不得通过
 拼接多个已经分页的专用结果实现。
 
+### 3.1 Client HTTP Search Facade
+
+通用 Client HTTP Facade 为：
+
+```text
+GET /v3/client/ai/resources/search
+```
+
+请求参数包括 `namespaceId`、可选 `query`、可重复的 `resourceTypes`、可重复的
+`tagsAll`、可重复的 `capabilitiesAny`、不透明 `cursor` 和 `limit`。省略
+`namespaceId` 时使用 `public`；省略 `resourceTypes` 时检索所有已注册的可检索类型；
+省略 `limit` 时使用 `20`。`limit` 取值范围为 `1` 到 `100`（含边界）。每个重复
+filter 最多包含 32 个非空值，`query` 最长 1024 字符，`cursor` 最长 2048 字符。
+未知资源类型和非法边界统一返回参数校验错误。
+
+空白 `query` 执行确定性的当前资源列表；非空 `query` 执行相关度 Search。响应为
+`Result<AiResourceSearchResponse>`：`items` 包含协议无关资源身份、当前 Version、
+展示/检索元数据、时间戳和 score；没有下一页时不返回 `nextCursor`。通用 cursor page
+不暴露 numbered-page total。
+
+资源专用 Client HTTP Facade 为：
+
+| 资源 | Endpoint | 类型专用请求字段 | 响应 |
+| --- | --- | --- | --- |
+| Agent | `GET /v3/client/ai/agents/search` | 既有 RAD filter，包括 `agentNameContains`、`tagsAll` 和 `protocolsAny` | 既有 numbered `Page<AgentSummary>` 契约 |
+| AgentSpec | `GET /v3/client/ai/agentspecs/search` | 兼容字段 `keyword`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<AgentSpecBasicInfo>` |
+| Skill | `GET /v3/client/ai/skills/search` | `query`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<SkillBasicInfo>` |
+| Prompt | `GET /v3/client/ai/prompt/search` | `query`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<PromptMetaSummary>` |
+| MCP | `GET /v3/client/ai/mcp/search` | `query`、`tagsAll`、`protocolsAny`、`capabilitiesAny`、`pageNo` 和 `pageSize` | `Page<McpServerBasicInfo>` |
+
+各 numbered Facade 省略 `pageNo` 和 `pageSize` 时使用公共分页默认值，非正数必须拒绝。
+空白 text 按稳定资源键列出当前资源；非空 text 复用共享召回和排序路径。AgentSpec 为兼容
+既有 `keyword` 契约，保留 resource name 的 literal contains 语义。各 Facade 映射与通用
+单类型 Search 相同的合法 Document，不得在分页后再次过滤。
+
 ## 4. 聚合
 
 聚合必须基于完整的合法匹配集，而不是单个结果页。服务按消费者需要返回标准 bucket value、

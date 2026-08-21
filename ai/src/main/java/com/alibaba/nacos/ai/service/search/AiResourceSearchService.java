@@ -23,6 +23,8 @@ import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorHit;
@@ -236,6 +238,32 @@ public class AiResourceSearchService {
                 break;
             }
         }
+        long pageCount = totalCount / query.getPageSize()
+            + (totalCount % query.getPageSize() == 0 ? 0 : 1);
+        int pagesAvailable = (int) Math.min(Integer.MAX_VALUE, pageCount);
+        return new NumberedPage(items, totalCount, query.getPageNumber(), pagesAvailable);
+    }
+    
+    /**
+     * Search and relevance-rank one numbered page.
+     *
+     * <p>This adapter preserves the resource-specific numbered-page contract while using the
+     * same recall, filtering, visibility, and currentness pipeline as cursor Search.</p>
+     *
+     * @param query canonical discovery query with text and numbered-page settings
+     * @return numbered page over the complete recalled eligible result set
+     * @throws NacosException when recall or canonical resource lookup fails
+     */
+    public NumberedPage numberedSearch(Query query) throws NacosException {
+        List<RankedEntry> candidates = searchCandidates(query);
+        long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
+        int fromIndex = (int) Math.min(offset, candidates.size());
+        int toIndex = (int) Math.min((long) fromIndex + query.getPageSize(), candidates.size());
+        List<AiResourceSearchResult> items = new ArrayList<>(toIndex - fromIndex);
+        for (RankedEntry candidate : candidates.subList(fromIndex, toIndex)) {
+            items.add(toResult(candidate));
+        }
+        long totalCount = candidates.size();
         long pageCount = totalCount / query.getPageSize()
             + (totalCount % query.getPageSize() == 0 ? 0 : 1);
         int pagesAvailable = (int) Math.min(Integer.MAX_VALUE, pageCount);
@@ -823,7 +851,8 @@ public class AiResourceSearchService {
     }
     
     private NacosException invalidCursor() {
-        return new NacosException(NacosException.INVALID_PARAM, "Invalid discovery cursor");
+        return new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "Invalid discovery cursor");
     }
     
     private boolean enhancedRankingEnabled() {

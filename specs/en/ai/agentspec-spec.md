@@ -71,6 +71,9 @@ credentials or private runtime values does not enter chunks. The existing
 keyword-paged Client Search migrates to this facade and must not filter again
 after shared-index pagination. Generic Search restricted to AgentSpec has the
 same candidate eligibility as resource-specific Search.
+The Client facade is `GET /v3/client/ai/agentspecs/search`; it preserves the
+existing `keyword`, `pageNo`, and `pageSize` contract and additionally accepts
+repeated `tagsAll` values.
 
 ## 4. Lifecycle
 

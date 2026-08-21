@@ -75,6 +75,9 @@ description suitable for search. Credentials, secret defaults, and runtime
 parameter values that may occur in a template do not enter chunks. Generic
 Search restricted to Prompt matches resource-specific Search eligibility,
 visibility, and currentness.
+The Client facade is `GET /v3/client/ai/prompt/search`; it accepts `query`,
+repeated `tagsAll`, `pageNo`, and `pageSize`, and returns
+`Page<PromptMetaSummary>`.
 
 ## 5. Storage
 

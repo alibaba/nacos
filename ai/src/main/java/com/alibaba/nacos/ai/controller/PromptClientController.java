@@ -19,17 +19,22 @@ package com.alibaba.nacos.ai.controller;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.ai.utils.PromptConvertUtils;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,8 +55,26 @@ public class PromptClientController {
     
     private final PromptClientOperationService promptOperationService;
     
-    public PromptClientController(PromptClientOperationService promptOperationService) {
+    private final AiResourceSearchApplicationService searchService;
+    
+    public PromptClientController(PromptClientOperationService promptOperationService,
+        AiResourceSearchApplicationService searchService) {
         this.promptOperationService = promptOperationService;
+        this.searchService = searchService;
+    }
+    
+    /**
+     * Search visible current Prompts.
+     */
+    @Since("3.3.0")
+    @GetMapping("/search")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public Result<Page<PromptMetaSummary>> search(AiResourcePageSearchForm form,
+        PageForm pageForm) throws NacosException {
+        form.validate();
+        pageForm.validate();
+        return Result.success(searchService.searchPrompts(form, pageForm.getPageNo(),
+            pageForm.getPageSize()));
     }
     
     /**

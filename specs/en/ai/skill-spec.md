@@ -194,6 +194,9 @@ handler projects the latest online Version's name, description, tags, and
 searchable manifest content. Package scripts, credentials, and undeclared
 binary content do not enter search chunks. Generic Search restricted to Skill
 has the same candidate eligibility as resource-specific Search.
+The Client facade is `GET /v3/client/ai/skills/search`; it accepts `query`,
+repeated `tagsAll`, `pageNo`, and `pageSize`, and returns the existing
+`Page<SkillBasicInfo>` shape.
 
 Storage extension rules are defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).

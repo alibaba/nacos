@@ -60,6 +60,8 @@ Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 doc
 tags、公开依赖和能力说明；嵌入 credential 或私有运行时值的资源内容不得进入 chunk。现有按 keyword
 分页的 Client Search 必须逐步切换为该 Facade，不能在共享索引分页后再次过滤。通用 Search 只指定
 AgentSpec 时与专用 Search 候选资格一致。
+Client Facade 为 `GET /v3/client/ai/agentspecs/search`；它保留既有 `keyword`、
+`pageNo` 和 `pageSize` 契约，并增加可重复的 `tagsAll` 参数。
 
 ## 4. 生命周期
 

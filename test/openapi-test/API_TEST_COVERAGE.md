@@ -196,6 +196,16 @@ not creating an empty Client or Publisher. The Client-only renewal and
 Publisher-renewal separation is covered by the corresponding lifecycle unit
 tests.
 
+Protocol-neutral AI Resource Search coverage publishes one current online
+resource for each declared type (Agent, AgentSpec, Skill, Prompt, and MCP),
+waits for the durable projection rather than assuming synchronous indexing,
+and validates both cross-type global recall and every generic-single-type to
+resource-specific eligibility boundary. Its cursor scenario drains all pages
+and rejects duplicates, while structured-filter scenarios cover exact-all
+tags, exact-any capabilities, and MCP protocol filtering. Validation coverage
+includes unknown types, malformed cursors, query/limit bounds, numbered-page
+bounds, default namespace, and successful empty results.
+
 ## Coverage Documents
 
 | API surface | Scenario document | Test package |

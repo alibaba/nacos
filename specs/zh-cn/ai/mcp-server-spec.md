@@ -85,6 +85,9 @@ Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的同�
 description、tools、resources 和公开 tags；endpoint credential、运行时 instance 和敏感 auth
 metadata 不进入检索 chunk。迁移到标准 AI Resource 前，handler 可以读取兼容存储，但必须生成相同
 的标准 projection。通用 Search 只指定 MCP 时与专用 Search 候选资格一致。
+Client Facade 为 `GET /v3/client/ai/mcp/search`；它接受 `query`、可重复的
+`tagsAll`、`protocolsAny`、`capabilitiesAny`、`pageNo` 和 `pageSize`，并返回
+`Page<McpServerBasicInfo>`。
 
 ## 5. 当前兼容存储
 

@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecQueryForm;
 import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecSearchForm;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecQueryResult;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.ai.utils.AgentSpecRequestUtil;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
@@ -56,8 +57,12 @@ public class AgentSpecClientController {
     
     private final AgentSpecOperationService agentSpecOperationService;
     
-    public AgentSpecClientController(AgentSpecOperationService agentSpecOperationService) {
+    private final AiResourceSearchApplicationService searchService;
+    
+    public AgentSpecClientController(AgentSpecOperationService agentSpecOperationService,
+        AiResourceSearchApplicationService searchService) {
         this.agentSpecOperationService = agentSpecOperationService;
+        this.searchService = searchService;
     }
     
     /**
@@ -70,9 +75,8 @@ public class AgentSpecClientController {
         throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(
-            agentSpecOperationService.searchAgentSpecs(form.getNamespaceId(), form.getKeyword(),
-                pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(searchService.searchAgentSpecs(form, pageForm.getPageNo(),
+            pageForm.getPageSize()));
     }
     
     /**
