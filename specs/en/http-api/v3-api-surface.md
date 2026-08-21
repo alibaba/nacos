@@ -148,6 +148,12 @@ Console API docs should avoid presenting console-only endpoints as recommended
 automation APIs. Automation users should prefer Admin APIs unless a feature is
 intentionally console-only.
 
+`GET /v3/console/ai/mcp/importToolsFromMcp` is a console-only helper that opens
+an outbound connection from the Console process. Public targets are allowed by
+default, private or local targets require the operator-owned
+`nacos.console.ai.mcp.import.allowed-private-addresses` IP/CIDR allowlist, and
+operators may disable the helper with `nacos.console.ai.mcp.import.enabled`.
+
 ## 7. Auth API Implemented Behavior
 
 The v3 auth API lives in the default auth plugin, not in core:

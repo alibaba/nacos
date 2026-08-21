@@ -104,9 +104,17 @@ operation service. In the current implementation this may use the Config-backed
 while import plugins and unified import APIs remain compatible.
 
 Legacy MCP import APIs may remain as compatibility routes, but they should
-delegate to the unified AI resource import flow. User-provided registry URLs or
-MCP endpoint addresses must not be used as direct server-side network targets by
-default.
+delegate to the unified AI resource import flow. Within that registry import
+flow, user-provided registry URLs or MCP endpoint addresses must not be used as
+direct server-side network targets by default.
+
+The Console-only `GET /v3/console/ai/mcp/importToolsFromMcp` schema-building
+helper allows public MCP targets by default. Operators may disable all outbound
+tool import with `nacos.console.ai.mcp.import.enabled=false`. Private or local
+addresses are rejected unless every such address resolved from `baseUrl`
+matches the operator-owned
+`nacos.console.ai.mcp.import.allowed-private-addresses` IP/CIDR allowlist.
+`endpoint` cannot override the `baseUrl` origin, and redirects are disabled.
 
 ## 7. Pending Migration Issues
 
