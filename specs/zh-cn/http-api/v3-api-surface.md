@@ -162,6 +162,11 @@ Console API 模块在 UI 需要时会镜像 Admin 模块：
 Console API 文档应避免把控制台专用端点呈现为推荐的自动化 API。自动化用户
 应优先使用 Admin API，除非某个功能被明确设计为仅控制台可用。
 
+`GET /v3/console/ai/mcp/importToolsFromMcp` 是由 Console 进程发起出站连接的控制台专用
+辅助接口。公网目标默认允许；私网或本地目标必须命中运维通过
+`nacos.console.ai.mcp.import.allowed-private-addresses` 配置的 IP/CIDR 白名单。运维可以通过
+`nacos.console.ai.mcp.import.enabled` 关闭该能力。
+
 ## 7. Auth API 已实现行为
 
 V3 Auth API 位于默认鉴权插件中，而不是 core 模块中：

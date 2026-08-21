@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.console.config.McpEndpointAccessValidator;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
 import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -80,8 +81,12 @@ public class ConsoleMcpController {
     
     private final McpProxy mcpProxy;
     
-    public ConsoleMcpController(McpProxy mcpProxy) {
+    private final McpEndpointAccessValidator mcpEndpointAccessValidator;
+    
+    public ConsoleMcpController(McpProxy mcpProxy,
+        McpEndpointAccessValidator mcpEndpointAccessValidator) {
         this.mcpProxy = mcpProxy;
+        this.mcpEndpointAccessValidator = mcpEndpointAccessValidator;
     }
     
     /**
@@ -121,29 +126,43 @@ public class ConsoleMcpController {
     public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType,
         @RequestParam String baseUrl, @RequestParam String endpoint,
         @RequestParam(required = false) String authToken) throws NacosException {
-        McpClientTransport transport = null;
+        if (!StringUtils.equals(transportType, MCP_PROTOCOL_SSE)
+            && !StringUtils.equals(transportType, MCP_PROTOCOL_STREAMABLE)) {
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                "Unsupported transport type: " + transportType,
+                null);
+        }
+        try {
+            mcpEndpointAccessValidator.validate(baseUrl, endpoint);
+        } catch (SecurityException e) {
+            return Result.failure(ErrorCode.ACCESS_DENIED.getCode(), e.getMessage(), null);
+        } catch (IllegalArgumentException e) {
+            return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), e.getMessage(),
+                null);
+        }
+        McpClientTransport transport;
         if (StringUtils.equals(transportType, MCP_PROTOCOL_SSE)) {
             HttpClientSseClientTransport.Builder transportBuilder =
                 HttpClientSseClientTransport.builder(baseUrl)
-                    .sseEndpoint(endpoint);
-            if (!StringUtils.isBlank(authToken)) {
-                transportBuilder
-                    .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
-            }
-            transport = transportBuilder.build();
-        } else if (StringUtils.equals(transportType, MCP_PROTOCOL_STREAMABLE)) {
-            HttpClientStreamableHttpTransport.Builder transportBuilder =
-                HttpClientStreamableHttpTransport.builder(
-                    baseUrl).endpoint(endpoint);
+                    .sseEndpoint(endpoint)
+                    .customizeClient(builder -> builder
+                        .followRedirects(java.net.http.HttpClient.Redirect.NEVER));
             if (!StringUtils.isBlank(authToken)) {
                 transportBuilder
                     .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
             }
             transport = transportBuilder.build();
         } else {
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                "Unsupported transport type: " + transportType,
-                null);
+            HttpClientStreamableHttpTransport.Builder transportBuilder =
+                HttpClientStreamableHttpTransport.builder(
+                    baseUrl).endpoint(endpoint)
+                    .customizeClient(builder -> builder
+                        .followRedirects(java.net.http.HttpClient.Redirect.NEVER));
+            if (!StringUtils.isBlank(authToken)) {
+                transportBuilder
+                    .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
+            }
+            transport = transportBuilder.build();
         }
         try (McpSyncClient client =
             McpClient.sync(transport).requestTimeout(Duration.ofSeconds(10)).build()) {
