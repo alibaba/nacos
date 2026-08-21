@@ -150,6 +150,8 @@ Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 doc
 投影 latest online Version 的名称、description、tags 和可检索 manifest 内容；包内脚本、
 credential 和未声明的二进制内容不进入检索 chunk。通用 Search 只指定 Skill 时与专用 Search
 候选资格一致。
+Client Facade 为 `GET /v3/client/ai/skills/search`；它接受 `query`、可重复的
+`tagsAll`、`pageNo` 和 `pageSize`，并返回既有 `Page<SkillBasicInfo>` 结构。
 
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 

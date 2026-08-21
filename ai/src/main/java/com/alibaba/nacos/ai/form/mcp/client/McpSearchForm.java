@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,41 +14,46 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.agentspecs.client;
+package com.alibaba.nacos.ai.form.mcp.client;
 
 import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 
+import java.util.List;
+
 /**
- * AgentSpec search form for client runtime.
+ * MCP resource-specific Search form.
  *
- * @author nacos
+ * @author Nacos
  */
-public class AgentSpecSearchForm extends AiResourcePageSearchForm {
+public class McpSearchForm extends AiResourcePageSearchForm {
     
     private static final long serialVersionUID = 1L;
     
-    private static final int MAX_KEYWORD_LENGTH = 1024;
+    private List<String> protocolsAny;
     
-    private String keyword;
+    private List<String> capabilitiesAny;
     
-    /**
-     * Validate and normalize query parameters.
-     */
     @Override
     public void validate() throws NacosApiException {
         super.validate();
-        if (keyword != null && keyword.length() > MAX_KEYWORD_LENGTH) {
-            throw invalid("keyword exceeds " + MAX_KEYWORD_LENGTH + " characters");
-        }
+        protocolsAny = normalize(protocolsAny, MAX_FILTER_VALUES, "protocolsAny");
+        capabilitiesAny = normalize(capabilitiesAny, MAX_FILTER_VALUES, "capabilitiesAny");
     }
     
-    public String getKeyword() {
-        return keyword;
+    public List<String> getProtocolsAny() {
+        return protocolsAny;
     }
     
-    public void setKeyword(String keyword) {
-        this.keyword = keyword;
+    public void setProtocolsAny(List<String> protocolsAny) {
+        this.protocolsAny = protocolsAny;
     }
     
+    public List<String> getCapabilitiesAny() {
+        return capabilitiesAny;
+    }
+    
+    public void setCapabilitiesAny(List<String> capabilitiesAny) {
+        this.capabilitiesAny = capabilitiesAny;
+    }
 }

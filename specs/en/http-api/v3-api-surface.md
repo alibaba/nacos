@@ -71,9 +71,11 @@ guide, not as a final OpenAPI export.
 | --- | ---: | --- | --- |
 | `/v3/client/cs/config` | 1 | GET | Query config for custom HTTP clients. |
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | Register, heartbeat, deregister, and list service instances. |
-| `/v3/client/ai/prompt` | 1 | GET | Runtime prompt query. |
-| `/v3/client/ai/skills` | 1 | GET | Runtime skill zip download. |
+| `/v3/client/ai/resources` | 1 | GET | Protocol-neutral cross-resource Search. |
+| `/v3/client/ai/prompt` | 2 | GET | Runtime prompt query and Search. |
+| `/v3/client/ai/skills` | 2 | GET | Runtime skill zip download and Search. |
 | `/v3/client/ai/agentspecs` | 2 | GET | Runtime AgentSpec get and search. |
+| `/v3/client/ai/mcp` | 1 | GET | Runtime MCP Search. |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
@@ -98,10 +100,14 @@ Implemented Open API surface:
 | `POST /v3/client/ns/instance` | Register an instance, or send heartbeat when `heartBeat=true`. |
 | `DELETE /v3/client/ns/instance` | Deregister an instance. Missing instance is still successful. |
 | `GET /v3/client/ns/instance/list` | List enabled instances for a service. Disabled instances are filtered out. |
+| `GET /v3/client/ai/resources/search` | Search current visible Agent, AgentSpec, Skill, Prompt, and MCP resources through one cursor-based facade. |
 | `GET /v3/client/ai/prompt` | Query prompt by version, label, or latest. |
+| `GET /v3/client/ai/prompt/search` | Search current visible Prompts with numbered pagination. |
 | `GET /v3/client/ai/skills` | Download online skill package as a zip response. |
+| `GET /v3/client/ai/skills/search` | Search current visible Skills with numbered pagination. |
 | `GET /v3/client/ai/agentspecs` | Query AgentSpec by version, label, or latest. May allow anonymous access. |
 | `GET /v3/client/ai/agentspecs/search` | Search enabled AgentSpecs for runtime use. |
+| `GET /v3/client/ai/mcp/search` | Search current visible MCP servers with protocol and capability filters. |
 
 ## 5. Admin API Implemented Behavior
 

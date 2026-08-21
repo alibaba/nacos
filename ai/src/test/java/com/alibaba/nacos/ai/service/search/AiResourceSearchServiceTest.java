@@ -31,6 +31,8 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOper
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import org.junit.jupiter.api.Test;
@@ -175,6 +177,23 @@ class AiResourceSearchServiceTest {
         
         assertEquals(1, secondPage.getItems().size());
         assertEquals("one", secondPage.getItems().get(0).getResourceName());
+    }
+    
+    @Test
+    void listShouldRejectMalformedCursorAsParameterValidationError() {
+        AiResourceSearchService service = new AiResourceSearchService(
+            resourceManager, mcpServerOperationService, repository, embeddingService,
+            vectorIndex);
+        Query query = new Query();
+        query.setNamespaceId("public");
+        query.setResourceTypes(List.of("skill"));
+        query.setCursor("not-a-cursor");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.list(query));
+        
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+            exception.getDetailErrCode());
     }
     
     @Test
@@ -478,6 +497,47 @@ class AiResourceSearchServiceTest {
         assertEquals(0L, service.numberedList(query).getTotalCount());
         assertEquals(0L, service.numberedList(query).getTotalCount());
         assertEquals(0L, service.numberedList(query).getTotalCount());
+    }
+    
+    @Test
+    void numberedSearchShouldFilterBeforeTotalAndReturnStableRelevancePage() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        List<AiResourceSearchHit> hits = new ArrayList<>();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (long id = 1L; id <= 5L; id++) {
+            hits.add(hit(id));
+            documents.add(entry(id, "skill-" + id));
+        }
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks("public", "research", List.of("skill"), 10001))
+            .thenReturn(hits);
+        when(repository.findEntriesByIds(any())).thenReturn(documents);
+        when(resourceManager.findMeta(eq("public"), any(), eq("skill")))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findMeta("public", "skill-2", "skill")).thenReturn(null);
+        when(resourceManager.findVersion(eq("public"), any(), eq("skill"), eq("1.0.0")))
+            .thenReturn(onlineVersion());
+        Query query = listQuery();
+        query.setText("research");
+        query.setPageNumber(2);
+        query.setPageSize(2);
+        
+        NumberedPage page = service.numberedSearch(query);
+        
+        assertEquals(4L, page.getTotalCount());
+        assertEquals(2, page.getPageNumber());
+        assertEquals(2, page.getPagesAvailable());
+        assertEquals(List.of("skill-4", "skill-5"), List.of(
+            page.getItems().get(0).getResourceName(),
+            page.getItems().get(1).getResourceName()));
+        
+        query.setPageNumber(Integer.MAX_VALUE);
+        query.setPageSize(Integer.MAX_VALUE);
+        NumberedPage outOfRange = service.numberedSearch(query);
+        assertEquals(4L, outOfRange.getTotalCount());
+        assertTrue(outOfRange.getItems().isEmpty());
+        assertEquals(1, outOfRange.getPagesAvailable());
     }
     
     @Test

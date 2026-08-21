@@ -19,14 +19,20 @@ package com.alibaba.nacos.ai.controller;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
+import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -50,8 +56,26 @@ public class SkillClientController {
     
     private final SkillClientOperationService skillClientOperationService;
     
-    public SkillClientController(SkillClientOperationService skillClientOperationService) {
+    private final AiResourceSearchApplicationService searchService;
+    
+    public SkillClientController(SkillClientOperationService skillClientOperationService,
+        AiResourceSearchApplicationService searchService) {
         this.skillClientOperationService = skillClientOperationService;
+        this.searchService = searchService;
+    }
+    
+    /**
+     * Search visible current Skills.
+     */
+    @Since("3.3.0")
+    @GetMapping("/search")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    public Result<Page<SkillBasicInfo>> search(AiResourcePageSearchForm form, PageForm pageForm)
+        throws NacosException {
+        form.validate();
+        pageForm.validate();
+        return Result.success(searchService.searchSkills(form, pageForm.getPageNo(),
+            pageForm.getPageSize()));
     }
     
     /**

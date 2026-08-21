@@ -106,6 +106,48 @@ one resource type, its eligibility, visibility, and currentness results match
 the corresponding resource-specific Search. Cross-type Search must not be
 implemented by concatenating already-paginated resource-specific results.
 
+### 3.1 Client HTTP Search Facades
+
+The generic Client HTTP facade is:
+
+```text
+GET /v3/client/ai/resources/search
+```
+
+It accepts `namespaceId`, optional `query`, repeated `resourceTypes`, repeated
+`tagsAll`, repeated `capabilitiesAny`, an opaque `cursor`, and `limit`.
+Omitted `namespaceId` resolves to `public`; omitted `resourceTypes` means every
+registered searchable type; omitted `limit` means `20`. `limit` is between
+`1` and `100`, inclusive. Each repeated filter contains at most 32 non-blank
+values, `query` contains at most 1024 characters, and `cursor` contains at most
+2048 characters. Unknown resource types and invalid bounds return the standard
+parameter-validation error.
+
+A blank `query` performs a deterministic current-resource list. A non-blank
+`query` performs relevance-ranked Search. The response is
+`Result<AiResourceSearchResponse>`: `items` contains protocol-neutral resource
+identity, current Version, display/search metadata, timestamps, and score;
+`nextCursor` is omitted when no following page exists. The generic cursor page
+does not expose a numbered-page total.
+
+Resource-specific Client HTTP facades are:
+
+| Resource | Endpoint | Type-specific request fields | Response |
+| --- | --- | --- | --- |
+| Agent | `GET /v3/client/ai/agents/search` | Existing RAD filters, including `agentNameContains`, `tagsAll`, and `protocolsAny` | Existing numbered `Page<AgentSummary>` contract |
+| AgentSpec | `GET /v3/client/ai/agentspecs/search` | Compatibility `keyword`, `tagsAll`, `pageNo`, and `pageSize` | `Page<AgentSpecBasicInfo>` |
+| Skill | `GET /v3/client/ai/skills/search` | `query`, `tagsAll`, `pageNo`, and `pageSize` | `Page<SkillBasicInfo>` |
+| Prompt | `GET /v3/client/ai/prompt/search` | `query`, `tagsAll`, `pageNo`, and `pageSize` | `Page<PromptMetaSummary>` |
+| MCP | `GET /v3/client/ai/mcp/search` | `query`, `tagsAll`, `protocolsAny`, `capabilitiesAny`, `pageNo`, and `pageSize` | `Page<McpServerBasicInfo>` |
+
+For each numbered facade, omitted `pageNo` and `pageSize` use the shared page
+defaults and non-positive values are rejected. Blank text lists current
+resources in stable resource-key order; non-blank text uses the shared recall
+and ranking path. AgentSpec keeps literal resource-name containment for its
+existing `keyword` compatibility contract. These facades map the same eligible
+documents as generic single-type Search and do not perform post-pagination
+filtering.
+
 ## 4. Aggregation
 
 Aggregation runs over the complete eligible matched set, not one result page.

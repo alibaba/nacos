@@ -69,9 +69,11 @@ V3 HTTP 行为当前由以下代码位置定义：
 | --- | ---: | --- | --- |
 | `/v3/client/cs/config` | 1 | GET | 供自定义 HTTP 客户端查询配置。 |
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | 注册、心跳、注销和查询服务实例。 |
-| `/v3/client/ai/prompt` | 1 | GET | 运行时 Prompt 查询。 |
-| `/v3/client/ai/skills` | 1 | GET | 运行时 Skill zip 下载。 |
+| `/v3/client/ai/resources` | 1 | GET | 协议无关的跨资源 Search。 |
+| `/v3/client/ai/prompt` | 2 | GET | 运行时 Prompt 查询和 Search。 |
+| `/v3/client/ai/skills` | 2 | GET | 运行时 Skill zip 下载和 Search。 |
 | `/v3/client/ai/agentspecs` | 2 | GET | 运行时 AgentSpec 获取和搜索。 |
+| `/v3/client/ai/mcp` | 1 | GET | 运行时 MCP Search。 |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
@@ -96,10 +98,14 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `POST /v3/client/ns/instance` | 注册实例，或在 `heartBeat=true` 时发送心跳。 |
 | `DELETE /v3/client/ns/instance` | 注销实例。实例不存在时仍视为成功。 |
 | `GET /v3/client/ns/instance/list` | 查询服务的启用实例列表。会过滤 disabled 实例。 |
+| `GET /v3/client/ai/resources/search` | 通过统一 cursor Facade 搜索当前可见的 Agent、AgentSpec、Skill、Prompt 和 MCP 资源。 |
 | `GET /v3/client/ai/prompt` | 按版本、标签或 latest 查询 Prompt。 |
+| `GET /v3/client/ai/prompt/search` | 使用 numbered pagination 搜索当前可见 Prompt。 |
 | `GET /v3/client/ai/skills` | 以 zip 响应下载在线 Skill 包。 |
+| `GET /v3/client/ai/skills/search` | 使用 numbered pagination 搜索当前可见 Skill。 |
 | `GET /v3/client/ai/agentspecs` | 按版本、标签或 latest 查询 AgentSpec。可能允许匿名访问。 |
 | `GET /v3/client/ai/agentspecs/search` | 搜索运行时可用的已启用 AgentSpec。 |
+| `GET /v3/client/ai/mcp/search` | 使用协议和能力过滤搜索当前可见 MCP Server。 |
 
 ## 5. Admin API 已实现行为
 

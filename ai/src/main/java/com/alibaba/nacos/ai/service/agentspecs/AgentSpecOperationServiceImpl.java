@@ -37,7 +37,6 @@ import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
@@ -637,48 +636,6 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         resourceManager.syncImportedMeta(namespaceId, meta, agentSpec.getDescription(),
             agentSpec.getBizTags());
         scheduleAgentSpecIndexMaintenance(namespaceId, agentSpec.getName());
-    }
-    
-    /**
-     * Search AgentSpecs by keyword (fuzzy name match). Only returns enabled specs with at least one online version.
-     */
-    @Override
-    public Page<AgentSpecBasicInfo> searchAgentSpecs(String namespaceId, String keyword, int pageNo,
-        int pageSize)
-        throws NacosException {
-        // Build fuzzy query condition
-        String nameLike = StringUtils.isBlank(keyword) ? null
-            : resourceManager
-                .generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
-        QueryCondition queryCondition = resourceManager.buildQueryCondition(namespaceId,
-            RESOURCE_TYPE_AGENTSPEC, nameLike, null,
-            VisibilityConstants.ACTION_READ);
-        if (queryCondition.isAlwaysEmpty()) {
-            return AiResourceManager.buildEmptyPage(pageNo);
-        }
-        Page<AiResource> metaPage = resourceManager.listMeta(queryCondition, pageNo, pageSize);
-        List<AgentSpecBasicInfo> items = new ArrayList<>();
-        if (metaPage != null && metaPage.getPageItems() != null) {
-            for (AiResource meta : metaPage.getPageItems()) {
-                if (meta == null) {
-                    continue;
-                }
-                // Only return enabled agentspecs with at least one online version (for client-side search)
-                if (!AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-                    continue;
-                }
-                ResourceVersionInfo info =
-                    AiResourceManager.parseVersionInfo(meta.getVersionInfo());
-                if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
-                    continue;
-                }
-                AgentSpecBasicInfo basicInfo = new AgentSpecBasicInfo();
-                basicInfo.setName(meta.getName());
-                basicInfo.setDescription(meta.getDesc());
-                items.add(basicInfo);
-            }
-        }
-        return AiResourceManager.buildPageResult(items, metaPage, pageNo);
     }
     
     /**

@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecQueryForm;
 import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecSearchForm;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecQueryResult;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -51,11 +52,14 @@ class AgentSpecClientControllerTest {
     @Mock
     private AgentSpecOperationService agentSpecOperationService;
     
+    @Mock
+    private AiResourceSearchApplicationService searchService;
+    
     private AgentSpecClientController controller;
     
     @BeforeEach
     void setUp() {
-        controller = new AgentSpecClientController(agentSpecOperationService);
+        controller = new AgentSpecClientController(agentSpecOperationService, searchService);
     }
     
     @Test
@@ -68,8 +72,7 @@ class AgentSpecClientControllerTest {
         item.setName("agent-one");
         page.setPageItems(List.of(item));
         page.setTotalCount(1);
-        when(agentSpecOperationService.searchAgentSpecs("public", "agent", 1, 100))
-            .thenReturn(page);
+        when(searchService.searchAgentSpecs(form, 1, 100)).thenReturn(page);
         
         Result<Page<AgentSpecBasicInfo>> result = controller.search(form, pageForm);
         

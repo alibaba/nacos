@@ -23,11 +23,16 @@ package com.alibaba.nacos.ai.constant;
  */
 public class Constants {
     
+    public static final String AI_RESOURCE_SEARCH_CLIENT_PATH =
+        "/v3/client/ai/resources/search";
+    
     public static final String MCP_PATH = "/ai/mcp";
     
     public static final String MCP_ADMIN_PATH = "/v3/admin" + MCP_PATH;
     
     public static final String MCP_CONSOLE_PATH = "/v3/console" + MCP_PATH;
+    
+    public static final String MCP_CLIENT_PATH = "/v3/client" + MCP_PATH;
     
     public static final String AI_RESOURCE_IMPORT_ADMIN_PATH = "/v3/admin/ai/import";
     

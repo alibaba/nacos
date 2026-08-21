@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.service.agentspecs;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -179,21 +178,6 @@ public interface AgentSpecOperationService {
         throws NacosException {
         bootstrapAgentSpecFromZip(namespaceId, zipBytes);
     }
-    
-    /**
-     * Search agentspecs for runtime client usage. Only returns enabled agentspecs that have at least one online
-     * version. Returns only name and description for client consumption.
-     *
-     * @param namespaceId namespace ID
-     * @param keyword keyword (optional)
-     * @param pageNo page number
-     * @param pageSize page size
-     * @return paginated list of agentspec basic info
-     * @throws NacosException if search failed
-     */
-    Page<AgentSpecBasicInfo> searchAgentSpecs(String namespaceId, String keyword, int pageNo,
-        int pageSize)
-        throws NacosException;
     
     /**
      * Query agentspec for runtime client usage. Priority: label > version > latest(label).

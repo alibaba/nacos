@@ -99,6 +99,9 @@ enter search chunks. Before migration to canonical AI Resource storage, the
 handler may read compatibility storage but produces the same canonical
 projection. Generic Search restricted to MCP has the same candidate
 eligibility as resource-specific Search.
+The Client facade is `GET /v3/client/ai/mcp/search`; it accepts `query`,
+repeated `tagsAll`, `protocolsAny`, `capabilitiesAny`, `pageNo`, and `pageSize`,
+and returns `Page<McpServerBasicInfo>`.
 
 ## 5. Current Compatibility Storage
 

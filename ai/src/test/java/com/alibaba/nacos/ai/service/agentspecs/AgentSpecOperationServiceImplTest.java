@@ -31,7 +31,6 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -1047,45 +1046,6 @@ class AgentSpecOperationServiceImplTest {
             .thenReturn(null);
         service.deleteAgentSpec(namespaceId, name);
         verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
-    }
-    
-    @Test
-    void testSearchAgentSpecsSuccess() throws NacosException {
-        String namespaceId = "test-ns";
-        Page<AiResource> metaPage = new Page<>();
-        AiResource meta = new AiResource();
-        meta.setName("my-agentspec");
-        meta.setStatus("enable");
-        meta.setDesc("desc");
-        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
-        metaPage.setPageItems(List.of(meta));
-        metaPage.setTotalCount(1);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
-        Page<AgentSpecBasicInfo> result = service.searchAgentSpecs(namespaceId, "my", 1, 10);
-        assertNotNull(result);
-        assertEquals(1, result.getPageItems().size());
-        assertEquals("my-agentspec", result.getPageItems().get(0).getName());
-    }
-    
-    @Test
-    void testSearchAgentSpecsExcludesDisabledAndNoOnline() throws NacosException {
-        String namespaceId = "test-ns";
-        Page<AiResource> metaPage = new Page<>();
-        AiResource disabled = new AiResource();
-        disabled.setName("disabled");
-        disabled.setStatus("disable");
-        disabled.setVersionInfo("{\"onlineCnt\":1}");
-        AiResource noOnline = new AiResource();
-        noOnline.setName("no-online");
-        noOnline.setStatus("enable");
-        noOnline.setVersionInfo("{\"onlineCnt\":0}");
-        metaPage.setPageItems(List.of(disabled, noOnline));
-        metaPage.setTotalCount(2);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
-        Page<AgentSpecBasicInfo> result = service.searchAgentSpecs(namespaceId, null, 1, 10);
-        assertTrue(result.getPageItems().isEmpty());
     }
     
     @Test
