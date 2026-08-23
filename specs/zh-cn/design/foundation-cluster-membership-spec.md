@@ -102,6 +102,8 @@ Lookup 选择规则：
 - 当同一地址仍然存在于新列表时，应保留已有 member 的元数据和能力；
 - `memberJoin` 和 `memberLeave` 是便捷操作，最终都解析为完整 member-list 变更；
 - topology 变化会通过 `MemberUtil.syncToFile` 写入 `cluster.conf` 以保持兼容；
+- 兼容落盘必须先在同一目录的临时文件中写完完整 member-list 快照，再替换 `cluster.conf`；文件系统支持时
+  必须使用原子移动，构造新快照期间不得截断已经发布的文件；
 - 只有有效 topology 变化或 member 基础元数据变化时，才发布 `MembersChangeEvent`。
 
 `ServerMemberManager.update(Member)` 用于更新已存在 member 的元数据/状态。它不得新增未知 member。

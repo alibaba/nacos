@@ -19,7 +19,6 @@ package com.alibaba.nacos.sys.env;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +41,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -360,11 +365,61 @@ class EnvUtilTest {
     
     @Test
     void testWriteClusterConf() throws IOException {
-        DiskUtils.forceMkdir(EnvUtil.getNacosHome() + "/conf");
-        EnvUtil.writeClusterConf("127.0.0.1");
-        File file = new File(EnvUtil.getNacosHome() + "/conf/cluster.conf");
-        assertTrue(file.exists());
-        assertEquals("127.0.0.1", FileUtils.readFileToString(file, "UTF-8"));
+        Path nacosHome = Files.createTempDirectory("nacos-cluster-conf");
+        try {
+            EnvUtil.setNacosHomePath(nacosHome.toString());
+            Path confDirectory = Files.createDirectories(nacosHome.resolve("conf"));
+            EnvUtil.writeClusterConf("127.0.0.1");
+            Path clusterConf = confDirectory.resolve("cluster.conf");
+            assertTrue(Files.exists(clusterConf));
+            assertEquals("127.0.0.1", Files.readString(clusterConf));
+            try (java.util.stream.Stream<Path> files = Files.list(confDirectory)) {
+                assertEquals(1L, files.count());
+            }
+        } finally {
+            EnvUtil.setNacosHomePath(null);
+            FileUtils.deleteDirectory(nacosHome.toFile());
+        }
+    }
+    
+    @Test
+    void testWriteClusterConfReplacesOpenPreviousVersion() throws IOException {
+        Path nacosHome = Files.createTempDirectory("nacos-cluster-conf");
+        try {
+            EnvUtil.setNacosHomePath(nacosHome.toString());
+            Path confDirectory = Files.createDirectories(nacosHome.resolve("conf"));
+            Path clusterConf = confDirectory.resolve("cluster.conf");
+            Files.writeString(clusterConf, "previous-content");
+            try (FileChannel previousVersion =
+                FileChannel.open(clusterConf, StandardOpenOption.WRITE)) {
+                EnvUtil.writeClusterConf("complete-new-content");
+                previousVersion.position(0L);
+                previousVersion.write(ByteBuffer.wrap(
+                    "concurrent-writer".getBytes(StandardCharsets.UTF_8)));
+            }
+            assertEquals("complete-new-content", Files.readString(clusterConf));
+        } finally {
+            EnvUtil.setNacosHomePath(null);
+            FileUtils.deleteDirectory(nacosHome.toFile());
+        }
+    }
+    
+    @Test
+    void testWriteClusterConfDeletesTemporaryFileAfterFailure() throws IOException {
+        Path nacosHome = Files.createTempDirectory("nacos-cluster-conf");
+        try {
+            EnvUtil.setNacosHomePath(nacosHome.toString());
+            Path confDirectory = Files.createDirectories(nacosHome.resolve("conf"));
+            Path clusterConf = Files.createDirectory(confDirectory.resolve("cluster.conf"));
+            Files.writeString(clusterConf.resolve("keep"), "content");
+            assertThrows(IOException.class, () -> EnvUtil.writeClusterConf("new-content"));
+            try (java.util.stream.Stream<Path> files = Files.list(confDirectory)) {
+                assertEquals(1L, files.count());
+            }
+        } finally {
+            EnvUtil.setNacosHomePath(null);
+            FileUtils.deleteDirectory(nacosHome.toFile());
+        }
     }
     
     @Test

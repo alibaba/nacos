@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
@@ -31,7 +30,6 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,7 +37,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -409,9 +411,28 @@ public class EnvUtil {
         return instanceList;
     }
     
+    /**
+     * Write a complete cluster configuration snapshot without truncating the published file.
+     *
+     * @param content cluster configuration content
+     * @throws IOException if the temporary file cannot be written or published
+     */
     public static void writeClusterConf(String content) throws IOException {
-        DiskUtils.writeFile(new File(getClusterConfFilePath()),
-            content.getBytes(StandardCharsets.UTF_8), false);
+        Path clusterConfFile = Paths.get(getClusterConfFilePath());
+        Path temporaryFile = Files.createTempFile(clusterConfFile.getParent(),
+            clusterConfFile.getFileName().toString(), ".tmp");
+        try {
+            Files.write(temporaryFile, content.getBytes(StandardCharsets.UTF_8));
+            try {
+                Files.move(temporaryFile, clusterConfFile, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporaryFile, clusterConfFile,
+                    StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
     }
     
     public static String getMemberList() {

@@ -115,6 +115,10 @@ Change rules:
   full member-list change;
 - topology changes are written to `cluster.conf` for compatibility by
   `MemberUtil.syncToFile`;
+- compatibility persistence must write a complete member-list snapshot to a
+  temporary file in the same directory before replacing `cluster.conf`, using
+  an atomic move when the filesystem supports it; it must not truncate the
+  published file while constructing a new snapshot;
 - `MembersChangeEvent` is published only when the effective topology changes or
   basic member metadata changes.
 
