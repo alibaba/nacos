@@ -507,7 +507,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint firstEndpoint = endpoint(randomPort(), "/capacity", "first");
         List<Endpoint> secondEndpoints = new ArrayList<>();
         for (int i = 0; i <= publicationCapacity; i++) {
-            secondEndpoints.add(endpoint(randomPort(), "/capacity", "second-" + i));
+            secondEndpoints.add(endpoint(20000 + i, "/capacity", "second-" + i));
         }
         Endpoint thirdEndpoint = endpoint(randomPort(), "/capacity", "third");
 
@@ -563,9 +563,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         String burstAgent = agentPrefix + "-burst";
         List<Endpoint> burstEndpoints = Arrays.asList(
-            endpoint(randomPort(), "/capacity", "burst-a"),
-            endpoint(randomPort(), "/capacity", "burst-b"),
-            endpoint(randomPort(), "/capacity", "burst-c"));
+            endpoint(30000, "/capacity", "burst-a"),
+            endpoint(30001, "/capacity", "burst-b"),
+            endpoint(30002, "/capacity", "burst-c"));
         service.registerAgentEndpoints(registration(burstAgent, PROTOCOL_A2A, burstEndpoints));
         admittedAgents.add(burstAgent);
         admittedEndpoints.add(burstEndpoints);
