@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     complete Form and JSON-valued {@code endpoints} field.</li>
  *     <li>Exception/error handling: heartbeat before registration and after deregistration
  *     returns HTTP 404 with application code {@code HTTP_CLIENT_NOT_FOUND (50404)}, and malformed
- *     Endpoint JSON is rejected by Form validation.</li>
+ *     Endpoint JSON is rejected by Form validation. The configured Endpoint soft watermark
+ *     admits a whole batch from below even when it crosses the watermark; once at or above it,
+ *     replacement remains available without growth, new publication is rejected atomically,
+ *     and deregistration immediately releases capacity.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -55,6 +59,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCase {
     
     private static final String REQUEST_MODULE = "AI";
+
+    private static final String SERVER_PUBLICATION_CAPACITY_PROPERTY =
+            "nacos.agent.it.server.publication.capacity";
+
+    private static final int DEFAULT_SERVER_PUBLICATION_CAPACITY = 100;
     
     @Test
     public void testCompletePublisherLifecycleAndQueryIsolation() throws Exception {
@@ -130,6 +139,49 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         
         assertError(heartbeat(randomHttpClientId(), null), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "Request-Module");
+    }
+
+    @Test
+    public void testConfiguredPublicationCapacityAndSlotReuse() throws Exception {
+        int serverCapacity = Integer.getInteger(SERVER_PUBLICATION_CAPACITY_PROPERTY,
+                DEFAULT_SERVER_PUBLICATION_CAPACITY);
+        String clientId = randomHttpClientId();
+        String agentPrefix = randomAiName("agent-endpoint-capacity");
+        List<String> admittedAgents = new ArrayList<>();
+        addCleanup(() -> {
+            for (String agentName : admittedAgents) {
+                deleteEndpointForm(clientId, REQUEST_MODULE, identityForm(agentName));
+            }
+        });
+
+        for (int i = 0; i < serverCapacity - 1; i++) {
+            String agentName = agentPrefix + '-' + i;
+            assertLiveness(postEndpointForm(clientId, REQUEST_MODULE,
+                    registrationForm(agentName)));
+            admittedAgents.add(agentName);
+            if (i > 0 && i % 20 == 0) {
+                assertLiveness(heartbeat(clientId, REQUEST_MODULE));
+            }
+        }
+
+        String burstAgent = agentPrefix + "-burst";
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE,
+                registrationForm(burstAgent, 3)));
+        admittedAgents.add(burstAgent);
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE,
+                registrationForm(burstAgent, 3)));
+        String overflowAgent = agentPrefix + "-overflow";
+        assertError(postEndpointForm(clientId, REQUEST_MODULE,
+                registrationForm(overflowAgent)), 503,
+                ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
+                "limit of " + serverCapacity);
+
+        assertSuccessResponse(deleteEndpointForm(clientId, REQUEST_MODULE,
+                identityForm(burstAgent)));
+        admittedAgents.remove(burstAgent);
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE,
+                registrationForm(overflowAgent)));
+        admittedAgents.add(overflowAgent);
     }
     
     private void assertLiveness(HttpResponse response) throws Exception {
@@ -232,19 +284,27 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
     }
     
     private Map<String, String> registrationForm(String agentName) {
-        Map<String, Object> endpoint = new LinkedHashMap<>();
-        endpoint.put("uri", "http://127.0.0.1:18080/agent");
-        endpoint.put("transport", "HTTP+JSON");
-        endpoint.put("priority", 0);
-        endpoint.put("weight", 1.0D);
-        endpoint.put("metadata", Collections.singletonMap("zone", "openapi-it"));
-        
+        return registrationForm(agentName, 1);
+    }
+
+    private Map<String, String> registrationForm(String agentName, int endpointCount) {
+        List<Map<String, Object>> endpoints = new ArrayList<>();
+        for (int i = 0; i < endpointCount; i++) {
+            Map<String, Object> endpoint = new LinkedHashMap<>();
+            endpoint.put("uri", "http://127.0.0.1:" + (18080 + i) + "/agent");
+            endpoint.put("transport", "HTTP+JSON");
+            endpoint.put("priority", 0);
+            endpoint.put("weight", 1.0D);
+            endpoint.put("metadata", Collections.singletonMap("zone", "openapi-it"));
+            endpoints.add(endpoint);
+        }
+
         Map<String, String> result = new LinkedHashMap<>();
         result.put("agentName", agentName);
         result.put("runtimeVersion", "1.0.0");
         result.put("versionRange", "[1.0.0]");
         result.put("protocol", "a2a");
-        result.put("endpoints", JacksonUtils.toJson(List.of(endpoint)));
+        result.put("endpoints", JacksonUtils.toJson(endpoints));
         return result;
     }
     

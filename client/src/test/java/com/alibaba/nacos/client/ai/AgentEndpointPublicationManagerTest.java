@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import org.junit.jupiter.api.BeforeEach;
@@ -163,6 +164,126 @@ class AgentEndpointPublicationManagerTest {
         manager.shutdown();
         
         verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void localPublicationCapacityAllowsReplacementAndRejectsNewIdentity()
+        throws NacosException {
+        manager = new AgentEndpointPublicationManager(clientProxy, true, executor, 1);
+        when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100));
+        manager.register(registration("a2a", endpoint("http://one:80/a")));
+        manager.register(registration("a2a", endpoint("http://replacement:80/a")));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> manager.register(registration("mcp", endpoint("http://two:80/a"))));
+        assertEquals(NacosException.CLIENT_OVER_THRESHOLD, exception.getErrCode());
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            exception.getDetailErrCode());
+        verify(clientProxy, times(2)).registerAgentEndpoints(any());
+    }
+    
+    @Test
+    void localPublicationCapacityAdmitsWholeBatchFromBelowWatermark()
+        throws NacosException {
+        manager = new AgentEndpointPublicationManager(clientProxy, true, executor, 2);
+        when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100));
+        manager.register(registration("a2a", endpoint("http://one:80/a")));
+        manager.register(registration("mcp", endpoint("http://two:80/a"),
+            endpoint("http://three:80/a"), endpoint("http://four:80/a")));
+        manager.register(registration("mcp", endpoint("http://two:80/a"),
+            endpoint("http://three:80/a"), endpoint("http://four:80/a")));
+        
+        NacosApiException newIdentity = assertThrows(NacosApiException.class,
+            () -> manager.register(registration("custom", endpoint("http://five:80/a"))));
+        NacosApiException growth = assertThrows(NacosApiException.class,
+            () -> manager.register(registration("mcp", endpoint("http://two:80/a"),
+                endpoint("http://three:80/a"), endpoint("http://four:80/a"),
+                endpoint("http://five:80/a"))));
+        
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            newIdentity.getDetailErrCode());
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            growth.getDetailErrCode());
+        verify(clientProxy, times(3)).registerAgentEndpoints(any());
+    }
+    
+    @Test
+    void remotePublicationCapacityRejectRemovesHeartbeatAndRedoIntent()
+        throws NacosException {
+        when(clientProxy.registerAgentEndpoints(any()))
+            .thenThrow(publicationCapacityException());
+        
+        assertEquals(NacosException.OVER_THRESHOLD, assertThrows(NacosException.class,
+            () -> manager.register(registration("a2a", endpoint("http://one:80/a"))))
+            .getErrCode());
+        manager.shutdown();
+        
+        verify(executor, never()).schedule(any(Runnable.class), anyLong(), any());
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void remoteCapacityRejectOfReplacementDiscardsWholePublication()
+        throws NacosException {
+        when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100))
+            .thenThrow(publicationCapacityException());
+        manager.register(registration("a2a", endpoint("http://one:80/a")));
+        
+        assertThrows(NacosException.class,
+            () -> manager.register(registration("a2a", endpoint("http://two:80/a"))));
+        manager.shutdown();
+        
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void delayedCapacityRejectDiscardsIntentAndStopsHttpRedo() throws NacosException {
+        when(clientProxy.registerAgentEndpoints(any()))
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "timeout"))
+            .thenThrow(publicationCapacityException());
+        assertThrows(NacosException.class,
+            () -> manager.register(registration("a2a", endpoint("http://one:80/a"))));
+        
+        runMaintenance(0);
+        runMaintenance(0);
+        
+        verify(clientProxy, times(2)).registerAgentEndpoints(any());
+        verify(clientProxy, never()).heartbeatAgentEndpoints();
+        manager.shutdown();
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void genericOverThresholdFailureRemainsRetryable() throws NacosException {
+        when(clientProxy.registerAgentEndpoints(any()))
+            .thenThrow(new NacosException(NacosException.OVER_THRESHOLD, "throttled"))
+            .thenReturn(liveness(100));
+        assertThrows(NacosException.class,
+            () -> manager.register(registration("a2a", endpoint("http://one:80/a"))));
+        
+        runMaintenance(0);
+        
+        verify(clientProxy, times(2)).registerAgentEndpoints(any());
+        verify(clientProxy).heartbeatAgentEndpoints();
+    }
+    
+    @Test
+    void asynchronousRemoteCapacityRejectionDiscardsPublication() throws NacosException {
+        AgentEndpointRegistrationBatch batch =
+            registration("a2a", endpoint("http://one:80/a"));
+        when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100));
+        manager.register(batch);
+        
+        manager.discardAfterRemoteCapacityRejection(batch);
+        manager.shutdown();
+        
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void invalidLocalPublicationCapacityIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new AgentEndpointPublicationManager(clientProxy, true, executor, 0));
     }
     
     @Test
@@ -340,6 +461,11 @@ class AgentEndpointPublicationManagerTest {
         ClientLivenessInfo result = new ClientLivenessInfo();
         result.setHeartbeatIntervalMillis(interval);
         return result;
+    }
+    
+    private NacosApiException publicationCapacityException() {
+        return new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT, "full");
     }
     
     private AgentEndpointRegistrationBatch registration(String protocol,

@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -455,6 +456,9 @@ public class AiHttpClientProxy implements AiClientProxy {
             try {
                 return callAgentServer(api, method, parameters, form, server, resource);
             } catch (NacosException e) {
+                if (isPublicationCapacityRejected(e)) {
+                    throw e;
+                }
                 exception = e;
             }
             index = (index + 1) % servers.size();
@@ -510,10 +514,15 @@ public class AiHttpClientProxy implements AiClientProxy {
                 });
             if (result != null && result.getCode() != null
                 && !ErrorCode.SUCCESS.getCode().equals(result.getCode())) {
-                int errorCode = ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
-                    ? result.getCode() : restResult.getCode();
                 String errorMessage = result.getData() == null ? result.getMessage()
                     : String.valueOf(result.getData());
+                if (ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode()
+                    .equals(result.getCode())) {
+                    throw new NacosApiException(NacosException.OVER_THRESHOLD,
+                        ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT, errorMessage);
+                }
+                int errorCode = ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
+                    ? result.getCode() : restResult.getCode();
                 throw new NacosException(errorCode, errorMessage);
             }
         } catch (NacosException e) {
@@ -523,6 +532,12 @@ public class AiHttpClientProxy implements AiClientProxy {
             throw new NacosException(restResult.getCode(), restResult.getMessage());
         }
         throw new NacosException(restResult.getCode(), restResult.getMessage());
+    }
+    
+    private boolean isPublicationCapacityRejected(NacosException exception) {
+        return exception instanceof NacosApiException
+            && ((NacosApiException) exception)
+                .getDetailErrCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode();
     }
     
     private <T> T requireSuccess(Result<T> result) throws NacosException {

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
@@ -58,6 +59,8 @@ class AgentEndpointPublicationManager implements Closeable {
     
     private final ScheduledExecutorService executor;
     
+    private final int maxPublications;
+    
     private final Map<PublicationKey, PublicationState> publications =
         new HashMap<PublicationKey, PublicationState>();
     
@@ -69,20 +72,45 @@ class AgentEndpointPublicationManager implements Closeable {
     
     AgentEndpointPublicationManager(AiClientProxy clientProxy, boolean httpTransport) {
         this(clientProxy, httpTransport,
+            AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS);
+    }
+    
+    AgentEndpointPublicationManager(AiClientProxy clientProxy, boolean httpTransport,
+        int maxPublications) {
+        this(clientProxy, httpTransport,
             httpTransport ? new ScheduledThreadPoolExecutor(1,
-                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.endpoint")) : null);
+                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.endpoint")) : null,
+            maxPublications);
     }
     
     AgentEndpointPublicationManager(AiClientProxy clientProxy, boolean httpTransport,
         ScheduledExecutorService executor) {
+        this(clientProxy, httpTransport, executor,
+            AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS);
+    }
+    
+    AgentEndpointPublicationManager(AiClientProxy clientProxy, boolean httpTransport,
+        ScheduledExecutorService executor, int maxPublications) {
+        if (maxPublications < 1) {
+            throw new IllegalArgumentException("maxPublications must be greater than 0");
+        }
         this.clientProxy = clientProxy;
         this.httpTransport = httpTransport;
         this.executor = executor;
+        this.maxPublications = maxPublications;
     }
     
     synchronized void register(AgentEndpointRegistrationBatch batch) throws NacosException {
         PublicationKey key = PublicationKey.of(batch);
         PublicationState previous = publications.get(key);
+        int previousPublicationCount = countPublicationEntries(previous);
+        if (countPublicationEntries() >= maxPublications
+            && batch.getEndpoints().size() > previousPublicationCount) {
+            throw new NacosApiException(NacosException.CLIENT_OVER_THRESHOLD,
+                ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
+                "Agent Endpoint publication limit of " + maxPublications
+                    + " reached for this SDK Client.");
+        }
         PublicationState desired =
             new PublicationState(AgentModelUtils.copyRegistrationBatch(batch), true);
         publications.put(key, desired);
@@ -96,6 +124,18 @@ class AgentEndpointPublicationManager implements Closeable {
             handleWriteFailure(key, previous, desired, e);
             throw e;
         }
+    }
+    
+    private int countPublicationEntries() {
+        int result = 0;
+        for (PublicationState state : publications.values()) {
+            result += countPublicationEntries(state);
+        }
+        return result;
+    }
+    
+    private int countPublicationEntries(PublicationState state) {
+        return state == null || state.batch == null ? 0 : state.batch.getEndpoints().size();
     }
     
     synchronized void deregister(AgentEndpointDeregistrationBatch batch)
@@ -134,7 +174,9 @@ class AgentEndpointPublicationManager implements Closeable {
     
     private void handleWriteFailure(PublicationKey key, PublicationState previous,
         PublicationState desired, NacosException exception) {
-        if (isRetryable(exception)) {
+        if (isCapacityRejected(exception)) {
+            publications.remove(key);
+        } else if (isRetryable(exception)) {
             desired.dirty = true;
             desired.rollback = previous;
             scheduleMaintenanceIfRequired();
@@ -146,8 +188,21 @@ class AgentEndpointPublicationManager implements Closeable {
     }
     
     private boolean isRetryable(NacosException exception) {
-        return exception.getErrCode() >= NacosException.SERVER_ERROR
-            || exception.getErrCode() == NacosException.HTTP_CLIENT_ERROR_CODE;
+        return !isCapacityRejected(exception)
+            && (exception.getErrCode() >= NacosException.SERVER_ERROR
+                || exception.getErrCode() == NacosException.HTTP_CLIENT_ERROR_CODE);
+    }
+    
+    private boolean isCapacityRejected(NacosException exception) {
+        return exception instanceof NacosApiException
+            && ((NacosApiException) exception)
+                .getDetailErrCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode();
+    }
+    
+    synchronized void discardAfterRemoteCapacityRejection(
+        AgentEndpointRegistrationBatch batch) {
+        publications.remove(PublicationKey.of(batch));
+        scheduleMaintenanceIfRequired();
     }
     
     private Set<EndpointNaturalKey> naturalKeys(String namespaceId, String agentName,
@@ -238,7 +293,9 @@ class AgentEndpointPublicationManager implements Closeable {
                     state.rollback = null;
                 }
             } catch (NacosException e) {
-                if (!isRetryable(e)) {
+                if (isCapacityRejected(e)) {
+                    publications.remove(entry.getKey());
+                } else if (!isRetryable(e)) {
                     restorePrevious(entry.getKey(), state);
                 }
                 LOGGER.warn("Redo Agent Endpoint HTTP publication failed.", e);

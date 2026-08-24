@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
@@ -65,6 +66,7 @@ import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +84,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -183,6 +186,44 @@ class NacosAiServiceTest {
                 aiService.shutdown();
             }
         }
+    }
+    
+    @Test
+    void configuredCapacityMustBePositiveInteger() throws NacosApiException {
+        Properties properties = new Properties();
+        properties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, "7");
+        NacosClientProperties clientProperties =
+            NacosClientProperties.PROTOTYPE.derive(properties);
+        assertEquals(7, NacosAiService.resolvePositiveCapacity(clientProperties,
+            AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, 100));
+        
+        clientProperties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, "0");
+        assertThrows(NacosApiException.class,
+            () -> NacosAiService.resolvePositiveCapacity(clientProperties,
+                AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, 100));
+        clientProperties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+            "not-a-number");
+        assertThrows(NacosApiException.class,
+            () -> NacosAiService.resolvePositiveCapacity(clientProperties,
+                AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, 100));
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void grpcCapacityRejectionDiscardsPublicationManagerCache()
+        throws NoSuchFieldException, IllegalAccessException {
+        AiGrpcClient constructedGrpcClient = grpcClientConstruction.constructed().get(0);
+        ArgumentCaptor<Consumer<AgentEndpointRegistrationBatch>> handlerCaptor =
+            ArgumentCaptor.forClass(Consumer.class);
+        verify(constructedGrpcClient)
+            .setAgentEndpointPublicationCapacityRejectedHandler(handlerCaptor.capture());
+        injectMocks();
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        
+        handlerCaptor.getValue().accept(batch);
+        
+        verify(agentEndpointPublicationManager)
+            .discardAfterRemoteCapacityRejection(batch);
     }
     
     @Test

@@ -70,27 +70,47 @@ public class NacosAgentDiscoveryCacheHolder implements Closeable {
     
     private final ExecutorService callbackExecutor;
     
+    private final int maxSubscriptions;
+    
     private final Map<SubscriptionKey, Subscription> subscriptions =
         new HashMap<SubscriptionKey, Subscription>();
     
     private boolean closed;
     
     public NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy) {
+        this(namespaceId, clientProxy,
+            AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS);
+    }
+    
+    public NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy,
+        int maxSubscriptions) {
         this(namespaceId, clientProxy, AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL,
             new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.client.ai.agent.discovery")),
             Executors.newCachedThreadPool(
-                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.listener")));
+                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.listener")),
+            maxSubscriptions);
     }
     
     NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy,
         long updateIntervalMillis, ScheduledExecutorService pollingExecutor,
         ExecutorService callbackExecutor) {
+        this(namespaceId, clientProxy, updateIntervalMillis, pollingExecutor, callbackExecutor,
+            AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS);
+    }
+    
+    NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy,
+        long updateIntervalMillis, ScheduledExecutorService pollingExecutor,
+        ExecutorService callbackExecutor, int maxSubscriptions) {
+        if (maxSubscriptions < 1) {
+            throw new IllegalArgumentException("maxSubscriptions must be greater than 0");
+        }
         this.namespaceId = namespaceId;
         this.clientProxy = clientProxy;
         this.updateIntervalMillis = updateIntervalMillis;
         this.pollingExecutor = pollingExecutor;
         this.callbackExecutor = callbackExecutor;
+        this.maxSubscriptions = maxSubscriptions;
     }
     
     /**
@@ -116,6 +136,12 @@ public class NacosAgentDiscoveryCacheHolder implements Closeable {
         Subscription existing = subscriptions.get(key);
         if (existing != null) {
             return AgentModelUtils.copyDiscoveryResult(existing.current);
+        }
+        if (subscriptions.size() >= maxSubscriptions) {
+            throw new NacosApiException(NacosException.CLIENT_OVER_THRESHOLD,
+                ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
+                "Agent discovery subscription limit of " + maxSubscriptions
+                    + " reached for this SDK Client.");
         }
         AgentDiscoveryResult current = discoverOrNull(request);
         Subscription subscription = new Subscription(key, request, listener, current);

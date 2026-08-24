@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,6 +106,39 @@ class NacosAgentDiscoveryCacheHolderTest {
         
         reference.setAgentName("changed");
         assertEquals("agent-a", capturedRequest().getReference().getAgentName());
+    }
+    
+    @Test
+    void configuredSubscriptionCapacityRejectsBeforeDiscoverAndReusesReleasedSlot()
+        throws NacosException {
+        NacosAgentDiscoveryCacheHolder limited = new NacosAgentDiscoveryCacheHolder("public",
+            clientProxy, 10, pollingExecutor, callbackExecutor, 1);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(null);
+        TestListener firstListener = new TestListener(null);
+        AgentReference first = reference();
+        AgentReference second = reference();
+        second.setAgentName("agent-b");
+        
+        limited.subscribe(first, null, firstListener);
+        limited.subscribe(first, null, firstListener);
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> limited.subscribe(second, null, new TestListener(null)));
+        assertEquals(NacosException.CLIENT_OVER_THRESHOLD, exception.getErrCode());
+        assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+            exception.getDetailErrCode());
+        verify(clientProxy).discoverAgent(any(AgentDiscoveryRequest.class));
+        
+        limited.unsubscribe(first, null, firstListener);
+        limited.subscribe(second, null, new TestListener(null));
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        limited.shutdown();
+    }
+    
+    @Test
+    void invalidSubscriptionCapacityIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new NacosAgentDiscoveryCacheHolder("public", clientProxy, 10,
+                pollingExecutor, callbackExecutor, 0));
     }
     
     @Test
