@@ -236,6 +236,36 @@ AI payload semantics are defined by the
 | `BatchAgentEndpointRequest` | `AgentEndpointResponse` | write | `agentName`, `endpoints` | Replace this client's endpoints for an Agent. |
 | `QueryPromptRequest` | `QueryPromptResponse` | read | `namespace`, `promptKey`, `version`, `label`, `md5` | Query Prompt by version, label, latest, or md5. |
 
+The three existing MCP payloads remain compatibility bindings while MCP moves
+to the canonical AI Resource model:
+
+- `ReleaseMcpServerRequest` keeps its wire shape and maps to the MCP
+  compatibility-only direct-online lifecycle. A new exact Version becomes
+  online immediately; same-Version replacement retains its historical conflict
+  or overwrite behavior at that facade and must not relax canonical lifecycle
+  writes.
+- `QueryMcpServerRequest` keeps its wire shape. After canonical cutover it reads
+  only an enabled Resource and online Version; an omitted Version resolves the
+  server-managed `latest` label, and a missing canonical row never falls back
+  to the historical manifest.
+- The target `McpServerEndpointRequest` additively permits optional
+  `supportedTransports` and `versionRange` fields while retaining the existing
+  `version`. `supportedTransports` is a list of `sse` and/or
+  `streamable-http`; the server canonicalizes it to the comma-delimited Naming
+  metadata value. A range requires a SemVer `version`, must use the Agent/RAD
+  canonical range syntax, and must contain that Version. A non-SemVer
+  `version` without a range remains an exact binding. Absence of both Version
+  fields means all-Version compatibility.
+
+The target Endpoint handler writes an ephemeral instance under
+`mcp-endpoints / mcpName / DEFAULT`; Version, protocol, and transport are not
+part of Service or Cluster identity. Old `_mcp_server_version` metadata and
+historical `mcpName::version` Services remain read compatibility inputs. An SDK
+must not send the new explicit binding fields until endpoint-binding support is
+negotiated; old SDK methods remain valid without them. These additions are not
+part of the implemented payload inventory until the request model, handler,
+client redo, ability negotiation, and integration tests are present.
+
 The following Agent/RAD payloads are the approved Experimental target defined
 by the [Agent API Spec](../ai/agent-api-spec.md). They are not part of the
 current implemented payload inventory until their classes, handlers, SPI

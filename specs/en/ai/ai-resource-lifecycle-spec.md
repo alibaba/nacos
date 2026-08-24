@@ -118,6 +118,15 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
   offline of the current pointer selects the greatest remaining online Agent
   version. See the [Agent Management Spec](agent-management-spec.md) and the
   [A2A Agent Spec](a2a-agent-spec.md).
+- The MCP type has the same kind of compatibility-only direct-online facade.
+  A new historical-API Version becomes online immediately, and its legacy
+  latest flag may preserve the current valid pointer. The historical update
+  facade may also overwrite an existing exact Version as an audited
+  exception; canonical draft/lifecycle APIs must never reuse this relaxation.
+  Standard MCP publish, force-publish, and online operations move `latest`.
+  Latest fallback chooses the greatest SemVer, then greatest numeric `vN`, then
+  greatest stable case-sensitive string. See the
+  [MCP Server Spec](mcp-server-spec.md).
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This
@@ -151,6 +160,12 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
   missing resources are success.
 - Deleting an online version should update `onlineCnt` or labels when the type
   implementation supports it.
+- A type-owned derived projection is not Version content storage. In
+  particular, an MCP Direct Naming compatibility projection is removed only
+  after owner and snapshot-digest checks. Physical projection cleanup failure
+  creates a durable retry and must not revive or roll back an otherwise
+  successful canonical business deletion. Storage-object failure still follows
+  the row-preservation rule above.
 
 ## 7. Trace And Counters
 

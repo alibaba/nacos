@@ -227,7 +227,34 @@ Admin 路径使用已实现的 `/v3/admin/ai/agents` 前缀；Console 目标路�
 目标 API 不增加 Client HTTP Watch 或 Endpoint List GET。Watch 和 Push 使用协商后的
 gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` 路径。
 
-## 9. 文档 Gap 记录
+## 9. 已批准的 MCP 生命周期 API 面
+
+下列路径是 [MCP Server 规范](../ai/mcp-server-spec.md)确定的实验性目标管理 API 面。
+在对应 Controller、Form、鉴权、领域服务和集成测试完成前，它们不属于当前已实现清单。
+
+Admin 使用 `/v3/admin/ai/mcp`；Console 使用 `/v3/console/ai/mcp`，作为相同相对生命周期
+契约的 UI Facade：
+
+| 相对路径 | Method | 契约 |
+| --- | --- | --- |
+| `/versions` | GET | 受限列举 MCP Version metadata 和生命周期状态。 |
+| `/version` | GET | 读取一个精确 Version 的内容和 metadata。 |
+| `/draft` | POST, PUT, DELETE | 创建 Draft、只更新当前 Draft 或删除 Draft。 |
+| `/submit` | POST | 通过普通发布 Pipeline 提交 Draft。 |
+| `/publish` | POST | 发布 Reviewed Version。 |
+| `/force-publish` | POST | 经审计地执行管理端 Pipeline bypass。 |
+| `/redraft` | POST | 将 Reviewed Version 退回 Draft。 |
+| `/online` | POST | 将 Offline Version 上线并设为 latest。 |
+| `/offline` | POST | 将 Online Version 下线，并在需要时修复 latest。 |
+| `/labels` | PUT | 更新自定义 Label，忽略客户端提供的 `latest`。 |
+
+现有 MCP create/update/delete 路径和参数形态作为兼容专用的 direct-online Facade 保留，
+不能复制为新的生命周期 Form。尤其是同 Version 内容覆盖只允许通过历史更新路由执行。
+
+该目标不新增 MCP Client HTTP query、release、endpoint、heartbeat 或 subscription 路径。
+HTTP 与现有 gRPC/Java Client 表面对齐，需要等标准管理迁移完成后再独立设计。
+
+## 10. 文档 Gap 记录
 
 这不是 bug 列表，而是记录当前文档和代码可能描述了不同 API 面的地方。
 
@@ -251,7 +278,7 @@ gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` �
   `ControllerAdvice`，可能返回纯文本错误体。它们应在 v3 API 上收敛到
   `NacosApiExceptionHandler`。
 
-## 10. 废弃兼容说明
+## 11. 废弃兼容说明
 
 部分 v3 AI API 在本规范建立之前已经发布，后续又被更清晰的生命周期 API 或
 REST 风格 API 替代。这些旧端点应视为废弃兼容 API：

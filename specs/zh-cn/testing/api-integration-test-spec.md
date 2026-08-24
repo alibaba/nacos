@@ -159,3 +159,26 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
   identifier、representation-specific Artifact URL、offline/digest 失效和 Runtime 状态排除。
 
 测试异步索引时只允许有界轮询公开 API 可见结果，不得依赖固定 sleep、数据库内部行或任务执行顺序。
+
+## 10. MCP 迁移与生命周期场景
+
+实现 MCP 标准迁移或管理生命周期时，OpenAPI IT 场景矩阵至少覆盖：
+
+- 切换前后现有 Admin/Console create/update/query/list/delete 响应形态，包括兼容专用的同 Version
+  overwrite 和 latest 参数；
+- 新 Version list/detail 以及 Draft、Submit、Reviewed/Publish、Force Publish、Redraft、
+  Online/Offline、自定义 Label 和非法状态路径，并保证 Admin 与 Console 语义等价；
+- Enable Resource 通过历史运行时投影只暴露 online Version，Draft/Reviewing/Reviewed/Offline
+  只通过新的管理读取暴露；
+- 历史 Fixture 在 `SYNCING` 期间保持完整可见、异步对账幂等、全节点门禁、零差异自动切换、
+  重启后状态保持，以及标准路径不回退历史数据；
+- Server/Tools/Resources Config 坐标和字节不变，唯一例外是确定性的 Direct Server 快照扩展；
+- 历史单/多 Instance Direct 快照物化、标准读取不再依赖 Naming、切换时保留 Direct 投影，
+  以及带 owner/hash 隔离的删除重试；
+- 普通 Service Ref 的非所有权边界，且不误删外部所有的 Naming 数据；
+- 内容缺失、非法 Manifest、row 冲突、Storage 部分删除失败和 Direct 不一致均表现为受控行为，
+  同时阻止切换；
+- 通用/MCP 专用 Search、统一 Import 和 Registry Adaptor 结果在路由切换期间保持候选资格和当前性。
+
+迁移测试只把公开行为和重启后的耐久结果作为断言契约。测试准备可以写入文档化的历史 Fixture，
+但不能用直接数据库 row 断言作为成功标准。所有异步条件都使用有界轮询，不使用固定 sleep。

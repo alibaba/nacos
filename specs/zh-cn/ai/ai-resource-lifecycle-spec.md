@@ -99,6 +99,12 @@ create/upload draft
   标准 Agent publish 和 online 仍会移动 `latest`；当前指针被删除或下线时，选择剩余 online
   Agent Version 中最大的一个。详见 [Agent 管理规范](agent-management-spec.md)和
   [A2A Agent 规范](a2a-agent-spec.md)。
+- MCP 类型也具有同类的兼容专用 direct-online facade。通过旧 API 创建的新 Version 会立即
+  online，旧 latest 参数可以保留当前有效指针。历史更新 Facade 还可以覆盖已有精确
+  Version，但这只是需要审计的兼容例外；标准 Draft/生命周期 API 绝不得复用该放宽。标准 MCP
+  publish、force-publish 和 online 会移动 `latest`。Latest 回退依次选择最大的 SemVer、
+  数值最大的 `vN`，最后选择稳定且区分大小写的最大字符串。详见
+  [MCP Server 规范](mcp-server-spec.md)。
 
 流水线扩展行为由 [AI 发布流水线插件规范](../plugin/ai-pipeline-plugin-spec.md)定义。
 本领域规范只定义 AI 资源生命周期如何响应流水线结果。
@@ -123,6 +129,9 @@ create/upload draft
   删除操作必须返回失败，并保留重试所需的数据行和存储描述符。
 - 只有公开 API 契约明确说明缺失资源视为成功时，删除操作才应具备该幂等语义。
 - 删除 online 版本时，类型实现支持的情况下应更新 `onlineCnt` 或 labels。
+- 类型自有的派生投影不是 Version 内容存储。特别是 MCP Direct Naming 兼容投影，只能在 owner
+  和快照摘要校验通过后删除。投影物理清理失败必须创建耐久重试，且不得复活或回滚其他方面已经
+  成功的标准业务删除；Storage 内容对象失败仍遵循上述保留 row 的规则。
 
 ## 7. Trace 与计数
 
