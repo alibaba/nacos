@@ -42,6 +42,12 @@ public class InetAddressValidator {
      */
     private static final int MAX_MIXED_IPV6_BLOCKS = 6;
     
+    /**
+     * A compressed IPv6 part may hold at most five explicit blocks, because "::" stands for at
+     * least one omitted 16-bit block.
+     */
+    private static final int MAX_COMPRESSED_MIXED_IPV6_BLOCKS = MAX_MIXED_IPV6_BLOCKS - 1;
+    
     private static final Pattern IPV4_PATTERN = Pattern
         .compile("^" + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)"
             + "(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}" + "$");
@@ -135,8 +141,9 @@ public class InetAddressValidator {
             IPV6_MIXED_UNCOMPRESSED_REGEX.matcher(ipV6Part).matches();
         boolean ipV6CompressedDetected = IPV6_MIXED_COMPRESSED_REGEX.matcher(ipV6Part).matches();
         
-        return ipv4PartValid && (ipV6UncompressedDetected || ipV6CompressedDetected)
-            && countHexBlocks(ipV6Part) <= MAX_MIXED_IPV6_BLOCKS;
+        return ipv4PartValid && (ipV6UncompressedDetected
+            || (ipV6CompressedDetected
+                && countHexBlocks(ipV6Part) <= MAX_COMPRESSED_MIXED_IPV6_BLOCKS));
     }
     
     /**
