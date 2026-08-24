@@ -242,7 +242,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
         boolean aggregation) {
         ConfigListenerInfo result =
-            configListenerStateDelegate.getListenerStateByIp(ip, aggregation);
+            configListenerStateDelegate.getListenerStateByIp(ip, namespaceId, aggregation);
         result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
         if (result.getListenersStatus() == null || result.getListenersStatus().isEmpty()) {

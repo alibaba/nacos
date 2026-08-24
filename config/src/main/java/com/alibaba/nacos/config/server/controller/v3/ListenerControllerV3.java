@@ -66,7 +66,7 @@ public class ListenerControllerV3 {
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
         AggregationForm aggregationForm) {
         ConfigListenerInfo result = configListenerStateDelegate.getListenerStateByIp(ip,
-            aggregationForm.isAggregation());
+            namespaceId, aggregationForm.isAggregation());
         result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
         if (result.getListenersStatus() == null || result.getListenersStatus().isEmpty()) {
