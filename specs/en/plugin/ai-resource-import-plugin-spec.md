@@ -397,6 +397,17 @@ import compatibility. It is a Console helper for building an MCP Server schema
 from a user-owned MCP runtime endpoint and remains outside the AI resource
 marketplace or registry import flow.
 
+This helper causes the Console process to open a server-side network connection
+to a request-selected MCP runtime. Public targets are allowed by default, while
+private or local targets are rejected unless every such address resolved from
+`baseUrl` matches
+`nacos.console.ai.mcp.import.allowed-private-addresses`. Operators may disable
+all outbound tool import with `nacos.console.ai.mcp.import.enabled=false`. The
+request `baseUrl` must use HTTP or HTTPS. The `endpoint` parameter must remain a
+relative URI and cannot replace the scheme or authority from `baseUrl`.
+Redirects are not followed. Invalid private allowlist entries fail closed
+instead of being ignored.
+
 The compatibility endpoints are disabled by default. Operators may reopen them
 temporarily with `nacos.core.api.compatibility.enabled=true` while clients
 migrate to `/v3/{admin|console}/ai/import/*`.
@@ -471,6 +482,10 @@ The import flow must treat external sources as untrusted:
   download;
 - importer plugins must not leak secrets in API responses, trace events, or
   logs.
+
+The Console MCP tool-import helper follows the separate public-target policy
+and private exceptions described in the legacy MCP compatibility section even
+though the helper is not an importer-plugin operation.
 
 Deployments that intentionally import from private networks must opt in through
 operator-owned configuration.

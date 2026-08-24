@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.console.config.McpEndpointAccessValidator;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
 import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
 import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
@@ -68,7 +69,7 @@ class ConsoleMcpControllerTest {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         mockMvc = MockMvcBuilders.standaloneSetup(
-            new ConsoleMcpController(mcpProxy))
+            new ConsoleMcpController(mcpProxy, new McpEndpointAccessValidator()))
             .setControllerAdvice(new NacosApiExceptionHandler()).build();
     }
     
@@ -156,6 +157,80 @@ class ConsoleMcpControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
+    }
+    
+    @Test
+    void testImportToolsDisabledByOperatorSwitch() throws Exception {
+        environment.setProperty(McpEndpointAccessValidator.IMPORT_ENABLED_PROPERTY, "false");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-streamable")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("disabled"));
+        assertTrue(result.getMessage().contains(
+            McpEndpointAccessValidator.IMPORT_ENABLED_PROPERTY));
+    }
+    
+    @Test
+    void testImportToolsRejectsPrivateAddressByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-streamable")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("127.0.0.1"));
+        assertTrue(result.getMessage().contains("private or local"));
+        assertTrue(result.getMessage().contains(
+            McpEndpointAccessValidator.ALLOWED_PRIVATE_ADDRESSES_PROPERTY));
+    }
+    
+    @Test
+    void testImportToolsRejectsEndpointAuthorityOverride() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-sse")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "//192.0.2.1/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("must not override"));
+    }
+    
+    @Test
+    void testImportToolsUnsupportedTransportIsRejectedBeforeEndpointValidation() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "stdio")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("Unsupported transport type"));
     }
     
     @Test
