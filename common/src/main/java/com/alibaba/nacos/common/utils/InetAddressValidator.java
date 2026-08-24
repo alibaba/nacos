@@ -36,6 +36,12 @@ public class InetAddressValidator {
     
     private static final int FIVE = 5;
     
+    /**
+     * In the IPv6 mixed notation the IPv6 part holds at most 96 bits, that is six 16-bit blocks,
+     * because the trailing IPv4 part occupies the remaining 32 bits.
+     */
+    private static final int MAX_MIXED_IPV6_BLOCKS = 6;
+    
     private static final Pattern IPV4_PATTERN = Pattern
         .compile("^" + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)"
             + "(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}" + "$");
@@ -129,7 +135,31 @@ public class InetAddressValidator {
             IPV6_MIXED_UNCOMPRESSED_REGEX.matcher(ipV6Part).matches();
         boolean ipV6CompressedDetected = IPV6_MIXED_COMPRESSED_REGEX.matcher(ipV6Part).matches();
         
-        return ipv4PartValid && (ipV6UncompressedDetected || ipV6CompressedDetected);
+        return ipv4PartValid && (ipV6UncompressedDetected || ipV6CompressedDetected)
+            && countHexBlocks(ipV6Part) <= MAX_MIXED_IPV6_BLOCKS;
+    }
+    
+    /**
+     * Count the non-empty 16-bit blocks in the IPv6 part of a mixed address.
+     *
+     * @param ipV6Part the IPv6 part of a mixed address, including the trailing colon
+     * @return the number of non-empty blocks
+     */
+    private static int countHexBlocks(final String ipV6Part) {
+        int count = 0;
+        int index = 0;
+        int length = ipV6Part.length();
+        while (index < length) {
+            if (ipV6Part.charAt(index) == ':') {
+                index++;
+                continue;
+            }
+            count++;
+            while (index < length && ipV6Part.charAt(index) != ':') {
+                index++;
+            }
+        }
+        return count;
     }
     
     /**
