@@ -182,9 +182,10 @@ Agent Search 是共享 Search Core 上固定 `resourceType=agent` 的资源专�
 通用 AI Resource Search 只查询 Agent 时，候选资格、可见性和当前性必须与本 API 一致；响应 DTO、
 排序和 numbered page 仍遵循 RAD。
 
-`nacos.ai.rad.search.mode=INDEX` 且 Agent projection 未 READY 时，HTTP 和 gRPC Binding 返回
-明确的 service unavailable 等价错误；`AUTO` 在 readiness 前使用完整旧扫描，READY 后使用索引。
-Binding 不暴露当前物理路径，也不得因索引调用失败在一次请求内降级或混合结果。
+`nacos.ai.rad.search.mode=AUTO` 或 `INDEX` 时，即使 Agent projection 未 READY，HTTP 和
+gRPC Binding 也使用共享索引并返回可能不完整的当前快照；服务端输出不包含查询内容的限频诊断。
+`SCAN` 显式选择旧兼容路径。Binding 不暴露当前物理路径，也不得因索引调用失败在一次请求内
+降级或混合结果。
 
 Discover 直接映射 `agentName`、`version` 和 `label`。重复 Filter 参数为 `protocol`、
 `transport` 和 `endpointSource`，`protocolVersion` 为单值。`metadataSelector` 使用一个

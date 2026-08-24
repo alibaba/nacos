@@ -347,21 +347,11 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
     }
 
     private JsonNode waitForSearch(Query query) throws Exception {
-        HttpResponse last = null;
-        for (int retry = 0; retry < 100; retry++) {
-            last = getRaw(AGENT_SEARCH_PATH, query);
-            if (200 == last.code()) {
-                JsonNode result = JacksonUtils.toObj(last.body());
-                assertSuccess(result);
-                return result;
-            }
-            if (503 != last.code()) {
-                assertEquals(200, last.code(), last.body());
-            }
-            TimeUnit.MILLISECONDS.sleep(200L);
-        }
-        throw new AssertionError("Agent Search did not become ready: "
-                + (last == null ? "no response" : last.body()));
+        HttpResponse response = getRaw(AGENT_SEARCH_PATH, query);
+        assertEquals(200, response.code(), response.body());
+        JsonNode result = JacksonUtils.toObj(response.body());
+        assertSuccess(result);
+        return result;
     }
 
     private JsonNode waitForSearchTotal(Query query, int expectedTotal) throws Exception {

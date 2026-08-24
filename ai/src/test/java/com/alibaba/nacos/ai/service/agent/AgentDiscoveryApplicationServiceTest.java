@@ -25,7 +25,6 @@ import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageDescriptorSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.ai.service.search.AiResourceSearchReadinessService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
@@ -124,8 +123,7 @@ class AgentDiscoveryApplicationServiceTest {
     void setUp() {
         service = new AgentDiscoveryApplicationService(operationService, persistenceService,
             resourceManager, runtimeRegistryService, searchService,
-            new AgentSearchModeResolver(AiResourceSearchReadinessService.NOOP,
-                () -> AgentSearchMode.SCAN.name()));
+            new AgentSearchModeResolver(() -> AgentSearchMode.SCAN.name()));
     }
     
     @Test

@@ -105,14 +105,25 @@ public class AiResourceSearchService {
     
     private final AiResourceVectorIndex vectorIndex;
     
+    private final AiResourceSearchReadinessObserver readinessObserver;
+    
     @Autowired
     public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
         AiResourceSearchRepository repository,
-        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
+        AiResourceSearchReadinessObserver readinessObserver) {
         this.typeHandlerRegistry = typeHandlerRegistry;
         this.repository = repository;
         this.embeddingService = embeddingService;
         this.vectorIndex = vectorIndex;
+        this.readinessObserver = readinessObserver;
+    }
+    
+    public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
+        AiResourceSearchRepository repository,
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
+        this(typeHandlerRegistry, repository, embeddingService, vectorIndex,
+            AiResourceSearchReadinessObserver.NOOP);
     }
     
     public AiResourceSearchService(AiResourceManager resourceManager,
@@ -133,6 +144,7 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public Page search(Query query) throws NacosException {
+        observeReadiness(query);
         return page(searchCandidates(query), query);
     }
     
@@ -163,6 +175,7 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public Page list(Query query) throws NacosException {
+        observeReadiness(query);
         Comparator<RankedEntry> comparator = listComparator(query);
         RankedEntry cursor = listCursor(query);
         PriorityQueue<RankedEntry> selected =
@@ -206,6 +219,7 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public NumberedPage numberedList(Query query) throws NacosException {
+        observeReadiness(query);
         long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
         long totalCount = 0L;
         List<AiResourceSearchResult> items =
@@ -255,6 +269,7 @@ public class AiResourceSearchService {
      * @throws NacosException when recall or canonical resource lookup fails
      */
     public NumberedPage numberedSearch(Query query) throws NacosException {
+        observeReadiness(query);
         List<RankedEntry> candidates = searchCandidates(query);
         long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
         int fromIndex = (int) Math.min(offset, candidates.size());
@@ -280,6 +295,7 @@ public class AiResourceSearchService {
      */
     public AggregationResult aggregate(Query query, List<AggregationRequest> requests)
         throws NacosException {
+        observeReadiness(query);
         if (StringUtils.isBlank(query.getText())) {
             return aggregateList(query, requests);
         }
@@ -291,6 +307,10 @@ public class AiResourceSearchService {
             }
         }
         return new AggregationResult(candidates.size(), aggregations);
+    }
+    
+    private void observeReadiness(Query query) {
+        readinessObserver.observe(query == null ? null : query.getResourceTypes());
     }
     
     private AggregationResult aggregateList(Query query, List<AggregationRequest> requests)

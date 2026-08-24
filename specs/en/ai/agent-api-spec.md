@@ -209,11 +209,13 @@ truncation. When generic AI Resource Search queries only Agent, its candidate
 eligibility, visibility, and currentness match this API; the response DTO,
 ordering, and numbered-page contract continue to follow RAD.
 
-When `nacos.ai.rad.search.mode=INDEX` and the Agent projection is not READY,
-the HTTP and gRPC bindings return equivalent explicit service-unavailable
-errors. `AUTO` uses the complete legacy scan before readiness and the index
-after readiness. A binding does not expose the selected physical path and does
-not downgrade or mix results within one request after an index-call failure.
+With `nacos.ai.rad.search.mode=AUTO` or `INDEX`, the HTTP and gRPC bindings use
+the shared index even when the Agent projection is not READY. They return the
+current snapshot, which may be incomplete, and the server emits rate-limited
+diagnostics without logging query content. `SCAN` explicitly selects the
+legacy compatibility path. A binding does not expose the selected physical
+path and does not downgrade or mix results within one request after an
+index-call failure.
 
 Discover maps `agentName`, `version`, and `label` directly. Repeated filter
 parameters are `protocol`, `transport`, and `endpointSource`.

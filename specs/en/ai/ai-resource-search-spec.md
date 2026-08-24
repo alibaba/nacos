@@ -106,6 +106,14 @@ one resource type, its eligibility, visibility, and currentness results match
 the corresponding resource-specific Search. Cross-type Search must not be
 implemented by concatenating already-paginated resource-specific results.
 
+Every Search facade is available while one or more requested projection
+generations are not yet `READY`. It returns the current enabled and current
+index snapshot without falling back to a canonical full scan or failing the
+request. Such a snapshot may omit resources whose Backfill or lifecycle task
+has not converged yet; its total, cursor, and numbered pages describe only the
+currently indexed set. The server emits rate-limited diagnostics for requested
+unready types without logging query content.
+
 ### 3.1 Client HTTP Search Facades
 
 The generic Client HTTP facade is:
@@ -221,6 +229,11 @@ and scans by stable resource key in bounded batches. `isCurrent` enforces the
 resource's enabled, visibility, current-version, and source-digest rules. A
 handler belongs to the `ai` module and must not reference ARD DTOs, URLs, or
 media types.
+
+Every searchable handler declares a positive `projectionVersion`. The initial
+generation is `1`; a projection-contract change increments it. Readiness is a
+shared completeness and observability signal for every searchable type, not a
+compatibility switch implemented only by types that retain a legacy scan path.
 
 The searchable types declared by this specification are Agent, AgentSpec,
 Skill, Prompt, and MCP. If a future AI Resource does not participate in generic
@@ -388,10 +401,9 @@ returning a silently truncated result set. Operators may tune the bound with
 
 ## 8. Readiness And Read Modes
 
-A resource type that moves from a legacy scan path to the index maintains
-durable, cluster-shared readiness by `(resourceType, projectionVersion)`. A
-Backfill scan lease identifies only the current scan owner and does not replace
-readiness.
+Every searchable resource type maintains durable, cluster-shared readiness by
+`(resourceType, projectionVersion)`. A Backfill scan lease identifies only the
+current scan owner and does not replace readiness.
 
 A projection generation is marked `READY` through CAS only after all of these
 conditions hold:
@@ -410,20 +422,30 @@ pending does not return that generation to unready; query currentness checks
 exclude stale documents until the task converges. A projection contract change
 increments the projection version and creates a new readiness generation.
 
+`NOT READY` is not an API availability failure. Generic, resource-specific,
+RAD, and ARD Search continue through Search Core and return the current index
+snapshot. Results may be incomplete until Backfill and durable tasks converge.
+Servers cache readiness observations on the query path, emit rate-limited
+warnings that identify the unready resource types and generations, and must not
+log search text or structured predicate values. One request never combines a
+partial index with a canonical scan. Index runtime failures remain explicit
+errors and are distinct from projection readiness.
+
 RAD Search selects its read path with
 `nacos.ai.rad.search.mode=AUTO|INDEX|SCAN`, defaulting to `AUTO`:
 
 | Mode | Not READY | READY | Index-call failure |
 |---|---|---|---|
-| `AUTO` | Use the complete legacy scan path | Switch stickily in-process to the index | Fail explicitly; no per-request fallback |
-| `INDEX` | Return service unavailable explicitly | Use the index | Fail explicitly |
+| `AUTO` | Use the current index snapshot and warn that results may be incomplete | Use the index | Fail explicitly; no per-request fallback |
+| `INDEX` | Use the current index snapshot and warn that results may be incomplete | Use the index | Fail explicitly |
 | `SCAN` | Use legacy scan | Always use legacy scan | Not applicable |
 
-One request never combines partial index and partial legacy-scan results. The
-switch must not change RAD name, tag, protocol, case, ordering, total,
-pagination, visibility, or version-catalog contracts. Another consumer that
-needs a compatibility read mode defines it in its protocol or API spec but
-still reuses this readiness.
+`AUTO` remains the default and currently selects the shared index like `INDEX`;
+the separate value is retained for configuration compatibility and future
+selection policy. `SCAN` is an explicit diagnostic and compatibility path. The
+mode must not change RAD name, tag, protocol, case, ordering, visibility, or
+version-catalog contracts. While a generation is not ready, index-backed totals
+and pages intentionally cover only the current indexed set.
 
 ## 9. Upgrade And Initialization
 
@@ -468,11 +490,12 @@ PostgreSQL deployments that do not enable the default vector plugin need no
 pgvector objects. Deployments that enable it must separately run the optional
 schema owned by `nacos-default-ai-vector-plugin`.
 
-Before `AUTO` or `INDEX` uses a newly added resource type, that type completes
-Backfill and readiness for its projection generation. The index remains
-rebuildable derived state; it does not change the authoritative canonical
-resource or Runtime Endpoint stores and does not migrate Runtime state into the
-relational search tables.
+Backfill and readiness run for every newly added resource type and projection
+generation. Search may use the current snapshot before readiness and naturally
+becomes complete as convergence finishes. The index remains rebuildable derived
+state; it does not change the authoritative canonical resource or Runtime
+Endpoint stores and does not migrate Runtime state into the relational search
+tables.
 
 ## 10. Compatibility And Tests
 
@@ -493,6 +516,8 @@ stale-worker release fencing by lease token, idempotent enhancement retry,
 configuration-fingerprint recording without global rescheduling, lifecycle
 enhancement intent, repair-triggered reconciliation enhancement without
 historical full refresh, Agent lifecycle scheduling versus Runtime Endpoint
-non-scheduling, readiness CAS/restart/new generations, and the
-`AUTO/INDEX/SCAN` matrix. Protocol adaptors and resource APIs separately test
-their request grammar, response conformance, and single-type cross-results.
+non-scheduling, readiness CAS/restart/new generations for every searchable
+type, rate-limited NOT READY observation, non-blocking partial snapshot
+behavior, and the `AUTO/INDEX/SCAN` matrix. Protocol adaptors and resource APIs
+separately test their request grammar, response conformance, and single-type
+cross-results.

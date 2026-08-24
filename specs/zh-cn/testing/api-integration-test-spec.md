@@ -152,7 +152,7 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
   字面量，首/中/尾/越界页与正确 total；
 - 创建、metadata 更新、Version publish/online/offline/delete、latest/label 变化后的有界等待收敛；
 - Endpoint register/deregister/heartbeat 只改变 Discover，不改变目录 Search document；
-- `AUTO` readiness 前后结果等价且不混合，`INDEX` 未 READY 明确失败，`SCAN` 始终走兼容路径；
+- `AUTO` 或 `INDEX` 未 READY 时成功返回且不混合的当前快照、最终完整收敛，以及 `SCAN` 始终走兼容路径；
 - 通用 Search 指定单一 Agent、AgentSpec、Skill、Prompt 或 MCP 时，与对应资源专用 Search 的候选
   资格、可见性和当前性结果一致；
 - ARD 纯 A2A、多协议和只有旧 online Version 支持 A2A 的 type filter、primary 表示、稳定

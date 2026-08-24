@@ -288,6 +288,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedAgent(maintainer, customNamespace, customName,
             Arrays.asList("java-sdk-it", "blue"), Collections.singletonList(PROTOCOL_A2A), false);
         AiService customService = createAiService(customNamespace, null);
+        AgentSearchRequest currentSnapshot = new AgentSearchRequest();
+        currentSnapshot.setAgentNameContains(targetName);
+        assertNotNull(defaultService.searchAgents(currentSnapshot));
+        AgentSearchRequest customSnapshot = new AgentSearchRequest();
+        customSnapshot.setAgentNameContains(customName);
+        assertNotNull(customService.searchAgents(customSnapshot));
         waitForSearchTotal(defaultService, targetName, 1);
         waitForSearchTotal(defaultService, decoyName, 1);
         waitForSearchTotal(customService, customName, 1);

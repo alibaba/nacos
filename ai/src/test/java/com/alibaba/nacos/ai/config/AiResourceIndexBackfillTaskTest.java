@@ -76,6 +76,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -426,6 +427,28 @@ class AiResourceIndexBackfillTaskTest {
         
         verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
             Constants.Agent.RESOURCE_TYPE_AGENT, 1, true);
+    }
+    
+    @Test
+    void shouldRecordReadinessForEverySearchableTypeByDefault() throws Exception {
+        AiResourceSearchTypeHandler handler =
+            mock(AiResourceSearchTypeHandler.class, CALLS_REAL_METHODS);
+        when(handler.resourceTypes()).thenReturn(List.of(
+            Constants.Skills.RESOURCE_TYPE_SKILL,
+            AiResourceConstants.RESOURCE_TYPE_PROMPT,
+            AiResourceConstants.RESOURCE_TYPE_MCP));
+        when(handler.scan(eq(PUBLIC_NAMESPACE), anyString(), eq(1), eq(100)))
+            .thenReturn(new AiResourceIndexSourcePage(Collections.emptyList(), false));
+        useHandlers(handler);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            Constants.Skills.RESOURCE_TYPE_SKILL, 1, true);
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            AiResourceConstants.RESOURCE_TYPE_PROMPT, 1, true);
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            AiResourceConstants.RESOURCE_TYPE_MCP, 1, true);
     }
     
     @Test

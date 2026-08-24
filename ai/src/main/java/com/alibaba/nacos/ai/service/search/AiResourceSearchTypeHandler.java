@@ -31,12 +31,10 @@ public interface AiResourceSearchTypeHandler {
     /**
      * Projection contract generation used for durable readiness.
      *
-     * <p>Handlers that are not guarded by a compatibility read-path switch return {@code 0}.</p>
-     *
-     * @return projection generation, or {@code 0} when readiness is not required
+     * @return positive projection generation
      */
     default int projectionVersion() {
-        return 0;
+        return 1;
     }
     
     /**

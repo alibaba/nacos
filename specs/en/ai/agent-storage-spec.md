@@ -624,7 +624,7 @@ set uses the Version `contentDigest` as its opaque source revision.
 | Read | Facts read | AI Storage read |
 | --- | --- | :---: |
 | Management Agent list | `ai_resource` page. | No |
-| RAD or generic Agent Search | Current Agent Search document; RAD `AUTO/SCAN` uses the compatibility scan before readiness. | No |
+| RAD or generic Agent Search | Current Agent Search document; `AUTO/INDEX` may return a partial current snapshot before readiness, while `SCAN` explicitly uses the compatibility scan. | No |
 | Agent overview | Resource plus bounded Version-row page. | No |
 | Exact Version detail | One Version row. | One |
 | Runtime Endpoint snapshot | Complete internal `ServiceStorage` projection for one protocol; optional binding filter. | No |

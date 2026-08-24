@@ -403,10 +403,11 @@ Search 复用 [AI 资源检索规范](ai-resource-search-spec.md)定义的共享
 - Agent 的完整 online Version 目录来自当前 Search document，Runtime Endpoint、健康状态、
   Publisher 和心跳不进入 Search 索引或响应。
 
-`nacos.ai.rad.search.mode` 可以选择 `AUTO`、`INDEX` 或 `SCAN`。首次 Agent projection
-Backfill 未 READY 时，`AUTO` 使用完整旧扫描路径，`INDEX` 明确返回 service unavailable；
-READY 后 `AUTO` 以进程内 sticky 方式切换到索引。索引调用失败不得按请求回退，单次请求也
-不得混合两条路径。三种模式必须保持本节的过滤、排序、total、分页、可见性和版本目录结果等价。
+`nacos.ai.rad.search.mode` 可以选择 `AUTO`、`INDEX` 或 `SCAN`。`AUTO` 和 `INDEX` 在
+Agent projection readiness 前后都使用共享索引；generation 未 READY 时返回当前快照，total
+和分页可能不完整，同时输出不包含查询内容的限频诊断。`SCAN` 显式选择旧兼容路径。索引调用
+失败不得按请求回退，单次请求也不得混合两条路径。三种模式必须保持本节的过滤、排序、可见性
+和版本目录语义。
 
 ## 5. Discover
 
