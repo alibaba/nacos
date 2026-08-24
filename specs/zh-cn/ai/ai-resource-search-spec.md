@@ -81,6 +81,11 @@ resource type，并可以使用类型专用 predicate 和权重。通用 Search 
 时，其候选资格、可见性和当前性结果必须与对应资源专用 Search 一致。跨类型 Search 不得通过
 拼接多个已经分页的专用结果实现。
 
+一个或多个请求的 projection generation 尚未 `READY` 时，所有 Search Facade 仍然可用。
+它们返回当前 enabled 且 current 的索引快照，不回退到标准资源全量扫描，也不因 readiness
+失败。Backfill 或生命周期任务尚未收敛的资源可能暂时缺失；total、cursor 和 numbered page
+只描述当前已索引集合。服务端对请求涉及的未就绪类型输出限频诊断，但不得记录查询内容。
+
 ### 3.1 Client HTTP Search Facade
 
 通用 Client HTTP Facade 为：
@@ -171,6 +176,10 @@ exists(namespaceId, resourceName) -> boolean
 文档。`scan` 只用于 Backfill/Reconciliation，必须按稳定资源键有界扫描。`isCurrent` 必须执行
 该资源的 enabled、可见性、当前版本和 source digest 校验。处理器属于 `ai` 模块，不能引用
 ARD DTO、URL 或 media type。
+
+每个可检索处理器必须声明正数 `projectionVersion`，初始 generation 为 `1`，投影契约变化时
+递增。Readiness 是所有可检索类型共享的完整性与可观测信号，而不是仅由保留旧扫描路径的类型
+实现的兼容切换开关。
 
 本规范声明的可检索类型为 Agent、AgentSpec、Skill、Prompt 和 MCP。若将来某个 AI Resource
 不参加通用 Search，必须在该资源规范中明确声明；不能仅因为尚未实现处理器而静默漏掉。
@@ -290,8 +299,8 @@ Reconciliation 不得在内存中保留全部标准资源名称。集群扫描 l
 
 ## 8. Readiness 与读模式
 
-需要从旧扫描路径切换到索引的资源类型，必须按 `(resourceType, projectionVersion)` 维护持久、
-集群共享的 readiness。Backfill 扫描 lease 只表示当前扫描 owner，不能替代 readiness。
+每个可检索资源类型都必须按 `(resourceType, projectionVersion)` 维护持久、集群共享的
+readiness。Backfill 扫描 lease 只表示当前扫描 owner，不能替代 readiness。
 
 一个 projection generation 只有在以下条件全部满足时才能通过 CAS 标记为 `READY`：
 
@@ -305,17 +314,23 @@ Reconciliation 不得在内存中保留全部标准资源名称。集群扫描 l
 退回未就绪；查询的 currentness 校验先排除陈旧文档，任务随后收敛。投影契约变化必须递增
 projection version 并创建新的 readiness generation。
 
+`NOT READY` 不是 API 可用性错误。通用 Search、资源专用 Search、RAD 和 ARD 都继续调用
+Search Core 并返回当前索引快照；在 Backfill 和持久化任务收敛前，结果可能不完整。查询路径
+缓存 readiness 观测，并对未就绪的资源类型和 generation 输出限频警告；日志不得包含查询文本
+或结构化 predicate 值。一次请求不得混合部分索引和标准资源扫描结果。索引运行时失败仍然
+明确返回错误，并与 projection readiness 区分。
+
 RAD Search 使用 `nacos.ai.rad.search.mode=AUTO|INDEX|SCAN` 选择读路径，默认 `AUTO`：
 
 | 模式 | 未 READY | READY | 索引调用失败 |
 |---|---|---|---|
-| `AUTO` | 使用完整旧扫描路径 | 进程内 sticky 切换到索引 | 明确失败，不逐请求回退 |
-| `INDEX` | 明确 service unavailable | 使用索引 | 明确失败 |
+| `AUTO` | 使用当前索引快照并警告结果可能不完整 | 使用索引 | 明确失败，不逐请求回退 |
+| `INDEX` | 使用当前索引快照并警告结果可能不完整 | 使用索引 | 明确失败 |
 | `SCAN` | 使用旧扫描 | 始终使用旧扫描 | 不涉及索引 |
 
-一次请求不得合并部分索引和部分旧扫描结果。切换不得改变 RAD 名称、Tag、Protocol、大小写、
-排序、total、分页、可见性或 version catalog 契约。其他消费者若需要兼容读模式，必须在其协议
-或 API 规范中定义，但仍复用同一 readiness。
+`AUTO` 仍是默认值，当前与 `INDEX` 一样选择共享索引；保留独立值用于配置兼容和未来选择策略。
+`SCAN` 是显式诊断与兼容路径。模式不得改变 RAD 名称、Tag、Protocol、大小写、排序、可见性
+或 version catalog 契约。Generation 未就绪时，索引支持的 total 和分页只覆盖当前已索引集合。
 
 ## 9. 升级与初始化
 
@@ -350,9 +365,9 @@ Result、阶段、重试、租约、revision 和完成检查点，不能替代�
 PostgreSQL 环境如果不开启默认向量插件，无需创建任何 pgvector 对象；如果开启，则必须另外
 执行 `nacos-default-ai-vector-plugin` 自己维护的可选 Schema。
 
-新增资源类型必须先完成对应 projection generation 的 Backfill 和 readiness，再让 `AUTO` 或
-`INDEX` 使用该索引。索引是可重建派生状态，不改变标准资源或 Runtime Endpoint 的事实源，也
-不要求把 Runtime 状态迁移到关系检索表。
+每个新增资源类型和 projection generation 都运行 Backfill 与 readiness；Search 可以在
+readiness 前使用当前快照，并随收敛自然变得完整。索引是可重建派生状态，不改变标准资源或
+Runtime Endpoint 的事实源，也不要求把 Runtime 状态迁移到关系检索表。
 
 ## 10. 兼容与测试
 
@@ -366,5 +381,6 @@ cursor 和 numbered page、超过单页范围的全量聚合、通用单类型�
 lease 与重试边界、连续生命周期合并保留活动租约、基于 lease token 防止旧 worker 释放
 新租约、配置 fingerprint 记录但不全量重调度、生命周期 Enhancement 意图，
 仅对实际修复资源执行 Enhancement 且不全量刷新历史数据的 reconciliation、Agent lifecycle
-调度与 Runtime Endpoint 非调度、readiness CAS/重启/新 generation，以及 `AUTO/INDEX/SCAN`
-交叉行为。各协议适配器和资源 API 分别测试自己的请求语法、响应一致性和单类型交叉结果。
+调度与 Runtime Endpoint 非调度、所有可检索类型的 readiness CAS/重启/新 generation、
+NOT READY 限频观测、非阻塞部分快照行为，以及 `AUTO/INDEX/SCAN` 交叉行为。各协议适配器和
+资源 API 分别测试自己的请求语法、响应一致性和单类型交叉结果。

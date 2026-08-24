@@ -83,7 +83,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         assertEquals(Collections.singletonList(Constants.Agent.RESOURCE_TYPE_AGENT),
             new AgentAiResourceSearchTypeHandler(resourceManager, persistenceService)
                 .resourceTypes());
-        assertEquals(0, new NoopHandler().projectionVersion());
+        assertEquals(1, new NoopHandler().projectionVersion());
     }
     
     @Test

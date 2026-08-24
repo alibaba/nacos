@@ -525,7 +525,7 @@ Endpoint set 及其 revision，不维护第二份投影缓存。
 | 读取 | 读取事实 | AI Storage 读取 |
 | --- | --- | :---: |
 | 管控 Agent 列表 | `ai_resource` page。 | 否 |
-| RAD 或通用 Agent Search | 当前 Agent Search document；未 READY 的 RAD `AUTO/SCAN` 使用兼容扫描。 | 否 |
+| RAD 或通用 Agent Search | 当前 Agent Search document；`AUTO/INDEX` 在未 READY 时可返回部分当前快照，`SCAN` 显式使用兼容扫描。 | 否 |
 | Agent overview | Resource 和有界 Version-row page。 | 否 |
 | 精确 Version detail | 一行 Version。 | 一次 |
 | Runtime Endpoint Snapshot | 一个 protocol 的完整内部 `ServiceStorage` 投影；可选 binding filter。 | 否 |

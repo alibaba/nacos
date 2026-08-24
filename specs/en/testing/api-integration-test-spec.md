@@ -175,8 +175,9 @@ the OpenAPI IT scenario matrix covers at least:
   publish/online/offline/delete, and latest/label changes;
 - Endpoint register/deregister/heartbeat changes Discover only and does not
   change the catalog Search document;
-- equivalent results before and after `AUTO` readiness without mixing,
-  explicit failure for unready `INDEX`, and the compatibility path for `SCAN`;
+- successful current snapshots without mixing before `AUTO` or `INDEX`
+  readiness, convergence to complete results, and the compatibility path for
+  `SCAN`;
 - generic Search restricted to Agent, AgentSpec, Skill, Prompt, or MCP matches
   the corresponding resource-specific Search eligibility, visibility, and
   currentness; and

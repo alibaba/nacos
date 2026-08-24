@@ -280,6 +280,11 @@ Resource Search, and resource-specific Search share that runtime;
 `nacos.ai.ard.enabled` controls only the adaptor protocol surface and neither
 activates nor disables base Search Core.
 
+Readiness is tracked for every requested searchable resource type. A type that
+is not READY does not make ARD Search unavailable: the adaptor returns the
+current shared-index snapshot, which may be incomplete until convergence, and
+the server emits rate-limited diagnostics without logging query content.
+
 Visibility and current-version validation occur before the requested result
 limit is applied. List and aggregation scans use bounded database batches.
 Keyword and vector recall use the bounds defined by the AI resource search

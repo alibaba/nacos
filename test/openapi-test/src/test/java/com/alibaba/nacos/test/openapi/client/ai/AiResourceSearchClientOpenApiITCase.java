@@ -48,8 +48,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  *     exact-all tags, exact-any capabilities, MCP protocol filtering, and opaque cursor traversal
  *     work across page boundaries; unsupported types, malformed cursors, invalid limits,
  *     oversized queries, and invalid numbered pages are rejected.</li>
- *     <li>Exception/error handling: no-match Search returns a successful empty cursor page, and
- *     the test waits for durable index convergence instead of assuming synchronous projection.</li>
+ *     <li>Exception/error handling: no-match Search returns a successful empty cursor page.
+ *     Search remains available with the current snapshot during asynchronous projection, and the
+ *     test then waits for durable index convergence before comparing complete results.</li>
  * </ul>
  *
  * @author xiweng.yy

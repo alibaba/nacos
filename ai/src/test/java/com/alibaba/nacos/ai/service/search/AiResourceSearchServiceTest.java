@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,6 +81,47 @@ class AiResourceSearchServiceTest {
     
     @Mock
     private AiResourceVectorIndex vectorIndex;
+    
+    @Test
+    void shouldObserveReadinessForEverySearchEntryPoint() throws Exception {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        AiResourceSearchReadinessObserver observer =
+            mock(AiResourceSearchReadinessObserver.class);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex, observer);
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks("public", "query", List.of("skill"), 10001))
+            .thenReturn(Collections.emptyList());
+        Query query = new Query();
+        query.setNamespaceId("public");
+        query.setResourceTypes(List.of("skill"));
+        query.setText("query");
+        query.setLimit(10);
+        
+        service.search(query);
+        service.list(query);
+        service.numberedList(query);
+        service.numberedSearch(query);
+        service.aggregate(query, Collections.emptyList());
+        
+        verify(observer, times(5)).observe(List.of("skill"));
+        verify(observer, never()).observe(null);
+    }
+    
+    @Test
+    void shouldObserveAllTypesBeforeRejectingNullQuery() {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        AiResourceSearchReadinessObserver observer =
+            mock(AiResourceSearchReadinessObserver.class);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex, observer);
+        
+        assertThrows(NullPointerException.class, () -> service.search(null));
+        
+        verify(observer).observe(null);
+    }
     
     @Test
     void searchShouldFilterVisibilityAndCurrentVersionBeforePagination() throws Exception {

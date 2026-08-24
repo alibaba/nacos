@@ -455,13 +455,14 @@ Search reuses the shared Search Core defined by the
   while Runtime Endpoints, health, Publishers, and heartbeats enter neither the
   Search index nor its response.
 
-`nacos.ai.rad.search.mode` selects `AUTO`, `INDEX`, or `SCAN`. Before the first
-Agent projection Backfill is READY, `AUTO` uses the complete legacy scan path
-and `INDEX` returns service unavailable explicitly. After readiness, `AUTO`
-switches stickily in-process to the index. An index-call failure does not cause
-per-request fallback, and one request never mixes the two paths. All three
-modes preserve this section's filtering, ordering, total, pagination,
-visibility, and version-catalog results.
+`nacos.ai.rad.search.mode` selects `AUTO`, `INDEX`, or `SCAN`. `AUTO` and
+`INDEX` use the shared index before and after Agent projection readiness. When
+the generation is not READY, they return the current snapshot, whose total and
+pages may be incomplete, and emit rate-limited diagnostics without logging
+query content. `SCAN` explicitly selects the legacy compatibility path. An
+index-call failure does not cause per-request fallback, and one request never
+mixes the two paths. All three modes preserve this section's filtering,
+ordering, visibility, and version-catalog semantics.
 
 ## 5. Discover
 
