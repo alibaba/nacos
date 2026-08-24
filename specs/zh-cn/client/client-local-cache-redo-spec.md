@@ -163,6 +163,14 @@ gRPC Endpoint 意图归属于当前 connection id。Reconnect 后，SDK 获取�
 期望分组。HTTP 与 gRPC Publisher record 必须隔离；一种 Transport 不得注销另一种
 Transport 拥有的 Contribution。
 
+SDK 默认对全部已保留完整 Publication Batch 中的 Runtime Endpoint 条目使用 100 的软水位，
+可通过 `nacosAiAgentEndpointMaxPublications` 配置。一次原子 Register 前的条目数低于
+水位时，SDK 整批保留已校验 Batch，即使完成后越过水位；已达到或超过水位时仍允许等量
+替换或缩容，但拒绝新 Batch 或扩容 Batch，且不发生局部缓存修改。Server 独立执行权威的
+每 Client 软水位。命中本地或远程 Publication 容量限制属于终止性写失败：SDK 从
+Publication Manager 与 gRPC Redo Cache 移除被拒绝的身份，HTTP Maintenance 不再
+Heartbeat 或重试它；其他瞬时 5xx Transport 失败继续使用既有 Rollback 和 Redo 语义。
+
 ### 8.3 本地轮询订阅身份
 
 首版 SDK 不创建服务端 Watch，也不保存 Connection 维度 `watchKey`。规范化本地轮询
@@ -177,6 +185,12 @@ Reference 规范化保持精确 Version、Label 和 Latest 之间的区别。Fil
 执行相同 Discover；gRPC reconnect 不增加订阅 redo，因为下一次轮询自然使用新连接。
 目标不存在时保留轮询但不投递空快照。解析 Version、`contentDigest` 或任一
 `sourceRevision` 改变时，SDK 原子替换缓存并投递完整结果。
+
+本地轮询 Cache 默认最多保留 300 个不同的规范化订阅 Key，可通过
+`nacosAiAgentDiscoveryMaxSubscriptions` 配置。超限订阅必须在首次 Discover、缓存插入和
+调度提交前失败；重复 Subscribe 保持幂等，Unsubscribe 或 Shutdown 释放容量。当前 API
+每次调用只安装一个 Key；后续任何批量 Watch Cache 修改都必须使用操作前软水位，在水位
+以下整批保留规范化结果，或在已达到水位时无局部插入地拒绝增长。
 
 [运行时推送与重连规范](runtime-push-reconnect-spec.md)中的服务端 Watch/Push 是独立
 后续契约；实现该契约前必须先更新 Agent API、能力位和传输 Payload，不能从本地轮询

@@ -89,10 +89,14 @@ public class AgentRuntimeRegistryService {
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
+    private final AgentRuntimePublicationCapacityGate publicationCapacityGate;
+    
     public AgentRuntimeRegistryService(ServiceStorage serviceStorage,
-        EphemeralClientOperationServiceImpl clientOperationService) {
+        EphemeralClientOperationServiceImpl clientOperationService,
+        AgentRuntimePublicationCapacityGate publicationCapacityGate) {
         this.serviceStorage = serviceStorage;
         this.clientOperationService = clientOperationService;
+        this.publicationCapacityGate = publicationCapacityGate;
     }
     
     /**
@@ -111,8 +115,10 @@ public class AgentRuntimeRegistryService {
                 batch.getRuntimeVersion(), batch.getVersionRange()));
         }
         NamingUtils.batchCheckInstanceIsLegal(instances);
-        clientOperationService.batchRegisterInstance(composeService(batch.getNamespaceId(),
-            batch.getAgentName(), batch.getProtocol()), instances, publisherId);
+        Service service = composeService(batch.getNamespaceId(), batch.getAgentName(),
+            batch.getProtocol());
+        publicationCapacityGate.register(publisherId, service, instances.size(),
+            () -> clientOperationService.batchRegisterInstance(service, instances, publisherId));
     }
     
     /**

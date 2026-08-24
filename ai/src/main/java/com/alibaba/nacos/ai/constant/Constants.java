@@ -146,6 +146,14 @@ public class Constants {
         public static final String RAD_SEARCH_MODE_CONFIG_KEY = "nacos.ai.rad.search.mode";
         
         /**
+         * Soft watermark for Runtime Endpoint publication entries owned by one publisher Client.
+         */
+        public static final String MAX_PUBLICATIONS_PER_CLIENT_CONFIG_KEY =
+            "nacos.ai.rad.capacity.publication.max-publications-per-client";
+        
+        public static final int DEFAULT_MAX_PUBLICATIONS_PER_CLIENT = 100;
+        
+        /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
          */
         public static final String RESOURCE_TYPE_AGENT = "agent";

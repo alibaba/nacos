@@ -256,6 +256,18 @@ public enum ErrorCode {
     AGENT_VERSION_EXIST(50102, "Agent version already existed"),
     
     /**
+     * One Agent client owns the configured maximum number of Endpoint publications.
+     */
+    AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT(50103,
+        "Agent Endpoint publication capacity reached"),
+    
+    /**
+     * One Agent client owns the configured maximum number of discovery subscriptions.
+     */
+    AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT(50104,
+        "Agent discovery subscription capacity reached"),
+    
+    /**
      * HTTP connection-based client does not exist or no longer owns a publication.
      */
     HTTP_CLIENT_NOT_FOUND(50404, "HTTP client not found"),

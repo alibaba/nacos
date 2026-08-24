@@ -52,9 +52,12 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
+| `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
+| `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
+| `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same thirteen stable workflows pass with both the default JSON adapter and
+The same sixteen stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -154,6 +157,8 @@ Endpoint, and replacement across an already-online Version.
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
 | Same reference/filter and two listener instances | Listener identities are isolated and both receive changes. | UT |
 | Repeat subscribe with the same listener identity | Only one polling record and one callback per change are retained. | UT |
+| Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
+| Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
 | Unsubscribe an absent or different listener | The operation is an idempotent no-op. | UT |
 | Listener throws | Polling and other listeners continue. | UT |
@@ -171,6 +176,9 @@ Endpoint, and replacement across an already-online Version.
 | Replace a Batch while omitting a previous Endpoint | The omitted Endpoint is removed. | IT |
 | Publish two protocols | Each `(namespace, agent, protocol)` state is independent and Discover filters correctly. | IT + UT |
 | Publish from two SDK instances | Contributions aggregate by natural key and one publisher deregistration does not remove the other. | IT |
+| Cross the configured local publication watermark with one complete Batch | When the pre-operation Endpoint-entry count is below the watermark, the whole Batch is admitted and cached even if the resulting count exceeds it; no partial Batch is retained. | IT + UT |
+| Grow while already at or above the local publication watermark | Equal-size or shrinking replacement remains allowed, while a new identity or growing replacement throws `CLIENT_OVER_THRESHOLD` without entering either publication or gRPC redo cache. | IT + UT |
+| Server rejects publication growth at its per-Client watermark | The SDK surfaces `OVER_THRESHOLD`, removes the rejected identity from all redo/heartbeat state, and accepts it after enough Endpoint entries are deregistered. | OpenAPI IT + Java SDK IT + UT |
 | Missing range | The server receives a valid Batch whose range defaults to exact runtime Version semantics. | IT + UT |
 | Duplicate natural key, invalid URI/transport/version/range, empty Batch, or `healthy` input | The SDK rejects the Batch locally and does not retain invalid redo intent. | IT + UT |
 | Caller changes Batch or Endpoint objects after registration | Stored expected state and redo payload remain the original canonical copy. | UT |

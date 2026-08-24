@@ -90,6 +90,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * Nacos AI client service implementation.
@@ -148,9 +149,23 @@ public class NacosAiService implements AiService {
             this.aiClientProxy = this.grpcClient;
         }
         this.agentDiscoveryCacheHolder =
-            new NacosAgentDiscoveryCacheHolder(namespaceId, this.aiClientProxy);
+            new NacosAgentDiscoveryCacheHolder(namespaceId, this.aiClientProxy,
+                resolvePositiveCapacity(clientProperties,
+                    AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
+                    AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS));
         this.agentEndpointPublicationManager =
-            new AgentEndpointPublicationManager(this.aiClientProxy, httpTransport);
+            new AgentEndpointPublicationManager(this.aiClientProxy, httpTransport,
+                resolvePositiveCapacity(clientProperties,
+                    AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+                    AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS));
+        this.grpcClient.setAgentEndpointPublicationCapacityRejectedHandler(
+            new Consumer<AgentEndpointRegistrationBatch>() {
+                
+                @Override
+                public void accept(AgentEndpointRegistrationBatch batch) {
+                    agentEndpointPublicationManager.discardAfterRemoteCapacityRejection(batch);
+                }
+            });
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
@@ -159,6 +174,21 @@ public class NacosAiService implements AiService {
         this.skillCacheHolder = new NacosSkillCacheHolder(this.aiClientProxy, clientProperties);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
+    }
+    
+    static int resolvePositiveCapacity(NacosClientProperties properties, String key,
+        int defaultValue) throws NacosApiException {
+        try {
+            int result = properties.getInteger(key, defaultValue);
+            if (result < 1) {
+                throw new IllegalArgumentException("must be greater than 0");
+            }
+            return result;
+        } catch (RuntimeException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                "Client property `" + key + "` must be a positive integer.");
+        }
     }
     
     private String initNamespace(NacosClientProperties properties) {

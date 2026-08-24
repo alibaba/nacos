@@ -48,7 +48,9 @@ import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
@@ -129,6 +131,19 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private static final String RECONNECT_CONTROL_DIR_PROPERTY =
         "nacos.agent.reconnect.control.dir";
+
+    private static final String SERVER_PUBLICATION_CAPACITY_PROPERTY =
+        "nacos.agent.it.server.publication.capacity";
+
+    private static final int DEFAULT_SERVER_PUBLICATION_CAPACITY = 100;
+
+    private static final String CLIENT_PUBLICATION_CAPACITY_PROPERTY =
+        "nacos.agent.it.client.publication.capacity";
+
+    private static final String CLIENT_SUBSCRIPTION_CAPACITY_PROPERTY =
+        "nacos.agent.it.client.subscription.capacity";
+
+    private static final int DEFAULT_CLIENT_TEST_CAPACITY = 3;
 
     private static final String CONSOLE_BASE_URL = "http://" + NACOS_HOST + ":"
         + System.getProperty("nacos.console.port", "8080");
@@ -442,6 +457,146 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             deregistration(agentName, PROTOCOL_MCP,
                 Collections.singletonList(deregistrationEndpoint(mcp))));
         waitForEndpointCount(service, agentName, PROTOCOL_MCP, 0);
+    }
+
+    @Test
+    void shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot() throws Exception {
+        int subscriptionCapacity = Integer.getInteger(CLIENT_SUBSCRIPTION_CAPACITY_PROPERTY,
+            DEFAULT_CLIENT_TEST_CAPACITY);
+        assertTrue(subscriptionCapacity > 0, "subscription IT capacity must be positive");
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
+            String.valueOf(subscriptionCapacity));
+        AiService service = createAiService(properties);
+        RecordingAgentListener listener = new RecordingAgentListener();
+        List<AgentReference> references = new ArrayList<>();
+        for (int i = 0; i <= subscriptionCapacity; i++) {
+            references.add(reference(randomServiceName("subscription-capacity-" + i),
+                null, null));
+        }
+        for (int i = 0; i < subscriptionCapacity; i++) {
+            assertNull(service.subscribeAgent(references.get(i), listener));
+        }
+        assertNull(service.subscribeAgent(references.get(0), listener),
+            "an idempotent repeat must not consume another slot");
+        NacosApiException rejected = assertThrows(NacosApiException.class,
+            () -> service.subscribeAgent(references.get(subscriptionCapacity), listener));
+        assertEquals(NacosException.CLIENT_OVER_THRESHOLD, rejected.getErrCode());
+        assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+            rejected.getDetailErrCode());
+
+        service.unsubscribeAgent(references.get(0), listener);
+        assertNull(service.subscribeAgent(references.get(subscriptionCapacity), listener));
+        for (int i = 1; i <= subscriptionCapacity; i++) {
+            service.unsubscribeAgent(references.get(i), listener);
+        }
+    }
+
+    @Test
+    void shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot() throws Exception {
+        int publicationCapacity = Integer.getInteger(CLIENT_PUBLICATION_CAPACITY_PROPERTY,
+            DEFAULT_CLIENT_TEST_CAPACITY);
+        assertTrue(publicationCapacity > 1, "publication IT capacity must be greater than one");
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+            String.valueOf(publicationCapacity));
+        AiService service = createAiService(properties);
+        String firstAgent = randomServiceName("publication-capacity-first");
+        String secondAgent = randomServiceName("publication-capacity-second");
+        String thirdAgent = randomServiceName("publication-capacity-third");
+        Endpoint firstEndpoint = endpoint(randomPort(), "/capacity", "first");
+        List<Endpoint> secondEndpoints = new ArrayList<>();
+        for (int i = 0; i <= publicationCapacity; i++) {
+            secondEndpoints.add(endpoint(randomPort(), "/capacity", "second-" + i));
+        }
+        Endpoint thirdEndpoint = endpoint(randomPort(), "/capacity", "third");
+
+        service.registerAgentEndpoints(registration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(firstEndpoint)));
+        service.registerAgentEndpoints(registration(secondAgent, PROTOCOL_A2A,
+            secondEndpoints));
+        service.registerAgentEndpoints(registration(secondAgent, PROTOCOL_A2A,
+            secondEndpoints));
+        NacosApiException rejected = assertThrows(NacosApiException.class,
+            () -> service.registerAgentEndpoints(registration(thirdAgent, PROTOCOL_A2A,
+                Collections.singletonList(thirdEndpoint))));
+        assertEquals(NacosException.CLIENT_OVER_THRESHOLD, rejected.getErrCode());
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            rejected.getDetailErrCode());
+
+        service.deregisterAgentEndpoints(deregistration(secondAgent, PROTOCOL_A2A,
+            deregistrationEndpoints(secondEndpoints)));
+        service.registerAgentEndpoints(registration(thirdAgent, PROTOCOL_A2A,
+            Collections.singletonList(thirdEndpoint)));
+        service.deregisterAgentEndpoints(deregistration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(firstEndpoint))));
+        service.deregisterAgentEndpoints(deregistration(thirdAgent, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(thirdEndpoint))));
+    }
+
+    @Test
+    void shouldSurfaceServerPublicationCapacityAndStopRejectedRedo() throws Exception {
+        int serverCapacity = Integer.getInteger(SERVER_PUBLICATION_CAPACITY_PROPERTY,
+            DEFAULT_SERVER_PUBLICATION_CAPACITY);
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+            String.valueOf(serverCapacity + 3));
+        AiService service = createAiService(properties);
+        String agentPrefix = randomServiceName("server-publication-capacity");
+        List<String> admittedAgents = new ArrayList<>();
+        List<List<Endpoint>> admittedEndpoints = new ArrayList<>();
+        addCleanup(() -> {
+            for (int i = 0; i < admittedAgents.size(); i++) {
+                service.deregisterAgentEndpoints(deregistration(admittedAgents.get(i),
+                    PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.get(i))));
+            }
+        });
+
+        for (int i = 0; i < serverCapacity - 1; i++) {
+            String agentName = agentPrefix + '-' + i;
+            Endpoint endpoint = endpoint(randomPort(), "/capacity", "server-" + i);
+            service.registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(endpoint)));
+            admittedAgents.add(agentName);
+            admittedEndpoints.add(Collections.singletonList(endpoint));
+        }
+
+        String burstAgent = agentPrefix + "-burst";
+        List<Endpoint> burstEndpoints = Arrays.asList(
+            endpoint(randomPort(), "/capacity", "burst-a"),
+            endpoint(randomPort(), "/capacity", "burst-b"),
+            endpoint(randomPort(), "/capacity", "burst-c"));
+        service.registerAgentEndpoints(registration(burstAgent, PROTOCOL_A2A, burstEndpoints));
+        admittedAgents.add(burstAgent);
+        admittedEndpoints.add(burstEndpoints);
+        service.registerAgentEndpoints(registration(burstAgent, PROTOCOL_A2A, burstEndpoints));
+
+        String overflowAgent = agentPrefix + "-overflow";
+        Endpoint overflowEndpoint = endpoint(randomPort(), "/capacity", "overflow");
+        NacosApiException rejected = assertThrows(NacosApiException.class,
+            () -> service.registerAgentEndpoints(registration(overflowAgent, PROTOCOL_A2A,
+                Collections.singletonList(overflowEndpoint))));
+        assertEquals(NacosException.OVER_THRESHOLD, rejected.getErrCode());
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            rejected.getDetailErrCode());
+
+        String probeAgent = agentPrefix + "-probe";
+        Endpoint probeEndpoint = endpoint(randomPort(), "/capacity", "probe");
+        NacosApiException probeRejected = assertThrows(NacosApiException.class,
+            () -> service.registerAgentEndpoints(registration(probeAgent, PROTOCOL_A2A,
+                Collections.singletonList(probeEndpoint))));
+        assertEquals(NacosException.OVER_THRESHOLD, probeRejected.getErrCode(),
+            "the first rejected publication must be removed from the local cache and redo state");
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            probeRejected.getDetailErrCode());
+
+        int burstIndex = admittedAgents.indexOf(burstAgent);
+        service.deregisterAgentEndpoints(deregistration(admittedAgents.remove(burstIndex),
+            PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.remove(burstIndex))));
+        service.registerAgentEndpoints(registration(overflowAgent, PROTOCOL_A2A,
+            Collections.singletonList(overflowEndpoint)));
+        admittedAgents.add(overflowAgent);
+        admittedEndpoints.add(Collections.singletonList(overflowEndpoint));
     }
     
     @Test
@@ -1252,6 +1407,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(result::shutdown);
         return result;
     }
+
+    private AiService createAiService(Properties properties) throws NacosException {
+        AiService result = AiFactory.createAiService(properties);
+        addCleanup(result::shutdown);
+        return result;
+    }
     
     private void createPublishedAgent(AgentMaintainerService maintainer, String namespaceId,
         String agentName, List<String> tags, List<String> protocols, boolean declaredEndpoint)
@@ -1435,6 +1596,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint result = new Endpoint();
         result.setUri(source.getUri());
         result.setTransport(source.getTransport());
+        return result;
+    }
+
+    private List<Endpoint> deregistrationEndpoints(List<Endpoint> sources) {
+        List<Endpoint> result = new ArrayList<>();
+        for (Endpoint source : sources) {
+            result.add(deregistrationEndpoint(source));
+        }
         return result;
     }
     

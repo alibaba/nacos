@@ -204,9 +204,11 @@ Form-based independent HTTP Publisher lifecycle, required headers, idempotency,
 and the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. The Endpoint row also
 cross-validates the published definition and Runtime state through Admin,
 Client, and Console reads. Querying with a Client id is explicitly covered as
-not creating an empty Client or Publisher. The Client-only renewal and
-Publisher-renewal separation is covered by the corresponding lifecycle unit
-tests.
+not creating an empty Client or Publisher. CI configures a small authoritative
+Server Publication soft watermark, allowing the same row to prove whole-batch
+crossing, atomic growth rejection, and slot reuse without creating 100 test
+entries. The Client-only renewal and Publisher-renewal separation is covered by
+the corresponding lifecycle unit tests.
 
 Protocol-neutral AI Resource Search coverage publishes one current online
 resource for each declared type (Agent, AgentSpec, Skill, Prompt, and MCP),

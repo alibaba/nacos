@@ -68,6 +68,7 @@ import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -108,6 +109,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
@@ -134,6 +136,10 @@ public class AiGrpcClient implements AiClientProxy {
     
     private final NacosClientProperties properties;
     
+    private volatile Consumer<AgentEndpointRegistrationBatch> agentEndpointPublicationCapacityRejectedHandler =
+        batch -> {
+        };
+    
     private SecurityProxy securityProxy;
     
     private NacosMcpServerCacheHolder mcpServerCacheHolder;
@@ -151,6 +157,16 @@ public class AiGrpcClient implements AiClientProxy {
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
         this.redoService = new AiGrpcRedoService(properties, this);
         this.properties = properties;
+    }
+    
+    /**
+     * Register the local publication-state cleanup invoked after an asynchronous quota reject.
+     *
+     * @param handler rejected publication cleanup
+     */
+    public void setAgentEndpointPublicationCapacityRejectedHandler(
+        Consumer<AgentEndpointRegistrationBatch> handler) {
+        this.agentEndpointPublicationCapacityRejectedHandler = handler;
     }
     
     private RpcClient buildRpcClient(NacosClientProperties properties) {
@@ -796,6 +812,14 @@ public class AiGrpcClient implements AiClientProxy {
     private void restorePublicationAfterNonRetryableFailure(String key,
         AgentEndpointRegistrationBatch previous, boolean previousRegistered,
         NacosException exception) {
+        if (isPublicationCapacityRejected(exception)) {
+            redoService.discardAgentEndpointPublication(key);
+            if (previous == null) {
+                return;
+            }
+            agentEndpointPublicationCapacityRejectedHandler.accept(previous);
+            return;
+        }
         if (exception.getErrCode() >= NacosException.SERVER_ERROR
             || exception.getErrCode() == NacosException.HTTP_CLIENT_ERROR_CODE) {
             return;
@@ -807,6 +831,12 @@ public class AiGrpcClient implements AiClientProxy {
                 redoService.agentEndpointPublicationRegistered(key);
             }
         }
+    }
+    
+    private boolean isPublicationCapacityRejected(NacosException exception) {
+        return exception instanceof NacosApiException
+            && ((NacosApiException) exception)
+                .getDetailErrCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode();
     }
     
     private boolean shouldRetryWithLegacyFormat(NacosException e) {
@@ -880,6 +910,12 @@ public class AiGrpcClient implements AiClientProxy {
                 if (NacosException.NO_RIGHT == errorCode) {
                     securityProxy.reLogin();
                 }
+                if (response.getErrorCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT
+                    .getCode()) {
+                    throw new NacosApiException(errorCode,
+                        ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
+                        response.getMessage());
+                }
                 throw new NacosException(errorCode, response.getMessage());
             }
             if (responseClass.isAssignableFrom(response.getClass())) {
@@ -922,7 +958,22 @@ public class AiGrpcClient implements AiClientProxy {
             || errorCode == ErrorCode.DATA_ACCESS_ERROR.getCode()) {
             return NacosException.SERVER_ERROR;
         }
+        if (errorCode == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode()) {
+            return NacosException.OVER_THRESHOLD;
+        }
         return errorCode;
+    }
+    
+    /**
+     * Discard a reconnect redo publication after the server rejects its capacity.
+     *
+     * @param key publication redo key
+     * @param batch rejected publication batch
+     */
+    public void discardAgentEndpointPublicationAfterCapacityRejection(String key,
+        AgentEndpointRegistrationBatch batch) {
+        redoService.discardAgentEndpointPublication(key);
+        agentEndpointPublicationCapacityRejectedHandler.accept(batch);
     }
     
     private Map<String, String> getSecurityHeaders(String namespace, String mcpName) {

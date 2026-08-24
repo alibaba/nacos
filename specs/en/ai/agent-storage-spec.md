@@ -696,6 +696,7 @@ are defined by the [AI Resource Search Spec](ai-resource-search-spec.md).
 | `runtimeVersion` | 64 characters. |
 | Canonical `versionRange` | 256 characters; one continuous interval. |
 | Registration batch | 1 to 1000 Endpoints. |
+| Runtime Endpoint publication entries per publisher Client | Soft watermark 100 by default; configurable with `nacos.ai.rad.capacity.publication.max-publications-per-client`. A complete batch admitted from below may cross it. |
 | Runtime Endpoints per Agent and protocol | 1000, subject to a lower cluster quota. |
 | Final Endpoint metadata | 32 public items; key 64 and value 256 characters. |
 | Final Naming metadata | Sum of Java `String.length()` for keys and values is 1024. |

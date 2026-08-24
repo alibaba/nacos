@@ -14,6 +14,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  RAD_SERVER_PUBLICATION_CAPACITY: '3'
+  RAD_CLIENT_PUBLICATION_CAPACITY: '3'
+  RAD_CLIENT_SUBSCRIPTION_CAPACITY: '3'
+
 jobs:
   integration-test:
     name: OpenAPI, Java SDK and Maintainer SDK Integration Test
@@ -45,6 +50,10 @@ jobs:
           sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.publication.max-publications-per-client=.*|nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+
+          echo "RAD capacity configuration:"
+          grep -Fx "nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}" "$PROP_FILE"
 
           echo "Starting server..."
           bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
@@ -89,16 +98,28 @@ jobs:
       - name: Run IT Tests
         run: |
           cd test
-          mvn -B clean verify -Pintegration-test
+          mvn -B clean verify -Pintegration-test \
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}"
 
       - name: Run Java SDK IT Tests
-        run: mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test -DskipTests=false
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
 
       - name: Run Maintainer SDK IT Tests
         run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test -DskipTests=false
 
       - name: Run Java SDK IT Tests With Jackson 3
-        run: mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test,jackson3-sdk-test -DskipTests=false
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify \
+            -Pjava-sdk-integration-test,jackson3-sdk-test \
+            -DskipTests=false \
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
 
       - name: Run Maintainer SDK IT Tests With Jackson 3
         run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests=false

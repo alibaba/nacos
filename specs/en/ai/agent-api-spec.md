@@ -127,6 +127,20 @@ complete replacement result. `getAll`, `selectOneHealthy`, protocol choice,
 priority/weight selection, and actual Agent calling are local SDK helpers, not
 additional remote operations.
 
+One SDK instance keeps at most 300 distinct local polling-subscription records
+by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
+limit. Repeating the same canonical Reference, Filter, and Listener identity is
+idempotent and consumes no new slot. A new subscription over the limit fails
+synchronously with `CLIENT_OVER_THRESHOLD` and
+`AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT`; it is not cached or scheduled.
+Unsubscribe and shutdown release the slot. The later server Watch binding MUST
+independently enforce the same default of 300 active Wire Watches per owner
+connection. The current SDK installs one subscription per public call. A later
+batched Wire Watch operation MUST apply the same soft pre-operation watermark:
+when current usage is below the watermark it admits the whole normalized batch
+even if the final count crosses it; at or above the watermark it rejects growth
+atomically and never partially caches a batch.
+
 An `AgentReference` with neither `version` nor `label` is the rollout-safe
 default: it returns latest definition metadata and Runtime Endpoints compatible
 with any current online Version. Explicit `label=latest` requests a strict
@@ -138,6 +152,19 @@ One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
 including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
 removed. The SDK stores that complete batch as redo intent.
+
+One SDK instance has a soft watermark of 100 Endpoint publication entries
+across all retained complete intents by default;
+`nacosAiAgentEndpointMaxPublications` configures the local watermark. When the
+pre-operation entry count is below the watermark, the SDK admits and caches a
+whole validated batch even if the resulting count crosses it. At or above the
+watermark, equal-size or shrinking replacement remains allowed, while a new
+identity or growing replacement is rejected atomically. The server remains
+authoritative and independently applies its configured per-Client watermark.
+A local or server publication-capacity rejection is terminal for that attempted
+identity: the public API throws the capacity exception and the SDK removes the
+rejected publication from every heartbeat and reconnect redo cache instead of
+retrying it indefinitely.
 
 `deregisterAgentEndpoints` remains a convenience method over natural keys. The
 SDK removes those keys from its expected batch and sends the complete remaining
@@ -342,9 +369,12 @@ identity object or accept partial Endpoint keys.
 The endpoint handlers are Naming adapters. Register validates and converts the
 submitted complete Endpoint batch to Naming Instances, then invokes Naming
 batch registration. Deregister invokes Naming whole-publication deregistration.
-They do not read or merge the previous publisher batch, add an Agent service
-lock, directly query Naming's client index, or scan other publishers during a
-write.
+They do not read or merge the previous publisher payload, add an Agent service
+lock, or scan other publishers during a write. The admission step counts
+Runtime Endpoint entries across only the current Client's complete Agent
+publication batches. It evaluates the pre-operation entry count together with
+the existing and requested target-batch sizes, and serializes that soft-watermark
+check with the Naming replacement for the same Client.
 
 Runtime Snapshot and Discover read the complete internal Naming
 `ServiceStorage` projection. They construct one binding from each Instance's
@@ -384,13 +414,14 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Repeat query carrying an existing Client id | Refresh Client liveness only; do not create a Client or renew Publisher |
 | HTTP timeout | Retry with the same client id and identical payload using backoff |
 | `HTTP_CLIENT_NOT_FOUND` | Mark local endpoint intent unregistered and redo each complete service batch |
+| Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
 | gRPC reconnect | Redo complete endpoint batches under the new connection id; local polling subscriptions require no server redo |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
-Parameter and authorization errors do not enter infinite redo.
+Parameter, authorization, and capacity errors do not enter infinite redo.
 
 ## 3. Admin API And Maintainer SDK
 
