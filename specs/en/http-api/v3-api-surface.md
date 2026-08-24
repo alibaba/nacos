@@ -248,7 +248,39 @@ The target does not add Client HTTP Watch or Endpoint-list GET APIs. Watch and
 push use the negotiated gRPC binding; runtime inspection uses the Admin or
 Console `/runtime-endpoints` path.
 
-## 9. Documentation Gap Notes
+## 9. Approved MCP Lifecycle Surface
+
+The following paths are the Experimental target management surface from the
+[MCP Server Spec](../ai/mcp-server-spec.md). They are not part of the current
+implemented inventory until their controllers, forms, authorization, domain
+services, and integration tests are present.
+
+Admin uses `/v3/admin/ai/mcp`; Console uses `/v3/console/ai/mcp` as a UI facade
+over the same relative lifecycle contract:
+
+| Relative path | Methods | Contract |
+| --- | --- | --- |
+| `/versions` | GET | List bounded MCP Version metadata and lifecycle status. |
+| `/version` | GET | Read one exact Version content and metadata. |
+| `/draft` | POST, PUT, DELETE | Create a draft, update only the current draft, or delete it. |
+| `/submit` | POST | Submit a draft through the ordinary publish Pipeline. |
+| `/publish` | POST | Publish a reviewed Version. |
+| `/force-publish` | POST | Perform an audited administrative Pipeline bypass. |
+| `/redraft` | POST | Return a reviewed Version to draft. |
+| `/online` | POST | Bring an offline Version online and make it latest. |
+| `/offline` | POST | Take an online Version offline and repair latest when needed. |
+| `/labels` | PUT | Update custom labels while ignoring a client-provided `latest`. |
+
+Existing MCP create/update/delete paths and parameter shapes remain
+compatibility-only direct-online facades. They are not copied into the new
+lifecycle forms. In particular, same-Version content overwrite remains
+available only through the historical update route.
+
+This target does not add MCP Client HTTP query, release, endpoint, heartbeat,
+or subscription paths. HTTP parity with the existing gRPC/Java Client surface
+is deferred to a separate design after canonical management migration.
+
+## 10. Documentation Gap Notes
 
 This is not a bug list. It records places where the current documentation and
 code appear to describe different surfaces.
@@ -276,7 +308,7 @@ code appear to describe different surfaces.
   module-level `ControllerAdvice` classes that may return plain text error
   bodies. They should converge to `NacosApiExceptionHandler` for v3 APIs.
 
-## 10. Deprecated Compatibility Notes
+## 11. Deprecated Compatibility Notes
 
 Some v3 AI APIs were released before this spec existed and were later replaced by
 clearer lifecycle or REST-style APIs. These old endpoints should be treated as

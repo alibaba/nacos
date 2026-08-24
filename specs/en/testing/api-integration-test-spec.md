@@ -189,3 +189,38 @@ the OpenAPI IT scenario matrix covers at least:
 Tests of asynchronous indexing use only bounded polling of public API results;
 they do not depend on a fixed sleep, internal database rows, or task execution
 order.
+
+## 10. MCP Migration And Lifecycle Scenarios
+
+When the MCP canonical migration or management lifecycle is implemented, the
+OpenAPI IT matrix must cover at least:
+
+- existing Admin and Console create/update/query/list/delete response shapes
+  before and after cutover, including the compatibility-only same-Version
+  overwrite and latest flag;
+- new Version list/detail and draft, submit, reviewed/publish, force-publish,
+  redraft, online/offline, custom-label, and invalid-state paths, with equivalent
+  Admin and Console semantics;
+- an enabled Resource exposing only online Versions through historical runtime
+  projections, and draft/reviewing/reviewed/offline Versions only through new
+  management reads;
+- legacy fixtures remaining wholly visible during `SYNCING`, idempotent
+  asynchronous reconciliation, all-member gating, zero-difference automatic
+  cutover, restart persistence, and no canonical-to-legacy fallback;
+- unchanged Server/Tools/Resources Config coordinates and bytes, except for the
+  deterministic Direct Server snapshot extension;
+- historical single- and multi-instance Direct snapshot materialization,
+  canonical reads that no longer depend on Naming, Direct projection retention
+  at cutover, and owner/hash-isolated deletion retry;
+- ordinary Service Ref non-ownership and no accidental delete of externally
+  owned Naming data;
+- missing content, invalid manifest, conflicting row, partial storage deletion,
+  and Direct mismatch returning controlled behavior while preventing cutover;
+  and
+- generic and MCP-specific Search, unified Import, and Registry-adaptor results
+  remaining eligible and current across the route transition.
+
+Migration tests assert only public behavior and durable restart outcomes. They
+may seed documented legacy fixtures through test setup, but must not use direct
+database-row assertions as the success contract. Every asynchronous condition
+uses bounded polling rather than a fixed sleep.
