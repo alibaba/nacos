@@ -452,7 +452,7 @@ All PRs must target the `develop` branch. Follow the [PR template](.github/PULL_
 
 **Pre-submission checklist**:
 ```bash
-mvn -B clean package apache-rat:check spotbugs:check -DskipTests
+mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests
 mvn clean install
 mvn clean test-compile failsafe:integration-test
 ```
