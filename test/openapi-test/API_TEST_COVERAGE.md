@@ -71,10 +71,11 @@ the covered login contract.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
-has three covered scenario rows and one partial row; the remaining gap is a
-live standalone-adaptor conformance suite. Its in-module contract coverage now
-also includes singular Agent catalog entries, A2A/Nacos representation selection
-and filtering, and exact Version/digest Agent artifact retrieval.
+has four covered scenario rows and no partial rows. Its standalone conformance
+suite publishes canonical resources through the main-server Admin APIs and then
+verifies the separate ARD port against the same shared index, including singular
+Agent catalog entries, A2A/Nacos representation selection and filtering,
+latest-Version eligibility, facets, and exact Version/digest artifacts.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
@@ -225,4 +226,4 @@ bounds, default namespace, and successful empty results.
 | Admin API | [ADMIN_API_TEST_SCENARIOS.md](ADMIN_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi` |
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
 | Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth` |
-| AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry` |
+| AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry`, `src/test/java/com/alibaba/nacos/test/openapi/ard` |
