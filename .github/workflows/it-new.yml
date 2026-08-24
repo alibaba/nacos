@@ -43,6 +43,8 @@ jobs:
           sed 's|nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
 
           echo "Starting server..."
           bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
@@ -77,6 +79,12 @@ jobs:
             exit 1
           fi
           echo "Server is up"
+          echo "Waiting for the ARD adaptor to launch on port 9080..."
+          if ! timeout 60s bash -c 'until curl -s localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to start"
+            exit 1
+          fi
+          echo "ARD adaptor is up"
 
       - name: Run IT Tests
         run: |
