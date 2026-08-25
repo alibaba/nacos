@@ -39,7 +39,7 @@ final class McpJsonValidationSupport {
     }
     
     static Object parseSingleValue(String json, String contractName) {
-        if (json == null || json.trim().isEmpty()) {
+        if (json == null) {
             throw new IllegalArgumentException(contractName + " JSON must not be empty");
         }
         validateSingleJsonValue(json, contractName);

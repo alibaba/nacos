@@ -36,6 +36,7 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -368,6 +369,9 @@ class NacosConfigAiResourceStorageTest {
     
     @Test
     void testParseInvalidFormatThrows() {
+        StorageKey singlePartKey = new StorageKey(NacosConfigAiResourceStorage.TYPE, "single");
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(singlePartKey));
         StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE, "only:two");
         assertThrows(IllegalArgumentException.class, () -> NacosConfigAiResourceStorage.parse(key));
     }
@@ -678,6 +682,8 @@ class NacosConfigAiResourceStorageTest {
         for (int i = 0; i < expectedTypes.size(); i++) {
             assertEquals(expectedTypes.get(i), formCaptor.getAllValues().get(i).getType());
         }
+        assertEquals(ConfigType.TEXT.getType(), ReflectionTestUtils.invokeMethod(
+            NacosConfigAiResourceStorage.class, "guessConfigType", ""));
     }
     
     @Test

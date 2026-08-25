@@ -21,8 +21,12 @@ import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
+import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
@@ -31,13 +35,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
@@ -58,6 +67,9 @@ class McpServingManifestStorageTest {
     private ConfigOperationService configOperationService;
     
     @Mock
+    private ConfigDetailService configDetailService;
+    
+    @Mock
     private SyncEffectService syncEffectService;
     
     private McpServingManifestStorage storage;
@@ -65,7 +77,7 @@ class McpServingManifestStorageTest {
     @BeforeEach
     void setUp() {
         storage = new McpServingManifestStorage(configQueryChainService,
-            configOperationService, syncEffectService);
+            configOperationService, configDetailService, syncEffectService);
     }
     
     @Test
@@ -97,6 +109,22 @@ class McpServingManifestStorageTest {
     }
     
     @Test
+    void testGetRejectsMissingOrConflictingQueryResponse() {
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(null);
+        assertEquals("MCP serving Manifest query returned no response",
+            assertThrows(NacosException.class, () -> storage.get("public", MCP_ID)).getErrMsg());
+        
+        ConfigQueryChainResponse conflict = new ConfigQueryChainResponse();
+        conflict.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT);
+        conflict.setMessage("conflict");
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(conflict);
+        assertEquals("MCP serving Manifest cannot be read: conflict",
+            assertThrows(NacosException.class, () -> storage.get("public", MCP_ID)).getErrMsg());
+    }
+    
+    @Test
     void testGetRejectsMalformedOrConflictingManifest() {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
             .thenReturn(foundResponse("not-json"));
@@ -112,6 +140,87 @@ class McpServingManifestStorageTest {
             .thenReturn(foundResponse("{}"));
         assertEquals("MCP serving Manifest has invalid identity fields",
             assertThrows(NacosException.class, () -> storage.get("public", MCP_ID)).getErrMsg());
+    }
+    
+    @Test
+    void testListPagesAndValidatesManifestCoordinates() throws Exception {
+        Page<ConfigInfo> page = new Page<>();
+        page.setPageNumber(2);
+        page.setPagesAvailable(3);
+        page.setTotalCount(5);
+        page.setPageItems(Collections.singletonList(configInfo(manifest())));
+        when(configDetailService.findConfigInfoPage(Constants.MCP_LIST_SEARCH_BLUR, 2, 2,
+            Constants.ALL_PATTERN, Constants.MCP_SERVER_VERSIONS_GROUP, "public",
+            Collections.emptyMap())).thenReturn(page);
+        
+        Page<McpServerVersionInfo> result = storage.list("public", 2, 2);
+        
+        assertEquals(2, result.getPageNumber());
+        assertEquals(3, result.getPagesAvailable());
+        assertEquals(5, result.getTotalCount());
+        assertEquals("public", result.getPageItems().get(0).getNamespaceId());
+        assertEquals(MCP_ID, result.getPageItems().get(0).getId());
+    }
+    
+    @Test
+    void testListRejectsInvalidPageAndStorageFailures() {
+        assertThrows(IllegalArgumentException.class, () -> storage.list("public", 0, 1));
+        assertThrows(IllegalArgumentException.class, () -> storage.list("public", 1, 0));
+        assertThrows(IllegalArgumentException.class,
+            () -> storage.list("invalid namespace", 1, 1));
+        verifyNoInteractions(configDetailService);
+        
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenThrow(new IllegalStateException("failed"));
+        assertEquals("MCP serving Manifest page cannot be read",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+    }
+    
+    @Test
+    void testListRejectsMissingPageItemsAndInvalidRows() {
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(null);
+        assertEquals("MCP serving Manifest query returned no page",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+        
+        Page<ConfigInfo> missingItems = new Page<>();
+        missingItems.setPageItems(null);
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(missingItems);
+        assertEquals("MCP serving Manifest query returned no page",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+        
+        Page<ConfigInfo> nullRow = configPage(null);
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(nullRow);
+        assertEquals("MCP serving Manifest page contains an empty row",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+    }
+    
+    @Test
+    void testListRejectsMalformedContentAndCoordinateMismatch() {
+        ConfigInfo malformed = new ConfigInfo();
+        malformed.setDataId(McpConfigUtils.formatServerVersionInfoDataId(MCP_ID));
+        malformed.setGroup(Constants.MCP_SERVER_VERSIONS_GROUP);
+        malformed.setContent("not-json");
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(configPage(malformed));
+        assertEquals("MCP serving Manifest page contains invalid content",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+        
+        ConfigInfo wrongDataId = configInfo(manifest());
+        wrongDataId.setDataId("wrong");
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(configPage(wrongDataId));
+        assertEquals("MCP serving Manifest identity does not match its Config coordinate",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+        
+        ConfigInfo wrongGroup = configInfo(manifest());
+        wrongGroup.setGroup("wrong");
+        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
+            any(), any(), any())).thenReturn(configPage(wrongGroup));
+        assertEquals("MCP serving Manifest identity does not match its Config coordinate",
+            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
     }
     
     @Test
@@ -147,6 +256,36 @@ class McpServingManifestStorageTest {
     }
     
     @Test
+    void testPublishRejectsNullManifestBeforeConfigAccess() {
+        assertThrows(IllegalArgumentException.class, () -> storage.publish("public", null));
+        verifyNoInteractions(configOperationService, syncEffectService);
+    }
+    
+    @Test
+    void testPublishWorksWithoutSyncEffectService() throws Exception {
+        McpServingManifestStorage storageWithoutSync = new McpServingManifestStorage(
+            configQueryChainService, configOperationService, configDetailService, null);
+        
+        storageWithoutSync.publish("public", manifest());
+        
+        verify(configOperationService).publishConfig(any(ConfigFormV3.class), any(), isNull());
+        verifyNoInteractions(syncEffectService);
+    }
+    
+    @Test
+    void testPublishWrapsSerializationFailure() {
+        McpServerVersionInfo manifest = manifest();
+        try (MockedStatic<JacksonUtils> jacksonMock = Mockito.mockStatic(JacksonUtils.class)) {
+            jacksonMock.when(() -> JacksonUtils.toJson(manifest))
+                .thenThrow(new NacosSerializationException());
+            assertEquals("MCP serving Manifest cannot be encoded",
+                assertThrows(NacosException.class,
+                    () -> storage.publish("public", manifest)).getErrMsg());
+        }
+        verifyNoInteractions(configOperationService, syncEffectService);
+    }
+    
+    @Test
     void testDeleteUsesExistingCoordinate() throws Exception {
         storage.delete("public", MCP_ID);
         verify(configOperationService).deleteConfig(
@@ -176,4 +315,21 @@ class McpServingManifestStorageTest {
         result.setContent(content);
         return result;
     }
+    
+    private ConfigInfo configInfo(McpServerVersionInfo manifest) {
+        ConfigInfo result = new ConfigInfo();
+        result.setDataId(McpConfigUtils.formatServerVersionInfoDataId(manifest.getId()));
+        result.setGroup(Constants.MCP_SERVER_VERSIONS_GROUP);
+        result.setContent(JacksonUtils.toJson(manifest));
+        return result;
+    }
+    
+    private Page<ConfigInfo> configPage(ConfigInfo configInfo) {
+        Page<ConfigInfo> result = new Page<>();
+        result.setPageItems(Collections.singletonList(configInfo));
+        result.setTotalCount(1);
+        result.setPagesAvailable(1);
+        return result;
+    }
+    
 }

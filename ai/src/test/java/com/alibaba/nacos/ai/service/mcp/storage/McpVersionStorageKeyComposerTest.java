@@ -84,6 +84,8 @@ class McpVersionStorageKeyComposerTest {
         assertThrows(IllegalArgumentException.class, () -> McpVersionStorageKeyComposer.compose(
             "public", "invalid", "1.0.0", false, false));
         assertThrows(IllegalArgumentException.class, () -> McpVersionStorageKeyComposer.compose(
+            "public", MCP_ID, null, false, false));
+        assertThrows(IllegalArgumentException.class, () -> McpVersionStorageKeyComposer.compose(
             "public", MCP_ID, "", false, false));
         assertThrows(IllegalArgumentException.class, () -> McpVersionStorageKeyComposer.compose(
             "public", MCP_ID, repeat("v", 65), false, false));
