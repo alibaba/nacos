@@ -129,9 +129,10 @@ create/upload draft
   删除操作必须返回失败，并保留重试所需的数据行和存储描述符。
 - 只有公开 API 契约明确说明缺失资源视为成功时，删除操作才应具备该幂等语义。
 - 删除 online 版本时，类型实现支持的情况下应更新 `onlineCnt` 或 labels。
-- 类型自有的派生投影不是 Version 内容存储。特别是 MCP Direct Naming 兼容投影，只能在 owner
-  和快照摘要校验通过后删除。投影物理清理失败必须创建耐久重试，且不得复活或回滚其他方面已经
-  成功的标准业务删除；Storage 内容对象失败仍遵循上述保留 row 的规则。
+- 领域规范要求的类型自有物理清理必须进入类型 Storage Delete Callback，并且在 Metadata Row
+  删除前完成。MCP 自有 Direct Naming 清理和 MCP Version Config 清理遵循相同的 Row 保留规则：
+  任一失败都表示删除尚未完成，并保留 Resource/Version Row 和 Descriptor 供重试。普通被引用
+  Service 和 Client 自有 Runtime 状态不属于类型自有清理目标。
 
 ## 7. Trace 与计数
 

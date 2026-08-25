@@ -162,23 +162,29 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
 
 ## 10. MCP 迁移与生命周期场景
 
-实现 MCP 标准迁移或管理生命周期时，OpenAPI IT 场景矩阵至少覆盖：
+实现 MCP 生命周期托管时，OpenAPI IT 场景矩阵至少覆盖：
 
-- 切换前后现有 Admin/Console create/update/query/list/delete 响应形态，包括兼容专用的同 Version
-  overwrite 和 latest 参数；
-- 新 Version list/detail 以及 Draft、Submit、Reviewed/Publish、Force Publish、Redraft、
+- `SYNCING` 期间和 `LIFECYCLE_MANAGED` 后，现有 Admin/Console
+  Create/Update/Query/List/Delete 请求与响应形态保持一致，包括兼容专用的同 Version
+  Overwrite 和 Latest 参数；
+- Name-Only、Name+ID 和历史 ID-Only 管理输入，包括规范化后的标准鉴权，以及 Resource
+  Alias 缺失、重复或冲突的受控错误；
+- 新 Version List/Detail 以及 Draft、Submit、Reviewed/Publish、Force Publish、Redraft、
   Online/Offline、自定义 Label 和非法状态路径，并保证 Admin 与 Console 语义等价；
-- Enable Resource 通过历史运行时投影只暴露 online Version，Draft/Reviewing/Reviewed/Offline
-  只通过新的管理读取暴露；
-- 历史 Fixture 在 `SYNCING` 期间保持完整可见、异步对账幂等、全节点门禁、零差异自动切换、
-  重启后状态保持，以及标准路径不回退历史数据；
-- Server/Tools/Resources Config 坐标和字节不变，唯一例外是确定性的 Direct Server 快照扩展；
-- 历史单/多 Instance Direct 快照物化、标准读取不再依赖 Naming、切换时保留 Direct 投影，
-  以及带 owner/hash 隔离的删除重试；
-- 普通 Service Ref 的非所有权边界，且不误删外部所有的 Naming 数据；
-- 内容缺失、非法 Manifest、row 冲突、Storage 部分删除失败和 Direct 不一致均表现为受控行为，
-  同时阻止切换；
-- 通用/MCP 专用 Search、统一 Import 和 Registry Adaptor 结果在路由切换期间保持候选资格和当前性。
+- Enable Resource 通过不变的历史 Serving 投影只暴露 Online Version，
+  Draft/Reviewing/Reviewed/Offline 只通过新的管理读取暴露；
+- 历史 Fixture 在 `SYNCING` 期间保持完整可见、异步对账幂等、全节点管理能力门禁、
+  零差异自动切换和重启后状态保持；
+- Manifest/Server/Tools/Resources Config 坐标和字节不变；对账不修改 Naming Service、
+  Instance、frontend/backend 或 Runtime Metadata；
+- Manifest-Last Publish、Offline 从 Serving View 移除但保留内容和 Direct Service，
+  以及旧 Config/Naming 消费者不会观察到不完整 Version 内容；
+- Version 与完整 Resource 删除、Manifest-First 停止 Serving、Direct 或内容清理失败后保留
+  Resource/Version Row、Manifest 删除后按 Deprecated ID 重试，并且不误删普通被引用 Service
+  或 Client Runtime 状态；
+- 内容缺失、非法 Manifest、Row 冲突和 Storage 部分删除失败均表现为受控行为，并阻止托管切换；
+- 通用/MCP 专用 Search 使用标准 `mcpName`、耐久异步收敛和历史 ID-Keyed 清理，同时保持
+  Unified Import 与 Registry Adaptor 在管理路由切换期间的兼容性。
 
 迁移测试只把公开行为和重启后的耐久结果作为断言契约。测试准备可以写入文档化的历史 Fixture，
 但不能用直接数据库 row 断言作为成功标准。所有异步条件都使用有界轮询，不使用固定 sleep。

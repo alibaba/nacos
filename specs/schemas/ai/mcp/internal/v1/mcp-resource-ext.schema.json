@@ -3,7 +3,7 @@
   "$id": "urn:nacos:schema:ai:mcp:internal:v1:mcp-resource-ext",
   "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0. This is an internal schema and not a public wire compatibility contract.",
   "title": "Nacos MCP Resource Extension Schema v1",
-  "description": "Internal ai_resource.ext contract for type=mcp. The compatibility MCP id is an alias and never part of canonical resource identity.",
+  "description": "Internal ai_resource.ext contract for type=mcp. The deprecated MCP id remains a physical-storage and legacy-API alias and never becomes canonical resource identity.",
   "x-status": "experimental",
   "x-visibility": "internal",
   "x-schema-version": 1,
@@ -31,7 +31,7 @@
         "mcpId": {
           "type": "string",
           "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
-          "description": "Historical UUID-shaped compatibility alias. It is returned by legacy MCP surfaces and composes existing Config data ids, but it does not participate in canonical identity, authorization, labels, or Runtime Naming identity."
+          "description": "Historical UUID-shaped compatibility alias. It composes existing Config data ids, remains visible on legacy MCP surfaces, and supports low-frequency legacy ID lookup through Resource rows. It does not participate in canonical identity, authorization, visibility, labels, Search identity, or Runtime Naming identity."
         }
       }
     }

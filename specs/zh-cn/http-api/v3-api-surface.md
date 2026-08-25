@@ -251,8 +251,14 @@ Admin 使用 `/v3/admin/ai/mcp`；Console 使用 `/v3/console/ai/mcp`，作为�
 现有 MCP create/update/delete 路径和参数形态作为兼容专用的 direct-online Facade 保留，
 不能复制为新的生命周期 Form。尤其是同 Version 内容覆盖只允许通过历史更新路由执行。
 
+新的 Lifecycle Form 使用 `namespaceId + mcpName` 定位 Resource，再增加精确
+`version` 定位 Version，不增加 `mcpId`。已经接受 `mcpId` 的历史 Admin、Console
+和 Maintainer HTTP 输入继续作为已废弃兼容字段；服务端通过 `AiResource.ext` 解析，
+校验同时提供的名称，再进入相同的 Name-Based 鉴权和 Lifecycle Service。现有响应 ID
+字段保持 Wire-Compatible。
+
 该目标不新增 MCP Client HTTP query、release、endpoint、heartbeat 或 subscription 路径。
-HTTP 与现有 gRPC/Java Client 表面对齐，需要等标准管理迁移完成后再独立设计。
+HTTP 与现有 gRPC/Java Client 表面对齐，需要等生命周期托管完成后再独立设计。
 
 ## 10. 文档 Gap 记录
 

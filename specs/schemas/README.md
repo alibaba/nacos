@@ -85,5 +85,5 @@ being accepted accidentally where another was expected.
 | `ai/agent/0.1.0/agent-management.schema.json` | `0.1.0` | Experimental | Public Agent management resources and bounded read views. |
 | `ai/agent/0.2.0/agent-artifact.schema.json` | `0.2.0` | Experimental | Version-pinned protocol-neutral Agent artifact for ARD and other registry adaptors. |
 | `ai/agent/internal/v1/agent-storage.schema.json` | `1` | Internal experimental | Agent resource extension, version content and storage pointer, Naming projection, codecs, composers, and digest contracts. |
-| `ai/mcp/internal/v1/mcp-resource-ext.schema.json` | `1` | Internal experimental | MCP Resource extension containing the historical UUID compatibility alias. |
-| `ai/mcp/internal/v1/mcp-version-storage.schema.json` | `1` | Internal experimental | MCP Version storage pointers, Direct Endpoint storage and downgrade projection, Versionless Runtime Naming publication, and migration marker contracts. |
+| `ai/mcp/internal/v1/mcp-resource-ext.schema.json` | `1` | Internal experimental | MCP Resource extension containing the deprecated physical-storage and legacy-API UUID alias. |
+| `ai/mcp/internal/v1/mcp-version-storage.schema.json` | `1` | Internal experimental | MCP Version storage pointers to unchanged Server, Tools, and Resources Config objects. |

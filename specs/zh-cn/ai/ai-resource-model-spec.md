@@ -113,18 +113,18 @@ provider 路由。缺少 provider 的历史存储描述归属于 `nacos_config`�
 [Agent 存储规范](agent-storage-spec.md)定义。Runtime Agent Endpoint 遵循客户端拥有的
 Naming 生命周期，不写入 `AiResourceVersion.storage`。
 
-对 `type=mcp`，标准资源名为 `mcpName`。Resource `ext` 只保存 Schema Version 和历史
-UUID 形态的 `mcpId` 兼容别名。Version `storage` descriptor 通过 allowlist 限定的
-`mcp-config-v1` key 格式指向现有 MCP Server 和可选 Tools/Resources Config 对象；它不会
-复制这些 payload，也不会把它们变成用户拥有的 Config 资源。历史 Direct Endpoint 是唯一的
-内容例外：其地址会物化到原 Server Config，使 Naming 降级为可重建的兼容投影。精确字段由
+对 `type=mcp`，标准资源名为 `mcpName`。Resource `ext` 只保存 Schema Version 和已废弃的
+UUID 形态 `mcpId` 物理存储及旧 API 别名。Version `storage` Descriptor 通过 Allowlist
+限定的 `mcp-config-v1` Key 格式指向现有 MCP Server 和可选 Tools/Resources Config 对象；
+它不会复制、重写或扩展这些 Payload，也不会把它们变成用户拥有的 Config 资源。精确字段由
 [MCP Server 规范](mcp-server-spec.md)以及 MCP
 [Resource 扩展](../../schemas/ai/mcp/internal/v1/mcp-resource-ext.schema.json)和
 [Version Storage](../../schemas/ai/mcp/internal/v1/mcp-version-storage.schema.json) Schema 定义。
 
 MCP Runtime Endpoint 不写入 `AiResourceVersion.storage`，而是使用客户端拥有的 Naming
 运行时状态。MCP 普通 Service Ref 仍归其 Naming 用户所有；MCP Direct 持久 Naming Service
-在 Version Config 快照完整后只作为类型自有的降级投影。
+继续作为当前 Endpoint 事实和兼容 Serving 契约，不会在生命周期托管时被 Version Config
+快照替代。
 
 ## 6. 可见性
 
