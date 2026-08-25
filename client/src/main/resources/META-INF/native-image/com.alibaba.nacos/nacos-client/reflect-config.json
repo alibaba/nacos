@@ -409,9 +409,9 @@
     {"name":"getType","parameterTypes":[] },
     {"name":"getTypeBytes","parameterTypes":[] },
     {"name":"setClientIp","parameterTypes":["java.lang.String"] },
-    {"name":"setClientIpBytes","parameterTypes":["com.google.protobuf.ByteString"] },
+    {"name":"setClientIpBytes","parameterTypes":["com.alibaba.nacos.shaded.com.google.protobuf.ByteString"] },
     {"name":"setType","parameterTypes":["java.lang.String"] },
-    {"name":"setTypeBytes","parameterTypes":["com.google.protobuf.ByteString"] }
+    {"name":"setTypeBytes","parameterTypes":["com.alibaba.nacos.shaded.com.google.protobuf.ByteString"] }
   ]
 },
 {
@@ -434,7 +434,7 @@
     {"name":"getMetadataBuilder","parameterTypes":[] },
     {"name":"hasBody","parameterTypes":[] },
     {"name":"hasMetadata","parameterTypes":[] },
-    {"name":"setBody","parameterTypes":["com.google.protobuf.Any"] },
+    {"name":"setBody","parameterTypes":["com.alibaba.nacos.shaded.com.google.protobuf.Any"] },
     {"name":"setMetadata","parameterTypes":["com.alibaba.nacos.api.grpc.auto.Metadata"] }
   ]
 },
@@ -822,8 +822,10 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
+    {"name":"<init>","parameterTypes":[] },
     {"name":"getAbilityTable","parameterTypes":[] },
-    {"name":"getModule","parameterTypes":[] }
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"setAbilityTable","parameterTypes":["java.util.Map"] }
   ]
 },
 {
@@ -1351,10 +1353,29 @@
     "methods":[{"name":"getEmptyRegistry","parameterTypes":[] }]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.census.InternalCensusStatsAccessor"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.census.InternalCensusTracingAccessor"
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolverProvider"
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.internal.JndiResourceResolverFactory"
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.internal.PickFirstLoadBalancerProvider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor",
+    "fields":[{"name":"runState"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.NettyChannelProvider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.UdsNettyChannelProvider"
   },
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.AbstractNettyHandler",
@@ -1374,6 +1395,9 @@
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$GrpcNegotiationHandler",
     "methods":[{"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$PlaintextHandler"
   },
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$ProtocolNegotiationHandler",
@@ -1404,6 +1428,17 @@
     "fields":[{"name":"refCnt"}]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext",
+    "fields":[{"name":"handlerState"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelOutboundBuffer",
+    "fields":[
+      {"name":"totalPendingSize"},
+      {"name":"unwritable"}
+    ]
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelDuplexHandler",
     "methods":[
       {"name":"bind","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
@@ -1429,6 +1464,17 @@
       {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] },
       {"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
     ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultChannelConfig",
+    "fields":[
+      {"name":"autoRead"},
+      {"name":"writeBufferWaterMark"}
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline",
+    "fields":[{"name":"estimatorHandle"}]
   },
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext",
@@ -1467,6 +1513,9 @@
     ]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel"
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel",
     "methods":[{"name":"<init>","parameterTypes":[] }]
   },
@@ -1491,8 +1540,34 @@
     ]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.DefaultAttributeMap",
+    "fields":[{"name":"attributes"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.Recycler$DefaultHandle",
+    "fields":[{"name":"state"}]
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.ReferenceCountUtil",
     "queryAllDeclaredMethods":true
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.ResourceLeakDetector$DefaultResourceLeak",
+    "fields":[
+      {"name":"droppedRecords"},
+      {"name":"head"}
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.DefaultPromise",
+    "fields":[{"name":"result"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor",
+    "fields":[
+      {"name":"state"},
+      {"name":"threadProperties"}
+    ]
   },
   {
     "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields",
@@ -1519,7 +1594,28 @@
     "fields":[{"name":"producerLimit"}]
   },
   {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueConsumerIndexField",
+    "fields":[{"name":"consumerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueProducerIndexField",
+    "fields":[{"name":"producerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueProducerLimitField",
+    "fields":[{"name":"producerLimit"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.okhttp.OkHttpChannelProvider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.override.ContextStorageOverride"
+  },
+  {
     "name":"com.alibaba.nacos.shaded.io.grpc.util.SecretRoundRobinLoadBalancerProvider$Provider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl"
   },
 {
   "name":"io.grpc.internal.DnsNameResolverProvider"
