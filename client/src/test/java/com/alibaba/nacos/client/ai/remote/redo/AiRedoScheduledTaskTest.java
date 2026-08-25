@@ -396,7 +396,8 @@ class AiRedoScheduledTaskTest {
                 publication));
         when(aiGrpcRedoService.isConnected()).thenReturn(true);
         when(aiGrpcClient.isEnable()).thenReturn(true);
-        doThrow(new NacosException(NacosException.OVER_THRESHOLD, "throttled"))
+        doThrow(new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.SERVER_ERROR, "throttled"))
             .when(aiGrpcClient).doRegisterAgentEndpoints(publication.getKey(), publication.get());
         
         task.run();

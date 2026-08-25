@@ -402,6 +402,17 @@ class AiHttpClientProxyAgentTest {
     }
     
     @Test
+    void nonCapacityApiThresholdFailureIsRetried() throws Exception {
+        doThrow(new NacosApiException(NacosException.OVER_THRESHOLD, ErrorCode.SERVER_ERROR,
+            "throttled")).doReturn(success(new ClientLivenessInfo())).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        
+        assertNotNull(proxy.registerAgentEndpoints(registrationBatch(null)));
+        verify(restTemplate, times(2)).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class));
+    }
+    
+    @Test
     void forbiddenReloginsAndInvalidSuccessPayloadsAreRejected() throws Exception {
         doReturn(error(403, "forbidden")).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));

@@ -131,6 +131,21 @@ class AgentRuntimePublicationCapacityGateTest {
     }
     
     @Test
+    void testEmptyBatchPublicationConsumesNoCapacity() throws NacosApiException {
+        Service empty = agent("empty");
+        Service target = agent("new");
+        when(clientManager.getClient("client-1")).thenReturn(client);
+        when(client.getAllPublishedService()).thenReturn(Collections.singletonList(empty));
+        when(client.getInstancePublishInfo(empty)).thenReturn(new BatchInstancePublishInfo());
+        when(client.getInstancePublishInfo(target)).thenReturn(null);
+        AtomicBoolean invoked = new AtomicBoolean();
+        
+        gate(1).register("client-1", target, 1, () -> invoked.set(true));
+        
+        assertTrue(invoked.get());
+    }
+    
+    @Test
     void testAtCapacityReplacementMayStayEqualOrShrinkButCannotGrow()
         throws NacosApiException {
         Service replacement = agent("old");

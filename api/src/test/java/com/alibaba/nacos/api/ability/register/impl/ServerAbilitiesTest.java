@@ -41,10 +41,7 @@ class ServerAbilitiesTest {
     }
     
     @Test
-    void testSupportAgentDiscoveryAbilities() {
-        assertTrue(
-            ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_DISCOVERY_V1));
-        assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_ENDPOINT_V1));
-        assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_AGENT_PUBLISH_V1));
+    void testSupportRadV1Ability() {
+        assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_RAD_V1));
     }
 }

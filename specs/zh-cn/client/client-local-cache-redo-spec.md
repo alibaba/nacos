@@ -163,6 +163,12 @@ gRPC Endpoint 意图归属于当前 connection id。Reconnect 后，SDK 获取�
 期望分组。HTTP 与 gRPC Publisher record 必须隔离；一种 Transport 不得注销另一种
 Transport 拥有的 Contribution。
 
+当 Agent Transport 为 `AUTO` 时，Publication 首次准备发送前选择并缓存
+`ownerTransport`。同一 `(namespaceId, agentName, protocol)` 后续完整 Batch 替换、部分
+注销、整份注销、HTTP Heartbeat 和 Redo 均使用该 owner。Client 可同时持有由 HTTP 和
+gRPC 分别拥有的不同 Publication，但不得因为连接状态变化迁移一个已存在 Publication 的
+owner，也不得让 HTTP maintenance 处理 gRPC-owned record。
+
 SDK 默认对全部已保留完整 Publication Batch 中的 Runtime Endpoint 条目使用 100 的软水位，
 可通过 `nacosAiAgentEndpointMaxPublications` 配置。一次原子 Register 前的条目数低于
 水位时，SDK 整批保留已校验 Batch，即使完成后越过水位；已达到或超过水位时仍允许等量

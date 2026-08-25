@@ -212,6 +212,48 @@ write timeout, an SDK may change transport only when it knows the server did
 not process the request. An unknown gRPC write result must not be blindly
 repeated through HTTP.
 
+#### 2.2.1 Java SDK Agent Transport Modes
+
+The Java SDK configures protocol-neutral Agent/RAD operations with
+`nacosAiTransportMode`. Its public values are `grpc`, `http`, and `auto`, and
+the unset default remains `grpc`. Values are case-insensitive, but surrounding
+whitespace and unknown values are rejected while creating `AiService`. This
+property controls only the protocol-neutral Agent operations in this section;
+it does not change the existing transport contracts of MCP, legacy A2A,
+Prompt, Skill, or AgentSpec.
+
+- `grpc`: synchronously attempts the initial gRPC connection while creating the
+  SDK and keeps reconnecting asynchronously after failure, without HTTP fallback;
+- `http`: does not start gRPC initially for protocol-neutral Agent operations.
+  Another AI feature that only supports gRPC may start the shared gRPC client
+  lazily under its existing contract;
+- `auto`: also attempts gRPC synchronously during SDK creation. An operation
+  prefers gRPC only when the connection is `RUNNING` and the complete
+  `SERVER_RAD_V1` ability is negotiated; otherwise that invocation uses HTTP
+  immediately and never waits for a background probe.
+
+In `auto`, the client suspends the initial reconnect loop and settles Agent
+routing on HTTP only when gRPC has never connected, remains `STARTING`, reaches
+the configured gRPC retry count in failed asynchronous initial reconnects, and
+at least one Agent HTTP operation has succeeded. `UNHEALTHY` means that a
+connection existed previously and is not eligible for this startup fallback.
+If another feature of the same `AiService` explicitly requires gRPC, the client
+resumes and keeps retrying that connection, while Agent routing may remain on
+its settled HTTP choice.
+
+Search and Discover are reads. In `auto`, a connection-class failure after
+selecting gRPC may be reread through HTTP. Definite business failures such as
+authorization, validation, conflict, not-found, and capacity errors do not
+trigger fallback. A connection-class failure is limited to a disconnected or
+unregistered RPC connection, a connection that is no longer `RUNNING` after
+the failed invocation, or an underlying gRPC `UNAVAILABLE` status.
+Generic `SERVER_ERROR`, `BAD_GATEWAY`, unsupported ability/handler errors, and
+other server responses are not transport evidence and must remain visible to
+the caller. Definition publication never crosses transports after it is handed
+to one transport. Endpoint Publication selects an owner transport on its first
+send and keeps that owner for replacement, deregistration, heartbeat, and redo
+throughout the Publication lifetime.
+
 ### 2.3 Client HTTP Paths
 
 | Method | Path | Input | Result |
@@ -392,9 +434,14 @@ The target ability keys are:
 
 | Constant | Wire key | Meaning |
 |---|---|---|
-| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search and Discover payloads |
-| `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD endpoint publication payloads |
-| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server accepts generic code-first Agent publication payloads |
+| `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 contract |
+
+This ability is a compatibility and release unit rather than a per-handler
+inventory. It covers Agent definition publication, Search and Discover, and
+Runtime Endpoint publication because Nacos 3.3 implements, advertises, and
+tests them as one RAD v1 capability set. A future contract that can be deployed
+or enabled independently, such as server Watch/Push, must use a separate
+ability key.
 
 Legacy `SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and
 `SDK_AGENT_REGISTRY` gate only the old A2A contract. Absence of a new ability

@@ -189,6 +189,14 @@ old connection unregistered, and replays complete desired groups under the new
 connection. HTTP and gRPC publisher records stay separate; one transport must
 not deregister contributions owned by the other.
 
+In Agent `AUTO` transport mode, a Publication selects and caches its
+`ownerTransport` before the first send. Subsequent complete-Batch replacement,
+partial deregistration, whole-publication deregistration, HTTP heartbeat, and
+redo for the same `(namespaceId, agentName, protocol)` use that owner. A client
+may concurrently hold different Publications owned by HTTP and gRPC, but a
+connection-state change never migrates an existing Publication owner, and HTTP
+maintenance never processes a gRPC-owned record.
+
 The SDK uses a soft watermark of 100 Runtime Endpoint entries across retained
 complete publication batches by default, configurable with
 `nacosAiAgentEndpointMaxPublications`. If the entry count before an atomic
