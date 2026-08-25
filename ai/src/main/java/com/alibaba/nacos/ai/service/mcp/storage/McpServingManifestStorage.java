@@ -113,18 +113,21 @@ public class McpServingManifestStorage {
     }
     
     /**
-     * Page historical serving Manifests in one Namespace.
+     * Page historical serving Manifests in one Namespace for lifecycle reconciliation only.
      *
-     * <p>The scan remains encapsulated by Manifest Storage so lifecycle reconciliation never
-     * depends on the process-local MCP index or calls Config persistence directly.</p>
+     * <p>This is a temporary migration scan. It must not be reused for serving queries,
+     * management listing, identity resolution, or other MCP features. The scan remains
+     * encapsulated by Manifest Storage so historical reconciliation never depends on the
+     * process-local MCP index or calls Config persistence directly. Row-level decoding failures
+     * are returned as diagnostics so valid historical Manifests can still be reconciled.</p>
      *
      * @param namespaceId namespace identifier
      * @param pageNo one-based page number
      * @param pageSize positive page size
-     * @return decoded and coordinate-validated Manifests
-     * @throws NacosException when Config paging or decoding fails
+     * @return decoded and coordinate-validated Manifests plus row-level failures
+     * @throws NacosException when Config paging fails
      */
-    public Page<McpServerVersionInfo> list(String namespaceId, int pageNo, int pageSize)
+    public ReconciliationPage list(String namespaceId, int pageNo, int pageSize)
         throws NacosException {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         if (pageNo <= 0 || pageSize <= 0) {
@@ -141,16 +144,28 @@ public class McpServingManifestStorage {
         if (configPage == null || configPage.getPageItems() == null) {
             throw storageFailure("MCP serving Manifest query returned no page", null);
         }
+        ReconciliationPage result = new ReconciliationPage(Collections.emptyList());
         List<McpServerVersionInfo> manifests = new ArrayList<>(configPage.getPageItems().size());
         for (ConfigInfo configInfo : configPage.getPageItems()) {
-            manifests.add(decodeListedManifest(namespaceId, configInfo));
+            try {
+                manifests.add(decodeListedManifest(namespaceId, configInfo));
+            } catch (NacosException e) {
+                result.addFailure(listedManifestFailure(namespaceId, configInfo, e));
+            }
         }
-        Page<McpServerVersionInfo> result = new Page<>();
         result.setPageNumber(pageNo);
         result.setPagesAvailable(configPage.getPagesAvailable());
         result.setTotalCount(configPage.getTotalCount());
         result.setPageItems(manifests);
         return result;
+    }
+    
+    private String listedManifestFailure(String namespaceId, ConfigInfo configInfo,
+        NacosException cause) {
+        String dataId = configInfo == null || StringUtils.isBlank(configInfo.getDataId())
+            ? "<unknown>" : configInfo.getDataId();
+        return "Invalid historical MCP serving Manifest " + namespaceId + '/' + dataId + ": "
+            + cause.getErrMsg();
     }
     
     /**
@@ -246,5 +261,39 @@ public class McpServingManifestStorage {
     private static NacosException storageFailure(String message, Throwable cause) {
         return cause == null ? new NacosException(NacosException.SERVER_ERROR, message)
             : new NacosException(NacosException.SERVER_ERROR, message, cause);
+    }
+    
+    /**
+     * Migration-only Manifest page with row-level diagnostics.
+     *
+     * @author Nacos
+     */
+    public static final class ReconciliationPage extends Page<McpServerVersionInfo> {
+        
+        private static final long serialVersionUID = 3391973742548073578L;
+        
+        private final List<String> failures = new ArrayList<>();
+        
+        /**
+         * Create a migration scan page with existing diagnostics.
+         *
+         * @param failures non-null existing row-level scan failures
+         */
+        public ReconciliationPage(List<String> failures) {
+            this.failures.addAll(failures);
+        }
+        
+        /**
+         * Return immutable row-level scan failures.
+         *
+         * @return row-level scan failures
+         */
+        public List<String> getFailures() {
+            return Collections.unmodifiableList(failures);
+        }
+        
+        private void addFailure(String failure) {
+            failures.add(failure);
+        }
     }
 }

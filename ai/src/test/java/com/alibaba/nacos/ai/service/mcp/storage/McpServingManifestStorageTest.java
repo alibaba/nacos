@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.mcp.storage;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage.ReconciliationPage;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -40,11 +41,13 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -153,11 +156,12 @@ class McpServingManifestStorageTest {
             Constants.ALL_PATTERN, Constants.MCP_SERVER_VERSIONS_GROUP, "public",
             Collections.emptyMap())).thenReturn(page);
         
-        Page<McpServerVersionInfo> result = storage.list("public", 2, 2);
+        ReconciliationPage result = storage.list("public", 2, 2);
         
         assertEquals(2, result.getPageNumber());
         assertEquals(3, result.getPagesAvailable());
         assertEquals(5, result.getTotalCount());
+        assertTrue(result.getFailures().isEmpty());
         assertEquals("public", result.getPageItems().get(0).getNamespaceId());
         assertEquals(MCP_ID, result.getPageItems().get(0).getId());
     }
@@ -177,7 +181,7 @@ class McpServingManifestStorageTest {
     }
     
     @Test
-    void testListRejectsMissingPageItemsAndInvalidRows() {
+    void testListRejectsMissingPageItemsAndRecordsInvalidRows() throws Exception {
         when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
             any(), any(), any())).thenReturn(null);
         assertEquals("MCP serving Manifest query returned no page",
@@ -193,34 +197,42 @@ class McpServingManifestStorageTest {
         Page<ConfigInfo> nullRow = configPage(null);
         when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
             any(), any(), any())).thenReturn(nullRow);
-        assertEquals("MCP serving Manifest page contains an empty row",
-            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+        ReconciliationPage result = storage.list("public", 1, 1);
+        assertTrue(result.getPageItems().isEmpty());
+        assertEquals(1, result.getFailures().size());
+        assertTrue(result.getFailures().get(0).contains("<unknown>"));
     }
     
     @Test
-    void testListRejectsMalformedContentAndCoordinateMismatch() {
+    void testListContinuesAfterMalformedContentAndCoordinateMismatch() throws Exception {
         ConfigInfo malformed = new ConfigInfo();
         malformed.setDataId(McpConfigUtils.formatServerVersionInfoDataId(MCP_ID));
         malformed.setGroup(Constants.MCP_SERVER_VERSIONS_GROUP);
         malformed.setContent("not-json");
-        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
-            any(), any(), any())).thenReturn(configPage(malformed));
-        assertEquals("MCP serving Manifest page contains invalid content",
-            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
-        
         ConfigInfo wrongDataId = configInfo(manifest());
         wrongDataId.setDataId("wrong");
-        when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
-            any(), any(), any())).thenReturn(configPage(wrongDataId));
-        assertEquals("MCP serving Manifest identity does not match its Config coordinate",
-            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
-        
         ConfigInfo wrongGroup = configInfo(manifest());
         wrongGroup.setGroup("wrong");
+        McpServerVersionInfo validManifest = manifest();
+        validManifest.setName("valid");
+        ConfigInfo valid = configInfo(validManifest);
+        Page<ConfigInfo> page = new Page<>();
+        page.setPageItems(Arrays.asList(malformed, valid, wrongDataId, wrongGroup));
+        page.setTotalCount(4);
+        page.setPagesAvailable(1);
         when(configDetailService.findConfigInfoPage(any(), anyInt(), anyInt(), any(),
-            any(), any(), any())).thenReturn(configPage(wrongGroup));
-        assertEquals("MCP serving Manifest identity does not match its Config coordinate",
-            assertThrows(NacosException.class, () -> storage.list("public", 1, 1)).getErrMsg());
+            any(), any(), any())).thenReturn(page);
+        
+        ReconciliationPage result = storage.list("public", 1, 10);
+        
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("valid", result.getPageItems().get(0).getName());
+        assertEquals(3, result.getFailures().size());
+        assertTrue(result.getFailures().stream().anyMatch(message -> message.contains("wrong")));
+        assertTrue(result.getFailures().stream()
+            .anyMatch(message -> message.contains("invalid content")));
+        assertTrue(result.getFailures().stream()
+            .anyMatch(message -> message.contains("identity does not match")));
     }
     
     @Test

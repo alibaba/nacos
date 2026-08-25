@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
+import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage.ReconciliationPage;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
@@ -208,13 +209,21 @@ public class McpLifecycleReconciliationTask
         Set<String> manifestNames = new LinkedHashSet<>();
         Map<String, String> idsByName = new HashMap<>();
         Map<String, String> namesById = new HashMap<>();
+        boolean manifestScanComplete = true;
         int pageNo = 1;
         int pagesAvailable = 1;
         while (pageNo <= pagesAvailable) {
             lease.assertOwned();
-            Page<McpServerVersionInfo> page = manifestStorage.list(namespaceId, pageNo,
+            ReconciliationPage page = manifestStorage.list(namespaceId, pageNo,
                 SCAN_PAGE_SIZE);
             pagesAvailable = resolvePages(page, pageNo, SCAN_PAGE_SIZE);
+            if (!page.getFailures().isEmpty()) {
+                manifestScanComplete = false;
+                for (String failure : page.getFailures()) {
+                    stats.recordFailure(failure);
+                    LOGGER.warn("{}", failure);
+                }
+            }
             for (McpServerVersionInfo manifest : page.getPageItems()) {
                 lease.assertOwned();
                 stats.manifests++;
@@ -237,7 +246,12 @@ public class McpLifecycleReconciliationTask
             }
             pageNo++;
         }
-        detectOrphans(namespaceId, manifestNames, lease, stats);
+        if (manifestScanComplete) {
+            detectOrphans(namespaceId, manifestNames, lease, stats);
+        } else {
+            LOGGER.warn("Skip MCP orphan detection in namespace {} because the historical "
+                + "Manifest scan was incomplete", namespaceId);
+        }
     }
     
     private void detectOrphans(String namespaceId, Set<String> manifestNames,

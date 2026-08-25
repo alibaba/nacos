@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
+import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage.ReconciliationPage;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
@@ -115,7 +116,8 @@ class McpLifecycleReconciliationTaskTest {
             .thenReturn(notFoundResponse());
         lenient().when(namespaceOperationService.getNamespaceList())
             .thenReturn(Collections.singletonList(new Namespace(PUBLIC_NAMESPACE, "public")));
-        lenient().when(manifestStorage.list(any(), anyInt(), eq(100))).thenReturn(emptyPage());
+        lenient().when(manifestStorage.list(any(), anyInt(), eq(100)))
+            .thenReturn(emptyManifestPage());
         lenient().when(resourcePersistService.list(any(QueryCondition.class), anyInt(), eq(100)))
             .thenReturn(emptyPage());
     }
@@ -135,7 +137,7 @@ class McpLifecycleReconciliationTaskTest {
     void testExecutePersistsChangedSyncingProgressAndReleasesLease() throws Exception {
         McpServerVersionInfo manifest = manifest("demo", MCP_ID);
         when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100))
-            .thenReturn(page(Collections.singletonList(manifest), 1, 1));
+            .thenReturn(manifestPage(Collections.singletonList(manifest), 1, 1));
         when(reconciler.reconcile(PUBLIC_NAMESPACE, manifest)).thenReturn(2);
         
         task.executeReconciliation();
@@ -187,10 +189,10 @@ class McpLifecycleReconciliationTaskTest {
         McpServerVersionInfo duplicate = manifest("demo",
             "11111111-1111-1111-1111-111111111111");
         when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100))
-            .thenReturn(page(Collections.singletonList(first), 101, 0));
+            .thenReturn(manifestPage(Collections.singletonList(first), 101, 0));
         when(manifestStorage.list(PUBLIC_NAMESPACE, 2, 100))
-            .thenReturn(page(Collections.singletonList(duplicate), 101, 0));
-        when(manifestStorage.list(TEAM_NAMESPACE, 1, 100)).thenReturn(emptyPage());
+            .thenReturn(manifestPage(Collections.singletonList(duplicate), 101, 0));
+        when(manifestStorage.list(TEAM_NAMESPACE, 1, 100)).thenReturn(emptyManifestPage());
         
         task.executeReconciliation();
         
@@ -213,7 +215,7 @@ class McpLifecycleReconciliationTaskTest {
         McpServerVersionInfo second = manifest("second",
             "11111111-1111-1111-1111-111111111111");
         when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100))
-            .thenReturn(page(Arrays.asList(first, second), 2, 1));
+            .thenReturn(manifestPage(Arrays.asList(first, second), 2, 1));
         when(reconciler.reconcile(PUBLIC_NAMESPACE, first))
             .thenThrow(new IllegalStateException("conflict"));
         when(reconciler.reconcile(PUBLIC_NAMESPACE, second)).thenReturn(1);
@@ -225,6 +227,37 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(1, progress.get("failed"));
         assertEquals(1, progress.get("changed"));
         assertTrue(String.valueOf(progress.get("lastError")).contains("first"));
+    }
+    
+    @Test
+    void testExecuteContinuesAfterInvalidManifestRowsAndSkipsUnsafeOrphanScan()
+        throws Exception {
+        when(namespaceOperationService.getNamespaceList()).thenReturn(Arrays.asList(
+            new Namespace(TEAM_NAMESPACE, "team"),
+            new Namespace(PUBLIC_NAMESPACE, "public")));
+        McpServerVersionInfo publicManifest = manifest("public-demo", MCP_ID);
+        McpServerVersionInfo teamManifest = manifest("team-demo",
+            "11111111-1111-1111-1111-111111111111");
+        when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100)).thenReturn(manifestPage(
+            Collections.singletonList(publicManifest), 2, 1,
+            "Invalid historical MCP serving Manifest public/broken"));
+        when(manifestStorage.list(TEAM_NAMESPACE, 1, 100)).thenReturn(manifestPage(
+            Collections.singletonList(teamManifest), 1, 1));
+        
+        task.executeReconciliation();
+        
+        verify(reconciler).reconcile(PUBLIC_NAMESPACE, publicManifest);
+        verify(reconciler).reconcile(TEAM_NAMESPACE, teamManifest);
+        ArgumentCaptor<QueryCondition> conditionCaptor =
+            ArgumentCaptor.forClass(QueryCondition.class);
+        verify(resourcePersistService).list(conditionCaptor.capture(), eq(1), eq(100));
+        assertEquals(TEAM_NAMESPACE, conditionCaptor.getValue().getNamespaceId());
+        Map<?, ?> progress = capturedProgress();
+        assertEquals(2, progress.get("namespaces"));
+        assertEquals(2, progress.get("manifests"));
+        assertEquals(1, progress.get("failed"));
+        assertEquals(false, progress.get("zeroDifference"));
+        assertTrue(String.valueOf(progress.get("lastError")).contains("public/broken"));
     }
     
     @Test
@@ -554,6 +587,19 @@ class McpLifecycleReconciliationTaskTest {
     
     private <T> Page<T> emptyPage() {
         return page(Collections.emptyList(), 0, 0);
+    }
+    
+    private ReconciliationPage emptyManifestPage() {
+        return manifestPage(Collections.emptyList(), 0, 0);
+    }
+    
+    private ReconciliationPage manifestPage(List<McpServerVersionInfo> items, int totalCount,
+        int pagesAvailable, String... failures) {
+        ReconciliationPage result = new ReconciliationPage(Arrays.asList(failures));
+        result.setPageItems(items);
+        result.setTotalCount(totalCount);
+        result.setPagesAvailable(pagesAvailable);
+        return result;
     }
     
     private <T> Page<T> page(List<T> items, int totalCount, int pagesAvailable) {
