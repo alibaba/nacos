@@ -58,6 +58,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -210,6 +211,22 @@ class McpLifecycleReconciliationTaskTest {
     }
     
     @Test
+    void testExecuteDetectsDuplicateManifestIdAcrossDifferentNames() throws Exception {
+        McpServerVersionInfo first = manifest("first", MCP_ID);
+        McpServerVersionInfo duplicate = manifest("second", MCP_ID);
+        when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100))
+            .thenReturn(manifestPage(Arrays.asList(first, duplicate), 2, 1));
+        
+        task.executeReconciliation();
+        
+        verify(reconciler).reconcile(PUBLIC_NAMESPACE, first);
+        verify(reconciler, never()).reconcile(PUBLIC_NAMESPACE, duplicate);
+        Map<?, ?> progress = capturedProgress();
+        assertEquals(2, progress.get("manifests"));
+        assertEquals(1, progress.get("failed"));
+    }
+    
+    @Test
     void testExecuteContinuesAfterResourceFailureAndPersistsLastError() throws Exception {
         McpServerVersionInfo first = manifest("first", MCP_ID);
         McpServerVersionInfo second = manifest("second",
@@ -298,6 +315,32 @@ class McpLifecycleReconciliationTaskTest {
     }
     
     @Test
+    void testExecuteRejectsOtherInvalidResourceRowsAndAcceptsNonLegacyRows() throws Exception {
+        AiResource wrongType = legacyResource("wrong-type");
+        wrongType.setType(AiResourceConstants.RESOURCE_TYPE_SKILL);
+        AiResource blankName = legacyResource(" ");
+        AiResource nonLegacy = legacyResource("local");
+        nonLegacy.setFrom("local");
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(100)))
+            .thenReturn(page(Collections.singletonList(null), 1, 1),
+                page(Collections.singletonList(wrongType), 1, 1),
+                page(Collections.singletonList(blankName), 1, 1),
+                page(Collections.singletonList(nonLegacy), 1, 1));
+        
+        task.executeReconciliation();
+        task.executeReconciliation();
+        task.executeReconciliation();
+        task.executeReconciliation();
+        
+        verify(resourcePersistService, org.mockito.Mockito.times(4))
+            .list(any(QueryCondition.class), eq(1), eq(100));
+        Map<?, ?> progress = capturedProgress();
+        assertEquals(0, progress.get("failed"));
+        assertEquals(0, progress.get("orphaned"));
+        assertEquals(true, progress.get("zeroDifference"));
+    }
+    
+    @Test
     void testExecuteRejectsNullManifestPage() throws Exception {
         when(manifestStorage.list(PUBLIC_NAMESPACE, 1, 100)).thenReturn(null);
         
@@ -320,6 +363,20 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(false, progress.get("completeNamespaceScan"));
         assertEquals(false, progress.get("zeroDifference"));
         assertTrue(((Number) progress.get("failed")).intValue() > 0);
+    }
+    
+    @Test
+    void testExecuteFallsBackForNullEmptyAndBlankNamespaceLists() throws Exception {
+        when(namespaceOperationService.getNamespaceList()).thenReturn(null,
+            Collections.emptyList(),
+            Arrays.asList(null, new Namespace(" ", "blank")));
+        
+        task.executeReconciliation();
+        task.executeReconciliation();
+        task.executeReconciliation();
+        
+        verify(manifestStorage, org.mockito.Mockito.times(3))
+            .list(PUBLIC_NAMESPACE, 1, 100);
     }
     
     @Test
@@ -425,6 +482,17 @@ class McpLifecycleReconciliationTaskTest {
             .publishConfig(any(), any(), isNull());
         task.executeReconciliation();
         verifyNoInteractions(manifestStorage, reconciler);
+    }
+    
+    @Test
+    void testReadLeaseTreatsNullAndBlankResponsesAsAbsent() {
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(null);
+        assertNull(ReflectionTestUtils.invokeMethod(task, "readLease"));
+        
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(foundResponse(" ", "md5"));
+        assertNull(ReflectionTestUtils.invokeMethod(task, "readLease"));
     }
     
     @Test

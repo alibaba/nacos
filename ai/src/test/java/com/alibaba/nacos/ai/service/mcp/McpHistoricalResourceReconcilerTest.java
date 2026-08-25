@@ -55,6 +55,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -128,6 +129,25 @@ class McpHistoricalResourceReconcilerTest {
         assertResource(resourceCaptor.getValue(), manifest, 2);
         verify(versionStorageService, never()).save(any(), any());
         verify(versionStorageService, never()).delete(any());
+    }
+    
+    @Test
+    void testReconcileAcceptsManifestWithoutDescription() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION);
+        manifest.setDescription(null);
+        stubStorage(VERSION);
+        stubEmptyResource();
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.emptyList(), 0, 0));
+        when(versionPersistService.insert(any(AiResourceVersion.class))).thenReturn(1L);
+        when(resourcePersistService.insert(any(AiResource.class))).thenReturn(1L);
+        
+        assertEquals(2, reconciler.reconcile(NAMESPACE_ID, manifest));
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(resourcePersistService).insert(captor.capture());
+        assertNull(captor.getValue().getDesc());
     }
     
     @Test
@@ -382,6 +402,54 @@ class McpHistoricalResourceReconcilerTest {
     }
     
     @Test
+    void testReconcileRejectsNullAndInconsistentResourceQueryRows() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION);
+        stubStorage(VERSION);
+        Page<AiResource> nullItems = new Page<>();
+        nullItems.setPageItems(null);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(nullItems);
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+        
+        reset(resourcePersistService);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList((AiResource) null), 1, 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+        
+        reset(resourcePersistService);
+        AiResource wrongName = expectedResource(manifest, 1);
+        wrongName.setName("other");
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList(wrongName), 1, 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+        
+        reset(resourcePersistService);
+        AiResource wrongType = expectedResource(manifest, 1);
+        wrongType.setType(AiResourceConstants.RESOURCE_TYPE_SKILL);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList(wrongType), 1, 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+        
+        reset(resourcePersistService);
+        AiResource first = expectedResource(manifest, 1);
+        AiResource second = expectedResource(manifest, 1);
+        AiResource third = expectedResource(manifest, 1);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Arrays.asList(first, second, third), 3, 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+    }
+    
+    @Test
     void testReconcileRejectsExtraOrConflictingVersionRows() throws Exception {
         McpServerVersionInfo manifest = manifest(VERSION);
         stubStorage(VERSION);
@@ -442,6 +510,33 @@ class McpHistoricalResourceReconcilerTest {
     }
     
     @Test
+    void testReconcileRejectsNullAndInconsistentVersionQueryRows() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION);
+        stubStorage(VERSION);
+        stubEmptyResource();
+        Page<AiResourceVersion> nullItems = new Page<>();
+        nullItems.setPageItems(null);
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100)).thenReturn(nullItems);
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
+        
+        assertVersionRowsRejected(Collections.singletonList(null), manifest);
+        AiResourceVersion wrongNamespace = expectedVersion(VERSION);
+        wrongNamespace.setNamespaceId("other");
+        assertVersionRowsRejected(Collections.singletonList(wrongNamespace), manifest);
+        AiResourceVersion wrongType = expectedVersion(VERSION);
+        wrongType.setType(AiResourceConstants.RESOURCE_TYPE_SKILL);
+        assertVersionRowsRejected(Collections.singletonList(wrongType), manifest);
+        AiResourceVersion blankVersion = expectedVersion(VERSION);
+        blankVersion.setVersion(" ");
+        assertVersionRowsRejected(Collections.singletonList(blankVersion), manifest);
+        assertVersionRowsRejected(Arrays.asList(expectedVersion(VERSION),
+            expectedVersion(VERSION)), manifest);
+    }
+    
+    @Test
     void testReconcileRejectsInvalidManifestShapesBeforeStorageAccess() {
         assertInvalidManifest(null);
         assertEquals(NacosException.CONFLICT,
@@ -476,6 +571,9 @@ class McpHistoricalResourceReconcilerTest {
         assertInvalidManifest(invalid);
         invalid = manifest(VERSION);
         invalid.setLatestPublishedVersion("other");
+        assertInvalidManifest(invalid);
+        invalid = manifest(VERSION);
+        invalid.setLatestPublishedVersion(null);
         assertInvalidManifest(invalid);
         verifyNoInteractions(versionStorageService, resourcePersistService,
             versionPersistService);
@@ -555,6 +653,17 @@ class McpHistoricalResourceReconcilerTest {
         when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
             AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
             .thenReturn(page(versions, versions.size(), 1));
+    }
+    
+    private void assertVersionRowsRejected(List<AiResourceVersion> versions,
+        McpServerVersionInfo manifest) throws Exception {
+        reset(versionPersistService);
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(versions, versions.size(), 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcile(NAMESPACE_ID, manifest)).getErrCode());
     }
     
     private void stubEmptyResource() {
