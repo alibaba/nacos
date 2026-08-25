@@ -77,7 +77,7 @@ JSON。
 
 | Type | 标准身份 | 当前或已批准目标持久化形态 | 规范 |
 | --- | --- | --- | --- |
-| `mcp` | `namespaceId -> mcp -> mcpName` | 已批准目标为 `ai_resource`、`ai_resource_version`、指向现有 Config 内容的 descriptor、Config 承载的 Direct Endpoint 事实，以及 Naming 承载的 Service/Runtime Ref；历史 Manifest 只在 `SYNCING` 期间保持权威。 | [MCP Server 规范](mcp-server-spec.md) |
+| `mcp` | `namespaceId -> mcp -> mcpName` | 已批准目标由 `ai_resource` 和 `ai_resource_version` 托管管理生命周期，Descriptor 指向不变的 Config 内容；历史 Manifest 以及现有 Direct、Service Ref、frontend/backend 和 Runtime Naming 布局继续作为 Serving 平面。 | [MCP Server 规范](mcp-server-spec.md) |
 | `agent` | `namespaceId -> agent -> agentName` | 已批准目标为 `ai_resource`、`ai_resource_version`、AI 存储和 Naming 承载的 Runtime Endpoint publication；迁移完成前，历史 A2A 存储仍是兼容来源。 | [Agent 管理规范](agent-management-spec.md) |
 | `prompt` | `namespaceId -> prompt -> promptKey` | 使用 `ai_resource`、`ai_resource_version` 和 AI 存储；旧 Prompt 数据可迁移。 | [Prompt 规范](prompt-spec.md) |
 | `skill` | `namespaceId -> skill -> name` | 使用 `ai_resource`、`ai_resource_version`、AI 存储和轻量 discovery manifest。 | [Skill 规范](skill-spec.md) |
@@ -119,10 +119,10 @@ AI Registry 通过多个接口面暴露：
 
 ## 7. 迁移与演进事项
 
-- MCP 迁移遵循 MCP Server 规范中已批准的异步、单向 `SYNCING -> CANONICAL` 契约：保留现有
-  内容坐标，只物化历史 Direct Endpoint 快照；等待零差异对账和全节点能力门禁；切换时把 Direct
-  持久 Naming Service 保留在 `CANONICAL_COMPAT`，而不是删除。该契约完成实现和验证前，
-  production 行为仍未落地。
+- MCP 迁移遵循 MCP Server 规范中的异步、单向管理状态
+  `SYNCING -> LIFECYCLE_MANAGED`：只创建 Resource/Version 指针，不修改 Config 字节或
+  Naming；等待零差异对账和全节点管理能力门禁；切换后继续维护历史 Manifest 和当前 Endpoint
+  Serving 布局。该契约完成实现和验证前，Production 行为仍未落地。
 - 历史 A2A AgentCard 和 Naming endpoint 数据必须通过滚动升级方案迁移到 Agent 模型；
   旧 API 只是投影视图，不再拥有独立资源存储。
 - Prompt 已有从旧 Config 形态 Prompt 数据迁移到标准 AI 资源模型的路径。旧映射

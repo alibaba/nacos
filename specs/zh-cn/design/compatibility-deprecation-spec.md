@@ -105,6 +105,8 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 - AI Prompt legacy endpoints 和旧 Pipeline REST 风格端点；
 - 默认关闭的旧 MCP Console 导入端点；迁移到统一 AI 资源导入端点后，计划在 Nacos
   3.4.0 移除；
+- 历史 MCP `mcpId` 输入与输出；标准管理使用 Namespace 限定的 `mcpName`，
+  这些 ID 字段继续作为兼容别名；
 - 旧 A2A AgentCard Java、gRPC、Admin、Maintainer 和 Console facade；
 - Naming API 定义的 service selector 字段和请求参数；
 - Config 聚合配置字段及相关数据库列；
@@ -174,7 +176,26 @@ nacos.core.api.compatibility.enabled=true
 不得只向这些 facade 增加新能力。新增开发以 Agent Management 和 RAD 契约为目标。
 历史数据与混合 Server 滚动升级使用独立迁移方案，本身不延长 API 兼容窗口。
 
-## 12. 相关规范
+## 12. 旧 MCP 标识符
+
+标准 MCP 管理使用 `namespaceId + type=mcp + mcpName` 定位 Resource。UUID 形态的
+`mcpId` 作为公开资源标识符已废弃，但继续作为内部物理存储别名和旧 Wire 字段。
+
+不同字段具有不同兼容状态：
+
+| 接口面 | 状态 | 规则 |
+| --- | --- | --- |
+| 新 Admin、Console 和 Maintainer Lifecycle API | 标准 | 接受 `mcpName` 和可选 Version，不增加 `mcpId`。 |
+| 现有 Admin、Console 和 Maintainer ID-only 输入 | 已废弃兼容 | 在请求 Namespace 中唯一匹配 `AiResource.ext.mcpId`，随后按标准名称鉴权和操作。 |
+| 现有 Model、Event、Create/Release Response 和嵌套 `McpServerBasicInfo.id` 字段 | Active Compatibility | 物理 Config 坐标和当前消费者仍依赖时，保持 Wire Shape 和原值。 |
+| MCP gRPC Request 顶层 `AbstractMcpRequest.mcpId` | Ignored 且 Deprecated | 保留 Field Number，不实现 ID 查询，并保持各 Handler 当前 Name 必填规则。 |
+
+旧 ID 查询不得使用最终一致的 Search、历史 Manifest/Config 身份查询或 MCP 专用内存 Index。
+该已废弃路径不新增表或字段。移除它需要为 Config 坐标、直读消费者、SDK Model 和 Wire Response
+制定独立迁移；首期生命周期托管不定义移除版本。精确行为由
+[MCP Server 规范](../ai/mcp-server-spec.md)定义。
+
+## 13. 相关规范
 
 - [HTTP API 规范](../http-api/api-spec.md)
 - [V3 API 范围](../http-api/v3-api-surface.md)
@@ -186,3 +207,4 @@ nacos.core.api.compatibility.enabled=true
 - [插件规范](../plugin/README.md)
 - [Agent 管理规范](../ai/agent-management-spec.md)
 - [RAD 协议规范](../ai/rad-protocol-spec.md)
+- [MCP Server 规范](../ai/mcp-server-spec.md)

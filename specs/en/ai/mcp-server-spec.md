@@ -16,68 +16,96 @@
 
 # MCP Server Spec
 
-| Item | Value |
-| --- | --- |
-| Status | Experimental target migration contract |
-| Canonical resource type | `mcp` |
-| Migration route state | `SYNCING` or `CANONICAL` |
-| Direct compatibility state | `SYNCING`, `CANONICAL_COMPAT`, or future `PROJECTION_RETIRED` |
+This document defines the Nacos AI Registry contract for MCP Server resources.
+The first migration hosts MCP management identity and Version governance in the
+common AI Resource lifecycle while preserving the existing MCP serving and
+discovery plane.
 
-This document defines the Nacos AI Registry contract for MCP Server resources,
-including the migration from historical Config metadata to the standard AI
-Resource lifecycle. Until that migration implementation is present, the
-historical implementation remains the active code path; this target contract
-must not be advertised as an implemented server ability.
+## 1. Scope And Contract Status
 
-The migration is intentionally MCP-specific. It does not introduce a new
-abstraction shared by every AI resource, change Naming semantics, or move
-historical MCP payloads merely to obtain a different physical key.
+The first migration has two management-route states:
 
-## 1. Scope And Fact Boundaries
+| State | Management route | Client and gateway serving route |
+| --- | --- | --- |
+| `SYNCING` | Historical MCP management remains authoritative while Resource and Version rows are reconciled. | Existing Manifest, Config, and Naming behavior is unchanged. |
+| `LIFECYCLE_MANAGED` | Admin, Console, and Maintainer operations use the common AI Resource lifecycle. | Existing Manifest, Config, and Naming behavior remains unchanged. |
 
-MCP state is split by ownership and lifecycle:
+`LIFECYCLE_MANAGED` is not a data-plane cutover. It does not make the
+historical Manifest, Config objects, Direct Services, ordinary Service
+references, or client-owned Runtime Services disposable projections.
 
-```text
-MCP metadata --------------------------> ai_resource
-MCP Version governance ----------------> ai_resource_version
-Server / Tools / Resources content ----> existing Config coordinates
-Direct Endpoint fact ------------------> Version Server Config
-Direct downgrade projection -----------> persistent Naming Service
-ordinary Service Ref ------------------> externally owned Naming Service
-Runtime Endpoint publication ----------> Naming Client runtime state
-```
+The following changes are explicitly outside this migration:
 
-| Fact | Canonical owner after cutover |
-| --- | --- |
-| MCP identity, status, owner, scope, tags, labels, and working Version pointers | `ai_resource` |
-| Version status, author, description, pipeline state, and storage pointer | `ai_resource_version` |
-| Version Server, Tools, and Resources content | Existing Config objects selected by the Version storage descriptor |
-| Direct Endpoint addresses | `endpointKind` and `directEndpoints` in the Version Server Config |
-| Direct persistent Naming Service | MCP-owned downgrade projection; never a canonical read dependency |
-| Ordinary referenced Service | Naming user that owns that Service |
-| Runtime Endpoint | Naming Client publisher and its connection/liveness lifecycle |
-| Historical `mcp-server-versions` object | Compatibility projection after cutover; never a canonical decision source |
+- adding an internal `McpEndpointKind` or
+  `DIRECT/SERVICE_REF/RUNTIME_REF` persistence model;
+- materializing Direct endpoint addresses into Version Server Config;
+- replacing the current version-scoped Runtime Service with a versionless
+  Service;
+- adding `supportedTransports`, `versionRange`, or range-based MCP Runtime
+  binding;
+- retiring Direct persistent Naming Services or the historical Manifest; and
+- changing frontend/backend, subscription, reconnect, redo, or heartbeat
+  behavior.
 
-MCP Registry-compatible discovery remains an optional adapter surface defined
-by the [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md). It is not a
-second MCP resource store.
+Those items require a separate compatibility design and consumer migration
+window.
 
-## 2. Identity And AI Resource Mapping
+## 2. Fact Ownership
 
-### 2.1 Resource Identity
+The first migration uses the following ownership boundaries:
 
-The canonical identity is:
+| Fact | Owner | Contract |
+| --- | --- | --- |
+| MCP management identity | `ai_resource` | `namespaceId + type=mcp + mcpName`. |
+| Enabled state, owner, scope, labels, and working Version pointers | `ai_resource` | Common AI Resource metadata and lifecycle facts. |
+| Version state, author, Pipeline state, and content pointer | `ai_resource_version` | Common AI Resource Version facts. |
+| Server, Tools, and Resources payload | Existing MCP Config objects | Coordinates and bytes are preserved. |
+| Published Version set and historical latest view | `mcp-server-versions` Manifest | Compatibility serving index that remains maintained. |
+| Direct endpoint addresses | Existing persistent Naming Service and instances | Current Direct endpoint fact; not a downgrade projection. |
+| Ordinary REF backend | User-owned Naming Service selected by `serviceRef` | MCP reads but does not own the referenced Service. |
+| Frontend/backend mapping | Existing Server Config and endpoint query logic | `frontEndpointConfigList` behavior is unchanged. |
+| Client Runtime endpoint | Existing client-owned Naming state | Service name, cluster, metadata, redo, and liveness are unchanged. |
+| Search identity and index maintenance | `mcpName` and the shared asynchronous index service | Search is eventually consistent and is never an identity source. |
+
+AI Resource hosts the MCP management lifecycle. It does not replace the current
+MCP serving or discovery data plane.
+
+## 3. Identity And AI Resource Mapping
+
+### 3.1 Canonical Identity
+
+The canonical Nacos management identity is:
 
 ```text
 namespaceId + type=mcp + name=mcpName
 ```
 
-`mcpName` is case-sensitive and immutable as an identity field. The historical
-UUID-shaped `mcpId` is retained in `AiResource.ext` only as an API and storage
-compatibility alias; it does not participate in canonical identity,
-authorization, labels, or runtime Service composition.
+`mcpName` is case-sensitive and immutable as an identity field. The MCP wire
+protocol does not define a public MCP Server UUID. The official MCP Registry
+uses a registry-scoped name and Version as public coordinates. Nacos therefore
+uses its own Namespace to scope `mcpName`; it must not treat a runtime
+`serverInfo.name` value as a globally unique or security-sensitive identity.
 
-The schema-version-1 extension is:
+This conclusion is based on the current upstream contracts:
+
+- the [MCP protocol schema](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2026-07-28/schema.ts)
+  exposes implementation name and Version but no MCP Server UUID;
+- the [MCP Tools specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/server/tools.mdx)
+  states that a self-reported server name is not guaranteed unique across
+  Servers; and
+- the [official Registry API](https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/api/official-registry-api.md)
+  and [current API types](https://github.com/modelcontextprotocol/registry/blob/main/pkg/api/v0/types.go)
+  expose name and Version coordinates. Registry
+  [migration 009](https://github.com/modelcontextprotocol/registry/blob/main/internal/database/migrations/009_separate_official_metadata.sql)
+  removed earlier UUID columns in favor of the natural server-name and Version
+  key.
+
+The historical UUID-shaped `mcpId` remains an internal physical-storage alias
+and a deprecated compatibility field. It does not participate in canonical
+identity, authorization, visibility, labels, Search document identity, or
+Runtime Naming identity.
+
+The schema-version-1 Resource extension is:
 
 ```json
 {
@@ -89,6 +117,8 @@ The schema-version-1 extension is:
 Its machine-readable contract is
 [`mcp-resource-ext.schema.json`](../../schemas/ai/mcp/internal/v1/mcp-resource-ext.schema.json).
 
+### 3.2 Resource Mapping
+
 The Resource row maps MCP fields as follows:
 
 | `AiResource` field | MCP mapping |
@@ -96,76 +126,71 @@ The Resource row maps MCP fields as follows:
 | `namespaceId`, `type`, `name` | Namespace, constant `mcp`, and `mcpName`. |
 | `desc` | MCP description. |
 | `status` | Historical `enabled=true` maps to `enable`; otherwise `disable`. |
-| `owner` | Creating/importing operator; historical synchronization uses `nacos`. |
-| `scope` | Visibility default for new resources; historical synchronization uses `PUBLIC`. |
+| `owner` | Creating or importing operator; historical reconciliation uses `nacos`. |
+| `scope` | Visibility default for new resources; historical reconciliation uses `PUBLIC`. |
 | `bizTags` | Public MCP business tags, or an empty collection. |
-| `ext` | `McpResourceExt` containing the compatibility `mcpId`. |
-| `from` | Create, import, or `legacy-mcp` synchronization source. |
+| `ext` | `McpResourceExt` containing the internal `mcpId` alias. |
+| `from` | Local creation, import source, or `legacy-mcp` reconciliation source. |
 | `versionInfo` | Standard editing, reviewing, online-count, and label summary. |
 
-### 2.2 Version Identity And Status
+Within one Namespace, exactly one effective `type=mcp` Resource may exist for
+one `mcpName`. Because the current physical uniqueness includes `from`,
+reconciliation must detect multiple same-name source rows and block completion
+instead of choosing one silently.
 
-Each MCP Version has one `AiResourceVersion` row. Its exact identity is:
+### 3.3 Version Mapping
+
+Each MCP Version has one `AiResourceVersion` row with exact identity:
 
 ```text
 namespaceId + type=mcp + mcpName + version
 ```
 
-MCP Version values are non-empty, case-sensitive, and at most 64 characters so
-they fit the shared Version row without a table change. Strict SemVer is
-recommended and is required for range matching, but historical non-SemVer
-values within that limit remain valid exact identities. Migration must not
-rewrite them; an over-limit historical value is invalid data that blocks
-cutover until repaired.
+Historical published Versions enter the lifecycle as `online`. New
+management APIs use the common `draft`, `reviewing`, `reviewed`,
+`online`, and `offline` states. Version strings remain unchanged.
+Non-SemVer historical values remain valid exact identities within the shared
+Version field limit. This migration does not introduce MCP Version ranges.
 
-Historical published Versions enter the canonical model as `online`. New
-management operations use the standard `draft`, `reviewing`, `reviewed`,
-`online`, and `offline` states from the
-[AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md). The MCP Registry
-content states such as `active` and `deprecated` remain Version-content facts;
-they do not replace the AI Resource lifecycle state.
+Runtime query still exposes only an enabled Resource and an online Version.
+When Version is omitted, the query resolves the server-managed `latest`
+label. Management reads may inspect every lifecycle state.
 
-Runtime queries require an enabled Resource and an online Version. An omitted
-Version resolves the server-managed `latest` label. Management reads may query
-every lifecycle state.
+Latest selection follows the common lifecycle with this MCP compatibility
+refinement:
 
-### 2.3 Latest Selection
+- standard publish, force-publish, and online operations move `latest` to
+  the target Version;
+- a historical direct-online update may preserve the current valid pointer
+  when its existing latest parameter requests that behavior; and
+- deletion or offline of the current latest selects the greatest remaining
+  online SemVer, then greatest numeric `vN`, then greatest stable
+  case-sensitive string. If no online Version remains, `latest` is removed.
 
-The first online Version becomes `latest`. Standard publish, force-publish, and
-online operations move `latest` to the target. A legacy direct-online update
-may preserve the current valid label when its historical `latest=false`
-parameter is used.
+## 4. Physical Content And Storage Boundary
 
-Deleting or taking the current latest Version offline selects a replacement in
-this order:
+### 4.1 Preserved Coordinates
 
-1. greatest valid SemVer by SemVer precedence;
-2. if no SemVer remains, greatest `vN` value by numeric `N`; or
-3. if neither form remains, greatest string by stable case-sensitive ordinal
-   comparison.
-
-If no online Version remains, `latest` is removed. A non-SemVer Version may be
-selected by exact query but never participates in a Version range.
-
-## 3. Version Content And Storage
-
-### 3.1 Existing Physical Coordinates
-
-The migration preserves the existing MCP Config groups and data ids:
+The migration preserves these Config groups and data ids:
 
 | Content | Config group | Data id |
 | --- | --- | --- |
-| Historical Version manifest | `mcp-server-versions` | `<mcpId>-mcp-versions.json` |
+| Published-Version Manifest | `mcp-server-versions` | `<mcpId>-mcp-versions.json` |
 | Version Server | `mcp-server` | `<mcpId>-<version>-mcp-server.json` |
 | Version Tools | `mcp-tools` | `<mcpId>-<version>-mcp-tools.json` |
 | Version Resources | `mcp-resources` | `<mcpId>-<version>-mcp-resources.json` |
 
-The manifest becomes compatibility metadata. The three Version-content objects
-remain at their current coordinates.
+Historical reconciliation creates pointers only. It must not copy, move,
+rewrite, or extend the Server, Tools, or Resources payload bytes. It must not
+change any Naming Service or instance.
 
-### 3.2 Storage Descriptor
+The Manifest remains a compatibility serving index for clients and gateways
+that read Config and Naming directly. It is not the canonical management
+identity or lifecycle store.
 
-`AiResourceVersion.storage` contains one schema-version-1 descriptor:
+### 4.2 Version Storage Descriptor
+
+`AiResourceVersion.storage` contains a schema-version-1 descriptor:
 
 ```json
 {
@@ -178,414 +203,429 @@ remain at their current coordinates.
 }
 ```
 
-`serverKey` is required; `toolKey` and `resourceKey` are omitted when the
-corresponding content is absent. The built-in provider parses only the first
+`serverKey` is required. `toolKey` and `resourceKey` are omitted when the
+corresponding content is absent. The built-in provider splits only the first
 two `:` separators and treats the remainder as the Config data id. It accepts
-only the three MCP-owned groups above; this contract must not become arbitrary
+only the three MCP-owned groups above and must not become arbitrary
 `namespace:group:dataId` access to user Config.
 
-All three keys select the same persisted provider. The initial migration
-supports only `nacos_config`; an MCP multi-object contract for other providers
-requires a later design. The schema is
+All keys use the provider persisted in the Version row. The initial migration
+supports `nacos_config`. A multi-object MCP format for another AI Storage
+provider requires a separate design. The machine-readable contract is
 [`mcp-version-storage.schema.json`](../../schemas/ai/mcp/internal/v1/mcp-version-storage.schema.json).
 
-### 3.3 Byte Preservation And Write Order
+### 4.3 Required Layering
 
-Migration creates descriptors that point to existing Config objects; it does
-not call storage `save` or copy content. Tools and Resources bytes remain
-unchanged. A non-Direct historical Server Config also remains unchanged.
-
-The only historical content mutation is Direct Endpoint materialization in
-Section 4.2. It uses Config CAS to add an equivalent, self-contained snapshot
-while preserving the existing `serviceRef` and every unrelated JSON field.
-
-A new or updated draft writes in this order:
-
-1. validate Server, optional Tools, optional Resources, and Endpoint kind;
-2. save Tools and Resources;
-3. save the Server object that references them, including a complete Direct
-   snapshot when applicable;
-4. create or update the Version row with its storage descriptor; and
-5. CAS-update Resource `versionInfo`, then schedule Search and compatibility
-   projections.
-
-Draft retries overwrite deterministic keys. A failed attempt before the
-Version row exists may leave retryable orphan content. Canonical APIs never
-overwrite reviewing, reviewed, online, or offline content.
-
-Deletion first loads every complete storage descriptor and attempts every
-referenced content deletion. A content deletion failure preserves Resource and
-Version rows for retry. A Direct Naming projection is derived state rather than
-Version storage: its physical cleanup failure does not resurrect or roll back a
-successful canonical business deletion, but it must create a durable,
-owner-checked cleanup retry.
-
-## 4. Endpoint Model
-
-### 4.1 Public Shape And Internal Kinds
-
-The public `McpEndpointSpec.type` remains `DIRECT` or `REF`. Internally, MCP
-resolves one of three kinds:
-
-| Internal kind | Meaning | Owner | Version deletion |
-| --- | --- | --- | --- |
-| `DIRECT` | Known addresses are part of this Version. | MCP Version | Delete only its owner/hash-matching projection. |
-| `SERVICE_REF` | The Version references an ordinary existing Naming Service, including HTTP-to-MCP use cases. | Naming user | Never update or delete it. |
-| `RUNTIME_REF` | MCP Client APIs publish ephemeral runtime instances. | Naming Client/connection | Explicit deregistration, expiry, or disconnect; not Version deletion. |
-
-New Server content persists an explicit `endpointKind`. For historical content
-that lacks it, the compatibility reader resolves in this order:
-
-1. a referenced Service marked `__nacos.ai.mcp.service__=true` is `DIRECT`;
-2. `mcp-endpoints / mcpName::version` without that mark is `RUNTIME_REF`; or
-3. every other `REF` is `SERVICE_REF`.
-
-No inference may delete or mutate a Service. A missing Service, missing Direct
-mark, or conflicting fact blocks migration rather than being guessed.
-
-### 4.2 Direct Endpoint Fact
-
-Direct addresses are stored in the existing Version Server Config:
-
-```json
-{
-  "endpointKind": "DIRECT",
-  "directEndpoints": [
-    {
-      "address": "10.0.0.8",
-      "port": 8080,
-      "transportProtocol": "sse"
-    }
-  ],
-  "remoteServerConfig": {
-    "serviceRef": {
-      "namespaceId": "public",
-      "groupName": "mcp-endpoints",
-      "serviceName": "demo::1.0.0",
-      "transportProtocol": "sse"
-    }
-  }
-}
-```
-
-`directEndpoints` is the complete Version snapshot. Entries are deduplicated by
-`address + port + transportProtocol` and sorted by address ordinal, numeric
-port, then transport ordinal. Canonical query and subscription projection read
-this snapshot and do not query the persistent Naming Service.
-
-For historical Direct content, synchronization must:
-
-1. verify the `mcp-endpoints / mcpName::version` Service and its Direct mark;
-2. read all persistent instances and combine each address/port with the
-   `serviceRef.transportProtocol` value;
-3. CAS-add `endpointKind` and the deterministic snapshot without changing the
-   old `serviceRef` or other fields;
-4. rebuild or repair the Direct compatibility projection metadata; and
-5. reread and verify Config and Naming equivalence before the Version may pass
-   final migration validation.
-
-Old Jackson-based servers ignore the two unknown fields and can continue to
-read `serviceRef`. This supports emergency whole-cluster downgrade reads of the
-online compatibility view; mixed-version rolling downgrade and lossless
-legacy writes followed by re-upgrade are not promised. An old write may
-serialize the object without the new fields.
-
-### 4.3 Direct Naming Compatibility Projection
-
-The version-scoped persistent Naming Service remains during the first
-canonical release. Its Service metadata is:
-
-| Key | Value |
-| --- | --- |
-| `__nacos.ai.mcp.service__` | `true` |
-| `__nacos.ai.mcp.id__` | Compatibility `mcpId` |
-| `__nacos.ai.mcp.version__` | Exact MCP Version |
-| `__nacos.ai.mcp.endpointSnapshotHash__` | `sha256:<64 lowercase hex>` |
-
-The digest is SHA-256 over the UTF-8 bytes of the common Nacos JSON
-serialization of the sorted, deduplicated `directEndpoints` storage
-projection. The serializer must emit only `address`, `port`, and
-`transportProtocol` in that order. Fixtures must freeze the emitted bytes.
-
-Projection update or deletion requires the Direct mark, matching `mcpId`,
-matching Version, and the expected snapshot digest. This prevents a delayed
-retry from deleting a newly recreated Service with the same name.
-
-Projection compatibility is independent of read-route state:
-
-| Compatibility state | Direct fact | Persistent Naming behavior |
-| --- | --- | --- |
-| `SYNCING` | Being materialized; Naming may still be the legacy fact. | Never delete. |
-| `CANONICAL_COMPAT` | Server Config is canonical. | Maintain an online-view downgrade projection; do not bulk-delete at cutover. |
-| `PROJECTION_RETIRED` | Server Config remains canonical. | Future explicitly gated retirement may stop creation and clean projections. |
-
-The initial implementation reaches only `CANONICAL_COMPAT`. Draft creation
-does not create a projection. Publish, force-publish, online, and legacy
-direct-online writes ensure it exists. Offline removes the Version from the
-legacy manifest projection but retains the persistent Direct Service for later
-online. Business deletion removes the manifest entry and schedules projection
-cleanup immediately.
-
-`PROJECTION_RETIRED` requires a later spec and implementation that declares the
-end of legacy downgrade support, gates every server at the cleanup version,
-retires the old manifest projection, verifies every Direct snapshot, and
-operates only on complete owner/hash metadata. Cutover to `CANONICAL` alone is
-never permission to remove surviving Direct Services.
-
-### 4.4 Ordinary Service Ref
-
-A `SERVICE_REF` stores the user-provided `namespaceId`, `groupName`,
-`serviceName`, and `transportProtocol`. MCP reads the Service but never creates,
-overwrites, or deletes its Service or instances. MCP Client Endpoint
-register/deregister rejects this kind. Ordinary service registration continues
-through Naming APIs.
-
-### 4.5 Runtime Ref And Naming Layout
-
-The target Runtime layout is:
+The migration may reuse historical model conversion, JSON handling, Manifest
+selection, endpoint, and Naming logic. It must move physical Config access
+behind the following boundary:
 
 ```text
-group       = mcp-endpoints
-serviceName = mcpName
-cluster     = DEFAULT
-instance    = ephemeral
+MCP lifecycle/application service
+        -> MCP Version Storage / MCP Serving Manifest Storage
+        -> AI Resource Storage router or Config implementation
 ```
 
-Version, protocol, and transport are not part of Service or Cluster identity.
-Runtime instance metadata uses exactly these reserved keys:
+Normative rules:
 
-```text
-__nacos.mcp.endpoint.supportedTransports__
-__nacos.mcp.endpoint.version__
-__nacos.mcp.endpoint.versionRange__
-```
+- MCP Version Storage loads, saves, and deletes Server, optional Tools, and
+  optional Resources through the descriptor persisted in the Version row.
+- MCP Serving Manifest Storage encapsulates reads, publication, and deletion
+  of `mcp-server-versions`. The Manifest is a serving compatibility index,
+  not an identity resolver.
+- MCP lifecycle and operation services must not directly call Config CRUD for
+  the four MCP Config groups.
+- A service must not accept `mcpId`, compose a data id, and bypass the
+  persisted Version descriptor.
+- Direct, REF, and client Runtime Naming state does not enter the generic
+  `AiResourceStorage` SPI. MCP-specific ownership cleanup participates in the
+  common lifecycle deletion flow.
 
-`supportedTransports__` is one canonical comma-delimited value: `sse`,
-`streamable-http`, or `sse,streamable-http`. Values are lower-case,
-deduplicated, contain no whitespace or empty token, and follow that fixed
-order. An absent value means transport-unrestricted compatibility.
+Preserving Config and Naming means preserving physical compatibility, not
+preserving a service-to-Config layering violation.
 
-Version binding is singular; no serialized `versionBindings__` array exists:
+## 5. Endpoint And Serving Compatibility
 
-| `version__` | `versionRange__` | Meaning |
-| --- | --- | --- |
-| absent | absent | Compatible with all current and future Versions. |
-| any exact string | absent | Exact match, including a historical non-SemVer Version. |
-| SemVer | canonical range | Runtime is at that Version and supports the range; the range must contain it. |
-| absent | present | Invalid. |
-| non-SemVer | present | Invalid. |
+The public endpoint model and current resolution algorithm remain unchanged:
 
-Range syntax and comparison reuse the Agent/RAD canonical range parser. The
-legacy `_mcp_server_version` metadata is read as an exact binding only when the
-new Version key is absent. If both are absent, the instance is all-Version.
+1. `frontEndpointConfigList` determines which frontend endpoint shape is
+   returned to the caller.
+2. A Direct fixed address remains represented by the current version-scoped
+   persistent Naming Service and instances. Server Config retains its current
+   `serviceRef`.
+3. A REF continues reading the ordinary Naming Service selected by
+   `serviceRef`; Nacos MCP does not own that Service or its instances.
+4. A `BACKEND` frontend entry continues using the resolved backend endpoint
+   directly.
+5. In gateway proxy scenarios, the gateway is the frontend while
+   `remoteServerConfig.serviceRef` still selects the real backend.
+6. Client API endpoint registration continues using the current
+   version-scoped Runtime Service, cluster, and instance metadata.
+7. `subscribeMcpServer` continues polling the complete MCP query projection
+   rather than subscribing directly to the underlying Naming Service.
 
-For target Version `V` and transport `T`, runtime query retains an instance
-only when it is enabled, its transport is unrestricted or includes `T`, and
-its exact/range binding accepts `V`. Health is preserved in the result; the
-server does not load-balance.
+A Direct persistent Service is current MCP data and an external-consumer
+contract, not a downgrade projection. Offline removes a Version from the
+serving Manifest but retains its content and Direct Service so it can be
+brought online again.
 
-Historical Version content is not rewritten merely to change its old
-`mcpName::version` service reference. During compatibility, query reads the new
-Versionless Service and that historical referenced Service, prefers new
-contributions, and deduplicates by IP and port. Old ephemeral instances expire
-on disconnect; SDK redo after reconnect publishes to the new layout.
+Known gateway integrations, including Higress and Istio-based gateways, may
+read this serving plane without calling an MCP-specific query API. Their
+compatible flow is:
 
-MCP does not expose direct subscription to the underlying Naming Service.
-`subscribeMcpServer` continues polling the complete MCP query projection.
+1. list `mcp-server-versions` Config entries;
+2. read and watch `<mcpId>-mcp-versions.json`;
+3. compose exact Server and Tools data ids from the published Version;
+4. read `remoteServerConfig.serviceRef`;
+5. query or subscribe to the referenced Naming Service; and
+6. build the gateway frontend route while retaining the referenced backend.
 
-## 5. Canonical Lifecycle And Compatibility Facades
+Consequently, lifecycle hosting must not require those consumers to negotiate a
+new Nacos ability or release merely to preserve existing discovery.
 
-### 5.1 Standard Management Lifecycle
+## 6. Lifecycle And Compatibility Facades
+
+### 6.1 Standard Management Lifecycle
 
 MCP uses the common draft, submit, review, publish, force-publish, redraft,
 online, offline, label, and delete rules. Published content is immutable through
-canonical APIs; a change creates a new Version or redrafts a reviewed Version.
+standard lifecycle APIs; changing it creates a new Version or follows the
+allowed redraft transition.
 
-The approved Admin prefix is `/v3/admin/ai/mcp`. Console mirrors the same
-relative operations under `/v3/console/ai/mcp`. Exact routes are listed in the
+The Admin prefix is `/v3/admin/ai/mcp`. Console mirrors the same relative
+operations under `/v3/console/ai/mcp`. Exact routes are listed in the
 [V3 HTTP API Surface](../http-api/v3-api-surface.md).
 
-### 5.2 Historical Direct-Online Mapping
+### 6.2 Historical Direct-Online Facades
 
-Existing Admin, Console, Maintainer SDK, Java Client SDK, and gRPC shapes remain
-wire-compatible and are adapted as follows:
+Existing Admin, Console, Maintainer SDK, Java Client SDK, and gRPC wire shapes
+remain compatible and map to the lifecycle application service:
 
-| Historical operation | Canonical behavior |
+| Historical operation | Managed behavior |
 | --- | --- |
-| Create/release MCP | Create Resource and Version, take it online immediately, and set `latest`. |
-| Update with a new Version | Create an online Version; move `latest` only when the historical parameter requests it. |
-| Update an existing exact Version | Compatibility-only same-Version overwrite; preserve status and apply the historical latest parameter. |
-| Delete exact Version | Delete its storage and owner/hash-matching Direct projection. |
-| Delete MCP | Apply common Resource deletion to every Version and compatibility projection. |
-| Runtime query | Return only enabled + online; omitted Version resolves `latest`. |
-| Historical `allVersions` | Project online Versions only. |
-| Subscribe | Continue full-result polling; do not subscribe to Naming directly. |
+| Create or release MCP | Create Resource and Version, take the Version online immediately, set latest according to the historical contract, and return the historical response shape. |
+| Update with a new Version | Create an online Version and apply the historical latest parameter. |
+| Update an existing exact Version | Compatibility-only same-Version overwrite through MCP Storage; preserve lifecycle state and historical latest behavior. |
+| Query | Return the same serving projection and response shape as before migration. |
+| Delete exact Version | Stop Manifest exposure, clean MCP-owned Direct state and Version content through the managed deletion flow, then remove the Version row. |
+| Delete MCP | Stop Manifest exposure, run common Resource-with-Versions deletion with MCP storage cleanup, then remove metadata rows. |
 
-Same-Version overwrite is an audited exception available only through the
-historical update facade. Canonical lifecycle services must not reuse that
-relaxation. Draft, reviewing, reviewed, and offline Versions are visible through
-new management Version APIs rather than being disguised as published entries
-in old DTOs.
+The same-Version overwrite is an audited compatibility exception. Standard
+lifecycle APIs must never reuse it.
 
-Client HTTP parity with gRPC, transport selection, and heartbeat reuse are
-deferred until the management migration is complete. The existing Java SDK
-public interfaces should remain unchanged where they can express the old
-contract.
+### 6.3 Draft And Publish Ordering
 
-## 6. Historical Synchronization And Automatic Cutover
+A draft write uses this order:
 
-### 6.1 Route State, Marker, And Lease
+1. resolve or generate the internal `mcpId`;
+2. save Server and optional Tools/Resources through MCP Version Storage;
+3. create or update the `draft` Version row with the same descriptor; and
+4. update the Resource working pointer.
 
-There is no operator-controlled `nacos.ai.mcp.storage.mode`. The cluster has one
-durable, one-way route state:
+A draft is not added to the historical Manifest.
 
-| State | Read and write route |
-| --- | --- |
-| `SYNCING` | Historical MCP facts remain authoritative while canonical rows are reconciled. |
-| `CANONICAL` | Every MCP surface uses Resource/Version facts; no legacy read fallback. |
+Publish or online uses this order:
 
-The completion marker is an internal Config object:
+1. load and validate Version content through MCP Version Storage;
+2. validate the existing Direct or REF endpoint facts without rewriting them;
+3. transition the Version and update server-managed labels;
+4. rebuild the compatibility Manifest from the complete online Version set;
+5. publish the Manifest last through MCP Serving Manifest Storage; and
+6. reread and verify the serving view before returning success.
+
+If Manifest publication or verification fails, the operation reports failure
+and records durable repair state. Retries are idempotent. Search indexing is
+scheduled only after the business mutation and never determines publish
+success.
+
+### 6.4 Offline And Delete
+
+Offline first removes the Version from the Manifest serving view and verifies
+that change, then converges the Version to `offline`. It retains
+Server/Tools/Resources content and the Direct persistent Service.
+
+Version deletion:
+
+1. removes and verifies the Version's Manifest exposure;
+2. invokes the MCP-specific cleanup hook for Direct state owned by that
+   Version;
+3. deletes Server/Tools/Resources through MCP Version Storage;
+4. deletes the Version row only after all physical cleanup succeeds; and
+5. repairs labels and schedules asynchronous Search maintenance.
+
+Full Resource deletion:
+
+1. resolves and authorizes the canonical Resource by name or a deprecated
+   compatible ID;
+2. deletes the serving Manifest first so gateways stop discovering it;
+3. calls the common Resource-with-Versions deletion flow with the MCP storage
+   deleter;
+4. for every Version, the deleter validates the descriptor, cleans MCP-owned
+   Direct state, and deletes Resources, Tools, and Server content through
+   Storage; and
+5. removes Resource and Version rows only after every callback succeeds.
+
+Any endpoint or content cleanup failure reports failure and preserves the
+Resource row, Version rows, and storage descriptors required for retry. An
+ID-only retry still resolves through `AiResource.ext`, so deletion does not
+need a Manifest tombstone. An ordinary REF Service and client-owned Runtime
+instances retain their existing ownership and are not deleted with the MCP
+Version.
+
+## 7. Deprecated `mcpId` Compatibility
+
+### 7.1 Supported Uses
+
+`mcpId` remains necessary to:
+
+- compose the existing Config data ids;
+- let Version and Manifest Storage locate historical Config;
+- preserve existing Admin, Console, Maintainer, Client model, event, and
+  response shapes; and
+- preserve direct Config/Naming consumers.
+
+It must not become the identity of a new API, Search document, authorization
+rule, visibility rule, label, or lifecycle operation.
+
+### 7.2 Management Resolution
+
+New lifecycle APIs accept `namespaceId + mcpName (+ version)` and do not add
+an `mcpId` parameter. Existing Admin, Console, and Maintainer HTTP paths that
+already accept ID-only input remain compatible:
+
+- name-only performs an exact `AiResource` lookup by Namespace,
+  `type=mcp`, and name;
+- name plus ID performs the exact name lookup and verifies
+  `ext.mcpId` matches;
+- ID-only pages the current Namespace's `type=mcp` Resource rows, parses
+  `ext.mcpId`, and requires exactly one match; and
+- missing, malformed, duplicate, or conflicting aliases return a controlled
+  parameter or integrity error.
+
+After normalization, every path applies the same canonical authorization,
+Visibility, and lifecycle operation. ID lookup must not query the Search
+index, Manifest, Config, or the historical MCP in-memory index. No new table,
+column, or JSON index is introduced for this low-frequency deprecated path.
+The historical index may continue serving wholly historical management paths
+while `SYNCING`; after `LIFECYCLE_MANAGED`, no management correctness path
+depends on it.
+
+Existing create or release responses and existing DTOs continue returning
+their ID fields. Existing legacy-only custom UUID input is not expanded.
+Removal of `mcpId` requires a later migration of physical Config coordinates
+and direct consumers; deprecation does not authorize removal in this phase.
+
+### 7.3 gRPC Field Distinction
+
+Three wire fields have different compatibility status:
+
+1. the top-level `AbstractMcpRequest.mcpId`, flattened into current MCP
+   requests, remains ignored and deprecated; handlers do not add ID lookup and
+   retain their current name requirements;
+2. nested `McpServerBasicInfo.id` remains an active compatibility input or
+   model field where current requests use it, and name/ID inputs must agree;
+   and
+3. `ReleaseMcpServerResponse.mcpId` remains an active compatibility output.
+
+Field numbers and wire shapes remain unchanged. A separate SDK-proto change may
+add a deprecation option to the dormant top-level field, but the lifecycle
+migration does not depend on that release.
+
+## 8. Historical Reconciliation And Managed Cutover
+
+### 8.1 Marker And Lease
+
+There is no operator-selected storage mode. The one-way management completion
+marker is an internal Config object:
 
 ```text
 group  = nacos_internal
 dataId = nacos.ai.mcp.resource.migration.v1
-content = {"schemaVersion":1,"state":"CANONICAL","completedAt":<epochMillis>}
+content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMillis>}
 ```
 
-It is permanent and is never deleted when a task finishes. A separate renewable
-lease uses group `nacos_internal` and data id
-`nacos.ai.mcp.resource.migration.lock.v1`; lease expiry permits another node to
-continue reconciliation. Losing the lease aborts the current writer but never
-removes MCP content.
+The permanent marker means management rows are completely hosted. It does not
+authorize deletion or mutation of serving Config or Naming data. A renewable
+cluster lease may use a separate internal Config key. Losing the lease stops
+the current writer without deleting MCP content.
 
-### 6.2 Asynchronous Reconciliation
+### 8.2 Reconciliation
 
-After the root `ApplicationReadyEvent`, a background task periodically:
+After the root `ApplicationReadyEvent`, a background task:
 
-1. stops immediately when the completion marker already exists;
-2. acquires and renews the cluster lease;
-3. pages through every Namespace and the authoritative
-   `mcp-server-versions` Config group rather than trusting only an in-memory
-   index;
-4. validates each manifest and every referenced Server, Tools, and Resources
-   object;
-5. materializes and verifies historical Direct snapshots first;
-6. idempotently upserts all Version rows as `online`, using descriptors that
-   point to existing content;
-7. upserts the Resource row last with legacy enabled/latest facts and
-   `from=legacy-mcp`;
-8. removes reconciled rows whose `legacy-mcp` source was deleted, without
-   deleting independently created canonical resources;
-9. performs a zero-difference validation round; and
-10. publishes the completion marker only after the data conditions and the
-    all-member capability gate both pass.
+1. acquires and renews the cluster lease;
+2. pages every Namespace and scans `mcp-server-versions` through Manifest
+   Storage rather than trusting only the in-memory MCP index;
+3. validates Server, optional Tools, and optional Resources through Version
+   Storage;
+4. idempotently upserts each historical Version as `online` with a descriptor
+   pointing to existing content;
+5. upserts the Resource last with name, internal ID, enabled state, latest,
+   online count, and `from=legacy-mcp`;
+6. schedules shared asynchronous Search reconciliation by canonical
+   `mcpName`;
+7. detects missing content, conflicting identity, duplicate source rows,
+   invalid Versions, and pending deletion;
+8. reconciles removed `legacy-mcp` rows without deleting independently
+   created resources;
+9. completes a zero-difference validation round; and
+10. writes the completion marker only after every known cluster member supports
+    managed writes and write-after-reconcile hooks.
 
-No historical data is also a valid zero-difference result for a new cluster.
-Invalid manifests, missing content, conflicts, Direct mismatch, pending delete,
-or lease loss keep the cluster in `SYNCING` and are retried. They are never
-silently skipped.
+Reconciliation creates pointers only. It never saves or rewrites historical
+payloads and never mutates Naming.
 
-### 6.3 Writes During `SYNCING`
+### 8.3 Writes During `SYNCING`
 
-All query, list, subscribe, and Search responses remain wholly legacy while
-`SYNCING`; partial canonical rows are never exposed. A successful legacy write
-on a capable node invokes the same per-resource reconciler. The periodic full
-scan remains the repair path for writes made by an older node.
+Historical management responses remain wholly historical while `SYNCING`;
+partial Resource rows are not exposed as the management authority. A capable
+node performs the current physical compatibility write through MCP Storage and
+then invokes the same per-Resource reconciler. Periodic scanning repairs writes
+from an older node. New lifecycle write APIs do not become available before
+managed cutover. A mixed-version cluster remains `SYNCING`.
 
-The Resource row is created last, so a failed Version-first attempt is not
-visible through the legacy route. Reconciliation is idempotent and must compare
-an existing row for equivalence rather than overwrite a different MCP identity
-or content pointer.
+Cutover requires:
 
-Rolling upgrade stays `SYNCING` until every known member reports the minimum
-MCP canonical capability version and at least one later full scan produces no
-create, update, delete, pending, or failed result. Missing or invalid member
-versions fail the gate. Once a marker is published, a server below that minimum
-must not join and serve MCP traffic.
-
-### 6.4 Completion Conditions
-
-Cutover requires all of the following:
-
-- one equivalent MCP Resource for every legacy manifest;
-- one equivalent Version row and correct descriptor for every historical
+- exactly one equivalent Resource for every historical Manifest;
+- an equivalent Version row and correct descriptor for every historical
   Version;
-- matching `mcpId`, enabled state, latest label, online count, and Version set;
-- complete Direct snapshots, equivalent retained projections, and complete
-  owner/hash metadata;
-- no invalid, missing, conflicting, pending, or deleted-but-unreconciled fact;
-- a final zero-difference reconciliation round; and
-- every cluster member supporting canonical reads/writes and `SYNCING` write
-  hooks.
+- matching name, internal ID, enabled state, latest, online count, and Version
+  set;
+- no duplicate source rows, missing content, identity conflict, or pending
+  delete;
+- one final zero-difference round;
+- every cluster member supporting MCP Storage, lifecycle facades,
+  write-after-reconcile, and canonical-name Search tasks; and
+- no managed MCP service path bypassing Storage for Config CRUD.
 
-After completion, canonical row absence is an integrity error rather than a
-reason to revive data from the old manifest. The old manifest may be rebuilt
-from online canonical facts as a downgrade projection, but projection failure
-does not change the durable route state. Restart does not roll back
-`CANONICAL`; automatic rollback is unsupported.
+External gateways do not participate in this ability gate because their
+serving contract does not change.
 
-At minimum, migration diagnostics expose state, total, scanned, created,
-updated, deleted, pending, failed, and last-success time, with
-namespace/mcpId/version context for invalid facts.
+The marker is permanent and is not rolled back automatically. After it exists,
+a Nacos member that lacks the managed-write capability must not serve MCP
+management traffic, because an unhooked historical write could diverge the
+lifecycle rows. This restriction does not create a new negotiation requirement
+for external Config/Naming consumers.
 
-## 7. Tool Schema, Search, Import, And Adaptor Rules
+## 9. Search, Import, And Adaptor Rules
+
+MCP participates in generic AI Resource Search and the MCP-specific Search
+facade through one shared index and Query Planner. Canonical Search
+`resourceName` is `mcpName`, never `mcpId`.
+
+The MCP Search projector loads the visible Resource, online Version, and
+content through the persisted storage descriptor. It does not query the
+historical MCP operation service by ID. It may project public description,
+Tools, Resources, tags, protocols, and capabilities. Credentials, runtime
+instances, and sensitive authentication metadata never enter Search chunks.
+
+Every successful create, update, publish, online, offline, delete,
+enable/disable, label, or import mutation schedules a durable asynchronous
+maintenance task by `namespaceId + type=mcp + mcpName`. Tasks may merge
+successive updates and retry failures. Business requests do not wait for index
+completion. Eventual Search state is never used for identity resolution,
+authorization, visibility, or write correctness.
+
+Historical backfill rebuilds name-keyed documents. Projection-version
+reconciliation and orphan sweep remove historical ID-keyed documents and
+tasks; the system must not retain two canonical Search identities.
+
+External import uses the
+[AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md).
+Plugins produce artifacts and never write MCP storage directly. The MCP
+resource operator applies artifacts through the lifecycle application service
+and MCP Storage while preserving the existing Manifest, Config, and Naming
+serving outputs.
+
+The Console-only `GET /v3/console/ai/mcp/importToolsFromMcp` helper keeps its
+existing outbound-network policy: operators may disable it, private or local
+targets require the operator allowlist, an endpoint cannot override the
+`baseUrl` origin, and redirects are disabled.
+
+The optional AI Registry adaptor retains its external response shape. This
+management migration does not require adaptor consumers to negotiate a new
+version.
+
+## 10. API And SDK Boundaries
+
+The first migration changes management implementation and later adds standard
+management lifecycle operations:
+
+- Admin and Console historical methods retain their request, response, error,
+  and direct-online compatibility semantics while entering the same lifecycle
+  service.
+- Maintainer SDK binary signatures and historical overloads remain compatible;
+  typed name/Version lifecycle methods may be added with the standard Admin
+  semantics.
+- Import converges on the lifecycle service and MCP Storage.
+- Console UI moves to the lifecycle view only after the corresponding APIs are
+  available.
+
+The first migration does not change:
+
+- the Java Client `AiService` MCP public interface;
+- Query, Release, or Endpoint gRPC wire layout and field numbers;
+- Client endpoint registration/deregistration, subscription, reconnect, redo,
+  or heartbeat;
+- current Runtime Service names, clusters, or metadata;
+- MCP Client HTTP APIs; or
+- AI Registry adaptor response shapes.
+
+Client HTTP parity with gRPC and reuse of Agent HTTP publisher
+heartbeat/renewal remain separate follow-up work.
+
+## 11. Tool Schema Compatibility
 
 An MCP tool `outputSchema` is JSON Schema. Nacos preserves valid type unions,
 including a nullable property such as `{"type":["string","null"]}`. Console
 load/save and OpenAPI import must not narrow that union to one string type.
 
-MCP participates in generic AI Resource Search and the MCP-specific Search
-facade through one shared index and Query Planner. Canonical Search identity is
-`mcpName`, not `mcpId`. Search may project public Server description, Tools,
-Resources, tags, protocols, and capabilities; credentials, runtime instances,
-and sensitive auth metadata never enter search chunks. While `SYNCING`, the
-handler may read compatibility storage but must produce the same projection.
-
-External import uses the
-[AI Resource Import Plugin Spec](../plugin/ai-resource-import-plugin-spec.md).
-Plugins produce artifacts and never write MCP storage directly. The MCP
-resource operator applies artifacts through the current MCP facade, which
-routes them to the canonical lifecycle after cutover.
-
-The Console-only `GET /v3/console/ai/mcp/importToolsFromMcp` helper follows its
-existing outbound-network policy: operators may disable it, private/local
-targets require the operator allowlist, an endpoint cannot override the
-`baseUrl` origin, and redirects are disabled.
-
-## 8. Required Verification
+## 12. Required Verification
 
 Implementation PRs must cover at least:
 
-- unchanged Config group/data-id coordinates and unchanged Tools/Resources
-  bytes;
-- the sole Direct Server Config extension and old-model unknown-field reads;
-- draft through publish lifecycle, latest selection, old overwrite isolation,
-  and storage deletion retry;
-- `SYNCING` legacy visibility, idempotent asynchronous reconciliation, mixed
-  member gating, zero-difference cutover, restart, and no fallback;
-- multi-instance Direct materialization, projection retention at cutover,
-  owner/hash cleanup isolation, and cleanup retry;
-- ordinary Service Ref non-ownership;
-- Versionless runtime publication, transport and Version binding validation,
-  old/new Service merge, disconnect, reconnect, and redo;
-- both default JSON and Jackson 3 client adapters; and
-- equivalent Admin, Console, Maintainer SDK, Java SDK, Search, Import, and
-  Registry-adaptor projections.
+- exact Resource and Version mapping, including historical non-SemVer Version
+  strings;
+- name-only, name-plus-ID, and legacy ID-only resolution from Resource rows,
+  canonical authorization after normalization, and conflict handling;
+- unchanged Manifest/Server/Tools/Resources coordinates and bytes;
+- no Naming mutation during reconciliation and unchanged Direct, REF,
+  frontend/backend, Runtime, subscription, reconnect, and redo behavior;
+- all Server/Tools/Resources and Manifest Config access passing through MCP
+  Storage rather than direct service Config CRUD;
+- draft through publish lifecycle, historical same-Version overwrite isolation,
+  latest selection, and Manifest-last publication recovery;
+- offline retention of content and Direct Service;
+- Version and full Resource deletion, common row-preservation on physical
+  cleanup failure, retry by deprecated ID after Manifest removal, and no delete
+  of ordinary REF or client Runtime state;
+- idempotent asynchronous reconciliation, lease takeover, mixed-member gating,
+  zero-difference completion, restart, and `LIFECYCLE_MANAGED` persistence;
+- canonical name-keyed asynchronous Search, failure retry, backfill, and
+  historical ID-keyed orphan cleanup;
+- equivalent Admin, Console, Maintainer, Client, Import, Search, and adaptor
+  compatibility projections; and
+- both default JSON and Jackson 3 client adapters where existing MCP Java
+  Client behavior is covered.
 
 Asynchronous assertions use bounded polling of public behavior. They must not
-depend on fixed sleeps or an internal task order.
+depend on fixed sleeps, internal task order, or eventually consistent Search
+for identity correctness.
 
-## 9. Evolution And Deferred Work
+## 13. Deferred Evolution
 
-The first migration does not define a multi-object MCP format for non-Config AI
-Storage providers, multiple disjoint runtime ranges, forced deletion of every
-connection-owned runtime publication, or Direct projection retirement.
+The following require later independent designs:
 
-Client HTTP API parity and reuse of Agent HTTP publisher heartbeat/renewal are
-recorded follow-up work. They require a separate design after the canonical
-management migration; this spec intentionally does not freeze their paths,
-payloads, transport negotiation, or heartbeat intervals.
+- MCP Client HTTP query, release, endpoint, subscription, and
+  heartbeat/renewal parity;
+- Endpoint-kind persistence and Direct endpoint materialization;
+- retirement or version negotiation for the historical Manifest or Direct
+  Services;
+- versionless Runtime publication, multi-transport metadata, and SemVer range
+  binding;
+- non-Config multi-object MCP storage; and
+- removal of the deprecated physical `mcpId` alias.
 
-Upstream MCP tool, resource, transport, auth, and registry formats may evolve.
-Such changes must preserve the canonical identity and ownership boundaries or
+Upstream MCP tool, resource, transport, auth, and Registry formats may evolve.
+Such changes must preserve the Nacos identity and ownership boundaries or
 publish an explicit schema and migration revision.

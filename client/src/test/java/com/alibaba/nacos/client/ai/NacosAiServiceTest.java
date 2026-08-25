@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
@@ -66,6 +67,9 @@ import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
+import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
+import com.alibaba.nacos.client.ai.remote.AgentHttpTransport;
+import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,6 +98,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -129,6 +134,15 @@ class NacosAiServiceTest {
     
     @Mock
     private AiClientProxy aiClientProxy;
+    
+    @Mock
+    private AgentGrpcTransport grpcTransport;
+    
+    @Mock
+    private AgentHttpTransport httpTransport;
+    
+    @Mock
+    private AgentTransportRouter agentTransportRouter;
     
     @Mock
     private AiChangeNotifier aiChangeNotifier;
@@ -206,6 +220,23 @@ class NacosAiServiceTest {
         assertThrows(NacosApiException.class,
             () -> NacosAiService.resolvePositiveCapacity(clientProperties,
                 AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, 100));
+    }
+    
+    @Test
+    void agentTransportModeParsingIsStrictAndDefaultsToGrpc() throws NacosApiException {
+        NacosClientProperties properties =
+            NacosClientProperties.PROTOTYPE.derive(new Properties());
+        assertEquals(AgentTransportMode.GRPC,
+            NacosAiService.resolveAgentTransportMode(properties));
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, "AuTo");
+        assertEquals(AgentTransportMode.AUTO,
+            NacosAiService.resolveAgentTransportMode(properties));
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, " auto ");
+        assertThrows(NacosApiException.class,
+            () -> NacosAiService.resolveAgentTransportMode(properties));
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, "unknown");
+        assertThrows(NacosApiException.class,
+            () -> NacosAiService.resolveAgentTransportMode(properties));
     }
     
     @Test
@@ -923,12 +954,13 @@ class NacosAiServiceTest {
         source.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
         source.setTags(new ArrayList<String>(Collections.singletonList("assistant")));
         AgentVersionDetail expected = new AgentVersionDetail();
-        when(aiClientProxy.publishAgent(any(AgentPublishRequest.class))).thenReturn(expected);
+        when(agentTransportRouter.publishAgent(any(AgentPublishRequest.class)))
+            .thenReturn(expected);
         
         assertEquals(expected, nacosAiService.publishAgent(source));
         ArgumentCaptor<AgentPublishRequest> request =
             ArgumentCaptor.forClass(AgentPublishRequest.class);
-        verify(aiClientProxy).publishAgent(request.capture());
+        verify(agentTransportRouter).publishAgent(request.capture());
         assertNotNull(request.getValue());
         assertEquals("assistant", request.getValue().getTags().get(0));
         source.getTags().clear();
@@ -939,9 +971,9 @@ class NacosAiServiceTest {
     void agentSearchAndDiscoverBindNamespaceAndDelegate() throws Exception {
         injectMocks();
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        when(aiClientProxy.searchAgents(any(AgentSearchRequest.class))).thenReturn(page);
+        when(agentTransportRouter.searchAgents(any(AgentSearchRequest.class))).thenReturn(page);
         AgentDiscoveryResult discoveryResult = new AgentDiscoveryResult();
-        when(aiClientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+        when(agentTransportRouter.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(discoveryResult);
         AgentSearchRequest search = new AgentSearchRequest();
         AgentReference reference = new AgentReference();
@@ -952,12 +984,12 @@ class NacosAiServiceTest {
         
         ArgumentCaptor<AgentSearchRequest> searchCaptor =
             ArgumentCaptor.forClass(AgentSearchRequest.class);
-        verify(aiClientProxy).searchAgents(searchCaptor.capture());
+        verify(agentTransportRouter).searchAgents(searchCaptor.capture());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, searchCaptor.getValue().getNamespaceId());
         assertNull(search.getNamespaceId());
         ArgumentCaptor<AgentDiscoveryRequest> discoveryCaptor =
             ArgumentCaptor.forClass(AgentDiscoveryRequest.class);
-        verify(aiClientProxy).discoverAgent(discoveryCaptor.capture());
+        verify(agentTransportRouter).discoverAgent(discoveryCaptor.capture());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID,
             discoveryCaptor.getValue().getNamespaceId());
         assertEquals("agent-a",
@@ -1033,6 +1065,7 @@ class NacosAiServiceTest {
         properties.put(com.alibaba.nacos.api.ai.constant.AiConstants.AI_TRANSPORT_MODE,
             com.alibaba.nacos.api.ai.constant.AiConstants.AI_TRANSPORT_MODE_HTTP);
         NacosAiService aiService = null;
+        int grpcClientIndex = grpcClientConstruction.constructed().size();
         try {
             aiService = new NacosAiService(properties);
             // Verify aiClientProxy field is set to httpProxy
@@ -1041,6 +1074,8 @@ class NacosAiServiceTest {
             Field httpProxyField = NacosAiService.class.getDeclaredField("httpProxy");
             httpProxyField.setAccessible(true);
             assertEquals(httpProxyField.get(aiService), clientProxyField.get(aiService));
+            verify(grpcClientConstruction.constructed().get(grpcClientIndex), never())
+                .start(any(), any());
         } catch (NoSuchFieldException | IllegalAccessException ex) {
             throw new RuntimeException(ex);
         } finally {
@@ -1050,7 +1085,30 @@ class NacosAiServiceTest {
         }
     }
     
+    @Test
+    void constructorAutoTransportStartsGrpcSynchronously() throws NacosException {
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        properties.put(AiConstants.AI_TRANSPORT_MODE, AiConstants.AI_TRANSPORT_MODE_AUTO);
+        int grpcClientIndex = grpcClientConstruction.constructed().size();
+        NacosAiService service = null;
+        try {
+            service = new NacosAiService(properties);
+            verify(grpcClientConstruction.constructed().get(grpcClientIndex))
+                .start(any(), any());
+        } finally {
+            if (service != null) {
+                service.shutdown();
+            }
+        }
+    }
+    
     private void injectMocks() throws NoSuchFieldException, IllegalAccessException {
+        try {
+            lenient().when(grpcTransport.requireGrpcClient()).thenReturn(grpcClient);
+        } catch (NacosException e) {
+            throw new IllegalStateException(e);
+        }
         Field field = NacosAiService.class.getDeclaredField("grpcClient");
         field.setAccessible(true);
         final AiGrpcClient autoBuildGrpcClient = (AiGrpcClient) field.get(nacosAiService);
@@ -1062,6 +1120,15 @@ class NacosAiServiceTest {
         field = NacosAiService.class.getDeclaredField("aiClientProxy");
         field.setAccessible(true);
         field.set(nacosAiService, aiClientProxy);
+        field = NacosAiService.class.getDeclaredField("grpcTransport");
+        field.setAccessible(true);
+        field.set(nacosAiService, grpcTransport);
+        field = NacosAiService.class.getDeclaredField("httpTransport");
+        field.setAccessible(true);
+        field.set(nacosAiService, httpTransport);
+        field = NacosAiService.class.getDeclaredField("agentTransportRouter");
+        field.setAccessible(true);
+        field.set(nacosAiService, agentTransportRouter);
         field = NacosAiService.class.getDeclaredField("mcpServerCacheHolder");
         field.setAccessible(true);
         NacosMcpServerCacheHolder autoBuildCacheHolder =

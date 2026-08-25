@@ -67,8 +67,7 @@ their handlers and Java SDK form a complete implementation.
 
 | Mode | Constant | Wire key | Meaning |
 |---|---|---|---|
-| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search and Discover payloads. |
-| `SERVER` | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD runtime Endpoint publication payloads. |
+| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 contract. |
 
 The first `subscribeAgent` polls Discover locally and defines no SDK-client
 ability. A future server Watch/Push design must separately review its client
@@ -130,10 +129,9 @@ features:
   `SERVER_AGENT_REGISTRY`.
 - A2A AgentCard 1.0 fields should require `SERVER_AGENT_CARD_V1` or use an
   explicitly documented compatibility conversion.
-- RAD Search and Discover requests must require `SERVER_AGENT_DISCOVERY_V1`;
-  local polling subscriptions reuse the same Discover check.
-- RAD runtime Endpoint registration and deregistration must require
-  `SERVER_AGENT_ENDPOINT_V1`.
+- RAD definition publication, Search and Discover, and runtime Endpoint
+  publication must require `SERVER_RAD_V1`; local polling subscriptions reuse
+  the same Discover path and therefore the same ability.
 
 Feature code should not cache a positive ability result beyond the current
 connection. It should query the runtime connection ability when the operation is

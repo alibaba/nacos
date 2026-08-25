@@ -179,6 +179,34 @@ Publisher 续约行为。普通 Discover 和订阅轮询只刷新 HTTP Client �
 Publisher。写入超时后，只有 SDK 确定服务端未处理请求时才允许切换传输；结果未知的
 gRPC 写入不得盲目通过 HTTP 重试。
 
+#### 2.2.1 Java SDK Agent Transport 模式
+
+Java SDK 使用 `nacosAiTransportMode` 配置通用 Agent/RAD 操作，公开取值为
+`grpc`、`http` 和 `auto`，未设置时保持 `grpc`。取值大小写不敏感，但不接受首尾空白或
+未知值；非法值必须在创建 `AiService` 时返回参数错误。该配置只约束本节中的通用 Agent
+操作，不改变 MCP、旧 A2A、Prompt、Skill 或 AgentSpec 的既有传输契约。
+
+- `grpc`：SDK 创建时同步执行初始 gRPC 连接；失败后持续异步重连，不切换到 HTTP；
+- `http`：通用 Agent 操作不启动初始 gRPC 连接。其他只支持 gRPC 的 AI 功能被调用时可按
+  既有契约延迟启动共享 gRPC Client；
+- `auto`：SDK 创建时同样同步尝试 gRPC。当前连接为 `RUNNING` 且已协商完整的
+  `SERVER_RAD_V1` 能力时优先使用 gRPC，否则当前调用立即使用 HTTP，不等待后台连接探测。
+
+`auto` 下，只有 gRPC 从未连接成功、状态持续为 `STARTING`、异步初始重连失败次数达到
+配置的 gRPC retry 次数，并且至少一个 Agent HTTP 操作已经成功时，Client 才暂停该初始
+重连循环并稳定使用 HTTP。`UNHEALTHY` 表示曾经建立过连接，不适用此降级规则。若同一
+`AiService` 中其他功能明确需要 gRPC，Client 必须恢复并继续该连接的重试，但 Agent 路由可
+继续保持已稳定的 HTTP 选择。
+
+Search 和 Discover 是只读操作；`auto` 中已选择 gRPC 后出现连接类失败，可以通过 HTTP
+重新读取。连接类失败仅包括 RPC connection 已断开、已注销、失败后连接已不再处于
+`RUNNING`，或底层 gRPC 返回
+`UNAVAILABLE`；通用 `SERVER_ERROR`、`BAD_GATEWAY`、Ability/Handler 不支持及其他服务端
+响应都不是传输不可用的证据，必须原样暴露给调用方。鉴权、参数、冲突、未找到和容量等确定
+业务错误同样不得触发 fallback。定义发布一旦交给某个传输就不得跨传输重放。Endpoint
+Publication 第一次发送时选择 owner transport，后续替换、注销、Heartbeat 和 Redo 在该
+Publication 生命周期内始终使用同一 owner。
+
 ### 2.3 Client HTTP 路径
 
 | Method | Path | 输入 | 返回 |
@@ -323,9 +351,12 @@ Java SDK 本地实现，不扩展 RAD 的六个根消息。
 
 | 常量 | Wire key | 含义 |
 |---|---|---|
-| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search 和 Discover Payload |
-| `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Endpoint Publication Payload |
-| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server 接受通用 Agent 代码式发布 Payload |
+| `SERVER_RAD_V1` | `radV1` | Server 接受 Nacos 3.3 完整 RAD v1 契约 |
+
+Ability 表达兼容与发布单元，而不是逐个 Handler 的清单。Nacos 3.3 将 Agent Definition
+Publication、Search/Discover 和 Runtime Endpoint Publication 作为同一套 RAD v1 能力实现、
+发布与测试，因此使用一个能力位。未来能够独立部署或启用的契约（例如 Server Watch/Push）
+必须使用独立能力位。
 
 旧 `SERVER_AGENT_REGISTRY`、`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 只约束
 旧 A2A 契约。新能力位缺失时，不得通过旧能力位 fallback 发送 RAD Payload。

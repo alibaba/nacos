@@ -276,9 +276,17 @@ compatibility-only direct-online facades. They are not copied into the new
 lifecycle forms. In particular, same-Version content overwrite remains
 available only through the historical update route.
 
+New lifecycle forms identify a Resource with `namespaceId + mcpName` and a
+Version with the additional exact `version`; they do not add `mcpId`.
+Historical Admin, Console, and Maintainer HTTP inputs that already accept
+`mcpId` remain deprecated compatibility fields. The server resolves them
+through `AiResource.ext`, verifies a simultaneously supplied name, and enters
+the same name-based authorization and lifecycle service. Existing response ID
+fields remain wire-compatible.
+
 This target does not add MCP Client HTTP query, release, endpoint, heartbeat,
 or subscription paths. HTTP parity with the existing gRPC/Java Client surface
-is deferred to a separate design after canonical management migration.
+is deferred to a separate design after lifecycle hosting is complete.
 
 ## 10. Documentation Gap Notes
 

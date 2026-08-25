@@ -192,33 +192,39 @@ order.
 
 ## 10. MCP Migration And Lifecycle Scenarios
 
-When the MCP canonical migration or management lifecycle is implemented, the
-OpenAPI IT matrix must cover at least:
+When MCP lifecycle hosting is implemented, the OpenAPI IT matrix must cover at
+least:
 
-- existing Admin and Console create/update/query/list/delete response shapes
-  before and after cutover, including the compatibility-only same-Version
-  overwrite and latest flag;
+- existing Admin and Console create/update/query/list/delete request and
+  response shapes during `SYNCING` and after `LIFECYCLE_MANAGED`, including
+  the compatibility-only same-Version overwrite and latest flag;
+- name-only, name-plus-ID, and historical ID-only management inputs, including
+  canonical authorization after normalization and controlled missing,
+  duplicate, or conflicting Resource aliases;
 - new Version list/detail and draft, submit, reviewed/publish, force-publish,
   redraft, online/offline, custom-label, and invalid-state paths, with equivalent
   Admin and Console semantics;
-- an enabled Resource exposing only online Versions through historical runtime
-  projections, and draft/reviewing/reviewed/offline Versions only through new
-  management reads;
+- an enabled Resource exposing only online Versions through the unchanged
+  historical serving projection, and draft/reviewing/reviewed/offline Versions
+  only through new management reads;
 - legacy fixtures remaining wholly visible during `SYNCING`, idempotent
-  asynchronous reconciliation, all-member gating, zero-difference automatic
-  cutover, restart persistence, and no canonical-to-legacy fallback;
-- unchanged Server/Tools/Resources Config coordinates and bytes, except for the
-  deterministic Direct Server snapshot extension;
-- historical single- and multi-instance Direct snapshot materialization,
-  canonical reads that no longer depend on Naming, Direct projection retention
-  at cutover, and owner/hash-isolated deletion retry;
-- ordinary Service Ref non-ownership and no accidental delete of externally
-  owned Naming data;
-- missing content, invalid manifest, conflicting row, partial storage deletion,
-  and Direct mismatch returning controlled behavior while preventing cutover;
-  and
-- generic and MCP-specific Search, unified Import, and Registry-adaptor results
-  remaining eligible and current across the route transition.
+  asynchronous reconciliation, all-member management gating, zero-difference
+  automatic cutover, and restart persistence;
+- unchanged Manifest/Server/Tools/Resources Config coordinates and bytes, with
+  no Naming Service, instance, frontend/backend, or Runtime metadata mutation
+  caused by reconciliation;
+- Manifest-last publish, offline removal from the serving view while content
+  and Direct Service remain available, and old Config/Naming consumers never
+  observing incomplete Version content;
+- Version and full Resource deletion, Manifest-first stop-serving behavior,
+  Resource/Version row preservation after Direct or content cleanup failure,
+  retry by deprecated ID after Manifest removal, and no accidental delete of an
+  ordinary referenced Service or client Runtime state;
+- missing content, invalid Manifest, conflicting row, and partial storage
+  deletion returning controlled behavior while preventing managed cutover; and
+- generic and MCP-specific Search using canonical `mcpName`, durable
+  asynchronous convergence and historical ID-keyed cleanup, plus unified Import
+  and Registry-adaptor compatibility across the management transition.
 
 Migration tests assert only public behavior and durable restart outcomes. They
 may seed documented legacy fixtures through test setup, but must not use direct

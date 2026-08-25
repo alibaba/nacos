@@ -63,8 +63,7 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 
 | Mode | 常量 | Wire key | 含义 |
 |---|---|---|---|
-| `SERVER` | `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search 和 Discover Payload。 |
-| `SERVER` | `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Runtime Endpoint 发布 Payload。 |
+| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server 接受 Nacos 3.3 完整 RAD v1 契约。 |
 
 首版 `subscribeAgent` 只在 SDK 本地轮询 Discover，不定义 SDK Client ability。
 未来服务端 Watch/Push 必须独立评审 Client ability、Payload 和 ACK 契约。旧
@@ -111,9 +110,8 @@ Unknown 不是成功。新功能应优先返回 fail-fast unsupported error，�
 - AI MCP registry 操作必须要求 `SERVER_MCP_REGISTRY`。
 - 旧 A2A Agent 和 AgentCard 操作必须要求 `SERVER_AGENT_REGISTRY`。
 - A2A AgentCard 1.0 字段应要求 `SERVER_AGENT_CARD_V1`，或使用显式文档化的兼容转换。
-- RAD Search 和 Discover 请求必须要求 `SERVER_AGENT_DISCOVERY_V1`；本地轮询订阅复用
-  同一 Discover 检查。
-- RAD Runtime Endpoint 注册和注销必须要求 `SERVER_AGENT_ENDPOINT_V1`。
+- RAD Definition Publication、Search/Discover 和 Runtime Endpoint Publication 必须要求
+  `SERVER_RAD_V1`；本地轮询订阅复用同一 Discover 路径，因此使用同一能力位。
 
 功能代码不应把 positive ability result 缓存在当前 connection 生命周期之外。执行操作前应查询
 运行时 connection ability，或确认缓存值属于当前 connection。

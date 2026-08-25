@@ -94,7 +94,7 @@ Detailed field and lifecycle rules are defined by the
 
 | Type | Standard identity | Current or approved target persistence shape | Spec |
 | --- | --- | --- | --- |
-| `mcp` | `namespaceId -> mcp -> mcpName` | Approved target: `ai_resource` and `ai_resource_version`, descriptors pointing to existing Config content, Config-backed Direct Endpoint facts, and Naming-backed Service/Runtime references. Historical manifests remain authoritative only while `SYNCING`. | [MCP Server Spec](mcp-server-spec.md) |
+| `mcp` | `namespaceId -> mcp -> mcpName` | Approved target: `ai_resource` and `ai_resource_version` host management lifecycle; descriptors point to unchanged Config content. The historical Manifest and existing Direct, Service Ref, frontend/backend, and Runtime Naming layouts remain the serving plane. | [MCP Server Spec](mcp-server-spec.md) |
 | `agent` | `namespaceId -> agent -> agentName` | Approved target: `ai_resource`, `ai_resource_version`, AI storage, and Naming-backed runtime endpoint publications. Historical A2A storage remains a compatibility source until migration. | [Agent Management Spec](agent-management-spec.md) |
 | `prompt` | `namespaceId -> prompt -> promptKey` | Uses `ai_resource`, `ai_resource_version`, and AI storage; legacy Prompt data may be migrated. | [Prompt Spec](prompt-spec.md) |
 | `skill` | `namespaceId -> skill -> name` | Uses `ai_resource`, `ai_resource_version`, AI storage, and a lightweight manifest for discovery. | [Skill Spec](skill-spec.md) |
@@ -141,13 +141,13 @@ AI Registry is exposed through multiple surfaces:
 
 ## 7. Migration And Evolution Items
 
-- MCP migration follows the approved asynchronous, one-way
-  `SYNCING -> CANONICAL` contract in the MCP Server Spec. It preserves existing
-  content coordinates, materializes only historical Direct Endpoint snapshots,
-  waits for zero-difference reconciliation and every-member capability, and
-  keeps Direct persistent Naming Services in `CANONICAL_COMPAT` rather than
-  deleting them at cutover. Production behavior remains pending until that
-  contract is implemented and verified.
+- MCP migration follows the asynchronous, one-way management transition
+  `SYNCING -> LIFECYCLE_MANAGED` in the MCP Server Spec. It creates
+  Resource/Version pointers without changing Config bytes or Naming, waits for
+  zero-difference reconciliation and every-member management capability, and
+  continues maintaining the historical Manifest and current endpoint serving
+  layout after cutover. Production behavior remains pending until that contract
+  is implemented and verified.
 - Historical A2A AgentCard and Naming endpoint data must migrate to the Agent
   model through the rolling-upgrade plan; the legacy APIs remain projections,
   not an independent resource store.

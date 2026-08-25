@@ -207,6 +207,12 @@ creates a draft or runs the ordinary submit Pipeline according to
 conflicts, and state convergence follow the
 [Agent API Spec](../ai/agent-api-spec.md).
 
+`AgentTransportMode` is a Java 8-compatible API-module enum exposing `GRPC`,
+`HTTP`, and `AUTO`; `getValue()` supplies the `nacosAiTransportMode` property
+value. The mode is frozen when `AiService` is created, and invalid values fail
+factory creation. The [Agent API Spec](../ai/agent-api-spec.md) defines the
+transport lifecycle, AUTO probe, and operation fallback rules.
+
 `AgentDiscoveryService` provides these namespace-bound methods:
 
 | Capability | Methods | Contract |

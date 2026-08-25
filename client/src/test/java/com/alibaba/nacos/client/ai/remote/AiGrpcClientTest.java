@@ -59,6 +59,7 @@ import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.InitialConnectionFailureListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -766,6 +767,25 @@ class AiGrpcClientTest {
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
             .thenReturn(AbilityStatus.SUPPORTED);
         assertTrue(aiGrpcClient.isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY));
+    }
+    
+    @Test
+    void initialConnectionProbeDelegatesToRpcClient() throws Exception {
+        injectMock();
+        InitialConnectionFailureListener listener =
+            org.mockito.Mockito.mock(InitialConnectionFailureListener.class);
+        when(rpcClient.getInitialConnectionFailureCount()).thenReturn(7);
+        when(rpcClient.suspendInitialReconnect()).thenReturn(true);
+        when(rpcClient.resumeInitialReconnect()).thenReturn(true);
+        when(rpcClient.isInitialReconnectSuspended()).thenReturn(true);
+        
+        aiGrpcClient.registerInitialConnectionFailureListener(listener);
+        assertEquals(7, aiGrpcClient.getInitialConnectionFailureCount());
+        assertTrue(aiGrpcClient.suspendInitialReconnect());
+        assertTrue(aiGrpcClient.resumeInitialReconnect());
+        assertTrue(aiGrpcClient.isInitialReconnectSuspended());
+        assertTrue(aiGrpcClient.getRetryTimes() > 0);
+        verify(rpcClient).registerInitialConnectionFailureListener(listener);
     }
     
     @Test

@@ -177,6 +177,11 @@ default bridge；它不放入 `AgentDiscoveryService`，因为定义发布不是
 Request、注入 SDK namespace，并按 `autoSubmit` 创建 draft 或执行普通 submit Pipeline，且不
 修改调用方对象。等价重试、冲突和状态收敛遵循 [Agent API 规范](../ai/agent-api-spec.md)。
 
+`AgentTransportMode` 是 API 模块中的 Java 8 兼容枚举，公开 `GRPC`、`HTTP`、`AUTO`，并可通过
+`getValue()` 写入 `nacosAiTransportMode`。模式在 `AiService` 创建时冻结；非法值在 Factory
+创建阶段失败。Transport 生命周期、AUTO 探测与操作 fallback 的具体规则由
+[Agent API 规范](../ai/agent-api-spec.md)定义。
+
 `AgentDiscoveryService` 提供以下 namespace-bound 方法：
 
 | 能力 | 方法 | 契约 |
