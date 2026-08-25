@@ -208,6 +208,23 @@ projection version；无语义的修改时间不单独触发 digest 变化。
 关键词匹配继续通过与 Locale 无关的查询规范化实现大小写不敏感，不得依赖数据源专属的表级
 大小写不敏感排序规则。
 
+### 5.3 MCP 投影
+
+每个 `(namespaceId, mcpName)` 最多存在一个 Enable Document。`resourceName`
+必须是标准 `mcpName`，绝不能是已废弃 `mcpId`；`resourceVersion` 是 Common
+`latest` 指向的 Online Version。
+
+MCP Handler 从 `AiResource`、`AiResourceVersion` 以及通过持久化 MCP Storage
+Descriptor 加载的内容生成投影。它不得通过历史 MCP Operation Service、Serving Manifest、
+最终一致的 Search 或 MCP 内存 ID Index 定位源内容。公开 Description、Tools、Resources、
+Business Tag、Protocol 和 Capability 可以进入 Document；Credential、敏感 Auth Metadata、
+Naming Instance、Health、Heartbeat 和 Runtime Endpoint 状态绝不进入耐久索引。
+
+只有兼容 DTO 要求时，历史 `mcpId` 才可以作为 Response Metadata 保留，不能成为 Document
+Identity。生命周期托管投影递增 MCP `projectionVersion`；Backfill 重建 Name-Keyed
+Document，Reconciliation 删除过期或孤立的 ID-Keyed Document 与 Task，确保 MCP 不会长期
+保留两个标准 Search 身份。
+
 ## 6. 一致性
 
 单个逻辑资源的关系 document、chunks 和内嵌 facets 必须原子替换。关系索引与向量索引之间不要求分布式
@@ -221,6 +238,10 @@ key 是 task type、namespace 以及由 resource type 和 resource name 组成�
 metadata 或治理字段变化、Version publish/online/offline/delete、common latest 或自定义 label
 变化、legacy A2A facade 产生的 canonical 定义变化，以及 Agent 删除都必须调度。Endpoint
 register、deregister、heartbeat、健康变化和 Runtime revision 不得调度目录索引任务。
+
+对 MCP，Create/Update、Publish、Online/Offline/Delete、Enable/Disable、Label 和 Import
+变更按标准 `mcpName` 调度任务。MCP Endpoint Register/Deregister、Heartbeat、Reconnect
+和其他仅 Runtime 变更不调度。调度失败遵循相同的耐久修复规则，绝不能改变身份或写入正确性。
 
 同一任务行负责两个持久化阶段：
 

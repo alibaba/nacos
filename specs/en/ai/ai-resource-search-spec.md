@@ -273,6 +273,27 @@ case-sensitive comparison consistent with canonical resource storage. Keyword
 matching remains case-insensitive through locale-stable query normalization;
 it must not depend on a datasource-specific case-insensitive table collation.
 
+### 5.3 MCP Projection
+
+At most one enabled document exists per `(namespaceId, mcpName)`. Its
+`resourceName` is exactly the canonical `mcpName`, never the deprecated
+`mcpId`, and its `resourceVersion` is the online Version referenced by
+common `latest`.
+
+The MCP handler projects from `AiResource`, `AiResourceVersion`, and content
+loaded through the persisted MCP storage descriptor. It must not locate source
+content through the historical MCP operation service, serving Manifest,
+eventually consistent Search, or MCP in-memory ID index. Public description,
+Tools, Resources, business tags, protocols, and capabilities may enter the
+document. Credentials, sensitive auth metadata, Naming instances, health,
+heartbeats, and Runtime endpoint state never enter the durable index.
+
+Historical `mcpId` may remain response metadata only where a compatibility DTO
+requires it; it is not document identity. The lifecycle-hosting projection
+increments the MCP `projectionVersion`. Backfill rebuilds name-keyed
+documents, while reconciliation removes stale or orphaned ID-keyed documents
+and tasks so MCP never retains two canonical Search identities.
+
 ## 6. Consistency
 
 Replacing one logical resource's relational document, chunks, and embedded
@@ -293,6 +314,12 @@ changes, canonical definition changes made through the legacy A2A facade, and
 Agent deletion all schedule the task. Endpoint registration, deregistration,
 heartbeat, health changes, and Runtime revisions do not schedule a catalog
 index task.
+
+For MCP, create/update, publish, online/offline/delete, enable/disable, label,
+and import changes schedule the task by canonical `mcpName`. MCP endpoint
+registration, deregistration, heartbeat, reconnect, and other Runtime-only
+changes do not schedule it. A scheduling failure follows the same durable
+repair rule and never changes identity or write correctness.
 
 The same task row owns two durable stages:
 

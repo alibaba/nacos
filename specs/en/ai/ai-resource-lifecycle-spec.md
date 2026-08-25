@@ -160,12 +160,13 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
   missing resources are success.
 - Deleting an online version should update `onlineCnt` or labels when the type
   implementation supports it.
-- A type-owned derived projection is not Version content storage. In
-  particular, an MCP Direct Naming compatibility projection is removed only
-  after owner and snapshot-digest checks. Physical projection cleanup failure
-  creates a durable retry and must not revive or roll back an otherwise
-  successful canonical business deletion. Storage-object failure still follows
-  the row-preservation rule above.
+- Type-owned physical cleanup required by a domain spec participates in the
+  type storage-deletion callback and must finish before metadata rows are
+  removed. In particular, MCP-owned Direct Naming cleanup and MCP Version
+  Config cleanup use the same row-preservation rule: either failure reports the
+  delete as incomplete and preserves Resource/Version rows and descriptors for
+  retry. Ordinary referenced Services and client-owned Runtime state are not
+  type-owned cleanup targets.
 
 ## 7. Trace And Counters
 

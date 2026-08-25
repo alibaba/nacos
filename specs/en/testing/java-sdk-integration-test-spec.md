@@ -178,29 +178,30 @@ public SDK contracts.
 
 ## 9. MCP Compatibility And Runtime Endpoint Scenarios
 
-When the MCP storage route, lifecycle facade, or Endpoint binding changes, Java
-SDK IT must cover at least:
+When MCP Storage routing or lifecycle hosting changes, Java SDK IT must cover at
+least:
 
-- a real `AiService` releasing a new MCP Resource/Version, querying an explicit
-  Version and latest, and observing only enabled + online content;
+- a real `AiService` releasing a new MCP Resource/Version, preserving the
+  historical ID response, querying an explicit Version and latest, and
+  observing the same enabled and published serving content;
 - historical exact-Version conflict/overwrite behavior remaining isolated from
-  canonical lifecycle writes;
+  standard lifecycle writes;
 - `subscribeMcpServer` initial delivery, changed full-result callback,
-  unsubscribe, resubscribe, and shutdown cleanup without a Naming subscription;
-- Runtime Endpoint all-Version, SemVer exact, SemVer range, and non-SemVer exact
-  bindings, including range-without-Version, non-SemVer range, and range-not-
-  containing-Version rejection;
-- `sse`, `streamable-http`, and canonical dual-transport publication, plus
-  absence of transport metadata for the compatibility-unrestricted case;
-- new Versionless Service results merged and deduplicated with a historical
-  `mcpName::version` Service during compatibility;
-- deregistration, disconnect, reconnect, and redo restoring the same defensive
-  publication snapshot without duplicating instances or losing another MCP
-  publication; and
-- equivalent behavior through the default JSON adapter and Jackson 3 adapter,
-  including old request fixtures that omit all additive fields.
+  unsubscribe, resubscribe, and shutdown cleanup without a direct Naming
+  subscription;
+- current version-scoped Runtime endpoint registration and deregistration,
+  Service/cluster/metadata compatibility, disconnect, reconnect, and redo
+  restoring the same defensive publication snapshot without duplicating
+  instances or losing another MCP publication;
+- the Java Client continuing to use `mcpName` and not populating the dormant
+  top-level gRPC `mcpId`, while active model, event, and response ID fields
+  retain their current values;
+- lifecycle reconciliation and management cutover causing no new Runtime
+  publication, Naming layout, ability-negotiation, or public `AiService`
+  interface behavior; and
+- equivalent behavior through the default JSON adapter and Jackson 3 adapter
+  with current request fixtures and response models.
 
-An SDK using explicit new Endpoint fields must negotiate server support and
-produce a controlled exception or documented fallback when the ability is
-absent. Client HTTP parity and heartbeat renewal remain outside this matrix
-until their separate design is approved.
+Versionless Runtime Services, explicit transport lists, MCP Version ranges,
+Client HTTP parity, and heartbeat renewal remain outside this matrix until
+their separate designs are approved.

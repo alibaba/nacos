@@ -151,21 +151,21 @@ gRPC 连接就绪状态或可选服务端能力的 SDK 测试。
 
 ## 9. MCP 兼容与 Runtime Endpoint 场景
 
-MCP Storage 路由、生命周期 Facade 或 Endpoint Binding 发生变化时，Java SDK IT 至少覆盖：
+MCP Storage 路由或生命周期托管发生变化时，Java SDK IT 至少覆盖：
 
-- 真实 `AiService` 发布新的 MCP Resource/Version，按精确 Version 和 latest 查询，并且只观察到
-  enable + online 内容；
-- 历史精确 Version conflict/overwrite 行为只存在于兼容 Facade，不影响标准生命周期写入；
-- `subscribeMcpServer` 初始投递、完整结果变化回调、unsubscribe、重新 subscribe 和 shutdown
-  清理，且不建立 Naming subscription；
-- Runtime Endpoint 全 Version、SemVer exact、SemVer Range 和非 SemVer exact Binding，
-  包括拒绝无 Version Range、非 SemVer Range 和不包含 Version 的 Range；
-- `sse`、`streamable-http` 和标准双 Transport publication，以及缺少 Transport metadata 时的
-  兼容不受限语义；
-- 兼容期间合并新的无 Version Service 与历史 `mcpName::version` Service，并正确去重；
-- Deregister、断连、重连和 redo 恢复同一份防御性 publication 快照，不重复 Instance，
-  也不丢失其他 MCP publication；
-- 默认 JSON Adapter 与 Jackson 3 Adapter 行为等价，包括省略全部新增字段的旧 Request Fixture。
+- 真实 `AiService` 发布新的 MCP Resource/Version，保留历史 ID 响应，按精确 Version
+  和 Latest 查询，并观察到与之前相同的 Enable 和 Published Serving 内容；
+- 历史精确 Version Conflict/Overwrite 行为只存在于兼容 Facade，不影响标准生命周期写入；
+- `subscribeMcpServer` 初始投递、完整结果变化回调、Unsubscribe、重新 Subscribe 和
+  Shutdown 清理，且不建立直接 Naming Subscription；
+- 当前按 Version 划分的 Runtime Endpoint Register/Deregister、Service/Cluster/Metadata
+  兼容性，以及断连、重连和 Redo 恢复同一份防御性 Publication Snapshot，不重复 Instance，
+  也不丢失其他 MCP Publication；
+- Java Client 继续使用 `mcpName`，不填充 Dormant 顶层 gRPC `mcpId`，同时 Active
+  Model、Event 和 Response ID 字段保持当前值；
+- 生命周期对账和管理切换不新增 Runtime Publication、Naming Layout、能力协商或公开
+  `AiService` Interface 行为；
+- 默认 JSON Adapter 与 Jackson 3 Adapter 使用当前 Request Fixture 和 Response Model 时行为等价。
 
-使用显式新增 Endpoint 字段的 SDK 必须协商服务端支持；能力缺失时返回受控异常或文档化 fallback。
-Client HTTP 对齐和心跳续约在独立设计批准前不属于该矩阵。
+无 Version Runtime Service、显式 Transport List、MCP Version Range、Client HTTP 对齐和
+心跳续约在独立设计批准前不属于该矩阵。

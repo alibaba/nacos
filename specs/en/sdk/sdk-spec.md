@@ -119,38 +119,43 @@ The target Maintainer SDK is not namespace-bound. Every Agent management call
 must explicitly identify its namespace. It exposes the new Agent management
 facade while retaining the A2A management facade for its compatibility window.
 
-## 5. MCP Migration Target Contract
+## 5. MCP Lifecycle-Hosting Contract
 
 The existing Java Client MCP interfaces remain compatibility surfaces while
-MCP metadata and Versions move to the standard AI Resource lifecycle. Public
-method signatures should remain unchanged wherever the existing operation can
-be adapted internally:
+MCP metadata and Versions move to the common AI Resource lifecycle. Public
+method signatures remain unchanged wherever the existing operation can be
+adapted internally:
 
-- release remains a direct-online compatibility write;
-- query resolves only enabled + online and uses `latest` when Version is
-  omitted;
+- release remains a direct-online compatibility write with the same return
+  value;
+- query retains its current serving projection and uses `latest` when Version
+  is omitted;
 - subscription continues polling the complete MCP query projection and does
   not subscribe to the underlying Naming Service; and
 - endpoint deregistration, reconnect, and redo preserve client-owned Runtime
   publication intent without creating or deleting an MCP definition.
 
-Explicit Runtime Version ranges and multiple supported transports may use a
-new request object or overload only when the old interface cannot express them.
-Such an additive API keeps the existing `version` exact-binding behavior. The
-target transport request carries optional `supportedTransports` and
-`versionRange`; redo snapshots these values defensively and restores the
-Versionless `mcp-endpoints / mcpName / DEFAULT` publication after reconnect.
-Non-SemVer Versions support exact matching only.
+Lifecycle hosting does not change the current Runtime Service name, cluster,
+metadata, endpoint request, reconnect snapshot, or ability negotiation. It does
+not add Runtime Version ranges or multiple-transport fields. Such endpoint
+model changes require a later compatibility design.
 
 The Maintainer SDK retains its current MCP create/update/delete/query methods as
 direct-online compatibility facades and adds typed methods matching the Admin
 MCP Version, draft, submit, publish, force-publish, redraft, online, offline,
-and label operations. Every management call identifies its namespace and uses
-the same lifecycle application service as Admin and Console APIs.
+and label operations. Every new management call identifies its namespace and
+uses `mcpName + version` with the same lifecycle application service as Admin
+and Console APIs.
 
-Client HTTP parity with gRPC is deferred until canonical MCP management
-migration is complete. A later design should preserve the public SDK interface
-where possible, keep HTTP and gRPC semantics identical, and reuse Agent HTTP
+Existing Maintainer overloads that accept only `mcpId` remain deprecated
+compatibility inputs. The server resolves the alias from MCP AI Resource rows
+and then applies the same name-based authorization and operation. The Java
+Client does not start populating the dormant top-level gRPC `mcpId`; current
+model, event, and release-response ID fields remain wire-compatible.
+
+Client HTTP parity with gRPC is deferred until MCP lifecycle hosting is
+complete. A later design should preserve the public SDK interface where
+possible, keep HTTP and gRPC semantics identical, and reuse Agent HTTP
 publisher heartbeat/renewal rather than creating a second liveness model. This
 spec does not yet define those HTTP paths, payloads, or heartbeat intervals.
 

@@ -125,13 +125,11 @@ stored in `AiResourceVersion.storage` because they follow a client-owned Naming
 lifecycle.
 
 For `type=mcp`, the canonical name is `mcpName`. Resource `ext` stores only the
-schema version and historical UUID-shaped `mcpId` compatibility alias. A
-Version `storage` descriptor points to the existing MCP Server and optional
-Tools/Resources Config objects through the allowlisted `mcp-config-v1` key
-format. It does not copy those payloads or turn them into user-owned Config
-resources. Historical Direct Endpoints are the sole content exception: their
-addresses are materialized into the existing Server Config so Naming can become
-a rebuildable compatibility projection. Exact fields are defined by the
+schema version and deprecated UUID-shaped `mcpId` physical-storage and legacy
+API alias. A Version `storage` descriptor points to the existing MCP Server
+and optional Tools/Resources Config objects through the allowlisted
+`mcp-config-v1` key format. It does not copy, rewrite, or extend those payloads
+or turn them into user-owned Config resources. Exact fields are defined by the
 [MCP Server Spec](mcp-server-spec.md) and the MCP
 [Resource extension](../../schemas/ai/mcp/internal/v1/mcp-resource-ext.schema.json)
 and [Version storage](../../schemas/ai/mcp/internal/v1/mcp-version-storage.schema.json)
@@ -139,8 +137,9 @@ schemas.
 
 MCP Runtime Endpoints are not stored in `AiResourceVersion.storage`. They use
 client-owned Naming runtime state. An MCP ordinary Service Ref remains owned by
-its Naming user, while an MCP Direct persistent Naming Service is only a
-type-owned downgrade projection after its Version Config snapshot is complete.
+its Naming user. An MCP Direct persistent Naming Service remains the current
+endpoint fact and compatibility serving contract; it is not replaced by a
+Version Config snapshot during lifecycle hosting.
 
 ## 6. Visibility
 
