@@ -76,6 +76,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
@@ -89,11 +90,11 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.InitialConnectionFailureListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
-import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -130,6 +131,8 @@ public class AiGrpcClient implements AiClientProxy {
     
     private final RpcClient rpcClient;
     
+    private final int retryTimes;
+    
     private final AbstractServerListManager serverListManager;
     
     private final AiGrpcRedoService redoService;
@@ -153,7 +156,10 @@ public class AiGrpcClient implements AiClientProxy {
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout =
             Long.parseLong(properties.getProperty(AiConstants.AI_REQUEST_TIMEOUT, "-1"));
-        this.rpcClient = buildRpcClient(properties);
+        GrpcClientConfig grpcClientConfig = buildGrpcClientConfig(properties);
+        this.retryTimes = grpcClientConfig.retryTimes();
+        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC,
+            grpcClientConfig);
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
         this.redoService = new AiGrpcRedoService(properties, this);
         this.properties = properties;
@@ -169,14 +175,68 @@ public class AiGrpcClient implements AiClientProxy {
         this.agentEndpointPublicationCapacityRejectedHandler = handler;
     }
     
-    private RpcClient buildRpcClient(NacosClientProperties properties) {
+    private GrpcClientConfig buildGrpcClientConfig(NacosClientProperties properties) {
         Map<String, String> labels = new HashMap<>(3);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_AI);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+        return RpcClientConfigFactory.getInstance()
             .createGrpcClientConfig(properties.asProperties(), labels);
-        return RpcClientFactory.createClient(uuid, ConnectionType.GRPC, grpcClientConfig);
+    }
+    
+    /**
+     * Register a listener for failed asynchronous initial gRPC connection attempts.
+     *
+     * @param listener initial connection failure listener
+     */
+    public void registerInitialConnectionFailureListener(
+        InitialConnectionFailureListener listener) {
+        rpcClient.registerInitialConnectionFailureListener(listener);
+    }
+    
+    /**
+     * Return the configured gRPC retry count used as the AUTO initial probe budget.
+     *
+     * @return configured retry count
+     */
+    public int getRetryTimes() {
+        return retryTimes;
+    }
+    
+    /**
+     * Return the number of failed asynchronous initial connection attempts.
+     *
+     * @return failure count
+     */
+    public int getInitialConnectionFailureCount() {
+        return rpcClient.getInitialConnectionFailureCount();
+    }
+    
+    /**
+     * Pause background gRPC reconnect while this client has never connected.
+     *
+     * @return {@code true} when reconnect is suspended
+     */
+    public boolean suspendInitialReconnect() {
+        return rpcClient.suspendInitialReconnect();
+    }
+    
+    /**
+     * Resume a previously suspended initial gRPC reconnect.
+     *
+     * @return {@code true} when reconnect is resumed
+     */
+    public boolean resumeInitialReconnect() {
+        return rpcClient.resumeInitialReconnect();
+    }
+    
+    /**
+     * Check whether initial gRPC reconnect is suspended.
+     *
+     * @return {@code true} when suspended
+     */
+    public boolean isInitialReconnectSuspended() {
+        return rpcClient.isInitialReconnectSuspended();
     }
     
     /**
@@ -210,7 +270,7 @@ public class AiGrpcClient implements AiClientProxy {
     
     @Override
     public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_PUBLISH_V1, "Agent publication");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentPublishRpcRequest rpcRequest = new AgentPublishRpcRequest();
         rpcRequest.setNamespaceId(namespaceId);
         rpcRequest.setPublishRequest(request);
@@ -222,7 +282,7 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_DISCOVERY_V1, "Agent discovery");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentSearchRpcRequest rpcRequest = new AgentSearchRpcRequest();
         rpcRequest.setSearchRequest(request);
         AgentSearchResponse response =
@@ -233,7 +293,7 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_DISCOVERY_V1, "Agent discovery");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentDiscoveryRpcRequest rpcRequest = new AgentDiscoveryRpcRequest();
         rpcRequest.setDiscoveryRequest(request);
         AgentDiscoveryResponse response =
@@ -250,7 +310,7 @@ public class AiGrpcClient implements AiClientProxy {
      */
     public void doRegisterAgentEndpoints(String key, AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_ENDPOINT_V1, "Agent Endpoint");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentEndpointRegisterRpcRequest request = new AgentEndpointRegisterRpcRequest();
         request.setRegistrationBatch(batch);
         requestToServer(request, AgentEndpointOperationResponse.class);
@@ -260,7 +320,7 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public void deregisterAgentEndpoints(String namespaceId, String agentName, String protocol)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_ENDPOINT_V1, "Agent Endpoint");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         String key =
             AgentEndpointPublicationRedoData.keyOf(namespaceId, agentName, protocol);
         AgentEndpointRegistrationBatch previous =
@@ -287,7 +347,7 @@ public class AiGrpcClient implements AiClientProxy {
      */
     public void doDeregisterAgentEndpoints(String key, String namespaceId, String agentName,
         String protocol) throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_ENDPOINT_V1, "Agent Endpoint");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentEndpointDeregisterRpcRequest request = new AgentEndpointDeregisterRpcRequest();
         request.setNamespaceId(namespaceId);
         request.setAgentName(agentName);
@@ -621,7 +681,7 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_AGENT_ENDPOINT_V1, "Agent Endpoint");
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         String key = AgentEndpointPublicationRedoData.keyOf(batch.getNamespaceId(),
             batch.getAgentName(), batch.getProtocol());
         AgentEndpointRegistrationBatch previous =

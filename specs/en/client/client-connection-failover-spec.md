@@ -74,6 +74,20 @@ cannot establish a running connection within the configured retry budget, it may
 continue with asynchronous reconnect, but public SDK calls must surface
 connection unavailability according to their domain contract.
 
+A domain client may suspend background initial reconnect only while the client
+has never connected and remains `STARTING`, and only when all of the following
+hold:
+
+- the domain contract defines an available alternate transport;
+- that alternate transport has completed at least one authoritative request;
+- failed asynchronous initial reconnects have reached the domain probe budget.
+
+Suspension suppresses new initial reconnect signals and the active initial
+reconnect loop; it does not pretend that the client is `RUNNING` or
+`UNHEALTHY`. Explicit gRPC mode, a connection already in `UNHEALTHY`, and an
+explicit shared-gRPC demand from another feature must keep or resume reconnect.
+Public requests must not wait for this background probe to finish.
+
 Reconnect can be triggered by:
 
 - request stream error or completion;

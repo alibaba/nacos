@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -52,6 +53,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
@@ -1168,6 +1170,72 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(endpoint))));
         waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
+    }
+    
+    @Test
+    void shouldUseGrpcForAutoWhenInitialConnectionIsAvailable() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID,
+            AgentTransportMode.AUTO.getValue());
+        String agentName = randomServiceName("agent-auto-grpc");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Arrays.asList("java-sdk-it", "auto-grpc"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+        waitForSearchTotal(service, agentName, 1);
+        Endpoint endpoint = endpoint(randomPort(), "/auto-grpc", "auto-grpc");
+        service.registerAgentEndpoints(
+            registration(agentName, PROTOCOL_A2A, Collections.singletonList(endpoint)));
+        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
+        
+        service.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpoint))));
+        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
+    }
+    
+    @Test
+    void shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String agentName = randomServiceName("agent-auto-http");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Arrays.asList("java-sdk-it", "auto-http"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+        Properties autoProperties = sdkProperties();
+        autoProperties.setProperty(PropertyKeyConst.NAMESPACE, Constants.DEFAULT_NAMESPACE_ID);
+        autoProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.AUTO.getValue());
+        autoProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
+        AiService autoService = createAiService(autoProperties);
+        waitForSearchTotal(autoService, agentName, 1);
+        RecordingAgentListener listener = new RecordingAgentListener();
+        AgentReference reference = reference(agentName, null, null);
+        AgentDiscoveryResult initial = autoService.subscribeAgent(reference, listener);
+        assertEquals(VERSION, initial.getVersion());
+        Endpoint endpoint = endpoint(randomPort(), "/auto-http", "auto-http");
+        autoService.registerAgentEndpoints(
+            registration(agentName, PROTOCOL_A2A, Collections.singletonList(endpoint)));
+        awaitEvent(listener, "AUTO polling should observe its HTTP-owned publication",
+            result -> containsEndpoint(result, PROTOCOL_A2A, endpoint.getUri()));
+        
+        Properties httpProperties = sdkProperties();
+        httpProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.HTTP.getValue());
+        httpProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
+        AiService httpService = createAiService(httpProperties);
+        assertEquals(agentName, searchOne(httpService, agentName).getAgentName());
+        
+        Properties grpcProperties = sdkProperties();
+        grpcProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.GRPC.getValue());
+        grpcProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
+        AiService grpcService = createAiService(grpcProperties);
+        AgentSearchRequest search = new AgentSearchRequest();
+        search.setAgentNameContains(agentName);
+        assertThrows(NacosException.class, () -> grpcService.searchAgents(search));
+        
+        autoService.unsubscribeAgent(reference, listener);
+        autoService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpoint))));
+        waitForEndpointCount(httpService, agentName, PROTOCOL_A2A, 0);
     }
 
     @Test

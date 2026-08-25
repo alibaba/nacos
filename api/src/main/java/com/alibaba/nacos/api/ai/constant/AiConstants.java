@@ -82,6 +82,8 @@ public class AiConstants {
     
     public static final String AI_TRANSPORT_MODE_HTTP = "http";
     
+    public static final String AI_TRANSPORT_MODE_AUTO = "auto";
+    
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL =

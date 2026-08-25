@@ -51,13 +51,15 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
+| `shouldUseGrpcForAutoWhenInitialConnectionIsAvailable` | AUTO synchronous startup with an available negotiated gRPC connection, followed by Search, Endpoint Publication, Discover, and Deregister. |
+| `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, polling subscription, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
 | `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
 | `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same sixteen stable workflows pass with both the default JSON adapter and
+The same eighteen stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -82,6 +84,11 @@ is never stopped.
 | Shutdown with no subscription or publication | Polling, heartbeat, HTTP resources, and gRPC resources stop cleanly. | IT + UT |
 | Shutdown with active subscriptions and publications | The SDK cancels polling and heartbeat and best-effort deregisters every complete publication. | IT + UT |
 | Repeated shutdown | No duplicate callback, uncontrolled exception, or leaked task is produced. | UT |
+| `grpc` Agent transport mode | Initial gRPC connection is attempted synchronously; an unavailable connection keeps retrying and Agent operations never fall back to HTTP. | IT + UT |
+| `http` Agent transport mode | Agent operations do not depend on initial gRPC startup and remain usable when the configured gRPC port is unreachable. | IT + UT |
+| `auto` with available negotiated gRPC | Agent operations prefer gRPC. | IT + UT |
+| `auto` with gRPC remaining `STARTING` | The public request does not wait for the background probe, succeeds through HTTP, and settles on HTTP only after the retry budget plus a successful HTTP operation. | IT + UT |
+| Invalid, padded, or unknown transport mode | Factory creation fails locally with a controlled invalid-parameter exception. | UT |
 
 ## Search
 
@@ -97,6 +104,8 @@ is never stopped.
 | gRPC ability is `SUPPORTED` | Exactly one Search RPC is sent and the typed page is returned. | UT |
 | gRPC ability is `NOT_SUPPORTED` or `UNKNOWN` | A local unsupported error is raised without legacy or HTTP fallback. | UT |
 | HTTP transport | The documented GET query, auth resource, and stable HTTP Client id are used. | IT + UT |
+| AUTO read and gRPC is not currently available | HTTP is selected immediately without waiting for asynchronous reconnect. | IT + UT |
+| AUTO read encounters a gRPC connection-class failure | The read may be repeated through HTTP; a definite business error is returned without fallback. | UT |
 
 ## Discover
 
@@ -115,6 +124,7 @@ is never stopped.
 | Version and label are both set, or reference/filter is invalid | The SDK rejects the call locally without mutating the input. | IT + UT |
 | gRPC ability is missing or unknown | A local unsupported error is raised and no remote request is sent. | UT |
 | HTTP and gRPC transport parity | Both transports return equivalent typed snapshots for the same server state. | IT |
+| AUTO with available or never-connected gRPC | The same typed snapshot is returned through gRPC or immediate HTTP routing respectively. | IT + UT |
 
 ## Definition And Version Evolution
 

@@ -70,28 +70,14 @@ public enum AbilityKey {
         AbilityMode.SERVER),
     
     /**
-     * Negotiation key for AI module RAD Search and Discover payloads.
+     * Negotiation key for the complete RAD v1 contract introduced by Nacos 3.3.
      *
-     * <p>Defining the wire key does not advertise the capability. The server ability registry
-     * enables it only after the matching SDK transport is available.</p>
+     * <p>The contract includes Agent definition publication, Search and Discover, and Runtime
+     * Endpoint publication. Independently deployable future contracts such as server Watch/Push
+     * require their own ability key.</p>
      */
-    SERVER_AGENT_DISCOVERY_V1("agentDiscoveryV1",
-        "Server whether support RAD Search and Discover payloads", AbilityMode.SERVER),
-    
-    /**
-     * Negotiation key for AI module RAD Endpoint publication payloads.
-     *
-     * <p>Defining the wire key does not advertise the capability. The server ability registry
-     * enables it only after the matching SDK transport is available.</p>
-     */
-    SERVER_AGENT_ENDPOINT_V1("agentEndpointV1",
-        "Server whether support RAD Endpoint publication payloads", AbilityMode.SERVER),
-    
-    /**
-     * Negotiation key for generic code-first Agent publication payloads.
-     */
-    SERVER_AGENT_PUBLISH_V1("agentPublishV1",
-        "Server whether support generic Agent publication payloads", AbilityMode.SERVER),
+    SERVER_RAD_V1("radV1", "Server whether support the complete RAD v1 contract",
+        AbilityMode.SERVER),
     
     /**
      * For fuzzy watch naming or config.

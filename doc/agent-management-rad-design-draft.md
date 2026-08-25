@@ -1372,9 +1372,9 @@ gRPC Payload Wrapper 统一使用 `RpcRequest` 后缀，以区别于 RAD 协议�
 首版不定义 `AgentSubscribeRequest`、`AgentDiscoveryNotifyRequest`、watchKey、Push ACK 或 Connection
 维度 Watch Redo State。轮询调度、完整结果缓存和变化去重全部属于 Java SDK 本地实现。
 
-新能力位暂定为 `SERVER_AGENT_DISCOVERY_V1` 和 `SERVER_AGENT_ENDPOINT_V1`，前者只覆盖 Search 和 Discover，
-并与旧
-`SERVER_AGENT_REGISTRY` 分离。Java SDK 默认使用 gRPC，也允许显式选择 HTTP transport。只有在确认请求尚未被
+RAD v1 能力组使用 `SERVER_RAD_V1`，统一覆盖 Definition Publication、Search/Discover 与 Runtime
+Endpoint Publication，并与旧 `SERVER_AGENT_REGISTRY` 分离；未来可独立部署或启用的 Server Watch/Push
+再定义单独能力位。Java SDK 默认使用 gRPC，也允许显式选择 HTTP transport。只有在确认请求尚未被
 服务端处理时才能切换传输；gRPC write timeout 的结果未知，不得自动改用 HTTP 重复写入。
 
 #### 5.2.3 Client HTTP Search 与 Discover
