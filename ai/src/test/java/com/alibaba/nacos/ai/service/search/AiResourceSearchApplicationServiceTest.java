@@ -258,9 +258,10 @@ class AiResourceSearchApplicationServiceTest {
     @Test
     void searchMcpShouldApplyTypedFiltersAndMapKnownCapabilities() throws Exception {
         AiResourceSearchResult source = result(AiResourceConstants.RESOURCE_TYPE_MCP,
-            "mcp-id", "1.0.0");
+            "mcp-name", "1.0.0");
         source.setCapabilities(Arrays.asList("tool", "future-capability"));
-        source.setMetadata(Map.of("protocol", "stdio", "frontProtocol", "http"));
+        source.setMetadata(Map.of("mcpServerId", "mcp-id", "protocol", "stdio",
+            "frontProtocol", "http"));
         when(searchService.numberedSearch(any())).thenReturn(
             new NumberedPage(Collections.singletonList(source), 1, 1, 1));
         McpSearchForm form = new McpSearchForm();

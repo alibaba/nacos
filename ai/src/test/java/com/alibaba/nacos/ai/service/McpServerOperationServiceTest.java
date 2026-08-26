@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.ai.service;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
@@ -99,6 +101,8 @@ class McpServerOperationServiceTest {
     
     @Mock
     private SyncEffectService syncEffectService;
+    @Mock
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService;
     
     McpServerOperationService serverOperationService;
     
@@ -109,6 +113,8 @@ class McpServerOperationServiceTest {
                 toolOperationService, resourceOperationService, endpointOperationService,
                 mcpServerIndex,
                 syncEffectService);
+        serverOperationService.setAiResourceIndexMaintenanceService(
+            resourceIndexMaintenanceService);
     }
     
     @AfterEach
@@ -683,6 +689,9 @@ class McpServerOperationServiceTest {
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
             mockServerBasicInfo.getName());
         verify(mcpServerIndex, times(1)).removeMcpServerById(id);
+        verify(resourceIndexMaintenanceService).schedule(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP,
+            mockServerBasicInfo.getName());
     }
     
     @Test
@@ -701,6 +710,9 @@ class McpServerOperationServiceTest {
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
             mockServerBasicInfo.getName());
         verify(mcpServerIndex, times(1)).removeMcpServerById(id);
+        verify(resourceIndexMaintenanceService).schedule(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP,
+            "mcpName");
     }
     
     @Test
@@ -1061,6 +1073,9 @@ class McpServerOperationServiceTest {
                 Constants.MCP_SERVER_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
         }
+        verify(resourceIndexMaintenanceService).schedule(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP,
+            "mcpName");
     }
     
     @Test

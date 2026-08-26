@@ -50,7 +50,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <ul>
  *     <li>Expected capability: Admin APIs publish Agent, Skill, Prompt, and MCP resources through
  *     the main server, while the separate ARD web context recalls the same durable shared-index
- *     projections through Search, List, Explore, Catalog, and exact artifact URLs.</li>
+ *     projections through Search, List, Explore, Catalog, and exact artifact URLs; MCP uses
+ *     its canonical name while retaining the compatible ID in metadata.</li>
  *     <li>Representation boundary: a pure A2A Agent defaults to an A2A Agent Card, a
  *     multi-protocol Agent defaults to the Nacos Agent artifact while remaining selectable as
  *     A2A, and an Agent whose latest Version is custom-only is excluded from A2A results even
@@ -451,7 +452,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         
         private Set<String> allResourceNames() {
             return Set.of(pureA2aAgent, multiAgent, latestCustomAgent, skillName, promptKey,
-                    mcpId);
+                    mcpName);
         }
     }
 }

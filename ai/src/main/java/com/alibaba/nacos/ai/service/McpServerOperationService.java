@@ -662,26 +662,23 @@ public class McpServerOperationService {
             StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
                 : AiResourceTraceService.OP_DELETE_RESOURCE,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
-        if (StringUtils.isNotEmpty(version)) {
-            scheduleMcpIndexMaintenance(namespaceId, mcpServerId);
-        } else {
-            scheduleMcpIndexMaintenance(namespaceId, mcpServerId);
-        }
+        scheduleMcpIndexMaintenance(namespaceId, mcpServerVersionInfo.getName());
     }
     
     private void scheduleMcpIndexMaintenance(String namespaceId,
         McpServerBasicInfo serverSpecification) {
-        if (serverSpecification != null) {
-            String resourceName = StringUtils.isNotBlank(serverSpecification.getId())
-                ? serverSpecification.getId() : serverSpecification.getName();
+        if (serverSpecification != null
+            && StringUtils.isNotBlank(serverSpecification.getName())) {
             resourceIndexMaintenanceService.schedule(namespaceId,
-                AiResourceConstants.RESOURCE_TYPE_MCP, resourceName);
+                AiResourceConstants.RESOURCE_TYPE_MCP, serverSpecification.getName());
         }
     }
     
-    private void scheduleMcpIndexMaintenance(String namespaceId, String mcpServerId) {
-        resourceIndexMaintenanceService.schedule(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
-            mcpServerId);
+    private void scheduleMcpIndexMaintenance(String namespaceId, String mcpName) {
+        if (StringUtils.isNotBlank(mcpName)) {
+            resourceIndexMaintenanceService.schedule(namespaceId,
+                AiResourceConstants.RESOURCE_TYPE_MCP, mcpName);
+        }
     }
     
     private void electLatestMcpServerVersion(McpServerVersionInfo mcpServerVersionInfo) {
