@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -127,12 +127,13 @@ public class AiResourceSearchService {
     }
     
     public AiResourceSearchService(AiResourceManager resourceManager,
-        McpServerOperationService mcpServerOperationService, AiResourceSearchRepository repository,
+        McpOperationService mcpOperationService,
+        AiResourceSearchRepository repository,
         AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
         this(new AiResourceSearchTypeHandlerRegistry(List.of(
             new StoredAiResourceSearchTypeHandler(resourceManager,
                 AiResourceIndexContentLoader.NOOP),
-            new McpAiResourceSearchTypeHandler(mcpServerOperationService))), repository,
+            new McpAiResourceSearchTypeHandler(mcpOperationService))), repository,
             embeddingService, vectorIndex);
     }
     

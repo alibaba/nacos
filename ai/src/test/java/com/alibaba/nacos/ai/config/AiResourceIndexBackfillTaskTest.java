@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
@@ -36,6 +36,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
@@ -102,7 +103,7 @@ class AiResourceIndexBackfillTaskTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
@@ -131,7 +132,7 @@ class AiResourceIndexBackfillTaskTest {
     private AiResourceIndexBackfillTask task;
     
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         lenient().when(namespaceOperationService.getNamespaceList())
             .thenReturn(List.of(new Namespace(PUBLIC_NAMESPACE, "public")));
@@ -370,8 +371,8 @@ class AiResourceIndexBackfillTaskTest {
             Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
                 "stored-skill", "1.0.0"));
-        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, "uncertain-mcp",
-            null, null)).thenThrow(new NacosException(NacosException.SERVER_ERROR,
+        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, null,
+            "uncertain-mcp", null)).thenThrow(new NacosException(NacosException.SERVER_ERROR,
                 "temporary failure"));
         
         task.onApplicationEvent(rootContextEvent());
@@ -412,7 +413,7 @@ class AiResourceIndexBackfillTaskTest {
         task.onApplicationEvent(rootContextEvent());
         
         verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
-            PUBLIC_NAMESPACE, "mcp", "avatar-mcp");
+            PUBLIC_NAMESPACE, "mcp", "Avatar MCP");
         verifyMarkerReleased();
     }
     
@@ -599,10 +600,14 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     private McpServerBasicInfo mcpServer(String id, String version) {
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(version);
+        versionDetail.setIs_latest(true);
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setId(id);
         server.setName("Avatar MCP");
         server.setVersion(version);
+        server.setVersionDetail(versionDetail);
         server.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
         return server;
     }

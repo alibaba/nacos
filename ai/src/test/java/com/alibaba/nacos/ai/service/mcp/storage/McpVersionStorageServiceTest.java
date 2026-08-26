@@ -178,6 +178,48 @@ class McpVersionStorageServiceTest {
     }
     
     @Test
+    void testLoadIfPresentReturnsNullOnlyWhenServerIsMissing() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor descriptor = descriptor(true, true);
+        when(storage.get(any(StorageKey.class))).thenReturn(null);
+        
+        assertNull(service.loadIfPresent(descriptor));
+        
+        verify(storage).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testLoadIfPresentLoadsCompleteExistingVersion() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor descriptor = descriptor(true, true);
+        when(storage.get(any(StorageKey.class))).thenAnswer(invocation -> contentFor(
+            descriptor, invocation.getArgument(0)));
+        
+        McpVersionStorageContents result = service.loadIfPresent(descriptor);
+        
+        assertArrayEquals(SERVER, result.getServerContent());
+        assertArrayEquals(TOOLS, result.getToolContent());
+        assertArrayEquals(RESOURCES, result.getResourceContent());
+        verify(storage, times(3)).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testLoadIfPresentDoesNotHideOptionalOrProviderFailure() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor descriptor = descriptor(true, false);
+        when(storage.get(any(StorageKey.class))).thenReturn(SERVER, null);
+        assertEquals("MCP Tools content does not exist",
+            assertThrows(NacosException.class,
+                () -> service.loadIfPresent(descriptor)).getErrMsg());
+        
+        NacosException expected = new NacosException(NacosException.SERVER_ERROR, "read failed");
+        when(storage.get(any(StorageKey.class))).thenThrow(expected);
+        assertEquals(expected,
+            assertThrows(NacosException.class,
+                () -> service.loadIfPresent(descriptor(false, false))));
+    }
+    
+    @Test
     void testLoadRejectsMissingOrEmptyReferencedContent() throws Exception {
         givenStorage();
         McpVersionStorageDescriptor descriptor = descriptor(true, true);
@@ -255,6 +297,46 @@ class McpVersionStorageServiceTest {
         ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
         verify(storage).delete(keyCaptor.capture());
         assertEquals(descriptor.getServerKey(), keyCaptor.getValue().getKey());
+    }
+    
+    @Test
+    void testDeleteObsoleteRemovesOnlyDroppedObjectsInDependencyOrder() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor previous = descriptor(true, true);
+        McpVersionStorageDescriptor replacement = descriptor(false, false);
+        
+        service.deleteObsolete(previous, replacement);
+        
+        ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
+        verify(storage, times(2)).delete(keyCaptor.capture());
+        assertEquals(List.of(previous.getResourceKey(), previous.getToolKey()), keys(keyCaptor));
+    }
+    
+    @Test
+    void testDeleteObsoleteRetainsUnchangedDescriptorWithoutRouting() throws Exception {
+        McpVersionStorageDescriptor descriptor = descriptor(true, true);
+        
+        service.deleteObsolete(descriptor, descriptor(true, true));
+        
+        verifyNoInteractions(storageRouter, storage);
+    }
+    
+    @Test
+    void testDeleteObsoleteAttemptsAllDroppedObjectsAndReportsFailures() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor previous = descriptor(true, true);
+        McpVersionStorageDescriptor replacement = descriptor(false, false);
+        NacosException failure = new NacosException(NacosException.SERVER_ERROR, "failed");
+        NacosException secondFailure = new NacosException(NacosException.SERVER_ERROR,
+            "failed again");
+        doThrow(failure, secondFailure).when(storage).delete(any(StorageKey.class));
+        
+        NacosException result = assertThrows(NacosException.class,
+            () -> service.deleteObsolete(previous, replacement));
+        
+        assertEquals(failure, result);
+        assertEquals(1, result.getSuppressed().length);
+        verify(storage, times(2)).delete(any(StorageKey.class));
     }
     
     @Test

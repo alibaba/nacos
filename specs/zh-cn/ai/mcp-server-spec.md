@@ -26,10 +26,13 @@ Version 治理接入通用 AI Resource 生命周期，同时保留现有 MCP Ser
 | 状态 | 管理路由 | Client 与网关 Serving 路由 |
 | --- | --- | --- |
 | `SYNCING` | 后台对账 Resource/Version row 期间，历史 MCP 管理路径仍是权威。 | 现有 Manifest、Config 和 Naming 行为不变。 |
-| `LIFECYCLE_MANAGED` | Admin、Console 和 Maintainer 操作使用通用 AI Resource 生命周期。 | 现有 Manifest、Config 和 Naming 行为仍然不变。 |
+| `LIFECYCLE_MANAGED` | 完整兼容管理操作集的读写统一使用通用 AI Resource 生命周期。 | 现有 Manifest、Config 和 Naming 行为仍然不变。 |
 
 `LIFECYCLE_MANAGED` 不是数据面切换。它不会把历史 Manifest、Config 对象、
 Direct Service、普通 Service Ref 或 Client 自有 Runtime Service 降级为可随时删除的投影。
+
+每个请求只针对完整操作契约解析一次管理路由。节点绝不能把读操作路由到生命周期 Row、同时把写操作
+路由到历史实现，也不能暴露其他混合事实源组合。
 
 以下改动明确不属于首期迁移：
 
@@ -269,6 +272,14 @@ Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像�
 
 同 Version 覆盖是需要审计的兼容例外，标准生命周期 API 绝不能复用该放宽。
 
+兼容覆盖在 `isPublish=false` 时必须保留当前 Version Lifecycle Status、Manifest Presentation、
+Latest Pointer 和已有 Release Metadata。只有后续显式 Publish 后，被覆盖的 Version 内容才成为
+已发布 Presentation。
+
+兼容 Direct-online Create 可以临时使用 Resource `editingVersion` Pointer 作为进行中的重试标记；
+只有 Manifest 重读验证成功后才清除该 Pointer。已经完成或被有意 Offline 的 Resource 不含此标记，
+重复 Create 仍返回冲突。
+
 ### 6.3 Draft 与 Publish 顺序
 
 Draft 按以下顺序写入：
@@ -289,35 +300,39 @@ Publish 或 Online 按以下顺序执行：
 5. 最后通过 MCP Serving Manifest Storage 发布 Manifest；
 6. 重读并验证 Serving View 后才返回成功。
 
-Manifest 发布或校验失败时，操作返回失败并记录耐久修复状态；重试必须幂等。
-Search 索引只在业务变更后异步调度，不参与 Publish 成功判定。
+Online 生命周期 Row 是耐久期望状态。Manifest 发布或校验失败时，操作返回失败并保留该 Row；幂等重试
+或托管 Reconciler 根据它重建缺失的 Serving 投影。Search 索引只在业务变更后异步调度，不参与
+Publish 成功判定。
 
 ### 6.4 Offline 与 Delete
 
-Offline 先从 Manifest Serving View 中移除 Version 并验证，再把 Version 收敛为
-`offline`。它保留 Server/Tools/Resources 内容和 Direct 持久 Service。
+Offline 先把 Version 收敛为耐久的 `offline` 生命周期状态，再重建并验证不包含该 Version 的
+Manifest Serving View。它不隐式 Disable Resource，并保留 Server/Tools/Resources 内容和 Direct
+持久 Service。Manifest 收敛失败时操作返回失败，而保留的 Offline Row 为重试和对账提供唯一明确的目标。
 
 Version 删除流程：
 
-1. 移除并验证该 Version 的 Manifest 暴露；
-2. 调用 MCP 专用清理 Hook，清理该 Version 拥有的 Direct 状态；
-3. 通过 MCP Version Storage 删除 Server/Tools/Resources；
-4. 只有全部物理清理成功后才删除 Version row；
-5. 修复 Label 并异步调度 Search 维护。
+1. 加载并保留该 Version 的 Storage Descriptor；
+2. 把 Version 收敛为 `offline`、修复 Label，并移除和验证它的 Manifest 暴露；
+3. 调用 MCP 专用清理 Hook，清理该 Version 拥有的 Direct 状态；
+4. 通过 MCP Version Storage 删除 Server/Tools/Resources；
+5. 只有全部物理清理成功后才删除 Version Row；
+6. 异步调度 Search 维护。
 
 完整 Resource 删除流程：
 
-1. 通过名称或已废弃兼容 ID 解析并鉴权标准 Resource；
-2. 首先删除 Serving Manifest，让网关停止发现；
-3. 使用 MCP Storage Deleter 调用通用 Resource-with-Versions 删除流程；
-4. 对每个 Version，Deleter 校验 Descriptor、清理 MCP 自有 Direct 状态，并通过
+1. 通过名称或已废弃兼容 ID 解析并鉴权标准 Resource，并加载全部 Version Descriptor；
+2. Disable Resource 并把其 Version 收敛为 `offline`，让生命周期 Row 耐久表达非 Serving 目标；
+3. 删除并验证 Serving Manifest，让网关停止发现；
+4. 使用 MCP Storage Deleter 调用通用 Resource-with-Versions 删除流程；
+5. 对每个 Version，Deleter 校验 Descriptor、清理 MCP 自有 Direct 状态，并通过
    Storage 删除 Resources、Tools 和 Server 内容；
-5. 只有全部 Callback 成功后才删除 Resource 和 Version row。
+6. 只有全部 Callback 成功后才删除 Resource 和 Version Row。
 
-任一 Endpoint 或内容清理失败都返回失败，并保留重试所需的 Resource row、Version row
-和 Storage Descriptor。ID-only 重试仍通过 `AiResource.ext` 解析，因此删除流程不需要
-Manifest Tombstone。普通 REF Service 和 Client 自有 Runtime Instance 保持现有所有权，
-不随 MCP Version 删除。
+任一 Manifest、Endpoint 或内容清理失败都返回失败，并保留重试所需的 Disabled/Offline Resource、
+Version Row 和 Storage Descriptor。这些生命周期状态本身也是耐久恢复意图，因此不需要额外的 MCP
+操作日志或 Manifest Tombstone。ID-only 重试仍通过 `AiResource.ext` 解析。普通 REF Service 和
+Client 自有 Runtime Instance 保持现有所有权，不随 MCP Version 删除。
 
 ## 7. 已废弃 `mcpId` 兼容
 
@@ -415,6 +430,12 @@ Config 或 Naming 状态。该部分同步状态绝不能写入完成 Marker。�
 周期扫描补齐旧节点写入。托管切换前不开放新的 Lifecycle Write API。混合版本集群保持
 `SYNCING`。
 
+该状态下 Lifecycle 对账是次级收敛步骤。失败会进入诊断并由周期扫描修复，但不能重新解释或回滚
+已经成功的权威历史写入。
+
+兼容 Facade 在该状态下把完整读写操作契约路由到历史实现。只有全部托管操作及其恢复路径都可用后，
+永久 Marker 才能把完整契约切换到生命周期实现；不能独立切换单个方法。
+
 切换要求：
 
 - 每个历史 Manifest 恰好存在一个等价 Resource；
@@ -436,9 +457,13 @@ Config/Naming 消费者增加新的协商要求。
 MCP 通过同一个 Index 和 Query Planner 参与通用 AI Resource Search 与 MCP 专用
 Search Facade。标准 Search `resourceName` 是 `mcpName`，绝不能是 `mcpId`。
 
-MCP Search Projector 根据持久化 Storage Descriptor 加载可见 Resource、Online Version 和内容，
-不通过 ID 调用历史 MCP Operation Service。它可以投影公开 Description、Tools、Resources、
-Tag、Protocol 和 Capability；Credential、Runtime Instance 和敏感 Auth Metadata 不进入 Search Chunk。
+MCP Search Projector 与管理流量使用同一个完整兼容操作 Router。`SYNCING` 期间，它按标准名称
+通过 MCP Storage 投影完整历史视图，避免部分完成对账的 Resource Row 隐藏 MCP Server；进入
+`LIFECYCLE_MANAGED` 后，同一个 Router 根据持久化 Storage Descriptor 加载可见 Resource、
+Online Version 和内容。Projector 输入和 Search Identity 绝不使用 `mcpId`；`SYNCING` 策略仍可
+解析读取未变更 Manifest/Config 坐标所需的内部兼容 Alias。它可以投影公开 Description、Tools、
+Resources、Tag、Protocol 和 Capability；Credential、Runtime Instance 和敏感 Auth Metadata 不进入
+Search Chunk。
 
 每次成功的 Create、Update、Publish、Online、Offline、Delete、Enable/Disable、Label 或 Import
 变更，都按 `namespaceId + type=mcp + mcpName` 调度耐久异步维护任务。任务可以合并连续更新并重试失败；

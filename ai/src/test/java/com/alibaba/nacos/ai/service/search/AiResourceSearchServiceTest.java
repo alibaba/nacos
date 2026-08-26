@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationRequest;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationResult;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
@@ -71,7 +71,7 @@ class AiResourceSearchServiceTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;

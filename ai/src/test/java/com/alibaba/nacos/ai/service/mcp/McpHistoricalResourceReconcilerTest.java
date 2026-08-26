@@ -479,6 +479,108 @@ class McpHistoricalResourceReconcilerTest {
     }
     
     @Test
+    void testReconcileAfterLegacyVersionDeleteRemovesStaleRowThenRepairsResource()
+        throws Exception {
+        McpServerVersionInfo oldManifest = manifest(VERSION, "2.0.0");
+        McpServerVersionInfo remainingManifest = manifest(VERSION);
+        AiResource staleResource = expectedResource(oldManifest, 2);
+        AiResourceVersion retained = expectedVersion(VERSION);
+        AiResourceVersion deleted = expectedVersion("2.0.0");
+        stubStorage(VERSION);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList(staleResource), 1, 1));
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Arrays.asList(retained, deleted), 2, 1),
+                page(Collections.singletonList(retained), 1, 1));
+        when(versionPersistService.delete(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, "2.0.0")).thenReturn(1);
+        when(resourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq(MCP_NAME),
+            eq(AiResourceConstants.RESOURCE_TYPE_MCP), eq(1L), any(AiResource.class)))
+            .thenReturn(true);
+        
+        assertEquals(2, reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+            remainingManifest));
+        
+        verify(versionPersistService).delete(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, "2.0.0");
+        verify(resourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq(MCP_NAME),
+            eq(AiResourceConstants.RESOURCE_TYPE_MCP), eq(1L), any(AiResource.class));
+    }
+    
+    @Test
+    void testReconcileAfterLegacyFullDeleteOnlyRemovesMatchingLegacyRows() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION, "2.0.0");
+        AiResource resource = expectedResource(manifest, 2);
+        stubRows(resource, Arrays.asList(expectedVersion(VERSION), expectedVersion("2.0.0")));
+        when(resourcePersistService.delete(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP)).thenReturn(1);
+        when(versionPersistService.deleteByNameAndType(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP)).thenReturn(2);
+        
+        assertEquals(3, reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+            null));
+        
+        verify(resourcePersistService).delete(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP);
+        verify(versionPersistService).deleteByNameAndType(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP);
+        
+        reset(resourcePersistService, versionPersistService);
+        resource.setFrom("local");
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList(resource), 1, 1));
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+                    null))
+                .getErrCode());
+        verify(resourcePersistService, never()).delete(any(), any(), any());
+    }
+    
+    @Test
+    void testReconcileAfterLegacyFullDeleteRemovesOrphanedReconciliationVersions()
+        throws Exception {
+        AiResourceVersion orphan = expectedVersion(VERSION);
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.emptyList(), 0, 0));
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.singletonList(orphan), 1, 1));
+        when(versionPersistService.deleteByNameAndType(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP)).thenReturn(1);
+        
+        assertEquals(1, reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+            null));
+        
+        verify(resourcePersistService, never()).delete(any(), any(), any());
+        verify(versionPersistService).deleteByNameAndType(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP);
+    }
+    
+    @Test
+    void testReconcileAfterLegacyFullDeleteRejectsUnknownOrphanedVersion() throws Exception {
+        AiResourceVersion unknown = expectedVersion(VERSION);
+        unknown.setStorage(McpVersionStorageDescriptorSerializer.serialize(
+            McpVersionStorageKeyComposer.compose(NAMESPACE_ID,
+                "5f8c62ed-f764-4222-b089-bb55fb74f438", VERSION, false, false)));
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.emptyList(), 0, 0));
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.singletonList(unknown), 1, 1));
+        
+        assertEquals(NacosException.CONFLICT,
+            assertThrows(NacosException.class,
+                () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+                    null))
+                .getErrCode());
+        
+        verify(resourcePersistService, never()).delete(any(), any(), any());
+        verify(versionPersistService, never()).deleteByNameAndType(any(), any(), any());
+    }
+    
+    @Test
     void testReconcilePagesVersionsAndRejectsInconsistentPages() throws Exception {
         McpServerVersionInfo manifest = manifest(VERSION);
         stubStorage(VERSION);

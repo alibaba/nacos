@@ -97,6 +97,11 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
 - Publish moves the version to `online`, clears working pointers, increments
   `onlineCnt` when needed, and the server manages the `latest` label according
   to the resource type spec.
+- When a resource type maintains a separate compatibility serving projection,
+  the lifecycle row is the durable desired state. Projection convergence follows
+  the lifecycle mutation, and the operation reports success only after the
+  projection is verified. A convergence failure preserves the lifecycle row so
+  an idempotent retry or reconciler can finish the projection.
 - Publish and force-publish requests may keep the historical
   `updateLatestLabel` parameter for compatibility. This parameter is deprecated;
   new clients must not send it. When it is absent or `true`, the published
@@ -153,6 +158,10 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
 - Resource deletion must load every Version storage descriptor before mutating
   metadata. Storage cleanup must route through the provider persisted in each
   descriptor and attempt every referenced content object.
+- After all descriptors are loaded, a type may first move the Resource and its
+  Versions to a non-serving lifecycle state before converging an external
+  compatibility projection and starting physical cleanup. Those retained rows
+  are the durable retry anchor until cleanup completes.
 - Metadata and Version rows must be deleted only after all referenced storage
   content is cleaned successfully. If any cleanup fails, the delete operation
   must report failure and preserve the rows and descriptors needed for retry.
