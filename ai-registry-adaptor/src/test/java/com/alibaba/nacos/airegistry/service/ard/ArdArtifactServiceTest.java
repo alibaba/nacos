@@ -19,7 +19,7 @@ package com.alibaba.nacos.airegistry.service.ard;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -66,7 +66,7 @@ class ArdArtifactServiceTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceFileReader fileReader;

@@ -17,10 +17,8 @@
 package com.alibaba.nacos.ai.remote.handler;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -60,17 +58,14 @@ public class ReleaseMcpServerRequestHandler
     private static final Logger LOGGER =
         LoggerFactory.getLogger(ReleaseMcpServerRequestHandler.class);
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
     private final McpEndpointOperationService endpointOperationService;
     
-    private final McpServerIndex mcpServerIndex;
-    
-    public ReleaseMcpServerRequestHandler(McpServerOperationService mcpServerOperationService,
-        McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex) {
+    public ReleaseMcpServerRequestHandler(McpOperationService mcpServerOperationService,
+        McpEndpointOperationService endpointOperationService) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.endpointOperationService = endpointOperationService;
-        this.mcpServerIndex = mcpServerIndex;
     }
     
     @Override
@@ -141,14 +136,11 @@ public class ReleaseMcpServerRequestHandler
             } else if (ErrorCode.MCP_SEVER_VERSION_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // mcp server found but version not found, update mcp server.
                 createNewVersionMcpServer(namespaceId, request);
-                McpServerIndexData mcpServerIndexData =
-                    mcpServerIndex.getMcpServerByName(namespaceId,
-                        serverSpecification.getName());
-                response.setMcpId(mcpServerIndexData.getId());
+                response.setMcpId(serverSpecification.getId());
                 LOGGER.info("Mcp Server {} new version {} released, Mcp Server id: {}",
                     serverSpecification.getName(),
                     serverSpecification.getVersionDetail().getVersion(),
-                    mcpServerIndexData.getId());
+                    serverSpecification.getId());
             } else {
                 LOGGER.error("Mcp Server {} released failed.", serverSpecification.getName(), e);
                 throw e;

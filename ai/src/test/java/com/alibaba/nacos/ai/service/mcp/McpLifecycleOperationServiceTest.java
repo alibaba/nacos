@@ -48,6 +48,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -89,6 +90,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -129,6 +131,9 @@ class McpLifecycleOperationServiceTest {
     @Mock
     private AiResourceIndexMaintenanceService indexMaintenanceService;
     
+    @Mock
+    private McpCanonicalAuthorizationService canonicalAuthorizationService;
+    
     private final AtomicReference<AiResource> resource = new AtomicReference<>();
     
     private final Map<String, AiResourceVersion> versions = new LinkedHashMap<>();
@@ -157,7 +162,7 @@ class McpLifecycleOperationServiceTest {
         McpResourceLocator resourceLocator = new McpResourceLocator(resourcePersistService);
         service = new McpLifecycleOperationService(resourceLocator, resourceManager,
             resourcePersistService, versionPersistService, versionStorageService, manifestStorage,
-            endpointOperationService);
+            endpointOperationService, canonicalAuthorizationService);
         service.setIndexMaintenanceService(indexMaintenanceService);
         setUpResourceRepository();
         setUpVersionRepository();
@@ -208,6 +213,25 @@ class McpLifecycleOperationServiceTest {
             any(McpServerVersionInfo.class));
         verify(indexMaintenanceService).schedule(NAMESPACE_ID,
             AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
+    }
+    
+    @Test
+    void testIdOnlyCompatibilityOperationsAuthorizeResolvedCanonicalName() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        
+        McpServerDetailInfo detail =
+            service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, null, VERSION_ONE);
+        assertEquals(MCP_NAME, detail.getName());
+        McpServerBasicInfo update = server(VERSION_ONE, "updated");
+        update.setName(null);
+        service.updateMcpServer(NAMESPACE_ID, true, update, null, null, null, false);
+        assertEquals(MCP_NAME, update.getName());
+        service.deleteMcpServer(NAMESPACE_ID, null, MCP_ID, null);
+        
+        verify(canonicalAuthorizationService).authorizeIdOnly(NAMESPACE_ID, MCP_NAME, null,
+            MCP_ID, ActionTypes.READ);
+        verify(canonicalAuthorizationService, times(2)).authorizeIdOnly(NAMESPACE_ID, MCP_NAME,
+            null, MCP_ID, ActionTypes.WRITE);
     }
     
     @Test
@@ -704,7 +728,7 @@ class McpLifecycleOperationServiceTest {
         McpLifecycleOperationService emptyService = new McpLifecycleOperationService(
             new McpResourceLocator(resourcePersistService), emptyManager, resourcePersistService,
             versionPersistService, versionStorageService, manifestStorage,
-            endpointOperationService);
+            endpointOperationService, canonicalAuthorizationService);
         
         Page<McpServerBasicInfo> result = emptyService.listMcpServerWithPage(NAMESPACE_ID, null,
             Constants.MCP_LIST_SEARCH_ACCURATE, 3, 10);
@@ -729,6 +753,81 @@ class McpLifecycleOperationServiceTest {
         
         assertEquals("legacy",
             service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null).getVersion());
+    }
+    
+    @Test
+    void testDisabledCreateDetectsOptionalSpecificationShapes() throws Exception {
+        McpToolSpecification tools = new McpToolSpecification();
+        tools.setTools(null);
+        tools.setSecuritySchemes(Collections.emptyList());
+        McpResourceSpecification resources = new McpResourceSpecification();
+        resources.setResourceTemplates(Collections.singletonList(Map.of("uri", "resource://x")));
+        McpServerBasicInfo specification = server(VERSION_ONE, "disabled");
+        specification.setEnabled(false);
+        
+        service.createMcpServer(NAMESPACE_ID, specification, tools, resources, null);
+        
+        assertEquals(AiResourceConstants.META_STATUS_DISABLE, resource.get().getStatus());
+        McpVersionStorageContents stored = contents.values().iterator().next();
+        assertNotNull(stored.getToolContent());
+        assertNotNull(stored.getResourceContent());
+    }
+    
+    @Test
+    void testUpdateAndLifecycleActionsValidateBoundaryInputs() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        
+        assertThrows(NacosException.class,
+            () -> service.updateMcpServer(NAMESPACE_ID, true, null, null, null, null, false));
+        assertThrows(NacosException.class,
+            () -> service.onlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_TWO, true));
+        assertThrows(NacosException.class,
+            () -> service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_TWO));
+        
+        Page<McpServerBasicInfo> page = service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
+        assertEquals(1, page.getTotalCount());
+    }
+    
+    @Test
+    void testLastVersionDeleteRemovesResourceInSameAttempt() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        
+        service.deleteMcpServer(NAMESPACE_ID, MCP_NAME, null, VERSION_ONE);
+        
+        assertNull(resource.get());
+        assertTrue(versions.isEmpty());
+        assertTrue(contents.isEmpty());
+    }
+    
+    @Test
+    void testCreateRetryRejectsChangedStorageDescriptor() throws Exception {
+        failNextManifestPublish.set(true);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        AiResourceVersion retained = versions.get(VERSION_ONE);
+        McpVersionStorageDescriptor changed = McpVersionStorageDescriptorSerializer.deserialize(
+            retained.getStorage());
+        changed.setServerKey(changed.getServerKey().replace(MCP_ID,
+            "6f27f843-2f55-49e7-9aa4-d6957fefbc61"));
+        retained.setStorage(McpVersionStorageDescriptorSerializer.serialize(changed));
+        
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+    }
+    
+    @Test
+    void testGetRejectsNullJsonServerContent() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        McpVersionStorageDescriptor descriptor = McpVersionStorageDescriptorSerializer.deserialize(
+            versions.get(VERSION_ONE).getStorage());
+        contents.put(storageKey(descriptor), new McpVersionStorageContents(
+            "null".getBytes(StandardCharsets.UTF_8), null, null));
+        
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
     }
     
     private void setUpResourceRepository() {

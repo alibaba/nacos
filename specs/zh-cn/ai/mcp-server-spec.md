@@ -358,9 +358,12 @@ Client 自有 Runtime Instance 保持现有所有权，不随 MCP Version 删除
   `ext.mcpId` 并要求唯一命中；
 - Alias 缺失、非法、重复或冲突时返回受控参数错误或完整性错误。
 
-规范化后，所有路径执行相同的标准鉴权、Visibility 和生命周期操作。ID 查询不得使用
-Search Index、Manifest、Config 或历史 MCP 内存 Index。不为这个低频已废弃路径新增表、
-字段或 JSON Index。`SYNCING` 期间历史 Index 可以继续服务完整的历史管理路径；
+协议 Filter 先按现有 Wire 契约完成请求身份认证。对于 ID-only 输入，Lifecycle Locator 随后解析
+Canonical Resource，并在读取任何内容或执行变更前，针对该标准名称再次执行精确的 Identity 与
+Authority 校验；之后与 Name 输入执行相同的 Visibility 和生命周期操作。这个顺序既避免未认证的
+Alias 枚举，也防止空 Wire Name 绕过标准名称鉴权。ID 查询不得使用 Search Index、Manifest、
+Config 或历史 MCP 内存 Index。不为这个低频已废弃路径新增表、字段或 JSON Index。
+`SYNCING` 期间历史 Index 可以继续服务完整的历史管理路径；
 `LIFECYCLE_MANAGED` 后任何管理正确性路径都不再依赖它。
 
 现有 Create/Release 响应和 DTO 继续返回 ID 字段；现有仅兼容的自定义 UUID 输入能力不扩展。
@@ -517,7 +520,8 @@ OpenAPI Import 不得把它收窄为单个字符串类型。
 Implementation PR 至少覆盖：
 
 - 精确 Resource/Version 映射，包括历史非 SemVer Version 字符串；
-- 从 Resource row 执行 name-only、name+ID 和 legacy ID-only 解析，规范化后的标准鉴权与冲突处理；
+- 从 Resource row 执行 name-only、name+ID 和 legacy ID-only 解析，协议身份认证后针对 ID-only
+  标准名称执行精确二次鉴权，并处理身份冲突；
 - Manifest/Server/Tools/Resources 坐标和字节保持不变；
 - 对账不修改 Naming，Direct、REF、frontend/backend、Runtime、订阅、重连和 redo 行为保持不变；
 - 所有 Server/Tools/Resources 和 Manifest Config 访问经过 MCP Storage，不存在 Service

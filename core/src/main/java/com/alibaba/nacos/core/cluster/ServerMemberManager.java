@@ -160,6 +160,8 @@ public class ServerMemberManager implements NacosMemberManager {
         this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
         // Temporary capability used to finish the JRaft authentication rolling upgrade.
         this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH, true);
+        // Capability gate for the one-way MCP lifecycle management cutover.
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT, true);
         this.self.setGrpcReportEnabled(true);
         
         // init abilities.

@@ -199,8 +199,8 @@ least:
   response shapes during `SYNCING` and after `LIFECYCLE_MANAGED`, including
   the compatibility-only same-Version overwrite and latest flag;
 - name-only, name-plus-ID, and historical ID-only management inputs, including
-  canonical authorization after normalization and controlled missing,
-  duplicate, or conflicting Resource aliases;
+  protocol authentication followed by exact canonical re-authorization for
+  ID-only input and controlled missing, duplicate, or conflicting Resource aliases;
 - new Version list/detail and draft, submit, reviewed/publish, force-publish,
   redraft, online/offline, custom-label, and invalid-state paths, with equivalent
   Admin and Console semantics;

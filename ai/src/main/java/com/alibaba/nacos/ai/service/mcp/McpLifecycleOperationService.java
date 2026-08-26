@@ -60,6 +60,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,6 +122,8 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private final McpEndpointOperationService endpointOperationService;
     
+    private final McpCanonicalAuthorizationService canonicalAuthorizationService;
+    
     private AiResourceIndexMaintenanceService indexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
     
@@ -129,7 +132,8 @@ public class McpLifecycleOperationService implements McpOperationService {
         AiResourceVersionPersistService versionPersistService,
         McpVersionStorageService versionStorageService,
         McpServingManifestStorage manifestStorage,
-        McpEndpointOperationService endpointOperationService) {
+        McpEndpointOperationService endpointOperationService,
+        McpCanonicalAuthorizationService canonicalAuthorizationService) {
         this.resourceLocator = resourceLocator;
         this.resourceManager = resourceManager;
         this.resourcePersistService = resourcePersistService;
@@ -137,6 +141,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         this.versionStorageService = versionStorageService;
         this.manifestStorage = manifestStorage;
         this.endpointOperationService = endpointOperationService;
+        this.canonicalAuthorizationService = canonicalAuthorizationService;
     }
     
     @Autowired(required = false)
@@ -171,6 +176,8 @@ public class McpLifecycleOperationService implements McpOperationService {
     public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpServerId,
         String mcpServerName, String version) throws NacosException {
         AiResource resource = resourceLocator.locate(namespaceId, mcpServerName, mcpServerId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), mcpServerName, mcpServerId, ActionTypes.READ);
         resourceManager.ensureReadableOrNotFound(resource,
             "MCP server not found: " + resource.getName());
         LifecycleResource lifecycle = requireLifecycleResource(resource);
@@ -233,9 +240,17 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
         boolean overrideExisting) throws NacosException {
         String normalizedNamespace = normalizeNamespace(namespaceId);
+        if (serverSpecification == null) {
+            throw invalidParameter("serverSpecification must not be null", null);
+        }
+        String requestedName = serverSpecification.getName();
+        String requestedId = serverSpecification.getId();
+        AiResource resource = resourceLocator.locate(normalizedNamespace, requestedName,
+            requestedId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), requestedName, requestedId, ActionTypes.WRITE);
+        serverSpecification.setName(resource.getName());
         VersionIdentity identity = validateUpdate(serverSpecification);
-        AiResource resource = resourceLocator.locate(normalizedNamespace, identity.name,
-            serverSpecification.getId());
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         serverSpecification.setId(lifecycle.mcpId);
@@ -292,6 +307,8 @@ public class McpLifecycleOperationService implements McpOperationService {
         String version) throws NacosException {
         String normalizedNamespace = normalizeNamespace(namespaceId);
         AiResource resource = resourceLocator.locate(normalizedNamespace, mcpName, mcpServerId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), mcpName, mcpServerId, ActionTypes.WRITE);
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         if (StringUtils.isBlank(version)) {

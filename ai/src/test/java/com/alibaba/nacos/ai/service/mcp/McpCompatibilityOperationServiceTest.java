@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -57,6 +59,8 @@ class McpCompatibilityOperationServiceTest {
     void setUp() {
         service = new McpCompatibilityOperationService(modeResolver, legacyService,
             lifecycleService);
+        org.mockito.Mockito.lenient().when(
+            modeResolver.localMemberSupportsManagedLifecycle()).thenReturn(true);
     }
     
     @Test
@@ -139,8 +143,21 @@ class McpCompatibilityOperationServiceTest {
     }
     
     @Test
-    void testResolverRemainsSyncingUntilAtomicCutover() {
+    void testRejectsManagedTrafficOnMemberWithoutCapability() {
+        when(modeResolver.resolve()).thenReturn(McpCompatibilityMode.LIFECYCLE_MANAGED);
+        when(modeResolver.localMemberSupportsManagedLifecycle()).thenReturn(false);
+        
+        assertThrows(NacosApiException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null));
+        verifyNoInteractions(legacyService, lifecycleService);
+    }
+    
+    @Test
+    void testResolverUsesDurableManagementState() {
+        McpLifecycleManagementStateService stateService =
+            org.mockito.Mockito.mock(McpLifecycleManagementStateService.class);
+        when(stateService.resolveMode()).thenReturn(McpCompatibilityMode.SYNCING);
         assertEquals(McpCompatibilityMode.SYNCING,
-            new McpCompatibilityModeResolver().resolve());
+            new McpCompatibilityModeResolver(stateService).resolve());
     }
 }

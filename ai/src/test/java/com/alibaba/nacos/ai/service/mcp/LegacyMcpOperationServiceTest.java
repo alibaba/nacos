@@ -413,6 +413,56 @@ class LegacyMcpOperationServiceTest {
             () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE));
     }
     
+    @Test
+    void testDetailAcceptsHistoricalServerWithoutNestedVersionDetail() throws Exception {
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest(VERSION_ONE));
+        McpServerStorageInfo stored = server(VERSION_ONE, false, false);
+        stored.setVersionDetail(null);
+        McpVersionStorageContents storedContents =
+            new McpVersionStorageContents(serverBytes(stored), null, null);
+        when(versionStorageService.loadIfPresent(any())).thenReturn(storedContents);
+        when(versionStorageService.load(any())).thenReturn(storedContents);
+        
+        McpServerDetailInfo detail = service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME,
+            VERSION_ONE);
+        
+        assertEquals(VERSION_ONE, detail.getVersion());
+    }
+    
+    @Test
+    void testCreateValidatesVersionAndDetectsOptionalSpecificationShapes() throws Exception {
+        McpServerBasicInfo missingVersion = specification(null, "missing-version");
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, missingVersion, null, null, null));
+        
+        McpToolSpecification tools = new McpToolSpecification();
+        tools.setTools(null);
+        tools.setSecuritySchemes(Collections.emptyList());
+        McpResourceSpecification resources = new McpResourceSpecification();
+        resources.setResourceTemplates(Collections.singletonList(Map.of("uri", "resource://x")));
+        McpServerBasicInfo specification = specification(VERSION_ONE, "optional-shapes");
+        specification.setId(MCP_ID);
+        
+        service.createMcpServer(NAMESPACE_ID, specification, tools, resources, null);
+        
+        ArgumentCaptor<McpVersionStorageDescriptor> descriptor =
+            ArgumentCaptor.forClass(McpVersionStorageDescriptor.class);
+        verify(versionStorageService).save(descriptor.capture(),
+            any(McpVersionStorageContents.class));
+        assertNotNull(descriptor.getValue().getToolKey());
+        assertNotNull(descriptor.getValue().getResourceKey());
+    }
+    
+    @Test
+    void testDetailRejectsNullJsonContent() throws Exception {
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest(VERSION_ONE));
+        when(versionStorageService.loadIfPresent(any())).thenReturn(
+            new McpVersionStorageContents(bytes("null"), null, null));
+        
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE));
+    }
+    
     private void stubVersionContent(String version, boolean tools, boolean resources)
         throws Exception {
         McpServerStorageInfo server = server(version, tools, resources);

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -42,11 +42,11 @@ import org.springframework.stereotype.Service;
 @EnabledAiHandler
 public class McpInnerHandler implements McpHandler {
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
     private final McpLegacyImportAdapter mcpLegacyImportAdapter;
     
-    public McpInnerHandler(McpServerOperationService mcpServerOperationService,
+    public McpInnerHandler(McpOperationService mcpServerOperationService,
         McpLegacyImportAdapter mcpLegacyImportAdapter) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.mcpLegacyImportAdapter = mcpLegacyImportAdapter;
@@ -55,7 +55,7 @@ public class McpInnerHandler implements McpHandler {
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
         String search, int pageNo,
-        int pageSize) {
+        int pageSize) throws NacosException {
         return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo,
             pageSize);
     }

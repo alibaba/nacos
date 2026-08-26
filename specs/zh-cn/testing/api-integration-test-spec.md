@@ -167,8 +167,8 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
 - `SYNCING` 期间和 `LIFECYCLE_MANAGED` 后，现有 Admin/Console
   Create/Update/Query/List/Delete 请求与响应形态保持一致，包括兼容专用的同 Version
   Overwrite 和 Latest 参数；
-- Name-Only、Name+ID 和历史 ID-Only 管理输入，包括规范化后的标准鉴权，以及 Resource
-  Alias 缺失、重复或冲突的受控错误；
+- Name-Only、Name+ID 和历史 ID-Only 管理输入，包括协议身份认证后针对 ID-Only 标准名称的
+  精确二次鉴权，以及 Resource Alias 缺失、重复或冲突的受控错误；
 - 新 Version List/Detail 以及 Draft、Submit、Reviewed/Publish、Force Publish、Redraft、
   Online/Offline、自定义 Label 和非法状态路径，并保证 Admin 与 Console 语义等价；
 - Enable Resource 通过不变的历史 Serving 投影只暴露 Online Version，

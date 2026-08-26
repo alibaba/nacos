@@ -227,9 +227,6 @@ public class McpEndpointOperationService {
     private void addBackendFrontendEndpoints(McpServerDetailInfo detailInfo,
         FrontEndpointConfig config, List<McpEndpointInfo> result) {
         List<McpEndpointInfo> backendEndpoints = detailInfo.getBackendEndpoints();
-        if (backendEndpoints == null) {
-            return;
-        }
         backendEndpoints.stream().map(endpoint -> {
             McpEndpointInfo frontend = new McpEndpointInfo();
             frontend.setAddress(endpoint.getAddress());

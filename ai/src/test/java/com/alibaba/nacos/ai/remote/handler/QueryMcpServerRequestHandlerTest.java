@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
@@ -31,8 +29,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -40,17 +36,13 @@ import static org.mockito.Mockito.when;
 class QueryMcpServerRequestHandlerTest {
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
-    
-    @Mock
-    private McpServerIndex mcpServerIndex;
+    private McpOperationService mcpServerOperationService;
     
     QueryMcpServerRequestHandler requestHandler;
     
     @BeforeEach
     void setUp() {
-        requestHandler =
-            new QueryMcpServerRequestHandler(mcpServerOperationService, mcpServerIndex);
+        requestHandler = new QueryMcpServerRequestHandler(mcpServerOperationService);
     }
     
     @AfterEach
@@ -80,12 +72,8 @@ class QueryMcpServerRequestHandlerTest {
     void handle() throws NacosException {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setMcpName("test");
-        McpServerIndexData indexData = new McpServerIndexData();
-        indexData.setId(UUID.randomUUID().toString());
-        indexData.setNamespaceId("public");
-        when(mcpServerIndex.getMcpServerByName("public", "test")).thenReturn(indexData);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServerDetail("public", indexData.getId(), null, null))
+        when(mcpServerOperationService.getMcpServerDetail("public", null, "test", null))
             .thenReturn(
                 mcpServerDetailInfo);
         QueryMcpServerResponse response = requestHandler.handle(request, null);

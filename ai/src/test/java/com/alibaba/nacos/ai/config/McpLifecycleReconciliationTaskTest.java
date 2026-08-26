@@ -18,7 +18,10 @@ package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService.CutoverStatus;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage.ReconciliationPage;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
@@ -62,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -105,6 +109,9 @@ class McpLifecycleReconciliationTaskTest {
     @Mock
     private ConfigOperationService configOperationService;
     
+    @Mock
+    private McpLifecycleManagementStateService managementStateService;
+    
     private McpLifecycleReconciliationTask task;
     
     @BeforeEach
@@ -112,7 +119,9 @@ class McpLifecycleReconciliationTaskTest {
         EnvUtil.setEnvironment(new StandardEnvironment());
         task = new McpLifecycleReconciliationTask(namespaceOperationService, manifestStorage,
             reconciler, resourcePersistService, configQueryChainService,
-            configOperationService);
+            configOperationService, managementStateService);
+        lenient().when(managementStateService.tryCompleteCutover(anyBoolean()))
+            .thenReturn(CutoverStatus.syncing(false, false));
         lenient().when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
             .thenReturn(notFoundResponse());
         lenient().when(namespaceOperationService.getNamespaceList())
@@ -162,6 +171,7 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(false, progress.get("managedCutoverReady"));
         assertFalse(forms.stream()
             .anyMatch(form -> "nacos.ai.mcp.resource.migration.v1".equals(form.getDataId())));
+        verify(managementStateService).tryCompleteCutover(false);
         ArgumentCaptor<ConfigRequestInfo> requestCaptor =
             ArgumentCaptor.forClass(ConfigRequestInfo.class);
         verify(configOperationService, org.mockito.Mockito.times(3)).publishConfig(any(),
@@ -178,6 +188,46 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(0, progress.get("failed"));
         assertEquals(true, progress.get("completeNamespaceScan"));
         assertEquals(true, progress.get("zeroDifference"));
+        verify(managementStateService).tryCompleteCutover(true);
+    }
+    
+    @Test
+    void testManagedModeSkipsReconciliationAndLease() {
+        when(managementStateService.resolveMode())
+            .thenReturn(McpCompatibilityMode.LIFECYCLE_MANAGED);
+        
+        task.executeReconciliation();
+        
+        verifyNoInteractions(manifestStorage, reconciler, resourcePersistService,
+            configOperationService);
+    }
+    
+    @Test
+    void testManagedCutoverOutcomeIsPersistedInProgress() throws Exception {
+        when(managementStateService.tryCompleteCutover(true)).thenReturn(CutoverStatus.managed());
+        
+        task.executeReconciliation();
+        
+        Map<?, ?> progress = capturedProgress();
+        assertEquals(McpLifecycleManagementStateService.LIFECYCLE_MANAGED_STATE,
+            progress.get("state"));
+        assertEquals(true, progress.get("membersReady"));
+        assertEquals(false, progress.get("searchBackfillPending"));
+        assertEquals(true, progress.get("managedCutoverReady"));
+    }
+    
+    @Test
+    void testCutoverEvaluationFailureStillReleasesLease() throws Exception {
+        when(managementStateService.tryCompleteCutover(true))
+            .thenThrow(new IllegalStateException("cutover unavailable"));
+        
+        task.executeReconciliation();
+        
+        List<ConfigForm> forms = capturedForms();
+        assertEquals(2, forms.size());
+        assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_LEASE_DATA_ID,
+            forms.get(1).getDataId());
+        assertTrue(forms.get(1).getContent().endsWith("|0"));
     }
     
     @Test

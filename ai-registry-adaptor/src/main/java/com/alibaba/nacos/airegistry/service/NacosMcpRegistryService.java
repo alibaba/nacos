@@ -17,9 +17,7 @@
 package com.alibaba.nacos.airegistry.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -64,17 +62,14 @@ public class NacosMcpRegistryService {
     
     private static final int DEFAULT_HTTPS_PORT = 443;
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
     private final NamespaceOperationService namespaceOperationService;
     
-    private final McpServerIndex mcpServerIndex;
-    
-    public NacosMcpRegistryService(McpServerOperationService mcpServerOperationService,
-        NamespaceOperationService namespaceOperationService, McpServerIndex mcpServerIndex) {
+    public NacosMcpRegistryService(McpOperationService mcpServerOperationService,
+        NamespaceOperationService namespaceOperationService) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.namespaceOperationService = namespaceOperationService;
-        this.mcpServerIndex = mcpServerIndex;
     }
     
     /**
@@ -83,8 +78,10 @@ public class NacosMcpRegistryService {
      *
      * @param listServerForm listServerParams
      * @return {@link McpRegistryServerList}
+     * @throws NacosException if the MCP lifecycle query fails
      */
-    public McpRegistryServerList listMcpServers(ListServerForm listServerForm) {
+    public McpRegistryServerList listMcpServers(ListServerForm listServerForm)
+        throws NacosException {
         int limit = listServerForm.getLimit();
         int offset = listServerForm.getOffset();
         String namespaceId = listServerForm.getNamespaceId();
@@ -117,7 +114,7 @@ public class NacosMcpRegistryService {
     
     private List<McpServerBasicInfo> listMcpServerByNamespaceList(
         Collection<String> namespaceIdList, String serverName,
-        int offset, int limit) {
+        int offset, int limit) throws NacosException {
         List<McpServerBasicInfo> result = new ArrayList<>();
         
         // 如果 limit <= 0，直接返回空
@@ -237,14 +234,21 @@ public class NacosMcpRegistryService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public McpToolSpecification getTools(String serverId, String version) throws NacosException {
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerById(serverId);
-        if (Objects.isNull(indexData)) {
-            return null;
+        for (String namespaceId : fetchOrderedNamespaceList()) {
+            try {
+                McpServerDetailInfo mcpServerDetail =
+                    mcpServerOperationService.getMcpServerDetail(namespaceId, serverId, null,
+                        version);
+                if (mcpServerDetail != null) {
+                    return mcpServerDetail.getToolSpec();
+                }
+            } catch (NacosException e) {
+                if (e.getErrCode() != NacosException.NOT_FOUND) {
+                    throw e;
+                }
+            }
         }
-        McpServerDetailInfo mcpServerDetail =
-            mcpServerOperationService.getMcpServerDetail(indexData.getNamespaceId(),
-                serverId, null, version);
-        return mcpServerDetail.getToolSpec();
+        return null;
     }
     
     /**
