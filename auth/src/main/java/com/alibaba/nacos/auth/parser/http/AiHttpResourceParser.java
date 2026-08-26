@@ -41,6 +41,12 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_
  */
 public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
+    /**
+     * Optional request attribute containing a canonical MCP name resolved before authorization.
+     */
+    public static final String MCP_CANONICAL_NAME_ATTRIBUTE =
+        AiHttpResourceParser.class.getName() + ".mcpCanonicalName";
+    
     public static final String MCP_PATH = "/ai/mcp";
     
     public static final String A2A_PATH = "/ai/a2a";
@@ -99,6 +105,10 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     }
     
     private String getMcpName(HttpServletRequest request) {
+        Object canonicalName = request.getAttribute(MCP_CANONICAL_NAME_ATTRIBUTE);
+        if (canonicalName instanceof String && StringUtils.isNotBlank((String) canonicalName)) {
+            return (String) canonicalName;
+        }
         String mcpName = request.getParameter("mcpName");
         return StringUtils.isBlank(mcpName) ? StringUtils.EMPTY : mcpName;
     }

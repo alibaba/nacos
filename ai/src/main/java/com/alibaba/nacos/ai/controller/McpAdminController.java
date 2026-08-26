@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
+import com.alibaba.nacos.ai.service.mcp.McpManagementReadService;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -61,8 +62,12 @@ public class McpAdminController {
     
     private final McpServerOperationService mcpServerOperationService;
     
-    public McpAdminController(McpServerOperationService mcpServerOperationService) {
+    private final McpManagementReadService mcpManagementReadService;
+    
+    public McpAdminController(McpServerOperationService mcpServerOperationService,
+        McpManagementReadService mcpManagementReadService) {
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpManagementReadService = mcpManagementReadService;
     }
     
     /**
@@ -82,7 +87,7 @@ public class McpAdminController {
         mcpListForm.validate();
         pageForm.validate();
         return Result.success(
-            mcpServerOperationService.listMcpServerWithPage(mcpListForm.getNamespaceId(),
+            mcpManagementReadService.listMcpServers(mcpListForm.getNamespaceId(),
                 mcpListForm.getMcpName(),
                 mcpListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
@@ -99,9 +104,8 @@ public class McpAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(),
-            mcpForm.getMcpId(),
-            mcpForm.getMcpName(), mcpForm.getVersion()));
+        return Result.success(mcpManagementReadService.getMcpServer(mcpForm.getNamespaceId(),
+            mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion()));
     }
     
     /**

@@ -24,11 +24,8 @@ import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
-import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
-import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -36,16 +33,13 @@ import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -100,6 +94,8 @@ public class McpServerOperationService {
     
     private final McpEndpointOperationService endpointOperationService;
     
+    private final McpEndpointReadService endpointReadService;
+    
     private final McpServerIndex mcpServerIndex;
     
     private final SyncEffectService syncEffectService;
@@ -111,12 +107,14 @@ public class McpServerOperationService {
         ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
         McpResourceOperationService resourceOperationService,
         McpEndpointOperationService endpointOperationService,
+        McpEndpointReadService endpointReadService,
         McpServerIndex mcpServerIndex, SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;
         this.resourceOperationService = resourceOperationService;
         this.endpointOperationService = endpointOperationService;
+        this.endpointReadService = endpointReadService;
         this.mcpServerIndex = mcpServerIndex;
         this.syncEffectService = syncEffectService;
     }
@@ -238,7 +236,7 @@ public class McpServerOperationService {
         
         if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO
             .equalsIgnoreCase(serverSpecification.getProtocol())) {
-            injectEndpoint(result);
+            endpointReadService.injectEndpoint(result);
         }
         return result;
     }
@@ -256,102 +254,6 @@ public class McpServerOperationService {
         }
         
         return JacksonUtils.toObj(response.getContent(), McpServerVersionInfo.class);
-    }
-    
-    private void injectEndpoint(McpServerDetailInfo detailInfo) throws NacosException {
-        injectBackendEndpointRef(detailInfo);
-        injectFrontendEndpointRef(detailInfo);
-    }
-    
-    private void injectBackendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
-        List<Instance> instances;
-        
-        instances = endpointOperationService.getMcpServerEndpointInstances(
-            detailInfo.getRemoteServerConfig().getServiceRef());
-        
-        String protocol = null;
-        McpServiceRef serviceRef = detailInfo.getRemoteServerConfig().getServiceRef();
-        if (Objects.nonNull(serviceRef)) {
-            protocol = serviceRef.getTransportProtocol();
-        }
-        List<McpEndpointInfo> backendEndpoints = transferToMcpEndpointInfo(instances,
-            detailInfo.getRemoteServerConfig().getExportPath(),
-            protocol);
-        detailInfo.setBackendEndpoints(backendEndpoints);
-    }
-    
-    private List<McpEndpointInfo> transferToMcpEndpointInfoWithHeaders(List<Instance> instances,
-        String exportPath,
-        String protocol, List<KeyValueInput> headers) {
-        List<McpEndpointInfo> endpointInfos = new LinkedList<>();
-        for (Instance each : instances) {
-            McpEndpointInfo mcpEndpointInfo = new McpEndpointInfo();
-            mcpEndpointInfo.setAddress(each.getIp());
-            mcpEndpointInfo.setPort(each.getPort());
-            mcpEndpointInfo.setProtocol(protocol);
-            mcpEndpointInfo.setHeaders(headers);
-            mcpEndpointInfo.setPath(exportPath);
-            endpointInfos.add(mcpEndpointInfo);
-        }
-        return endpointInfos;
-    }
-    
-    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances,
-        String exportPath,
-        String protocol) {
-        return transferToMcpEndpointInfoWithHeaders(instances, exportPath, protocol, null);
-    }
-    
-    private void injectFrontendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
-        List<FrontEndpointConfig> frontEndpointConfigs = detailInfo.getRemoteServerConfig()
-            .getFrontEndpointConfigList();
-        if (CollectionUtils.isEmpty(frontEndpointConfigs)) {
-            detailInfo.setFrontendEndpoints(Collections.emptyList());
-            return;
-        }
-        List<McpEndpointInfo> frontendEndpoints = new LinkedList<>();
-        for (FrontEndpointConfig each : frontEndpointConfigs) {
-            if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
-                McpServiceRef mcpServiceRef =
-                    McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
-                List<Instance> instances =
-                    endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
-                List<McpEndpointInfo> endpointInfos =
-                    transferToMcpEndpointInfoWithHeaders(instances, each.getPath(),
-                        each.getProtocol(), each.getHeaders());
-                frontendEndpoints.addAll(endpointInfos);
-            } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
-                McpEndpointInfo endpointInfo = new McpEndpointInfo();
-                endpointInfo.setPath(each.getPath());
-                endpointInfo.setProtocol(each.getProtocol());
-                endpointInfo.setHeaders(each.getHeaders());
-                String address = each.getEndpointData().toString();
-                if (InternetAddressUtil.containsPort(address)) {
-                    String[] info = InternetAddressUtil.splitIpPortStr(address);
-                    endpointInfo.setAddress(info[0]);
-                    endpointInfo.setPort(Integer.parseInt(info[1]));
-                } else {
-                    endpointInfo.setAddress(address);
-                    endpointInfo.setPort(
-                        Constants.PROTOCOL_TYPE_HTTP.equals(each.getProtocol()) ? 80 : 443);
-                }
-                frontendEndpoints.add(endpointInfo);
-            } else if (AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK
-                .equals(each.getEndpointType())) {
-                detailInfo.getBackendEndpoints().stream()
-                    .map((endpoint) -> {
-                        McpEndpointInfo frontEndpoint = new McpEndpointInfo();
-                        frontEndpoint.setAddress(endpoint.getAddress());
-                        frontEndpoint.setPort(endpoint.getPort());
-                        frontEndpoint.setProtocol(endpoint.getProtocol());
-                        frontEndpoint.setPath(each.getPath());
-                        frontEndpoint.setHeaders(each.getHeaders());
-                        return frontEndpoint;
-                    })
-                    .forEach(frontendEndpoints::add);
-            }
-            detailInfo.setFrontendEndpoints(frontendEndpoints);
-        }
     }
     
     /**

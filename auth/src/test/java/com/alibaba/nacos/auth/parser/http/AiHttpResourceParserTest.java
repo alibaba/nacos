@@ -116,6 +116,21 @@ class AiHttpResourceParserTest {
     
     @Test
     @Secured(signType = "ai")
+    void testParseWithCanonicalMcpNameAttribute() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/ai/mcp");
+        when(request.getAttribute(AiHttpResourceParser.MCP_CANONICAL_NAME_ATTRIBUTE))
+            .thenReturn("canonicalMcp");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals("canonicalMcp", actual.getName());
+    }
+    
+    @Test
+    @Secured(signType = "ai")
     void testParseWithA2aPathWithAgentName() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");

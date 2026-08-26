@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpManagementReadService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -44,27 +45,30 @@ public class McpInnerHandler implements McpHandler {
     
     private final McpServerOperationService mcpServerOperationService;
     
+    private final McpManagementReadService mcpManagementReadService;
+    
     private final McpLegacyImportAdapter mcpLegacyImportAdapter;
     
     public McpInnerHandler(McpServerOperationService mcpServerOperationService,
+        McpManagementReadService mcpManagementReadService,
         McpLegacyImportAdapter mcpLegacyImportAdapter) {
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpManagementReadService = mcpManagementReadService;
         this.mcpLegacyImportAdapter = mcpLegacyImportAdapter;
     }
     
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
         String search, int pageNo,
-        int pageSize) {
-        return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo,
+        int pageSize) throws NacosException {
+        return mcpManagementReadService.listMcpServers(namespaceId, mcpName, search, pageNo,
             pageSize);
     }
     
     @Override
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId,
         String version) throws NacosException {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName,
-            version);
+        return mcpManagementReadService.getMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
     @Override

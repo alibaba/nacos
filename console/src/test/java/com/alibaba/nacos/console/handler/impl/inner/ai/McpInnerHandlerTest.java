@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpManagementReadService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -51,17 +52,21 @@ class McpInnerHandlerTest {
     @Mock
     McpLegacyImportAdapter mcpLegacyImportAdapter;
     
+    @Mock
+    McpManagementReadService mcpManagementReadService;
+    
     McpInnerHandler mcpInnerHandler;
     
     @BeforeEach
     void setUp() {
-        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpLegacyImportAdapter);
+        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpManagementReadService,
+            mcpLegacyImportAdapter);
     }
     
     @Test
     void listMcpServers() throws NacosException {
         Page<McpServerBasicInfo> mockPage = new Page<>();
-        when(mcpServerOperationService.listMcpServerWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+        when(mcpManagementReadService.listMcpServers(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
             "test",
             Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(mockPage);
         Page<McpServerBasicInfo> actual =
@@ -73,8 +78,8 @@ class McpInnerHandlerTest {
     @Test
     void getMcpServer() throws NacosException {
         McpServerDetailInfo mock = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-            "test", "name",
+        when(mcpManagementReadService.getMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            "name", "test",
             "version")).thenReturn(mock);
         McpServerDetailInfo actual =
             mcpInnerHandler.getMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "name", "test",

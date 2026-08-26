@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpManagementReadService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -79,11 +80,15 @@ class McpAdminControllerTest {
     @MockitoBean
     private McpServerOperationService mcpServerOperationService;
     
+    @MockitoBean
+    private McpManagementReadService mcpManagementReadService;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
-        mcpAdminController = new McpAdminController(mcpServerOperationService);
+        mcpAdminController = new McpAdminController(mcpServerOperationService,
+            mcpManagementReadService);
         mockMvc = MockMvcBuilders.standaloneSetup(mcpAdminController).build();
     }
     
@@ -117,7 +122,7 @@ class McpAdminControllerTest {
     
     @Test
     void listMcpServersSuccess() throws Throwable {
-        when(mcpServerOperationService.listMcpServerWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+        when(mcpManagementReadService.listMcpServers(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
             null,
             Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(new Page<>());
         MockHttpServletRequestBuilder builder =
@@ -144,8 +149,8 @@ class McpAdminControllerTest {
     void getMcpServerWithMcpName() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH)
             .param("mcpName", "testName");
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-            null, "testName",
+        when(mcpManagementReadService.getMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            "testName", null,
             null)).thenReturn(new McpServerDetailInfo());
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
@@ -161,8 +166,8 @@ class McpAdminControllerTest {
         String id = UUID.randomUUID().toString();
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH).param("mcpId", id);
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
-            null,
+        when(mcpManagementReadService.getMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
+            id,
             null)).thenReturn(new McpServerDetailInfo());
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
@@ -179,7 +184,7 @@ class McpAdminControllerTest {
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH).param("mcpId", id)
                 .param("namespaceId", "testNs").param("version", "1.0.0");
-        when(mcpServerOperationService.getMcpServerDetail("testNs", id, null, "1.0.0")).thenReturn(
+        when(mcpManagementReadService.getMcpServer("testNs", null, id, "1.0.0")).thenReturn(
             new McpServerDetailInfo());
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());

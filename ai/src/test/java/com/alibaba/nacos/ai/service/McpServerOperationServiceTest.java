@@ -107,7 +107,7 @@ class McpServerOperationServiceTest {
         serverOperationService =
             new McpServerOperationService(configQueryChainService, configOperationService,
                 toolOperationService, resourceOperationService, endpointOperationService,
-                mcpServerIndex,
+                new McpEndpointReadService(endpointOperationService), mcpServerIndex,
                 syncEffectService);
     }
     

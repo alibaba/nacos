@@ -189,7 +189,16 @@ configuration are verified by focused Console module tests.
 MCP Admin detail coverage verifies the version-selection contract: when a
 newer draft exists after a published version, an omitted `version` resolves the
 latest published version, while the draft remains queryable by its explicit
-version.
+version. MCP Admin and Console compatibility IT continue to run while the
+migration state is `SYNCING`. The one-way `LIFECYCLE_MANAGED` read route is not
+activated as an isolated PR4 test because writes do not become lifecycle
+authoritative until the later cutover stage; forcing the marker here would
+create an unsupported mixed read/write mode for subsequent standalone cases.
+Focused AI/Auth/Console module tests cover Resource/Version reads, deprecated
+ID resolution and cross-checking, canonical authorization, Visibility,
+storage-descriptor loading, endpoint compatibility, and integrity failures.
+The complete managed HTTP and Maintainer SDK workflow remains a required
+cutover-stage IT scenario.
 
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. The Search scenario is reusable
