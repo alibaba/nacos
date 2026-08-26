@@ -549,7 +549,9 @@ public class LegacyMcpOperationService implements McpOperationService {
         String result = StringUtils.isBlank(requestedId) ? UUID.randomUUID().toString()
             : requestedId;
         if (!StringUtils.isUuidString(result)) {
-            throw invalidParameter("serverSpecification.id must be a UUID", null);
+            throw invalidParameter(
+                "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern",
+                null);
         }
         if (mcpServerIndex.getMcpServerById(result) != null) {
             throw conflict("MCP compatibility id already exists: " + result, null);

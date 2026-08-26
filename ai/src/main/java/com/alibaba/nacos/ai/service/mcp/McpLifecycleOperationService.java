@@ -1012,7 +1012,9 @@ public class McpLifecycleOperationService implements McpOperationService {
             try {
                 McpResourceExtSerializer.validateMcpId(serverSpecification.getId());
             } catch (IllegalArgumentException e) {
-                throw invalidParameter("serverSpecification.id must be a UUID", e);
+                throw invalidParameter(
+                    "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern",
+                    e);
             }
         }
         return identity;

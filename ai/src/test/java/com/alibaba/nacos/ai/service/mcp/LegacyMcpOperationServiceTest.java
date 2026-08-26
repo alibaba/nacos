@@ -266,8 +266,9 @@ class LegacyMcpOperationServiceTest {
         
         McpServerBasicInfo invalid = specification(VERSION_ONE, "first");
         invalid.setId("not-a-uuid");
-        assertThrows(NacosException.class,
+        NacosException invalidIdError = assertThrows(NacosException.class,
             () -> service.createMcpServer(NAMESPACE_ID, invalid, null, null, null));
+        assertTrue(invalidIdError.getMessage().contains("uuid pattern"));
     }
     
     @Test

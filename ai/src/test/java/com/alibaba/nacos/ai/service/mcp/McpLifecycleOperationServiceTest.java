@@ -537,8 +537,9 @@ class McpLifecycleOperationServiceTest {
         
         McpServerBasicInfo invalidId = server(VERSION_ONE, "invalid-id");
         invalidId.setId("not-a-uuid");
-        assertThrows(NacosException.class,
+        NacosException invalidIdError = assertThrows(NacosException.class,
             () -> service.createMcpServer(NAMESPACE_ID, invalidId, null, null, null));
+        assertTrue(invalidIdError.getMessage().contains("uuid pattern"));
         assertThrows(NacosException.class,
             () -> service.listMcpServerWithPage("invalid namespace", null,
                 Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10));
