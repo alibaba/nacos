@@ -446,8 +446,11 @@ content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMil
 
 The permanent marker means management rows are completely hosted. It does not
 authorize deletion or mutation of serving Config or Naming data. A renewable
-cluster lease may use a separate internal Config key. Losing the lease stops
-the current writer without deleting MCP content.
+cluster lease uses `nacos.ai.mcp.resource.reconciliation.lease.v1`. While the
+system is still synchronizing, the task may persist non-authoritative
+diagnostics at `nacos.ai.mcp.resource.reconciliation.progress.v1` with
+`state=SYNCING`. Neither object is the completion marker. Losing the lease
+stops the current writer without deleting MCP content.
 
 ### 8.2 Reconciliation
 
@@ -466,14 +469,22 @@ After the root `ApplicationReadyEvent`, a background task:
    `mcpName`;
 7. detects missing content, conflicting identity, duplicate source rows,
    invalid Versions, and pending deletion;
-8. reconciles removed `legacy-mcp` rows without deleting independently
-   created resources;
+8. routes removed `legacy-mcp` rows through the common lifecycle
+   delete/recovery flow without deleting independently created resources;
 9. completes a zero-difference validation round; and
 10. writes the completion marker only after every known cluster member supports
     managed writes and write-after-reconcile hooks.
 
-Reconciliation creates pointers only. It never saves or rewrites historical
-payloads and never mutates Naming.
+The Version/Resource upsert phase creates pointers only. It never saves or
+rewrites historical payloads and never mutates Naming. Until the canonical
+name Search projector and the common lifecycle delete/recovery handlers are
+available on every member, a `SYNCING` reconciler records Search backfill,
+extra Version, and orphaned `legacy-mcp` work as blocking diagnostics. It must
+not enqueue an ID-keyed Search task or directly delete Resource/Version rows,
+payload Config, or Naming state. Such a partial synchronization can never
+write the completion marker. Before the name-keyed projector is introduced,
+the progress record keeps `searchBackfillPending=true` and
+`managedCutoverReady=false` even when lifecycle rows have zero difference.
 
 ### 8.3 Writes During `SYNCING`
 

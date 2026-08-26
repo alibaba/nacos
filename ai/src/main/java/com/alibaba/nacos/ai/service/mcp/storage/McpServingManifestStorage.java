@@ -25,15 +25,22 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Owns Config access for the historical MCP serving Manifest.
@@ -50,12 +57,16 @@ public class McpServingManifestStorage {
     
     private final ConfigOperationService configOperationService;
     
+    private final ConfigDetailService configDetailService;
+    
     private final SyncEffectService syncEffectService;
     
     public McpServingManifestStorage(ConfigQueryChainService configQueryChainService,
-        ConfigOperationService configOperationService, SyncEffectService syncEffectService) {
+        ConfigOperationService configOperationService, ConfigDetailService configDetailService,
+        SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
+        this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
     }
     
@@ -99,6 +110,62 @@ public class McpServingManifestStorage {
                 null);
         }
         return result;
+    }
+    
+    /**
+     * Page historical serving Manifests in one Namespace for lifecycle reconciliation only.
+     *
+     * <p>This is a temporary migration scan. It must not be reused for serving queries,
+     * management listing, identity resolution, or other MCP features. The scan remains
+     * encapsulated by Manifest Storage so historical reconciliation never depends on the
+     * process-local MCP index or calls Config persistence directly. Row-level decoding failures
+     * are returned as diagnostics so valid historical Manifests can still be reconciled.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param pageNo one-based page number
+     * @param pageSize positive page size
+     * @return decoded and coordinate-validated Manifests plus row-level failures
+     * @throws NacosException when Config paging fails
+     */
+    public ReconciliationPage list(String namespaceId, int pageNo, int pageSize)
+        throws NacosException {
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        if (pageNo <= 0 || pageSize <= 0) {
+            throw new IllegalArgumentException("MCP serving Manifest page must be positive");
+        }
+        final Page<ConfigInfo> configPage;
+        try {
+            configPage = configDetailService.findConfigInfoPage(Constants.MCP_LIST_SEARCH_BLUR,
+                pageNo, pageSize, Constants.ALL_PATTERN, Constants.MCP_SERVER_VERSIONS_GROUP,
+                namespaceId, Collections.emptyMap());
+        } catch (RuntimeException e) {
+            throw storageFailure("MCP serving Manifest page cannot be read", e);
+        }
+        if (configPage == null || configPage.getPageItems() == null) {
+            throw storageFailure("MCP serving Manifest query returned no page", null);
+        }
+        ReconciliationPage result = new ReconciliationPage(Collections.emptyList());
+        List<McpServerVersionInfo> manifests = new ArrayList<>(configPage.getPageItems().size());
+        for (ConfigInfo configInfo : configPage.getPageItems()) {
+            try {
+                manifests.add(decodeListedManifest(namespaceId, configInfo));
+            } catch (NacosException e) {
+                result.addFailure(listedManifestFailure(namespaceId, configInfo, e));
+            }
+        }
+        result.setPageNumber(pageNo);
+        result.setPagesAvailable(configPage.getPagesAvailable());
+        result.setTotalCount(configPage.getTotalCount());
+        result.setPageItems(manifests);
+        return result;
+    }
+    
+    private String listedManifestFailure(String namespaceId, ConfigInfo configInfo,
+        NacosException cause) {
+        String dataId = configInfo == null || StringUtils.isBlank(configInfo.getDataId())
+            ? "<unknown>" : configInfo.getDataId();
+        return "Invalid historical MCP serving Manifest " + namespaceId + '/' + dataId + ": "
+            + cause.getErrMsg();
     }
     
     /**
@@ -154,6 +221,28 @@ public class McpServingManifestStorage {
         return result;
     }
     
+    private McpServerVersionInfo decodeListedManifest(String namespaceId, ConfigInfo configInfo)
+        throws NacosException {
+        if (configInfo == null) {
+            throw storageFailure("MCP serving Manifest page contains an empty row", null);
+        }
+        final McpServerVersionInfo manifest;
+        try {
+            manifest = JacksonUtils.toObj(configInfo.getContent(), McpServerVersionInfo.class);
+            validateManifest(manifest);
+        } catch (NacosDeserializationException | IllegalArgumentException e) {
+            throw storageFailure("MCP serving Manifest page contains invalid content", e);
+        }
+        String expectedDataId = McpConfigUtils.formatServerVersionInfoDataId(manifest.getId());
+        if (!expectedDataId.equals(configInfo.getDataId())
+            || !Constants.MCP_SERVER_VERSIONS_GROUP.equals(configInfo.getGroup())) {
+            throw storageFailure(
+                "MCP serving Manifest identity does not match its Config coordinate", null);
+        }
+        manifest.setNamespaceId(namespaceId);
+        return manifest;
+    }
+    
     private void validateCoordinate(String namespaceId, String mcpId) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         McpResourceExtSerializer.validateMcpId(mcpId);
@@ -172,5 +261,39 @@ public class McpServingManifestStorage {
     private static NacosException storageFailure(String message, Throwable cause) {
         return cause == null ? new NacosException(NacosException.SERVER_ERROR, message)
             : new NacosException(NacosException.SERVER_ERROR, message, cause);
+    }
+    
+    /**
+     * Migration-only Manifest page with row-level diagnostics.
+     *
+     * @author Nacos
+     */
+    public static final class ReconciliationPage extends Page<McpServerVersionInfo> {
+        
+        private static final long serialVersionUID = 3391973742548073578L;
+        
+        private final List<String> failures = new ArrayList<>();
+        
+        /**
+         * Create a migration scan page with existing diagnostics.
+         *
+         * @param failures non-null existing row-level scan failures
+         */
+        public ReconciliationPage(List<String> failures) {
+            this.failures.addAll(failures);
+        }
+        
+        /**
+         * Return immutable row-level scan failures.
+         *
+         * @return row-level scan failures
+         */
+        public List<String> getFailures() {
+            return Collections.unmodifiableList(failures);
+        }
+        
+        private void addFailure(String failure) {
+            failures.add(failure);
+        }
     }
 }

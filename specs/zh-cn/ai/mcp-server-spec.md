@@ -377,7 +377,10 @@ content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMil
 ```
 
 该永久 Marker 表示管理 row 已完整托管，不授权删除或修改 Serving Config/Naming 数据。
-可续约集群 Lease 可以使用独立内部 Config Key；失去 Lease 只停止当前 Writer，不删除 MCP 内容。
+可续约集群 Lease 使用 `nacos.ai.mcp.resource.reconciliation.lease.v1`。系统仍在同步时，
+任务可以在 `nacos.ai.mcp.resource.reconciliation.progress.v1` 持久化
+`state=SYNCING` 的非权威诊断信息。两者都不是完成 Marker；失去 Lease 只停止当前 Writer，
+不删除 MCP 内容。
 
 ### 8.2 对账流程
 
@@ -392,11 +395,18 @@ content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMil
    `from=legacy-mcp`；
 6. 按标准 `mcpName` 调度共享异步 Search 对账；
 7. 检测内容缺失、身份冲突、多来源重复 row、非法 Version 和 pending delete；
-8. 对已删除的 `legacy-mcp` row 做对账，但不删除独立创建的资源；
+8. 通过通用生命周期 Delete/Recovery 流程处理已删除的 `legacy-mcp` row，
+   但不删除独立创建的资源；
 9. 完成一轮零差异校验；
 10. 只有所有已知集群成员都支持托管写入和写后对账 Hook 时才写完成 Marker。
 
-对账只创建指针，绝不保存或重写历史 payload，也不修改 Naming。
+Version/Resource Upsert 阶段只创建指针，绝不保存或重写历史 payload，也不修改 Naming。
+在所有 Member 都具备标准名称 Search Projector 和通用生命周期 Delete/Recovery Handler 前，
+`SYNCING` Reconciler 把 Search Backfill、额外 Version 和孤儿 `legacy-mcp` 工作记录为阻断性
+诊断；不得调度以 ID 为 Key 的 Search Task，也不得直接删除 Resource/Version Row、Payload
+Config 或 Naming 状态。该部分同步状态绝不能写入完成 Marker。在基于名称的 Projector
+落地前，即使生命周期 Row 已达到零差异，进度记录也保持 `searchBackfillPending=true` 和
+`managedCutoverReady=false`。
 
 ### 8.3 `SYNCING` 期间写入
 

@@ -16,8 +16,13 @@
 
 package com.alibaba.nacos.ai.service.mcp.storage;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpVersionStorageDescriptor;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -80,6 +85,7 @@ class McpVersionStorageDescriptorSerializerTest {
         assertInvalidDescriptorValue(value -> value.setProvider("object-store"));
         assertInvalidDescriptorValue(value -> value.setKeyFormat("other"));
         assertInvalidDescriptorValue(value -> value.setSchemaVersion(2));
+        assertInvalidDescriptorValue(value -> value.setServerKey(null));
         assertInvalidDescriptorValue(
             value -> value.setServerKey("public:mcp-tools:x-mcp-tools.json"));
         assertInvalidDescriptorValue(
@@ -90,6 +96,26 @@ class McpVersionStorageDescriptorSerializerTest {
             "other:mcp-resources:x-mcp-resources.json"));
         assertInvalidDescriptorValue(value -> value.setServerKey(
             repeat("a", 1025) + ":mcp-server:x-mcp-server.json"));
+    }
+    
+    @Test
+    void testRejectMalformedStorageCoordinates() {
+        assertInvalidServerKey(":mcp-server:x-mcp-server.json");
+        assertInvalidServerKey("public::x-mcp-server.json");
+        assertInvalidServerKey("public:mcp-server:");
+        assertInvalidServerKey("public:mcp-server:" + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX);
+        assertInvalidServerKey("public:mcp-server:long-invalid-server-coordinate.json");
+    }
+    
+    @Test
+    void testSerializeWrapsJacksonFailure() {
+        McpVersionStorageDescriptor descriptor = descriptor();
+        try (MockedStatic<JacksonUtils> jacksonMock = Mockito.mockStatic(JacksonUtils.class)) {
+            jacksonMock.when(() -> JacksonUtils.toJson(Mockito.any()))
+                .thenThrow(new NacosSerializationException());
+            assertThrows(IllegalArgumentException.class,
+                () -> McpVersionStorageDescriptorSerializer.serialize(descriptor));
+        }
     }
     
     @Test
@@ -119,6 +145,13 @@ class McpVersionStorageDescriptorSerializerTest {
     private void assertInvalidJson(String json) {
         assertThrows(IllegalArgumentException.class,
             () -> McpVersionStorageDescriptorSerializer.deserialize(json));
+    }
+    
+    private void assertInvalidServerKey(String key) {
+        assertThrows(IllegalArgumentException.class,
+            () -> McpVersionStorageDescriptorSerializer.parseKey(key,
+                Constants.MCP_SERVER_GROUP, Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX,
+                "serverKey"));
     }
     
     private McpVersionStorageDescriptor descriptor() {

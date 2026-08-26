@@ -17,7 +17,11 @@
 package com.alibaba.nacos.ai.service.mcp.storage;
 
 import com.alibaba.nacos.ai.model.mcp.McpResourceExt;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,6 +63,19 @@ class McpResourceExtSerializerTest {
         ext.setSchemaVersion(McpResourceExt.SCHEMA_VERSION);
         ext.setMcpId("not-a-uuid");
         assertThrows(IllegalArgumentException.class, () -> McpResourceExtSerializer.serialize(ext));
+    }
+    
+    @Test
+    void testSerializeWrapsJacksonFailure() {
+        McpResourceExt ext = new McpResourceExt();
+        ext.setSchemaVersion(McpResourceExt.SCHEMA_VERSION);
+        ext.setMcpId(MCP_ID);
+        try (MockedStatic<JacksonUtils> jacksonMock = Mockito.mockStatic(JacksonUtils.class)) {
+            jacksonMock.when(() -> JacksonUtils.toJson(Mockito.any()))
+                .thenThrow(new NacosSerializationException());
+            assertThrows(IllegalArgumentException.class,
+                () -> McpResourceExtSerializer.serialize(ext));
+        }
     }
     
     @Test

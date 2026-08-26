@@ -132,6 +132,70 @@ class McpResourceLocatorTest {
     }
     
     @Test
+    void testLocateByNameHandlesNullPageAndInconsistentDuplicateRows() {
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(null);
+        NacosApiException missing = assertThrows(NacosApiException.class,
+            () -> locator.locate("public", "demo", null));
+        assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
+        
+        List<AiResource> duplicates = Arrays.asList(resource("public", "demo", MCP_ID),
+            resource("public", "demo", OTHER_MCP_ID));
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(1, 1, duplicates));
+        NacosApiException conflict = assertThrows(NacosApiException.class,
+            () -> locator.locate("public", "demo", null));
+        assertEquals(NacosException.CONFLICT, conflict.getErrCode());
+    }
+    
+    @Test
+    void testLocateByIdRejectsInvalidPageResponses() {
+        when(resourcePersistService.list(any(QueryCondition.class), anyInt(), eq(100)))
+            .thenReturn(null);
+        assertIntegrityFailure(() -> locator.locate("public", null, MCP_ID));
+        
+        when(resourcePersistService.list(any(QueryCondition.class), anyInt(), eq(100)))
+            .thenReturn(page(0, 0, (List<AiResource>) null));
+        assertIntegrityFailure(() -> locator.locate("public", null, MCP_ID));
+    }
+    
+    @Test
+    void testLocateByIdCalculatesPagesFromTotalCount() throws Exception {
+        Page<AiResource> first = page(101, 0,
+            resource("public", "other", OTHER_MCP_ID));
+        Page<AiResource> second = page(101, 0, resource("public", "demo", MCP_ID));
+        when(resourcePersistService.list(any(QueryCondition.class), anyInt(), eq(100)))
+            .thenReturn(first, second);
+        
+        assertEquals("demo", locator.locate("public", null, MCP_ID).getName());
+        verify(resourcePersistService, times(2))
+            .list(any(QueryCondition.class), anyInt(), eq(100));
+    }
+    
+    @Test
+    void testLocateByIdReturnsControlledNotFound() {
+        when(resourcePersistService.list(any(QueryCondition.class), anyInt(), eq(100)))
+            .thenReturn(page(0, 0, Collections.emptyList()));
+        NacosApiException missing = assertThrows(NacosApiException.class,
+            () -> locator.locate("public", null, MCP_ID));
+        assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
+        assertEquals(ErrorCode.MCP_SERVER_NOT_FOUND.getCode(), missing.getDetailErrCode());
+    }
+    
+    @Test
+    void testLocateRejectsInconsistentRows() {
+        AiResource wrongNamespace = resource("other", "demo", MCP_ID);
+        AiResource wrongType = resource("public", "demo", MCP_ID);
+        wrongType.setType("skill");
+        AiResource wrongName = resource("public", "other", MCP_ID);
+        for (AiResource invalid : Arrays.asList(null, wrongNamespace, wrongType, wrongName)) {
+            when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+                .thenReturn(page(1, 1, invalid));
+            assertIntegrityFailure(() -> locator.locate("public", "demo", null));
+        }
+    }
+    
+    @Test
     void testLocateRejectsMalformedStoredExtension() {
         AiResource invalid = resource("public", "demo", MCP_ID);
         invalid.setExt("{\"schemaVersion\":1}");
@@ -196,5 +260,16 @@ class McpResourceLocatorTest {
         result.setPagesAvailable(pagesAvailable);
         result.setPageItems(resources);
         return result;
+    }
+    
+    private void assertIntegrityFailure(ThrowingLocatorCall call) {
+        NacosApiException conflict = assertThrows(NacosApiException.class, call::locate);
+        assertEquals(NacosException.CONFLICT, conflict.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), conflict.getDetailErrCode());
+    }
+    
+    private interface ThrowingLocatorCall {
+        
+        void locate() throws NacosApiException;
     }
 }
