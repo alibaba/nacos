@@ -20,10 +20,13 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.mcp.McpResourceExt;
+import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.model.mcp.McpVersionStorageDescriptor;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
+import com.alibaba.nacos.ai.service.mcp.storage.McpResourceExtSerializer;
 import com.alibaba.nacos.ai.service.mcp.storage.McpVersionStorageContents;
 import com.alibaba.nacos.ai.service.mcp.storage.McpVersionStorageDescriptorSerializer;
 import com.alibaba.nacos.ai.service.mcp.storage.McpVersionStorageService;
@@ -34,6 +37,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -43,6 +47,8 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,11 +64,13 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.dao.DuplicateKeyException;
 
 import java.sql.Timestamp;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,6 +88,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -438,6 +447,290 @@ class McpLifecycleOperationServiceTest {
             () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
     }
     
+    @Test
+    void testCreateWithEndpointPersistsServiceReferenceAndInjectsEndpoint() throws Exception {
+        McpEndpointSpec endpoint = new McpEndpointSpec();
+        endpoint.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpoint.setData(Map.of(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY,
+            AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE));
+        when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE, endpoint, false)).thenReturn(
+                Service.newService(NAMESPACE_ID, "endpoint-group",
+                    MCP_NAME + "::" + VERSION_ONE));
+        McpServerBasicInfo specification = server(VERSION_ONE, "endpoint");
+        specification.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE);
+        
+        service.createMcpServer(NAMESPACE_ID, specification, null, null, endpoint);
+        
+        McpVersionStorageDescriptor descriptor = McpVersionStorageDescriptorSerializer
+            .deserialize(versions.get(VERSION_ONE).getStorage());
+        McpServerStorageInfo stored = JacksonUtils.toObj(
+            new String(contents.get(storageKey(descriptor)).getServerContent(),
+                StandardCharsets.UTF_8),
+            McpServerStorageInfo.class);
+        assertEquals("endpoint-group",
+            stored.getRemoteServerConfig().getServiceRef().getGroupName());
+        assertEquals(MCP_NAME + "::" + VERSION_ONE,
+            stored.getRemoteServerConfig().getServiceRef().getServiceName());
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE,
+            stored.getRemoteServerConfig().getServiceRef().getTransportProtocol());
+        
+        service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE);
+        
+        verify(endpointOperationService).injectEndpoint(any(McpServerDetailInfo.class));
+    }
+    
+    @Test
+    void testCreateGeneratesIdAndAcceptsVersionFieldInDefaultNamespace() throws Exception {
+        McpServerBasicInfo specification = server("v2", "generated");
+        specification.setId(null);
+        specification.setNamespaceId(null);
+        specification.setVersionDetail(null);
+        
+        String generatedId = service.createMcpServer(null, specification, null, null, null);
+        
+        assertTrue(UUID.fromString(generatedId).toString().equals(generatedId));
+        assertEquals(NAMESPACE_ID, resource.get().getNamespaceId());
+        assertEquals("v2", versions.get("v2").getVersion());
+        assertEquals("v2", specification.getVersionDetail().getVersion());
+    }
+    
+    @Test
+    void testCreateRejectsInvalidSpecificationsNamespacesAndDuplicateId() throws Exception {
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, null, null, null, null));
+        
+        McpServerBasicInfo missingName = server(VERSION_ONE, "missing-name");
+        missingName.setName(" ");
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, missingName, null, null, null));
+        
+        McpServerBasicInfo missingVersion = server(VERSION_ONE, "missing-version");
+        missingVersion.setVersion(null);
+        missingVersion.setVersionDetail(null);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, missingVersion, null, null, null));
+        
+        McpServerBasicInfo invalidId = server(VERSION_ONE, "invalid-id");
+        invalidId.setId("not-a-uuid");
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, invalidId, null, null, null));
+        assertThrows(NacosException.class,
+            () -> service.listMcpServerWithPage("invalid namespace", null,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10));
+        
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        McpServerBasicInfo duplicateId = server(VERSION_TWO, "duplicate-id");
+        duplicateId.setName("another-mcp");
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, duplicateId, null, null, null));
+    }
+    
+    @Test
+    void testCreateRecoversWhenInsertSucceededBeforeRepositoryFailure() throws Exception {
+        when(resourcePersistService.insert(any(AiResource.class))).thenAnswer(invocation -> {
+            AiResource inserted = invocation.getArgument(0);
+            inserted.setId(sequence.incrementAndGet());
+            inserted.setMetaVersion(1L);
+            resource.set(inserted);
+            throw new IllegalStateException("result lost");
+        });
+        
+        assertEquals(MCP_ID,
+            service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        assertNotNull(manifest.get());
+    }
+    
+    @Test
+    void testCreateTranslatesInvalidInsertResultAndDuplicateKey() throws Exception {
+        when(resourcePersistService.insert(any(AiResource.class))).thenReturn(0L);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        
+        when(resourcePersistService.insert(any(AiResource.class)))
+            .thenThrow(new DuplicateKeyException("duplicate"));
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+    }
+    
+    @Test
+    void testCreateRejectsRecoveredRowWithInvalidCompatibilityIdentity() throws Exception {
+        when(resourcePersistService.insert(any(AiResource.class))).thenAnswer(invocation -> {
+            AiResource inserted = invocation.getArgument(0);
+            inserted.setExt("{}");
+            resource.set(inserted);
+            throw new IllegalStateException("ambiguous insert");
+        });
+        
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+    }
+    
+    @Test
+    void testCreateRetryRejectsDifferentCompatibilityIdAndContent() throws Exception {
+        failNextManifestPublish.set(true);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        
+        McpServerBasicInfo differentId = server(VERSION_ONE, "first");
+        differentId.setId("9d7939c0-72ea-4ef4-b232-418d1e16b45c");
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, differentId, null, null, null));
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "different"), null,
+                null, null));
+    }
+    
+    @Test
+    void testCreateRetryRestoresMissingVersionContent() throws Exception {
+        failNextManifestPublish.set(true);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        contents.clear();
+        
+        assertEquals(MCP_ID,
+            service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+        assertFalse(contents.isEmpty());
+    }
+    
+    @Test
+    void testCreateFailsAfterConcurrentMetadataRetriesAreExhausted() {
+        when(resourcePersistService.updateMetaCas(anyString(), anyString(), anyString(), anyLong(),
+            any(AiResource.class))).thenReturn(false);
+        
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+                null));
+    }
+    
+    @Test
+    void testOfflineFailsWhenResourceMetaVersionIsMissing() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        resource.get().setMetaVersion(null);
+        
+        assertThrows(NacosException.class,
+            () -> service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testOfflineVerifiesServingManifestDeletion() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        doAnswer(invocation -> null).when(manifestStorage).delete(anyString(), anyString());
+        
+        assertThrows(NacosException.class,
+            () -> service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE));
+        assertNotNull(manifest.get());
+    }
+    
+    @Test
+    void testDraftUpdateRejectsRetainedManifestWithDifferentIdentity() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        manifest.get().setId("9d7939c0-72ea-4ef4-b232-418d1e16b45c");
+        
+        assertThrows(NacosException.class,
+            () -> service.updateMcpServer(NAMESPACE_ID, false,
+                server(VERSION_ONE, "draft"), null, null, null, false));
+    }
+    
+    @Test
+    void testRejectsInvalidResourceVersionRowsAndStoredContents() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        AiResourceVersion row = versions.get(VERSION_ONE);
+        row.setNamespaceId("other");
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+        row.setNamespaceId(NAMESPACE_ID);
+        
+        McpVersionStorageDescriptor descriptor = McpVersionStorageDescriptorSerializer
+            .deserialize(row.getStorage());
+        String key = storageKey(descriptor);
+        McpVersionStorageContents original = contents.get(key);
+        McpServerStorageInfo stored = JacksonUtils.toObj(
+            new String(original.getServerContent(), StandardCharsets.UTF_8),
+            McpServerStorageInfo.class);
+        stored.setId("9d7939c0-72ea-4ef4-b232-418d1e16b45c");
+        contents.put(key, new McpVersionStorageContents(
+            JacksonUtils.toJson(stored).getBytes(StandardCharsets.UTF_8), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+        
+        stored.setId(MCP_ID);
+        stored.setToolsDescriptionRef("missing-tools.json");
+        contents.put(key, new McpVersionStorageContents(
+            JacksonUtils.toJson(stored).getBytes(StandardCharsets.UTF_8), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+        
+        contents.put(key, new McpVersionStorageContents("invalid-json".getBytes(
+            StandardCharsets.UTF_8), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testRejectsInvalidResourceAndNullVersionPage() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        resource.get().setExt("{}");
+        assertThrows(NacosException.class,
+            () -> service.listMcpServerWithPage(NAMESPACE_ID, null,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10));
+        
+        resource.get().setExt(McpResourceExtSerializer.serialize(resourceExt()));
+        resource.get().setName(" ");
+        assertThrows(NacosException.class,
+            () -> service.listMcpServerWithPage(NAMESPACE_ID, null,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10));
+        resource.get().setName(MCP_NAME);
+        when(versionPersistService.list(anyString(), anyString(), anyString(), any(), anyInt(),
+            anyInt())).thenReturn(null);
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testListReturnsEmptyPageForAlwaysEmptyVisibilityCondition() throws Exception {
+        AiResourceManager emptyManager = mock(AiResourceManager.class);
+        QueryCondition emptyCondition = new QueryCondition();
+        emptyCondition.setAlwaysEmpty(true);
+        when(emptyManager.buildQueryCondition(NAMESPACE_ID, AiResourceConstants.RESOURCE_TYPE_MCP,
+            null, null, VisibilityConstants.ACTION_READ)).thenReturn(emptyCondition);
+        McpLifecycleOperationService emptyService = new McpLifecycleOperationService(
+            new McpResourceLocator(resourcePersistService), emptyManager, resourcePersistService,
+            versionPersistService, versionStorageService, manifestStorage,
+            endpointOperationService);
+        
+        Page<McpServerBasicInfo> result = emptyService.listMcpServerWithPage(NAMESPACE_ID, null,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 3, 10);
+        
+        assertEquals(3, result.getPageNumber());
+        assertTrue(result.getPageItems().isEmpty());
+    }
+    
+    @Test
+    void testOfflineVNumberFallsBackToStoredVersionForDetail() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server("v2", "v-number"), null, null, null);
+        service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "v2");
+        
+        assertEquals("v2",
+            service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null).getVersion());
+    }
+    
+    @Test
+    void testOfflineOpaqueVersionFallsBackToStoredVersionForDetail() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server("legacy", "opaque"), null, null, null);
+        service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "legacy");
+        
+        assertEquals("legacy",
+            service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null).getVersion());
+    }
+    
     private void setUpResourceRepository() {
         when(resourcePersistService.find(anyString(), anyString(), anyString()))
             .thenAnswer(invocation -> matchesResource(invocation.getArgument(0),
@@ -648,6 +941,13 @@ class McpLifecycleOperationServiceTest {
     private McpResourceSpecification resourceSpecification() {
         McpResourceSpecification result = new McpResourceSpecification();
         result.getResources().add(Collections.singletonMap("name", "weather"));
+        return result;
+    }
+    
+    private McpResourceExt resourceExt() {
+        McpResourceExt result = new McpResourceExt();
+        result.setSchemaVersion(McpResourceExt.SCHEMA_VERSION);
+        result.setMcpId(MCP_ID);
         return result;
     }
     

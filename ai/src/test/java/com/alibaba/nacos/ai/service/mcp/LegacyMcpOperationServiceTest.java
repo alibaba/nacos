@@ -270,6 +270,149 @@ class LegacyMcpOperationServiceTest {
             () -> service.createMcpServer(NAMESPACE_ID, invalid, null, null, null));
     }
     
+    @Test
+    void testListHandlesMissingPageAndRejectsInvalidIndexRows() throws Exception {
+        when(mcpServerIndex.searchMcpServerByNameWithPage(NAMESPACE_ID, MCP_NAME,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 2, 10)).thenReturn(null);
+        
+        Page<McpServerBasicInfo> empty = service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 2, 10);
+        
+        assertEquals(0, empty.getTotalCount());
+        assertEquals(0, empty.getPagesAvailable());
+        assertEquals(2, empty.getPageNumber());
+        
+        Page<McpServerIndexData> invalidPage = new Page<>();
+        invalidPage.setPageItems(Collections.singletonList(new McpServerIndexData()));
+        when(mcpServerIndex.searchMcpServerByNameWithPage(NAMESPACE_ID, MCP_NAME,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10)).thenReturn(invalidPage);
+        assertThrows(NacosException.class,
+            () -> service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10));
+    }
+    
+    @Test
+    void testDetailRejectsStoredIdentityAndInjectsNonStdioEndpoint() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION_ONE);
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest);
+        McpServerStorageInfo wrongName = server(VERSION_ONE, false, false);
+        wrongName.setName("other");
+        when(versionStorageService.loadIfPresent(any())).thenReturn(
+            new McpVersionStorageContents(serverBytes(wrongName), null, null));
+        when(versionStorageService.load(any())).thenReturn(
+            new McpVersionStorageContents(serverBytes(wrongName), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE));
+        
+        McpServerStorageInfo streamable = server(VERSION_ONE, false, false);
+        streamable.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE);
+        when(versionStorageService.loadIfPresent(any())).thenReturn(
+            new McpVersionStorageContents(serverBytes(streamable), null, null));
+        when(versionStorageService.load(any())).thenReturn(
+            new McpVersionStorageContents(serverBytes(streamable), null, null));
+        
+        service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE);
+        
+        verify(endpointOperationService).injectEndpoint(any(McpServerDetailInfo.class));
+    }
+    
+    @Test
+    void testCreateGeneratesIdAndRejectsDuplicateNameIdAndInvalidNamespace() throws Exception {
+        McpServerBasicInfo generated = specification(VERSION_ONE, "generated");
+        
+        String generatedId = service.createMcpServer(null, generated, null, null, null);
+        
+        assertTrue(com.alibaba.nacos.common.utils.StringUtils.isUuidString(generatedId));
+        
+        when(mcpServerIndex.getMcpServerByName(NAMESPACE_ID, MCP_NAME))
+            .thenReturn(McpServerIndexData.newIndexData(MCP_ID, NAMESPACE_ID));
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID,
+                specification(VERSION_ONE, "duplicate-name"), null, null, null));
+        when(mcpServerIndex.getMcpServerByName(NAMESPACE_ID, MCP_NAME)).thenReturn(null);
+        when(mcpServerIndex.getMcpServerById(MCP_ID))
+            .thenReturn(McpServerIndexData.newIndexData(MCP_ID, NAMESPACE_ID));
+        McpServerBasicInfo duplicateId = specification(VERSION_ONE, "duplicate-id");
+        duplicateId.setId(MCP_ID);
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, duplicateId, null, null, null));
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer("invalid namespace",
+                specification(VERSION_ONE, "invalid-namespace"), null, null, null));
+        assertThrows(NacosException.class,
+            () -> service.createMcpServer(NAMESPACE_ID, null, null, null, null));
+    }
+    
+    @Test
+    void testPublishNewVersionWithoutExistingContentUpdatesPresentation() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION_ONE);
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest);
+        when(mcpServerIndex.getMcpServerByName(NAMESPACE_ID, MCP_NAME))
+            .thenReturn(McpServerIndexData.newIndexData(MCP_ID, NAMESPACE_ID));
+        when(versionStorageService.loadIfPresent(any())).thenReturn(null);
+        McpServerBasicInfo second = specification(VERSION_TWO, "published");
+        second.setEnabled(false);
+        second.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE);
+        
+        service.updateMcpServer(NAMESPACE_ID, true, second, null, null, null, false);
+        
+        ArgumentCaptor<McpServerVersionInfo> published =
+            ArgumentCaptor.forClass(McpServerVersionInfo.class);
+        verify(manifestStorage).publish(eq(NAMESPACE_ID), published.capture());
+        assertEquals(VERSION_TWO, published.getValue().getLatestPublishedVersion());
+        assertEquals("published", published.getValue().getDescription());
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE,
+            published.getValue().getProtocol());
+    }
+    
+    @Test
+    void testDeleteMissingVersionAndLifecycleReconcileFailureRemainCompatible() throws Exception {
+        McpServerVersionInfo manifest = manifest(VERSION_ONE);
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "reconcile failed"))
+            .when(reconciler).reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+                manifest);
+        
+        service.deleteMcpServer(NAMESPACE_ID, MCP_NAME, MCP_ID, VERSION_TWO);
+        
+        verify(manifestStorage).publish(NAMESPACE_ID, manifest);
+        assertEquals(VERSION_ONE, manifest.getLatestPublishedVersion());
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
+    }
+    
+    @Test
+    void testResolveIdentityAndManifestNotFoundPaths() throws Exception {
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+        
+        when(mcpServerIndex.getMcpServerByName(NAMESPACE_ID, MCP_NAME))
+            .thenReturn(McpServerIndexData.newIndexData(MCP_ID, NAMESPACE_ID));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testDetailRejectsBlankVersionInvalidJsonAndStoredIdentity() throws Exception {
+        McpServerVersionInfo noLatest = manifest();
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(noLatest);
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, null));
+        
+        when(manifestStorage.get(NAMESPACE_ID, MCP_ID)).thenReturn(manifest(VERSION_ONE));
+        when(versionStorageService.loadIfPresent(any())).thenReturn(
+            new McpVersionStorageContents(bytes("invalid-json"), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE));
+        
+        McpServerStorageInfo wrongId = server(VERSION_ONE, false, false);
+        wrongId.setId("9d7939c0-72ea-4ef4-b232-418d1e16b45c");
+        when(versionStorageService.loadIfPresent(any())).thenReturn(
+            new McpVersionStorageContents(serverBytes(wrongId), null, null));
+        assertThrows(NacosException.class,
+            () -> service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, VERSION_ONE));
+    }
+    
     private void stubVersionContent(String version, boolean tools, boolean resources)
         throws Exception {
         McpServerStorageInfo server = server(version, tools, resources);
