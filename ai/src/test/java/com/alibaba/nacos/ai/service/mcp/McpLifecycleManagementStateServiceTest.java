@@ -43,9 +43,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -129,6 +134,27 @@ class McpLifecycleManagementStateServiceTest {
     }
     
     @Test
+    void publicConstructorShouldUseNoopSearchReadinessWhenProviderIsEmpty() {
+        when(searchReadinessServiceProvider.getIfAvailable(any())).thenAnswer(invocation -> {
+            Supplier<AiResourceSearchReadinessService> fallback = invocation.getArgument(0);
+            return fallback.get();
+        });
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(notFound());
+        when(serverMemberManager.allMembers())
+            .thenReturn(Collections.singletonList(supportedMember()));
+        service = new McpLifecycleManagementStateService(configQueryChainService,
+            configOperationService, serverMemberManager, searchReadinessServiceProvider);
+        
+        CutoverStatus status = service.tryCompleteCutover(true);
+        
+        assertTrue(status.isMembersReady());
+        assertFalse(status.isSearchReady());
+        assertFalse(status.isManaged());
+        verifyNoInteractions(searchReadinessService, configOperationService);
+    }
+    
+    @Test
     void resolveModeShouldRejectUnavailableOrInvalidMarkers() {
         assertRejectedMarker(null);
         assertRejectedMarker(response(
@@ -197,6 +223,22 @@ class McpLifecycleManagementStateServiceTest {
         assertTrue(searchPending.isMembersReady());
         assertFalse(searchPending.isSearchReady());
         assertFalse(differencesRemain.isManaged());
+        verifyNoInteractions(configOperationService);
+    }
+    
+    @Test
+    void tryCompleteCutoverShouldKeepSyncingWithoutClusterMembers() {
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(notFound());
+        when(serverMemberManager.allMembers()).thenReturn(Collections.emptyList());
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+            .thenReturn(true);
+        
+        CutoverStatus status = service.tryCompleteCutover(true);
+        
+        assertFalse(status.isMembersReady());
+        assertTrue(status.isSearchReady());
+        assertFalse(status.isManaged());
         verifyNoInteractions(configOperationService);
     }
     
@@ -274,6 +316,36 @@ class McpLifecycleManagementStateServiceTest {
         
         when(serverMemberManager.getSelf()).thenThrow(new IllegalStateException("members"));
         assertFalse(service.localMemberSupportsManagedLifecycle());
+    }
+    
+    @Test
+    void markerRefreshDoubleCheckShouldAvoidRedundantRead() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        Thread worker;
+        synchronized (service) {
+            worker = new Thread(() -> {
+                started.countDown();
+                ReflectionTestUtils.invokeMethod(service, "refreshMarkerIfNecessary", false);
+            });
+            worker.start();
+            assertTrue(started.await(1, TimeUnit.SECONDS));
+            long deadline = System.currentTimeMillis() + 1000L;
+            while (worker.getState() != Thread.State.BLOCKED
+                && System.currentTimeMillis() < deadline) {
+                Thread.yield();
+            }
+            assertEquals(Thread.State.BLOCKED, worker.getState());
+            ReflectionTestUtils.setField(service, "nextMarkerRefreshAt", Long.MAX_VALUE);
+        }
+        worker.join(1000L);
+        assertFalse(worker.isAlive());
+        verifyNoInteractions(configQueryChainService);
+        
+        AtomicBoolean lifecycleManaged =
+            (AtomicBoolean) ReflectionTestUtils.getField(service, "lifecycleManaged");
+        lifecycleManaged.set(true);
+        ReflectionTestUtils.invokeMethod(service, "refreshMarkerIfNecessary", true);
+        verifyNoInteractions(configQueryChainService);
     }
     
     private void assertRejectedMarker(ConfigQueryChainResponse response) {

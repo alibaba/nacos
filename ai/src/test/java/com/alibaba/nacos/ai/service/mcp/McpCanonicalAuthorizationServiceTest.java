@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.mcp;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.context.addition.AuthContext;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
@@ -44,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -91,8 +96,32 @@ class McpCanonicalAuthorizationServiceTest {
     }
     
     @Test
-    void defaultConstructorShouldBeAvailableForSpring() {
-        assertNotNull(new McpCanonicalAuthorizationService());
+    void defaultConstructorShouldUseRuntimeAuthRegistries() throws Exception {
+        NacosAuthConfigHolder authConfigHolder = mock(NacosAuthConfigHolder.class);
+        AuthPluginManager authPluginManager = mock(AuthPluginManager.class);
+        when(authConfigHolder.getNacosAuthConfigByScope("ADMIN_API")).thenReturn(authConfig);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getNacosAuthSystemType()).thenReturn("mock");
+        when(authPluginManager.findAuthServiceSpiImpl("mock")).thenReturn(Optional.empty());
+        
+        try (MockedStatic<NacosAuthConfigHolder> authConfigHolderMock =
+            Mockito.mockStatic(NacosAuthConfigHolder.class);
+            MockedStatic<AuthPluginManager> authPluginManagerMock =
+                Mockito.mockStatic(AuthPluginManager.class)) {
+            authConfigHolderMock.when(NacosAuthConfigHolder::getInstance)
+                .thenReturn(authConfigHolder);
+            authPluginManagerMock.when(AuthPluginManager::getInstance)
+                .thenReturn(authPluginManager);
+            
+            McpCanonicalAuthorizationService defaultService =
+                new McpCanonicalAuthorizationService();
+            assertNotNull(defaultService);
+            defaultService.authorizeIdOnly(NAMESPACE_ID, MCP_NAME, null, MCP_ID,
+                ActionTypes.READ);
+        }
+        
+        verify(authConfigHolder).getNacosAuthConfigByScope("ADMIN_API");
+        verify(authPluginManager).findAuthServiceSpiImpl("mock");
     }
     
     @Test

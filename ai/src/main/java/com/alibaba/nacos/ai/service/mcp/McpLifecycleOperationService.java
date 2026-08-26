@@ -376,8 +376,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         LifecycleResource lifecycle = requireLifecycleResource(existing);
         String requestedId = serverSpecification.getId();
         if (StringUtils.isNotBlank(requestedId) && !lifecycle.mcpId.equals(requestedId)) {
-            throw conflict("MCP server already exists with another compatibility id: "
-                + existing.getName(), null);
+            throw duplicateServer(existing.getName(), null);
         }
         AiResourceVersion row = resourceManager.findVersion(namespaceId, existing.getName(),
             RESOURCE_TYPE, version);
@@ -580,7 +579,7 @@ public class McpLifecycleOperationService implements McpOperationService {
                 return;
             }
             if (recovered != null || e instanceof DuplicateKeyException) {
-                throw conflict("MCP server already exists: " + resource.getName(), e);
+                throw duplicateServer(resource.getName(), e);
             }
             throw serverError("Failed to insert MCP Resource: " + resource.getName(), e);
         }
@@ -605,7 +604,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         throws NacosException {
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
         if (!version.equals(info.getEditingVersion())) {
-            throw conflict("MCP server already exists: " + resource.getName(), null);
+            throw duplicateServer(resource.getName(), null);
         }
     }
     
@@ -1187,6 +1186,11 @@ public class McpLifecycleOperationService implements McpOperationService {
             ? new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, message)
             : new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, cause,
                 message);
+    }
+    
+    private NacosApiException duplicateServer(String name, Throwable cause) {
+        return conflict("mcp server `" + name
+            + "` has existed, please update it rather than create.", cause);
     }
     
     private NacosApiException integrityFailure(String message, Throwable cause) {

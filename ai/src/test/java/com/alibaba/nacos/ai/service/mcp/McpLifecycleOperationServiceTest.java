@@ -351,9 +351,10 @@ class McpLifecycleOperationServiceTest {
         service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
         service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
         
-        assertThrows(NacosException.class,
+        NacosException error = assertThrows(NacosException.class,
             () -> service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
                 null));
+        assertTrue(error.getErrMsg().contains("has existed"));
     }
     
     @Test
