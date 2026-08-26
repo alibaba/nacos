@@ -95,7 +95,13 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                     expectedKeysByType(expectedKeys).get(resourceType)));
             Set<String> dedicated = dedicatedKeys(resourceType,
                     awaitDedicatedSearch(resourceType, suffix));
-            assertEquals(genericSingleType, dedicated, resourceType);
+            if ("mcp".equals(resourceType)) {
+                assertEquals(Set.of("mcp:" + fixture.mcpName), genericSingleType,
+                        resourceType);
+                assertEquals(Set.of("mcp:" + fixture.mcpId), dedicated, resourceType);
+            } else {
+                assertEquals(genericSingleType, dedicated, resourceType);
+            }
         }
         
         JsonNode blankList = awaitGenericSearch(Query.newInstance()
