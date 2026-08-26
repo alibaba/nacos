@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *     <li>Expected capability: Admin lifecycle APIs publish one current online Agent, AgentSpec,
  *     Skill, Prompt, and MCP resource. Generic Search recalls all five through one global query,
  *     and every generic single-type result is cross-checked against its resource-specific Search
- *     facade.</li>
+ *     facade. Generic Search exposes the canonical MCP name while the dedicated MCP DTO keeps
+ *     its compatible ID field.</li>
  *     <li>Boundary/validation: omitted namespace uses public; blank query lists deterministically;
  *     exact-all tags, exact-any capabilities, MCP protocol filtering, and opaque cursor traversal
  *     work across page boundaries; unsupported types, malformed cursors, invalid limits,
@@ -94,7 +95,13 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                     expectedKeysByType(expectedKeys).get(resourceType)));
             Set<String> dedicated = dedicatedKeys(resourceType,
                     awaitDedicatedSearch(resourceType, suffix));
-            assertEquals(genericSingleType, dedicated, resourceType);
+            if ("mcp".equals(resourceType)) {
+                assertEquals(Set.of("mcp:" + fixture.mcpName), genericSingleType,
+                        resourceType);
+                assertEquals(Set.of("mcp:" + fixture.mcpId), dedicated, resourceType);
+            } else {
+                assertEquals(genericSingleType, dedicated, resourceType);
+            }
         }
         
         JsonNode blankList = awaitGenericSearch(Query.newInstance()
@@ -103,15 +110,15 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue(genericKeys(blankList).containsAll(expectedKeys), blankList.toString());
         
         Set<String> expectedTagged = new LinkedHashSet<>(expectedKeys);
-        expectedTagged.remove("mcp:" + fixture.mcpId);
+        expectedTagged.remove("mcp:" + fixture.mcpName);
         JsonNode tagged = awaitGenericSearch(genericQuery(suffix)
                 .addParam("tagsAll", suffix), expectedTagged);
         assertEquals(expectedTagged, genericKeys(tagged), tagged.toString());
         
         JsonNode capable = awaitGenericSearch(genericQuery(suffix)
                 .addParam("capabilitiesAny", "tool"),
-                Set.of("mcp:" + fixture.mcpId));
-        assertEquals(Set.of("mcp:" + fixture.mcpId), genericKeys(capable), capable.toString());
+                Set.of("mcp:" + fixture.mcpName));
+        assertEquals(Set.of("mcp:" + fixture.mcpName), genericKeys(capable), capable.toString());
         
         JsonNode mcpByProtocol = awaitDedicatedSearch("mcp", suffix,
                 Query.newInstance().addParam("protocolsAny", "stdio"));
@@ -350,7 +357,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
             assertNotNull(mcpName);
             return new LinkedHashSet<>(Set.of("agent:" + agentName,
                     "agentspec:" + agentSpecName, "skill:" + skillName,
-                    "prompt:" + promptKey, "mcp:" + mcpId));
+                    "prompt:" + promptKey, "mcp:" + mcpName));
         }
     }
 }

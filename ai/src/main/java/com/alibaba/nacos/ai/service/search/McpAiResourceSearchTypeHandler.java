@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -31,9 +31,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -46,6 +44,10 @@ import java.util.Map;
 /**
  * Search type handler for canonical MCP server resources.
  *
+ * <p>The canonical document identity is always the MCP name. Projection follows the complete
+ * compatibility router so SYNCING reads the full historical view and managed mode reads lifecycle
+ * rows; partially reconciled rows therefore never become a Search authority.</p>
+ *
  * @author nacos
  */
 @Service
@@ -54,11 +56,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     
     private static final int DEFAULT_MAX_MCP_CONTENT_CHARS = 12000;
     
-    private static final TypeReference<Map<String, Object>> MAP_TYPE =
-        new TypeReference<Map<String, Object>>() {
-        };
-    
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpOperationService;
     
     private final AiResourceSearchDocumentBuilder documentBuilder =
         new AiResourceSearchDocumentBuilder();
@@ -66,9 +64,13 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     private final AiResourceIndexProjectionBuilder projectionBuilder =
         new AiResourceIndexProjectionBuilder();
     
-    public McpAiResourceSearchTypeHandler(
-        McpServerOperationService mcpServerOperationService) {
-        this.mcpServerOperationService = mcpServerOperationService;
+    public McpAiResourceSearchTypeHandler(McpOperationService mcpOperationService) {
+        this.mcpOperationService = mcpOperationService;
+    }
+    
+    @Override
+    public int projectionVersion() {
+        return 2;
     }
     
     @Override
@@ -83,8 +85,8 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
             return null;
         }
         try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(namespaceId,
-                resourceName, null, version);
+            McpServerDetailInfo detail = mcpOperationService.getMcpServerDetail(namespaceId,
+                null, resourceName, version);
             return projectServer(namespaceId, detail);
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND) {
@@ -96,11 +98,11 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     
     @Override
     public AiResourceIndexSourcePage scan(String namespaceId, String resourceType, int pageNo,
-        int pageSize) {
+        int pageSize) throws NacosException {
         if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
             return new AiResourceIndexSourcePage(Collections.emptyList(), false);
         }
-        Page<McpServerBasicInfo> page = mcpServerOperationService.listMcpServerWithPage(namespaceId,
+        Page<McpServerBasicInfo> page = mcpOperationService.listMcpServerWithPage(namespaceId,
             null, Constants.MCP_LIST_SEARCH_ACCURATE, pageNo, pageSize);
         List<McpServerBasicInfo> servers = page == null ? null : page.getPageItems();
         if (servers == null || servers.isEmpty()) {
@@ -108,8 +110,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
         }
         List<AiResourceIndexSource> items = new ArrayList<>();
         for (McpServerBasicInfo server : servers) {
-            String resourceName = server == null ? null
-                : firstNotBlank(server.getId(), server.getName());
+            String resourceName = server == null ? null : server.getName();
             try {
                 items.add(AiResourceIndexSource.success(resourceName,
                     projectServer(namespaceId, server)));
@@ -126,15 +127,13 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
             || !AiResourceConstants.RESOURCE_TYPE_MCP.equals(document.getResourceType())) {
             return false;
         }
-        Map<String, Object> metadata = parseMetadata(document.getMetadata());
-        String mcpServerId = firstNotBlank(stringValue(metadata.get("mcpServerId")),
-            document.getResourceName());
-        String mcpName = stringValue(metadata.get("mcpName"));
         try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
-                document.getNamespaceId(), mcpServerId, mcpName, document.getResourceVersion());
+            McpServerDetailInfo detail = mcpOperationService.getMcpServerDetail(
+                document.getNamespaceId(), null, document.getResourceName(),
+                document.getResourceVersion());
             ServerVersionDetail versionDetail = detail == null ? null : detail.getVersionDetail();
-            return detail != null && detail.isEnabled()
+            return detail != null && document.getResourceName().equals(detail.getName())
+                && detail.isEnabled()
                 && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())
                 && versionDetail != null && Boolean.TRUE.equals(versionDetail.getIs_latest());
         } catch (NacosException e) {
@@ -149,7 +148,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
             return false;
         }
         try {
-            return mcpServerOperationService.getMcpServerDetail(namespaceId, resourceName, null,
+            return mcpOperationService.getMcpServerDetail(namespaceId, null, resourceName,
                 null) != null;
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_FOUND) {
@@ -161,8 +160,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     
     private AiResourceIndexProjection projectServer(String namespaceId,
         McpServerBasicInfo mcpServer) {
-        String resourceName = mcpServer == null ? null
-            : firstNotBlank(mcpServer.getId(), mcpServer.getName());
+        String resourceName = mcpServer == null ? null : mcpServer.getName();
         String resourceVersion = mcpServer == null ? null : resolveMcpVersion(mcpServer);
         if (!isIndexable(mcpServer) || StringUtils.isBlank(resourceName)
             || StringUtils.isBlank(resourceVersion)) {
@@ -300,8 +298,11 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     }
     
     private boolean isIndexable(McpServerBasicInfo mcpServer) {
+        ServerVersionDetail versionDetail = mcpServer == null ? null
+            : mcpServer.getVersionDetail();
         return mcpServer != null && mcpServer.isEnabled()
-            && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(mcpServer.getStatus());
+            && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(mcpServer.getStatus())
+            && versionDetail != null && Boolean.TRUE.equals(versionDetail.getIs_latest());
     }
     
     private String resolveMcpVersion(McpServerBasicInfo mcpServer) {
@@ -310,26 +311,6 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
             return mcpServer.getVersionDetail().getVersion();
         }
         return mcpServer.getVersion();
-    }
-    
-    private String stringValue(Object value) {
-        return value == null ? null : String.valueOf(value);
-    }
-    
-    private Map<String, Object> parseMetadata(String metadata) {
-        if (StringUtils.isBlank(metadata)) {
-            return Collections.emptyMap();
-        }
-        try {
-            Map<String, Object> result = JacksonUtils.toObj(metadata, MAP_TYPE);
-            return result == null ? Collections.emptyMap() : result;
-        } catch (Exception ignored) {
-            return Collections.emptyMap();
-        }
-    }
-    
-    private String firstNotBlank(String first, String second) {
-        return StringUtils.isNotBlank(first) ? first : second;
     }
     
     private String limit(String text, int maxLength) {

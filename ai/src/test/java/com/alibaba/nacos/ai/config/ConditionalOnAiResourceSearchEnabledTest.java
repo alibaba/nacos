@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexContentLoaderImpl;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceServiceImpl;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexService;
@@ -99,8 +98,6 @@ class ConditionalOnAiResourceSearchEnabledTest {
                 () -> mock(AiResourceIndexTaskRepository.class));
             context.registerBean(AiResourceIndexService.class,
                 () -> mock(AiResourceIndexService.class));
-            context.registerBean(McpServerOperationService.class,
-                () -> mock(McpServerOperationService.class));
             context.register(AiResourceIndexTaskConsumer.class);
             EnvUtil.setEnvironment(context.getEnvironment());
             context.refresh();

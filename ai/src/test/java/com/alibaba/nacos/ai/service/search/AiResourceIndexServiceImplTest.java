@@ -22,7 +22,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchChunk;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -88,7 +88,7 @@ class AiResourceIndexServiceImplTest {
     private AiResourceIndexContentLoader contentLoader;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpCompatibilityOperationService mcpServerOperationService;
     
     @Test
     void rebuildAiResourceShouldPersistEntryChunksAndVectors() throws Exception {
@@ -518,7 +518,7 @@ class AiResourceIndexServiceImplTest {
                 return chunks;
             });
         
-        when(mcpServerOperationService.getMcpServerDetail("public", "mcp-avatar", null, null))
+        when(mcpServerOperationService.getMcpServerDetail("public", null, "mcp-avatar", null))
             .thenReturn(mcpServer);
         service.rebuildLatestAiResource("public", AiResourceConstants.RESOURCE_TYPE_MCP,
             "mcp-avatar");
@@ -624,6 +624,7 @@ class AiResourceIndexServiceImplTest {
         toolSpec.setTools(List.of(tool));
         ServerVersionDetail versionDetail = new ServerVersionDetail();
         versionDetail.setVersion("1.0.0");
+        versionDetail.setIs_latest(true);
         McpServerDetailInfo mcpServer = new McpServerDetailInfo();
         mcpServer.setId("mcp-avatar");
         mcpServer.setName("Avatar MCP");

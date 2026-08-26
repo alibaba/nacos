@@ -18,7 +18,10 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -174,6 +177,88 @@ class McpEndpointOperationServiceTest {
         assertEquals(1, actual.size());
         assertEquals("127.0.0.1", actual.get(0).getIp());
         assertEquals(8848, actual.get(0).getPort());
+    }
+    
+    @Test
+    void injectEndpointPreservesDirectAndBackendFrontendProjection() throws NacosException {
+        Instance instance = new Instance();
+        instance.setIp("10.0.0.1");
+        instance.setPort(9000);
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.singletonList(instance));
+        when(instanceOperator.listInstance("public", "backend-group", "backend-service", null,
+            "", true)).thenReturn(serviceInfo);
+        McpServiceRef backend = serviceRef("public", "backend-group", "backend-service");
+        backend.setTransportProtocol(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE);
+        McpServerRemoteServiceConfig remote = new McpServerRemoteServiceConfig();
+        remote.setServiceRef(backend);
+        remote.setExportPath("/backend");
+        FrontEndpointConfig direct = new FrontEndpointConfig();
+        direct.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        direct.setEndpointData("127.0.0.1:8848");
+        direct.setProtocol(Constants.PROTOCOL_TYPE_HTTP);
+        direct.setPath("/direct");
+        FrontEndpointConfig toBackend = new FrontEndpointConfig();
+        toBackend.setEndpointType(AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK);
+        toBackend.setPath("/gateway");
+        remote.setFrontEndpointConfigList(List.of(direct, toBackend));
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        detail.setRemoteServerConfig(remote);
+        
+        endpointOperationService.injectEndpoint(detail);
+        
+        assertEquals(1, detail.getBackendEndpoints().size());
+        assertEquals("10.0.0.1", detail.getBackendEndpoints().get(0).getAddress());
+        assertEquals(2, detail.getFrontendEndpoints().size());
+        assertEquals("127.0.0.1", detail.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(8848, detail.getFrontendEndpoints().get(0).getPort());
+        assertEquals("10.0.0.1", detail.getFrontendEndpoints().get(1).getAddress());
+        assertEquals("/gateway", detail.getFrontendEndpoints().get(1).getPath());
+    }
+    
+    @Test
+    void injectEndpointResolvesReferencedFrontendService() throws NacosException {
+        Instance instance = new Instance();
+        instance.setIp("10.0.0.2");
+        instance.setPort(9443);
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.singletonList(instance));
+        when(instanceOperator.listInstance("public", "front-group", "front-service", null, "",
+            true)).thenReturn(serviceInfo);
+        FrontEndpointConfig frontend = new FrontEndpointConfig();
+        frontend.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
+        frontend.setEndpointData(serviceRef("public", "front-group", "front-service"));
+        frontend.setProtocol("https");
+        frontend.setPath("/mcp");
+        McpServerRemoteServiceConfig remote = new McpServerRemoteServiceConfig();
+        remote.setFrontEndpointConfigList(Collections.singletonList(frontend));
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        detail.setRemoteServerConfig(remote);
+        
+        endpointOperationService.injectEndpoint(detail);
+        
+        assertEquals(0, detail.getBackendEndpoints().size());
+        assertEquals(1, detail.getFrontendEndpoints().size());
+        assertEquals("10.0.0.2", detail.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(9443, detail.getFrontendEndpoints().get(0).getPort());
+    }
+    
+    @Test
+    void injectEndpointHandlesMissingRemoteConfiguration() throws NacosException {
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        
+        endpointOperationService.injectEndpoint(detail);
+        
+        assertEquals(0, detail.getBackendEndpoints().size());
+        assertEquals(0, detail.getFrontendEndpoints().size());
+    }
+    
+    private McpServiceRef serviceRef(String namespaceId, String group, String serviceName) {
+        McpServiceRef result = new McpServiceRef();
+        result.setNamespaceId(namespaceId);
+        result.setGroupName(group);
+        result.setServiceName(serviceName);
+        return result;
     }
     
     @Test

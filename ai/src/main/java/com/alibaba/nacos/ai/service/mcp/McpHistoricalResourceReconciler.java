@@ -124,6 +124,123 @@ public class McpHistoricalResourceReconciler {
         return changes;
     }
     
+    /**
+     * Reconcile lifecycle rows after the authoritative historical path deletes Versions.
+     *
+     * <p>The caller must finish the legacy endpoint, Version Storage and serving Manifest
+     * mutations first. This method then removes only rows that are no longer present in the
+     * remaining Manifest and reuses normal reconciliation for the retained Versions. A full
+     * delete only removes a resource created by historical reconciliation with the same
+     * compatibility identity. If a previous Version-first reconciliation failed before inserting
+     * its Resource, the full delete also removes those orphan Version rows only after their
+     * canonical metadata and Server storage key prove the same legacy identity. Independently
+     * created MCP resources and versions are never claimed.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param name canonical MCP name before deletion
+     * @param mcpId historical compatibility identity
+     * @param remainingManifest remaining authoritative Manifest, or {@code null} for full delete
+     * @return number of Resource or Version rows changed
+     * @throws NacosException when retained rows conflict with the historical identity
+     */
+    public int reconcileAfterLegacyDelete(String namespaceId, String name, String mcpId,
+        McpServerVersionInfo remainingManifest) throws NacosException {
+        ManifestIdentity identity = validateDeletionIdentity(namespaceId, name, mcpId);
+        AiResource existing = uniqueResourceOrNull(namespaceId, name);
+        if (existing != null) {
+            validateLegacyDeletionResource(existing, identity);
+        }
+        if (remainingManifest == null) {
+            Map<String, AiResourceVersion> versions = loadExistingVersions(identity);
+            validateLegacyDeletionVersions(versions, identity);
+            if (existing == null && versions.isEmpty()) {
+                return 0;
+            }
+            int changes = existing == null ? 0 : resourcePersistService.delete(namespaceId, name,
+                AiResourceConstants.RESOURCE_TYPE_MCP);
+            changes += versionPersistService.deleteByNameAndType(namespaceId, name,
+                AiResourceConstants.RESOURCE_TYPE_MCP);
+            return changes;
+        }
+        ManifestIdentity remainingIdentity = validateManifest(namespaceId, remainingManifest);
+        if (!identity.name.equals(remainingIdentity.name)
+            || !identity.mcpId.equals(remainingIdentity.mcpId)) {
+            throw conflict("Remaining historical MCP Manifest changed identity for " + name,
+                null);
+        }
+        Set<String> retainedVersions = new HashSet<>();
+        for (ServerVersionDetail detail : remainingManifest.getVersionDetails()) {
+            retainedVersions.add(detail.getVersion());
+        }
+        int changes = 0;
+        for (AiResourceVersion row : loadExistingVersions(identity).values()) {
+            if (!retainedVersions.contains(row.getVersion())) {
+                changes += versionPersistService.delete(namespaceId, name,
+                    AiResourceConstants.RESOURCE_TYPE_MCP, row.getVersion());
+            }
+        }
+        return changes + reconcile(namespaceId, remainingManifest);
+    }
+    
+    private ManifestIdentity validateDeletionIdentity(String namespaceId, String name,
+        String mcpId) throws NacosException {
+        try {
+            AgentValidationUtils.validateNamespaceId(namespaceId);
+            McpResourceExtSerializer.validateMcpId(mcpId);
+            if (StringUtils.isBlank(name) || name.length() > MAX_RESOURCE_NAME_LENGTH) {
+                throw new IllegalArgumentException("Invalid historical MCP Resource name");
+            }
+            return new ManifestIdentity(namespaceId, name, mcpId);
+        } catch (IllegalArgumentException e) {
+            throw conflict("Invalid deleted historical MCP identity", e);
+        }
+    }
+    
+    private void validateLegacyDeletionResource(AiResource resource,
+        ManifestIdentity identity) throws NacosException {
+        boolean matches = identity.namespaceId.equals(resource.getNamespaceId())
+            && identity.name.equals(resource.getName())
+            && AiResourceConstants.RESOURCE_TYPE_MCP.equals(resource.getType())
+            && LEGACY_SOURCE.equals(resource.getFrom());
+        if (matches) {
+            try {
+                matches = identity.mcpId.equals(
+                    McpResourceExtSerializer.deserialize(resource.getExt()).getMcpId());
+            } catch (IllegalArgumentException e) {
+                throw conflict("Historical MCP Resource has invalid compatibility identity for "
+                    + identity.name, e);
+            }
+        }
+        if (!matches) {
+            throw conflict("Historical MCP delete conflicts with an existing Resource for "
+                + identity.name, null);
+        }
+    }
+    
+    private void validateLegacyDeletionVersions(Map<String, AiResourceVersion> versions,
+        ManifestIdentity identity) throws NacosException {
+        for (AiResourceVersion version : versions.values()) {
+            boolean matches = AiResourceConstants.VERSION_STATUS_ONLINE.equals(
+                version.getStatus()) && OWNER_NACOS.equals(version.getAuthor())
+                && StringUtils.isBlank(version.getDesc())
+                && StringUtils.isBlank(version.getPublishPipelineInfo());
+            try {
+                McpVersionStorageDescriptor actual =
+                    McpVersionStorageDescriptorSerializer.deserialize(version.getStorage());
+                McpVersionStorageDescriptor expected = McpVersionStorageKeyComposer.compose(
+                    identity.namespaceId, identity.mcpId, version.getVersion(), false, false);
+                matches = matches && expected.getServerKey().equals(actual.getServerKey());
+            } catch (IllegalArgumentException e) {
+                throw conflict("Historical MCP Version has invalid storage identity for "
+                    + identity.name + ':' + version.getVersion(), e);
+            }
+            if (!matches) {
+                throw conflict("Historical MCP delete conflicts with an existing Version for "
+                    + identity.name + ':' + version.getVersion(), null);
+            }
+        }
+    }
+    
     private ManifestIdentity validateManifest(String namespaceId, McpServerVersionInfo manifest)
         throws NacosException {
         try {

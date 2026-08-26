@@ -22,7 +22,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
@@ -112,7 +112,7 @@ class ArdSearchServiceImplTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
@@ -854,10 +854,10 @@ class ArdSearchServiceImplTest {
         AiResourceSearchDocument prompt = entry(200L, "avatar prompt");
         prompt.setResourceType(AiResourceConstants.RESOURCE_TYPE_PROMPT);
         prompt.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "prompt")));
-        AiResourceSearchDocument mcp = entry(300L, "mcp/avatar server");
+        AiResourceSearchDocument mcp = entry(300L, "avatar-server");
         mcp.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
         mcp.setMetadata(JacksonUtils.toJson(Map.of("resourceType", "mcp", "mcpName",
-            "avatar-server")));
+            "avatar-server", "mcpServerId", "mcp/avatar server")));
         when(repository.scanEnabledEntries("public",
             List.of("agent", "skill", "prompt", "mcp"), 0L, 500))
             .thenReturn(List.of(prompt, mcp));
@@ -867,13 +867,14 @@ class ArdSearchServiceImplTest {
         when(resourceManager.findVersion("public", "avatar prompt",
             AiResourceConstants.RESOURCE_TYPE_PROMPT, "1.0.0")).thenReturn(onlineVersion("1.0.0"));
         McpServerDetailInfo mcpDetail = new McpServerDetailInfo();
+        mcpDetail.setName("avatar-server");
         mcpDetail.setEnabled(true);
         mcpDetail.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
         ServerVersionDetail versionDetail = new ServerVersionDetail();
         versionDetail.setIs_latest(true);
         mcpDetail.setVersionDetail(versionDetail);
-        when(mcpServerOperationService.getMcpServerDetail("public", "mcp/avatar server",
-            "avatar-server", "1.0.0")).thenReturn(mcpDetail);
+        when(mcpServerOperationService.getMcpServerDetail("public", null, "avatar-server",
+            "1.0.0")).thenReturn(mcpDetail);
         
         ArdSearchServiceImpl service = service();
         ArdCatalog catalog = service.catalog("public");
@@ -886,7 +887,7 @@ class ArdSearchServiceImplTest {
         assertEquals(ArdProtocolConstants.MEDIA_TYPE_MCP,
             catalog.getEntries().get(2).getType());
         assertEquals("/v3/ai/ard/artifacts?namespaceId=public&resourceType=mcp"
-            + "&resourceName=mcp%2Favatar+server&version=1.0.0&mcpName=avatar-server",
+            + "&resourceName=avatar-server&version=1.0.0&mcpName=avatar-server",
             catalog.getEntries().get(2).getUrl());
         assertCatalogSchemaValid(catalog);
     }

@@ -306,7 +306,9 @@ public class AiResourceSearchApplicationService {
     private McpServerBasicInfo toMcpServerBasicInfo(AiResourceSearchResult source) {
         McpServerBasicInfo result = new McpServerBasicInfo();
         result.setNamespaceId(source.getNamespaceId());
-        result.setId(source.getResourceName());
+        String mcpServerId = stringValue(source.getMetadata(), "mcpServerId");
+        result.setId(StringUtils.isNotBlank(mcpServerId) ? mcpServerId
+            : source.getResourceName());
         result.setName(source.getDisplayName());
         result.setDescription(source.getDescription());
         result.setVersion(source.getResourceVersion());

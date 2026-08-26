@@ -67,6 +67,39 @@ public class McpVersionStorageService {
     }
     
     /**
+     * Delete objects referenced only by a descriptor that has just been replaced.
+     *
+     * <p>The replacement content must be saved before this method is called. Cleanup uses the
+     * previous descriptor's provider and attempts Resources, Tools and Server in dependency
+     * order. Objects whose provider and key are unchanged are retained.</p>
+     *
+     * @param previous previous persisted descriptor
+     * @param replacement replacement descriptor already saved successfully
+     * @throws NacosException after all obsolete deletion attempts when one or more fail
+     */
+    public void deleteObsolete(McpVersionStorageDescriptor previous,
+        McpVersionStorageDescriptor replacement) throws NacosException {
+        checkedDescriptor(previous);
+        checkedDescriptor(replacement);
+        NacosException failure = null;
+        if (isObsolete(previous, previous.getResourceKey(), replacement,
+            replacement.getResourceKey())) {
+            failure = deleteContent(previous, previous.getResourceKey(), failure);
+        }
+        if (isObsolete(previous, previous.getToolKey(), replacement,
+            replacement.getToolKey())) {
+            failure = deleteContent(previous, previous.getToolKey(), failure);
+        }
+        if (isObsolete(previous, previous.getServerKey(), replacement,
+            replacement.getServerKey())) {
+            failure = deleteContent(previous, previous.getServerKey(), failure);
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+    
+    /**
      * Load the Server and every optional object selected by the persisted descriptor.
      *
      * @param descriptor Version storage descriptor
@@ -77,6 +110,32 @@ public class McpVersionStorageService {
         throws NacosException {
         checkedDescriptor(descriptor);
         byte[] server = loadRequired(descriptor, descriptor.getServerKey(), "Server");
+        byte[] tools = descriptor.getToolKey() == null ? null
+            : loadRequired(descriptor, descriptor.getToolKey(), "Tools");
+        byte[] resources = descriptor.getResourceKey() == null ? null
+            : loadRequired(descriptor, descriptor.getResourceKey(), "Resources");
+        return new McpVersionStorageContents(server, tools, resources);
+    }
+    
+    /**
+     * Load one Version when its Server content exists.
+     *
+     * <p>This differs from {@link #load(McpVersionStorageDescriptor)} only for an absent Server
+     * object, which returns {@code null}. Provider failures and missing optional content still
+     * fail normally, allowing an operation retry to distinguish an incomplete retained write
+     * from an unavailable storage provider.</p>
+     *
+     * @param descriptor Version storage descriptor
+     * @return exact content bytes, or {@code null} when Server content does not exist
+     * @throws NacosException when the provider fails or referenced optional content is missing
+     */
+    public McpVersionStorageContents loadIfPresent(McpVersionStorageDescriptor descriptor)
+        throws NacosException {
+        checkedDescriptor(descriptor);
+        byte[] server = loadContent(descriptor, descriptor.getServerKey());
+        if (server == null || server.length == 0) {
+            return null;
+        }
         byte[] tools = descriptor.getToolKey() == null ? null
             : loadRequired(descriptor, descriptor.getToolKey(), "Tools");
         byte[] resources = descriptor.getResourceKey() == null ? null
@@ -120,6 +179,12 @@ public class McpVersionStorageService {
         }
     }
     
+    private boolean isObsolete(McpVersionStorageDescriptor previous, String previousKey,
+        McpVersionStorageDescriptor replacement, String replacementKey) {
+        return previousKey != null && (!Objects.equals(previous.getProvider(),
+            replacement.getProvider()) || !Objects.equals(previousKey, replacementKey));
+    }
+    
     private void checkedDescriptor(McpVersionStorageDescriptor descriptor) throws NacosException {
         try {
             McpVersionStorageDescriptorSerializer.validate(descriptor);
@@ -140,17 +205,21 @@ public class McpVersionStorageService {
     
     private byte[] loadRequired(McpVersionStorageDescriptor descriptor, String key,
         String contentName) throws NacosException {
-        StorageKey storageKey = new StorageKey(descriptor.getProvider(), key);
-        final byte[] result;
-        try {
-            result = route(storageKey).get(storageKey);
-        } catch (IllegalArgumentException e) {
-            throw storageFailure("Invalid MCP Version storage key", e);
-        }
+        byte[] result = loadContent(descriptor, key);
         if (result == null || result.length == 0) {
             throw storageFailure("MCP " + contentName + " content does not exist", null);
         }
         return result;
+    }
+    
+    private byte[] loadContent(McpVersionStorageDescriptor descriptor, String key)
+        throws NacosException {
+        StorageKey storageKey = new StorageKey(descriptor.getProvider(), key);
+        try {
+            return route(storageKey).get(storageKey);
+        } catch (IllegalArgumentException e) {
+            throw storageFailure("Invalid MCP Version storage key", e);
+        }
     }
     
     private NacosException deleteContent(McpVersionStorageDescriptor descriptor, String key,
@@ -179,7 +248,9 @@ public class McpVersionStorageService {
         if (previous == null) {
             return current;
         }
-        previous.addSuppressed(current);
+        if (previous != current) {
+            previous.addSuppressed(current);
+        }
         return previous;
     }
     
