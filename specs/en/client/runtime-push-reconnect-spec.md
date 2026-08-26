@@ -54,10 +54,9 @@ Domain rules:
 - AI push behavior is versioned by each AI resource spec and must keep the same
   identity rules as the corresponding query API.
 
-The target RAD Watch carries a complete discovery snapshot rather than only a
-change identity. That snapshot is authoritative for replacement of the local
-RAD discovery cache, while the Registry remains the resource authority and a
-Discover re-query can refresh the snapshot.
+RAD Watch carries only an invalidation hint. The client must execute the
+ordinary authorized Discover operation and compare the complete canonical
+result fingerprint before replacing its local cache or invoking a listener.
 
 ## 3. Server-Side Connection State
 
@@ -112,84 +111,98 @@ Client recovery is defined in detail by the
 selection and liveness are defined by the
 [Client Connection And Failover Spec](client-connection-failover-spec.md).
 
-## 6. Agent And RAD Target Watch Contract
+## 6. Agent And RAD Watch Contract
 
-This section defines the target gRPC Watch contract for Agent/RAD. It does not
-describe a currently implemented capability. An implementation must not expose
-or advertise this behavior until the Agent/RAD abilities in the
-[Agent API Spec](../ai/agent-api-spec.md) are implemented and negotiated. The
-initial Nacos HTTP binding supports Discover but not Watch.
+This section defines Nacos Agent/RAD server-aware Watch. It is advertised only
+after the independent abilities in the
+[Agent API Spec](../ai/agent-api-spec.md) are implemented and negotiated.
 
-### 6.1 Identity And Initial Result
+### 6.1 Identity, Projection, And Fingerprint
 
-The canonical SDK Watch key is:
+The canonical local Watch identity is:
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
-The canonical reference preserves whether the caller selected an exact
-version, a label, or latest. Canonical Filter construction applies defaults and
-sorts and deduplicates set-valued fields. Listener identity is the same
-listener instance supplied to cancellation. An implementation may multiplex
-wire subscriptions, but it must preserve this public identity and callback
-isolation.
+The canonical reference preserves exact Version, Label, explicit latest, and
+the rollout-safe unspecified-version form. Filter construction materializes
+defaults and sorts and deduplicates set-valued fields. Listener identity is the
+same listener instance supplied to cancellation. The server projection key
+excludes listener identity and authorization/visibility scope; authorization
+decides whether a caller may install or refresh a Watch and is never encoded as
+resource identity.
 
-The server evaluates Discover before creating a Watch. `NOT_FOUND` creates no
-server or client Watch state. A successful `AgentSubscribeResponse` returns a
-connection-scoped opaque `watchKey` and the current complete
-`AgentDiscoveryResult`. The SDK maps that key to its canonical local Watch
-key and does not parse it.
+Client and server share canonical request normalization and complete-result
+fingerprinting. Fingerprint format is
+`sha256-canonical-json-v1:<64-lowercase-hex>`. It is an equality token only,
+not a sequence, version, authorization proof, or replay cursor. Equal final
+fingerprints permit A-B-A task coalescing without another listener callback.
 
-RAD itself still has exactly six root messages and defines no protocol-level
-event envelope. The Nacos gRPC binding uses
-`AgentDiscoveryNotifyRequest(watchKey, eventType, result?, errorCode?)` to
-multiplex Watch events on the shared Payload connection. This request is a
-binding object, not another RAD root message.
+### 6.2 Server Projection And Push Execution
 
-### 6.2 Complete Replacement And Listener Delivery
+Definition, Version/Label, visibility, runtime Endpoint, liveness, and
+connection cleanup events mark affected projections dirty. The reusable push
+pipeline follows Naming's latest-snapshot task discipline: producers add or
+merge a delay task by projection; tasks not yet executing may coalesce; once
+execution starts it completes; a concurrent later change creates or merges
+into a subsequent task. Agent supplies projection matching and fingerprint
+construction, while shared runtime code supplies task merge, target fan-out,
+connection lookup, asynchronous push, retry, and metrics.
 
-For `eventType=SNAPSHOT`, `AgentDiscoveryNotifyRequest` requires one complete
-`AgentDiscoveryResult` and has no error. The client atomically replaces the
-previous snapshot for the identified Watch with each accepted result and then
-acknowledges it with `AgentDiscoveryNotifyResponse`. It must not merge calling
-interfaces, Endpoint sets, or Endpoints from different snapshots. A changed resolved version,
-`contentDigest`, or `sourceRevision` identifies a potentially new snapshot;
-these tokens support equality and deduplication, not ordering.
+The server does not keep a prior business snapshot or per-Watch sequence. A
+gRPC Notify contains only `watchKey`, event type, optional observed
+fingerprint, and terminal error code. The client acknowledges after validating
+the key and marking the local intent dirty. ACK does not wait for Discover or
+listener execution. Retry is bounded and connection-scoped; exhausting retry
+may force reconnect so resubscription restores intent.
 
-An empty filtered shape is a valid complete result and replaces the previous
-snapshot. Naming push-empty protection does not apply to RAD. Listener
-exceptions are isolated from connection processing and from other listeners;
-they do not turn an already accepted snapshot into an unacknowledged event.
+### 6.3 Current-Fact Refresh And Listener Delivery
 
-### 6.3 Terminal Disappearance
+Every accepted Hint, reconnect refresh requirement, HTTP changed item, or
+polling-fallback tick executes ordinary authorized Discover. The client
+canonicalizes the complete result and compares its fingerprint with cache.
+Only a different result atomically replaces cache and emits a complete
+`SNAPSHOT`; it never merges result fragments. An empty filtered shape is a
+valid snapshot. Listener work is isolated from connection and long-poll I/O;
+slow, throwing, or rejected listener execution cannot change Hint ACK state or
+block another Watch.
 
-If a previously discoverable target becomes absent, invisible, disabled, or
-has no discoverable online target version, the server sends
-`AgentDiscoveryNotifyRequest` with `eventType=TERMINATED`, no result, and
-`errorCode=NOT_FOUND`. This event closes only the identified `watchKey`; the
-shared Payload connection and every other Watch remain active. The client
-delivers the terminal status, removes only that local Watch key and cached
-snapshot, acknowledges the terminal event, and does not redo that Watch on
-later reconnects. An existing Agent whose Filter currently matches no
-interface or Endpoint remains a successful empty `SNAPSHOT` and is not
-terminal.
+`NOT_FOUND` enters a bounded local pending state and emits at most one
+`UNAVAILABLE` transition for the absent period; recovery emits a new snapshot.
+Terminal authorization or capacity errors emit one unavailable event and
+remove the rejected intent. Transient transport or Discover failures retain
+intent and use bounded backoff without exposing stale data as a new snapshot.
 
-### 6.4 Missed Push And Reconnect
+### 6.4 gRPC Reconnect
 
-When connection loss, a rejected notification, or binding-specific gap
-detection means a push may have been missed, the client must re-run Discover
-with the same namespace, canonical reference, and canonical Filter, then
-atomically replace its cached snapshot. It must not reconstruct the missing
-state by applying locally inferred deltas.
+gRPC Watch state belongs to one connection. Disconnect removes server state
+and invalidates every old `watchKey`. The SDK retains canonical local intent,
+re-subscribes the complete active set under the new connection, and performs
+Discover when `refreshRequired` is true. There is no periodic full-data Sync;
+resubscription plus current-fact Discover is the reconciliation mechanism.
+Late notifications for old keys are rejected and cannot reach listeners.
 
-On gRPC disconnect, the server removes connection-scoped Watch state. The SDK
-marks the corresponding local Watch records unregistered. After reconnect it
-uses the new connection id to restore the same canonical local Watch keys. It
-discards each old wire `watchKey`; every successful resubscription supplies a
-new opaque `watchKey` and initial complete result, which becomes the new
-snapshot before subsequent pushes. A terminal result during recovery follows
-Section 6.3 instead of remaining in redo state.
+### 6.5 HTTP Batch Long Poll
+
+HTTP uses one request-scoped batch long poll for the complete current Watch
+set, not one request per Agent. The request contains local generation, timeout,
+and each item with client Watch id, discovery request, and last materialized
+fingerprint. A response contains timeout or changed client ids only. It carries
+no business data and no per-item authorization details.
+
+Each long-poll request may reach a different cluster node. Correctness does not
+depend on node-local generation continuity: the receiving node compares the
+submitted fingerprints with its current serving projection, and a returned id
+is re-fetched through Discover. Local list changes advance generation and
+supersede the prior request. A late old-generation response is ignored. Server
+awareness of socket cancellation is an optimization; timeout and the next
+complete-list request clean up request-scoped wait state.
+
+The first HTTP binding performs one-namespace request-level AI read
+authorization and deliberately does not implement per-item multi-resource
+fine-grained authorization. Discover remains the mandatory content and
+visibility authorization boundary.
 
 ## 7. Ordering
 

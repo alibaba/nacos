@@ -177,30 +177,40 @@ SDK 默认对全部已保留完整 Publication Batch 中的 Runtime Endpoint 条
 Publication Manager 与 gRPC Redo Cache 移除被拒绝的身份，HTTP Maintenance 不再
 Heartbeat 或重试它；其他瞬时 5xx Transport 失败继续使用既有 Rollback 和 Redo 语义。
 
-### 8.3 本地轮询订阅身份
+### 8.3 本地 Watch Manager 与 Wire Intent
 
-首版 SDK 不创建服务端 Watch，也不保存 Connection 维度 `watchKey`。规范化本地轮询
-订阅 Key 包含：
+Canonical Local Watch Key 包含：
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
-Reference 规范化保持精确 Version、Label 和 Latest 之间的区别。Filter 的集合和 Map
-内容用于值相等比较，Listener identity 是取消订阅时使用的同一 Listener 实例。SDK 周期
-执行相同 Discover；gRPC reconnect 不增加订阅 redo，因为下一次轮询自然使用新连接。
-目标不存在时保留轮询但不投递空快照。解析 Version、`contentDigest` 或任一
-`sourceRevision` 改变时，SDK 原子替换缓存并投递完整结果。
+Reference 规范化保留 Exact Version、Label、显式 Latest 和未指定 Version 的语义。
+Filter Collection 和 Map 参与 Canonical Value Equality。Listener Identity 是取消时使用的
+同一实例。一个 Record 拥有 Request 防御性副本、Listener、最后完整 Result、Canonical
+Fingerprint、Availability State、所选 Wire Transport、Wire Generation/Key、Dirty/Refresh
+State 和有界 Retry State。Transport Adapter 不得拥有另一份 Listener 或 Result Cache。
 
-本地轮询 Cache 默认最多保留 300 个不同的规范化订阅 Key，可通过
+本地 Watch Manager 默认最多保留 300 个不同的 Canonical Subscription Key，可通过
 `nacosAiAgentDiscoveryMaxSubscriptions` 配置。超限订阅必须在首次 Discover、缓存插入和
-调度提交前失败；重复 Subscribe 保持幂等，Unsubscribe 或 Shutdown 释放容量。当前 API
-每次调用只安装一个 Key；后续任何批量 Watch Cache 修改都必须使用操作前软水位，在水位
-以下整批保留规范化结果，或在已达到水位时无局部插入地拒绝增长。
+Wire 调度前失败；重复 Subscribe 保持幂等，Unsubscribe 或 Shutdown 释放容量。被本地或
+Server 容量拒绝的注册完整回滚且不进入 Retry。任何 Batch Mutation 都使用操作前软水位，
+在水位以下整批保留规范化结果，或在已达到水位时无局部插入地拒绝增长。
 
-[运行时推送与重连规范](runtime-push-reconnect-spec.md)中的服务端 Watch/Push 是独立
-后续契约；实现该契约前必须先更新 Agent API、能力位和传输 Payload，不能从本地轮询
-身份推导 Wire Watch state。
+Wire Intent 从本地 Intent 派生，不能取代它：
+
+- gRPC State 保存当前 Connection 范围的 `watchKey`；Disconnect 清除该 Key，并把 Record
+  标记为在新 Connection 下重新订阅；
+- HTTP State 把 Request 与 Fingerprint 加入下一轮完整 List Batch Generation，不保存持久
+  Server Key；
+- 轮询回退调度有界周期 Discover，不改变 Canonical Identity；
+- 已接受 Hint 只标记 Refresh Dirty。一个串行化的 Current-fact Discover 计算完整
+  Fingerprint、原子更新 Cache，并在 Transport I/O 外投递 Listener Event；
+- Unsubscribe 在 Best-effort Wire Cleanup 前先删除 Listener 和 Local Intent，因此迟到的
+  gRPC Hint 与 HTTP Response 不能调用它。
+
+[运行时推送与重连规范](runtime-push-reconnect-spec.md)定义对应 Transport Recovery 和
+面向最终 Projection 的 Push 纪律。
 
 ### 8.4 旧 A2A 兼容恢复
 
@@ -219,6 +229,9 @@ SDK shutdown 必须停止旧 AgentCard Cache Holder 的全部轮询。
 SDK shutdown 必须清理内存 redo state、停止后台 retry task、关闭 transport client，并停止本地
 cache/failover refresh task。除非用户显式调用缓存清理操作，shutdown 不应删除用户维护的 failover
 文件或服务端派生 snapshot。
+
+Agent Shutdown 还要取消 HTTP Batch Long Poll、Best-effort Unsubscribe 当前 gRPC Wire Key、
+拒绝迟到 Generation、停止轮询回退，并在禁止新 Callback 后关闭 Listener Executor。
 
 ## 10. 待处理问题
 

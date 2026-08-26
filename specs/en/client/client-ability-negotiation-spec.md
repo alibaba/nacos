@@ -67,13 +67,17 @@ their handlers and Java SDK form a complete implementation.
 
 | Mode | Constant | Wire key | Meaning |
 |---|---|---|---|
-| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 contract. |
+| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 base contract. |
+| `SERVER` | `SERVER_RAD_WATCH_V1` | `radWatchV1` | Server accepts Subscribe, Unsubscribe, and fingerprint Hint binding payloads. |
+| `SDK_CLIENT` | `SDK_RAD_WATCH_V1` | `radWatchV1` | Client accepts and acknowledges fingerprint Hint push payloads. |
 
-The first `subscribeAgent` polls Discover locally and defines no SDK-client
-ability. A future server Watch/Push design must separately review its client
-ability, payload, and acknowledgement contract. Legacy `SERVER_AGENT_REGISTRY`,
-`SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY` continue to gate only the old
-A2A contract. They are not a fallback for any RAD operation.
+Base RAD and Watch are independent deployment units. gRPC server-aware Watch
+is enabled only when the current connection reports both Watch abilities. If
+either is absent or unknown, the client must not send Watch payloads and uses
+the documented HTTP Watch or local Discover-polling fallback. Legacy
+`SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY`
+continue to gate only the old A2A contract. They are not a fallback for any RAD
+operation.
 
 ## 3. gRPC Negotiation Flow
 
@@ -130,8 +134,10 @@ features:
 - A2A AgentCard 1.0 fields should require `SERVER_AGENT_CARD_V1` or use an
   explicitly documented compatibility conversion.
 - RAD definition publication, Search and Discover, and runtime Endpoint
-  publication must require `SERVER_RAD_V1`; local polling subscriptions reuse
-  the same Discover path and therefore the same ability.
+  publication must require `SERVER_RAD_V1`.
+- gRPC RAD Watch must require both `SERVER_RAD_WATCH_V1` and
+  `SDK_RAD_WATCH_V1`; local polling fallback requires only the base Discover
+  ability.
 
 Feature code should not cache a positive ability result beyond the current
 connection. It should query the runtime connection ability when the operation is
@@ -139,8 +145,9 @@ about to execute or when a cached value is known to belong to the current
 connection.
 
 After reconnect, the client must negotiate abilities again before restoring
-Endpoint publications. A local polling subscription stores no
-connection-scoped Watch state; its next Discover uses the new connection.
+Endpoint publications or gRPC Wire Watches. Canonical local Watch intent
+survives the connection, but every old wire key is discarded. When Watch is no
+longer negotiated, recovery uses the documented transport or polling fallback.
 
 ## 6. Compatibility Rules
 

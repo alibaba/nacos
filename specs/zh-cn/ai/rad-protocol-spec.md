@@ -45,11 +45,13 @@ RAD 0.1.0 定义五个操作：
 |---|---|---|---|
 | `Search` | `AgentSearchRequest` | `AgentCatalogPage` | 分页搜索候选 Agent |
 | `Discover` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` | 返回一个 Agent 版本的完整调用快照 |
-| `Watch` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` 流 | 返回初始和后续的完整替换快照 |
+| `Watch` | `AgentDiscoveryRequest` | 逻辑 `AgentDiscoveryResult` 流 | 通过 Binding 定义的失效提示与重新查询流程观察完整替换快照 |
 | `Register` | `AgentEndpointRegistrationBatch` | 成功或错误 | 完整替换当前发布者的运行时 Endpoint Batch |
 | `Deregister` | `AgentEndpointDeregistrationBatch` | 成功或错误 | 从发布者期望 Batch 中移除 Endpoint 自然键 |
 
-`Watch` 复用 `Discover` 的请求和结果。RAD 不在订阅快照外增加事件信封对象。
+`Watch` 复用 `Discover` 请求作为公开输入，并以 Discover 结果作为逻辑输出。传输
+Binding 可以只投递变化提示，并要求 Consumer 执行一次经过鉴权的 Discover，之后才向
+应用发布新的完整快照。此类传输信封不属于 RAD 根消息。
 
 ### 1.2 范围外内容
 
@@ -449,23 +451,37 @@ Priority 和 Weight，以及无健康 Instance 时是否回退，都属于 Consu
 
 ## 6. Watch
 
-Watch 使用与 Discover 相同的请求和结果。
+Watch 使用与 Discover 相同的公开请求和完整结果，但它的 Wire Binding 是失效提示
+协议，而不是业务数据流。
 
-- Registry 首先执行 Discover；如果返回 `NOT_FOUND`，则不创建订阅。
-- 成功的 Watch 首先发送当前完整 `AgentDiscoveryResult`。
-- 后续每次通知都是不带事件信封的完整替换结果。
-- 解析出的版本、`contentDigest` 或任一 `sourceRevision` 发生变化时产生新快照。
-- 匹配的运行时注册、更新、注销或存活状态变化在公开投影变化时产生新快照。
-- 未改变公开投影的内部变化不应产生重复通知。
-- 之前可发现的目标变为 `NOT_FOUND` 时，Binding 发送终止 `NOT_FOUND` 状态并关闭
-  Watch。
-- Consumer 收到每个新结果后，整体替换旧快照。
-- 订阅者身份、确认、重连、重放和背压由 Binding 定义。
+- Consumer 在向应用暴露初始完整 `AgentDiscoveryResult` 前执行经过鉴权的 Discover。
+  `NOT_FOUND` 可以保留为有界的本地 Pending Intent，使之后创建或上线目标时可以恢复，
+  且不改变公开 Watch 身份。
+- Server 只记录已鉴权的 Active Watch Intent。变化生产者将匹配的 Projection 标记为
+  Dirty；Transport 在执行前合并重复 Dirty 标记。
+- 通知只包含 Watch 身份、事件类型以及可选的已观测 Projection Fingerprint，不得包含
+  Agent Descriptor、Endpoint、Metadata、凭据或完整 Discover 结果。
+- 收到通知后，Consumer 执行普通的、经过鉴权的 Discover。只有该结果可以替换本地
+  Snapshot 并到达应用 Listener。
+- Consumer 比较重新查询所得完整结果与缓存的 Canonical Fingerprint；相同则抑制回调，
+  不同则原子替换缓存并发送一个完整替换快照。
+- Fingerprint 只是相等性 Token，不是 Sequence、鉴权证明、Replay Cursor 或顺序保证。
+  当最终公开 Projection 回到 A 时，A-B-A 变化可以被合并。
+- 匹配的定义、Label、Runtime 注册、更新、注销、存活或可见性变化将受影响的 Projection
+  标记为 Dirty；不改变公开 Projection 的内部变化不应触发应用回调。
+- Server 终止条件或重新查询得到的 `NOT_FOUND`、`PERMISSION_DENIED`、
+  `RESOURCE_EXHAUSTED`、`CONFLICT` 等结果通过 Binding 的 Unavailable/Terminal 路径
+  投递，不得作为陈旧业务数据投递。
+- 重连时重新注册完整的当前 Watch Intent。丢失、重复、过期或跨节点通知是安全的，
+  因为每个被接受的 Hint 后都会执行 Current-fact Discover 和 Fingerprint 比较。
 
-Binding 可以使用自己的传输信封投递快照与终止状态。该信封不属于 RAD 公共模型，
-也不扩展第 3.1 节的六个根消息。
+Canonical Watch Key 包含生效 `namespaceId`、规范化 `AgentReference`、规范化 Filter
+以及调用方所有的订阅身份。Visibility 是鉴权决策，不进入 Projection Key 或 Fingerprint。
 
-等价的取消键包含 `namespaceId`、规范化 `AgentReference`、Filter 和订阅者身份。
+Nacos Watch Binding 的 Fingerprint 格式为
+`sha256-canonical-json-v1:<64-lowercase-hex>`。摘要输入是生效默认值已物化并经过
+Canonical JSON 编码的完整公开 `AgentDiscoveryResult`。保留本规范定义的公开数组顺序，
+Object/Map Key 排序；排除内部 Owner、Connection、Heartbeat、Task 和 Timestamp 字段。
 
 ## 7. Register 与 Deregister
 
@@ -573,10 +589,12 @@ Binding 声明其支持的 Profile 和可选能力：
 | Publisher Profile | `Register`、`Deregister` |
 | Watch 能力 | `Watch` |
 
-符合 RAD 的 Binding 至少实现一个 Profile。Watch 在 RAD 核心层是可选能力。Nacos
-首版 HTTP 和 gRPC Binding 都只实现 Consumer 与 Publisher Profile，不暴露服务端
-Watch/Push 操作。Java SDK 后续可以通过周期执行 Discover 提供本地订阅便利能力；
-这种轮询不表示对应传输支持 RAD Watch，也不增加 Watch Wire 消息。
+符合 RAD 的 Binding 至少实现一个 Profile。Watch 在 RAD 核心层是可选能力。Nacos 将
+Server-aware Watch 与基础 RAD 能力分开声明。gRPC Binding 维护单资源 Watch Intent，
+通过连接发送 Fingerprint 变化提示；HTTP Binding 在一个请求范围的 Batch Long Poll
+中携带调用方当前完整 Watch Set，只返回变化的调用方 Item ID。两种 Binding 都要求
+Client 在更新应用状态前执行 Discover。本地周期 Discover 保留为兼容回退，但不表示
+Server Watch 能力。
 
 ## 10. 错误语义
 
@@ -601,16 +619,24 @@ Registry 在每个操作前执行命名空间和权限校验。Search、Discover
 资源可见性。Agent 定义尚不存在时，Register 也不能跳过权限校验。发布者身份不是
 调用凭据。
 
+gRPC Binding 对每次 Subscribe 鉴权，并在重建 Connection-owned State 时重新校验。
+首版 HTTP Batch Long Poll 每个请求只接受一个生效 Namespace，执行请求级 AI Read
+鉴权，不提供逐 Item 的多资源精细化鉴权，因此只返回不透明的变化 Item ID。两种
+Binding 中，后续 Discover 都是强制的资源可见性和内容鉴权边界；Hint 不授权读取内容。
+
 Descriptor、URI 和 Metadata 都是不可信输入，不得保存明文凭据。发现结果不得暴露
 连接归属、发布者身份、心跳或内部路由信息。Endpoint Metadata 不得使用 Nacos 内部
 保留 Key。
 
 ## 12. Schema 与演进
 
-规范性配套文件是使用 JSON Schema Draft 2020-12 的
+规范性领域配套文件是
 [RAD 0.1.0 JSON Schema](../../schemas/ai/rad/0.1.0/rad-protocol.schema.json)。
-普通对象使用严格属性集合，只有 Metadata Map 和 `nativeDescriptor` 是开放内容。
-Schema Default 只是注解，生效值由实现物化。
+实验性的 Nacos 传输信封由独立的
+[RAD Watch Binding 0.1.0 JSON Schema](../../schemas/ai/rad/watch/0.1.0/rad-watch-binding.schema.json)
+定义，不扩展不可变的 RAD 根消息集合。两者都使用 JSON Schema Draft 2020-12。普通
+对象使用严格属性集合，只有 Metadata Map 和 `nativeDescriptor` 是开放内容。Schema
+Default 只是注解，生效值由实现物化。
 
 新增字段、改变 `required`、扩大联合类型或改变枚举都需要新的 RAD 协议版本。领域
 校验还要检查 SemVer、Version/Label 互斥、保留 Label、Endpoint 自然键、

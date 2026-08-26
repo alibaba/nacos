@@ -47,12 +47,15 @@ RAD 0.1.0 defines five operations:
 |---|---|---|---|
 | `Search` | `AgentSearchRequest` | `AgentCatalogPage` | Search candidate Agents with pagination |
 | `Discover` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` | Return one complete calling snapshot for an Agent version |
-| `Watch` | `AgentDiscoveryRequest` | `AgentDiscoveryResult` stream | Return the initial and subsequent complete replacement snapshots |
+| `Watch` | `AgentDiscoveryRequest` | Logical `AgentDiscoveryResult` stream | Observe complete replacement snapshots through a Binding-defined invalidation and re-fetch flow |
 | `Register` | `AgentEndpointRegistrationBatch` | Success or error | Replace the current publisher's complete runtime endpoint batch |
 | `Deregister` | `AgentEndpointDeregistrationBatch` | Success or error | Remove endpoint keys from the publisher's desired batch |
 
-`Watch` reuses the `Discover` request and result. RAD does not add an event
-envelope around watched snapshots.
+`Watch` reuses the `Discover` request and result as its public input and
+logical output. A transport Binding may deliver only a change hint and require
+the Consumer to execute an authorized Discover before publishing the next
+complete snapshot to the application. Such transport envelopes are not RAD
+root messages.
 
 ### 1.2 Out Of Scope
 
@@ -508,32 +511,51 @@ healthy instance exists are consumer concerns.
 
 ## 6. Watch
 
-Watch uses the same request and result as Discover.
+Watch uses the same public request and complete result as Discover, but its
+wire Binding is an invalidation protocol rather than a business-data stream.
 
-- The Registry first evaluates Discover. If it returns `NOT_FOUND`, no watch is
-  created.
-- A successful Watch first emits the current complete
-  `AgentDiscoveryResult`.
-- Every later notification is another complete replacement result, without an
-  event envelope.
-- A changed resolved version, `contentDigest`, or any `sourceRevision` produces
-  a new snapshot.
-- Matching runtime registration, update, deregistration, or liveness changes
-  produce a snapshot when the public projection changes.
-- Internal changes that do not change the public projection SHOULD NOT produce
-  duplicate notifications.
-- If a previously discoverable target becomes `NOT_FOUND`, the binding sends a
-  terminal `NOT_FOUND` status and closes the watch.
-- A consumer atomically replaces its previous snapshot with each new result.
-- Subscriber identity, acknowledgement, reconnect, replay, and backpressure
-  are binding concerns.
+- A Consumer performs an authorized Discover before exposing its initial
+  complete `AgentDiscoveryResult` to the application. `NOT_FOUND` may remain a
+  bounded local pending intent so a later creation or publication can recover
+  without changing the public Watch identity.
+- The server records only authorized active Watch intent. A change producer
+  marks the matching projection dirty; the transport coalesces repeated dirty
+  marks before execution.
+- A notification contains the Watch identity, an event type, and optionally an
+  observed projection fingerprint. It MUST NOT contain an Agent descriptor,
+  Endpoint, metadata, credential, or complete discovery result.
+- After a notification, the Consumer executes the ordinary authorized
+  Discover operation. Only that result may replace the local snapshot and
+  reach an application listener.
+- The Consumer compares the canonical fingerprint of the fetched complete
+  result with its cached fingerprint. Equal fingerprints suppress the
+  callback; different fingerprints atomically replace the cache and emit one
+  complete replacement snapshot.
+- A fingerprint is an equality token only. It is not a sequence number,
+  authorization proof, replay cursor, or ordering guarantee. An A-B-A change
+  may be coalesced when the final public projection is again A.
+- Matching definition, label, runtime registration, update, deregistration,
+  liveness, or visibility changes mark affected projections dirty. Internal
+  changes that do not alter the public projection SHOULD NOT cause an
+  application callback.
+- A terminal server condition or a re-fetch result such as `NOT_FOUND`,
+  `PERMISSION_DENIED`, `RESOURCE_EXHAUSTED`, or `CONFLICT` is delivered through
+  the binding's unavailable/terminal path and never as stale business data.
+- Reconnect re-registers the complete current Watch intent. Lost, duplicated,
+  stale, or cross-node notifications are safe because every accepted hint is
+  followed by current-fact Discover and fingerprint comparison.
 
-A binding may use its own transport envelope for snapshot and terminal
-delivery. Such an envelope is not a RAD public model and does not extend the
-six root messages in Section 3.1.
+The canonical Watch key contains the effective `namespaceId`, normalized
+`AgentReference`, normalized filter, and caller-owned subscription identity.
+Visibility is an authorization decision and is not part of the projection key
+or fingerprint input.
 
-The equivalent cancellation key includes `namespaceId`, canonical
-`AgentReference`, filter, and subscriber identity.
+The Nacos Watch binding uses fingerprint format
+`sha256-canonical-json-v1:<64-lowercase-hex>`. The digest input is the complete
+public `AgentDiscoveryResult` after effective defaults are materialized and
+canonical JSON is produced. Public array order defined by this specification
+is preserved; object/map keys are sorted. Internal owner, connection,
+heartbeat, task, and timestamp fields are excluded.
 
 ## 7. Register And Deregister
 
@@ -672,11 +694,13 @@ A binding advertises the profiles and optional capabilities it supports:
 | Watch capability | `Watch` |
 
 A conforming binding implements at least one profile. Watch is optional at the
-RAD core level. The initial Nacos HTTP and gRPC bindings implement only the
-Consumer and Publisher profiles and expose no server-side Watch or Push
-operation. A later Java SDK may provide a local subscription convenience by
-periodically executing Discover. Such polling does not advertise RAD Watch
-support for either transport and adds no Watch wire message.
+RAD core level. Nacos advertises server-aware Watch separately from base RAD
+support. Its gRPC binding maintains single-resource Watch intent and sends
+fingerprint change hints over the connection. Its HTTP binding carries the
+caller's complete current Watch set in one request-scoped batch long-poll and
+returns changed caller item identifiers only. Both bindings require the client
+to execute Discover before updating application state. Local periodic Discover
+remains a compatibility fallback and does not advertise server Watch support.
 
 ## 10. Error Semantics
 
@@ -703,6 +727,14 @@ Search, Discover, and Watch also apply resource visibility. Register does not
 skip authorization when the Agent definition is absent. Publisher identity is
 not a credential.
 
+The gRPC binding authorizes each Subscribe and revalidates authorization when
+re-establishing connection-owned state. The first HTTP batch-long-poll binding
+accepts only one effective namespace per request, performs request-level AI
+read authorization, and does not provide per-item multi-resource fine-grained
+authorization. It therefore returns only opaque changed item identifiers. In
+both bindings, the subsequent Discover is the mandatory resource-visibility
+and content authorization boundary; a hint never authorizes content access.
+
 Descriptors, URIs, and metadata are untrusted input and MUST NOT store
 plaintext credentials. Discovery results MUST NOT expose connection ownership,
 publisher identity, heartbeat data, or internal routing information. Endpoint
@@ -710,11 +742,14 @@ metadata MUST NOT use Nacos-reserved internal keys.
 
 ## 12. Schema And Evolution
 
-The normative companion is the
-[RAD 0.1.0 JSON Schema](../../schemas/ai/rad/0.1.0/rad-protocol.schema.json),
-using JSON Schema Draft 2020-12. Ordinary objects use strict property sets;
-only metadata maps and `nativeDescriptor` are open content. Schema defaults are
-annotations; implementations materialize effective values.
+The normative domain companion is the
+[RAD 0.1.0 JSON Schema](../../schemas/ai/rad/0.1.0/rad-protocol.schema.json).
+The experimental Nacos transport envelopes are defined separately by the
+[RAD Watch Binding 0.1.0 JSON Schema](../../schemas/ai/rad/watch/0.1.0/rad-watch-binding.schema.json)
+and do not extend the immutable RAD root-message set. Both use JSON Schema
+Draft 2020-12. Ordinary objects use strict property sets; only metadata maps
+and `nativeDescriptor` are open content. Schema defaults are annotations;
+implementations materialize effective values.
 
 Adding a field, changing `required`, widening a union, or changing an enum
 requires a new RAD protocol version. Domain validation additionally verifies

@@ -160,7 +160,22 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
 
 测试异步索引时只允许有界轮询公开 API 可见结果，不得依赖固定 sleep、数据库内部行或任务执行顺序。
 
-## 10. MCP 迁移与生命周期场景
+## 10. Agent HTTP Watch 场景
+
+Agent HTTP Batch-long-poll Watch Binding 发生变化时，OpenAPI IT 至少覆盖：
+
+- 一个请求携带多个 Agent Watch Item，并在 Definition、Latest/Label、Runtime Endpoint、
+  Liveness 和 Visibility 变化后只返回变化的调用方 Item ID；
+- Timeout 返回 `changed=false`，随后使用下一 Generation 和完整 List 立即复用；
+- Add/Remove Generation、迟到的前一轮 Response、重复 Item ID、混合 Namespace、空/超大
+  Batch、非法 Fingerprint、Timeout 边界、Form Size 边界和已配置 Watch 软容量；
+- 缺失或非法 `X-Nacos-Client-Id` 与 `Request-Module`、请求级 AI Read 拒绝，以及成功
+  Response 不包含 Descriptor、Endpoint 或逐 Item 鉴权数据；
+- 变化 ID 只能通过普通鉴权 Discover 重新读取，包括不可见与缺失资源的标准受控结果；
+- Server Restart 和重复 Long Poll 通过有界公开 API 轮询收敛，不依赖 Socket Cancel 时机、
+  固定 Server Node 或内部 Waiter State。
+
+## 11. MCP 迁移与生命周期场景
 
 实现 MCP 生命周期托管时，OpenAPI IT 场景矩阵至少覆盖：
 
