@@ -51,6 +51,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
+| `shouldKeepComplexDiscoveryFingerprintsStableAcrossTransports` | Two online Versions, A2A plus MCP interfaces, declared and Runtime sources, independent gRPC/HTTP publishers, complete HTTP/gRPC snapshot fingerprint equality, and repeated-query fingerprint stability. |
 | `shouldUseGrpcForAutoWhenInitialConnectionIsAvailable` | AUTO synchronous startup with an available negotiated gRPC connection, followed by Search, Endpoint Publication, Discover, and Deregister. |
 | `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, polling subscription, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
@@ -59,7 +60,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same eighteen stable workflows pass with both the default JSON adapter and
+The same nineteen stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -70,6 +71,12 @@ the restarted server must recover both gRPC reconnect redo and HTTP
 Scheduler, listener-failure, transport-error, ability, heartbeat/50404, rollback,
 and redo races remain deterministic UT responsibilities; the shared-server CI run
 is never stopped.
+
+Every default-gRPC workflow first completes a side-effect-free RAD Search readiness
+probe rather than relying only on the shared MCP connection probe. Search count
+assertions are scoped to a per-test random Agent-name stem so asynchronous removal
+from an earlier standalone-server workflow cannot change another workflow's exact
+expected count.
 
 ## Factory, Namespace, And Lifecycle
 
@@ -94,7 +101,7 @@ is never stopped.
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Search with only default page inputs | Enabled visible Agents with an online latest Version are returned in stable pages. | IT |
+| Search with default page inputs inside the workflow's unique Agent-name scope | Enabled visible Agents with an online latest Version are returned in stable pages without depending on unrelated shared-server data. | IT |
 | Search by literal `agentNameContains` | Only case-sensitive literal contains matches are returned; `%`, `_`, and `\` are not interpreted as datastore wildcards. | OpenAPI IT + Java SDK IT |
 | Search by multiple `tagsAll` | Every returned Agent contains all requested tags. | IT |
 | Search by multiple `protocolsAny` | Every returned Agent contains at least one requested protocol. | IT |

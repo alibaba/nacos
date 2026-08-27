@@ -46,6 +46,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -1174,6 +1175,59 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 Collections.singletonList(deregistrationEndpoint(endpoint))));
         waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
     }
+
+    @Test
+    void shouldKeepComplexDiscoveryFingerprintsStableAcrossTransports() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService grpcService = createAiService();
+        AiService httpService =
+            createAiService(Constants.DEFAULT_NAMESPACE_ID, AiConstants.AI_TRANSPORT_MODE_HTTP);
+        String agentName = randomServiceName("agent-canonical-fingerprint");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Arrays.asList("java-sdk-it", "fingerprint"),
+            Arrays.asList(PROTOCOL_A2A, PROTOCOL_MCP), true);
+        createPublishedMultiProtocolVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID,
+            agentName, VERSION_2, true);
+
+        Endpoint grpcA2a = endpoint(randomPort(), "/grpc-a2a-v1", "grpc-a2a");
+        Endpoint httpA2a = endpoint(randomPort(), "/http-a2a-v2", "http-a2a");
+        Endpoint grpcMcp = endpoint(randomPort(), "/grpc-mcp-v2", "grpc-mcp");
+        grpcService.registerAgentEndpoints(registration(agentName, VERSION, PROTOCOL_A2A,
+            Collections.singletonList(grpcA2a)));
+        httpService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+            Collections.singletonList(httpA2a)));
+        grpcService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_MCP,
+            Collections.singletonList(grpcMcp)));
+
+        waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 2);
+        waitForEndpointCount(httpService, agentName, PROTOCOL_MCP, 1);
+        AgentReference reference = reference(agentName, null, null);
+        AgentDiscoveryResult grpcResult = grpcService.discoverAgent(reference);
+        AgentDiscoveryResult httpResult = httpService.discoverAgent(reference);
+
+        assertEquals(VERSION_2, grpcResult.getVersion());
+        assertEquals(2,
+            sourceEndpoints(grpcResult, PROTOCOL_A2A, EndpointSource.RUNTIME).size());
+        assertEquals(1,
+            sourceEndpoints(grpcResult, PROTOCOL_A2A, EndpointSource.DECLARED).size());
+        assertEquals(1,
+            sourceEndpoints(grpcResult, PROTOCOL_MCP, EndpointSource.RUNTIME).size());
+        String expectedFingerprint = AgentDiscoveryCanonicalizer.fingerprint(grpcResult);
+        assertEquals(expectedFingerprint, AgentDiscoveryCanonicalizer.fingerprint(httpResult));
+        assertEquals(expectedFingerprint, AgentDiscoveryCanonicalizer.fingerprint(
+            grpcService.discoverAgent(reference)));
+        assertEquals(expectedFingerprint, AgentDiscoveryCanonicalizer.fingerprint(
+            httpService.discoverAgent(reference)));
+
+        grpcService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(grpcA2a))));
+        httpService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(httpA2a))));
+        grpcService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_MCP,
+            Collections.singletonList(deregistrationEndpoint(grpcMcp))));
+        waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
+        waitForEndpointCount(httpService, agentName, PROTOCOL_MCP, 0);
+    }
     
     @Test
     void shouldUseGrpcForAutoWhenInitialConnectionIsAvailable() throws Exception {
@@ -1467,6 +1521,18 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties).agent();
     }
+
+    @Override
+    protected AiService createAiService() throws Exception {
+        AiService result = super.createAiService();
+        AgentSearchRequest readinessProbe = new AgentSearchRequest();
+        readinessProbe.setAgentNameContains(randomServiceName("agent-readiness-probe"));
+        waitUntil("RAD SDK client should connect to server and negotiate its ability", () -> {
+            result.searchAgents(readinessProbe);
+            return true;
+        });
+        return result;
+    }
     
     private AiService createAiService(String namespaceId, String transport) throws Exception {
         Properties properties = sdkProperties();
@@ -1513,6 +1579,21 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 "legacy-compatible Agent Version " + version))));
         request.setAuthor("java-sdk-it");
         request.setChangeDescription("publish Agent Version " + version);
+        maintainer.createDraft(namespaceId, request);
+        maintainer.forcePublish(namespaceId, versionCommand(agentName, version));
+    }
+
+    private void createPublishedMultiProtocolVersion(AgentMaintainerService maintainer,
+        String namespaceId, String agentName, String version, boolean declaredEndpoint)
+        throws NacosException {
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
+        request.setAgentName(agentName);
+        request.setVersion(version);
+        request.setCallInterfaces(Arrays.asList(
+            callInterface(agentName, PROTOCOL_A2A, declaredEndpoint, version),
+            callInterface(agentName, PROTOCOL_MCP, false, version)));
+        request.setAuthor("java-sdk-it");
+        request.setChangeDescription("publish multi-protocol Agent Version " + version);
         maintainer.createDraft(namespaceId, request);
         maintainer.forcePublish(namespaceId, versionCommand(agentName, version));
     }
