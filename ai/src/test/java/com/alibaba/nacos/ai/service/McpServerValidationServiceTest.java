@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
@@ -57,7 +58,7 @@ class McpServerValidationServiceTest {
     private McpServerValidationService mcpServerValidationService;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @BeforeEach
     void setUp() {
@@ -104,7 +105,8 @@ class McpServerValidationServiceTest {
         McpServerDetailInfo validServer = createValidServer();
         servers.add(validServer);
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         McpServerImportValidationResult result =
@@ -134,7 +136,8 @@ class McpServerValidationServiceTest {
         
         servers.add(invalidServer);
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         McpServerImportValidationResult result =
@@ -165,7 +168,8 @@ class McpServerValidationServiceTest {
         servers.add(server1);
         servers.add(server2);
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         McpServerImportValidationResult result =
@@ -201,7 +205,8 @@ class McpServerValidationServiceTest {
         // Mock that server already exists
         McpServerDetailInfo existingServer = createValidServer();
         existingServer.setId(UUID.randomUUID().toString());
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(existingServer);
         
         McpServerImportValidationResult result =
@@ -228,7 +233,8 @@ class McpServerValidationServiceTest {
         servers.add(server);
         
         // Mock exception during validation
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class)))
             .thenThrow(new RuntimeException("Test exception"));
         
@@ -250,7 +256,8 @@ class McpServerValidationServiceTest {
         McpServerDetailInfo server = createValidServer();
         server.setName("valid-server");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // 使用反射调用私有方法
@@ -278,7 +285,8 @@ class McpServerValidationServiceTest {
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription("Test description");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // 使用反射调用私有方法
@@ -305,7 +313,8 @@ class McpServerValidationServiceTest {
         server.setProtocol(""); // Empty protocol
         server.setDescription("Test description");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // 使用反射调用私有方法
@@ -332,7 +341,8 @@ class McpServerValidationServiceTest {
         server.setProtocol("invalid-protocol");
         server.setDescription("Test description");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // 使用反射调用私有方法
@@ -359,7 +369,8 @@ class McpServerValidationServiceTest {
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription(""); // Empty description
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // 使用反射调用私有方法
@@ -383,7 +394,8 @@ class McpServerValidationServiceTest {
         McpServerDetailInfo server = createValidServer();
         server.setName("duplicate-server");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // Add server name + version to existing names set to simulate duplicate in batch
@@ -412,7 +424,8 @@ class McpServerValidationServiceTest {
         McpServerDetailInfo server = createValidServer();
         server.setName("test-server");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class)))
             .thenThrow(new RuntimeException("Test exception"));
         
@@ -664,7 +677,8 @@ class McpServerValidationServiceTest {
         server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         server.setDescription("Test description");
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         // Should not call the index when name is blank
@@ -704,7 +718,8 @@ class McpServerValidationServiceTest {
         duplicateServer.setName("valid-server"); // Same name as validServer
         servers.add(duplicateServer);
         
-        when(mcpServerOperationService.getMcpServerDetail(anyString(), anyString(), anyString(),
+        when(mcpServerOperationService.getMcpServerDetail(anyString(), nullable(String.class),
+            anyString(),
             nullable(String.class))).thenReturn(null);
         
         McpServerImportValidationResult result =

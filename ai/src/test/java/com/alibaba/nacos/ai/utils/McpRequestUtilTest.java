@@ -107,6 +107,22 @@ class McpRequestUtilTest {
     }
     
     @Test
+    void parseMcpServerBasicInfoShouldPreserveCompatibilityIdInputs() throws NacosApiException {
+        McpDetailForm outerIdForm = new McpDetailForm();
+        outerIdForm.setServerSpecification(MCP_SERVER_SPEC_NEW);
+        outerIdForm.setMcpId("4d7939c0-72ea-4ef4-b232-418d1e16b45c");
+        assertEquals("4d7939c0-72ea-4ef4-b232-418d1e16b45c",
+            McpRequestUtil.parseMcpServerBasicInfo(outerIdForm).getId());
+        
+        McpDetailForm nestedIdForm = new McpDetailForm();
+        nestedIdForm.setServerSpecification(MCP_SERVER_SPEC_NEW.replace("\"id\":\"\"",
+            "\"id\":\"nested-id\""));
+        nestedIdForm.setMcpId("outer-id");
+        assertEquals("nested-id",
+            McpRequestUtil.parseMcpServerBasicInfo(nestedIdForm).getId());
+    }
+    
+    @Test
     void parseMcpServerBasicInfoWithWrongData() {
         McpDetailForm mcpForm = new McpDetailForm();
         mcpForm.setServerSpecification("{");

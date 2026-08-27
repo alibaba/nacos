@@ -253,6 +253,60 @@ class McpEndpointOperationServiceTest {
         assertEquals(0, detail.getFrontendEndpoints().size());
     }
     
+    @Test
+    void injectEndpointHandlesEmptyAndDirectFrontendConfigurations() throws NacosException {
+        McpServerRemoteServiceConfig remote = new McpServerRemoteServiceConfig();
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        detail.setRemoteServerConfig(remote);
+        
+        endpointOperationService.injectEndpoint(detail);
+        
+        assertEquals(0, detail.getBackendEndpoints().size());
+        assertEquals(0, detail.getFrontendEndpoints().size());
+        
+        FrontEndpointConfig http = new FrontEndpointConfig();
+        http.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        http.setEndpointData("mcp.example.com");
+        http.setProtocol(Constants.PROTOCOL_TYPE_HTTP);
+        FrontEndpointConfig https = new FrontEndpointConfig();
+        https.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        https.setEndpointData("secure.example.com");
+        https.setProtocol("https");
+        remote.setFrontEndpointConfigList(List.of(http, https));
+        
+        endpointOperationService.injectEndpoint(detail);
+        
+        assertEquals("mcp.example.com", detail.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(80, detail.getFrontendEndpoints().get(0).getPort());
+        assertEquals("secure.example.com", detail.getFrontendEndpoints().get(1).getAddress());
+        assertEquals(443, detail.getFrontendEndpoints().get(1).getPort());
+    }
+    
+    @Test
+    void directEndpointOverrideRemovesExistingInstances() throws NacosException {
+        ServiceManager.getInstance().getSingleton(
+            Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP, "mcpName::1.0.0"));
+        Instance oldInstance = new Instance();
+        oldInstance.setIp("127.0.0.2");
+        oldInstance.setPort(8848);
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.singletonList(oldInstance));
+        when(instanceOperator.listInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            Constants.MCP_SERVER_ENDPOINT_GROUP, "mcpName::1.0.0", null, "", false))
+            .thenReturn(serviceInfo);
+        McpEndpointSpec endpoint = new McpEndpointSpec();
+        endpoint.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpoint.getData().put("address", "127.0.0.1");
+        endpoint.getData().put("port", "8848");
+        
+        endpointOperationService.createMcpServerEndpointServiceIfNecessary(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", endpoint, true);
+        
+        verify(instanceOperator).removeInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            Constants.MCP_SERVER_ENDPOINT_GROUP, "mcpName::1.0.0", oldInstance);
+    }
+    
     private McpServiceRef serviceRef(String namespaceId, String group, String serviceName) {
         McpServiceRef result = new McpServiceRef();
         result.setNamespaceId(namespaceId);

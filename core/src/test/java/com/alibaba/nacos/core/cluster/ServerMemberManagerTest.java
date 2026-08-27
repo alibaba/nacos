@@ -146,6 +146,8 @@ class ServerMemberManagerTest {
     void testSelfReportsJRaftAuthenticationCapability() {
         assertEquals(Boolean.TRUE, serverMemberManager.getSelf()
             .getExtendVal(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH));
+        assertEquals(Boolean.TRUE, serverMemberManager.getSelf()
+            .getExtendVal(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT));
     }
     
     @Test

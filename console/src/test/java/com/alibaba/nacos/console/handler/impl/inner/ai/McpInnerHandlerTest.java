@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 class McpInnerHandlerTest {
     
     @Mock
-    McpServerOperationService mcpServerOperationService;
+    McpOperationService mcpServerOperationService;
     
     @Mock
     McpLegacyImportAdapter mcpLegacyImportAdapter;

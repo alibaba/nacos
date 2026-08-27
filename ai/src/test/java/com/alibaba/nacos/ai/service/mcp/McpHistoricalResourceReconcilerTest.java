@@ -559,6 +559,62 @@ class McpHistoricalResourceReconcilerTest {
     }
     
     @Test
+    void testReconcileAfterLegacyFullDeleteNoRowsIsNoopAndValidatesIdentity() throws Exception {
+        stubEmptyResource();
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.emptyList(), 0, 0));
+        
+        assertEquals(0, reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+            null));
+        assertThrows(NacosException.class,
+            () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, " ", MCP_ID, null));
+        
+        verify(resourcePersistService, never()).delete(any(), any(), any());
+        verify(versionPersistService, never()).deleteByNameAndType(any(), any(), any());
+    }
+    
+    @Test
+    void testReconcileAfterLegacyDeleteRejectsChangedRemainingIdentity() throws Exception {
+        stubEmptyResource();
+        McpServerVersionInfo remaining = manifest(VERSION);
+        remaining.setName("another-mcp");
+        
+        assertThrows(NacosException.class,
+            () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID,
+                remaining));
+    }
+    
+    @Test
+    void testReconcileAfterLegacyFullDeleteRejectsInvalidRetainedRows() throws Exception {
+        AiResource invalidResource = expectedResource(manifest(VERSION), 1);
+        invalidResource.setExt("not-json");
+        when(resourcePersistService.list(any(QueryCondition.class), eq(1), eq(2)))
+            .thenReturn(page(Collections.singletonList(invalidResource), 1, 1));
+        assertThrows(NacosException.class,
+            () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID, null));
+        
+        reset(resourcePersistService, versionPersistService);
+        stubEmptyResource();
+        AiResourceVersion invalidDescriptor = expectedVersion(VERSION);
+        invalidDescriptor.setStorage("not-json");
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.singletonList(invalidDescriptor), 1, 1));
+        assertThrows(NacosException.class,
+            () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID, null));
+        
+        reset(versionPersistService);
+        AiResourceVersion offline = expectedVersion(VERSION);
+        offline.setStatus(AiResourceConstants.VERSION_STATUS_OFFLINE);
+        when(versionPersistService.list(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, null, 1, 100))
+            .thenReturn(page(Collections.singletonList(offline), 1, 1));
+        assertThrows(NacosException.class,
+            () -> reconciler.reconcileAfterLegacyDelete(NAMESPACE_ID, MCP_NAME, MCP_ID, null));
+    }
+    
+    @Test
     void testReconcileAfterLegacyFullDeleteRejectsUnknownOrphanedVersion() throws Exception {
         AiResourceVersion unknown = expectedVersion(VERSION);
         unknown.setStorage(McpVersionStorageDescriptorSerializer.serialize(

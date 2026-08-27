@@ -195,9 +195,13 @@ public class McpServingManifestStorage {
      */
     public void delete(String namespaceId, String mcpId) throws NacosException {
         validateCoordinate(namespaceId, mcpId);
+        ConfigFormV3 form = buildCoordinateForm(namespaceId, mcpId);
+        long startTimeStamp = System.currentTimeMillis();
         configOperationService.deleteConfig(
-            McpConfigUtils.formatServerVersionInfoDataId(mcpId),
-            Constants.MCP_SERVER_VERSIONS_GROUP, namespaceId, null, null, "nacos", null);
+            form.getDataId(), form.getGroup(), namespaceId, null, null, "nacos", null);
+        if (syncEffectService != null) {
+            syncEffectService.toSync(form, startTimeStamp);
+        }
     }
     
     private ConfigFormV3 buildForm(String namespaceId, McpServerVersionInfo manifest)
@@ -208,16 +212,21 @@ public class McpServingManifestStorage {
         } catch (NacosSerializationException e) {
             throw storageFailure("MCP serving Manifest cannot be encoded", e);
         }
-        ConfigFormV3 result = new ConfigFormV3();
-        result.setGroupName(Constants.MCP_SERVER_VERSIONS_GROUP);
-        result.setGroup(Constants.MCP_SERVER_VERSIONS_GROUP);
-        result.setNamespaceId(namespaceId);
-        result.setDataId(McpConfigUtils.formatServerVersionInfoDataId(manifest.getId()));
+        ConfigFormV3 result = buildCoordinateForm(namespaceId, manifest.getId());
         result.setContent(content);
         result.setType(ConfigType.JSON.getType());
         result.setAppName(manifest.getName());
         result.setSrcUser("nacos");
         result.setConfigTags(McpConfigUtils.buildMcpServerVersionConfigTags(manifest.getName()));
+        return result;
+    }
+    
+    private ConfigFormV3 buildCoordinateForm(String namespaceId, String mcpId) {
+        ConfigFormV3 result = new ConfigFormV3();
+        result.setGroupName(Constants.MCP_SERVER_VERSIONS_GROUP);
+        result.setGroup(Constants.MCP_SERVER_VERSIONS_GROUP);
+        result.setNamespaceId(namespaceId);
+        result.setDataId(McpConfigUtils.formatServerVersionInfoDataId(mcpId));
         return result;
     }
     

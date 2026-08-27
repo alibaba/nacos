@@ -22,7 +22,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -83,8 +85,15 @@ public class McpCompatibilityOperationService implements McpOperationService {
         current().deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
-    private McpOperationService current() {
+    private McpOperationService current() throws NacosException {
         McpCompatibilityMode mode = modeResolver.resolve();
-        return McpCompatibilityMode.LIFECYCLE_MANAGED == mode ? lifecycleService : legacyService;
+        if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {
+            return legacyService;
+        }
+        if (!modeResolver.localMemberSupportsManagedLifecycle()) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "This Nacos member cannot process MCP lifecycle-managed requests");
+        }
+        return lifecycleService;
     }
 }

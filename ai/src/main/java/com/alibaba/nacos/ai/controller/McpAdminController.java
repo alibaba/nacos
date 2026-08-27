@@ -23,7 +23,7 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -59,9 +59,9 @@ import org.springframework.web.bind.annotation.RestController;
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class McpAdminController {
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
-    public McpAdminController(McpServerOperationService mcpServerOperationService) {
+    public McpAdminController(McpOperationService mcpServerOperationService) {
         this.mcpServerOperationService = mcpServerOperationService;
     }
     

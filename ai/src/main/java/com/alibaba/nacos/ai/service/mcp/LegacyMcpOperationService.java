@@ -196,7 +196,7 @@ public class LegacyMcpOperationService implements McpOperationService {
         versionStorageService.save(prepared.descriptor, prepared.contents);
         McpServerVersionInfo manifest = buildInitialManifest(prepared.server, detail);
         manifestStorage.publish(normalizedNamespace, manifest);
-        afterLegacyWrite(normalizedNamespace, manifest, null);
+        afterLegacyWrite(normalizedNamespace, manifest);
         trace(identity.name, identity.version, AiResourceTraceService.OP_CREATE_DRAFT);
         return mcpId;
     }
@@ -234,7 +234,7 @@ public class LegacyMcpOperationService implements McpOperationService {
         }
         manifest.setVersions(details);
         manifestStorage.publish(normalizedNamespace, manifest);
-        afterLegacyWrite(normalizedNamespace, manifest, identity.name);
+        afterLegacyWrite(normalizedNamespace, manifest);
         trace(requested.name, requested.version,
             isPublish ? AiResourceTraceService.OP_PUBLISH
                 : AiResourceTraceService.OP_UPDATE_DRAFT);
@@ -401,12 +401,7 @@ public class LegacyMcpOperationService implements McpOperationService {
         return result;
     }
     
-    private void afterLegacyWrite(String namespaceId, McpServerVersionInfo manifest,
-        String previousName) {
-        if (StringUtils.isNotBlank(previousName)
-            && !Objects.equals(previousName, manifest.getName())) {
-            mcpServerIndex.removeMcpServerByName(namespaceId, previousName);
-        }
+    private void afterLegacyWrite(String namespaceId, McpServerVersionInfo manifest) {
         mcpServerIndex.removeMcpServerByName(namespaceId, manifest.getName());
         mcpServerIndex.removeMcpServerById(manifest.getId());
         try {
@@ -554,7 +549,9 @@ public class LegacyMcpOperationService implements McpOperationService {
         String result = StringUtils.isBlank(requestedId) ? UUID.randomUUID().toString()
             : requestedId;
         if (!StringUtils.isUuidString(result)) {
-            throw invalidParameter("serverSpecification.id must be a UUID", null);
+            throw invalidParameter(
+                "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern",
+                null);
         }
         if (mcpServerIndex.getMcpServerById(result) != null) {
             throw conflict("MCP compatibility id already exists: " + result, null);

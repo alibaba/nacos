@@ -18,7 +18,6 @@ package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
@@ -294,8 +293,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     void shouldSearchDiscoverAndIsolateNamespaces() throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
         AiService defaultService = createAiService();
-        String targetName = randomServiceName("agent-search-target");
-        String decoyName = randomServiceName("agent-search-decoy");
+        String searchScope = randomServiceName("agent-search");
+        String targetName = searchScope + "-target";
+        String decoyName = searchScope + "-decoy";
         String customNamespace = randomServiceName("agent-namespace");
         String customName = randomServiceName("agent-search-custom");
         createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, targetName,
@@ -329,11 +329,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION, page.getPageItems().get(0).getLatestVersion());
         
         AgentSearchRequest defaultSearch = new AgentSearchRequest();
+        defaultSearch.setAgentNameContains(searchScope);
         assertEquals(2, defaultService.searchAgents(defaultSearch).getTotalCount());
         AgentSearchRequest tagSearch = new AgentSearchRequest();
+        tagSearch.setAgentNameContains(searchScope);
         tagSearch.setTagsAll(Collections.singletonList("blue"));
         assertEquals(1, defaultService.searchAgents(tagSearch).getTotalCount());
         AgentSearchRequest protocolSearch = new AgentSearchRequest();
+        protocolSearch.setAgentNameContains(searchScope);
         protocolSearch.setProtocolsAny(Collections.singletonList(PROTOCOL_A2A));
         assertEquals(1, defaultService.searchAgents(protocolSearch).getTotalCount());
         
@@ -1204,7 +1207,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         autoProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,
             AgentTransportMode.AUTO.getValue());
         autoProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
-        AiService autoService = createAiService(autoProperties);
+        AiService autoService = createAiServiceWithoutReadiness(autoProperties);
         waitForSearchTotal(autoService, agentName, 1);
         RecordingAgentListener listener = new RecordingAgentListener();
         AgentReference reference = reference(agentName, null, null);
@@ -1227,7 +1230,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         grpcProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,
             AgentTransportMode.GRPC.getValue());
         grpcProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
-        AiService grpcService = createAiService(grpcProperties);
+        AiService grpcService = createAiServiceWithoutReadiness(grpcProperties);
         AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(agentName);
         assertThrows(NacosException.class, () -> grpcService.searchAgents(search));
@@ -1465,21 +1468,13 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return AiMaintainerFactory.createAiMaintainerService(properties).agent();
     }
     
-    private AiService createAiService(String namespaceId, String transport) throws NacosException {
+    private AiService createAiService(String namespaceId, String transport) throws Exception {
         Properties properties = sdkProperties();
         properties.setProperty(PropertyKeyConst.NAMESPACE, namespaceId);
         if (transport != null) {
             properties.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
         }
-        AiService result = AiFactory.createAiService(properties);
-        addCleanup(result::shutdown);
-        return result;
-    }
-
-    private AiService createAiService(Properties properties) throws NacosException {
-        AiService result = AiFactory.createAiService(properties);
-        addCleanup(result::shutdown);
-        return result;
+        return createAiService(properties);
     }
     
     private void createPublishedAgent(AgentMaintainerService maintainer, String namespaceId,

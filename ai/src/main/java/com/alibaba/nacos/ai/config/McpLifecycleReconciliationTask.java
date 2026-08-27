@@ -19,6 +19,9 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService.CutoverStatus;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage.ReconciliationPage;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
@@ -68,9 +71,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Periodically reconciles historical MCP serving data into AI Resource lifecycle rows.
  *
- * <p>The task remains in {@code SYNCING}. It persists diagnostic progress and uses a renewable
- * Config lease, but deliberately does not delete lifecycle rows, write the permanent
- * {@code LIFECYCLE_MANAGED} marker, or switch any management route.</p>
+ * <p>The task persists diagnostic progress and uses a renewable Config lease. A complete
+ * zero-difference scan delegates the one-way cutover decision to
+ * {@link McpLifecycleManagementStateService}.</p>
  *
  * @author Nacos
  */
@@ -133,18 +136,22 @@ public class McpLifecycleReconciliationTask
     
     private final ConfigOperationService configOperationService;
     
+    private final McpLifecycleManagementStateService managementStateService;
+    
     public McpLifecycleReconciliationTask(NamespaceOperationService namespaceOperationService,
         McpServingManifestStorage manifestStorage,
         McpHistoricalResourceReconciler reconciler,
         AiResourcePersistService resourcePersistService,
         ConfigQueryChainService configQueryChainService,
-        ConfigOperationService configOperationService) {
+        ConfigOperationService configOperationService,
+        McpLifecycleManagementStateService managementStateService) {
         this.namespaceOperationService = namespaceOperationService;
         this.manifestStorage = manifestStorage;
         this.reconciler = reconciler;
         this.resourcePersistService = resourcePersistService;
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
+        this.managementStateService = managementStateService;
     }
     
     @Override
@@ -167,6 +174,9 @@ public class McpLifecycleReconciliationTask
     }
     
     void executeReconciliation() {
+        if (managementStateService.resolveMode() == McpCompatibilityMode.LIFECYCLE_MANAGED) {
+            return;
+        }
         ReconciliationLease lease = tryAcquireLease();
         if (lease == null) {
             LOGGER.debug("Skip MCP lifecycle reconciliation because another node owns the lease");
@@ -192,10 +202,17 @@ public class McpLifecycleReconciliationTask
             LOGGER.error("MCP lifecycle reconciliation failed unexpectedly", e);
         } finally {
             stats.completedAt = System.currentTimeMillis();
-            if (lease.isOwned()) {
-                persistProgress(stats);
+            try {
+                if (lease.isOwned()) {
+                    CutoverStatus cutoverStatus =
+                        managementStateService.tryCompleteCutover(stats.zeroDifference());
+                    persistProgress(stats, cutoverStatus);
+                }
+            } catch (Exception e) {
+                LOGGER.error("Failed to evaluate MCP lifecycle managed cutover", e);
+            } finally {
+                lease.close();
             }
-            lease.close();
             LOGGER.info(
                 "MCP lifecycle reconciliation completed: generation={}, namespaces={}, "
                     + "manifests={}, changed={}, orphaned={}, failed={}, zeroDifference={}",
@@ -384,11 +401,12 @@ public class McpLifecycleReconciliationTask
         }
     }
     
-    private void persistProgress(ReconciliationStats stats) {
+    private void persistProgress(ReconciliationStats stats, CutoverStatus cutoverStatus) {
         try {
             Map<String, Object> progress = new LinkedHashMap<>();
             progress.put("schemaVersion", 1);
-            progress.put("state", STATE_SYNCING);
+            progress.put("state", cutoverStatus.isManaged()
+                ? McpLifecycleManagementStateService.LIFECYCLE_MANAGED_STATE : STATE_SYNCING);
             progress.put("generation", stats.generation);
             progress.put("startedAt", stats.startedAt);
             progress.put("completedAt", stats.completedAt);
@@ -399,8 +417,9 @@ public class McpLifecycleReconciliationTask
             progress.put("failed", stats.failed);
             progress.put("completeNamespaceScan", stats.complete);
             progress.put("zeroDifference", stats.zeroDifference());
-            progress.put("searchBackfillPending", true);
-            progress.put("managedCutoverReady", false);
+            progress.put("membersReady", cutoverStatus.isMembersReady());
+            progress.put("searchBackfillPending", !cutoverStatus.isSearchReady());
+            progress.put("managedCutoverReady", cutoverStatus.isManaged());
             if (StringUtils.isNotBlank(stats.lastError)) {
                 progress.put("lastError", stats.lastError);
             }

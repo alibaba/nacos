@@ -426,10 +426,15 @@ already accept ID-only input remain compatible:
 - missing, malformed, duplicate, or conflicting aliases return a controlled
   parameter or integrity error.
 
-After normalization, every path applies the same canonical authorization,
-Visibility, and lifecycle operation. ID lookup must not query the Search
-index, Manifest, Config, or the historical MCP in-memory index. No new table,
-column, or JSON index is introduced for this low-frequency deprecated path.
+The protocol filter authenticates the request first using the existing wire
+contract. For ID-only input, the lifecycle locator then resolves the canonical
+Resource and, before any content read or mutation, repeats identity and
+authority validation against that exact canonical name. The path subsequently
+applies the same Visibility and lifecycle operation as name-based input. This
+order avoids unauthenticated alias enumeration while preventing an empty wire
+name from bypassing canonical authorization. ID lookup must not query the
+Search index, Manifest, Config, or the historical MCP in-memory index. No new
+table, column, or JSON index is introduced for this low-frequency deprecated path.
 The historical index may continue serving wholly historical management paths
 while `SYNCING`; after `LIFECYCLE_MANAGED`, no management correctness path
 depends on it.
@@ -638,7 +643,8 @@ Implementation PRs must cover at least:
 - exact Resource and Version mapping, including historical non-SemVer Version
   strings;
 - name-only, name-plus-ID, and legacy ID-only resolution from Resource rows,
-  canonical authorization after normalization, and conflict handling;
+  protocol authentication followed by exact canonical re-authorization for
+  ID-only input, and conflict handling;
 - unchanged Manifest/Server/Tools/Resources coordinates and bytes;
 - no Naming mutation during reconciliation and unchanged Direct, REF,
   frontend/backend, Runtime, subscription, reconnect, and redo behavior;

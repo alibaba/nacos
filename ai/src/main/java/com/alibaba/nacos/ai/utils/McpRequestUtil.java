@@ -60,6 +60,9 @@ public class McpRequestUtil {
         if (StringUtils.isEmpty(result.getName())) {
             result.setName(mcpForm.getMcpName());
         }
+        if (StringUtils.isEmpty(result.getId())) {
+            result.setId(mcpForm.getMcpId());
+        }
         return result;
     }
     

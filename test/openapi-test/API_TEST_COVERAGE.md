@@ -191,6 +191,15 @@ newer draft exists after a published version, an omitted `version` resolves the
 latest published version, while the draft remains queryable by its explicit
 version.
 
+The Admin and Console MCP scenarios also remain the wire-contract regression
+coverage for the compatibility router while management authority is `SYNCING`.
+The one-way `LIFECYCLE_MANAGED` marker is intentionally not activated in the
+shared standalone suite because it cannot be rolled back before subsequent IT
+classes. Focused component tests instead cover the zero-difference, all-member
+capability, and Search-projection gates; permanent marker retry/observation;
+per-request authority pinning; lifecycle create/read/update/delete routing; and
+canonical re-authorization of deprecated ID-only requests.
+
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. The Search scenario is reusable
 against `AUTO`, `INDEX`, and `SCAN`: `AUTO` and `INDEX` return the current

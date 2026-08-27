@@ -16,26 +16,57 @@
 
 package com.alibaba.nacos.ai.service.mcp;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
  * Resolves the implementation for one complete MCP operation.
  *
- * <p>The lifecycle operation engine is intentionally not activated by this change. Until the
- * cluster-wide cutover gate and permanent marker are introduced, every production request remains
- * in {@link McpCompatibilityMode#SYNCING}.</p>
+ * <p>A real HTTP or gRPC request pins its first result in {@link RequestContext}. This prevents a
+ * permanent marker observed in the middle of a compound request from selecting two authorities.</p>
  *
  * @author Nacos
  */
 @Component
 public class McpCompatibilityModeResolver {
     
+    private static final String REQUEST_MODE_CONTEXT_KEY =
+        McpCompatibilityModeResolver.class.getName() + ".mode";
+    
+    private final McpLifecycleManagementStateService stateService;
+    
+    public McpCompatibilityModeResolver(McpLifecycleManagementStateService stateService) {
+        this.stateService = stateService;
+    }
+    
     /**
      * Resolve the operation authority for the current request.
      *
-     * @return {@link McpCompatibilityMode#SYNCING} until atomic cutover is implemented
+     * @return the request-pinned or durable management mode
      */
     public McpCompatibilityMode resolve() {
-        return McpCompatibilityMode.SYNCING;
+        RequestContext context = RequestContextHolder.getContext();
+        boolean requestScoped = StringUtils.isNotBlank(
+            context.getBasicContext().getRequestProtocol());
+        if (requestScoped) {
+            Object pinned = context.getExtensionContext(REQUEST_MODE_CONTEXT_KEY);
+            if (pinned instanceof McpCompatibilityMode mode) {
+                return mode;
+            }
+        }
+        McpCompatibilityMode result = stateService.resolveMode();
+        if (requestScoped) {
+            context.addExtensionContext(REQUEST_MODE_CONTEXT_KEY, result);
+        }
+        return result;
+    }
+    
+    /**
+     * Check whether the local member may process managed MCP traffic.
+     */
+    public boolean localMemberSupportsManagedLifecycle() {
+        return stateService.localMemberSupportsManagedLifecycle();
     }
 }

@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.agent.AgentArtifactBuilder;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceFileReader;
@@ -58,7 +58,7 @@ public class ArdArtifactService {
     
     private final AiResourceManager resourceManager;
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
     private final AiResourceFileReader fileReader;
     
@@ -68,7 +68,7 @@ public class ArdArtifactService {
     
     @Autowired
     public ArdArtifactService(AiResourceManager resourceManager,
-        McpServerOperationService mcpServerOperationService,
+        McpOperationService mcpServerOperationService,
         AiResourceFileReader fileReader, SkillClientOperationService skillClientOperationService) {
         this.resourceManager = resourceManager;
         this.mcpServerOperationService = mcpServerOperationService;

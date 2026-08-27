@@ -53,7 +53,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -303,7 +302,27 @@ class McpServingManifestStorageTest {
         verify(configOperationService).deleteConfig(
             McpConfigUtils.formatServerVersionInfoDataId(MCP_ID),
             Constants.MCP_SERVER_VERSIONS_GROUP, "public", null, null, "nacos", null);
-        verify(syncEffectService, never()).toSync(any(), anyLong());
+        ArgumentCaptor<ConfigFormV3> captor = ArgumentCaptor.forClass(ConfigFormV3.class);
+        verify(syncEffectService).toSync(captor.capture(), anyLong());
+        assertEquals(McpConfigUtils.formatServerVersionInfoDataId(MCP_ID),
+            captor.getValue().getDataId());
+        assertEquals(Constants.MCP_SERVER_VERSIONS_GROUP, captor.getValue().getGroup());
+        assertEquals(Constants.MCP_SERVER_VERSIONS_GROUP,
+            captor.getValue().getGroupName());
+        assertEquals("public", captor.getValue().getNamespaceId());
+    }
+    
+    @Test
+    void testDeleteWorksWithoutSyncEffectService() throws Exception {
+        McpServingManifestStorage storageWithoutSync = new McpServingManifestStorage(
+            configQueryChainService, configOperationService, configDetailService, null);
+        
+        storageWithoutSync.delete("public", MCP_ID);
+        
+        verify(configOperationService).deleteConfig(
+            McpConfigUtils.formatServerVersionInfoDataId(MCP_ID),
+            Constants.MCP_SERVER_VERSIONS_GROUP, "public", null, null, "nacos", null);
+        verifyNoInteractions(syncEffectService);
     }
     
     @Test

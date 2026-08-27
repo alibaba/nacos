@@ -313,6 +313,20 @@ class McpVersionStorageServiceTest {
     }
     
     @Test
+    void testDeleteObsoleteRemovesReplacedServerObject() throws Exception {
+        givenStorage();
+        McpVersionStorageDescriptor previous = descriptor(false, false);
+        McpVersionStorageDescriptor replacement = McpVersionStorageKeyComposer.compose("public",
+            "6f27f843-2f55-49e7-9aa4-d6957fefbc61", "1.0.0", false, false);
+        
+        service.deleteObsolete(previous, replacement);
+        
+        ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
+        verify(storage).delete(keyCaptor.capture());
+        assertEquals(previous.getServerKey(), keyCaptor.getValue().getKey());
+    }
+    
+    @Test
     void testDeleteObsoleteRetainsUnchangedDescriptorWithoutRouting() throws Exception {
         McpVersionStorageDescriptor descriptor = descriptor(true, true);
         

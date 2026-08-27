@@ -60,6 +60,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,6 +122,8 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private final McpEndpointOperationService endpointOperationService;
     
+    private final McpCanonicalAuthorizationService canonicalAuthorizationService;
+    
     private AiResourceIndexMaintenanceService indexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
     
@@ -129,7 +132,8 @@ public class McpLifecycleOperationService implements McpOperationService {
         AiResourceVersionPersistService versionPersistService,
         McpVersionStorageService versionStorageService,
         McpServingManifestStorage manifestStorage,
-        McpEndpointOperationService endpointOperationService) {
+        McpEndpointOperationService endpointOperationService,
+        McpCanonicalAuthorizationService canonicalAuthorizationService) {
         this.resourceLocator = resourceLocator;
         this.resourceManager = resourceManager;
         this.resourcePersistService = resourcePersistService;
@@ -137,6 +141,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         this.versionStorageService = versionStorageService;
         this.manifestStorage = manifestStorage;
         this.endpointOperationService = endpointOperationService;
+        this.canonicalAuthorizationService = canonicalAuthorizationService;
     }
     
     @Autowired(required = false)
@@ -171,6 +176,8 @@ public class McpLifecycleOperationService implements McpOperationService {
     public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpServerId,
         String mcpServerName, String version) throws NacosException {
         AiResource resource = resourceLocator.locate(namespaceId, mcpServerName, mcpServerId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), mcpServerName, mcpServerId, ActionTypes.READ);
         resourceManager.ensureReadableOrNotFound(resource,
             "MCP server not found: " + resource.getName());
         LifecycleResource lifecycle = requireLifecycleResource(resource);
@@ -233,9 +240,17 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
         boolean overrideExisting) throws NacosException {
         String normalizedNamespace = normalizeNamespace(namespaceId);
+        if (serverSpecification == null) {
+            throw invalidParameter("serverSpecification must not be null", null);
+        }
+        String requestedName = serverSpecification.getName();
+        String requestedId = serverSpecification.getId();
+        AiResource resource = resourceLocator.locate(normalizedNamespace, requestedName,
+            requestedId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), requestedName, requestedId, ActionTypes.WRITE);
+        serverSpecification.setName(resource.getName());
         VersionIdentity identity = validateUpdate(serverSpecification);
-        AiResource resource = resourceLocator.locate(normalizedNamespace, identity.name,
-            serverSpecification.getId());
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         serverSpecification.setId(lifecycle.mcpId);
@@ -292,6 +307,8 @@ public class McpLifecycleOperationService implements McpOperationService {
         String version) throws NacosException {
         String normalizedNamespace = normalizeNamespace(namespaceId);
         AiResource resource = resourceLocator.locate(normalizedNamespace, mcpName, mcpServerId);
+        canonicalAuthorizationService.authorizeIdOnly(resource.getNamespaceId(),
+            resource.getName(), mcpName, mcpServerId, ActionTypes.WRITE);
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         if (StringUtils.isBlank(version)) {
@@ -359,8 +376,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         LifecycleResource lifecycle = requireLifecycleResource(existing);
         String requestedId = serverSpecification.getId();
         if (StringUtils.isNotBlank(requestedId) && !lifecycle.mcpId.equals(requestedId)) {
-            throw conflict("MCP server already exists with another compatibility id: "
-                + existing.getName(), null);
+            throw duplicateServer(existing.getName(), null);
         }
         AiResourceVersion row = resourceManager.findVersion(namespaceId, existing.getName(),
             RESOURCE_TYPE, version);
@@ -563,7 +579,7 @@ public class McpLifecycleOperationService implements McpOperationService {
                 return;
             }
             if (recovered != null || e instanceof DuplicateKeyException) {
-                throw conflict("MCP server already exists: " + resource.getName(), e);
+                throw duplicateServer(resource.getName(), e);
             }
             throw serverError("Failed to insert MCP Resource: " + resource.getName(), e);
         }
@@ -588,7 +604,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         throws NacosException {
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
         if (!version.equals(info.getEditingVersion())) {
-            throw conflict("MCP server already exists: " + resource.getName(), null);
+            throw duplicateServer(resource.getName(), null);
         }
     }
     
@@ -995,7 +1011,9 @@ public class McpLifecycleOperationService implements McpOperationService {
             try {
                 McpResourceExtSerializer.validateMcpId(serverSpecification.getId());
             } catch (IllegalArgumentException e) {
-                throw invalidParameter("serverSpecification.id must be a UUID", e);
+                throw invalidParameter(
+                    "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern",
+                    e);
             }
         }
         return identity;
@@ -1168,6 +1186,11 @@ public class McpLifecycleOperationService implements McpOperationService {
             ? new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, message)
             : new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, cause,
                 message);
+    }
+    
+    private NacosApiException duplicateServer(String name, Throwable cause) {
+        return conflict("mcp server `" + name
+            + "` has existed, please update it rather than create.", cause);
     }
     
     private NacosApiException integrityFailure(String message, Throwable cause) {
