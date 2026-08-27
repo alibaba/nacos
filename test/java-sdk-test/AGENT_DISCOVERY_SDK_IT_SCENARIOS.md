@@ -21,10 +21,11 @@ This matrix is the test-first contract and execution trace for the first
 maintained with the resulting tests. Every scenario is assigned to stable standalone
 Java SDK IT, deterministic unit tests, or both.
 
-The SDK now owns subscription state through a transport-neutral Watch core. During
-the W4 compatibility stage, the public service still selects active Discover
-polling as its transport; server Watch requests, Push payloads, ACKs, and Watch
-ability selection are enabled only by later stages.
+The SDK owns subscription state through a transport-neutral Watch core. A negotiated
+`SERVER_RAD_WATCH_V1` plus `SDK_RAD_WATCH_V1` connection uses gRPC fingerprint hints
+followed by authoritative Discover; explicit HTTP and connections without the Watch
+ability retain bounded Discover polling. Complete snapshots, fingerprints, listener
+ordering, local-pending state, and capacity remain transport-neutral.
 
 ## Test-Layer Legend
 
@@ -47,8 +48,8 @@ ability selection are enabled only by later stages.
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical natural-key partial deregistration, unknown/repeated no-op, final deregistration, and protocol isolation. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
 | `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, one typed `UNAVAILABLE` event, recovery with a complete `SNAPSHOT`, unsubscribe, and post-unsubscribe suppression. |
-| `shouldPollExistingAgentOnlyWhenCompleteFingerprintChanges` | Subscribe-existing current value, Runtime source-revision replacement event, and unchanged-fingerprint callback de-duplication. |
-| `shouldShareCanonicalPollingIntentAndIsolateListeners` | Null/empty Filter canonical equivalence, one shared polling intent, two recording listeners plus one throwing listener, complete replacement delivery, partial unsubscribe isolation, and shutdown callback suppression. |
+| `shouldWatchExistingAgentOnlyWhenCompleteFingerprintChanges` | Subscribe-existing current value, negotiated gRPC Hint followed by Discover, Runtime source-revision replacement event, and unchanged-fingerprint callback de-duplication. |
+| `shouldShareCanonicalPollingIntentAndIsolateListeners` | Null/empty Filter canonical equivalence, one shared Wire intent, two recording listeners plus one throwing listener, complete replacement delivery, partial unsubscribe isolation, and shutdown callback suppression. |
 | `shouldTrackVersionEvolutionAcrossRegistrationOrders` | Version 1 definition-first, Version 2 Endpoint-first, Version 3 definition-first, latest/exact/label subscriptions, catalog order, and offline/online latest recalculation. |
 | `shouldSeparateDefaultRolloutPoolFromExplicitLatest` | Two independent publishers keep exact Version 1 and Version 2 Endpoints concurrently. The omitted selector uses latest Version metadata while aggregating every online Version's compatible Endpoints; explicit `label=latest` remains latest-only. The workflow verifies the interval before Version 2 Endpoint registration, the combined pool after registration, Version 1 removal after it goes offline, binding provenance, and polling callback de-duplication for both selectors. |
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
@@ -59,18 +60,20 @@ ability selection are enabled only by later stages.
 | `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, polling subscription, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
 | `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
+| `shouldSurfaceServerWatchCapacityAndReuseSlot` | Workflow-configured authoritative gRPC Watch soft watermark, whole-operation crossing from below, remote over-limit exception mapping, rejected Watch cleanup, and capacity reuse after unsubscribe. |
 | `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same twenty stable workflows pass with both the default JSON adapter and
+The same twenty-one stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
-`shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
+`shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart` workflow also passed
 against a real standalone process stopped and restarted by an external harness.
-It retains independent gRPC and HTTP publishers and polling subscriptions so
-the restarted server must recover both gRPC reconnect redo and HTTP
-`HTTP_CLIENT_NOT_FOUND` re-registration.
+It retains independent gRPC and HTTP publishers, a negotiated gRPC Watch, and an
+HTTP polling subscription so the restarted server must recover gRPC Watch
+resubscription and publication redo together with HTTP `HTTP_CLIENT_NOT_FOUND`
+re-registration and polling recovery.
 Scheduler, listener-failure, transport-error, ability, heartbeat/50404, rollback,
 and redo races remain deterministic UT responsibilities; the shared-server CI run
 is never stopped.
@@ -162,11 +165,12 @@ Endpoint, and replacement across an already-online Version.
 | Publication range spans multiple Versions | Every matching exact/latest Discover sees the shared Endpoint; a nonmatching Version does not. | IT + UT |
 | Offline and then bring the current latest online while another Version remains online | Search/Discover follow the server-managed recalculated latest without changing publisher intent. | IT |
 
-## Local Polling Subscription
+## Agent Subscription And gRPC Watch
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Subscribe to an existing target | The method returns the current snapshot and retains one polling record. | IT + UT |
+| Subscribe to an existing target with both Watch abilities | The method returns the current snapshot, installs one connection-scoped gRPC Watch, and refreshes only through Hint followed by Discover. | IT + UT |
+| Subscribe through explicit HTTP or without negotiated Watch ability | The method returns the same snapshot and retains one bounded polling transport record. | IT + UT |
 | Subscribe before the target exists | The method returns `null`, emits at most one typed `UNAVAILABLE` event, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
 | Repeated not-found polls | No duplicate `UNAVAILABLE` or empty snapshot is delivered and the subscription remains active. | UT |
 | Poll returns the same Version, digest, and source revisions | No duplicate listener event is delivered. | IT + UT |
@@ -175,13 +179,16 @@ Endpoint, and replacement across an already-online Version.
 | Any `sourceRevision` changes | One complete replacement event is delivered. | IT + UT |
 | A Runtime binding changes while its Endpoint payload and health stay equal | The v2 Runtime revision changes because discovery-visible binding provenance is part of the snapshot. | UT |
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
-| Same reference/filter and two listener instances | Canonically equivalent intents share one polling record while listener identities remain isolated and both receive changes. | IT + UT |
-| Repeat subscribe with the same listener identity | Only one polling record and one callback per change are retained. | UT |
+| Same reference/filter and two listener instances | Canonically equivalent intents share one Wire intent while listener identities remain isolated and both receive changes. | IT + UT |
+| Repeat subscribe with the same listener identity | Only one Wire intent and one callback per change are retained. | UT |
 | Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
 | Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
 | Unsubscribe an absent or different listener | The operation is an idempotent no-op. | UT |
-| Listener throws | Per-listener ordered delivery isolates the failure so polling and other listeners continue. | IT + UT |
+| Listener throws | Per-listener ordered delivery isolates the failure so refresh and other listeners continue. | IT + UT |
+| gRPC Hint is duplicate, stale, or carries the already-materialized fingerprint | It is acknowledged only after dirty state is durable; stale/unknown connection-scoped keys are rejected and an unchanged authoritative result produces no callback. | UT |
+| gRPC Watch admission exceeds the configured server watermark | The SDK surfaces `OVER_THRESHOLD`, removes the rejected route and Watch state, and can reuse capacity after unsubscribe. | IT + UT |
+| gRPC connection is replaced | The old wire key is discarded, current intents are resubscribed on the new connection, and the first required refresh cannot be lost between Subscribe and ACK. | Directed IT + UT |
 | HTTP polling uses the publication Client id | It renews only Client liveness and does not renew Publisher liveness. | IT |
 | Shutdown during polling | Pending/retry/polling tasks are cancelled and no callback is delivered after shutdown. | IT + UT |
 
@@ -246,7 +253,7 @@ continues only after the harness writes a restarted marker.
 | --- | --- | --- |
 | Initial server | Create and publish a legacy-compatible Version 1; pre-register legacy exact-Version Endpoints for Versions 1 and 2 into the canonical Runtime Service; register independent protocol-neutral gRPC and HTTP Endpoint Batches on the same SDK connection; Search, legacy SERVICE query, latest/exact Discover, Runtime bindings, and polling subscriptions agree without publication overwrite. | Directed IT |
 | Server unavailable | Keep the same gRPC and HTTP SDK instances and their local subscription/publication intent; both transports observe connection unavailability, but the client process stays alive and no local intent is deleted. | Directed IT + UT |
-| Same server restarted | The gRPC SDK reconnects and redoes its protocol-neutral complete Batch plus both legacy exact-Version publications. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Legacy child publishers are rebuilt on the new connection, Runtime bindings recover independently, and polling over both transports converges. | Directed IT + UT |
+| Same server restarted | The gRPC SDK reconnects, redoes its protocol-neutral complete Batch plus both legacy exact-Version publications, negotiates Watch again, and resubscribes with a new connection-scoped key. The HTTP heartbeat receives `HTTP_CLIENT_NOT_FOUND`, retains the same external HTTP client id, creates fresh server state, and re-registers its complete Batch. Legacy child publishers are rebuilt on the new connection, Runtime bindings recover independently, the gRPC Watch resumes, and HTTP polling converges. | Directed IT + UT |
 | Endpoint-first upgrade after reconnect | Create and publish Version 2 after its legacy Endpoint was already registered and recovered; legacy SERVICE query, RAD Discover, and both subscriptions immediately resolve that canonical Runtime Endpoint. Later protocol-neutral gRPC and HTTP publishers add their independent contributions without replacing it. | Directed IT |
 | Exact and label checks after reconnect | Exact Version 1 remains resolvable, exact/latest Version 2 agree through both transports, and a moved custom label resolves Version 2. | Directed IT |
 | Cleanup | Unsubscribe both listeners, deregister both protocol-neutral final publications and the legacy Version 2 publication, verify the exact Runtime pool becomes empty, delete the Agent, and shut down clients while the restarted server remains usable for later IT. | Directed IT |
@@ -272,13 +279,13 @@ failed targeted run rather than a sleeping normal CI test.
 | Public and custom namespace workflows run together | Search, Discover, subscription, and publication never cross namespaces. | IT |
 | Version 1 online + Version 2 Endpoint pre-registration + Version 2 publish | Search, latest/exact/label Discover, and subscriptions agree at every transition. | IT |
 | Version 1 online + Version 2 publish before Endpoint registration + independent Version 2 publisher | Omitted selection preserves the rollout pool across the transition, explicit latest observes only Version 2, and both polling subscriptions converge without duplicate callbacks. | IT |
-| Real standalone restart with active gRPC and HTTP publications and polling subscriptions | The same live SDK process restores both transport-owned complete Batches, resumes both polling loops, then observes a later Version and both Endpoints. | Directed IT |
+| Real standalone restart with active gRPC/HTTP publications, gRPC Watch, and HTTP polling | The same live SDK process restores both transport-owned complete Batches, resubscribes the gRPC Watch, resumes HTTP polling, then observes a later Version and both Endpoints without duplicate callbacks. | Directed IT |
 
 ## Deferred In This Phase
 
 | Item | Reason |
 | --- | --- |
-| Server Watch/Push, `watchKey`, Push ACK, gap recovery, and Watch ability | The approved first version uses active Discover polling. |
+| HTTP Batch Long Poll Watch, cross-node LP generation, and HTTP/AUTO Watch routing | gRPC Watch is complete in W5; the HTTP Wire Watch stages remain separate so explicit HTTP still uses bounded Discover polling. |
 | Public `getAll` / `selectOneHealthy` helper API shape | The design states local selection semantics but does not yet specify a stable Java type and method signature. It does not block Search, Discover, polling, or publication and is recorded rather than invented in this phase. |
 | Agent management-metadata change notification | `AgentDiscoveryResult` intentionally excludes display name, description, tags, provider, and other management metadata. Its polling fingerprint contains only resolved Version, Version `contentDigest`, and Endpoint `sourceRevision` values. A future requirement to subscribe to forced updates of published Agent metadata needs a Search/catalog subscription or an explicit RAD contract extension; it is not inferred by the current Discover subscription. |
 | Packet loss at individual frames and unknown gRPC write-result ambiguity | Covered with deterministic unit fault injection; a real single-node process restart is covered separately, while frame-level fault injection is not stable standalone IT. |

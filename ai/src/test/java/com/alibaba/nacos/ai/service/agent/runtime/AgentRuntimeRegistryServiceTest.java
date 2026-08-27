@@ -306,6 +306,22 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void testCurrentRuntimeEndpointSetRefreshesNamingPublisherFacts() throws NacosException {
+        Endpoint endpoint = endpoint("https://current.example.com/agent", "json-rpc");
+        when(serviceStorage.getPushData(expectedService())).thenReturn(serviceInfo(10L,
+            instance(endpoint, "1.0.0", "[1.0.0]", true, true)));
+        
+        EndpointSet result = registryService.getCurrentRuntimeEndpointSet(NAMESPACE_ID,
+            AGENT_NAME, PROTOCOL, Collections.singletonList("1.0.0"));
+        
+        assertEquals(1, result.getEndpoints().size());
+        assertEquals("https://current.example.com:443/agent",
+            result.getEndpoints().get(0).getUri());
+        verify(serviceStorage).getPushData(expectedService());
+        verify(serviceStorage, never()).getData(expectedService());
+    }
+    
+    @Test
     void testRuntimeEndpointSetAggregatesBindingsAcrossSelectedVersions()
         throws NacosException {
         Endpoint versionOne = endpoint("https://v1.example.com/agent", "json-rpc");

@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.cache;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import com.alibaba.nacos.client.ai.watch.AgentWatchManager;
+import com.alibaba.nacos.client.ai.watch.AgentWatchTransport;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,6 +41,19 @@ public class NacosAgentDiscoveryCacheHolder extends AgentWatchManager {
     public NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,
         int maxSubscriptions) {
         super(namespaceId, clientProxy, maxSubscriptions);
+    }
+    
+    /**
+     * Create a compatibility holder with an explicit Watch transport.
+     *
+     * @param namespaceId SDK namespace
+     * @param clientProxy authoritative Discover proxy
+     * @param maxSubscriptions local Listener-record watermark
+     * @param watchTransport Wire Watch transport router
+     */
+    public NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,
+        int maxSubscriptions, AgentWatchTransport watchTransport) {
+        super(namespaceId, clientProxy, maxSubscriptions, watchTransport);
     }
     
     NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,

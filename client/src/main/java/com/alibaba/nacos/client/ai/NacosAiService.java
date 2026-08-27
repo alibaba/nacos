@@ -80,6 +80,7 @@ import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.AgentHttpTransport;
 import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
+import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
@@ -175,7 +176,9 @@ public class NacosAiService implements AiService {
             new NacosAgentDiscoveryCacheHolder(namespaceId, this.agentTransportRouter,
                 resolvePositiveCapacity(clientProperties,
                     AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
-                    AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS));
+                    AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
+                new AgentWatchTransportRouter(transportMode, grpcClient,
+                    AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
         this.agentEndpointPublicationManager =
             new AgentEndpointPublicationManager(this.agentTransportRouter,
                 resolvePositiveCapacity(clientProperties,

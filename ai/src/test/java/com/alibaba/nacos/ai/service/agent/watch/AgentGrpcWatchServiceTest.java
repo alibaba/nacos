@@ -102,6 +102,8 @@ class AgentGrpcWatchServiceTest {
             .thenReturn(AgentWatchOwnerEligibility.ALLOWED);
         when(projectionService.retain(any()))
             .thenAnswer(invocation -> AgentProjectionKey.of(invocation.getArgument(0)));
+        when(projectionService.refreshNow(any()))
+            .thenAnswer(invocation -> projectionState.get().orElse(null));
         when(projectionService.getState(any())).thenAnswer(invocation -> projectionState.get());
         doAnswer(invocation -> {
             pushes.add(new PushRecord(invocation.getArgument(1), invocation.getArgument(2)));
@@ -137,6 +139,7 @@ class AgentGrpcWatchServiceTest {
         assertEquals(1, service.connectionSize(CONNECTION_ID));
         verify(discoveryService).discover(any());
         verify(projectionService).retain(any());
+        verify(projectionService).refreshNow(AgentProjectionTestFixtures.key("agent"));
         
         service.unsubscribe("other", first.getWatchKey());
         assertEquals(1, service.size());
@@ -182,6 +185,16 @@ class AgentGrpcWatchServiceTest {
         assertThrows(IllegalStateException.class,
             () -> service.subscribe(CONNECTION_ID, request("watch", "agent", null)));
         assertEquals(0, service.size());
+        
+        reset(projectionService);
+        doAnswer(invocation -> AgentProjectionKey.of(invocation.getArgument(0)))
+            .when(projectionService).retain(any());
+        doThrow(new IllegalStateException("refresh failed"))
+            .when(projectionService).refreshNow(any());
+        assertThrows(IllegalStateException.class,
+            () -> service.subscribe(CONNECTION_ID, request("watch", "agent", null)));
+        assertEquals(0, service.size());
+        verify(projectionService).release(AgentProjectionTestFixtures.key("agent"));
     }
     
     @Test
@@ -200,6 +213,7 @@ class AgentGrpcWatchServiceTest {
         reset(projectionService);
         doAnswer(invocation -> AgentProjectionKey.of(invocation.getArgument(0)))
             .when(projectionService).retain(any());
+        when(projectionService.refreshNow(any())).thenReturn(null);
         when(projectionService.getState(any())).thenReturn(Optional.empty());
         createService(1);
         when(discoveryService.discover(any())).thenReturn(snapshot);

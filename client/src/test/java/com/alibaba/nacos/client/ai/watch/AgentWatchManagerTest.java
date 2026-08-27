@@ -920,6 +920,27 @@ class AgentWatchManagerTest {
     }
     
     @Test
+    void initialTransportNotFoundReturnsPendingWithoutLeakingWireState() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A));
+        transport.startFailure = notFound("removed between Discover and Watch admission");
+        TestListener listener = new TestListener(null);
+        
+        AgentDiscoveryResult current =
+            manager.subscribe(reference("agent-a"), null, listener);
+        
+        assertNull(current);
+        assertEquals(1, manager.intentCount());
+        assertEquals(1, manager.subscriptionCount());
+        assertEquals(1, scheduled.size());
+        assertTrue(transport.registrations.isEmpty());
+        assertTrue(transport.callbacks.isEmpty());
+        runCallback(0);
+        assertEvent(listener, 0, NacosAgentDiscoveryEventType.UNAVAILABLE,
+            NacosException.NOT_FOUND);
+    }
+    
+    @Test
     void pendingActivationRetrySchedulingRejectionRemovesIntent() throws Exception {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenThrow(notFound("missing")).thenReturn(result("1.0.0", DIGEST_A));

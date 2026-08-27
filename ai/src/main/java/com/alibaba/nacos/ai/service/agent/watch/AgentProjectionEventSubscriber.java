@@ -26,6 +26,8 @@ import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -38,6 +40,9 @@ import java.util.List;
  */
 @Component
 public class AgentProjectionEventSubscriber extends SmartSubscriber {
+    
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AgentProjectionEventSubscriber.class);
     
     private final AgentProjectionService projectionService;
     
@@ -70,6 +75,7 @@ public class AgentProjectionEventSubscriber extends SmartSubscriber {
         }
         Service service = ((ServiceEvent.ServiceChangedEvent) event).getService();
         if (Constants.Agent.AGENT_ENDPOINT_GROUP.equals(service.getGroup())) {
+            LOGGER.debug("Runtime service change invalidates Agent projections: {}", service);
             projectionService.onRuntimeServiceChanged(service);
         }
     }

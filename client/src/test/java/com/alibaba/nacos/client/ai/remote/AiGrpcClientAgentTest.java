@@ -32,10 +32,14 @@ import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentUnsubscribeRpcResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -49,6 +53,8 @@ import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,12 +73,15 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -144,6 +153,62 @@ class AiGrpcClientAgentTest {
             (AgentDiscoveryRpcRequest) requests.get(1);
         assertSame(discovery, discoveryRpcRequest.getDiscoveryRequest());
         assertEquals("alice", discoveryRpcRequest.getHeader("identity"));
+    }
+    
+    @Test
+    void watchUsesTypedRequestsSecurityAndConnectionPlumbing() throws Exception {
+        support(AbilityKey.SERVER_RAD_WATCH_V1);
+        AgentSubscribeRpcResponse subscribeResponse = new AgentSubscribeRpcResponse();
+        subscribeResponse.setWatchKey("wire-a");
+        when(rpcClient.request(any(AgentSubscribeRpcRequest.class)))
+            .thenReturn(subscribeResponse);
+        when(rpcClient.request(any(AgentUnsubscribeRpcRequest.class)))
+            .thenReturn(new AgentUnsubscribeRpcResponse());
+        when(rpcClient.getCurrentConnectionId()).thenReturn("connection-a");
+        ConnectionEventListener connectionListener = mock(ConnectionEventListener.class);
+        ServerRequestHandler requestHandler = mock(ServerRequestHandler.class);
+        AgentDiscoveryRequest discovery = discoveryRequest();
+        
+        client.registerConnectionListener(connectionListener);
+        client.registerServerRequestHandler(requestHandler);
+        assertTrue(client.isAgentWatchAvailable());
+        assertEquals("connection-a", client.getCurrentConnectionId());
+        assertSame(subscribeResponse,
+            client.subscribeAgentWatch("watch-a", discovery, "fingerprint-a"));
+        client.unsubscribeAgentWatch("wire-a");
+        
+        verify(rpcClient).registerConnectionListener(connectionListener);
+        verify(rpcClient).registerServerRequestHandler(requestHandler);
+        ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);
+        verify(rpcClient, times(2)).request(request.capture());
+        AgentSubscribeRpcRequest subscribe =
+            (AgentSubscribeRpcRequest) request.getAllValues().get(0);
+        assertEquals("watch-a", subscribe.getClientWatchId());
+        assertSame(discovery, subscribe.getDiscoveryRequest());
+        assertEquals("fingerprint-a", subscribe.getMaterializedFingerprint());
+        assertEquals("alice", subscribe.getHeader("identity"));
+        AgentUnsubscribeRpcRequest unsubscribe =
+            (AgentUnsubscribeRpcRequest) request.getAllValues().get(1);
+        assertEquals("wire-a", unsubscribe.getWatchKey());
+        assertEquals("alice", unsubscribe.getHeader("identity"));
+        
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_WATCH_V1))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertFalse(client.isAgentWatchAvailable());
+    }
+    
+    @Test
+    void watchCapacityFailureRetainsTypedDetailCode() throws Exception {
+        support(AbilityKey.SERVER_RAD_WATCH_V1);
+        when(rpcClient.request(any(AgentSubscribeRpcRequest.class)))
+            .thenReturn(error(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> client.subscribeAgentWatch("watch-a", discoveryRequest(), null));
+        
+        assertEquals(NacosException.OVER_THRESHOLD, exception.getErrCode());
+        assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+            exception.getDetailErrCode());
     }
     
     @Test
@@ -358,6 +423,8 @@ class AiGrpcClientAgentTest {
         assertMapped(mapper, ErrorCode.SERVER_ERROR, NacosException.SERVER_ERROR);
         assertMapped(mapper, ErrorCode.DATA_ACCESS_ERROR, NacosException.SERVER_ERROR);
         assertMapped(mapper, ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
+            NacosException.OVER_THRESHOLD);
+        assertMapped(mapper, ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
             NacosException.OVER_THRESHOLD);
         assertEquals(98765, mapper.invoke(client, 98765));
     }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+import com.alibaba.nacos.api.ability.register.impl.SdkClientAbilities;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -48,6 +49,8 @@ import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
@@ -60,6 +63,8 @@ import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
+import com.alibaba.nacos.api.ai.remote.response.AgentUnsubscribeRpcResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
@@ -91,9 +96,11 @@ import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.InitialConnectionFailureListener;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -192,6 +199,24 @@ public class AiGrpcClient implements AiClientProxy {
     public void registerInitialConnectionFailureListener(
         InitialConnectionFailureListener listener) {
         rpcClient.registerInitialConnectionFailureListener(listener);
+    }
+    
+    /**
+     * Register one lifecycle listener on the shared AI gRPC connection.
+     *
+     * @param listener connection lifecycle listener
+     */
+    public void registerConnectionListener(ConnectionEventListener listener) {
+        rpcClient.registerConnectionListener(listener);
+    }
+    
+    /**
+     * Register one server-push handler on the shared AI gRPC connection.
+     *
+     * @param handler server request handler
+     */
+    public void registerServerRequestHandler(ServerRequestHandler handler) {
+        rpcClient.registerServerRequestHandler(handler);
     }
     
     /**
@@ -299,6 +324,39 @@ public class AiGrpcClient implements AiClientProxy {
         AgentDiscoveryResponse response =
             requestToServer(rpcRequest, AgentDiscoveryResponse.class);
         return response.getDiscoveryResult();
+    }
+    
+    /**
+     * Install one connection-owned RAD Watch.
+     *
+     * @param clientWatchId process-stable client Watch identifier
+     * @param discoveryRequest complete canonical discovery request
+     * @param materializedFingerprint last complete-result fingerprint
+     * @return wire Watch admission result
+     * @throws NacosException when ability negotiation or subscription fails
+     */
+    public AgentSubscribeRpcResponse subscribeAgentWatch(String clientWatchId,
+        AgentDiscoveryRequest discoveryRequest, String materializedFingerprint)
+        throws NacosException {
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_WATCH_V1, "RAD Watch v1");
+        AgentSubscribeRpcRequest request = new AgentSubscribeRpcRequest();
+        request.setClientWatchId(clientWatchId);
+        request.setDiscoveryRequest(discoveryRequest);
+        request.setMaterializedFingerprint(materializedFingerprint);
+        return requestToServer(request, AgentSubscribeRpcResponse.class);
+    }
+    
+    /**
+     * Remove one connection-owned RAD Watch.
+     *
+     * @param watchKey opaque connection-scoped Watch key
+     * @throws NacosException when ability negotiation or unsubscription fails
+     */
+    public void unsubscribeAgentWatch(String watchKey) throws NacosException {
+        checkServerAbilityStrict(AbilityKey.SERVER_RAD_WATCH_V1, "RAD Watch v1");
+        AgentUnsubscribeRpcRequest request = new AgentUnsubscribeRpcRequest();
+        request.setWatchKey(watchKey);
+        requestToServer(request, AgentUnsubscribeRpcResponse.class);
     }
     
     /**
@@ -836,6 +894,27 @@ public class AiGrpcClient implements AiClientProxy {
         return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
     
+    /**
+     * Check whether both sides negotiated the RAD Watch hint binding.
+     *
+     * @return {@code true} only for a running connection with both Watch abilities
+     */
+    public boolean isAgentWatchAvailable() {
+        return rpcClient.isRunning()
+            && Boolean.TRUE.equals(
+                SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_RAD_WATCH_V1))
+            && isAbilitySupportedByServer(AbilityKey.SERVER_RAD_WATCH_V1);
+    }
+    
+    /**
+     * Return the identifier of the current shared AI gRPC connection.
+     *
+     * @return connection identifier, or {@code null} before connection establishment
+     */
+    public String getCurrentConnectionId() {
+        return rpcClient.getCurrentConnectionId();
+    }
+    
     private void checkServerAbilityOrThrow(AbilityKey abilityKey, String featureName) {
         if (!rpcClient.isRunning()) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR,
@@ -976,6 +1055,12 @@ public class AiGrpcClient implements AiClientProxy {
                         ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
                         response.getMessage());
                 }
+                if (response.getErrorCode() == ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT
+                    .getCode()) {
+                    throw new NacosApiException(errorCode,
+                        ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
+                        response.getMessage());
+                }
                 throw new NacosException(errorCode, response.getMessage());
             }
             if (responseClass.isAssignableFrom(response.getClass())) {
@@ -1019,6 +1104,9 @@ public class AiGrpcClient implements AiClientProxy {
             return NacosException.SERVER_ERROR;
         }
         if (errorCode == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode()) {
+            return NacosException.OVER_THRESHOLD;
+        }
+        if (errorCode == ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode()) {
             return NacosException.OVER_THRESHOLD;
         }
         return errorCode;

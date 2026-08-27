@@ -286,7 +286,7 @@ public class AgentDiscoveryApplicationService {
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
         Agent agent = operationService.getAgent(namespaceId, reference.getAgentName());
-        return projectCurrentFact(request, agent);
+        return buildDiscoveryResult(request, agent, false);
     }
     
     /**
@@ -308,11 +308,11 @@ public class AgentDiscoveryApplicationService {
         AgentReference reference = request.getReference();
         Agent agent = persistenceService.getAgent(request.getNamespaceId(),
             reference.getAgentName());
-        return projectCurrentFact(request, agent);
+        return buildDiscoveryResult(request, agent, true);
     }
     
-    private AgentDiscoveryResult projectCurrentFact(AgentDiscoveryRequest request, Agent agent)
-        throws NacosException {
+    private AgentDiscoveryResult buildDiscoveryResult(AgentDiscoveryRequest request, Agent agent,
+        boolean currentRuntimeFacts) throws NacosException {
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
         if (!AiConstants.Agent.RESOURCE_STATUS_ENABLE.equals(agent.getStatus())) {
@@ -329,7 +329,7 @@ public class AgentDiscoveryApplicationService {
         result.setVersion(version);
         result.setContentDigest(detail.getContentDigest());
         result.setCallInterfaces(resolveCallInterfaces(namespaceId, reference.getAgentName(),
-            runtimeVersions, detail, request.getFilter()));
+            runtimeVersions, detail, request.getFilter(), currentRuntimeFacts));
         RadModelValidator.validate(result);
         return result;
     }
@@ -495,7 +495,7 @@ public class AgentDiscoveryApplicationService {
     
     private List<AgentDiscoveryCallInterface> resolveCallInterfaces(String namespaceId,
         String agentName, List<String> runtimeVersions, AgentVersionDetail detail,
-        AgentDiscoveryFilter filter) throws NacosException {
+        AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
         List<AgentDiscoveryCallInterface> result =
             new ArrayList<AgentDiscoveryCallInterface>();
         for (AgentCallInterface source : detail.getCallInterfaces()) {
@@ -509,7 +509,8 @@ public class AgentDiscoveryApplicationService {
             callInterface.setDescriptorMediaType(source.getDescriptorMediaType());
             callInterface.setNativeDescriptor(source.getNativeDescriptor());
             callInterface.setEndpointSets(resolveEndpointSets(namespaceId, agentName,
-                runtimeVersions, detail.getContentDigest(), source, filter));
+                runtimeVersions, detail.getContentDigest(), source, filter,
+                currentRuntimeFacts));
             result.add(callInterface);
         }
         return result;
@@ -531,17 +532,24 @@ public class AgentDiscoveryApplicationService {
     private List<EndpointSet> resolveEndpointSets(String namespaceId, String agentName,
         List<String> runtimeVersions, String contentDigest,
         AgentCallInterface callInterface,
-        AgentDiscoveryFilter filter) throws NacosException {
+        AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
         List<EndpointSet> result = new ArrayList<EndpointSet>();
         for (EndpointSource source : callInterface.getEndpointSourceOrder()) {
             if (filter != null && filter.getEndpointSources() != null
                 && !filter.getEndpointSources().contains(source)) {
                 continue;
             }
-            EndpointSet endpointSet = source == EndpointSource.RUNTIME
-                ? runtimeRegistryService.getRuntimeEndpointSet(namespaceId, agentName,
-                    callInterface.getProtocol(), runtimeVersions)
-                : declaredEndpointSet(contentDigest, callInterface.getDeclaredEndpoints());
+            EndpointSet endpointSet;
+            if (source == EndpointSource.RUNTIME) {
+                endpointSet = currentRuntimeFacts
+                    ? runtimeRegistryService.getCurrentRuntimeEndpointSet(namespaceId, agentName,
+                        callInterface.getProtocol(), runtimeVersions)
+                    : runtimeRegistryService.getRuntimeEndpointSet(namespaceId, agentName,
+                        callInterface.getProtocol(), runtimeVersions);
+            } else {
+                endpointSet =
+                    declaredEndpointSet(contentDigest, callInterface.getDeclaredEndpoints());
+            }
             endpointSet.setEndpoints(filterEndpoints(namespaceId, agentName,
                 callInterface.getProtocol(), endpointSet.getEndpoints(), filter));
             result.add(endpointSet);

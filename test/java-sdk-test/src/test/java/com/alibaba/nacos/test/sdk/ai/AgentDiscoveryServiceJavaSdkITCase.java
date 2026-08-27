@@ -127,6 +127,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String LABEL_LATEST = "latest";
     
     private static final long POLLING_TIMEOUT_MILLIS = 25000L;
+
+    private static final long WATCH_HINT_TIMEOUT_MILLIS = 8000L;
     
     private static final long RECONNECT_TIMEOUT_MILLIS = 120000L;
     
@@ -137,6 +139,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static final String SERVER_PUBLICATION_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
+
+    private static final String SERVER_WATCH_CAPACITY_PROPERTY =
+        "nacos.agent.it.server.watch.capacity";
 
     private static final int DEFAULT_SERVER_PUBLICATION_CAPACITY = 100;
 
@@ -500,6 +505,48 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = SERVER_WATCH_CAPACITY_PROPERTY, matches = "[1-9][0-9]*")
+    void shouldSurfaceServerWatchCapacityAndReuseSlot() throws Exception {
+        int watchCapacity = Integer.getInteger(SERVER_WATCH_CAPACITY_PROPERTY);
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.GRPC.getValue());
+        properties.setProperty(AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
+            String.valueOf(watchCapacity + 1));
+        AiService service = createAiService(properties);
+        List<AgentReference> references = new ArrayList<>();
+        List<RecordingAgentListener> listeners = new ArrayList<>();
+        for (int i = 0; i <= watchCapacity; i++) {
+            String agentName = randomServiceName("server-watch-capacity-" + i);
+            createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+                Collections.singletonList("java-sdk-it"),
+                Collections.singletonList(PROTOCOL_A2A), false);
+            references.add(reference(agentName, null, null));
+            listeners.add(new RecordingAgentListener());
+        }
+        for (int i = 0; i < watchCapacity; i++) {
+            assertEquals(VERSION,
+                service.subscribeAgent(references.get(i), listeners.get(i)).getVersion());
+        }
+
+        NacosApiException rejected = assertThrows(NacosApiException.class,
+            () -> service.subscribeAgent(references.get(watchCapacity),
+                listeners.get(watchCapacity)));
+        assertEquals(NacosException.OVER_THRESHOLD, rejected.getErrCode());
+        assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+            rejected.getDetailErrCode());
+
+        service.unsubscribeAgent(references.get(0), listeners.get(0));
+        assertEquals(VERSION,
+            service.subscribeAgent(references.get(watchCapacity),
+                listeners.get(watchCapacity)).getVersion());
+        for (int i = 1; i <= watchCapacity; i++) {
+            service.unsubscribeAgent(references.get(i), listeners.get(i));
+        }
+    }
+
+    @Test
     void shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot() throws Exception {
         int publicationCapacity = Integer.getInteger(CLIENT_PUBLICATION_CAPACITY_PROPERTY,
             DEFAULT_CLIENT_TEST_CAPACITY);
@@ -755,7 +802,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
     
     @Test
-    void shouldPollExistingAgentOnlyWhenCompleteFingerprintChanges() throws Exception {
+    void shouldWatchExistingAgentOnlyWhenCompleteFingerprintChanges() throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
         AiService service = createAiService();
         String agentName = randomServiceName("agent-existing-subscription");
@@ -789,8 +836,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentEndpointRegistrationBatch replacementBatch =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement));
         service.registerAgentEndpoints(replacementBatch);
-        assertTrue(replacementCallback.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
-            "Runtime source-revision change must deliver a complete replacement snapshot");
+        assertTrue(replacementCallback.await(WATCH_HINT_TIMEOUT_MILLIS,
+            TimeUnit.MILLISECONDS),
+            "gRPC Watch Hint must trigger Discover and a complete replacement snapshot");
         assertTrue(containsEndpoint(callbackResult.get(), PROTOCOL_A2A, replacement.getUri()));
         
         int countAfterReplacement = callbackCount.get();
@@ -1038,7 +1086,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     @Test
     @EnabledIfSystemProperty(named = RECONNECT_ENABLED_PROPERTY, matches = "true")
-    void shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart()
+    void shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart()
         throws Exception {
         Path controlDirectory =
             Paths.get(System.getProperty(RECONNECT_CONTROL_DIR_PROPERTY));
@@ -1077,8 +1125,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("legacy Version 1 Endpoint should be visible before restart", () ->
             containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne));
-        assertEquals(agentName, searchOne(grpcService, agentName).getAgentName());
-        assertEquals(agentName, searchOne(httpService, agentName).getAgentName());
+        waitUntilLong("the asynchronous Search index exposes the Agent before restart",
+            () -> agentName.equals(searchedAgentName(grpcService, agentName))
+                && agentName.equals(searchedAgentName(httpService, agentName)));
         
         RecordingAgentListener grpcLatestListener = new RecordingAgentListener();
         RecordingAgentListener httpLatestListener = new RecordingAgentListener();
@@ -1097,8 +1146,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForMarker(serverRestarted, "external harness restarts the standalone server");
         
         waitUntilLong("the same gRPC and HTTP SDKs can Search after restart",
-            () -> agentName.equals(searchOne(grpcService, agentName).getAgentName())
-                && agentName.equals(searchOne(httpService, agentName).getAgentName()));
+            () -> agentName.equals(searchedAgentName(grpcService, agentName))
+                && agentName.equals(searchedAgentName(httpService, agentName)));
         waitUntilLong("gRPC redo and HTTP 50404 recovery restore both Version 1 publications",
             () -> {
                 AgentDiscoveryResult grpcResult =
@@ -1121,10 +1170,10 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("the pre-registered legacy Version 2 Endpoint survives restart", () ->
             containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION_2,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionTwo));
-        awaitEvent(grpcLatestListener, "gRPC polling resumes with Version 2 after reconnect",
+        awaitEvent(grpcLatestListener, "gRPC Watch resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A,
-                    legacyEndpointUri(legacyVersionTwo)));
+                    legacyEndpointUri(legacyVersionTwo)), WATCH_HINT_TIMEOUT_MILLIS);
         awaitEvent(httpLatestListener, "HTTP polling resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A,
@@ -1135,7 +1184,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(grpcVersionTwo)));
         waitForEndpointCount(httpService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 2);
         awaitEvent(grpcLatestListener,
-            "gRPC polling observes the Version 2 gRPC Endpoint after reconnect",
+            "gRPC Watch observes the Version 2 gRPC Endpoint after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri()));
         awaitEvent(httpLatestListener,
@@ -1148,7 +1197,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(httpVersionTwo)));
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 3);
         awaitEvent(grpcLatestListener,
-            "gRPC polling observes both Version 2 Endpoints after reconnect",
+            "gRPC Watch observes both Version 2 Endpoints after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri()));
@@ -1174,8 +1223,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             grpcService.discoverAgent(reference(agentName, null, LABEL_STABLE)).getVersion());
         assertEquals(VERSION_2,
             httpService.discoverAgent(reference(agentName, null, LABEL_STABLE)).getVersion());
-        assertEquals(VERSION_2, searchOne(grpcService, agentName).getLatestVersion());
-        assertEquals(VERSION_2, searchOne(httpService, agentName).getLatestVersion());
+        waitUntilLong("the asynchronous Search index exposes Version 2 after restart",
+            () -> VERSION_2.equals(latestSearchVersion(grpcService, agentName))
+                && VERSION_2.equals(latestSearchVersion(httpService, agentName)));
         
         grpcService.unsubscribeAgent(latestReference, grpcLatestListener);
         httpService.unsubscribeAgent(latestReference, httpLatestListener);
@@ -1912,6 +1962,18 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         }
         return null;
     }
+    
+    private String latestSearchVersion(AiService service, String agentName)
+        throws NacosException {
+        AgentCatalogEntry entry = searchOne(service, agentName);
+        return entry == null ? null : entry.getLatestVersion();
+    }
+    
+    private String searchedAgentName(AiService service, String agentName)
+        throws NacosException {
+        AgentCatalogEntry entry = searchOne(service, agentName);
+        return entry == null ? null : entry.getAgentName();
+    }
 
     private void waitForSearchTotal(AiService service, String nameContains, int expected)
         throws Exception {
@@ -1991,7 +2053,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private AgentDiscoveryResult awaitEvent(RecordingAgentListener listener, String reason,
         Predicate<AgentDiscoveryResult> predicate) throws Exception {
-        long deadline = System.currentTimeMillis() + POLLING_TIMEOUT_MILLIS;
+        return awaitEvent(listener, reason, predicate, POLLING_TIMEOUT_MILLIS);
+    }
+
+    private AgentDiscoveryResult awaitEvent(RecordingAgentListener listener, String reason,
+        Predicate<AgentDiscoveryResult> predicate, long timeoutMillis) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
         while (System.currentTimeMillis() < deadline) {
             long remaining = deadline - System.currentTimeMillis();
             AgentDiscoveryResult result =

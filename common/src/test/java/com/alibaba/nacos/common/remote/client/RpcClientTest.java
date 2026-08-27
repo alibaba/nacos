@@ -294,6 +294,14 @@ class RpcClientTest {
     }
     
     @Test
+    void testGetCurrentConnectionId() {
+        assertNull(rpcClient.getCurrentConnectionId());
+        when(connection.getConnectionId()).thenReturn("connection-a");
+        rpcClient.currentConnection = connection;
+        assertEquals("connection-a", rpcClient.getCurrentConnectionId());
+    }
+    
+    @Test
     void testLabels() {
         when(rpcClientConfig.labels())
             .thenReturn(Collections.singletonMap("labelKey1", "labelValue1"));

@@ -251,6 +251,9 @@ public class AgentProjectionService {
         if (!applied.isPresent()) {
             return true;
         }
+        LOGGER.debug("Agent Projection refreshed: key={}, reasons={}, status={}, fingerprint={}",
+            key, reasons, applied.get().getCurrent().getStatus(),
+            applied.get().getCurrent().getFingerprint());
         notifyUpdate(applied.get());
         return !applied.get().getCurrent().requiresRetry();
     }

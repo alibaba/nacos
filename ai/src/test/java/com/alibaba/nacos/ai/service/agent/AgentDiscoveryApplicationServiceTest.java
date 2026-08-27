@@ -592,7 +592,13 @@ class AgentDiscoveryApplicationServiceTest {
             .thenReturn(onlineVersion(DIGEST));
         when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(detail(DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
-                Collections.singletonList(EndpointSource.DECLARED), null))));
+                Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), null))));
+        EndpointSet runtime = endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
+            Collections.<AgentDiscoveryEndpoint>emptyList());
+        when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION))).thenReturn(runtime);
+        when(runtimeRegistryService.getCurrentRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION))).thenReturn(runtime);
         
         AgentDiscoveryResult authorized = service.discover(request);
         AgentDiscoveryResult internal = service.projectCurrentFact(request);
@@ -601,7 +607,10 @@ class AgentDiscoveryApplicationServiceTest {
             AgentDiscoveryCanonicalizer.fingerprint(internal));
         verify(operationService).getAgent(NAMESPACE_ID, AGENT_NAME);
         verify(persistenceService).getAgent(NAMESPACE_ID, AGENT_NAME);
-        verifyNoInteractions(runtimeRegistryService);
+        verify(runtimeRegistryService).getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION));
+        verify(runtimeRegistryService).getCurrentRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
+            "a2a", Collections.singletonList(VERSION));
     }
     
     @Test

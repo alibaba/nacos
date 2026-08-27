@@ -19,10 +19,8 @@ package com.alibaba.nacos.ai.service.agent.watch;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
-import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -79,23 +77,14 @@ public class DefaultAgentProjectionProjector implements AgentProjectionProjector
     private Set<Service> dependencies(AgentDiscoveryResult result) {
         Set<Service> dependencies = new LinkedHashSet<Service>();
         for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
-            if (containsRuntimeSource(callInterface)) {
-                dependencies.add(Service.newService(result.getNamespaceId(),
-                    Constants.Agent.AGENT_ENDPOINT_GROUP,
-                    RadServiceNameComposer.compose(result.getAgentName(),
-                        callInterface.getProtocol())));
-            }
+            // A declared protocol is also a prospective Runtime dependency. Retaining it before
+            // the first Endpoint exists lets a Watch observe creation of that Naming service.
+            dependencies.add(Service.newService(result.getNamespaceId(),
+                Constants.Agent.AGENT_ENDPOINT_GROUP,
+                RadServiceNameComposer.compose(result.getAgentName(),
+                    callInterface.getProtocol())));
         }
         return dependencies;
-    }
-    
-    private boolean containsRuntimeSource(AgentDiscoveryCallInterface callInterface) {
-        for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
-            if (endpointSet.getSource() == EndpointSource.RUNTIME) {
-                return true;
-            }
-        }
-        return false;
     }
     
     private AgentProjectionState failure(int errorCode, String message, long computedAt) {

@@ -144,6 +144,24 @@ public class AgentWatchManager implements Closeable {
                 Math.max(updateIntervalMillis, MAXIMUM_RETRY_DELAY_MILLIS)));
     }
     
+    /**
+     * Create a Watch manager with a configured Wire transport.
+     *
+     * @param namespaceId SDK namespace
+     * @param clientProxy authoritative Discover proxy
+     * @param maxSubscriptions local Listener-record watermark
+     * @param watchTransport Wire Watch transport router
+     */
+    public AgentWatchManager(String namespaceId, AgentClientProxy clientProxy,
+        int maxSubscriptions, AgentWatchTransport watchTransport) {
+        this(namespaceId, clientProxy,
+            new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.watch")),
+            newCallbackExecutor(), maxSubscriptions, watchTransport,
+            new AgentWatchRetryPolicy.Jittered(
+                AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL, MAXIMUM_RETRY_DELAY_MILLIS));
+    }
+    
     AgentWatchManager(String namespaceId, AgentClientProxy clientProxy,
         ScheduledExecutorService refreshExecutor, ExecutorService callbackExecutor,
         int maxSubscriptions, AgentWatchTransport watchTransport,
@@ -230,8 +248,7 @@ public class AgentWatchManager implements Closeable {
             intent.current = initial.result;
             intent.fingerprint = fingerprint(initial.result);
         }
-        activateSynchronously(intent);
-        return copy(initial.result);
+        return activateSynchronously(intent) ? copy(initial.result) : null;
     }
     
     private AgentDiscoveryResult initializePending(WatchIntent intent, NacosException exception)
@@ -388,10 +405,14 @@ public class AgentWatchManager implements Closeable {
         dispatch(notifications);
     }
     
-    private void activateSynchronously(WatchIntent intent) throws NacosException {
+    private boolean activateSynchronously(WatchIntent intent) throws NacosException {
         try {
             watchTransport.start(registration(intent), intent.callback);
         } catch (NacosException e) {
+            if (isNotFound(e)) {
+                handleActivationFailure(intent, e);
+                return false;
+            }
             synchronized (this) {
                 if (intentsById.get(intent.clientWatchId) == intent) {
                     intent.completeActivation(e);
@@ -416,7 +437,7 @@ public class AgentWatchManager implements Closeable {
                 intent.completeActivation(new NacosException(NacosException.CLIENT_DISCONNECT,
                     "Agent Watch activation was canceled."));
                 watchTransport.stop(intent.clientWatchId);
-                return;
+                return true;
             }
             intent.state = WatchState.ACTIVE;
             intent.transportActive = true;
@@ -425,6 +446,7 @@ public class AgentWatchManager implements Closeable {
                 scheduleRefresh(intent, 0L);
             }
         }
+        return true;
     }
     
     private void executePending(String clientWatchId) {
@@ -533,6 +555,10 @@ public class AgentWatchManager implements Closeable {
                 intent.fingerprint = null;
                 intent.state = WatchState.LOCAL_PENDING;
                 intent.pendingFailureCount++;
+                if (isNotFound(exception) && !intent.unavailableNotified) {
+                    intent.unavailableNotified = true;
+                    notifications.addAll(unavailableNotifications(intent, exception, true));
+                }
                 if (!schedulePending(intent)) {
                     notifications.addAll(terminalNotifications(intent, schedulingRejected()));
                     removeIntent(intent);

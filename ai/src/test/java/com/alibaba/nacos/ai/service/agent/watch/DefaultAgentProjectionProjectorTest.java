@@ -58,7 +58,7 @@ class DefaultAgentProjectionProjectorTest {
     }
     
     @Test
-    void testSuccessBuildsFingerprintAndRuntimeDependenciesOnly() throws NacosException {
+    void testSuccessBuildsFingerprintAndAllProtocolDependencies() throws NacosException {
         AgentDiscoveryResult snapshot = AgentProjectionTestFixtures.snapshot(
             AgentProjectionTestFixtures.AGENT_NAME, "a2a", "mcp");
         snapshot.setCallInterfaces(new ArrayList<>(snapshot.getCallInterfaces()));
@@ -75,12 +75,12 @@ class DefaultAgentProjectionProjectorTest {
         assertEquals(123L, result.getComputedAt());
         assertNull(result.getErrorCode());
         assertNull(result.getErrorMessage());
-        assertEquals(2, result.getPhysicalDependencies().size());
+        assertEquals(3, result.getPhysicalDependencies().size());
         assertTrue(result.getPhysicalDependencies().contains(
             AgentProjectionTestFixtures.service(AgentProjectionTestFixtures.AGENT_NAME, "a2a")));
         assertTrue(result.getPhysicalDependencies().contains(
             AgentProjectionTestFixtures.service(AgentProjectionTestFixtures.AGENT_NAME, "mcp")));
-        assertFalse(result.getPhysicalDependencies().contains(
+        assertTrue(result.getPhysicalDependencies().contains(
             AgentProjectionTestFixtures.service(AgentProjectionTestFixtures.AGENT_NAME,
                 "custom")));
     }
@@ -116,13 +116,16 @@ class DefaultAgentProjectionProjectorTest {
     }
     
     @Test
-    void testInterfaceWithoutRuntimeSourceCreatesNoDependency() throws NacosException {
+    void testDeclaredInterfaceCreatesProspectiveRuntimeDependency() throws NacosException {
         AgentDiscoveryResult snapshot = AgentProjectionTestFixtures.snapshot(
             AgentProjectionTestFixtures.AGENT_NAME);
         snapshot.setCallInterfaces(Arrays.asList(
             AgentProjectionTestFixtures.callInterface("a2a", EndpointSource.DECLARED)));
         when(discoveryService.projectCurrentFact(any())).thenReturn(snapshot);
-        assertEquals(Collections.emptySet(), projector.project(key).getPhysicalDependencies());
+        assertEquals(Collections.singleton(
+            AgentProjectionTestFixtures.service(AgentProjectionTestFixtures.AGENT_NAME,
+                "a2a")),
+            projector.project(key).getPhysicalDependencies());
     }
     
     @Test
