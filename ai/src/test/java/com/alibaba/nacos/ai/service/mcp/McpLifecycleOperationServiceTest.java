@@ -938,6 +938,7 @@ class McpLifecycleOperationServiceTest {
         service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
             null);
         Page<AiResourceVersion> pageWithoutItems = new Page<>();
+        pageWithoutItems.setPageItems(null);
         AtomicLong lifecycleListCalls = new AtomicLong();
         when(versionPersistService.list(anyString(), anyString(), anyString(), any(), anyInt(),
             anyInt())).thenAnswer(invocation -> {
@@ -1100,6 +1101,22 @@ class McpLifecycleOperationServiceTest {
         assertFalse(contents.isEmpty());
         
         service.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertNull(versions.get(VERSION_ONE));
+        assertTrue(contents.isEmpty());
+    }
+    
+    @Test
+    void testStandardDeleteDraftRetryClearsPointerAfterVersionRowRemoved() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        McpVersionStorageDescriptor descriptor = McpVersionStorageDescriptorSerializer.deserialize(
+            versions.get(VERSION_ONE).getStorage());
+        contents.remove(storageKey(descriptor));
+        versions.remove(VERSION_ONE);
+        
+        service.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        
         assertNull(versionInfo(resource.get()).getEditingVersion());
         assertNull(versions.get(VERSION_ONE));
         assertTrue(contents.isEmpty());
