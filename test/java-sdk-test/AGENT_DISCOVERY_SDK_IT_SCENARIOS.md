@@ -21,8 +21,10 @@ This matrix is the test-first contract and execution trace for the first
 maintained with the resulting tests. Every scenario is assigned to stable standalone
 Java SDK IT, deterministic unit tests, or both.
 
-The first implementation uses active Discover polling. It does not add a server
-Watch request, Push payload, ACK, or Watch ability.
+The SDK now owns subscription state through a transport-neutral Watch core. During
+the W4 compatibility stage, the public service still selects active Discover
+polling as its transport; server Watch requests, Push payloads, ACKs, and Watch
+ability selection are enabled only by later stages.
 
 ## Test-Layer Legend
 
@@ -44,8 +46,9 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; explicit and mismatched namespace binding; namespace-isolated publication. |
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical natural-key partial deregistration, unknown/repeated no-op, final deregistration, and protocol isolation. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
-| `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, complete callback snapshot, unsubscribe, and post-unsubscribe suppression. |
+| `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, one typed `UNAVAILABLE` event, recovery with a complete `SNAPSHOT`, unsubscribe, and post-unsubscribe suppression. |
 | `shouldPollExistingAgentOnlyWhenCompleteFingerprintChanges` | Subscribe-existing current value, Runtime source-revision replacement event, and unchanged-fingerprint callback de-duplication. |
+| `shouldShareCanonicalPollingIntentAndIsolateListeners` | Null/empty Filter canonical equivalence, one shared polling intent, two recording listeners plus one throwing listener, complete replacement delivery, partial unsubscribe isolation, and shutdown callback suppression. |
 | `shouldTrackVersionEvolutionAcrossRegistrationOrders` | Version 1 definition-first, Version 2 Endpoint-first, Version 3 definition-first, latest/exact/label subscriptions, catalog order, and offline/online latest recalculation. |
 | `shouldSeparateDefaultRolloutPoolFromExplicitLatest` | Two independent publishers keep exact Version 1 and Version 2 Endpoints concurrently. The omitted selector uses latest Version metadata while aggregating every online Version's compatible Endpoints; explicit `label=latest` remains latest-only. The workflow verifies the interval before Version 2 Endpoint registration, the combined pool after registration, Version 1 removal after it goes offline, binding provenance, and polling callback de-duplication for both selectors. |
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
@@ -60,7 +63,7 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same nineteen stable workflows pass with both the default JSON adapter and
+The same twenty stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -164,23 +167,23 @@ Endpoint, and replacement across an already-online Version.
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
 | Subscribe to an existing target | The method returns the current snapshot and retains one polling record. | IT + UT |
-| Subscribe before the target exists | The method returns `null`, retains polling, and delivers the complete snapshot after the target appears. | IT + UT |
-| Repeated not-found polls | No empty snapshot is delivered and the subscription remains active. | UT |
+| Subscribe before the target exists | The method returns `null`, emits at most one typed `UNAVAILABLE` event, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
+| Repeated not-found polls | No duplicate `UNAVAILABLE` or empty snapshot is delivered and the subscription remains active. | UT |
 | Poll returns the same Version, digest, and source revisions | No duplicate listener event is delivered. | IT + UT |
 | Resolved Version changes | One complete replacement event is delivered. | IT + UT |
 | `contentDigest` changes | One complete replacement event is delivered. | UT |
 | Any `sourceRevision` changes | One complete replacement event is delivered. | IT + UT |
 | A Runtime binding changes while its Endpoint payload and health stay equal | The v2 Runtime revision changes because discovery-visible binding provenance is part of the snapshot. | UT |
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
-| Same reference/filter and two listener instances | Listener identities are isolated and both receive changes. | UT |
+| Same reference/filter and two listener instances | Canonically equivalent intents share one polling record while listener identities remain isolated and both receive changes. | IT + UT |
 | Repeat subscribe with the same listener identity | Only one polling record and one callback per change are retained. | UT |
 | Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
 | Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
 | Unsubscribe an absent or different listener | The operation is an idempotent no-op. | UT |
-| Listener throws | Polling and other listeners continue. | UT |
+| Listener throws | Per-listener ordered delivery isolates the failure so polling and other listeners continue. | IT + UT |
 | HTTP polling uses the publication Client id | It renews only Client liveness and does not renew Publisher liveness. | IT |
-| Shutdown during polling | No callback is delivered after shutdown. | UT |
+| Shutdown during polling | Pending/retry/polling tasks are cancelled and no callback is delivered after shutdown. | IT + UT |
 
 ## Complete Endpoint Publication
 

@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -646,44 +647,111 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             () -> service.discoverAgent(reference(agentName, null, null)));
         assertEquals(NacosException.NOT_FOUND, absent.getErrCode());
         
-        AtomicInteger callbackCount = new AtomicInteger();
-        AtomicReference<AgentDiscoveryResult> callbackResult = new AtomicReference<>();
-        CountDownLatch callback = new CountDownLatch(1);
-        AbstractNacosAgentDiscoveryListener listener =
-            new AbstractNacosAgentDiscoveryListener() {
-                
-                @Override
-                public void onEvent(NacosAgentDiscoveryEvent event) {
-                    callbackResult.set(event.getAgentDiscoveryResult());
-                    callbackCount.incrementAndGet();
-                    callback.countDown();
-                }
-            };
+        RecordingAgentEventListener listener = new RecordingAgentEventListener();
         AgentReference reference = reference(agentName, null, null);
         assertNull(service.subscribeAgent(reference, listener));
+
+        NacosAgentDiscoveryEvent unavailable = awaitDiscoveryEvent(listener,
+            "a missing target must emit one unavailable transition",
+            event -> event.getType() == NacosAgentDiscoveryEventType.UNAVAILABLE);
+        assertEquals(NacosException.NOT_FOUND, unavailable.getErrorCode());
+        assertNull(unavailable.getAgentDiscoveryResult());
         
         createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
             Collections.singletonList("java-sdk-it"), Collections.singletonList(PROTOCOL_A2A),
             false);
-        assertTrue(callback.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
-            "polling must discover an Agent created after subscription");
-        assertNotNull(callbackResult.get());
+        NacosAgentDiscoveryEvent recovered = awaitDiscoveryEvent(listener,
+            "polling must discover an Agent created after subscription",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT);
+        assertNotNull(recovered.getAgentDiscoveryResult());
         assertEquals(1,
-            sourceEndpoints(callbackResult.get(), PROTOCOL_A2A, EndpointSource.RUNTIME).size());
+            sourceEndpoints(recovered.getAgentDiscoveryResult(), PROTOCOL_A2A,
+                EndpointSource.RUNTIME).size());
         
         service.unsubscribeAgent(reference, listener);
-        int countAfterUnsubscribe = callbackCount.get();
+        int countAfterUnsubscribe = listener.eventCount.get();
         Endpoint replacement = endpoint(randomPort(), "/replacement", "replacement");
         service.registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         Thread.sleep(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL + 1500L);
-        assertEquals(countAfterUnsubscribe, callbackCount.get(),
+        assertEquals(countAfterUnsubscribe, listener.eventCount.get(),
             "no callback may be delivered after unsubscribe");
         
         service.deregisterAgentEndpoints(
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(replacement))));
+    }
+
+    @Test
+    void shouldShareCanonicalPollingIntentAndIsolateListeners() throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService reader = createAiService();
+        AiService publisher = createAiService();
+        String agentName = randomServiceName("agent-shared-watch");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("java-sdk-it"), Collections.singletonList(PROTOCOL_A2A),
+            false);
+        Endpoint initial = endpoint(randomPort(), "/initial", "initial");
+        publisher.registerAgentEndpoints(
+            registration(agentName, PROTOCOL_A2A, Collections.singletonList(initial)));
+        waitForEndpointCount(reader, agentName, PROTOCOL_A2A, 1);
+
+        AgentReference reference = reference(agentName, null, null);
+        AgentDiscoveryFilter emptyFilter = new AgentDiscoveryFilter();
+        RecordingAgentListener first = new RecordingAgentListener();
+        RecordingAgentListener second = new RecordingAgentListener();
+        AtomicInteger throwingCallbacks = new AtomicInteger();
+        CountDownLatch throwingCallback = new CountDownLatch(1);
+        AbstractNacosAgentDiscoveryListener throwing =
+            new AbstractNacosAgentDiscoveryListener() {
+
+                @Override
+                public void onEvent(NacosAgentDiscoveryEvent event) {
+                    throwingCallbacks.incrementAndGet();
+                    throwingCallback.countDown();
+                    throw new IllegalStateException("intentional listener failure");
+                }
+            };
+        AgentDiscoveryResult firstCurrent = reader.subscribeAgent(reference, first);
+        AgentDiscoveryResult secondCurrent = reader.subscribeAgent(reference, emptyFilter, second);
+        reader.subscribeAgent(reference, throwing);
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(firstCurrent),
+            AgentDiscoveryCanonicalizer.fingerprint(secondCurrent));
+
+        Endpoint replacement = endpoint(randomPort(), "/replacement", "replacement");
+        publisher.registerAgentEndpoints(
+            registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement)));
+        awaitEvent(first, "first listener must receive the replacement snapshot",
+            result -> containsEndpoint(result, PROTOCOL_A2A, replacement.getUri()));
+        awaitEvent(second, "empty Filter must share the canonical replacement view",
+            result -> containsEndpoint(result, PROTOCOL_A2A, replacement.getUri()));
+        assertTrue(throwingCallback.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
+            "a throwing listener must be invoked without blocking other listeners");
+        assertTrue(throwingCallbacks.get() > 0);
+
+        reader.unsubscribeAgent(reference, first);
+        first.events.clear();
+        second.events.clear();
+        Endpoint afterPartialUnsubscribe =
+            endpoint(randomPort(), "/partial-unsubscribe", "partial-unsubscribe");
+        publisher.registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(afterPartialUnsubscribe)));
+        awaitEvent(second, "the remaining listener must stay active",
+            result -> containsEndpoint(result, PROTOCOL_A2A,
+                afterPartialUnsubscribe.getUri()));
+        TimeUnit.MILLISECONDS.sleep(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL + 1000L);
+        assertNull(first.events.poll(), "the removed listener must remain silent");
+
+        reader.unsubscribeAgent(reference, throwing);
+        int secondCallbacksBeforeShutdown = second.eventCount.get();
+        reader.shutdown();
+        Endpoint afterShutdown = endpoint(randomPort(), "/shutdown", "shutdown");
+        publisher.registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(afterShutdown)));
+        TimeUnit.MILLISECONDS.sleep(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL + 1000L);
+        assertEquals(secondCallbacksBeforeShutdown, second.eventCount.get(),
+            "shutdown must suppress every later polling callback");
     }
     
     @Test
@@ -796,7 +864,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             result -> VERSION_2.equals(result.getVersion()));
         assertEquals(VERSION_2, service.discoverAgent(stableReference).getVersion());
         
-        AgentCatalogEntry versionTwoCatalog = searchOne(service, agentName);
+        AgentCatalogEntry versionTwoCatalog =
+            waitForCatalog(service, agentName, VERSION_2, 2);
         assertEquals(VERSION_2, versionTwoCatalog.getLatestVersion());
         assertEquals(Arrays.asList(VERSION_2, VERSION),
             Arrays.asList(versionTwoCatalog.getVersions().get(0).getVersion(),
@@ -821,7 +890,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             versionCommand(agentName, VERSION_3));
         awaitEvent(latestListener, "offlining latest recalculates to Version 2",
             result -> VERSION_2.equals(result.getVersion()));
-        assertEquals(VERSION_2, searchOne(service, agentName).getLatestVersion());
+        assertEquals(VERSION_2,
+            waitForCatalogLatest(service, agentName, VERSION_2).getLatestVersion());
         maintainer.online(Constants.DEFAULT_NAMESPACE_ID,
             versionCommand(agentName, VERSION_3));
         awaitEvent(latestListener, "onlining Version 3 restores latest",
@@ -1865,6 +1935,17 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result.get();
     }
 
+    private AgentCatalogEntry waitForCatalogLatest(AiService service, String agentName,
+        String latestVersion) throws Exception {
+        AtomicReference<AgentCatalogEntry> result = new AtomicReference<>();
+        waitUntilLong("Search catalog should converge for " + agentName, () -> {
+            AgentCatalogEntry entry = searchOne(service, agentName);
+            result.set(entry);
+            return entry != null && latestVersion.equals(entry.getLatestVersion());
+        });
+        return result.get();
+    }
+
     private void waitForSearchAbsent(AiService service, String agentName) throws Exception {
         waitUntilLong("Agent with no online Version should leave Search: " + agentName,
             () -> searchOne(service, agentName) == null);
@@ -1922,6 +2003,21 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         fail(reason);
         return null;
     }
+
+    private NacosAgentDiscoveryEvent awaitDiscoveryEvent(RecordingAgentEventListener listener,
+        String reason, Predicate<NacosAgentDiscoveryEvent> predicate) throws Exception {
+        long deadline = System.currentTimeMillis() + POLLING_TIMEOUT_MILLIS;
+        while (System.currentTimeMillis() < deadline) {
+            long remaining = deadline - System.currentTimeMillis();
+            NacosAgentDiscoveryEvent event =
+                listener.events.poll(Math.max(1L, remaining), TimeUnit.MILLISECONDS);
+            if (event != null && predicate.test(event)) {
+                return event;
+            }
+        }
+        fail(reason);
+        return null;
+    }
     
     private void waitUntilLong(String reason, CheckedCondition condition) throws Exception {
         long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
@@ -1960,10 +2056,28 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         private final BlockingQueue<AgentDiscoveryResult> events =
             new LinkedBlockingQueue<>();
+
+        private final AtomicInteger eventCount = new AtomicInteger();
         
         @Override
         public void onEvent(NacosAgentDiscoveryEvent event) {
+            eventCount.incrementAndGet();
             events.add(event.getAgentDiscoveryResult());
+        }
+    }
+
+    private static final class RecordingAgentEventListener
+        extends AbstractNacosAgentDiscoveryListener {
+
+        private final BlockingQueue<NacosAgentDiscoveryEvent> events =
+            new LinkedBlockingQueue<>();
+
+        private final AtomicInteger eventCount = new AtomicInteger();
+
+        @Override
+        public void onEvent(NacosAgentDiscoveryEvent event) {
+            eventCount.incrementAndGet();
+            events.add(event);
         }
     }
     
