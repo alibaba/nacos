@@ -79,11 +79,11 @@ guide, not as a final OpenAPI export.
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 89 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 101 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
-| `/v3/console/ai/*` | 67 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
+| `/v3/console/ai/*` | 79 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
 | `/v3/console/copilot/*` | 6 | GET, POST | Config plus SSE copilot operations. |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | User login and management in default auth plugin. |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | Role management in default auth plugin. |
@@ -250,10 +250,11 @@ Console `/runtime-endpoints` path.
 
 ## 9. Approved MCP Lifecycle Surface
 
-The following paths are the Experimental target management surface from the
-[MCP Server Spec](../ai/mcp-server-spec.md). They are not part of the current
-implemented inventory until their controllers, forms, authorization, domain
-services, and integration tests are present.
+The following paths are the Experimental management surface implemented from
+the [MCP Server Spec](../ai/mcp-server-spec.md). They are available only after
+the one-way MCP management authority reaches `LIFECYCLE_MANAGED`; before that
+cutover, a valid request fails with `RESOURCE_CONFLICT` and does not mutate
+legacy MCP state.
 
 Admin uses `/v3/admin/ai/mcp`; Console uses `/v3/console/ai/mcp` as a UI facade
 over the same relative lifecycle contract:
@@ -271,6 +272,25 @@ over the same relative lifecycle contract:
 | `/offline` | POST | Take an online Version offline and repair latest when needed. |
 | `/labels` | PUT | Update custom labels while ignoring a client-provided `latest`. |
 
+All routes use form/query parameters. The common identity fields are
+`namespaceId` (optional, default `public`), required `mcpName`, and, except for
+`/versions` and `/labels`, required exact `version`. `/versions` additionally
+accepts optional `status` plus bounded `pageNo` and `pageSize`.
+
+`POST` and `PUT /draft` additionally accept required JSON
+`serverSpecification` and optional JSON `toolSpecification`,
+`resourceSpecification`, and `endpointSpecification`. The outer `mcpName` and
+`version` are canonical. Repeated name or Version fields in
+`serverSpecification` must match them, and `serverSpecification.id` is
+rejected. `/labels` accepts a JSON string map; blank input clears custom labels
+while preserving server-managed labels.
+
+Version list results use `Page<McpLifecycleVersionSummary>`. Exact reads and
+draft writes return `McpLifecycleVersionDetail`, including lifecycle metadata
+and Server/Tools/Resources content without the internal MCP ID. Lifecycle
+commands return the resulting summary, draft deletion returns an empty success
+result, and label replacement returns the effective label map.
+
 Existing MCP create/update/delete paths and parameter shapes remain
 compatibility-only direct-online facades. They are not copied into the new
 lifecycle forms. In particular, same-Version content overwrite remains
@@ -287,6 +307,13 @@ fields remain wire-compatible.
 This target does not add MCP Client HTTP query, release, endpoint, heartbeat,
 or subscription paths. HTTP parity with the existing gRPC/Java Client surface
 is deferred to a separate design after lifecycle hosting is complete.
+
+In an embedded or standalone Console process, the Console facade delegates to
+the same lifecycle application service as Admin. Console-only remote deployment
+requires the typed Maintainer lifecycle transport planned by the next MCP
+governance stage; until that transport is present, these new Console lifecycle
+routes return `API_FUNCTION_DISABLED` in remote mode rather than falling back
+to a legacy or ID-based write path.
 
 ## 10. Documentation Gap Notes
 

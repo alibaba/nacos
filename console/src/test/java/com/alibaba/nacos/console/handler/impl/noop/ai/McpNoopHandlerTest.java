@@ -70,6 +70,34 @@ class McpNoopHandlerTest {
     }
     
     @Test
+    void standardLifecycleMethodsThrowDisabled() {
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.listLifecycleVersions("ns", "name", null, 1, 10));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.getLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.createLifecycleDraft("ns", null, null, null, null));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.updateLifecycleDraft("ns", null, null, null, null));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.deleteLifecycleDraft("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.updateLifecycleLabels("ns", "name", null));
+    }
+    
+    @Test
     void validateImport() {
         assertThrows(NacosApiException.class,
             () -> mcpNoopHandler.validateImport("ns", new McpServerImportRequest()));

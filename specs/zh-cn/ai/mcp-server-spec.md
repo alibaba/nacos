@@ -256,6 +256,10 @@ Label 和 Delete 规则。通过标准生命周期 API 发布的内容不可变�
 Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像相同的
 相对操作。精确路由由 [V3 HTTP API 范围](../http-api/v3-api-surface.md)定义。
 
+这些标准路由只在管理权威达到 `LIFECYCLE_MANAGED` 后启用。Embedded 和 Standalone Console
+直接使用相同的 Application Service。Console-only Remote 部署必须使用 Typed Maintainer Lifecycle
+Transport；该 Transport 可用前，Remote Handler 返回能力未启用，且不得回退到 Legacy Write。
+
 ### 6.2 历史 Direct-Online Facade
 
 现有 Admin、Console、Maintainer SDK、Java Client SDK 和 gRPC wire shape 保持兼容，
@@ -290,6 +294,10 @@ Draft 按以下顺序写入：
 4. 更新 Resource 工作指针。
 
 Draft 不加入历史 Manifest。
+
+删除精确 Draft 时，先通过 MCP Storage 清理内容，清理成功后删除 Version Row，最后清除匹配的
+Resource Working Pointer。Storage 或 Row 删除中断时，保留的 Pointer 是重试锚点；如果 Row 已经
+删除，重试可以在不再依赖已删除 Content Descriptor 的情况下清除 Pointer。
 
 Publish 或 Online 按以下顺序执行：
 

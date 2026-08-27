@@ -18,6 +18,9 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -34,6 +37,8 @@ import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 /**
  * Remote implementation of Mcp handler.
  *
@@ -43,6 +48,9 @@ import org.springframework.stereotype.Service;
 @EnabledRemoteHandler
 @EnabledAiHandler
 public class McpRemoteHandler implements McpHandler {
+    
+    private static final String LIFECYCLE_REMOTE_MESSAGE =
+        "Remote MCP lifecycle management requires the typed Maintainer SDK lifecycle API";
     
     private final NacosMaintainerClientHolder clientHolder;
     
@@ -99,6 +107,82 @@ public class McpRemoteHandler implements McpHandler {
             version);
     }
     
+    @Override
+    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+        throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        String mcpName, String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
+    @Override
+    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+        Map<String, String> labels) throws NacosException {
+        throw lifecycleDisabled();
+    }
+    
     @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
@@ -116,5 +200,10 @@ public class McpRemoteHandler implements McpHandler {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             "MCP import functionality is not supported in remote mode");
+    }
+    
+    private NacosApiException lifecycleDisabled() {
+        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED, LIFECYCLE_REMOTE_MESSAGE);
     }
 }

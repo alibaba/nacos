@@ -37,10 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     name filters; delete removes the server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
- *     version and invalid custom ID are rejected with HTTP 400. The legacy import endpoints return HTTP 410 by
- *     default, remain available behind the shared compatibility switch through Nacos 3.3.x, and are planned for
- *     removal in 3.4.0. MCP runtime tool import has a separate scenario class because its outbound-network policy is
- *     independent from MCP resource CRUD.
+ *     version and invalid custom ID are rejected with HTTP 400. Standard lifecycle routes require name/version,
+ *     reject nested mcpId, and remain non-mutating until the permanent managed cutover. The legacy import endpoints
+ *     return HTTP 410 by default, remain available behind the shared compatibility switch through Nacos 3.3.x, and
+ *     are planned for removal in 3.4.0. MCP runtime tool import has a separate scenario class because its
+ *     outbound-network policy is independent from MCP resource CRUD.
  *     Console currently accepts {@code resourceSpecification} but does not persist it because the controller does
  *     not parse resources.
  *     </li>
@@ -152,6 +153,25 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 ErrorCode.API_DEPRECATED, "POST /v3/console/ai/import/validate");
         assertError(postRaw(CONSOLE_MCP_IMPORT_EXECUTE_PATH, Query.newInstance()), 410,
                 ErrorCode.API_DEPRECATED, "POST /v3/console/ai/import/execute");
+    }
+
+    @Test
+    public void testStandardLifecycleApiIdentityAndCutoverGate() throws Exception {
+        String mcpName = randomAiName("mcp-lifecycle");
+        String version = "1.0.0";
+        assertError(getRaw(CONSOLE_MCP_PATH + "/versions", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpId", "legacy-id")
+                .addParam("pageNo", "1").addParam("pageSize", "10")), 400,
+                ErrorCode.PARAMETER_MISSING, "mcpName");
+        assertError(getRaw(CONSOLE_MCP_PATH + "/version", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)), 400,
+                ErrorCode.PARAMETER_MISSING, "version");
+        Query nestedId = mcpLifecycleDraftQuery(mcpName, version).addParam(
+                "serverSpecification", "{\"id\":\"legacy-id\",\"protocol\":\"stdio\"}");
+        assertError(postRaw(CONSOLE_MCP_PATH + "/draft", nestedId), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "does not accept serverSpecification.id");
+
+        assertMcpLifecycleAuthorityBoundary(CONSOLE_MCP_PATH, mcpName, version);
     }
 
 }
