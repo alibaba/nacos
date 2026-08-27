@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.task.engine;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.task.NacosTask;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -94,6 +96,46 @@ class TaskExecuteWorkerTest {
     }
     
     @Test
+    @DisplayName("tryProcess should reject without blocking when queue is full or closed")
+    void testTryProcessAdmission() throws Exception {
+        CountDownLatch executing = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        TaskExecuteWorker boundedWorker =
+            new TaskExecuteWorker("bounded", 0, 1, null, 1);
+        try {
+            AbstractExecuteTask blocking = new AbstractExecuteTask() {
+                
+                @Override
+                public void run() {
+                    executing.countDown();
+                    try {
+                        release.await(2, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            };
+            assertTrue(boundedWorker.tryProcess(blocking));
+            assertTrue(executing.await(2, TimeUnit.SECONDS));
+            assertTrue(boundedWorker.tryProcess(new NoopExecuteTask()));
+            assertFalse(boundedWorker.tryProcess(new NoopExecuteTask()));
+            release.countDown();
+            boundedWorker.shutdown();
+            assertFalse(boundedWorker.tryProcess(new NoopExecuteTask()));
+        } finally {
+            release.countDown();
+            boundedWorker.shutdown();
+        }
+    }
+    
+    @Test
+    @DisplayName("tryProcess should reject tasks unsupported by execute workers")
+    void testTryProcessRejectsUnsupportedTask() {
+        NacosTask unsupported = () -> true;
+        assertFalse(worker.tryProcess(unsupported));
+    }
+    
+    @Test
     @DisplayName("shutdown should clear queue and set closed flag")
     void testShutdown() throws NacosException {
         worker.shutdown();
@@ -107,5 +149,12 @@ class TaskExecuteWorkerTest {
         TaskExecuteWorker customWorker = new TaskExecuteWorker("custom", 0, 1, customLogger);
         assertEquals("custom_0%1", customWorker.getName());
         customWorker.shutdown();
+    }
+    
+    private static class NoopExecuteTask extends AbstractExecuteTask {
+        
+        @Override
+        public void run() {
+        }
     }
 }

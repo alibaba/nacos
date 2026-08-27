@@ -72,6 +72,24 @@ public class NacosExecuteTaskExecuteEngine
         worker.process(task);
     }
     
+    /**
+     * Try to submit one task without waiting for a full worker queue.
+     *
+     * <p>Callers using this path must retain recoverable source state when the task is rejected.
+     * Existing {@link #addTask(Object, AbstractExecuteTask)} behavior remains unchanged.</p>
+     *
+     * @param tag task dispatch tag
+     * @param task execute task
+     * @return {@code true} when accepted by a processor or worker queue
+     */
+    public boolean tryAddTask(Object tag, AbstractExecuteTask task) {
+        NacosTaskProcessor processor = getProcessor(tag);
+        if (null != processor) {
+            return processor.process(task);
+        }
+        return getWorker(tag).tryProcess(task);
+    }
+    
     private TaskExecuteWorker getWorker(Object tag) {
         int idx = (tag.hashCode() & Integer.MAX_VALUE) % workersCount();
         return executeWorkers[idx];

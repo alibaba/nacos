@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
+import com.alibaba.nacos.ai.service.agent.watch.AgentProjectionChangeNotifier;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
@@ -100,6 +101,9 @@ public class AgentOperationService {
     private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
     
+    private AgentProjectionChangeNotifier projectionChangeNotifier =
+        AgentProjectionChangeNotifier.NOOP;
+    
     public AgentOperationService(AgentPersistenceService persistenceService,
         AiResourceManager resourceManager, PublishPipelineExecutor publishPipelineExecutor) {
         this.persistenceService = persistenceService;
@@ -112,6 +116,14 @@ public class AgentOperationService {
         AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
         if (resourceIndexMaintenanceService != null) {
             this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
+        }
+    }
+    
+    @Autowired(required = false)
+    public void setAgentProjectionChangeNotifier(
+        AgentProjectionChangeNotifier projectionChangeNotifier) {
+        if (projectionChangeNotifier != null) {
+            this.projectionChangeNotifier = projectionChangeNotifier;
         }
     }
     
@@ -907,6 +919,12 @@ public class AgentOperationService {
             resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE, agentName);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed to schedule Agent search-index maintenance for {} in namespace {}",
+                agentName, namespaceId, e);
+        }
+        try {
+            projectionChangeNotifier.notifyDefinitionChanged(namespaceId, agentName);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to notify Agent Projection change for {} in namespace {}",
                 agentName, namespaceId, e);
         }
     }

@@ -286,6 +286,35 @@ public class AgentDiscoveryApplicationService {
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
         Agent agent = operationService.getAgent(namespaceId, reference.getAgentName());
+        return projectCurrentFact(request, agent);
+    }
+    
+    /**
+     * Project the current complete Discover fact after Watch admission has already authorized the
+     * resource.
+     *
+     * <p>This internal server path deliberately bypasses request-thread visibility so a shared
+     * projection can be recomputed without encoding an Owner in its key. It never grants access or
+     * returns data directly to a caller; every Watch still performs normal authorized Discover
+     * before content reaches a Client.</p>
+     *
+     * @param request canonical Discover request
+     * @return complete current projection
+     * @throws NacosException when the target is unavailable or cannot be projected
+     */
+    public AgentDiscoveryResult projectCurrentFact(AgentDiscoveryRequest request)
+        throws NacosException {
+        RadModelValidator.validate(request);
+        AgentReference reference = request.getReference();
+        Agent agent = persistenceService.getAgent(request.getNamespaceId(),
+            reference.getAgentName());
+        return projectCurrentFact(request, agent);
+    }
+    
+    private AgentDiscoveryResult projectCurrentFact(AgentDiscoveryRequest request, Agent agent)
+        throws NacosException {
+        String namespaceId = request.getNamespaceId();
+        AgentReference reference = request.getReference();
         if (!AiConstants.Agent.RESOURCE_STATUS_ENABLE.equals(agent.getStatus())) {
             throw notFound(reference.getAgentName());
         }
