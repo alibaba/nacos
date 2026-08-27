@@ -57,6 +57,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,12 +70,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
@@ -228,6 +234,27 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_LEASE_DATA_ID,
             forms.get(1).getDataId());
         assertTrue(forms.get(1).getContent().endsWith("|0"));
+    }
+    
+    @Test
+    void testLostLeaseSkipsCutoverAndProgress() throws Exception {
+        ScheduledExecutorService leaseExecutor = mock(ScheduledExecutorService.class);
+        ScheduledFuture<?> renewal = mock(ScheduledFuture.class);
+        ReflectionTestUtils.setField(task, "leaseExecutor", leaseExecutor);
+        when(configOperationService.publishConfig(any(), any(), isNull())).thenReturn(true)
+            .thenThrow(new IllegalStateException("renew failed"));
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            return renewal;
+        }).when(leaseExecutor).scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(),
+            eq(TimeUnit.MILLISECONDS));
+        
+        task.executeReconciliation();
+        
+        verify(managementStateService, never()).tryCompleteCutover(anyBoolean());
+        verify(renewal).cancel(false);
+        verify(configOperationService, org.mockito.Mockito.times(2))
+            .publishConfig(any(), any(), isNull());
     }
     
     @Test

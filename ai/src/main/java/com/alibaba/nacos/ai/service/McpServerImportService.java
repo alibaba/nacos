@@ -254,7 +254,7 @@ public class McpServerImportService {
             McpResourceSpecification resourceSpec = server.getResourceSpec();
             McpServerBasicInfo basicInfo = generateMcpBasicInfo(server);
             McpEndpointSpec endpointSpec = generateEndpointSpec(server);
-            if (item.isExists() && overrideExisting) {
+            if (item.isExists()) {
                 operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec,
                     resourceSpec, endpointSpec,
                     true);

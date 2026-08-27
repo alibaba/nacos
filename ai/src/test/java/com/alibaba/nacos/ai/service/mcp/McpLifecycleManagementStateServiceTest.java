@@ -160,6 +160,7 @@ class McpLifecycleManagementStateServiceTest {
         assertRejectedMarker(response(
             ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT, "conflict"));
         assertRejectedMarker(found(" "));
+        assertRejectedMarker(found("null"));
         assertRejectedMarker(found("not-json"));
         assertRejectedMarker(found(markerJson(2,
             McpLifecycleManagementStateService.LIFECYCLE_MANAGED_STATE, 1L)));
@@ -230,15 +231,24 @@ class McpLifecycleManagementStateServiceTest {
     void tryCompleteCutoverShouldKeepSyncingWithoutClusterMembers() {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
             .thenReturn(notFound());
-        when(serverMemberManager.allMembers()).thenReturn(Collections.emptyList());
+        when(serverMemberManager.allMembers()).thenReturn(null, Collections.emptyList(),
+            Collections.singletonList(null));
         when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
             .thenReturn(true);
         
-        CutoverStatus status = service.tryCompleteCutover(true);
+        CutoverStatus nullMembers = service.tryCompleteCutover(true);
+        CutoverStatus emptyMembers = service.tryCompleteCutover(true);
+        CutoverStatus nullMember = service.tryCompleteCutover(true);
         
-        assertFalse(status.isMembersReady());
-        assertTrue(status.isSearchReady());
-        assertFalse(status.isManaged());
+        assertFalse(nullMembers.isMembersReady());
+        assertFalse(emptyMembers.isMembersReady());
+        assertFalse(nullMember.isMembersReady());
+        assertTrue(nullMembers.isSearchReady());
+        assertTrue(emptyMembers.isSearchReady());
+        assertTrue(nullMember.isSearchReady());
+        assertFalse(nullMembers.isManaged());
+        assertFalse(emptyMembers.isManaged());
+        assertFalse(nullMember.isManaged());
         verifyNoInteractions(configOperationService);
     }
     
@@ -308,9 +318,11 @@ class McpLifecycleManagementStateServiceTest {
     
     @Test
     void localCapabilityShouldFailClosed() {
+        Member unsupported = new Member();
         Member supported = supportedMember();
-        when(serverMemberManager.getSelf()).thenReturn(null, supported);
+        when(serverMemberManager.getSelf()).thenReturn(null, unsupported, supported);
         
+        assertFalse(service.localMemberSupportsManagedLifecycle());
         assertFalse(service.localMemberSupportsManagedLifecycle());
         assertTrue(service.localMemberSupportsManagedLifecycle());
         

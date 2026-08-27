@@ -35,13 +35,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -97,6 +100,13 @@ class McpCanonicalAuthorizationServiceTest {
         assertNotNull(defaultService);
         defaultService.authorizeIdOnly(NAMESPACE_ID, MCP_NAME, MCP_NAME, MCP_ID,
             ActionTypes.READ);
+        
+        @SuppressWarnings("unchecked")
+        Function<String, Optional<AuthPluginService>> authPluginProvider =
+            (Function<String, Optional<AuthPluginService>>) ReflectionTestUtils.getField(
+                defaultService, "authPluginProvider");
+        assertNotNull(authPluginProvider);
+        assertTrue(authPluginProvider.apply("missing-auth-plugin").isEmpty());
     }
     
     @Test
