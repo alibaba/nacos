@@ -301,6 +301,13 @@ The Admin prefix is `/v3/admin/ai/mcp`. Console mirrors the same relative
 operations under `/v3/console/ai/mcp`. Exact routes are listed in the
 [V3 HTTP API Surface](../http-api/v3-api-surface.md).
 
+These standard routes are enabled only after management authority reaches
+`LIFECYCLE_MANAGED`. Embedded and standalone Console use the same application
+service directly. A Console-only remote deployment must use the typed
+Maintainer lifecycle transport; until that transport is available, the remote
+handler reports the capability as disabled and must not fall back to a legacy
+write.
+
 ### 6.2 Historical Direct-Online Facades
 
 Existing Admin, Console, Maintainer SDK, Java Client SDK, and gRPC wire shapes
@@ -338,6 +345,12 @@ A draft write uses this order:
 4. update the Resource working pointer.
 
 A draft is not added to the historical Manifest.
+
+Deleting an exact draft uses MCP Storage cleanup first, removes the Version row
+after cleanup succeeds, and clears the matching Resource working pointer last.
+The retained pointer is the retry anchor if storage or row deletion is
+interrupted. A retry after the row has already been removed clears that pointer
+without requiring the deleted content descriptor.
 
 Publish or online uses this order:
 

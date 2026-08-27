@@ -38,6 +38,8 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -830,6 +832,313 @@ class McpLifecycleOperationServiceTest {
         
         assertThrows(NacosException.class,
             () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testStandardDraftCreateUpdateListAndLabelsUseLifecycleRows() throws Exception {
+        McpToolSpecification tools = new McpToolSpecification();
+        McpResourceSpecification resources = resourceSpecification();
+        
+        McpLifecycleVersionDetail created = service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "draft"), tools, resources, null);
+        
+        assertEquals(NAMESPACE_ID, created.getNamespaceId());
+        assertEquals(MCP_NAME, created.getMcpName());
+        assertEquals(VERSION_ONE, created.getVersion());
+        assertEquals(AiResourceConstants.VERSION_STATUS_DRAFT, created.getStatus());
+        assertNull(created.getServerSpecification().getId());
+        assertNotNull(created.getToolSpecification());
+        assertNotNull(created.getResourceSpecification());
+        assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
+        assertNull(manifest.get());
+        
+        Page<McpLifecycleVersionSummary> page = service.listLifecycleVersions(NAMESPACE_ID,
+            MCP_NAME, AiResourceConstants.VERSION_STATUS_DRAFT, 1, 10);
+        assertEquals(1, page.getTotalCount());
+        assertEquals(VERSION_ONE, page.getPageItems().get(0).getVersion());
+        assertFalse(page.getPageItems().get(0).getLatest());
+        
+        McpServerBasicInfo replacement = server(VERSION_ONE, "updated draft");
+        McpLifecycleVersionDetail updated = service.updateLifecycleDraft(NAMESPACE_ID,
+            replacement, null, null, null);
+        assertEquals("updated draft", updated.getDescription());
+        assertNull(updated.getToolSpecification());
+        assertNull(updated.getResourceSpecification());
+        assertEquals("updated draft",
+            service.getLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE).getDescription());
+        
+        Map<String, String> labels = service.updateLifecycleLabels(NAMESPACE_ID, MCP_NAME,
+            Map.of("candidate", VERSION_TWO));
+        assertEquals(VERSION_TWO, labels.get("candidate"));
+        assertNull(labels.get(AiResourceConstants.LABEL_LATEST));
+        verify(indexMaintenanceService, times(3)).schedule(NAMESPACE_ID,
+            AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
+    }
+    
+    @Test
+    void testStandardDraftCreateUsesExistingResourceAndRejectsDuplicateVersion()
+        throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
+            null);
+        service.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        
+        McpLifecycleVersionDetail second = service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_TWO, "second"), null, null, null);
+        
+        assertEquals(VERSION_TWO, second.getVersion());
+        assertEquals(VERSION_TWO, versionInfo(resource.get()).getEditingVersion());
+        service.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, VERSION_TWO);
+        assertThrows(NacosException.class, () -> service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "duplicate"), null, null, null));
+    }
+    
+    @Test
+    void testStandardDraftInsertFailureCanRetryWithoutWorkingPointer() throws Exception {
+        when(versionPersistService.insert(any(AiResourceVersion.class))).thenReturn(0L);
+        
+        assertThrows(NacosException.class, () -> service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "draft"), null, null, null));
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertNull(versions.get(VERSION_ONE));
+        
+        setUpVersionRepository();
+        McpLifecycleVersionDetail retried = service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "draft"), null, null, null);
+        assertEquals(VERSION_ONE, retried.getVersion());
+        assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
+    }
+    
+    @Test
+    void testStandardDraftMapsDuplicateVersionInsert() throws Exception {
+        when(versionPersistService.insert(any(AiResourceVersion.class)))
+            .thenThrow(new DuplicateKeyException("duplicate"));
+        
+        assertThrows(NacosException.class, () -> service.createLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "draft"), null, null, null));
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+    }
+    
+    @Test
+    void testStandardVersionSummaryHandlesTimestampBoundaries() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        AiResourceVersion row = versions.get(VERSION_ONE);
+        row.setGmtCreate(null);
+        row.setGmtModified(new Timestamp(42L));
+        
+        McpLifecycleVersionSummary summary = service.listLifecycleVersions(NAMESPACE_ID,
+            MCP_NAME, null, 1, 10).getPageItems().get(0);
+        
+        assertNull(summary.getCreateTime());
+        assertEquals(42L, summary.getUpdateTime());
+    }
+    
+    @Test
+    void testStandardVersionListHandlesMissingSourceAndItems() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        Page<AiResourceVersion> pageWithoutItems = new Page<>();
+        pageWithoutItems.setPageItems(null);
+        AtomicLong lifecycleListCalls = new AtomicLong();
+        when(versionPersistService.list(anyString(), anyString(), anyString(), any(), anyInt(),
+            anyInt())).thenAnswer(invocation -> {
+                int pageSize = invocation.getArgument(5);
+                if (pageSize == 10) {
+                    return lifecycleListCalls.getAndIncrement() == 0 ? null : pageWithoutItems;
+                }
+                return versionPage(invocation.getArgument(3), invocation.getArgument(4));
+            });
+        
+        assertTrue(service.listLifecycleVersions(NAMESPACE_ID, MCP_NAME, null, 1, 10)
+            .getPageItems().isEmpty());
+        assertTrue(service.listLifecycleVersions(NAMESPACE_ID, MCP_NAME, null, 1, 10)
+            .getPageItems().isEmpty());
+    }
+    
+    @Test
+    void testStandardSubmitPublishesDirectlyAndRejectsOnlineResubmit() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        
+        McpLifecycleVersionSummary published = service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, published.getStatus());
+        assertTrue(published.getLatest());
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertEquals(1, versionInfo(resource.get()).getOnlineCnt());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+        assertNotNull(service.getLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE)
+            .getServerSpecification().getVersionDetail().getRelease_date());
+        assertThrows(NacosException.class, () -> service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+    }
+    
+    @Test
+    void testStandardSubmitSupportsReviewingWorkingPointer() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        versions.get(VERSION_ONE).setStatus(AiResourceConstants.VERSION_STATUS_REVIEWING);
+        ResourceVersionInfo info = versionInfo(resource.get());
+        info.setEditingVersion(null);
+        info.setReviewingVersion(VERSION_ONE);
+        resource.get().setVersionInfo(JacksonUtils.toJson(info));
+        
+        McpLifecycleVersionSummary summary = service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, summary.getStatus());
+        assertNull(versionInfo(resource.get()).getReviewingVersion());
+    }
+    
+    @Test
+    void testStandardPublishRetryConvergesManifestWithoutDoubleCounting() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        versions.get(VERSION_ONE).setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        ResourceVersionInfo info = versionInfo(resource.get());
+        info.setEditingVersion(null);
+        info.setReviewingVersion(VERSION_ONE);
+        resource.get().setVersionInfo(JacksonUtils.toJson(info));
+        failNextManifestPublish.set(true);
+        
+        assertThrows(NacosException.class, () -> service.publishLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE,
+            versions.get(VERSION_ONE).getStatus());
+        
+        McpLifecycleVersionSummary retried = service.publishLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, retried.getStatus());
+        assertEquals(1, versionInfo(resource.get()).getOnlineCnt());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+    }
+    
+    @Test
+    void testStandardOnlineAndOfflineRetriesConvergeServingProjection() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        service.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        service.offlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        service.offlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        assertNull(manifest.get());
+        failNextManifestPublish.set(true);
+        
+        assertThrows(NacosException.class, () -> service.onlineLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE,
+            versions.get(VERSION_ONE).getStatus());
+        
+        service.onlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+        assertEquals(1, versionInfo(resource.get()).getOnlineCnt());
+    }
+    
+    @Test
+    void testStandardForcePublishRejectsTerminalStateBeforeContentMutation() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        AiResourceVersion row = versions.get(VERSION_ONE);
+        row.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        McpVersionStorageDescriptor descriptor =
+            McpVersionStorageDescriptorSerializer.deserialize(row.getStorage());
+        String retained = JacksonUtils.toJson(contents.get(storageKey(descriptor)));
+        
+        assertThrows(NacosException.class, () -> service.forcePublishLifecycleVersion(
+            NAMESPACE_ID, MCP_NAME, VERSION_ONE));
+        
+        assertEquals(retained, JacksonUtils.toJson(contents.get(storageKey(descriptor))));
+        assertNull(manifest.get());
+    }
+    
+    @Test
+    void testStandardForcePublishDraftCompletesServingProjection() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        
+        McpLifecycleVersionSummary summary = service.forcePublishLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, summary.getStatus());
+        assertTrue(summary.getLatest());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+    }
+    
+    @Test
+    void testStandardDeleteDraftRejectsNonDraftRow() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        versions.get(VERSION_ONE).setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        
+        assertThrows(NacosException.class, () -> service.deleteLifecycleDraft(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+        assertNotNull(versions.get(VERSION_ONE));
+    }
+    
+    @Test
+    void testStandardUpdateDraftRejectsChangedWorkingPointer() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        ResourceVersionInfo info = versionInfo(resource.get());
+        info.setEditingVersion(VERSION_TWO);
+        resource.get().setVersionInfo(JacksonUtils.toJson(info));
+        
+        assertThrows(NacosException.class, () -> service.updateLifecycleDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "changed"), null, null, null));
+    }
+    
+    @Test
+    void testStandardDeleteDraftRetriesStorageFailureBeforeClearingPointer() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        failNextStorageDelete.set(true);
+        
+        assertThrows(NacosException.class, () -> service.deleteLifecycleDraft(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+        assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
+        assertNotNull(versions.get(VERSION_ONE));
+        assertFalse(contents.isEmpty());
+        
+        service.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertNull(versions.get(VERSION_ONE));
+        assertTrue(contents.isEmpty());
+    }
+    
+    @Test
+    void testStandardDeleteDraftRetryClearsPointerAfterVersionRowRemoved() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        McpVersionStorageDescriptor descriptor = McpVersionStorageDescriptorSerializer.deserialize(
+            versions.get(VERSION_ONE).getStorage());
+        contents.remove(storageKey(descriptor));
+        versions.remove(VERSION_ONE);
+        
+        service.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertNull(versions.get(VERSION_ONE));
+        assertTrue(contents.isEmpty());
+    }
+    
+    @Test
+    void testStandardRedraftIsIdempotentAfterStatusTransition() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        versions.get(VERSION_ONE).setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        ResourceVersionInfo info = versionInfo(resource.get());
+        info.setEditingVersion(null);
+        info.setReviewingVersion(VERSION_ONE);
+        resource.get().setVersionInfo(JacksonUtils.toJson(info));
+        
+        service.redraftLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        service.redraftLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_DRAFT,
+            versions.get(VERSION_ONE).getStatus());
+        assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
+        assertNull(versionInfo(resource.get()).getReviewingVersion());
     }
     
     private void setUpResourceRepository() {

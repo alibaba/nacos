@@ -78,6 +78,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -1311,6 +1312,283 @@ class AiResourceManagerTest {
         assertEquals("v1", deletedVersion.get());
     }
     
+    @Test
+    void doDeleteDraftShouldRejectEditingPointerChangedDuringCas() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        AiResource latest = buildMeta("res");
+        latest.setMetaVersion(2L);
+        latest.setVersionInfo(
+            "{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latest);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter));
+        
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot delete draft"));
+        verifyNoInteractions(deleter);
+    }
+    
+    @Test
+    void doDeleteDraftShouldRejectEditingPointerAppearingDuringReviewingCas() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        AiResource latest = buildMeta("res");
+        latest.setMetaVersion(2L);
+        latest.setVersionInfo("{\"editingVersion\":\"v2\",\"reviewingVersion\":\"v1\","
+            + "\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latest);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter));
+        
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot delete draft"));
+        verifyNoInteractions(deleter);
+    }
+    
+    @Test
+    void doRedraftShouldRecoverAfterStatusChangedBeforePointerCas() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), any())).thenReturn(true);
+        
+        manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1");
+        
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), anyString());
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), captor.capture());
+        ResourceVersionInfo saved =
+            JacksonUtils.toObj(captor.getValue().getVersionInfo(), ResourceVersionInfo.class);
+        assertEquals("v1", saved.getEditingVersion());
+        assertNull(saved.getReviewingVersion());
+    }
+    
+    @Test
+    void doRedraftShouldRejectMissingWorkingPointer() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        AiResource latest = buildMeta("res");
+        latest.setMetaVersion(2L);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latest);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"));
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot redraft"));
+    }
+    
+    @Test
+    void doRedraftShouldRejectOccupiedEditingPointer() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        AiResource latest = buildMeta("res");
+        latest.setMetaVersion(2L);
+        latest.setVersionInfo("{\"editingVersion\":\"v2\",\"reviewingVersion\":\"v1\","
+            + "\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(meta, latest);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doRedraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"));
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot redraft"));
+    }
+    
+    @Test
+    void exactDeleteDraftShouldDeleteStorageAndRowBeforePointer() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), any())).thenReturn(true);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", deleter);
+        
+        InOrder order = inOrder(deleter, aiResourceVersionPersistService,
+            aiResourcePersistService);
+        order.verify(deleter).deleteStorage(version);
+        order.verify(aiResourceVersionPersistService).delete(NAMESPACE_ID, "res", RESOURCE_TYPE,
+            "v1");
+        order.verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), any());
+    }
+    
+    @Test
+    void exactDeleteDraftShouldKeepPointerWhenStorageDeleteFails() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "storage failed"))
+            .when(deleter).deleteStorage(version);
+        
+        assertThrows(NacosException.class, () -> manager.doDeleteDraft(NAMESPACE_ID, "res",
+            RESOURCE_TYPE, "v1", deleter));
+        
+        verify(aiResourceVersionPersistService, never()).delete(anyString(), anyString(),
+            anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
+    }
+    
+    @Test
+    void exactDeleteDraftRetryShouldClearPointerWhenRowAlreadyDeleted() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(null);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), any())).thenReturn(true);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", deleter);
+        
+        verify(deleter, never()).deleteStorage(any());
+        verify(aiResourceVersionPersistService, never()).delete(anyString(), anyString(),
+            anyString(), anyString());
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), captor.capture());
+        assertNull(AiResourceManager.requireVersionInfo(captor.getValue()).getEditingVersion());
+    }
+    
+    @Test
+    void exactDeleteDraftShouldReturnWhenPointerAndRowAreAbsent() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(null);
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        
+        manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", deleter);
+        
+        verifyNoInteractions(deleter);
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
+    }
+    
+    @Test
+    void exactDeleteDraftShouldRejectRowOutsideWorkingPointer() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ignored -> {
+            }));
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot delete draft"));
+    }
+    
+    @Test
+    void exactDeleteDraftShouldRejectNonDraftRow() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        
+        assertThrows(NacosException.class, () -> manager.doDeleteDraft(NAMESPACE_ID, "res",
+            RESOURCE_TYPE, "v1", ignored -> {
+            }));
+    }
+    
+    @Test
+    void exactDeleteDraftShouldClearReviewingPointer() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), any())).thenReturn(true);
+        
+        manager.doDeleteDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ignored -> {
+        });
+        
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+            eq(RESOURCE_TYPE), eq(1L), captor.capture());
+        ResourceVersionInfo saved = AiResourceManager.requireVersionInfo(captor.getValue());
+        assertNull(saved.getReviewingVersion());
+        assertNull(saved.getEditingVersion());
+    }
+    
     // ---- resolveBaseVersion ----
     
     @Test
@@ -1759,6 +2037,31 @@ class AiResourceManagerTest {
         assertEquals("v1", savedInfo.getReviewingVersion());
         assertEquals("v2", savedInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
         assertEquals("v1", savedInfo.getLabels().get("stable"));
+    }
+    
+    @Test
+    void moveToReviewingShouldRejectWorkingPointerChangedDuringCas() {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo(
+            "{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
+        AiResource latest = buildMeta("res");
+        latest.setMetaVersion(2L);
+        latest.setVersionInfo(
+            "{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":0}");
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+            .thenReturn(version);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+            .thenReturn(latest);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> manager.moveToReviewing(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", meta, info));
+        
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("Working version changed, cannot submit review"));
     }
     
     @Test

@@ -158,6 +158,76 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return form;
     }
 
+    protected Query mcpLifecycleVersionQuery(String mcpName, String version) {
+        return Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("mcpName", mcpName).addParam("version", version);
+    }
+
+    protected Query mcpLifecycleDraftQuery(String mcpName, String version) {
+        return mcpLifecycleVersionQuery(mcpName, version).addParam("serverSpecification",
+                mcpServerSpecification(mcpName, version, "lifecycle draft"));
+    }
+
+    protected void assertMcpLifecycleAuthorityBoundary(String basePath, String mcpName,
+            String version) throws Exception {
+        Query listQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("mcpName", mcpName).addParam("status", "ONLINE")
+                .addParam("pageNo", "1").addParam("pageSize", "10");
+        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/versions", listQuery));
+        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/version",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/submit",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/force-publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/redraft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/online",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/offline",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/labels",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("labels", "{}")));
+
+        HttpResponse createResponse = postRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version));
+        if (409 == createResponse.code()) {
+            assertMcpLifecycleCutoverConflict(createResponse);
+            return;
+        }
+        assertEquals(200, createResponse.code(), createResponse.body());
+        JsonNode created = JacksonUtils.toObj(createResponse.body());
+        assertEquals(0, created.path("code").asInt(), created.toString());
+        assertEquals(mcpName, created.path("data").path("mcpName").asText(),
+                created.toString());
+        assertEquals(version, created.path("data").path("version").asText(),
+                created.toString());
+        addCleanup(() -> deleteQuietly(basePath, mcpIdentityQuery(mcpName, null, null)));
+        JsonNode deleted = JacksonUtils.toObj(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)).body());
+        assertEquals(0, deleted.path("code").asInt(), deleted.toString());
+    }
+
+    private void assertMcpLifecycleAbsentOrCutover(HttpResponse response) throws Exception {
+        if (409 == response.code()) {
+            assertMcpLifecycleCutoverConflict(response);
+            return;
+        }
+        assertError(response, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+    }
+
+    private void assertMcpLifecycleCutoverConflict(HttpResponse response) throws Exception {
+        assertError(response, 409, ErrorCode.RESOURCE_CONFLICT,
+                "unavailable before LIFECYCLE_MANAGED cutover");
+    }
+
     protected void deleteMcpServerQuietly(String mcpName, String mcpId) throws Exception {
         deleteQuietly(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, mcpId, null));
     }

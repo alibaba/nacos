@@ -193,12 +193,21 @@ version.
 
 The Admin and Console MCP scenarios also remain the wire-contract regression
 coverage for the compatibility router while management authority is `SYNCING`.
-The one-way `LIFECYCLE_MANAGED` marker is intentionally not activated in the
-shared standalone suite because it cannot be rolled back before subsequent IT
-classes. Focused component tests instead cover the zero-difference, all-member
-capability, and Search-projection gates; permanent marker retry/observation;
-per-request authority pinning; lifecycle create/read/update/delete routing; and
-canonical re-authorization of deprecated ID-only requests.
+They exercise all twelve standard lifecycle routes at their public HTTP
+boundary: name-only identity and exact-Version validation, nested legacy ID
+rejection, case-insensitive status input, and the controlled pre-cutover
+conflict envelope. If background reconciliation has already completed the
+one-way cutover, the same scenario accepts only controlled absent-resource
+responses and verifies one real draft create/delete pair. The test does not
+publish the `LIFECYCLE_MANAGED` marker into the shared standalone process.
+Focused component tests instead cover the
+zero-difference, all-member capability, and Search-projection gates; permanent
+marker retry/observation; per-request authority pinning; lifecycle
+create/read/update/delete and state-transition success paths; storage-first
+draft deletion/retry; and canonical re-authorization of deprecated ID-only
+requests. Embedded and standalone Console use this local lifecycle facade;
+remote Console remains disabled until the typed Maintainer SDK transport is
+introduced, so it does not fall back to the legacy Config-writing path.
 
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. The Search scenario is reusable

@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service.mcp;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -27,6 +29,8 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Routes each complete historical MCP operation to exactly one authority.
@@ -85,10 +89,124 @@ public class McpCompatibilityOperationService implements McpOperationService {
         current().deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
+    /**
+     * Page standard lifecycle Version summaries after the managed cutover.
+     */
+    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        return managed().listLifecycleVersions(namespaceId, mcpName, status, pageNo, pageSize);
+    }
+    
+    /**
+     * Read one exact standard lifecycle Version after the managed cutover.
+     */
+    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().getLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Create one standard MCP draft after the managed cutover.
+     */
+    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return managed().createLifecycleDraft(namespaceId, serverSpecification,
+            toolSpecification, resourceSpecification, endpointSpecification);
+    }
+    
+    /**
+     * Replace one exact standard MCP draft after the managed cutover.
+     */
+    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return managed().updateLifecycleDraft(namespaceId, serverSpecification,
+            toolSpecification, resourceSpecification, endpointSpecification);
+    }
+    
+    /**
+     * Delete one exact standard MCP draft after the managed cutover.
+     */
+    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+        throws NacosException {
+        managed().deleteLifecycleDraft(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Submit one standard MCP Version after the managed cutover.
+     */
+    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().submitLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Publish one standard MCP Version after the managed cutover.
+     */
+    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().publishLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Force-publish one standard MCP Version after the managed cutover.
+     */
+    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        String mcpName, String version) throws NacosException {
+        return managed().forcePublishLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Return one reviewed standard MCP Version to draft after the managed cutover.
+     */
+    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().redraftLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Bring one standard MCP Version online after the managed cutover.
+     */
+    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().onlineLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Take one standard MCP Version offline after the managed cutover.
+     */
+    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return managed().offlineLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    /**
+     * Replace custom MCP labels after the managed cutover.
+     */
+    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+        Map<String, String> labels) throws NacosException {
+        return managed().updateLifecycleLabels(namespaceId, mcpName, labels);
+    }
+    
     private McpOperationService current() throws NacosException {
         McpCompatibilityMode mode = modeResolver.resolve();
         if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {
             return legacyService;
+        }
+        if (!modeResolver.localMemberSupportsManagedLifecycle()) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "This Nacos member cannot process MCP lifecycle-managed requests");
+        }
+        return lifecycleService;
+    }
+    
+    private McpLifecycleOperationService managed() throws NacosException {
+        if (McpCompatibilityMode.LIFECYCLE_MANAGED != modeResolver.resolve()) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                "MCP standard lifecycle APIs are unavailable before LIFECYCLE_MANAGED cutover");
         }
         if (!modeResolver.localMemberSupportsManagedLifecycle()) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,

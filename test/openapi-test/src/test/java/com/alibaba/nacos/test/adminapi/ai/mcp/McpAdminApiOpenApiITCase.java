@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
- *     version, and invalid custom ID are rejected with HTTP 400.</li>
+ *     version, and invalid custom ID are rejected with HTTP 400. Standard lifecycle routes require name/version,
+ *     reject nested mcpId, and remain non-mutating until the permanent managed cutover.</li>
  *     <li>Exception/error handling: duplicate create returns conflict, absent server returns the MCP not-found result
  *     envelope, and malformed JSON is rejected as a controlled validation error instead of HTTP 500.</li>
  * </ul>
@@ -153,6 +154,25 @@ public class McpAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 .addParam("pageNo", "1").addParam("pageSize", "10")).get("data");
         assertEmptyPageShape(emptyPage);
         assertFalse(emptyPage.get("pageItems").elements().hasNext(), emptyPage.toString());
+    }
+
+    @Test
+    public void testStandardLifecycleApiIdentityAndCutoverGate() throws Exception {
+        String mcpName = randomAiName("mcp-lifecycle");
+        String version = "1.0.0";
+        assertError(getRaw(ADMIN_MCP_PATH + "/versions", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpId", "legacy-id")
+                .addParam("pageNo", "1").addParam("pageSize", "10")), 400,
+                ErrorCode.PARAMETER_MISSING, "mcpName");
+        assertError(getRaw(ADMIN_MCP_PATH + "/version", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)), 400,
+                ErrorCode.PARAMETER_MISSING, "version");
+        Query nestedId = mcpLifecycleDraftQuery(mcpName, version).addParam(
+                "serverSpecification", "{\"id\":\"legacy-id\",\"protocol\":\"stdio\"}");
+        assertError(postRaw(ADMIN_MCP_PATH + "/draft", nestedId), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "does not accept serverSpecification.id");
+
+        assertMcpLifecycleAuthorityBoundary(ADMIN_MCP_PATH, mcpName, version);
     }
 
 }
