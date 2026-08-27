@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.sdk;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -85,19 +86,26 @@ public abstract class JavaSdkBaseITCase {
     }
     
     protected AiService createAiService() throws Exception {
-        AiService service = AiFactory.createAiService(sdkProperties());
-        shutdownActions.addFirst(service::shutdown);
+        return createAiService(sdkProperties());
+    }
+
+    protected AiService createAiService(Properties properties) throws Exception {
+        AiService service = createAiServiceWithoutReadiness(properties);
+        AgentSearchRequest probe = new AgentSearchRequest();
+        probe.setAgentNameContains(AI_CONNECTION_PROBE);
+        probe.setPageNo(1);
+        probe.setPageSize(1);
         waitUntil("AI SDK client should connect to server", () -> {
-            try {
-                service.getMcpServer(AI_CONNECTION_PROBE);
-                return true;
-            } catch (NacosException exception) {
-                if (NacosException.NOT_FOUND == exception.getErrCode()) {
-                    return true;
-                }
-                throw exception;
-            }
+            service.searchAgents(probe);
+            return true;
         });
+        return service;
+    }
+
+    protected AiService createAiServiceWithoutReadiness(Properties properties)
+            throws NacosException {
+        AiService service = AiFactory.createAiService(properties);
+        shutdownActions.addFirst(service::shutdown);
         return service;
     }
     

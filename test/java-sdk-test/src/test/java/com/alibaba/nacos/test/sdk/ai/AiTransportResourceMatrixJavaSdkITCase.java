@@ -18,7 +18,6 @@ package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
@@ -255,12 +254,10 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         }
     }
 
-    private AiService createAiService(AgentTransportMode mode) throws NacosException {
+    private AiService createAiService(AgentTransportMode mode) throws Exception {
         Properties properties = sdkProperties();
         properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode.getValue());
-        AiService result = AiFactory.createAiService(properties);
-        addCleanup(result::shutdown);
-        return result;
+        return createAiService(properties);
     }
 
     private AiMaintainerService createAiMaintainerService() throws NacosException {

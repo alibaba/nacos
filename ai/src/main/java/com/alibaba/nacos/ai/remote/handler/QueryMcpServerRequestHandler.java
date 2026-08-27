@@ -69,16 +69,28 @@ public class QueryMcpServerRequestHandler
     private QueryMcpServerResponse doHandler(QueryMcpServerRequest request, RequestMeta meta)
         throws NacosException {
         QueryMcpServerResponse response = new QueryMcpServerResponse();
-        McpServerDetailInfo detailInfo =
-            mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
+        McpServerDetailInfo detailInfo;
+        try {
+            detailInfo = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
                 null, request.getMcpName(), request.getVersion());
+        } catch (NacosException exception) {
+            if (NacosException.NOT_FOUND != exception.getErrCode()) {
+                throw exception;
+            }
+            return buildNotFoundResponse(request, response);
+        }
         if (detailInfo == null) {
-            response.setErrorInfo(NacosException.NOT_FOUND,
-                String.format("MCP server `%s` not found in namespaceId: `%s`",
-                    request.getMcpName(), request.getNamespaceId()));
-            return response;
+            return buildNotFoundResponse(request, response);
         }
         response.setMcpServerDetailInfo(detailInfo);
+        return response;
+    }
+    
+    private QueryMcpServerResponse buildNotFoundResponse(QueryMcpServerRequest request,
+        QueryMcpServerResponse response) {
+        response.setErrorInfo(NacosException.NOT_FOUND,
+            String.format("MCP server `%s` not found in namespaceId: `%s`",
+                request.getMcpName(), request.getNamespaceId()));
         return response;
     }
 }
