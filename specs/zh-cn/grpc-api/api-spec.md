@@ -245,18 +245,19 @@ Payload 清单。
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | 代码式创建 Agent draft，并按 `autoSubmit` 可选执行普通 submit。 |
-| `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | 订阅或取消订阅 Agent Reference 和可选 Filter；订阅时返回不透明 `watchKey` 和当前完整结果。 |
-| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `SNAPSHOT` 或 `TERMINATED` 事件并接收 ACK。 |
+| `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | 安装一个已鉴权且归属当前 Connection 的 Watch，返回不透明 `watchKey`、已观测 fingerprint 和刷新决策，绝不返回 Discover Snapshot。 |
+| `AgentUnsubscribeRpcRequest` | `AgentUnsubscribeRpcResponse` | read | 幂等删除一个归属当前 Connection 的 Watch。 |
+| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | 为一个 `watchKey` 推送 `INVALIDATE`、`REVALIDATE` 或 `TERMINATED` Hint 并接收 ACK。 |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | 完整替换当前 Connection 对一个 Agent 和 Protocol 的 Runtime Endpoint Batch。 |
 | `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | write | 幂等移除当前 Connection 对一个 Agent 和 Protocol 的整份 Runtime Endpoint Publication。 |
 
-在该目标 Binding 中，`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和
-`eventType`。`SNAPSHOT` 必须携带完整 `AgentDiscoveryResult` 且不携带错误；
-`TERMINATED` 不携带 Result，并固定要求 `errorCode=NOT_FOUND`。Client 对两种事件都
-发送 ACK。终止事件只结束共享 Payload Connection 上由该 `watchKey` 标识的 Watch，
-不结束 Connection 或其他 Watch。`AgentSubscribeResponse` 是 Connection 维度不透明
-`watchKey` 的来源，Reconnect 后也由新 Response 提供。这些 Wrapper 仍属于 gRPC
-Binding 对象，不扩展 RAD 的六个根消息。
+在该 Binding 中，`AgentDiscoveryNotifyRequest` 包含 `watchKey` 和
+`eventType`。只有 `INVALIDATE` 可以携带已观测 fingerprint；`REVALIDATE`
+既不携带 fingerprint 也不携带业务内容，`TERMINATED` 必须携带错误码。任何
+Watch Payload 都不携带 `AgentDiscoveryResult`。Client 只在把对应本地 Intent 记录为
+Dirty 后确认该不透明 Key；未知 Key 返回失败 ACK，不影响其他 Watch。完整内容
+始终通过标准的已鉴权 Discover 操作物化。终止 Hint 只结束对应 Watch，不结束共享
+Payload Connection。
 
 Skill ZIP 下载和 AgentSpec 组装属于 Java SDK interface 能力，但当前 Java 客户端
 实现使用 HTTP/config 组合，不对应专用 gRPC payload。

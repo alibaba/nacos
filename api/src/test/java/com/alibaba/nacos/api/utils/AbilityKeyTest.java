@@ -50,8 +50,9 @@ class AbilityKeyTest {
         enumMap.put(AbilityKey.SERVER_AGENT_REGISTRY, false);
         enumMap.put(AbilityKey.SERVER_AGENT_CARD_V1, false);
         enumMap.put(AbilityKey.SERVER_RAD_V1, false);
+        enumMap.put(AbilityKey.SERVER_RAD_WATCH_V1, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(7, stringBooleanMap.size());
+        assertEquals(8, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
@@ -59,6 +60,7 @@ class AbilityKeyTest {
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_REGISTRY.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_AGENT_CARD_V1.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_RAD_V1.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_RAD_WATCH_V1.getName()));
         
         enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
         enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
@@ -66,8 +68,9 @@ class AbilityKeyTest {
         enumMap.put(AbilityKey.SERVER_AGENT_REGISTRY, true);
         enumMap.put(AbilityKey.SERVER_AGENT_CARD_V1, true);
         enumMap.put(AbilityKey.SERVER_RAD_V1, true);
+        enumMap.put(AbilityKey.SERVER_RAD_WATCH_V1, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(7, stringBooleanMap.size());
+        assertEquals(8, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
@@ -75,14 +78,15 @@ class AbilityKeyTest {
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_REGISTRY.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_AGENT_CARD_V1.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_RAD_V1.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_RAD_WATCH_V1.getName()));
     }
     
     @Test
     void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
-        assertEquals(7, actual.size());
+        assertEquals(8, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
-        assertEquals(4, actual.size());
+        assertEquals(5, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
@@ -90,9 +94,9 @@ class AbilityKeyTest {
     @Test
     void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
-        assertEquals(7, actual.size());
+        assertEquals(8, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
-        assertEquals(4, actual.size());
+        assertEquals(5, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }

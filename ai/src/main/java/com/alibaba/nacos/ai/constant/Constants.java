@@ -154,6 +154,14 @@ public class Constants {
         public static final int DEFAULT_MAX_PUBLICATIONS_PER_CLIENT = 100;
         
         /**
+         * Soft watermark for gRPC Watches owned by one client connection.
+         */
+        public static final String MAX_WATCHES_PER_CLIENT_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.max-per-client";
+        
+        public static final int DEFAULT_MAX_WATCHES_PER_CLIENT = 300;
+        
+        /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
          */
         public static final String RESOURCE_TYPE_AGENT = "agent";

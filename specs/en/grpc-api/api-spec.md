@@ -270,19 +270,21 @@ registrations, and negotiated abilities are present in the runtime.
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit`. |
-| `AgentSubscribeRequest` | `AgentSubscribeResponse` | read | Subscribe or unsubscribe an Agent reference and optional filter; subscribe returns an opaque `watchKey` and the current complete result. |
-| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | Push one `SNAPSHOT` or `TERMINATED` event for a `watchKey` and receive an acknowledgement. |
+| `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | Install one authorized connection-owned Watch and return an opaque `watchKey`, observed fingerprint, and refresh decision; never return a discovery snapshot. |
+| `AgentUnsubscribeRpcRequest` | `AgentUnsubscribeRpcResponse` | read | Idempotently remove one Watch owned by the current connection. |
+| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | server push | Push one `INVALIDATE`, `REVALIDATE`, or `TERMINATED` hint for a `watchKey` and receive an acknowledgement. |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | write | Replace the complete runtime Endpoint batch owned by the current connection for one Agent and protocol. |
 | `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | write | Idempotently remove the current connection's whole runtime Endpoint publication for one Agent and protocol. |
 
-For this target binding, `AgentDiscoveryNotifyRequest` contains `watchKey` and
-`eventType`. `SNAPSHOT` requires a complete `AgentDiscoveryResult` and no
-error. `TERMINATED` requires no result and `errorCode=NOT_FOUND`. The client
-acknowledges both event types. A terminal event ends only the identified Watch
-on the shared Payload connection; it does not end the connection or another
-Watch. `AgentSubscribeResponse` is the source of the connection-scoped opaque
-`watchKey`, including after reconnect. These wrappers remain gRPC binding
-objects and do not extend RAD's six root messages.
+For this binding, `AgentDiscoveryNotifyRequest` contains `watchKey` and
+`eventType`. Only `INVALIDATE` may carry an observed fingerprint;
+`REVALIDATE` carries neither fingerprint nor business content, and
+`TERMINATED` requires an error code. No Watch payload carries an
+`AgentDiscoveryResult`. The client acknowledges the opaque key only after
+recording the matching local intent dirty. An unknown key returns a failed
+acknowledgement and does not affect another Watch. Full content is always
+materialized through the standard authorized Discover operation. A terminal
+hint ends only the identified Watch, not its shared Payload connection.
 
 Skill ZIP download and AgentSpec assembly are Java SDK interface capabilities,
 but current Java client implementation uses HTTP/config composition rather than a

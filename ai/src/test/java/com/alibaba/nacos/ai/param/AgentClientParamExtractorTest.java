@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
@@ -125,6 +127,24 @@ class AgentClientParamExtractorTest {
         assertEquals("demo", actual.getAgentName());
         
         assertEmpty(extract(new NotifySubscriberRequest()));
+    }
+    
+    @Test
+    void testRpcWatchExtraction() throws Exception {
+        AgentSubscribeRpcRequest subscribe = new AgentSubscribeRpcRequest();
+        assertEmpty(extract(subscribe));
+        
+        AgentReference reference = new AgentReference();
+        reference.setAgentName("watch-agent");
+        AgentDiscoveryRequest discovery = new AgentDiscoveryRequest();
+        discovery.setNamespaceId("watch-ns");
+        discovery.setReference(reference);
+        subscribe.setDiscoveryRequest(discovery);
+        ParamInfo actual = extract(subscribe);
+        assertEquals("watch-ns", actual.getNamespaceId());
+        assertEquals("watch-agent", actual.getAgentName());
+        
+        assertEmpty(extract(new AgentUnsubscribeRpcRequest()));
     }
     
     private ParamInfo extract(Request request) throws Exception {

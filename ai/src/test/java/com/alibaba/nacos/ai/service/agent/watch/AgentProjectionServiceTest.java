@@ -127,6 +127,28 @@ class AgentProjectionServiceTest {
     }
     
     @Test
+    void testExplicitRevalidationOnlySchedulesActiveProjection() throws Exception {
+        AtomicInteger projects = new AtomicInteger();
+        service = newService(key -> AgentProjectionTestFixtures.available(
+            "fp-" + projects.incrementAndGet(), projects.get()), 5L, 5L, 0L, 10, 1);
+        AgentProjectionKey key = service.retain(
+            AgentProjectionTestFixtures.request("revalidate"));
+        waitUntil(() -> service.getState(key)
+            .map(state -> "fp-1".equals(state.getFingerprint())).orElse(false));
+        
+        service.revalidate(key);
+        waitUntil(() -> projects.get() == 2);
+        assertEquals("fp-2", service.getState(key).get().getFingerprint());
+        
+        assertTrue(service.release(key));
+        service.revalidate(key);
+        TimeUnit.MILLISECONDS.sleep(40L);
+        assertEquals(2, projects.get());
+        service.shutdown();
+        service.revalidate(key);
+    }
+    
+    @Test
     void testListenerFailureIsIsolatedAndRemovalStopsDelivery() throws Exception {
         AgentProjectionProjector projector =
             key -> AgentProjectionTestFixtures.available("listener", 1L);

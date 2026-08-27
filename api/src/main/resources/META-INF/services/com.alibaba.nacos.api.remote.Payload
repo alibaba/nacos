@@ -102,3 +102,9 @@ com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest
 com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse
 com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest
 com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse
+com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest
+com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse
+com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest
+com.alibaba.nacos.api.ai.remote.response.AgentUnsubscribeRpcResponse
+com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest
+com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryNotifyResponse

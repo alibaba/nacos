@@ -189,6 +189,17 @@ public class AgentProjectionService {
     }
     
     /**
+     * Schedule a current-fact revalidation for one active Projection.
+     *
+     * @param key active projection key
+     */
+    public void revalidate(AgentProjectionKey key) {
+        if (!closed.get() && registry.isActive(key)) {
+            taskEngine.retry(key, AgentProjectionChangeReason.RETRY);
+        }
+    }
+    
+    /**
      * Schedule one bounded reconciliation slice over active Projections only.
      */
     void reconcileBatch() {
