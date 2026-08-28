@@ -17,28 +17,68 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.index.CachedMcpServerIndex;
+import com.alibaba.nacos.ai.index.McpCacheIndex;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.index.PlainMcpServerIndex;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityModeResolver;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for McpServerIndexConfiguration.
  */
 class McpServerIndexConfigurationTest {
+    
+    @Test
+    void shouldWireLifecycleGuardIntoCachedIndex() {
+        McpCacheIndexProperties properties = mock(McpCacheIndexProperties.class);
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getSyncIntervalSeconds()).thenReturn(10L);
+        McpServerIndexConfiguration configuration = new McpServerIndexConfiguration(properties);
+        ConfigDetailService configDetailService = mock(ConfigDetailService.class);
+        NamespaceOperationService namespaceOperationService = mock(
+            NamespaceOperationService.class);
+        ConfigQueryChainService queryService = mock(ConfigQueryChainService.class);
+        McpCacheIndex cacheIndex = mock(McpCacheIndex.class);
+        ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<McpCompatibilityModeResolver> provider = mock(ObjectProvider.class);
+        McpCompatibilityModeResolver resolver = mock(McpCompatibilityModeResolver.class);
+        when(provider.getIfAvailable()).thenReturn(resolver);
+        when(resolver.resolve()).thenReturn(McpCompatibilityMode.LIFECYCLE_MANAGED);
+        
+        configuration.cachedMcpServerIndex(configDetailService, namespaceOperationService,
+            queryService, cacheIndex, executor, provider);
+        
+        verify(executor, never()).scheduleWithFixedDelay(any(Runnable.class), anyLong(),
+            anyLong(), any());
+        when(resolver.resolve()).thenReturn(McpCompatibilityMode.SYNCING);
+        configuration.cachedMcpServerIndex(configDetailService, namespaceOperationService,
+            queryService, cacheIndex, executor, provider);
+        verify(executor).scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any());
+    }
     
     @Configuration
     static class TestConfig {

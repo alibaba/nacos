@@ -178,10 +178,14 @@ Resource operators live in the AI Registry domain, not in the import plugin.
 They validate and write artifacts through the resource type's current service
 layer.
 
-For MCP, the initial operator may call the current `McpServerOperationService`
-and related validation services, even though MCP is still backed by Config
-records. When MCP later migrates to `ai_resource`, only the MCP operator should
-change. Import plugins and unified import APIs must remain compatible.
+For MCP, the operator calls the current `McpOperationService` compatibility
+application contract and related validation services. While lifecycle
+reconciliation is `SYNCING`, that complete contract uses the historical
+strategy and immediately reconciles successful writes. After the atomic
+cutover it uses the canonical lifecycle strategy, MCP Version Storage, and
+canonical name-keyed asynchronous Search tasks. Import plugins and unified
+import APIs remain unchanged across the cutover and must not call the removed
+Config-backed `McpServerOperationService` directly.
 
 For Skill, the operator should preserve the Skill package boundary and write
 through the Skill upload or draft lifecycle APIs. After a successful import, if

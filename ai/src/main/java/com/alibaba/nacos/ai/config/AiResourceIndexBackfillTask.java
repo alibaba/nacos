@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexContentLoader;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
@@ -149,7 +149,7 @@ public class AiResourceIndexBackfillTask
     }
     
     AiResourceIndexBackfillTask(AiResourceManager resourceManager,
-        McpOperationService mcpOperationService,
+        McpLifecycleOperationService mcpOperationService,
         AiResourceSearchRepository repository,
         AiResourceIndexMaintenanceService indexMaintenanceService,
         AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,

@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -938,6 +940,56 @@ class CachedMcpServerIndexTest {
         
         // 验证调度任务已启动
         verify(scheduledExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+            any(TimeUnit.class));
+    }
+    
+    @Test
+    void shouldNotStartOrTriggerSyncAfterManagedCutover() {
+        ScheduledExecutorService managedExecutor = mock(ScheduledExecutorService.class);
+        NamespaceOperationService managedNamespace = mock(NamespaceOperationService.class);
+        CachedMcpServerIndex managedIndex = new CachedMcpServerIndex(configDetailService,
+            managedNamespace, configQueryChainService, cacheIndex, managedExecutor, true, 10,
+            () -> false);
+        
+        managedIndex.triggerCacheSync();
+        
+        verify(managedExecutor, never()).scheduleWithFixedDelay(any(Runnable.class), anyLong(),
+            anyLong(), any(TimeUnit.class));
+        verify(managedNamespace, never()).getNamespaceList();
+    }
+    
+    @Test
+    void shouldStopScheduledSyncWhenManagedCutoverCompletes() {
+        ScheduledExecutorService managedExecutor = mock(ScheduledExecutorService.class);
+        ScheduledFuture<?> managedTask = mock(ScheduledFuture.class);
+        ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
+        when(managedExecutor.scheduleWithFixedDelay(taskCaptor.capture(), eq(10L), eq(10L),
+            any(TimeUnit.class))).thenAnswer(invocation -> managedTask);
+        AtomicBoolean historicalIndexRequired = new AtomicBoolean(true);
+        NamespaceOperationService managedNamespace = mock(NamespaceOperationService.class);
+        new CachedMcpServerIndex(configDetailService, managedNamespace,
+            configQueryChainService, cacheIndex, managedExecutor, true, 10,
+            historicalIndexRequired::get);
+        
+        historicalIndexRequired.set(false);
+        taskCaptor.getValue().run();
+        
+        verify(managedTask).cancel(false);
+        verify(managedNamespace, never()).getNamespaceList();
+    }
+    
+    @Test
+    void shouldRetainScheduledSyncWhenModeResolutionFails() {
+        ScheduledExecutorService guardedExecutor = mock(ScheduledExecutorService.class);
+        when(guardedExecutor.scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+            any(TimeUnit.class))).thenAnswer(invocation -> mock(ScheduledFuture.class));
+        
+        new CachedMcpServerIndex(configDetailService, namespaceOperationService,
+            configQueryChainService, cacheIndex, guardedExecutor, true, 10, () -> {
+                throw new IllegalStateException("mode unavailable");
+            });
+        
+        verify(guardedExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
             any(TimeUnit.class));
     }
     

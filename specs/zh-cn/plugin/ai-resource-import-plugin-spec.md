@@ -157,9 +157,11 @@ Artifact 是导入边界对象，不是持久化资源模型。资源 Operator �
 Resource Operator 位于 AI Registry 领域内，不属于导入插件。它们通过资源类型当前的服务层校验并
 写入 artifact。
 
-对 MCP 而言，初始 Operator 可以调用当前 `McpServerOperationService` 和相关校验服务，即使 MCP
-当前仍由 Config 记录承载。未来 MCP 迁移到 `ai_resource` 后，只应修改 MCP Operator。导入插件和
-统一导入 API 应保持兼容。
+对 MCP 而言，Operator 调用当前 `McpOperationService` 完整兼容 application contract 和相关校验
+服务。生命周期 reconciliation 仍处于 `SYNCING` 时，该完整契约使用历史策略，并在写成功后立即
+reconcile；原子切换后则使用标准生命周期策略、MCP Version Storage 和按标准名称调度的异步 Search
+任务。切换前后 Import 插件和统一导入 API 保持不变，且不得再直接调用已经移除的 Config-backed
+`McpServerOperationService`。
 
 对 Skill 而言，Operator 应保持 Skill 包边界，并通过 Skill upload 或 draft 生命周期 API 写入。导入成功后，
 如果 artifact 包含 `sourceMetadata.artifactUrl`，Skill Operator 应将该 URL 记录为导入后资源的来源

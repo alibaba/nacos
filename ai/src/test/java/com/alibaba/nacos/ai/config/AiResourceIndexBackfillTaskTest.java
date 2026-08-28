@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
@@ -103,7 +103,7 @@ class AiResourceIndexBackfillTaskTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpOperationService mcpServerOperationService;
+    private McpLifecycleOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
@@ -341,6 +341,30 @@ class AiResourceIndexBackfillTaskTest {
         
         verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
             PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "deleted-skill");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldScheduleLegacyMcpIdIndexDeletion() throws Exception {
+        AiResourceSearchDocument legacyIdEntry = new AiResourceSearchDocument();
+        legacyIdEntry.setId(1L);
+        legacyIdEntry.setNamespaceId(PUBLIC_NAMESPACE);
+        legacyIdEntry.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
+        legacyIdEntry.setResourceName("legacy-mcp-id");
+        when(repository.scanEntries(eq(PUBLIC_NAMESPACE), anyList(), eq(0L), eq(100)))
+            .thenAnswer(invocation -> {
+                List<?> resourceTypes = invocation.getArgument(1);
+                return resourceTypes.contains(AiResourceConstants.RESOURCE_TYPE_MCP)
+                    ? List.of(legacyIdEntry) : Collections.emptyList();
+            });
+        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, null,
+            "legacy-mcp-id", null)).thenThrow(new NacosException(NacosException.NOT_FOUND,
+                "MCP server not found"));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP, "legacy-mcp-id");
         verifyMarkerReleased();
     }
     
