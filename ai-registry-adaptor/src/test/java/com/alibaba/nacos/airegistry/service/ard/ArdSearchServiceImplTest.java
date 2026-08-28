@@ -22,7 +22,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
@@ -112,7 +112,7 @@ class ArdSearchServiceImplTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpOperationService mcpServerOperationService;
+    private McpLifecycleOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
