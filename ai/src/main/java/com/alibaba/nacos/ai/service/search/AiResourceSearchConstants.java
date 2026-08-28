@@ -49,6 +49,10 @@ public final class AiResourceSearchConstants {
     
     public static final String CHUNK_TYPE_MCP_CONTENT = "mcp_content";
     
+    public static final String CHUNK_TYPE_AGENT_CONTENT = "agent_content";
+    
+    public static final String CHUNK_TYPE_AGENTSPEC_CONTENT = "agentspec_content";
+    
     public static final String CHUNK_TYPE_AI_SUMMARY = "ai_summary";
     
     public static final String CHUNK_TYPE_SEARCH_INTENT = "search_intent";

@@ -158,6 +158,76 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return form;
     }
 
+    protected Query mcpLifecycleVersionQuery(String mcpName, String version) {
+        return Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("mcpName", mcpName).addParam("version", version);
+    }
+
+    protected Query mcpLifecycleDraftQuery(String mcpName, String version) {
+        return mcpLifecycleVersionQuery(mcpName, version).addParam("serverSpecification",
+                mcpServerSpecification(mcpName, version, "lifecycle draft"));
+    }
+
+    protected void assertMcpLifecycleAuthorityBoundary(String basePath, String mcpName,
+            String version) throws Exception {
+        Query listQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("mcpName", mcpName).addParam("status", "ONLINE")
+                .addParam("pageNo", "1").addParam("pageSize", "10");
+        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/versions", listQuery));
+        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/version",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/submit",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/force-publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/redraft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/online",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/offline",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/labels",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("labels", "{}")));
+
+        HttpResponse createResponse = postRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version));
+        if (409 == createResponse.code()) {
+            assertMcpLifecycleCutoverConflict(createResponse);
+            return;
+        }
+        assertEquals(200, createResponse.code(), createResponse.body());
+        JsonNode created = JacksonUtils.toObj(createResponse.body());
+        assertEquals(0, created.path("code").asInt(), created.toString());
+        assertEquals(mcpName, created.path("data").path("mcpName").asText(),
+                created.toString());
+        assertEquals(version, created.path("data").path("version").asText(),
+                created.toString());
+        addCleanup(() -> deleteQuietly(basePath, mcpIdentityQuery(mcpName, null, null)));
+        JsonNode deleted = JacksonUtils.toObj(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)).body());
+        assertEquals(0, deleted.path("code").asInt(), deleted.toString());
+    }
+
+    private void assertMcpLifecycleAbsentOrCutover(HttpResponse response) throws Exception {
+        if (409 == response.code()) {
+            assertMcpLifecycleCutoverConflict(response);
+            return;
+        }
+        assertError(response, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+    }
+
+    private void assertMcpLifecycleCutoverConflict(HttpResponse response) throws Exception {
+        assertError(response, 409, ErrorCode.RESOURCE_CONFLICT,
+                "unavailable before LIFECYCLE_MANAGED cutover");
+    }
+
     protected void deleteMcpServerQuietly(String mcpName, String mcpId) throws Exception {
         deleteQuietly(ADMIN_MCP_PATH, mcpIdentityQuery(mcpName, mcpId, null));
     }
@@ -574,6 +644,10 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(skillMd.contains("version: " + version), skillMd);
         assertTrue(skillMd.contains(body), skillMd);
         JsonNode resource = findSkillResource(data.get("resource"), "references", "guide.md");
+        if (guideContent == null) {
+            assertTrue(resource.isMissingNode(), data.toString());
+            return;
+        }
         assertNotNull(resource, data.toString());
         assertEquals("guide.md", resource.get("name").asText(), data.toString());
         assertEquals("references", resource.get("type").asText(), data.toString());
@@ -614,14 +688,21 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(skillMd.contains("name: " + skillName), skillMd);
         assertTrue(skillMd.contains("version: " + version), skillMd);
         assertTrue(skillMd.contains(body), skillMd);
-        assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
+        if (guideContent == null) {
+            assertFalse(entries.containsKey(skillName + "/references/guide.md"),
+                    entries.keySet().toString());
+        } else {
+            assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
+        }
     }
 
     protected byte[] buildSkillZip(String skillName, String version, String body,
             String guideContent) throws Exception {
         Map<String, String> entries = new LinkedHashMap<>();
         entries.put("SKILL.md", skillMarkdown(skillName, version, body));
-        entries.put("references/guide.md", guideContent);
+        if (guideContent != null) {
+            entries.put("references/guide.md", guideContent);
+        }
         return zipEntries(entries);
     }
 
@@ -949,12 +1030,14 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         card.put("name", skillName);
         card.put("description", "skill admin openapi integration test");
         card.put("skillMd", skillMarkdown(skillName, null, body));
-        Map<String, Object> guide = new LinkedHashMap<>();
-        guide.put("name", "guide.md");
-        guide.put("type", "references");
-        guide.put("content", guideContent);
         Map<String, Object> resources = new LinkedHashMap<>();
-        resources.put("references::guide.md", guide);
+        if (guideContent != null) {
+            Map<String, Object> guide = new LinkedHashMap<>();
+            guide.put("name", "guide.md");
+            guide.put("type", "references");
+            guide.put("content", guideContent);
+            resources.put("references::guide.md", guide);
+        }
         card.put("resource", resources);
         return JacksonUtils.toJson(card);
     }

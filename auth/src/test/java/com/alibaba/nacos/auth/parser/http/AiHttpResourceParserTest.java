@@ -466,6 +466,37 @@ class AiHttpResourceParserTest {
                 com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
     }
     
+    @Test
+    @Secured(signType = "ai")
+    void testParseGenericResourceSearchAsNamespaceRange() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/client/ai/resources/search");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_RESOURCE,
+            actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
+    @Test
+    @Secured(signType = "ai")
+    void testAiResourcePathRequiresSegmentBoundary() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/client/ai/resources-extra/search");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+        
+        Resource actual = resourceParser.parse(request, secured);
+        
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertNull(actual.getProperties().getProperty(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE));
+    }
+    
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];

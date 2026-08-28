@@ -132,7 +132,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ? "
             + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
-        return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+        return databaseOperate.queryMany(sql,
+            new String[] {"%" + generateLikeArgument(username) + "%"}, String.class);
     }
     
     @Override

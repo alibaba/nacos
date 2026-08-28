@@ -142,3 +142,49 @@ API IT 变更需要对 `test/openapi-test` 运行格式化和编译验证。在�
 服务可用时，应运行相关 Failsafe IT 选择或对应 API 面的全量选择。
 
 仅修改 IT 覆盖索引文档时，最低验证要求是受影响模块的 license 和格式检查。
+
+## 9. AI Resource Search 与 Agent 场景
+
+共享 Search Core、Agent projection 或 ARD Agent 表示变更时，OpenAPI IT 场景矩阵至少覆盖：
+
+- ARD 关闭但 `nacos.ai.resource.search.enabled=true` 时，RAD 和资源专用 Search 仍可使用基础索引；
+- Agent 名称 literal contains、Tag ALL、Protocol ANY、组合 AND、大小写及 `%`、`_`、`\\`
+  字面量，首/中/尾/越界页与正确 total；
+- 创建、metadata 更新、Version publish/online/offline/delete、latest/label 变化后的有界等待收敛；
+- Endpoint register/deregister/heartbeat 只改变 Discover，不改变目录 Search document；
+- `AUTO` 或 `INDEX` 未 READY 时成功返回且不混合的当前快照、最终完整收敛，以及 `SCAN` 始终走兼容路径；
+- 通用 Search 指定单一 Agent、AgentSpec、Skill、Prompt 或 MCP 时，与对应资源专用 Search 的候选
+  资格、可见性和当前性结果一致；
+- ARD 纯 A2A、多协议和只有旧 online Version 支持 A2A 的 type filter、primary 表示、稳定
+  identifier、representation-specific Artifact URL、offline/digest 失效和 Runtime 状态排除。
+
+测试异步索引时只允许有界轮询公开 API 可见结果，不得依赖固定 sleep、数据库内部行或任务执行顺序。
+
+## 10. MCP 迁移与生命周期场景
+
+实现 MCP 生命周期托管时，OpenAPI IT 场景矩阵至少覆盖：
+
+- `SYNCING` 期间和 `LIFECYCLE_MANAGED` 后，现有 Admin/Console
+  Create/Update/Query/List/Delete 请求与响应形态保持一致，包括兼容专用的同 Version
+  Overwrite 和 Latest 参数；
+- Name-Only、Name+ID 和历史 ID-Only 管理输入，包括协议身份认证后针对 ID-Only 标准名称的
+  精确二次鉴权，以及 Resource Alias 缺失、重复或冲突的受控错误；
+- 新 Version List/Detail 以及 Draft、Submit、Reviewed/Publish、Force Publish、Redraft、
+  Online/Offline、自定义 Label 和非法状态路径，并保证 Admin 与 Console 语义等价；
+- Enable Resource 通过不变的历史 Serving 投影只暴露 Online Version，
+  Draft/Reviewing/Reviewed/Offline 只通过新的管理读取暴露；
+- 历史 Fixture 在 `SYNCING` 期间保持完整可见、异步对账幂等、全节点管理能力门禁、
+  零差异自动切换和重启后状态保持；
+- Manifest/Server/Tools/Resources Config 坐标和字节不变；对账不修改 Naming Service、
+  Instance、frontend/backend 或 Runtime Metadata；
+- Manifest-Last Publish、Offline 从 Serving View 移除但保留内容和 Direct Service，
+  以及旧 Config/Naming 消费者不会观察到不完整 Version 内容；
+- Version 与完整 Resource 删除、Manifest-First 停止 Serving、Direct 或内容清理失败后保留
+  Resource/Version Row、Manifest 删除后按 Deprecated ID 重试，并且不误删普通被引用 Service
+  或 Client Runtime 状态；
+- 内容缺失、非法 Manifest、Row 冲突和 Storage 部分删除失败均表现为受控行为，并阻止托管切换；
+- 通用/MCP 专用 Search 使用标准 `mcpName`、耐久异步收敛和历史 ID-Keyed 清理，同时保持
+  Unified Import 与 Registry Adaptor 在管理路由切换期间的兼容性。
+
+迁移测试只把公开行为和重启后的耐久结果作为断言契约。测试准备可以写入文档化的历史 Fixture，
+但不能用直接数据库 row 断言作为成功标准。所有异步条件都使用有界轮询，不使用固定 sleep。

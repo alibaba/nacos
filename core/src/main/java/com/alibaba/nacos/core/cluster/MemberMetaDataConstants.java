@@ -44,7 +44,18 @@ public class MemberMetaDataConstants {
     
     public static final String SUPPORT_GRAY_MODEL = "supportGrayModel";
     
+    /**
+     * Temporary capability flag for JRaft gRPC authentication rolling upgrades.
+     */
+    public static final String SUPPORT_JRAFT_AUTH = "supportJraftAuth";
+    
+    /**
+     * Capability flag for MCP AI Resource lifecycle management and recovery.
+     */
+    public static final String SUPPORT_MCP_LIFECYCLE_MANAGEMENT =
+        "supportMcpLifecycleManagement";
+    
     public static final String[] BASIC_META_KEYS =
         new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION,
-            READY_TO_UPGRADE};
+            READY_TO_UPGRADE, SUPPORT_JRAFT_AUTH, SUPPORT_MCP_LIFECYCLE_MANAGEMENT};
 }

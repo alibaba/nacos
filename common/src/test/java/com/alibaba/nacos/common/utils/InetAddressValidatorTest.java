@@ -46,6 +46,33 @@ class InetAddressValidatorTest {
     }
     
     @Test
+    void isIpv6MixedAddressRejectsTooManyBlocks() {
+        // The IPv6 part of a mixed address holds at most six 16-bit blocks, because the
+        // trailing IPv4 part occupies the remaining 32 bits of the 128-bit address.
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("::1:2:3:4:5:172.12.55.18"));
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("1:2:3::4:5:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("::1:2:3:4:5:6:7:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("::1:2:3:4:5:6:7:8:9:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6Address("::1:2:3:4:5:6:7:8:9:172.12.55.18"));
+    }
+    
+    @Test
+    void isIpv6MixedAddressBlockLimitDependsOnCompression() {
+        // Without "::" all six blocks are written explicitly.
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("1:2:3:4:5:6:172.12.55.18"));
+        // "::" stands for at least one omitted block, so a compressed IPv6 part carries at
+        // most five explicit blocks, wherever "::" appears.
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("::1:2:3:4:5:172.12.55.18"));
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("1:2:3:4:5::172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("::1:2:3:4:5:6:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("1:2:3:4:5:6::172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("1::1:2:3:4:5:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("1:2:3::1:2:3:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("1:2:3:4:5::1:172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6Address("::1:2:3:4:5:6:172.12.55.18"));
+    }
+    
+    @Test
     void isIpv6Ipv4MappedAddress() {
         assertFalse(InetAddressValidator.isIpv6Ipv4MappedAddress(":ffff:1.1.1.1"));
         assertTrue(InetAddressValidator.isIpv6Ipv4MappedAddress("::FFFF:192.168.1.2"));

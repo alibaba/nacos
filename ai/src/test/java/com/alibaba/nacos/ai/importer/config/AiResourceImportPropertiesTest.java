@@ -38,13 +38,11 @@ class AiResourceImportPropertiesTest {
         Properties raw = new Properties();
         raw.setProperty(AiResourceImportProperties.ENABLED_PROPERTY, " true ");
         raw.setProperty(AiResourceImportProperties.LEGACY_ENABLED_PROPERTY, "false");
-        raw.setProperty(AiResourceImportProperties.LEGACY_MCP_API_ENABLED_PROPERTY, "true");
         raw.setProperty(AiResourceImportProperties.ALLOW_USER_URL_PROPERTY, " true ");
         
         AiResourceImportProperties properties = AiResourceImportProperties.load(raw);
         
         assertTrue(properties.isEnabled());
-        assertTrue(properties.isLegacyMcpImportApiEnabled());
         assertTrue(properties.isAllowUserUrl());
     }
     
@@ -59,7 +57,6 @@ class AiResourceImportPropertiesTest {
         AiResourceImportProperties defaults = AiResourceImportProperties.load(null);
         assertTrue(defaults.isEnabled());
         assertTrue(new AiResourceImportProperties().isEnabled());
-        assertFalse(defaults.isLegacyMcpImportApiEnabled());
         assertFalse(defaults.isAllowUserUrl());
     }
     
@@ -90,10 +87,8 @@ class AiResourceImportPropertiesTest {
         assertTrue(properties.isEnabled());
         
         properties.setEnabled(false);
-        properties.setLegacyMcpImportApiEnabled(true);
         properties.setAllowUserUrl(true);
         assertFalse(properties.isEnabled());
-        assertTrue(properties.isLegacyMcpImportApiEnabled());
         assertTrue(properties.isAllowUserUrl());
     }
 }

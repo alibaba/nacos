@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
@@ -24,27 +26,38 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.console.config.McpEndpointAccessValidator;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,11 +68,20 @@ class ConsoleMcpControllerTest {
     
     private MockMvc mockMvc;
     
+    private MockEnvironment environment;
+    
     @BeforeEach
     void setUp() {
-        EnvUtil.setEnvironment(new StandardEnvironment());
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         mockMvc = MockMvcBuilders.standaloneSetup(
-            new ConsoleMcpController(mcpProxy)).build();
+            new ConsoleMcpController(mcpProxy, new McpEndpointAccessValidator()))
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
@@ -144,7 +166,154 @@ class ConsoleMcpControllerTest {
     }
     
     @Test
-    void testValidateImport() throws Exception {
+    void testStandardLifecycleApisDelegateByNameAndExactVersion() throws Exception {
+        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
+        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
+        when(mcpProxy.listLifecycleVersions("nacos-default-mcp", "test", "draft", 1, 10))
+            .thenReturn(new Page<>());
+        when(mcpProxy.getLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(detail);
+        when(mcpProxy.createLifecycleDraft(eq("nacos-default-mcp"),
+            any(McpServerBasicInfo.class), isNull(), isNull(), isNull())).thenReturn(detail);
+        when(mcpProxy.updateLifecycleDraft(eq("nacos-default-mcp"),
+            any(McpServerBasicInfo.class), isNull(), isNull(), isNull())).thenReturn(detail);
+        when(mcpProxy.submitLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.publishLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.forcePublishLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.redraftLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.onlineLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.offlineLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+            .thenReturn(summary);
+        when(mcpProxy.updateLifecycleLabels("nacos-default-mcp", "test", Map.of()))
+            .thenReturn(Map.of());
+        
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.get(
+            "/v3/console/ai/mcp/versions").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test").param("status", "draft").param("pageNo", "1")
+            .param("pageSize", "10")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.get(
+            "/v3/console/ai/mcp/version")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleDraftRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/draft")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleDraftRequest(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/draft")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.delete(
+            "/v3/console/ai/mcp/draft")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/submit")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/publish")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/force-publish")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/redraft")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/online")).andReturn().getResponse().getStatus());
+        assertEquals(200, lifecycleVersionRequest(MockMvcRequestBuilders.post(
+            "/v3/console/ai/mcp/offline")).andReturn().getResponse().getStatus());
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/labels").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test")).andReturn().getResponse().getStatus());
+        
+        verify(mcpProxy).deleteLifecycleDraft("nacos-default-mcp", "test", "1.0.0");
+        verify(mcpProxy).updateLifecycleLabels("nacos-default-mcp", "test", Map.of());
+    }
+    
+    @Test
+    void testImportToolsDisabledByOperatorSwitch() throws Exception {
+        environment.setProperty(McpEndpointAccessValidator.IMPORT_ENABLED_PROPERTY, "false");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-streamable")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("disabled"));
+        assertTrue(result.getMessage().contains(
+            McpEndpointAccessValidator.IMPORT_ENABLED_PROPERTY));
+    }
+    
+    @Test
+    void testImportToolsRejectsPrivateAddressByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-streamable")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.ACCESS_DENIED.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("127.0.0.1"));
+        assertTrue(result.getMessage().contains("private or local"));
+        assertTrue(result.getMessage().contains(
+            McpEndpointAccessValidator.ALLOWED_PRIVATE_ADDRESSES_PROPERTY));
+    }
+    
+    @Test
+    void testImportToolsRejectsEndpointAuthorityOverride() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "mcp-sse")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "//192.0.2.1/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("must not override"));
+    }
+    
+    @Test
+    void testImportToolsUnsupportedTransportIsRejectedBeforeEndpointValidation() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/importToolsFromMcp")
+                .param("transportType", "stdio")
+                .param("baseUrl", "http://127.0.0.1:8080")
+                .param("endpoint", "/mcp"))
+            .andReturn().getResponse();
+        
+        Result<Object> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("Unsupported transport type"));
+    }
+    
+    @Test
+    void testValidateImportDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/import/validate")
+                .param("namespaceId", "nacos-default-mcp")
+                .param("importType", "json")
+                .param("data", "[{\"name\":\"test-server\"}]"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response, "POST /v3/console/ai/import/validate");
+        verifyNoInteractions(mcpProxy);
+    }
+    
+    @Test
+    void testValidateImportWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         McpServerImportValidationResult validationResult =
             new McpServerImportValidationResult();
         when(mcpProxy.validateImport(anyString(), any())).thenReturn(validationResult);
@@ -166,7 +335,21 @@ class ConsoleMcpControllerTest {
     }
     
     @Test
-    void testExecuteImport() throws Exception {
+    void testExecuteImportDisabledByDefault() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/import/execute")
+                .param("namespaceId", "nacos-default-mcp")
+                .param("importType", "json")
+                .param("data", "[{\"name\":\"test-server\"}]"))
+            .andReturn().getResponse();
+        
+        assertDeprecated(response, "POST /v3/console/ai/import/execute");
+        verifyNoInteractions(mcpProxy);
+    }
+    
+    @Test
+    void testExecuteImportWhenCompatibilityEnabled() throws Exception {
+        environment.setProperty(CompatibilityHelper.API_COMPATIBILITY_ENABLED_KEY, "true");
         McpServerImportResponse importResponse = new McpServerImportResponse();
         when(mcpProxy.executeImport(anyString(), any())).thenReturn(importResponse);
         
@@ -184,5 +367,28 @@ class ConsoleMcpControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertNotNull(result.getData());
+    }
+    
+    private void assertDeprecated(MockHttpServletResponse response, String alternative)
+        throws Exception {
+        assertEquals(HttpStatus.GONE.value(), response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.API_DEPRECATED.getCode(), result.getCode());
+        assertTrue(result.getData().contains(alternative));
+    }
+    
+    private org.springframework.test.web.servlet.ResultActions lifecycleVersionRequest(
+        MockHttpServletRequestBuilder request) throws Exception {
+        return mockMvc.perform(request.param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test").param("version", "1.0.0"));
+    }
+    
+    private org.springframework.test.web.servlet.ResultActions lifecycleDraftRequest(
+        MockHttpServletRequestBuilder request) throws Exception {
+        return lifecycleVersionRequest(request.param("serverSpecification",
+            "{\"protocol\":\"stdio\",\"name\":\"test\","
+                + "\"versionDetail\":{\"version\":\"1.0.0\"},\"enabled\":true}"));
     }
 }

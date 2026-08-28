@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.storage;
 
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
@@ -31,7 +33,6 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
-import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
@@ -41,12 +42,13 @@ import java.nio.charset.StandardCharsets;
 /**
  * Nacos Config based {@link AiResourceStorage} implementation.
  *
- * <p>Supports Skill, AgentSpec, Prompt and Agent Version resources.
+ * <p>Supports Skill, AgentSpec, Prompt, Agent Version and allowlisted MCP resources.
  * StorageKey.key format:
  * <ul>
  *   <li>Legacy (Skill): {@code namespaceId:name:version:filePath} (4-part, defaults to skill__ prefix)</li>
  *   <li>Typed: {@code namespaceId:resourceType:name:version:filePath} (5-part, resourceType = "skill", "agentspec" or "prompt")</li>
  *   <li>Agent Version: {@code namespaceId:agent-version:dataId} (3-part opaque key)</li>
+ *   <li>MCP Version content: {@code namespaceId:mcp-owned-group:dataId} (3-part opaque key)</li>
  * </ul>
  * File path convention: main = {@link #getMainFilePath()} / {@link #getMainFilePath(String)},
  * resources = {@link #getResourceFilePath(String, String)} / {@link #getAgentSpecResourceFilePath(String, String)},
@@ -192,9 +194,8 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         long startTimeStamp = System.currentTimeMillis();
         KeyParts parts = parse(storageKey);
         ConfigForm form = new ConfigForm();
-        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
-        String physicalGroup =
-            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
+        String physicalDataId = toPhysicalDataId(parts);
+        String physicalGroup = toPhysicalGroup(parts);
         form.setDataId(physicalDataId);
         form.setGroup(physicalGroup);
         form.setNamespaceId(parts.namespaceId());
@@ -223,9 +224,8 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public byte[] get(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
-        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
-        String physicalGroup =
-            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
+        String physicalDataId = toPhysicalDataId(parts);
+        String physicalGroup = toPhysicalGroup(parts);
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
             physicalDataId, physicalGroup, parts.namespaceId());
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
@@ -239,9 +239,8 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public void delete(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
-        String physicalDataId = NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
-        String physicalGroup =
-            NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
+        String physicalDataId = toPhysicalDataId(parts);
+        String physicalGroup = toPhysicalGroup(parts);
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             configOperationService.deleteConfig(physicalDataId, physicalGroup, parts.namespaceId(),
                 null, null, "nacos",
@@ -269,9 +268,10 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     }
     
     /**
-     * Parse StorageKey into KeyParts. Supports four key formats:
+     * Parse StorageKey into KeyParts. Supports five key formats:
      * <ul>
      *   <li>Agent Version: {@code namespaceId:agent-version:dataId} → group = agent-version</li>
+     *   <li>MCP content: {@code namespaceId:mcp-owned-group:dataId} → exact legacy coordinate</li>
      *   <li>Legacy 4-part (Skill): {@code namespaceId:name:version:filePath} → group = skill__{name}__{version}</li>
      *   <li>Legacy 4-part manifest: {@code namespaceId:name::filePath} (blank version) → group = skill_{name}</li>
      *   <li>Typed 5-part: {@code namespaceId:resourceType:name:version:filePath} → group = {prefix}{name}__{version}</li>
@@ -281,6 +281,10 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     static KeyParts parse(StorageKey storageKey) {
         if (storageKey == null || StringUtils.isBlank(storageKey.getKey())) {
             throw new IllegalArgumentException("StorageKey.key is blank");
+        }
+        KeyParts mcpParts = parseMcpStorageKey(storageKey.getKey());
+        if (mcpParts != null) {
+            return mcpParts;
         }
         String[] agentVersionParts = storageKey.getKey().split(":", -1);
         if (agentVersionParts.length == 3 && AGENT_VERSION_GROUP.equals(agentVersionParts[1])
@@ -339,6 +343,56 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             group = SkillUtils.buildSkillVersionGroup(skillName, version);
         }
         return new KeyParts(namespaceId, group, SkillUtils.SKILL_GROUP_PREFIX, filePath);
+    }
+    
+    private static KeyParts parseMcpStorageKey(String key) {
+        int namespaceSeparator = key.indexOf(':');
+        if (namespaceSeparator < 0) {
+            return null;
+        }
+        int groupSeparator = key.indexOf(':', namespaceSeparator + 1);
+        if (groupSeparator < 0) {
+            return null;
+        }
+        String group = key.substring(namespaceSeparator + 1, groupSeparator);
+        if (!isMcpStorageGroup(group)) {
+            return null;
+        }
+        String namespaceId = key.substring(0, namespaceSeparator);
+        String dataId = key.substring(groupSeparator + 1);
+        if (!isMcpStorageDataId(group, dataId)) {
+            return null;
+        }
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        return new KeyParts(namespaceId, group, group, dataId);
+    }
+    
+    private static boolean isMcpStorageDataId(String group, String dataId) {
+        String suffix;
+        if (Constants.MCP_SERVER_GROUP.equals(group)) {
+            suffix = Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX;
+        } else if (Constants.MCP_SERVER_TOOL_GROUP.equals(group)) {
+            suffix = Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX;
+        } else {
+            suffix = Constants.MCP_SERVER_RESOURCE_DATA_ID_SUFFIX;
+        }
+        return dataId.length() > suffix.length() && dataId.endsWith(suffix);
+    }
+    
+    private static boolean isMcpStorageGroup(String group) {
+        return Constants.MCP_SERVER_GROUP.equals(group)
+            || Constants.MCP_SERVER_TOOL_GROUP.equals(group)
+            || Constants.MCP_SERVER_RESOURCE_GROUP.equals(group);
+    }
+    
+    private static String toPhysicalDataId(KeyParts parts) {
+        return isMcpStorageGroup(parts.group()) ? parts.dataId()
+            : NacosAiConfigKeyCodec.toPhysicalDataId(parts.dataId());
+    }
+    
+    private static String toPhysicalGroup(KeyParts parts) {
+        return isMcpStorageGroup(parts.group()) ? parts.group()
+            : NacosAiConfigKeyCodec.toPhysicalGroup(parts.group(), parts.groupPrefix());
     }
     
     private static void validateAgentVersionDataId(String dataId) {

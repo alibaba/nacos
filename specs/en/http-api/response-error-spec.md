@@ -44,6 +44,8 @@ Current intentional response-shape exceptions:
 - Streaming copilot endpoints return Server-Sent Events.
 - Health readiness may return HTTP 500 with a `Result<String>` body when not
   ready.
+- Default-auth v1 and v3 login success returns the legacy flat token object,
+  while credential failures return HTTP 403 with a generic plain-text body.
 - Some legacy or operational endpoints may return plain text. These should be
   kept only when confirmed as compatibility behavior.
 
@@ -62,6 +64,9 @@ v3 errors:
 | `AccessException` | 403 | `ACCESS_DENIED` |
 | data access, servlet, or IO failures | 500 | `DATA_ACCESS_ERROR` |
 | unhandled exceptions | 500 | generic failure |
+
+Deprecated v3 APIs that use the shared compatibility gate return HTTP `410 Gone`
+with `API_DEPRECATED` while `nacos.core.api.compatibility.enabled` is false.
 
 ## 4. Exception Handler Convergence
 

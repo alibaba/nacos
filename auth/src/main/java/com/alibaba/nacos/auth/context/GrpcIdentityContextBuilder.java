@@ -61,7 +61,7 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
         Map<String, String> map = request.getHeaders();
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (identityNames.contains(entry.getKey())) {
-                result.setParameter(entry.getKey(), entry.getValue());
+                result.setRequestIdentityParameter(entry.getKey(), entry.getValue());
             }
         }
         return result;

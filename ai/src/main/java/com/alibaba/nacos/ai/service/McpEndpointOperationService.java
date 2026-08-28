@@ -17,15 +17,22 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.ServiceOperator;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -34,8 +41,11 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Nacos AI MCP Endpoint operation service.
@@ -110,8 +120,122 @@ public class McpEndpointOperationService {
     
     public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef)
         throws NacosException {
+        if (serviceRef == null) {
+            return Collections.emptyList();
+        }
         return instanceOperator.listInstance(serviceRef.getNamespaceId(), serviceRef.getGroupName(),
             serviceRef.getServiceName(), null, "", true).getHosts();
+    }
+    
+    /**
+     * Project the current MCP Naming model into backend and frontend endpoint responses.
+     *
+     * <p>This deliberately preserves the historical Direct, REF and BACKEND behavior. Both the
+     * legacy Config implementation and the lifecycle implementation must use this method so the
+     * lifecycle cutover cannot introduce a second endpoint interpretation.</p>
+     *
+     * @param detailInfo MCP detail loaded from persisted Server content
+     * @throws NacosException when a referenced Naming service cannot be queried
+     */
+    public void injectEndpoint(McpServerDetailInfo detailInfo) throws NacosException {
+        injectBackendEndpointRef(detailInfo);
+        injectFrontendEndpointRef(detailInfo);
+    }
+    
+    private void injectBackendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
+        if (detailInfo.getRemoteServerConfig() == null) {
+            detailInfo.setBackendEndpoints(Collections.emptyList());
+            return;
+        }
+        McpServiceRef serviceRef = detailInfo.getRemoteServerConfig().getServiceRef();
+        List<Instance> instances = getMcpServerEndpointInstances(serviceRef);
+        String protocol = Objects.isNull(serviceRef) ? null : serviceRef.getTransportProtocol();
+        detailInfo.setBackendEndpoints(transferToMcpEndpointInfo(instances,
+            detailInfo.getRemoteServerConfig().getExportPath(), protocol));
+    }
+    
+    private List<McpEndpointInfo> transferToMcpEndpointInfoWithHeaders(List<Instance> instances,
+        String exportPath, String protocol, List<KeyValueInput> headers) {
+        List<McpEndpointInfo> result = new LinkedList<>();
+        for (Instance each : instances) {
+            McpEndpointInfo endpointInfo = new McpEndpointInfo();
+            endpointInfo.setAddress(each.getIp());
+            endpointInfo.setPort(each.getPort());
+            endpointInfo.setProtocol(protocol);
+            endpointInfo.setHeaders(headers);
+            endpointInfo.setPath(exportPath);
+            result.add(endpointInfo);
+        }
+        return result;
+    }
+    
+    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances,
+        String exportPath, String protocol) {
+        return transferToMcpEndpointInfoWithHeaders(instances, exportPath, protocol, null);
+    }
+    
+    private void injectFrontendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
+        if (detailInfo.getRemoteServerConfig() == null) {
+            detailInfo.setFrontendEndpoints(Collections.emptyList());
+            return;
+        }
+        List<FrontEndpointConfig> configs =
+            detailInfo.getRemoteServerConfig().getFrontEndpointConfigList();
+        if (CollectionUtils.isEmpty(configs)) {
+            detailInfo.setFrontendEndpoints(Collections.emptyList());
+            return;
+        }
+        List<McpEndpointInfo> result = new LinkedList<>();
+        for (FrontEndpointConfig each : configs) {
+            if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
+                addReferencedFrontendEndpoints(each, result);
+            } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
+                result.add(toDirectFrontendEndpoint(each));
+            } else if (AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK
+                .equals(each.getEndpointType())) {
+                addBackendFrontendEndpoints(detailInfo, each, result);
+            }
+        }
+        detailInfo.setFrontendEndpoints(result);
+    }
+    
+    private void addReferencedFrontendEndpoints(FrontEndpointConfig config,
+        List<McpEndpointInfo> result) throws NacosException {
+        McpServiceRef serviceRef = McpRequestUtil.transferToMcpServiceRef(config.getEndpointData());
+        List<Instance> instances = getMcpServerEndpointInstances(serviceRef);
+        result.addAll(transferToMcpEndpointInfoWithHeaders(instances, config.getPath(),
+            config.getProtocol(), config.getHeaders()));
+    }
+    
+    private McpEndpointInfo toDirectFrontendEndpoint(FrontEndpointConfig config) {
+        McpEndpointInfo result = new McpEndpointInfo();
+        result.setPath(config.getPath());
+        result.setProtocol(config.getProtocol());
+        result.setHeaders(config.getHeaders());
+        String address = String.valueOf(config.getEndpointData());
+        if (InternetAddressUtil.containsPort(address)) {
+            String[] info = InternetAddressUtil.splitIpPortStr(address);
+            result.setAddress(info[0]);
+            result.setPort(Integer.parseInt(info[1]));
+        } else {
+            result.setAddress(address);
+            result.setPort(Constants.PROTOCOL_TYPE_HTTP.equals(config.getProtocol()) ? 80 : 443);
+        }
+        return result;
+    }
+    
+    private void addBackendFrontendEndpoints(McpServerDetailInfo detailInfo,
+        FrontEndpointConfig config, List<McpEndpointInfo> result) {
+        List<McpEndpointInfo> backendEndpoints = detailInfo.getBackendEndpoints();
+        backendEndpoints.stream().map(endpoint -> {
+            McpEndpointInfo frontend = new McpEndpointInfo();
+            frontend.setAddress(endpoint.getAddress());
+            frontend.setPort(endpoint.getPort());
+            frontend.setProtocol(endpoint.getProtocol());
+            frontend.setPath(config.getPath());
+            frontend.setHeaders(config.getHeaders());
+            return frontend;
+        }).forEach(result::add);
     }
     
     /**

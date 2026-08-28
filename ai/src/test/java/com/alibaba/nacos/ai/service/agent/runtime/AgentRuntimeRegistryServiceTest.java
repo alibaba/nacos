@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
@@ -74,12 +75,17 @@ class AgentRuntimeRegistryServiceTest {
     @Mock
     private EphemeralClientOperationServiceImpl clientOperationService;
     
+    @Mock
+    private ClientManager clientManager;
+    
     private AgentRuntimeRegistryService registryService;
     
     @BeforeEach
     void setUp() {
-        registryService =
-            new AgentRuntimeRegistryService(serviceStorage, clientOperationService);
+        AgentRuntimePublicationCapacityGate publicationCapacityGate =
+            new AgentRuntimePublicationCapacityGate(clientManager, Integer.MAX_VALUE);
+        registryService = new AgentRuntimeRegistryService(serviceStorage,
+            clientOperationService, publicationCapacityGate);
     }
     
     @Test

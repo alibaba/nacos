@@ -16,36 +16,31 @@
 
 package com.alibaba.nacos.ai.form.agentspecs.client;
 
-import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 
 /**
  * AgentSpec search form for client runtime.
  *
  * @author nacos
  */
-public class AgentSpecSearchForm {
+public class AgentSpecSearchForm extends AiResourcePageSearchForm {
     
-    private String namespaceId;
+    private static final long serialVersionUID = 1L;
+    
+    private static final int MAX_KEYWORD_LENGTH = 1024;
     
     private String keyword;
     
     /**
      * Validate and normalize query parameters.
      */
-    public void validate() {
-        // keyword is optional
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = Constants.AgentSpecs.AGENTSPEC_DEFAULT_NAMESPACE;
+    @Override
+    public void validate() throws NacosApiException {
+        super.validate();
+        if (keyword != null && keyword.length() > MAX_KEYWORD_LENGTH) {
+            throw invalid("keyword exceeds " + MAX_KEYWORD_LENGTH + " characters");
         }
-    }
-    
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
     }
     
     public String getKeyword() {
@@ -55,4 +50,5 @@ public class AgentSpecSearchForm {
     public void setKeyword(String keyword) {
         this.keyword = keyword;
     }
+    
 }

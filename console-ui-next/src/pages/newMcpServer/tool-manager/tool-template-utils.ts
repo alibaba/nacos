@@ -13,6 +13,66 @@ interface JsonTemplateFields {
   errorResponseTemplate?: string;
 }
 
+export interface ToolSecurityConfig {
+  transparentAuth: boolean;
+  securitySchemeId: string;
+  clientSecuritySchemeId: string;
+}
+
+const readSecurityId = (value: unknown): string => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return '';
+  }
+  const id = (value as Record<string, unknown>).id;
+  return typeof id === 'string' ? id : '';
+};
+
+export function readToolSecurityConfig(meta?: McpToolMeta | null): ToolSecurityConfig {
+  const jsonTemplate = meta?.templates?.['json-go-template'];
+  const clientSecurity = jsonTemplate?.security;
+  const clientSecurityRecord =
+    clientSecurity !== null && typeof clientSecurity === 'object' && !Array.isArray(clientSecurity)
+      ? (clientSecurity as Record<string, unknown>)
+      : undefined;
+
+  return {
+    transparentAuth:
+      clientSecurityRecord?.passthrough === true || meta?.transparentAuth === true,
+    securitySchemeId:
+      readSecurityId(jsonTemplate?.requestTemplate?.security) || meta?.securitySchemeId || '',
+    clientSecuritySchemeId:
+      readSecurityId(clientSecurity) || meta?.clientSecuritySchemeId || '',
+  };
+}
+
+export function mergeToolSecurityConfig(
+  templates: McpToolMeta['templates'],
+  config: ToolSecurityConfig
+): McpToolMeta['templates'] | undefined {
+  const nextTemplates = { ...(templates || {}) };
+  const jsonTemplate = { ...(nextTemplates['json-go-template'] || {}) };
+
+  if (config.transparentAuth) {
+    const requestTemplate = { ...(jsonTemplate.requestTemplate || {}) };
+    requestTemplate.security = { id: config.securitySchemeId };
+    jsonTemplate.requestTemplate = requestTemplate;
+    jsonTemplate.security = {
+      id: config.clientSecuritySchemeId,
+      passthrough: true,
+    };
+  } else {
+    delete jsonTemplate.security;
+  }
+
+  if (Object.keys(jsonTemplate).length > 0) {
+    nextTemplates['json-go-template'] = jsonTemplate;
+  } else {
+    delete nextTemplates['json-go-template'];
+  }
+
+  return Object.keys(nextTemplates).length > 0 ? nextTemplates : undefined;
+}
+
 export function parseArgsPosition(text: string): ArgsPositionParseResult {
   if (!text.trim()) {
     return { ok: true };

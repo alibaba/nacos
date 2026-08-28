@@ -61,7 +61,21 @@ Prompt。如果 md5 与当前版本内容 md5 一致，服务端可以返回 not
 
 订阅应报告 Prompt 变更，但不应向运行时客户端暴露宽范围管理列表能力。
 
-## 5. 迁移
+Prompt 参与通用 AI Resource Search，并提供固定 `resourceType=prompt` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的同一索引和 Query Planner。
+Prompt handler 只投影调用方可见、enabled、latest 可解析到 online Version 的名称、description、
+业务 tags 和适合检索的模板说明；模板中可能出现的 credential、secret 默认值和运行时参数值不得进入
+chunk。通用 Search 只指定 Prompt 时与专用 Search 的候选资格、可见性和当前性一致。
+Client Facade 为 `GET /v3/client/ai/prompt/search`；它接受 `query`、可重复的
+`tagsAll`、`pageNo` 和 `pageSize`，并返回 `Page<PromptMetaSummary>`。
+
+## 5. 存储
+
+Prompt 在每个版本的存储描述中持久化选定的 provider。已有版本的操作使用已持久化的
+provider，有效 provider 配置仅作用于新版本。缺少 provider 的历史描述使用
+`nacos_config`。
+
+## 6. 迁移
 
 Prompt 存在从旧 Prompt 存储迁移到
 `ai_resource + ai_resource_version + AI storage` 的迁移任务。迁移必须：
@@ -71,7 +85,7 @@ Prompt 存在从旧 Prompt 存储迁移到
 - 尽可能保留已有版本和 latest 行为；
 - 将旧映射保持为兼容存储，而不是正式 Config 语义。
 
-## 6. 演进说明
+## 7. 演进说明
 
 Prompt 格式、变量 schema、tool-call 约定和模型提供方要求可能快速变化。Prompt 规范
 调整可以引入新的内容字段或校验规则，但必须为已有 Prompt 保留版本化迁移路径。

@@ -133,8 +133,25 @@ Nacos 注册中心路径不得在 upload、query 或 download 过程中执行包
 Skill 元数据和版本使用 `ai_resource` 与 `ai_resource_version`。Skill 文件内容通过
 AI 存储保存。默认存储为 `nacos_config`，但它只是实现后端。
 
+每个版本必须在 `ai_resource_version` 的存储描述中持久化存储 provider。读取和删除必须
+按该版本已持久化的 provider 路由。有效 AI Resource 存储 provider 配置只控制新写入，不得重定向已有
+版本。缺少 `provider` 的历史存储描述归属于 `nacos_config`。
+
+更新或覆盖 draft 时，必须替换完整的 Skill 包内容。写入替换文件后，旧存储描述符中已引用、
+但替换包中未包含的文件必须在持久化新描述符前，通过该版本已持久化的 provider 删除。清理
+失败时更新必须失败，并保留旧描述符以便重试清理。
+
 Skill 还维护一个轻量 manifest 以支持客户端发现。Manifest 是从 Skill 元数据派生的
 索引，不应成为生命周期状态的事实来源。
+
+Skill 参与通用 AI Resource Search，并提供固定 `resourceType=skill` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 document/chunk/facet、
+当前性、可见性和分页，不得把 manifest 或既有管理列表当作第二套 Search 索引。Skill handler
+投影 latest online Version 的名称、description、tags 和可检索 manifest 内容；包内脚本、
+credential 和未声明的二进制内容不进入检索 chunk。通用 Search 只指定 Skill 时与专用 Search
+候选资格一致。
+Client Facade 为 `GET /v3/client/ai/skills/search`；它接受 `query`、可重复的
+`tagsAll`、`pageNo` 和 `pageSize`，并返回既有 `Page<SkillBasicInfo>` 结构。
 
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 

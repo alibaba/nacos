@@ -19,13 +19,13 @@ package com.alibaba.nacos.ai.service.agent.storage;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
+import com.alibaba.nacos.ai.storage.AiResourceStorageUtils;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -253,8 +253,8 @@ public class AgentVersionStorageService {
     }
     
     private static String configuredProvider() {
-        return EnvUtil.getProperty(Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY,
-            DEFAULT_STORAGE_PROVIDER);
+        return AiResourceStorageUtils.resolveProvider(
+            Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY, DEFAULT_STORAGE_PROVIDER);
     }
     
     private static NacosException corruptedContent(String message, Throwable cause) {

@@ -38,7 +38,11 @@ public interface AiResourceStorageBuilder {
     /**
      * Build an {@link AiResourceStorage} instance.
      *
-     * @return a fully initialized {@link AiResourceStorage} instance
+     * <p>Unified plugin configuration is applied to configurable storage instances after
+     * registration. An optional provider may return {@code null} when its bootstrap properties
+     * are absent.</p>
+     *
+     * @return storage instance to register, or {@code null} to skip registration
      */
     AiResourceStorage build();
 }

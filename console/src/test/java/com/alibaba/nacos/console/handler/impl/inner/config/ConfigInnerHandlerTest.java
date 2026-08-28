@@ -263,7 +263,8 @@ class ConfigInnerHandlerTest {
     @Test
     void getAllSubClientConfigByIpEmpty() {
         ConfigListenerInfo mock = new ConfigListenerInfo();
-        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", true)).thenReturn(mock);
+        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", "tenant", true))
+            .thenReturn(mock);
         assertEquals(mock,
             configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", true));
     }
@@ -275,7 +276,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group+tenant", "1");
         configMd5Status.put("dataId+group+aaa", "2");
         mock.setListenersStatus(configMd5Status);
-        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
+        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", "tenant", false))
+            .thenReturn(mock);
         ConfigListenerInfo actual =
             configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());
@@ -291,7 +293,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group", "1");
         configMd5Status.put("dataId+group+aaa", "2");
         mock.setListenersStatus(configMd5Status);
-        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
+        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", "", false))
+            .thenReturn(mock);
         ConfigListenerInfo actual =
             configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());
@@ -307,7 +310,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group+aaa", "2");
         configMd5Status.put("dataId+group+tenant", "3");
         mock.setListenersStatus(configMd5Status);
-        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
+        when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", "aaa", false))
+            .thenReturn(mock);
         ConfigListenerInfo actual =
             configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "aaa", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());

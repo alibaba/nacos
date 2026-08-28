@@ -97,6 +97,11 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
 - Publish moves the version to `online`, clears working pointers, increments
   `onlineCnt` when needed, and the server manages the `latest` label according
   to the resource type spec.
+- When a resource type maintains a separate compatibility serving projection,
+  the lifecycle row is the durable desired state. Projection convergence follows
+  the lifecycle mutation, and the operation reports success only after the
+  projection is verified. A convergence failure preserves the lifecycle row so
+  an idempotent retry or reconciler can finish the projection.
 - Publish and force-publish requests may keep the historical
   `updateLatestLabel` parameter for compatibility. This parameter is deprecated;
   new clients must not send it. When it is absent or `true`, the published
@@ -118,6 +123,15 @@ operation. It accepts only `draft`, `reviewing`, and `reviewed` versions;
   offline of the current pointer selects the greatest remaining online Agent
   version. See the [Agent Management Spec](agent-management-spec.md) and the
   [A2A Agent Spec](a2a-agent-spec.md).
+- The MCP type has the same kind of compatibility-only direct-online facade.
+  A new historical-API Version becomes online immediately, and its legacy
+  latest flag may preserve the current valid pointer. The historical update
+  facade may also overwrite an existing exact Version as an audited
+  exception; canonical draft/lifecycle APIs must never reuse this relaxation.
+  Standard MCP publish, force-publish, and online operations move `latest`.
+  Latest fallback chooses the greatest SemVer, then greatest numeric `vN`, then
+  greatest stable case-sensitive string. See the
+  [MCP Server Spec](mcp-server-spec.md).
 
 Pipeline extension behavior is defined by the
 [AI Publish Pipeline Plugin Spec](../plugin/ai-pipeline-plugin-spec.md). This
@@ -141,10 +155,27 @@ domain spec defines only how AI resource lifecycle reacts to pipeline results.
   that version.
 - Deleting a resource should remove metadata, all version rows, and all
   type-owned storage.
+- Resource deletion must load every Version storage descriptor before mutating
+  metadata. Storage cleanup must route through the provider persisted in each
+  descriptor and attempt every referenced content object.
+- After all descriptors are loaded, a type may first move the Resource and its
+  Versions to a non-serving lifecycle state before converging an external
+  compatibility projection and starting physical cleanup. Those retained rows
+  are the durable retry anchor until cleanup completes.
+- Metadata and Version rows must be deleted only after all referenced storage
+  content is cleaned successfully. If any cleanup fails, the delete operation
+  must report failure and preserve the rows and descriptors needed for retry.
 - Delete operations should be idempotent only when the public API contract says
   missing resources are success.
 - Deleting an online version should update `onlineCnt` or labels when the type
   implementation supports it.
+- Type-owned physical cleanup required by a domain spec participates in the
+  type storage-deletion callback and must finish before metadata rows are
+  removed. In particular, MCP-owned Direct Naming cleanup and MCP Version
+  Config cleanup use the same row-preservation rule: either failure reports the
+  delete as incomplete and preserves Resource/Version rows and descriptors for
+  retry. Ordinary referenced Services and client-owned Runtime state are not
+  type-owned cleanup targets.
 
 ## 7. Trace And Counters
 

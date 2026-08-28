@@ -91,9 +91,6 @@ public class McpLegacyImportAdapter {
     @Deprecated
     public McpServerImportValidationResult validateImport(String namespaceId,
         McpServerImportRequest request) throws NacosException {
-        if (!isLegacyApiEnabled()) {
-            return deprecatedValidation();
-        }
         if (!shouldRouteToUnifiedImport(request)) {
             return shouldRejectUserUrl(request) ? rejectedValidation()
                 : mcpServerImportService.validateImport(namespaceId, request);
@@ -120,9 +117,6 @@ public class McpLegacyImportAdapter {
     @Deprecated
     public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
         throws NacosException {
-        if (!isLegacyApiEnabled()) {
-            return deprecatedResponse();
-        }
         if (!shouldRouteToUnifiedImport(request)) {
             return shouldRejectUserUrl(request) ? rejectedResponse()
                 : mcpServerImportService.executeImport(namespaceId, request);
@@ -139,10 +133,6 @@ public class McpLegacyImportAdapter {
     private boolean shouldRouteToUnifiedImport(McpServerImportRequest request) {
         return request != null && ExternalDataTypeEnum.URL.getName().equals(request.getImportType())
             && !isUrl(request.getData());
-    }
-    
-    private boolean isLegacyApiEnabled() {
-        return propertiesSupplier.get().isLegacyMcpImportApiEnabled();
     }
     
     private boolean shouldRejectUserUrl(McpServerImportRequest request) {
@@ -308,18 +298,6 @@ public class McpLegacyImportAdapter {
     
     private McpServerImportResponse rejectedResponse() {
         return failedResponse("Legacy URL import is disabled. Please use a configured source id.");
-    }
-    
-    private McpServerImportValidationResult deprecatedValidation() {
-        return failedValidation("Legacy MCP import API is disabled. Please use the unified "
-            + "AI resource import API or enable nacos.ai.resource.import.legacy-mcp-api-enabled "
-            + "for a compatibility window.");
-    }
-    
-    private McpServerImportResponse deprecatedResponse() {
-        return failedResponse("Legacy MCP import API is disabled. Please use the unified "
-            + "AI resource import API or enable nacos.ai.resource.import.legacy-mcp-api-enabled "
-            + "for a compatibility window.");
     }
     
     private McpServerImportValidationResult failedValidation(String errorMessage) {

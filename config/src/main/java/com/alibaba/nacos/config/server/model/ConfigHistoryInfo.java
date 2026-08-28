@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.config.server.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -32,7 +31,7 @@ public class ConfigHistoryInfo implements Serializable {
     
     private static final long serialVersionUID = -7827521105376245603L;
     
-    @JsonSerialize(using = ToStringSerializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private long id;
     
     private long lastId = -1;

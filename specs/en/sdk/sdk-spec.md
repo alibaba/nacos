@@ -119,7 +119,47 @@ The target Maintainer SDK is not namespace-bound. Every Agent management call
 must explicitly identify its namespace. It exposes the new Agent management
 facade while retaining the A2A management facade for its compatibility window.
 
-## 5. Security Rules
+## 5. MCP Lifecycle-Hosting Contract
+
+The existing Java Client MCP interfaces remain compatibility surfaces while
+MCP metadata and Versions move to the common AI Resource lifecycle. Public
+method signatures remain unchanged wherever the existing operation can be
+adapted internally:
+
+- release remains a direct-online compatibility write with the same return
+  value;
+- query retains its current serving projection and uses `latest` when Version
+  is omitted;
+- subscription continues polling the complete MCP query projection and does
+  not subscribe to the underlying Naming Service; and
+- endpoint deregistration, reconnect, and redo preserve client-owned Runtime
+  publication intent without creating or deleting an MCP definition.
+
+Lifecycle hosting does not change the current Runtime Service name, cluster,
+metadata, endpoint request, reconnect snapshot, or ability negotiation. It does
+not add Runtime Version ranges or multiple-transport fields. Such endpoint
+model changes require a later compatibility design.
+
+The Maintainer SDK retains its current MCP create/update/delete/query methods as
+direct-online compatibility facades and adds typed methods matching the Admin
+MCP Version, draft, submit, publish, force-publish, redraft, online, offline,
+and label operations. Every new management call identifies its namespace and
+uses `mcpName + version` with the same lifecycle application service as Admin
+and Console APIs.
+
+Existing Maintainer overloads that accept only `mcpId` remain deprecated
+compatibility inputs. The server resolves the alias from MCP AI Resource rows
+and then applies the same name-based authorization and operation. The Java
+Client does not start populating the dormant top-level gRPC `mcpId`; current
+model, event, and release-response ID fields remain wire-compatible.
+
+Client HTTP parity with gRPC is deferred until MCP lifecycle hosting is
+complete. A later design should preserve the public SDK interface where
+possible, keep HTTP and gRPC semantics identical, and reuse Agent HTTP
+publisher heartbeat/renewal rather than creating a second liveness model. This
+spec does not yet define those HTTP paths, payloads, or heartbeat intervals.
+
+## 6. Security Rules
 
 SDK capability design must follow least privilege:
 
@@ -134,7 +174,7 @@ SDK capability design must follow least privilege:
 - SDK documentation should make data-leakage risks visible when an API can list
   or export a large amount of configuration, service, client, or metadata.
 
-## 6. Transport and API Alignment
+## 7. Transport and API Alignment
 
 The SDK contract is a semantic contract, not a transport contract:
 
@@ -151,7 +191,7 @@ The SDK contract is a semantic contract, not a transport contract:
   language-idiomatic exceptions or result types without hiding server-side
   semantics.
 
-## 7. Multi-language Alignment
+## 8. Multi-language Alignment
 
 Java is currently the baseline implementation for defining shared SDK
 semantics. Other language SDKs should align with the same capability families:

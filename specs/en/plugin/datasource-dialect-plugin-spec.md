@@ -108,6 +108,34 @@ duplicates or legacy beta/tag gray tables. Such migration, if needed for a
 pre-3.0 deployment, is an upgrade prerequisite rather than a server runtime
 mapper responsibility.
 
+Mapper interfaces may supply `default` SQL for an operation. Such defaults are
+written in MySQL-compatible syntax, including row-limiting clauses such as
+`LIMIT`. A dialect whose database does not accept that syntax must override
+every affected operation; inheriting the default produces a syntax error at
+query time rather than a startup failure. Mapper defaults must also read
+optional filter values from the same `MapperContext` map the repository writes
+them to, so an optional predicate and its bound parameter are always emitted
+together.
+
+Fuzzy search parameters escape the `_` wildcard with a backslash before they are
+bound, so `LIKE` predicates are dialect-sensitive as well. MySQL and PostgreSQL
+treat the backslash as the default `LIKE` escape character, while Derby and
+Oracle have no default escape character and match the backslash literally, so an
+inherited predicate silently returns no row instead of failing. A dialect
+without a default escape character must therefore report its escape clause
+through `Mapper#getLikeEscapeClause()`, and every `LIKE ?` bound to such a
+parameter, in both mapper defaults and dialect overrides, must append that
+clause. The clause must not be hardcoded in shared defaults, because the string
+literal accepted for the escape character differs between databases.
+
+Declaring the escape clause also constrains the caller: once a `LIKE` predicate
+declares an escape character, the bound parameter must escape that character
+itself before escaping `_`, otherwise a search value containing a literal
+backslash forms an invalid escape sequence and the database rejects the whole
+query (Oracle `ORA-01424`, Derby `SQLSTATE 22025`). Every producer of a fuzzy
+search parameter must apply the same escaping order: the escape character `\`
+first, then `_`, and finally the Nacos wildcard `*` to `%`.
+
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
 operation error, not an empty result.

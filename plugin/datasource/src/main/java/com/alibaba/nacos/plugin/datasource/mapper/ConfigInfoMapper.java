@@ -287,7 +287,7 @@ public interface ConfigInfoMapper extends Mapper {
             String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
             
             if (StringUtils.isNotBlank(dataId)) {
-                where.append(" AND data_id LIKE ? ");
+                where.append(" AND data_id LIKE ? ").append(getLikeEscapeClause());
                 paramList.add(dataId);
             }
             if (StringUtils.isNotBlank(group)) {
@@ -420,18 +420,19 @@ public interface ConfigInfoMapper extends Mapper {
         
         WhereBuilder where = new WhereBuilder("SELECT count(*) FROM config_info");
         
-        where.like("tenant_id", tenantId);
+        String escapeClause = getLikeEscapeClause();
+        where.like("tenant_id", tenantId, escapeClause);
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().like("data_id", dataId);
+            where.and().like("data_id", dataId, escapeClause);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().like("group_id", group);
+            where.and().like("group_id", group, escapeClause);
         }
         if (StringUtils.isNotBlank(appName)) {
             where.and().eq("app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.and().like("content", content);
+            where.and().like("content", content, escapeClause);
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("type", types);

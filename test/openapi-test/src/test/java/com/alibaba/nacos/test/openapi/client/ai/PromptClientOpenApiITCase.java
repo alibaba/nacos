@@ -44,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     controlled not-found responses instead of HTTP 500.</li>
  * </ul>
  *
+ * <p>The standalone IT profile keeps authorization disabled, so authenticated owner, scope, and
+ * grant-based visibility filtering is covered by focused Prompt service tests instead.
+ *
  * <p>Draft, force-publish, label, and delete calls to {@code /nacos/v3/admin/ai/prompt} are helper calls only; this
  * class keeps its assertions focused on the runtime client query contract.
  *

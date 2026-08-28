@@ -97,6 +97,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
@@ -112,6 +113,9 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private AiResourceStorage storage;
+    
+    @Mock
+    private AiResourceStorage externalStorage;
     
     @Mock
     private AiResourcePersistService aiResourcePersistService;
@@ -139,7 +143,9 @@ class SkillOperationServiceImplTest {
         EnvUtil.setEnvironment(new StandardEnvironment());
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
+        lenient().when(externalStorage.type()).thenReturn("external");
         AiResourceStorageRouter.join(storage);
+        AiResourceStorageRouter.join(externalStorage);
         PublishPipelineManager pipelineManager = TestAiPipelineSupport.newManager(false,
             List.of(), List.of());
         PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(
@@ -163,6 +169,8 @@ class SkillOperationServiceImplTest {
             visibilityManagerStatic.close();
         }
         System.clearProperty(AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY);
+        System.clearProperty(
+            com.alibaba.nacos.ai.constant.Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY);
         TestAiPipelineSupport.clearStateChecker();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -228,6 +236,8 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 =
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("v1");
+        v1.setStorage("{\"provider\":\"nacos_config\","
+            + "\"scope\":\"test-namespace:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
         vPage.setPageItems(List.of(v1));
         when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(),
             isNull(), anyInt(), anyInt())).thenReturn(vPage);
@@ -238,6 +248,44 @@ class SkillOperationServiceImplTest {
         // Then
         verify(manifestService).delete(anyString(), anyString());
         verify(aiResourcePersistService).delete(eq(namespaceId), eq(skillName), anyString());
+    }
+    
+    @Test
+    void testDeleteSkillShouldAttemptAllPersistedProviderFilesAndKeepRowsOnFailure()
+        throws NacosException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(namespaceId, skillName, "skill")).thenReturn(meta);
+        AiResourceStorage persistedStorage = mock(AiResourceStorage.class);
+        when(persistedStorage.type()).thenReturn("persisted-provider");
+        AiResourceStorageRouter.join(persistedStorage);
+        com.alibaba.nacos.ai.model.AiResourceVersion version =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v1");
+        version.setStorage("{\"provider\":\"persisted-provider\","
+            + "\"scope\":\"test-namespace:test-skill:v1\","
+            + "\"files\":[\"SKILL.md\",\"references/doc.md\"]}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versionPage = new Page<>();
+        versionPage.setPageItems(List.of(version));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), eq("skill"),
+            isNull(), eq(1), anyInt())).thenReturn(versionPage);
+        NacosException storageFailure =
+            new NacosException(NacosException.SERVER_ERROR, "storage delete failed");
+        doThrow(storageFailure).doNothing().when(persistedStorage)
+            .delete(any(StorageKey.class));
+        
+        assertThrows(NacosException.class,
+            () -> skillOperationService.deleteSkill(namespaceId, skillName));
+        
+        verify(persistedStorage, times(2)).delete(any(StorageKey.class));
+        verify(storage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService, never()).deleteByNameAndType(anyString(),
+            anyString(), anyString());
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
     }
     
     @Test
@@ -286,7 +334,7 @@ class SkillOperationServiceImplTest {
     void testUploadSkillFromZip() throws NacosException, IOException {
         // Given
         String namespaceId = "test-namespace";
-        byte[] zipBytes = createValidZipBytes();
+        final byte[] zipBytes = createValidZipBytes();
         when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString()))
             .thenReturn(null);
         
@@ -298,6 +346,50 @@ class SkillOperationServiceImplTest {
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
             && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testUploadSkillFromZipAutoPublishesNewSkill() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        String version = "3.0.6";
+        final byte[] zipBytes = createValidZipBytes();
+        AiResource createdMeta = new AiResource();
+        createdMeta.setNamespaceId(namespaceId);
+        createdMeta.setName(skillName);
+        createdMeta.setType("skill");
+        createdMeta.setStatus("enable");
+        createdMeta.setMetaVersion(1L);
+        createdMeta.setVersionInfo(
+            "{\"editingVersion\":\"3.0.6\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(null, createdMeta);
+        com.alibaba.nacos.ai.model.AiResourceVersion draft =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        draft.setVersion(version);
+        draft.setStatus("draft");
+        draft.setStorage(
+            "{\"provider\":\"nacos_config\",\"scope\":\"test-namespace:test-skill:3.0.6\","
+                + "\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq(version))).thenReturn(draft);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+            new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>());
+        manifest.setLabels(new HashMap<>());
+        when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        
+        String result = uploadSkill(namespaceId, zipBytes, false, null, null, true);
+        
+        assertEquals(skillName, result);
+        verify(aiResourceVersionPersistService).updateStatus(namespaceId, skillName, "skill",
+            version, "online");
+        verify(manifestService).write(eq(namespaceId), eq(skillName), argThat(
+            written -> version.equals(written.getLabels().get(AiResourceConstants.LABEL_LATEST))));
     }
     
     @Test
@@ -364,6 +456,8 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         version.setVersion("v3");
         version.setStatus("draft");
+        version.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
             .thenReturn(meta);
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-skill"), anyString(),
@@ -378,6 +472,38 @@ class SkillOperationServiceImplTest {
             eq("v3"), anyString());
         verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
             && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())
+            && key.getKey().endsWith(":references/old.md")));
+    }
+    
+    @Test
+    void testUploadSkillFromZipDoesNotAutoPublishExistingSkill()
+        throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v3\",\"labels\":{},\"onlineCnt\":1}");
+        com.alibaba.nacos.ai.model.AiResourceVersion version =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v3");
+        version.setStatus("draft");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-skill"), anyString(),
+            eq("v3"))).thenReturn(version);
+        
+        String result = uploadSkill(namespaceId, zipBytes, true, null, null, true);
+        
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq("test-skill"),
+            anyString(), eq("v3"), anyString());
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), anyString());
     }
     
     @Test
@@ -1642,6 +1768,20 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
+    void testBatchUploadDoesNotAutoPublishNewSkill() throws IOException, NacosException {
+        String namespaceId = "test-ns";
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString()))
+            .thenReturn(null);
+        
+        BatchUploadResult result = skillOperationService.batchUploadSkillsFromZip(
+            namespaceId, createMultiSkillZipBytes(), false);
+        
+        assertEquals(1, result.getSucceeded().size());
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+            anyString(), anyString(), anyString());
+    }
+    
+    @Test
     void testListSkillsNoFilterServiceAvailable() throws NacosException {
         String namespaceId = "test-ns";
         AiResource meta = new AiResource();
@@ -2286,15 +2426,50 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         vRow.setVersion(version);
         vRow.setStorage(
-            "{\"provider\":\"nacos_config\",\"scope\":\"test-ns:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
+            "{\"provider\":\"external\",\"scope\":\"test-ns:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq(version)))
             .thenReturn(vRow);
-        when(storage.get(any(StorageKey.class))).thenReturn(
+        when(externalStorage.get(any(StorageKey.class))).thenReturn(
             ("---\nname: test-skill\ndescription: desc\n---\n\nbody").getBytes());
         Skill result = skillOperationService.getSkillVersionDetail(namespaceId, skillName, version);
         assertNotNull(result);
         assertEquals("test-skill", result.getName());
+        verify(externalStorage).get(argThat(key -> "external".equals(key.getProvider())));
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testGetSkillVersionDetailUsesNacosConfigForLegacyStorage() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "test-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion(version);
+        vRow.setStorage(
+            "{\"scope\":\"test-ns:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq(version)))
+            .thenReturn(vRow);
+        System.setProperty(
+            com.alibaba.nacos.ai.constant.Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
+            "external");
+        when(storage.get(any(StorageKey.class))).thenReturn(
+            ("---\nname: test-skill\ndescription: desc\n---\n\nbody").getBytes());
+        
+        Skill result = skillOperationService.getSkillVersionDetail(namespaceId, skillName, version);
+        
+        assertNotNull(result);
+        verify(storage).get(argThat(key -> "nacos_config".equals(key.getProvider())));
+        verify(externalStorage, never()).get(any(StorageKey.class));
     }
     
     @Test
@@ -2374,6 +2549,8 @@ class SkillOperationServiceImplTest {
             new com.alibaba.nacos.ai.model.AiResourceVersion();
         vRow.setVersion("v1");
         vRow.setStatus("draft");
+        vRow.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq("v1")))
             .thenReturn(vRow);
@@ -2388,7 +2565,56 @@ class SkillOperationServiceImplTest {
         skillOperationService.updateDraft(namespaceId, draft, null);
         verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq(skillName),
             anyString(),
-            eq("v1"), anyString());
+            eq("v1"), argThat(storageJson -> storageJson.contains(
+                "\"provider\":\"external\"")));
+        verify(externalStorage).save(argThat(key -> "external".equals(key.getProvider())),
+            any(byte[].class));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())
+            && key.getKey().endsWith(":references/old.md")));
+        verify(externalStorage, never())
+            .delete(argThat(key -> key.getKey().endsWith(":SKILL.md")));
+        verify(storage, never()).save(any(StorageKey.class), any(byte[].class));
+    }
+    
+    @Test
+    void testUpdateDraftKeepsStorageDescriptorWhenRemovedFileDeletionFails() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        vRow.setStorage(
+            "{\"provider\":\"external\",\"files\":[\"SKILL.md\",\"references/old.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "delete failed"))
+            .when(externalStorage)
+            .delete(argThat(key -> key.getKey().endsWith(":references/old.md")));
+        
+        Skill draft = new Skill();
+        draft.setName(skillName);
+        draft.setDescription("updated desc");
+        draft.setSkillMd("---\nname: my-skill\ndescription: updated desc\n---\n\nbody");
+        
+        assertThrows(NacosException.class,
+            () -> skillOperationService.updateDraft(namespaceId, draft, null));
+        verify(aiResourceVersionPersistService, never()).updateStorage(anyString(), anyString(),
+            anyString(), anyString(), anyString());
+        verify(aiResourceVersionPersistService, never()).updateStorageAndDesc(anyString(),
+            anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
     }
     
     @Test
@@ -2449,7 +2675,7 @@ class SkillOperationServiceImplTest {
         vRow.setVersion("v1");
         vRow.setStatus("draft");
         vRow.setStorage(
-            "{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+            "{\"provider\":\"external\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq("v1")))
             .thenReturn(vRow);
@@ -2460,6 +2686,38 @@ class SkillOperationServiceImplTest {
         skillOperationService.deleteDraft(namespaceId, skillName);
         verify(aiResourceVersionPersistService).delete(eq(namespaceId), eq(skillName), anyString(),
             eq("v1"));
+        verify(externalStorage).delete(argThat(key -> "external".equals(key.getProvider())));
+        verify(storage, never()).delete(any(StorageKey.class));
+    }
+    
+    @Test
+    void testDeleteDraftShouldUseNacosConfigForLegacyDescriptor() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion version =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v1");
+        version.setStatus("draft");
+        version.setStorage("{\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1"))).thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
+            eq(1L), any())).thenReturn(true);
+        
+        skillOperationService.deleteDraft(namespaceId, skillName);
+        
+        verify(storage).delete(argThat(key -> "nacos_config".equals(key.getProvider())));
+        verify(externalStorage, never()).delete(any(StorageKey.class));
+        verify(aiResourceVersionPersistService).delete(namespaceId, skillName, "skill", "v1");
     }
     
     @Test
@@ -2872,11 +3130,21 @@ class SkillOperationServiceImplTest {
         manifest.setVersions(new HashMap<>(Map.of("v1", List.of("SKILL.md"))));
         manifest.setLabels(new HashMap<>(Map.of("latest", "v1")));
         when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
-        when(storage.get(any(StorageKey.class))).thenReturn(
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow =
+            new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStorage(
+            "{\"provider\":\"external\",\"scope\":\"test-ns:my-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
+            eq("v1")))
+            .thenReturn(vRow);
+        when(externalStorage.get(any(StorageKey.class))).thenReturn(
             ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
         Skill result = skillOperationService.querySkill(namespaceId, skillName, null, null);
         assertNotNull(result);
         assertEquals("my-skill", result.getName());
+        verify(externalStorage).get(argThat(key -> "external".equals(key.getProvider())));
+        verify(storage, never()).get(any(StorageKey.class));
     }
     
     @Test
@@ -3104,12 +3372,19 @@ class SkillOperationServiceImplTest {
     private String uploadSkill(String namespaceId, byte[] zipBytes, boolean overwrite,
         String targetVersion, String commitMsg)
         throws NacosException {
+        return uploadSkill(namespaceId, zipBytes, overwrite, targetVersion, commitMsg, false);
+    }
+    
+    private String uploadSkill(String namespaceId, byte[] zipBytes, boolean overwrite,
+        String targetVersion, String commitMsg, boolean autoPublishIfNew)
+        throws NacosException {
         SkillUploadRequest request = SkillUploadRequest.builder()
             .namespaceId(namespaceId)
             .zipBytes(zipBytes)
             .overwrite(overwrite)
             .targetVersion(targetVersion)
             .commitMsg(commitMsg)
+            .autoPublishIfNew(autoPublishIfNew)
             .build();
         return skillOperationService.uploadSkillFromZip(request);
     }

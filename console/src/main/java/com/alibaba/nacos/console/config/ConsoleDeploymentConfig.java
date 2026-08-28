@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.config.server.auth.ConfigCloneSourceReadPermissionChecker;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Load Beans for {@link com.alibaba.nacos.sys.env.DeploymentType#CONSOLE} type.
@@ -32,12 +35,31 @@ import org.springframework.context.annotation.Configuration;
 public class ConsoleDeploymentConfig {
     
     @Bean
-    public ControllerMethodsCache controllerMethodsCache() {
-        return new ControllerMethodsCache();
+    public ControllerMethodsCache controllerMethodsCache(
+        ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider) {
+        return new ControllerMethodsCache(handlerMappingProvider);
     }
     
     @Bean
     public SelectorManager selectorManager() {
         return new SelectorManager();
+    }
+    
+    @Bean
+    public ConsoleAuthPluginInitializer consoleAuthPluginInitializer() {
+        return new ConsoleAuthPluginInitializer();
+    }
+    
+    /**
+     * Provide the config clone source read permission checker for standalone console deployment.
+     *
+     * <p>In a standalone console deployment the clone request is forwarded to the server using the
+     * server identity, so server-side permission checks cannot enforce the requesting user's read
+     * permission on the source namespace. Declaring the bean here keeps the check in the console
+     * proxy, which runs with the real user identity.
+     */
+    @Bean
+    public ConfigCloneSourceReadPermissionChecker configCloneSourceReadPermissionChecker() {
+        return new ConfigCloneSourceReadPermissionChecker();
     }
 }

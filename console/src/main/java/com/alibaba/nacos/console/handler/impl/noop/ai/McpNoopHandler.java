@@ -17,6 +17,9 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -30,6 +33,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 /**
  * Noop implementation of Mcp handler.
@@ -89,6 +94,82 @@ public class McpNoopHandler implements McpHandler {
             MCP_NOT_ENABLED_MESSAGE);
     }
     
+    @Override
+    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+        throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        String mcpName, String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+        Map<String, String> labels) throws NacosException {
+        throw disabled();
+    }
+    
     @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
@@ -105,5 +186,10 @@ public class McpNoopHandler implements McpHandler {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
             ErrorCode.API_FUNCTION_DISABLED,
             MCP_NOT_ENABLED_MESSAGE);
+    }
+    
+    private NacosApiException disabled() {
+        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
+            ErrorCode.API_FUNCTION_DISABLED, MCP_NOT_ENABLED_MESSAGE);
     }
 }

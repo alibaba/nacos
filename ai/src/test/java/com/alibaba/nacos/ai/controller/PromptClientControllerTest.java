@@ -17,11 +17,16 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
 import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.core.model.form.PageForm;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,11 +47,29 @@ class PromptClientControllerTest {
     @Mock
     private PromptClientOperationService promptClientOperationService;
     
+    @Mock
+    private AiResourceSearchApplicationService searchService;
+    
     private PromptClientController controller;
     
     @BeforeEach
     void setUp() {
-        controller = new PromptClientController(promptClientOperationService);
+        controller = new PromptClientController(promptClientOperationService, searchService);
+    }
+    
+    @Test
+    void searchShouldDelegateValidatedForms() throws NacosException {
+        AiResourcePageSearchForm form = new AiResourcePageSearchForm();
+        PageForm pageForm = new PageForm();
+        Page<PromptMetaSummary> page = new Page<>();
+        PromptMetaSummary item = new PromptMetaSummary();
+        item.setPromptKey("p1");
+        page.setPageItems(java.util.Collections.singletonList(item));
+        when(searchService.searchPrompts(form, 1, 100)).thenReturn(page);
+        
+        Result<Page<PromptMetaSummary>> result = controller.search(form, pageForm);
+        
+        assertEquals("p1", result.getData().getPageItems().get(0).getPromptKey());
     }
     
     @Test

@@ -48,8 +48,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -94,7 +94,8 @@ public class ConfigProxyTest {
     
     @BeforeEach
     public void setUp() {
-        configProxy = new ConfigProxy(configHandler, configCloneSourceReadPermissionChecker);
+        configProxy = new ConfigProxy(configHandler,
+            configCloneSourceReadPermissionChecker);
     }
     
     @Test
@@ -335,6 +336,7 @@ public class ConfigProxyTest {
         String sourceNamespaceId = "sourceNamespace";
         String targetNamespaceId = "targetNamespace";
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
+        
         doThrow(new AccessException("authorization failed"))
             .when(configCloneSourceReadPermissionChecker)
             .checkSourceReadPermission(sourceNamespaceId);

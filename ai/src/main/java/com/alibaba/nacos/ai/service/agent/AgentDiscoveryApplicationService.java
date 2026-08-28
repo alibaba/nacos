@@ -20,14 +20,21 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionComparator;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageDescriptorSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
@@ -51,9 +58,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -86,7 +97,13 @@ public class AgentDiscoveryApplicationService {
     
     private static final int VERSION_CACHE_SIZE = 1024;
     
+    private static final int SERVICE_UNAVAILABLE_STATUS = 503;
+    
     private static final String CACHE_KEY_SEPARATOR = "\u0000";
+    
+    private static final TypeReference<List<String>> STRING_LIST_TYPE =
+        new TypeReference<List<String>>() {
+        };
     
     private final AgentOperationService operationService;
     
@@ -96,15 +113,32 @@ public class AgentDiscoveryApplicationService {
     
     private final AgentRuntimeRegistryService runtimeRegistryService;
     
+    private final AiResourceSearchService searchService;
+    
+    private final AgentSearchModeResolver searchModeResolver;
+    
     private final Cache<String, AgentVersionDetail> versionCache;
     
+    @Autowired
     public AgentDiscoveryApplicationService(AgentOperationService operationService,
         AgentPersistenceService persistenceService, AiResourceManager resourceManager,
-        AgentRuntimeRegistryService runtimeRegistryService) {
+        AgentRuntimeRegistryService runtimeRegistryService,
+        ObjectProvider<AiResourceSearchService> searchServiceProvider,
+        AgentSearchModeResolver searchModeResolver) {
+        this(operationService, persistenceService, resourceManager, runtimeRegistryService,
+            searchServiceProvider.getIfAvailable(), searchModeResolver);
+    }
+    
+    AgentDiscoveryApplicationService(AgentOperationService operationService,
+        AgentPersistenceService persistenceService, AiResourceManager resourceManager,
+        AgentRuntimeRegistryService runtimeRegistryService,
+        AiResourceSearchService searchService, AgentSearchModeResolver searchModeResolver) {
         this.operationService = operationService;
         this.persistenceService = persistenceService;
         this.resourceManager = resourceManager;
         this.runtimeRegistryService = runtimeRegistryService;
+        this.searchService = searchService;
+        this.searchModeResolver = searchModeResolver;
         this.versionCache =
             CacheBuilder.newBuilder().maximumSize(VERSION_CACHE_SIZE).build();
     }
@@ -120,6 +154,14 @@ public class AgentDiscoveryApplicationService {
         RadModelValidator.validate(request);
         int pageNo = request.getPageNo() == null ? DEFAULT_PAGE_NO : request.getPageNo();
         int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
+        if (AgentSearchMode.INDEX == searchModeResolver.resolve()) {
+            return searchIndex(request, pageNo, pageSize);
+        }
+        return searchScan(request, pageNo, pageSize);
+    }
+    
+    private Page<AgentCatalogEntry> searchScan(AgentSearchRequest request, int pageNo,
+        int pageSize) throws NacosException {
         QueryCondition condition = resourceManager.buildQueryCondition(request.getNamespaceId(),
             Constants.Agent.RESOURCE_TYPE_AGENT, null, null, VisibilityConstants.ACTION_READ);
         if (condition.isAlwaysEmpty()) {
@@ -145,6 +187,91 @@ public class AgentDiscoveryApplicationService {
         Page<AgentCatalogEntry> result = page(matches, pageNo, pageSize);
         RadModelValidator.validateCatalogPage(result);
         return result;
+    }
+    
+    private Page<AgentCatalogEntry> searchIndex(AgentSearchRequest request, int pageNo,
+        int pageSize) throws NacosException {
+        if (searchService == null) {
+            throw new NacosException(SERVICE_UNAVAILABLE_STATUS,
+                "Agent Search index runtime is unavailable.");
+        }
+        Query query = new Query();
+        query.setNamespaceId(request.getNamespaceId());
+        query.setResourceTypes(Collections.singletonList(Constants.Agent.RESOURCE_TYPE_AGENT));
+        query.setPageNumber(pageNo);
+        query.setPageSize(pageSize);
+        query.setPredicates(buildSearchPredicates(request));
+        NumberedPage source = searchService.numberedList(query);
+        if (source.getTotalCount() > Integer.MAX_VALUE) {
+            throw serverError("Agent Search result count exceeds the supported page contract.",
+                null);
+        }
+        List<AgentCatalogEntry> items = new ArrayList<AgentCatalogEntry>(
+            source.getItems().size());
+        for (AiResourceSearchResult item : source.getItems()) {
+            items.add(toCatalogEntry(toIndexedSummary(item)));
+        }
+        Page<AgentCatalogEntry> result = new Page<AgentCatalogEntry>();
+        result.setPageNumber(source.getPageNumber());
+        result.setTotalCount((int) source.getTotalCount());
+        result.setPagesAvailable(source.getPagesAvailable());
+        result.setPageItems(items);
+        RadModelValidator.validateCatalogPage(result);
+        return result;
+    }
+    
+    private List<Predicate> buildSearchPredicates(AgentSearchRequest request) {
+        List<Predicate> result = new ArrayList<Predicate>();
+        if (request.getAgentNameContains() != null) {
+            result.add(new Predicate("resourceName", PredicateOperator.LITERAL_CONTAINS,
+                Collections.singletonList(request.getAgentNameContains()), true));
+        }
+        if (request.getTagsAll() != null) {
+            result.add(new Predicate("tags", PredicateOperator.EXACT_ALL,
+                request.getTagsAll(), true));
+        }
+        if (request.getProtocolsAny() != null) {
+            result.add(new Predicate("metadata.protocols", PredicateOperator.EXACT_ANY,
+                request.getProtocolsAny(), true));
+        }
+        return result;
+    }
+    
+    private AgentSummary toIndexedSummary(AiResourceSearchResult source) throws NacosException {
+        try {
+            Map<String, Object> metadata = source.getMetadata();
+            AgentVersionCatalog catalog = convertMetadata(metadata.get("versionCatalog"),
+                AgentVersionCatalog.class);
+            if (catalog == null) {
+                throw new IllegalArgumentException("versionCatalog is missing");
+            }
+            AgentSummary result = new AgentSummary();
+            result.setAgentName(source.getResourceName());
+            result.setDisplayName(source.getDisplayName());
+            result.setDescription(source.getDescription());
+            Object iconUrl = metadata.get("iconUrl");
+            result.setIconUrl(iconUrl == null ? null : String.valueOf(iconUrl));
+            result.setProvider(convertMetadata(metadata.get("provider"), AgentProvider.class));
+            if (metadata.containsKey("tags")) {
+                result.setTags(convertMetadata(metadata.get("tags"), STRING_LIST_TYPE));
+            } else {
+                result.setTags(source.getTags().isEmpty() ? null
+                    : new ArrayList<String>(source.getTags()));
+            }
+            result.setVersionCatalog(catalog);
+            return result;
+        } catch (RuntimeException e) {
+            throw serverError("Indexed Agent catalog is invalid: " + source.getResourceName(),
+                e);
+        }
+    }
+    
+    private <T> T convertMetadata(Object value, Class<T> type) {
+        return value == null ? null : JacksonUtils.toObj(JacksonUtils.toJson(value), type);
+    }
+    
+    private <T> T convertMetadata(Object value, TypeReference<T> type) {
+        return value == null ? null : JacksonUtils.toObj(JacksonUtils.toJson(value), type);
     }
     
     /**

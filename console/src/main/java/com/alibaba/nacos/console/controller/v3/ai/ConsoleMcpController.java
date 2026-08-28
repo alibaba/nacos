@@ -22,10 +22,16 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpImportForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleDraftForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleLabelsForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleVersionForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleVersionListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -41,7 +47,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.console.config.McpEndpointAccessValidator;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -62,6 +70,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE;
 import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
@@ -79,8 +88,12 @@ public class ConsoleMcpController {
     
     private final McpProxy mcpProxy;
     
-    public ConsoleMcpController(McpProxy mcpProxy) {
+    private final McpEndpointAccessValidator mcpEndpointAccessValidator;
+    
+    public ConsoleMcpController(McpProxy mcpProxy,
+        McpEndpointAccessValidator mcpEndpointAccessValidator) {
         this.mcpProxy = mcpProxy;
+        this.mcpEndpointAccessValidator = mcpEndpointAccessValidator;
     }
     
     /**
@@ -120,29 +133,43 @@ public class ConsoleMcpController {
     public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType,
         @RequestParam String baseUrl, @RequestParam String endpoint,
         @RequestParam(required = false) String authToken) throws NacosException {
-        McpClientTransport transport = null;
+        if (!StringUtils.equals(transportType, MCP_PROTOCOL_SSE)
+            && !StringUtils.equals(transportType, MCP_PROTOCOL_STREAMABLE)) {
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                "Unsupported transport type: " + transportType,
+                null);
+        }
+        try {
+            mcpEndpointAccessValidator.validate(baseUrl, endpoint);
+        } catch (SecurityException e) {
+            return Result.failure(ErrorCode.ACCESS_DENIED.getCode(), e.getMessage(), null);
+        } catch (IllegalArgumentException e) {
+            return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), e.getMessage(),
+                null);
+        }
+        McpClientTransport transport;
         if (StringUtils.equals(transportType, MCP_PROTOCOL_SSE)) {
             HttpClientSseClientTransport.Builder transportBuilder =
                 HttpClientSseClientTransport.builder(baseUrl)
-                    .sseEndpoint(endpoint);
-            if (!StringUtils.isBlank(authToken)) {
-                transportBuilder
-                    .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
-            }
-            transport = transportBuilder.build();
-        } else if (StringUtils.equals(transportType, MCP_PROTOCOL_STREAMABLE)) {
-            HttpClientStreamableHttpTransport.Builder transportBuilder =
-                HttpClientStreamableHttpTransport.builder(
-                    baseUrl).endpoint(endpoint);
+                    .sseEndpoint(endpoint)
+                    .customizeClient(builder -> builder
+                        .followRedirects(java.net.http.HttpClient.Redirect.NEVER));
             if (!StringUtils.isBlank(authToken)) {
                 transportBuilder
                     .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
             }
             transport = transportBuilder.build();
         } else {
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                "Unsupported transport type: " + transportType,
-                null);
+            HttpClientStreamableHttpTransport.Builder transportBuilder =
+                HttpClientStreamableHttpTransport.builder(
+                    baseUrl).endpoint(endpoint)
+                    .customizeClient(builder -> builder
+                        .followRedirects(java.net.http.HttpClient.Redirect.NEVER));
+            if (!StringUtils.isBlank(authToken)) {
+                transportBuilder
+                    .customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
+            }
+            transport = transportBuilder.build();
         }
         try (McpSyncClient client =
             McpClient.sync(transport).requestTimeout(Duration.ofSeconds(10)).build()) {
@@ -233,6 +260,170 @@ public class ConsoleMcpController {
     }
     
     /**
+     * Page lifecycle metadata for the Versions of one MCP resource.
+     */
+    @Since("3.3.0")
+    @GetMapping("/versions")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Page<McpLifecycleVersionSummary>> listLifecycleVersions(
+        McpLifecycleVersionListForm form, PageForm pageForm) throws NacosException {
+        form.validate();
+        pageForm.validate();
+        return Result.success(mcpProxy.listLifecycleVersions(form.getNamespaceId(),
+            form.getMcpName(), form.getStatus(), pageForm.getPageNo(), pageForm.getPageSize()));
+    }
+    
+    /**
+     * Read one exact MCP lifecycle Version.
+     */
+    @Since("3.3.0")
+    @GetMapping("/version")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionDetail> getLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.getLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Create one new MCP draft Version.
+     */
+    @Since("3.3.0")
+    @PostMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionDetail> createLifecycleDraft(
+        McpLifecycleDraftForm form) throws NacosException {
+        form.validate();
+        McpServerBasicInfo server = McpRequestUtil.parseMcpServerBasicInfo(form);
+        return Result.success(mcpProxy.createLifecycleDraft(form.getNamespaceId(), server,
+            McpRequestUtil.parseMcpTools(form), McpRequestUtil.parseMcpResources(form),
+            McpRequestUtil.parseMcpEndpointSpec(server, form)));
+    }
+    
+    /**
+     * Replace one exact current MCP draft.
+     */
+    @Since("3.3.0")
+    @PutMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionDetail> updateLifecycleDraft(
+        McpLifecycleDraftForm form) throws NacosException {
+        form.validate();
+        McpServerBasicInfo server = McpRequestUtil.parseMcpServerBasicInfo(form);
+        return Result.success(mcpProxy.updateLifecycleDraft(form.getNamespaceId(), server,
+            McpRequestUtil.parseMcpTools(form), McpRequestUtil.parseMcpResources(form),
+            McpRequestUtil.parseMcpEndpointSpec(server, form)));
+    }
+    
+    /**
+     * Delete one exact current MCP draft.
+     */
+    @Since("3.3.0")
+    @DeleteMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Void> deleteLifecycleDraft(McpLifecycleVersionForm form)
+        throws NacosException {
+        form.validate();
+        mcpProxy.deleteLifecycleDraft(form.getNamespaceId(), form.getMcpName(),
+            form.getVersion());
+        return Result.success();
+    }
+    
+    /**
+     * Submit one exact MCP working Version.
+     */
+    @Since("3.3.0")
+    @PostMapping("/submit")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> submitLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.submitLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Publish one exact reviewed MCP Version.
+     */
+    @Since("3.3.0")
+    @PostMapping("/publish")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> publishLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.publishLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Force-publish one exact MCP working Version.
+     */
+    @Since("3.3.0")
+    @PostMapping("/force-publish")
+    @Secured(resource = Constants.MCP_CONSOLE_PATH + "/force-publish",
+        action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> forcePublishLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.forcePublishLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Return one exact reviewed MCP Version to draft.
+     */
+    @Since("3.3.0")
+    @PostMapping("/redraft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> redraftLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.redraftLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Bring one exact offline MCP Version online and make it latest.
+     */
+    @Since("3.3.0")
+    @PostMapping("/online")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> onlineLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.onlineLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Take one exact online MCP Version offline.
+     */
+    @Since("3.3.0")
+    @PostMapping("/offline")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpLifecycleVersionSummary> offlineLifecycleVersion(
+        McpLifecycleVersionForm form) throws NacosException {
+        form.validate();
+        return Result.success(mcpProxy.offlineLifecycleVersion(form.getNamespaceId(),
+            form.getMcpName(), form.getVersion()));
+    }
+    
+    /**
+     * Replace custom MCP labels while preserving the server-managed latest label.
+     */
+    @Since("3.3.0")
+    @PutMapping("/labels")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Map<String, String>> updateLifecycleLabels(McpLifecycleLabelsForm form)
+        throws NacosException {
+        form.validate();
+        Map<String, String> labels = McpRequestUtil.parseLifecycleLabels(form.getLabels());
+        return Result.success(mcpProxy.updateLifecycleLabels(form.getNamespaceId(),
+            form.getMcpName(), labels));
+    }
+    
+    /**
      * Validate MCP server import request.
      *
      * @param mcpImportForm import request form
@@ -247,6 +438,7 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerImportValidationResult> validateImport(McpImportForm mcpImportForm)
         throws NacosException {
+        CompatibilityHelper.check("POST /v3/console/ai/import/validate");
         mcpImportForm.validate();
         McpServerImportRequest request = convertToImportRequest(mcpImportForm);
         McpServerImportValidationResult result =
@@ -269,6 +461,7 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerImportResponse> executeImport(McpImportForm mcpImportForm)
         throws NacosException {
+        CompatibilityHelper.check("POST /v3/console/ai/import/execute");
         mcpImportForm.validate();
         McpServerImportRequest request = convertToImportRequest(mcpImportForm);
         McpServerImportResponse response =

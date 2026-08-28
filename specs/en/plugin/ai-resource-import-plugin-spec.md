@@ -338,19 +338,35 @@ import compatibility. It is a Console helper for building an MCP Server schema
 from a user-owned MCP runtime endpoint and remains outside the AI resource
 marketplace or registry import flow.
 
+This helper causes the Console process to open a server-side network connection
+to a request-selected MCP runtime. Public targets are allowed by default, while
+private or local targets are rejected unless every such address resolved from
+`baseUrl` matches
+`nacos.console.ai.mcp.import.allowed-private-addresses`. Operators may disable
+all outbound tool import with `nacos.console.ai.mcp.import.enabled=false`. The
+request `baseUrl` must use HTTP or HTTPS. The `endpoint` parameter must remain a
+relative URI and cannot replace the scheme or authority from `baseUrl`.
+Redirects are not followed. Invalid private allowlist entries fail closed
+instead of being ignored.
+
 The compatibility endpoints are deprecated, remain available only through
 Nacos 3.3.x, and are planned for removal in Nacos 3.4.0. They are disabled by
 default. Operators may reopen them temporarily with
-`nacos.ai.resource.import.legacy-mcp-api-enabled=true` while clients migrate to
+`nacos.core.api.compatibility.enabled=true` while clients migrate to
 `/v3/{admin|console}/ai/import/*`.
+
+The former `nacos.ai.resource.import.legacy-mcp-api-enabled` property is no
+longer recognized. The shared compatibility switch also reopens other
+explicitly gated deprecated v3 APIs, as defined by the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 For legacy `importType=url`, the request must not use a user-provided URL as a
 network target by default. It may be interpreted as a `sourceId` when it matches
 an enabled source. Otherwise the request should fail with a migration message.
 Legacy direct URL import may only be enabled by explicit operator configuration
 for controlled deployments by setting
-`nacos.ai.resource.import.allow-user-url=true` together with the legacy API
-switch.
+`nacos.ai.resource.import.allow-user-url=true` together with
+`nacos.core.api.compatibility.enabled=true`.
 
 Legacy `importType=json` and `importType=file` may be mapped to built-in local
 importers because they do not require server-side network access.
@@ -408,6 +424,10 @@ The import flow must treat external sources as untrusted:
   download;
 - importer plugins must not leak secrets in API responses, trace events, or
   logs.
+
+The Console MCP tool-import helper follows the separate public-target policy
+and private exceptions described in the legacy MCP compatibility section even
+though the helper is not an importer-plugin operation.
 
 Deployments that intentionally import from private networks must opt in through
 operator-owned configuration.

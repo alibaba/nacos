@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -63,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -416,28 +418,19 @@ class PromptDataMigrationTaskTest {
             return resp;
         });
         
-        // Version already exists in DB — DB insert should be skipped, but storage write still happens
+        // Version already exists in DB — both storage write and DB insert should be skipped
         AiResourceVersion existingVersion = new AiResourceVersion();
         existingVersion.setVersion("0.0.1");
         when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, RESOURCE_TYPE_PROMPT, "0.0.1"))
             .thenReturn(existingVersion);
         
-        // readVersionContent uses configInfoPersistService.findConfigAllInfo
-        PromptVersionInfo versionContent = new PromptVersionInfo();
-        versionContent.setPromptKey(PROMPT_KEY);
-        versionContent.setVersion("0.0.1");
-        versionContent.setTemplate("Hello");
-        ConfigAllInfo versionConfigAllInfo = new ConfigAllInfo();
-        versionConfigAllInfo.setContent(JacksonUtils.toJson(versionContent));
-        when(configInfoPersistService.findConfigAllInfo(any(), eq(PROMPT_GROUP), eq(NS)))
-            .thenReturn(versionConfigAllInfo);
-        
         task.onApplicationEvent(createRootContextEvent());
         
         // Meta should still be inserted
         verify(aiResourcePersistService, timeout(ASYNC_TIMEOUT)).insert(any(AiResource.class));
-        // Storage write still happens (idempotent overwrite)
-        verify(storage, timeout(ASYNC_TIMEOUT)).save(any(StorageKey.class), any(byte[].class));
+        // Existing version storage must not be redirected or overwritten by the current provider
+        verify(storage, after(ASYNC_TIMEOUT).never()).save(any(StorageKey.class),
+            any(byte[].class));
         // But version DB insert should be skipped
         verify(aiResourceVersionPersistService, after(ASYNC_TIMEOUT).never())
             .insert(any(AiResourceVersion.class));
@@ -688,14 +681,17 @@ class PromptDataMigrationTaskTest {
     }
     
     @Test
-    void testCleanupLegacyConfigShouldSuppressDeleteExceptions() throws Exception {
+    void testCleanupLegacyConfigShouldReportDeleteExceptionsAfterTryingAllEntries()
+        throws Exception {
         // First delete throws, second should still proceed
         when(configOperationService.deleteConfig(
             eq(PromptDataIdUtils.buildDescriptorDataId(PROMPT_KEY)),
             eq(PROMPT_GROUP), eq(NS), any(), any(), eq("nacos"), any()))
             .thenThrow(new RuntimeException("delete failed"));
         
-        nacosReader.cleanupLegacyData(NS, PROMPT_KEY, Collections.singletonList("0.0.1"));
+        assertThrows(NacosException.class,
+            () -> nacosReader.cleanupLegacyData(NS, PROMPT_KEY,
+                Collections.singletonList("0.0.1")));
         
         // mapping delete should still be called despite descriptor delete failure
         verify(configOperationService).deleteConfig(
@@ -708,7 +704,7 @@ class PromptDataMigrationTaskTest {
     }
     
     @Test
-    void testCleanupLegacyConfigViaTaskShouldDelegateToReader() {
+    void testCleanupLegacyConfigViaTaskShouldDelegateToReader() throws NacosException {
         task.cleanupLegacyConfig(NS, PROMPT_KEY, Arrays.asList("0.0.1"));
         
         // Should delegate to nacosReader which calls deleteConfig
@@ -717,7 +713,7 @@ class PromptDataMigrationTaskTest {
     }
     
     @Test
-    void testCleanupLegacyConfigViaTaskShouldNoopWhenNoReaderFound() {
+    void testCleanupLegacyConfigViaTaskShouldNoopWhenNoReaderFound() throws NacosException {
         // Use a provider type that doesn't match any reader
         System.setProperty("nacos.ai.prompt.migration.provider", "nonexistent");
         EnvUtil.setEnvironment(new StandardEnvironment());

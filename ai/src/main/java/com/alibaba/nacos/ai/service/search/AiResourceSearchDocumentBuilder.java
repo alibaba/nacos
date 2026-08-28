@@ -90,7 +90,7 @@ public class AiResourceSearchDocumentBuilder {
     public AiResourceSearchDocument fromMcpServer(String namespaceId,
         McpServerBasicInfo mcpServer) {
         String resourceVersion = resolveMcpVersion(mcpServer);
-        String resourceName = firstNotBlank(mcpServer.getId(), mcpServer.getName());
+        String resourceName = mcpServer.getName();
         Map<String, Object> metadata =
             baseMetadata(namespaceId, AiResourceConstants.RESOURCE_TYPE_MCP,
                 resourceName, resourceVersion, null);

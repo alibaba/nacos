@@ -134,13 +134,13 @@
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <logback.version>1.5.32</logback.version>
-        <log4j.version>2.25.4</log4j.version>
+        <log4j.version>2.25.5</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.12</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <grpc-java.version>1.78.0</grpc-java.version>
+        <grpc-java.version>1.81.0</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.25.5</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>

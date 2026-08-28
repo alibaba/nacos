@@ -29,7 +29,15 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.util.ServletRequestPathUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -59,6 +67,11 @@ import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
 @Component
 public class ControllerMethodsCache {
     
+    public static final String LEGACY_RESOLVER_ENABLED =
+        "nacos.core.auth.controller-method-cache.legacy-enabled";
+    
+    private static final String MVC_HANDLER_MAPPING_BEAN_NAME = "requestMappingHandlerMapping";
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ControllerMethodsCache.class);
     
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
@@ -68,7 +81,92 @@ public class ControllerMethodsCache {
     
     private final Set<Class> scannedClass = new HashSet<>();
     
+    private final ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider;
+    
+    /**
+     * Create a controller method resolver backed by Spring MVC's handler mapping.
+     *
+     * @param handlerMappingProvider lazy provider used to avoid controller initialization cycles
+     */
+    @Autowired
+    public ControllerMethodsCache(
+        ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider) {
+        this.handlerMappingProvider = handlerMappingProvider;
+    }
+    
+    /**
+     * Create a resolver using the legacy annotation cache.
+     *
+     * @deprecated since 3.3.0, only retained for tests and compatibility and will be removed in
+     *     3.4.0. Use Spring MVC handler mapping.
+     */
+    @Deprecated(since = "3.3.0", forRemoval = true)
+    public ControllerMethodsCache() {
+        this.handlerMappingProvider = null;
+    }
+    
     public Method getMethod(HttpServletRequest request) {
+        if (handlerMappingProvider != null && !isLegacyResolverEnabled()) {
+            return getMethodFromHandlerMapping(request);
+        }
+        return getMethodFromLegacyCache(request);
+    }
+    
+    private boolean isLegacyResolverEnabled() {
+        String systemProperty = System.getProperty(LEGACY_RESOLVER_ENABLED);
+        if (systemProperty != null) {
+            return Boolean.parseBoolean(systemProperty);
+        }
+        return EnvUtil.getProperty(LEGACY_RESOLVER_ENABLED, Boolean.class, false);
+    }
+    
+    private Method getMethodFromHandlerMapping(HttpServletRequest request) {
+        RequestMappingHandlerMapping handlerMapping = resolveHandlerMapping(request);
+        if (handlerMapping == null) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "Spring MVC RequestMappingHandlerMapping is unavailable");
+        }
+        boolean parsedRequestPath = false;
+        try {
+            if (handlerMapping.usesPathPatterns()
+                && !ServletRequestPathUtils.hasParsedRequestPath(request)) {
+                ServletRequestPathUtils.parseAndCache(request);
+                parsedRequestPath = true;
+            }
+            HandlerExecutionChain handler = handlerMapping.getHandler(request);
+            if (handler == null || !(handler.getHandler() instanceof HandlerMethod)) {
+                return null;
+            }
+            return ((HandlerMethod) handler.getHandler()).getMethod();
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "Failed to resolve Spring MVC controller method", e);
+        } finally {
+            if (parsedRequestPath) {
+                ServletRequestPathUtils.clearParsedRequestPath(request);
+            }
+        }
+    }
+    
+    private RequestMappingHandlerMapping resolveHandlerMapping(HttpServletRequest request) {
+        WebApplicationContext webApplicationContext =
+            WebApplicationContextUtils.getWebApplicationContext(request.getServletContext());
+        if (webApplicationContext != null
+            && webApplicationContext.containsBean(MVC_HANDLER_MAPPING_BEAN_NAME)) {
+            return webApplicationContext.getBean(MVC_HANDLER_MAPPING_BEAN_NAME,
+                RequestMappingHandlerMapping.class);
+        }
+        return handlerMappingProvider.getIfUnique();
+    }
+    
+    /**
+     * Resolve a method with the original Nacos-maintained annotation cache.
+     *
+     * @deprecated since 3.3.0, use Spring MVC handler mapping so authorization and dispatch share
+     *     one resolver. This legacy resolver will be removed in 3.4.0.
+     */
+    @Deprecated(since = "3.3.0", forRemoval = true)
+    private Method getMethodFromLegacyCache(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
         String urlKey = httpMethod + REQUEST_PATH_SEPARATOR
@@ -99,8 +197,9 @@ public class ControllerMethodsCache {
     
     private String resolveContextPath(HttpServletRequest request) {
         String requestContextPath = request.getContextPath();
-        return StringUtils.isEmpty(requestContextPath) ? EnvUtil.getContextPath()
+        String contextPath = StringUtils.isEmpty(requestContextPath) ? EnvUtil.getContextPath()
             : requestContextPath;
+        return StringUtils.isEmpty(contextPath) ? contextPath : getPath(contextPath);
     }
     
     private String stripContextPath(String path, String contextPath) {
@@ -115,8 +214,12 @@ public class ControllerMethodsCache {
     }
     
     private String getPath(HttpServletRequest request) {
+        return getPath(request.getRequestURI());
+    }
+    
+    private String getPath(String uri) {
         try {
-            return new URI(request.getRequestURI()).getPath();
+            return new URI(uri).getPath();
         } catch (URISyntaxException e) {
             LOGGER.error("parse request to path error", e);
             throw new NacosRuntimeException(NacosException.NOT_FOUND, "Invalid URI");

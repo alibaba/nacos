@@ -168,6 +168,13 @@ adapter 也可以不实现该生命周期。该操作必须幂等，类型延迟
 提前构造自身领域服务，但选择延迟加载的类型在加载判据为 false 时不得自行实例化实现。
 服务端进入可用状态前的最终配置和是否可参与请求处理，仍必须遵守核心插件管理器的统一结果。
 
+独立部署的 Console 没有 Core application context，因此不会启动常规核心插件管理器。
+Console 开始接收请求前，本地 auth initializer 必须发现鉴权领域已经加载的
+`AuthPluginService` 实例，解析 `STATIC > DEFAULT`，校验并 apply 所有可配置鉴权实现，且只对
+当前选中的鉴权实现调用 `PluginStartupLifecycle`。选中的实现必须存在，否则 Console 启动应
+明确失败。该受限生命周期不加载其他插件类型，也不持有插件 state、runtime-persisted 配置、
+local-only override、storage 或集群同步能力。
+
 插件启动必须具备确定性：
 
 - 一个插件类型和插件名称组合只能对应一个运行时插件实例。
@@ -357,10 +364,14 @@ normalized full key 冲突。管理器在归一化前复制 definition 元数据
 | `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | 标准模块 key 保持权威，默认开启。 |
 | `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` 或统一 plugin state | 把旧内置 source 状态 key 迁移到受管实现状态。 |
 | `nacos.plugin.ai.importer.*` item 配置 | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | 把 display、description、limits 和 endpoint 输入迁移到受管 source 身份。 |
-| `nacos.ai.resource.import.legacy-mcp-api-enabled` 和 `nacos.ai.resource.import.allow-user-url` | 统一 `/v3/{admin|console}/ai/import/*` API 和受管 source endpoint 配置 | 这些开关和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
+| `nacos.ai.resource.import.allow-user-url` | 受管 source endpoint 配置 | 用户 URL 直接导入兼容和旧 MCP import adapter 计划在 Nacos 3.4.0 移除。 |
 | `ConfigChangeConfigs` property bridge | `ConfigChangePluginService` 上的 definitions 和 callbacks | 3.x 窗口内，没有 definitions 的旧二进制插件继续接收历史 properties。 |
 | `VisibilityService.init(Properties)` | 从 `PluginConfigSpec` 继承的 definitions 和 callbacks | 统一生命周期在 visibility 执行前应用 effective item-key map。 |
 | `CustomEnvironmentPluginManager.join(...)` | 通过 `PRE_CONTEXT` initializer 发现 Environment SPI | Environment 实现必须在 Spring environment 定制开始前可被发现。 |
+
+旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 输入不再识别。废弃 MCP Import API 改用
+[兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)定义的共享
+`nacos.core.api.compatibility.enabled` 门禁。
 
 对于表中的配置 key，只要标准 key 存在就优先，即使其值为空；只有标准 key 不存在时才回退
 旧输入。在各自计划版本移除这些输入时，也会同时移除对应迁移 WARN 和仅兼容代码路径。
@@ -527,6 +538,11 @@ source，解析 `STATIC > DEFAULT`，校验并应用结果，同时保存已接�
 `RESTART` 暴露，同时输出只包含 plugin ID 和 item key 的 WARN，不得修改插件持有的原对象。
 运行时配置 API、持久化或 local-only 恢复及 `ServerConfigChangeEvent` 刷新均不得更新
 pre-context 插件。
+
+独立部署 Console 的鉴权生命周期是另一种受限配置源变体。它为每个可配置鉴权实现维护已接受
+的 static 快照，并且只解析 `STATIC > DEFAULT`。`ServerConfigChangeEvent` 只能刷新声明为
+`RUNTIME` 的字段；包括鉴权插件选择和 token secret 在内的 `RESTART` 字段保持启动值。
+Console 不得读取或更新由 Server 持有的 runtime-persisted 或 local-only 插件配置源。
 
 `STATIC` resolver 应维护每个插件的已接受快照，而不是让每次 detail 查询独立读取实时
 环境值。启动时捕获全部已定义静态字段，并允许应用两种 effect mode。启动完成后，

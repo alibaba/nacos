@@ -83,7 +83,8 @@ public class AiStoragePluginTypePolicy implements PluginTypePolicy {
     
     @Override
     public String getSelectionProperty() {
-        return Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY + ", "
+        return Constants.AI_STORAGE_PROVIDER_CONFIG_KEY + ", "
+            + Constants.Prompt.PROMPT_STORAGE_PROVIDER_CONFIG_KEY + ", "
             + Constants.Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY + ", "
             + Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY + ", "
             + Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY;
@@ -91,11 +92,14 @@ public class AiStoragePluginTypePolicy implements PluginTypePolicy {
     
     @Override
     public String getActivationDescription() {
-        return "the AI module requires the configured Prompt, Skill, AgentSpec, and Agent storage providers";
+        return "the AI module requires the configured AI Resource storage providers";
     }
     
     private String resolveProvider(PluginTypeConfiguration configuration, String property) {
         String provider = configuration.getProperty(property);
+        if (StringUtils.isBlank(provider)) {
+            provider = configuration.getProperty(Constants.AI_STORAGE_PROVIDER_CONFIG_KEY);
+        }
         return StringUtils.isBlank(provider) ? NacosConfigAiResourceStorage.TYPE : provider.trim();
     }
 }

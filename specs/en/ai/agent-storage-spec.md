@@ -623,7 +623,8 @@ set uses the Version `contentDigest` as its opaque source revision.
 
 | Read | Facts read | AI Storage read |
 | --- | --- | :---: |
-| Management Agent list or RAD Search | `ai_resource` page. | No |
+| Management Agent list | `ai_resource` page. | No |
+| RAD or generic Agent Search | Current Agent Search document; `AUTO/INDEX` may return a partial current snapshot before readiness, while `SCAN` explicitly uses the compatibility scan. | No |
 | Agent overview | Resource plus bounded Version-row page. | No |
 | Exact Version detail | One Version row. | One |
 | Runtime Endpoint snapshot | Complete internal `ServiceStorage` projection for one protocol; optional binding filter. | No |
@@ -635,6 +636,7 @@ set uses the Version `contentDigest` as its opaque source revision.
 | Create or update draft | AI Storage fixed key plus Version row. | Pointer, bytes, size, and digest agree. |
 | Publish, online, offline, delete, label/latest | Version row plus Resource summaries. | Rebuild derived catalog. |
 | Runtime register, Publisher heartbeat, deregister | Naming Client runtime state. | Does not write AI Resource or Storage. |
+| Agent directory or Version lifecycle commit | Coalesced `search_index` revision in `ai_resource_task`. | Asynchronously re-reads facts and rebuilds the derived index. |
 
 Cache validators follow facts:
 
@@ -670,6 +672,22 @@ Digest mismatch must never return unverified content. `versionCatalog` and
 Resource version summaries are rebuildable derived data; their consistency is
 not delegated to Storage providers.
 
+The Agent Search projection is also rebuildable derived state. At most one
+current document exists per `(namespaceId, agentName)`. Its `resourceVersion`
+is the exact online Version referenced by common latest, and it contains the
+complete deterministically ordered online-Version catalog, `protocols` and
+`artifactKinds` facets, projection version, and source digest. The source
+digest covers canonical Agent metadata, the Version catalog, common latest,
+the latest Version `contentDigest`, artifact kinds, and projection version; a
+modification timestamp is not its sole input.
+
+The relational document, chunks, and embedded facets are replaced completely
+in one transaction. The index stores no Runtime Endpoint, health, Publisher,
+heartbeat, or Runtime revision. Backfill/Reconciliation scans through the
+resource-type handler in bounded resource-key batches and maintains cluster
+readiness by `(agent, projectionVersion)`. Task, lease, and read-mode semantics
+are defined by the [AI Resource Search Spec](ai-resource-search-spec.md).
+
 ## 9. Capacity And Security
 
 | Runtime or physical field | Limit |
@@ -678,6 +696,7 @@ not delegated to Storage providers.
 | `runtimeVersion` | 64 characters. |
 | Canonical `versionRange` | 256 characters; one continuous interval. |
 | Registration batch | 1 to 1000 Endpoints. |
+| Runtime Endpoint publication entries per publisher Client | Soft watermark 100 by default; configurable with `nacos.ai.rad.capacity.publication.max-publications-per-client`. A complete batch admitted from below may cross it. |
 | Runtime Endpoints per Agent and protocol | 1000, subject to a lower cluster quota. |
 | Final Endpoint metadata | 32 public items; key 64 and value 256 characters. |
 | Final Naming metadata | Sum of Java `String.length()` for keys and values is 1024. |

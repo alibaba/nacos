@@ -236,6 +236,30 @@ AI payload semantics are defined by the
 | `BatchAgentEndpointRequest` | `AgentEndpointResponse` | write | `agentName`, `endpoints` | Replace this client's endpoints for an Agent. |
 | `QueryPromptRequest` | `QueryPromptResponse` | read | `namespace`, `promptKey`, `version`, `label`, `md5` | Query Prompt by version, label, latest, or md5. |
 
+The three existing MCP payloads remain compatibility bindings while MCP
+management moves to the common AI Resource lifecycle:
+
+- `ReleaseMcpServerRequest` keeps its wire shape and direct-online behavior. A
+  new exact Version becomes online immediately; same-Version conflict or
+  overwrite behavior remains isolated to this compatibility facade. Managed
+  implementations write the unchanged physical Config and Manifest coordinates
+  through MCP Storage.
+- `QueryMcpServerRequest` keeps its wire shape and existing serving
+  projection. Lifecycle hosting does not change its Manifest, Config, Naming,
+  latest-Version, frontend/backend, or endpoint resolution behavior.
+- `McpServerEndpointRequest` keeps its current fields, version-scoped Naming
+  layout, metadata, registration/deregistration, reconnect, and redo behavior.
+  The first lifecycle-hosting migration does not add `supportedTransports`,
+  `versionRange`, a versionless Service, or a new ability negotiation.
+
+The top-level `AbstractMcpRequest.mcpId` inherited by MCP requests is an
+ignored and deprecated wire field. Its field number remains reserved, Query and
+Endpoint handlers retain their current `mcpName` requirements, and Release
+continues using its nested Server specification. No handler adds ID lookup for
+the top-level field. Nested `McpServerBasicInfo.id` and
+`ReleaseMcpServerResponse.mcpId` remain active compatibility fields where the
+current Client or response contract uses them.
+
 The following Agent/RAD payloads are the approved Experimental target defined
 by the [Agent API Spec](../ai/agent-api-spec.md). They are not part of the
 current implemented payload inventory until their classes, handlers, SPI

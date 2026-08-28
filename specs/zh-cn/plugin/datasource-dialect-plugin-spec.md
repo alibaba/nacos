@@ -91,6 +91,24 @@ Mapper 实现必须提供 repository 操作需要的基础 CRUD SQL 和表级专
 legacy beta/tag 灰度表的运行时 Config 迁移查询。如果 pre-3.0 部署仍需要这些迁移，应作为升级
 前置动作完成，而不是服务端运行时 mapper 的职责。
 
+mapper 接口可以为某个操作提供 `default` SQL。这些 default 实现使用 MySQL 兼容语法编写，
+包括 `LIMIT` 之类的行数限制子句。如果某个方言对应的数据库不接受该语法，必须覆写所有受影响
+的操作；直接继承 default 不会导致启动失败，而是在查询时报语法错误。default 实现读取可选
+过滤值时，必须从 repository 实际写入的那个 `MapperContext` map 中读取，从而保证可选谓词与
+其绑定参数始终成对出现。
+
+模糊查询参数在绑定前会用反斜杠转义 `_` 通配符，因此 `LIKE` 谓词同样与方言相关。MySQL 与
+PostgreSQL 默认把反斜杠当作 `LIKE` 的转义字符，而 Derby 与 Oracle 没有默认转义字符，会把
+反斜杠按字面量匹配，导致继承而来的谓词不报错却查不到任何行。因此，没有默认转义字符的方言
+必须通过 `Mapper#getLikeEscapeClause()` 声明自己的转义子句；凡是绑定了此类参数的
+`LIKE ?`，无论位于 mapper default 还是方言覆写中，都必须追加该子句。该子句不得在共享
+default 中硬编码，因为各数据库能接受的转义字符字面量写法并不相同。
+
+声明转义子句同时也对调用方提出了约束：一旦 `LIKE` 谓词声明了转义字符，绑定参数就必须先转义
+转义字符本身，再转义 `_`；否则搜索值中的字面反斜杠会构成非法转义序列，数据库将直接拒绝整条
+查询（Oracle 报 `ORA-01424`，Derby 报 `SQLSTATE 22025`）。所有生成模糊查询参数的实现都必须
+遵循同一转义顺序：先转义字符 `\`，再 `_`，最后把 Nacos 通配符 `*` 替换为 `%`。
+
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
 缺少数据源或表 mapper 是启动或操作错误，而不是空结果。
 

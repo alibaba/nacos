@@ -152,3 +152,56 @@ Java SDK ITs intentionally use the dedicated `java-sdk-integration-test` Maven
 profile. The generic `integration-test` profile is reserved for HTTP API IT
 workflows and must not accidentally run SDK tests that depend on SDK gRPC
 connection readiness or optional server abilities.
+
+## 8. AI Resource Search And Agent Scenarios
+
+When public AI SDK Search or Agent behavior changes, Java SDK IT covers at
+least:
+
+- a real SDK client performing Agent single-condition, combined-predicate,
+  numbered-page, and default-namespace queries;
+- equivalent Agent catalog results over HTTP and gRPC for the same facts and
+  transport selection;
+- bounded convergence after Agent publish/online/offline/latest transitions,
+  while Endpoint operations change Discover only;
+- matching eligibility between generic single-type Search and
+  resource-specific Agent, AgentSpec, Skill, Prompt, and MCP Search;
+- the same Search contract for supported client transport
+  `AUTO/HTTP/GRPC`, with a controlled exception when ability negotiation rejects
+  a transport; and
+- SDK shutdown, reconnect, and redo neither duplicate catalog-index writes nor
+  expose Runtime Endpoints in Search results.
+
+Protocol conformance for ARD artifacts remains covered by OpenAPI/adaptor IT.
+Java SDK IT validates only observable catalog and Discover behavior through
+public SDK contracts.
+
+## 9. MCP Compatibility And Runtime Endpoint Scenarios
+
+When MCP Storage routing or lifecycle hosting changes, Java SDK IT must cover at
+least:
+
+- a real `AiService` releasing a new MCP Resource/Version, preserving the
+  historical ID response, querying an explicit Version and latest, and
+  observing the same enabled and published serving content;
+- historical exact-Version conflict/overwrite behavior remaining isolated from
+  standard lifecycle writes;
+- `subscribeMcpServer` initial delivery, changed full-result callback,
+  unsubscribe, resubscribe, and shutdown cleanup without a direct Naming
+  subscription;
+- current version-scoped Runtime endpoint registration and deregistration,
+  Service/cluster/metadata compatibility, disconnect, reconnect, and redo
+  restoring the same defensive publication snapshot without duplicating
+  instances or losing another MCP publication;
+- the Java Client continuing to use `mcpName` and not populating the dormant
+  top-level gRPC `mcpId`, while active model, event, and response ID fields
+  retain their current values;
+- lifecycle reconciliation and management cutover causing no new Runtime
+  publication, Naming layout, ability-negotiation, or public `AiService`
+  interface behavior; and
+- equivalent behavior through the default JSON adapter and Jackson 3 adapter
+  with current request fixtures and response models.
+
+Versionless Runtime Services, explicit transport lists, MCP Version ranges,
+Client HTTP parity, and heartbeat renewal remain outside this matrix until
+their separate designs are approved.

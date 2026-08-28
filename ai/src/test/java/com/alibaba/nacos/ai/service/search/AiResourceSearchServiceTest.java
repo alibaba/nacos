@@ -21,13 +21,18 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationRequest;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.AggregationResult;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Page;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import org.junit.jupiter.api.Test;
@@ -37,13 +42,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,7 +71,7 @@ class AiResourceSearchServiceTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
@@ -70,6 +81,47 @@ class AiResourceSearchServiceTest {
     
     @Mock
     private AiResourceVectorIndex vectorIndex;
+    
+    @Test
+    void shouldObserveReadinessForEverySearchEntryPoint() throws Exception {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        AiResourceSearchReadinessObserver observer =
+            mock(AiResourceSearchReadinessObserver.class);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex, observer);
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks("public", "query", List.of("skill"), 10001))
+            .thenReturn(Collections.emptyList());
+        Query query = new Query();
+        query.setNamespaceId("public");
+        query.setResourceTypes(List.of("skill"));
+        query.setText("query");
+        query.setLimit(10);
+        
+        service.search(query);
+        service.list(query);
+        service.numberedList(query);
+        service.numberedSearch(query);
+        service.aggregate(query, Collections.emptyList());
+        
+        verify(observer, times(5)).observe(List.of("skill"));
+        verify(observer, never()).observe(null);
+    }
+    
+    @Test
+    void shouldObserveAllTypesBeforeRejectingNullQuery() {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        AiResourceSearchReadinessObserver observer =
+            mock(AiResourceSearchReadinessObserver.class);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex, observer);
+        
+        assertThrows(NullPointerException.class, () -> service.search(null));
+        
+        verify(observer).observe(null);
+    }
     
     @Test
     void searchShouldFilterVisibilityAndCurrentVersionBeforePagination() throws Exception {
@@ -170,6 +222,23 @@ class AiResourceSearchServiceTest {
     }
     
     @Test
+    void listShouldRejectMalformedCursorAsParameterValidationError() {
+        AiResourceSearchService service = new AiResourceSearchService(
+            resourceManager, mcpServerOperationService, repository, embeddingService,
+            vectorIndex);
+        Query query = new Query();
+        query.setNamespaceId("public");
+        query.setResourceTypes(List.of("skill"));
+        query.setCursor("not-a-cursor");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.list(query));
+        
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+            exception.getDetailErrCode());
+    }
+    
+    @Test
     void aggregateShouldUseCompleteEligibleResultSet() throws Exception {
         AiResourceSearchService service = new AiResourceSearchService(resourceManager,
             mcpServerOperationService, repository, embeddingService, vectorIndex);
@@ -199,6 +268,362 @@ class AiResourceSearchServiceTest {
         
         assertEquals(1001, result.getTotalMatched());
         assertEquals(1001, result.getAggregations().get("tags").getBuckets().get(0).getCount());
+    }
+    
+    @Test
+    void listShouldApplyTypedPredicatesWithLiteralSpecialCharacters() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        AiResourceSearchDocument matching = entry(1L, "Agent_100%");
+        matching.setDisplayName("Research%_\\Assistant");
+        matching.setTags(JacksonUtils.toJson(List.of("Research", "CITATIONS")));
+        matching.setMetadata(JacksonUtils.toJson(Map.of("protocols", List.of("A2A", "MCP"))));
+        AiResourceSearchDocument wildcardLookalike = entry(2L, "Agent_100X");
+        wildcardLookalike.setDisplayName("ResearchABAssistant");
+        wildcardLookalike.setTags(JacksonUtils.toJson(List.of("Research", "CITATIONS")));
+        wildcardLookalike.setMetadata(JacksonUtils.toJson(Map.of("protocols", List.of("A2A"))));
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(List.of(matching, wildcardLookalike));
+        mockCurrentResources();
+        Query query = listQuery();
+        query.setPredicates(Arrays.asList(null,
+            new Predicate("tags", PredicateOperator.EXACT_ALL,
+                List.of("research", "citations"), false),
+            new Predicate("displayName", PredicateOperator.LITERAL_CONTAINS,
+                List.of("%_\\"), true),
+            new Predicate("metadata.protocols", PredicateOperator.EXACT_ANY,
+                List.of("a2a"), false),
+            new Predicate("resourceName", PredicateOperator.EXACT_ANY,
+                List.of("Agent_100%"), true),
+            new Predicate("unused", PredicateOperator.EXACT_ALL, List.of(), false)));
+        
+        Page page = service.list(query);
+        
+        assertEquals(1, page.getItems().size());
+        assertEquals("Agent_100%", page.getItems().get(0).getResourceName());
+    }
+    
+    @Test
+    void listShouldRespectPredicateCaseSensitivityAndLegacyFilterSemantics() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        AiResourceSearchDocument document = entry(1L, "AgentOne");
+        document.setDisplayName("Research Assistant");
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(List.of(document));
+        mockCurrentResources();
+        Query query = listQuery();
+        Predicate predicate = new Predicate("resourceName", PredicateOperator.EXACT_ANY,
+            List.of("agentone"), true);
+        query.setPredicates(List.of(predicate));
+        
+        assertEquals(0, service.list(query).getItems().size());
+        predicate.setCaseSensitive(false);
+        query.setFilters(Map.of("displayName", List.of("assistant")));
+        assertEquals(1, service.list(query).getItems().size());
+    }
+    
+    @Test
+    void listShouldScopeRepresentationPredicateToAgentResources() throws Exception {
+        AiResourceSearchTypeHandlerRegistry registry =
+            mock(AiResourceSearchTypeHandlerRegistry.class);
+        when(registry.isCurrent(any())).thenReturn(true);
+        AiResourceSearchService service = new AiResourceSearchService(registry, repository,
+            embeddingService, vectorIndex);
+        AiResourceSearchDocument agent = entry(1L, "agent-a");
+        agent.setResourceType("agent");
+        agent.setMetadata(JacksonUtils.toJson(
+            Map.of("artifactKinds", List.of("a2a-agent-card", "nacos-agent"))));
+        AiResourceSearchDocument skill = entry(2L, "skill-a");
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill"), 0L, 500))
+            .thenReturn(List.of(agent, skill));
+        Query query = listQuery();
+        query.setResourceTypes(List.of("agent", "skill"));
+        Predicate predicate = new Predicate("metadata.artifactKinds",
+            PredicateOperator.EXACT_ANY, List.of("a2a-agent-card"), false,
+            List.of("agent"));
+        query.setPredicates(List.of(predicate));
+        
+        assertEquals(2, service.list(query).getItems().size());
+        predicate.setValues(List.of("unknown"));
+        assertEquals(1, service.list(query).getItems().size());
+        assertEquals("skill-a", service.list(query).getItems().get(0).getResourceName());
+    }
+    
+    @Test
+    void predicatesShouldRejectMissingFieldsMissingValuesAndNullTokens() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        AiResourceSearchDocument document = entry(1L, "AgentOne");
+        document.setTags(JacksonUtils.toJson(Arrays.asList("value", null)));
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(List.of(document));
+        Query query = listQuery();
+        query.setPredicates(List.of(new Predicate("tags", PredicateOperator.EXACT_ALL,
+            List.of("value", "missing"), false)));
+        assertEquals(0, service.list(query).getItems().size());
+        query.setPredicates(List.of(new Predicate("unknown", PredicateOperator.EXACT_ANY,
+            List.of("value"), false)));
+        assertEquals(0, service.list(query).getItems().size());
+        query.setPredicates(List.of(new Predicate("tags", PredicateOperator.EXACT_ANY,
+            Collections.singletonList(null), false)));
+        assertEquals(0, service.list(query).getItems().size());
+        query.setPredicates(List.of(new Predicate(null, PredicateOperator.EXACT_ANY,
+            List.of("value"), false)));
+        assertEquals(0, service.list(query).getItems().size());
+    }
+    
+    @Test
+    void numberedListShouldFilterBeforeTotalAndOffset() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        AiResourceSearchDocument alpha = entry(1L, "alpha");
+        AiResourceSearchDocument stale = entry(2L, "bravo");
+        AiResourceSearchDocument charlie = entry(3L, "charlie");
+        AiResourceSearchDocument disabled = entry(4L, "delta");
+        disabled.setStatus("disabled");
+        AiResourceSearchDocument echo = entry(5L, "echo");
+        AiResourceSearchDocument foxtrot = entry(6L, "foxtrot");
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(List.of(alpha, stale, charlie, disabled, echo, foxtrot));
+        when(resourceManager.findMeta(eq("public"), any(), eq("skill")))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findMeta("public", "bravo", "skill")).thenReturn(null);
+        when(resourceManager.findVersion(eq("public"), any(), eq("skill"), eq("1.0.0")))
+            .thenReturn(onlineVersion());
+        Query query = listQuery();
+        query.setPageNumber(2);
+        query.setPageSize(2);
+        
+        NumberedPage secondPage = service.numberedList(query);
+        
+        assertEquals(4L, secondPage.getTotalCount());
+        assertEquals(2, secondPage.getPageNumber());
+        assertEquals(2, secondPage.getPagesAvailable());
+        assertEquals(List.of("echo", "foxtrot"), List.of(
+            secondPage.getItems().get(0).getResourceName(),
+            secondPage.getItems().get(1).getResourceName()));
+        query.setPageNumber(3);
+        NumberedPage outOfRange = service.numberedList(query);
+        assertEquals(4L, outOfRange.getTotalCount());
+        assertEquals(0, outOfRange.getItems().size());
+        assertEquals(2, outOfRange.getPagesAvailable());
+    }
+    
+    @Test
+    void numberedListShouldContinueCountingAfterRequestedPageIsFull() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(List.of(entry(1L, "alpha"), entry(2L, "bravo"),
+                entry(3L, "charlie")));
+        mockCurrentResources();
+        Query query = listQuery();
+        query.setPageSize(1);
+        
+        NumberedPage page = service.numberedList(query);
+        
+        assertEquals(3L, page.getTotalCount());
+        assertEquals(3, page.getPagesAvailable());
+        assertEquals(List.of("alpha"),
+            List.of(page.getItems().get(0).getResourceName()));
+    }
+    
+    @Test
+    void numberedListShouldAdvanceAcrossBoundedResourceKeyBatches() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        List<AiResourceSearchDocument> firstBatch = new ArrayList<>();
+        for (long id = 1L; id <= 500L; id++) {
+            firstBatch.add(entry(id, String.format("skill-%03d", id - 1L)));
+        }
+        AiResourceSearchDocument finalDocument = entry(501L, "skill-500");
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(firstBatch);
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), "skill",
+            "skill-499", 500L, 500)).thenReturn(List.of(finalDocument));
+        mockCurrentResources();
+        Query query = listQuery();
+        query.setPageNumber(251);
+        query.setPageSize(2);
+        
+        NumberedPage page = service.numberedList(query);
+        
+        assertEquals(501L, page.getTotalCount());
+        assertEquals(251, page.getPagesAvailable());
+        assertEquals(1, page.getItems().size());
+        assertEquals("skill-500", page.getItems().get(0).getResourceName());
+    }
+    
+    @Test
+    void numberedListShouldHandleNullBatchAndRejectIncompleteAnchor() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        Query query = listQuery();
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(null, Collections.emptyList());
+        NumberedPage empty = service.numberedList(query);
+        assertEquals(0L, empty.getTotalCount());
+        assertEquals(0, empty.getPagesAvailable());
+        assertEquals(0L, service.numberedList(query).getTotalCount());
+        
+        AiResourceSearchDocument incomplete = entry(1L, "incomplete");
+        incomplete.setId(null);
+        incomplete.setStatus("disabled");
+        AiResourceSearchDocument missingType = entry(1L, "missing-type");
+        missingType.setResourceType(null);
+        missingType.setStatus("disabled");
+        AiResourceSearchDocument missingName = entry(1L, "missing-name");
+        missingName.setResourceName(null);
+        missingName.setStatus("disabled");
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(List.of(incomplete), List.of(missingType), List.of(missingName));
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+    }
+    
+    @Test
+    void numberedListShouldRejectEveryNonAdvancingResourceKeyDimension() {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        Query query = listQuery();
+        List<AiResourceSearchDocument> firstBatch = new ArrayList<>();
+        for (long id = 1L; id <= 500L; id++) {
+            AiResourceSearchDocument document = entry(id, String.format("skill-%03d", id - 1L));
+            document.setStatus("disabled");
+            firstBatch.add(document);
+        }
+        AiResourceSearchDocument typeBackwards = entry(501L, "z");
+        typeBackwards.setResourceType("prompt");
+        typeBackwards.setStatus("disabled");
+        AiResourceSearchDocument nameBackwards = entry(501L, "skill-400");
+        nameBackwards.setStatus("disabled");
+        AiResourceSearchDocument idBackwards = entry(500L, "skill-499");
+        idBackwards.setStatus("disabled");
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(firstBatch);
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), "skill",
+            "skill-499", 500L, 500)).thenReturn(List.of(typeBackwards),
+                List.of(nameBackwards), List.of(idBackwards));
+        
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+        assertThrows(IllegalStateException.class, () -> service.numberedList(query));
+    }
+    
+    @Test
+    void numberedListShouldAcceptEveryAdvancingResourceKeyDimension() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        Query query = listQuery();
+        List<AiResourceSearchDocument> firstBatch = new ArrayList<>();
+        for (long id = 1L; id <= 500L; id++) {
+            AiResourceSearchDocument document = entry(id, String.format("skill-%03d", id - 1L));
+            document.setStatus("disabled");
+            firstBatch.add(document);
+        }
+        AiResourceSearchDocument typeAdvance = entry(501L, "alpha");
+        typeAdvance.setResourceType("tool");
+        typeAdvance.setStatus("disabled");
+        AiResourceSearchDocument nameAdvance = entry(501L, "skill-500");
+        nameAdvance.setStatus("disabled");
+        AiResourceSearchDocument idAdvance = entry(501L, "skill-499");
+        idAdvance.setStatus("disabled");
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), null, null,
+            0L, 500)).thenReturn(firstBatch, firstBatch, firstBatch);
+        when(repository.scanEnabledEntriesByResourceKey("public", List.of("skill"), "skill",
+            "skill-499", 500L, 500)).thenReturn(List.of(typeAdvance),
+                List.of(nameAdvance), List.of(idAdvance));
+        
+        assertEquals(0L, service.numberedList(query).getTotalCount());
+        assertEquals(0L, service.numberedList(query).getTotalCount());
+        assertEquals(0L, service.numberedList(query).getTotalCount());
+    }
+    
+    @Test
+    void numberedSearchShouldFilterBeforeTotalAndReturnStableRelevancePage() throws Exception {
+        AiResourceSearchService service = new AiResourceSearchService(resourceManager,
+            mcpServerOperationService, repository, embeddingService, vectorIndex);
+        List<AiResourceSearchHit> hits = new ArrayList<>();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (long id = 1L; id <= 5L; id++) {
+            hits.add(hit(id));
+            documents.add(entry(id, "skill-" + id));
+        }
+        when(vectorIndex.available()).thenReturn(false);
+        when(repository.searchChunks("public", "research", List.of("skill"), 10001))
+            .thenReturn(hits);
+        when(repository.findEntriesByIds(any())).thenReturn(documents);
+        when(resourceManager.findMeta(eq("public"), any(), eq("skill")))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findMeta("public", "skill-2", "skill")).thenReturn(null);
+        when(resourceManager.findVersion(eq("public"), any(), eq("skill"), eq("1.0.0")))
+            .thenReturn(onlineVersion());
+        Query query = listQuery();
+        query.setText("research");
+        query.setPageNumber(2);
+        query.setPageSize(2);
+        
+        NumberedPage page = service.numberedSearch(query);
+        
+        assertEquals(4L, page.getTotalCount());
+        assertEquals(2, page.getPageNumber());
+        assertEquals(2, page.getPagesAvailable());
+        assertEquals(List.of("skill-4", "skill-5"), List.of(
+            page.getItems().get(0).getResourceName(),
+            page.getItems().get(1).getResourceName()));
+        
+        query.setPageNumber(Integer.MAX_VALUE);
+        query.setPageSize(Integer.MAX_VALUE);
+        NumberedPage outOfRange = service.numberedSearch(query);
+        assertEquals(4L, outOfRange.getTotalCount());
+        assertTrue(outOfRange.getItems().isEmpty());
+        assertEquals(1, outOfRange.getPagesAvailable());
+    }
+    
+    @Test
+    void queryPredicateAndNumberedPageShouldNormalizeAndExposeValues() {
+        Query query = new Query();
+        query.setPageNumber(0);
+        query.setPageSize(0);
+        query.setPredicates(null);
+        assertEquals(1, query.getPageNumber());
+        assertEquals(1, query.getPageSize());
+        assertTrue(query.getPredicates().isEmpty());
+        
+        Predicate predicate = new Predicate();
+        predicate.setField("resourceName");
+        predicate.setOperator(null);
+        predicate.setValues(null);
+        predicate.setCaseSensitive(true);
+        predicate.setApplicableResourceTypes(null);
+        assertEquals("resourceName", predicate.getField());
+        assertEquals(PredicateOperator.EXACT_ANY, predicate.getOperator());
+        assertTrue(predicate.getValues().isEmpty());
+        assertTrue(predicate.isCaseSensitive());
+        assertTrue(predicate.getApplicableResourceTypes().isEmpty());
+        
+        NumberedPage page = new NumberedPage(Collections.emptyList(), 3L, 2, 4);
+        assertTrue(page.getItems().isEmpty());
+        assertEquals(3L, page.getTotalCount());
+        assertEquals(2, page.getPageNumber());
+        assertEquals(4, page.getPagesAvailable());
+    }
+    
+    private Query listQuery() {
+        Query query = new Query();
+        query.setNamespaceId("public");
+        query.setResourceTypes(List.of("skill"));
+        query.setLimit(10);
+        return query;
+    }
+    
+    private void mockCurrentResources() {
+        when(resourceManager.findMeta(eq("public"), any(), eq("skill")))
+            .thenReturn(meta("1.0.0"));
+        when(resourceManager.findVersion(eq("public"), any(), eq("skill"), eq("1.0.0")))
+            .thenReturn(onlineVersion());
     }
     
     private AiResourceSearchHit hit(long documentId) {

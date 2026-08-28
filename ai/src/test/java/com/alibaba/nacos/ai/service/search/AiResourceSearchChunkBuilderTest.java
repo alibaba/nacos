@@ -23,9 +23,13 @@ import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -143,6 +147,51 @@ class AiResourceSearchChunkBuilderTest {
                 .equals(chunk.getChunkType())));
         assertTrue(chunks.stream().anyMatch(
             chunk -> chunk.getChunkText().contains("avatar_video")));
+    }
+    
+    @Test
+    void buildersShouldHandleEmptyMalformedAndDuplicateInputs() {
+        AiResourceSearchChunkBuilder builder = new AiResourceSearchChunkBuilder();
+        AiResourceSearchDocument entry = entry();
+        assertTrue(builder.buildSourceContentChunks(entry, null).isEmpty());
+        assertTrue(builder.buildSourceContentChunks(entry, Collections.emptyList()).isEmpty());
+        assertTrue(builder.buildSourceContentChunks(entry, List.of(
+            new AiResourceIndexEnhancementContent("unknown", "ignored"))).isEmpty());
+        assertTrue(builder.buildSourceContentChunks(entry, Arrays.asList(null,
+            new AiResourceIndexEnhancementContent("unknown", "ignored"))).isEmpty());
+        assertTrue(builder.buildSourceContentChunks(null, List.of(
+            new AiResourceIndexEnhancementContent("SKILL.md", "ignored"))).isEmpty());
+        assertTrue(builder.buildSourceContentChunks(entry, List.of(
+            new AiResourceIndexEnhancementContent("SKILL.md", "text")), "").isEmpty());
+        List<AiResourceSearchChunk> customSource = builder.buildSourceContentChunks(entry,
+            Arrays.asList(null,
+                new AiResourceIndexEnhancementContent("custom.txt", "custom content")),
+            "custom");
+        assertEquals(1, customSource.size());
+        assertTrue(customSource.get(0).getMetadata().contains("content"));
+        
+        assertTrue(builder.buildEnhancementChunks(entry, null).isEmpty());
+        assertTrue(builder.buildEnhancementChunks(entry, Collections.emptyList()).isEmpty());
+        List<AiResourceSearchChunk> enhancements = builder.buildEnhancementChunks(entry,
+            Arrays.asList(null, new AiResourceIndexEnhancementChunk("", "ignored", null),
+                new AiResourceIndexEnhancementChunk("custom", " ", null),
+                new AiResourceIndexEnhancementChunk("custom", "same", null),
+                new AiResourceIndexEnhancementChunk("custom", "same", null)));
+        assertEquals(1, enhancements.size());
+        
+        entry.setTags("null");
+        entry.setCapabilities("not-json");
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("inputTypes", null);
+        metadata.put("riskLevel", 7);
+        entry.setMetadata(JacksonUtils.toJson(metadata));
+        assertFalse(builder.buildChunks(entry).isEmpty());
+        entry.setMetadata("null");
+        assertFalse(builder.buildChunks(entry).isEmpty());
+        entry.setMetadata("");
+        assertFalse(builder.buildChunks(entry).isEmpty());
+        entry.setMetadata("not-json");
+        assertFalse(builder.buildChunks(entry).isEmpty());
     }
     
     private AiResourceSearchDocument entry() {

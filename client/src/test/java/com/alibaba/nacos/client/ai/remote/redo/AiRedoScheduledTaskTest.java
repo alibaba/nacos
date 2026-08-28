@@ -19,6 +19,8 @@ package com.alibaba.nacos.client.ai.remote.redo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.redo.data.RedoData;
 import org.junit.jupiter.api.AfterEach;
@@ -362,6 +364,46 @@ class AiRedoScheduledTaskTest {
         
         verify(aiGrpcClient).doRegisterAgentEndpoints(anyString(),
             any(AgentEndpointRegistrationBatch.class));
+    }
+    
+    @Test
+    void redoCompleteAgentEndpointPublicationDiscardsCapacityRejectedIntent()
+        throws NacosException {
+        AgentEndpointPublicationRedoData publication = buildAgentEndpointPublicationRedoData(
+            "register", RedoData.RedoType.REGISTER);
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(Collections.<RedoData<AgentEndpointRegistrationBatch>>singleton(
+                publication));
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.isEnable()).thenReturn(true);
+        doThrow(new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT, "full"))
+            .when(aiGrpcClient).doRegisterAgentEndpoints(publication.getKey(), publication.get());
+        
+        task.run();
+        
+        verify(aiGrpcClient).discardAgentEndpointPublicationAfterCapacityRejection(
+            publication.getKey(), publication.get());
+    }
+    
+    @Test
+    void redoCompleteAgentEndpointPublicationKeepsGenericThrottleIntent()
+        throws NacosException {
+        AgentEndpointPublicationRedoData publication = buildAgentEndpointPublicationRedoData(
+            "register", RedoData.RedoType.REGISTER);
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(Collections.<RedoData<AgentEndpointRegistrationBatch>>singleton(
+                publication));
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.isEnable()).thenReturn(true);
+        doThrow(new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.SERVER_ERROR, "throttled"))
+            .when(aiGrpcClient).doRegisterAgentEndpoints(publication.getKey(), publication.get());
+        
+        task.run();
+        
+        verify(aiGrpcClient, never()).discardAgentEndpointPublicationAfterCapacityRejection(
+            anyString(), any(AgentEndpointRegistrationBatch.class));
     }
     
     private McpServerEndpointRedoData buildMcpServerEndpointRedoData(String mcpName,

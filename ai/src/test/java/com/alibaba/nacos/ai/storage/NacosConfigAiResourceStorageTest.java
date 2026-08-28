@@ -36,6 +36,7 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -108,6 +109,81 @@ class NacosConfigAiResourceStorageTest {
         assertEquals("ns1", parts.namespaceId());
         assertEquals("agent-version", parts.group());
         assertEquals("agent__enc-Nacos-032Agent__1.0.0-RC1.json", parts.dataId());
+    }
+    
+    @Test
+    void testParseAllowlistedMcpKeysPreservesExistingCoordinates() {
+        List<String[]> coordinates = Arrays.asList(
+            new String[] {"mcp-server", "id-version:build-mcp-server.json"},
+            new String[] {"mcp-tools", "id-version:build-mcp-tools.json"},
+            new String[] {"mcp-resources", "id-version:build-mcp-resources.json"});
+        for (String[] coordinate : coordinates) {
+            StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE,
+                "public:" + coordinate[0] + ':' + coordinate[1]);
+            NacosConfigAiResourceStorage.KeyParts parts =
+                NacosConfigAiResourceStorage.parse(key);
+            assertEquals("public", parts.namespaceId());
+            assertEquals(coordinate[0], parts.group());
+            assertEquals(coordinate[1], parts.dataId());
+        }
+    }
+    
+    @Test
+    void testMcpStorageOperationsDoNotEncodePhysicalCoordinate() throws Exception {
+        NacosConfigAiResourceStorage storageWithoutSync =
+            new NacosConfigAiResourceStorage(configQueryChainService, configOperationService, null);
+        String dataId = "id-version:build-mcp-server.json";
+        StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE,
+            "public:mcp-server:" + dataId);
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        response.setContent("content");
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(response);
+        
+        storageWithoutSync.save(key, "content".getBytes(StandardCharsets.UTF_8));
+        assertArrayEquals("content".getBytes(StandardCharsets.UTF_8), storageWithoutSync.get(key));
+        storageWithoutSync.delete(key);
+        
+        ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configOperationService).publishConfig(formCaptor.capture(), any(), isNull());
+        assertEquals(dataId, formCaptor.getValue().getDataId());
+        assertEquals("mcp-server", formCaptor.getValue().getGroup());
+        ArgumentCaptor<ConfigQueryChainRequest> requestCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(requestCaptor.capture());
+        assertEquals(dataId, requestCaptor.getValue().getDataId());
+        assertEquals("mcp-server", requestCaptor.getValue().getGroup());
+        verify(configOperationService).deleteConfig(dataId, "mcp-server", "public", null, null,
+            "nacos", null);
+    }
+    
+    @Test
+    void testRejectMcpLikeKeysOutsideAllowlistOrSuffixContract() {
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE, "public:user-group:file.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE, "public:mcp-server:wrong.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE, ":mcp-tools:id-mcp-tools.json")));
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(new StorageKey(
+                NacosConfigAiResourceStorage.TYPE, "public:mcp-resources:")));
+    }
+    
+    @Test
+    void testMcpGroupTokensDoNotBreakLegacySkillNames() {
+        for (String skillName : Arrays.asList("mcp-server", "mcp-tools", "mcp-resources")) {
+            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                NacosConfigAiResourceStorage.TYPE, "public", skillName, "1.0.0", "skill.json");
+            NacosConfigAiResourceStorage.KeyParts parts =
+                NacosConfigAiResourceStorage.parse(key);
+            assertEquals(SkillUtils.buildSkillVersionGroup(skillName, "1.0.0"), parts.group());
+            assertEquals("skill.json", parts.dataId());
+        }
     }
     
     @Test
@@ -293,6 +369,9 @@ class NacosConfigAiResourceStorageTest {
     
     @Test
     void testParseInvalidFormatThrows() {
+        StorageKey singlePartKey = new StorageKey(NacosConfigAiResourceStorage.TYPE, "single");
+        assertThrows(IllegalArgumentException.class,
+            () -> NacosConfigAiResourceStorage.parse(singlePartKey));
         StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE, "only:two");
         assertThrows(IllegalArgumentException.class, () -> NacosConfigAiResourceStorage.parse(key));
     }
@@ -603,6 +682,8 @@ class NacosConfigAiResourceStorageTest {
         for (int i = 0; i < expectedTypes.size(); i++) {
             assertEquals(expectedTypes.get(i), formCaptor.getAllValues().get(i).getType());
         }
+        assertEquals(ConfigType.TEXT.getType(), ReflectionTestUtils.invokeMethod(
+            NacosConfigAiResourceStorage.class, "guessConfigType", ""));
     }
     
     @Test

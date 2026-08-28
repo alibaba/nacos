@@ -441,6 +441,29 @@ Search MUST:
 
 `pageNo` defaults to `1`; `pageSize` defaults to `20` and is at most `100`.
 
+Search reuses the shared Search Core defined by the
+[AI Resource Search Spec](ai-resource-search-spec.md) and fixes the request to
+`resourceType=agent`:
+
+- `agentNameContains` maps to case-sensitive `LITERAL_CONTAINS`, where `%`,
+  `_`, and the escape character are all literals;
+- `tagsAll` maps to case-sensitive `EXACT_ALL`;
+- `protocolsAny` maps to case-sensitive `EXACT_ANY`;
+- different filter categories combine with AND, and filtering, visibility,
+  and currentness checks all occur before totals and page truncation; and
+- the complete online-Version catalog comes from the current Search document,
+  while Runtime Endpoints, health, Publishers, and heartbeats enter neither the
+  Search index nor its response.
+
+`nacos.ai.rad.search.mode` selects `AUTO`, `INDEX`, or `SCAN`. `AUTO` and
+`INDEX` use the shared index before and after Agent projection readiness. When
+the generation is not READY, they return the current snapshot, whose total and
+pages may be incomplete, and emit rate-limited diagnostics without logging
+query content. `SCAN` explicitly selects the legacy compatibility path. An
+index-call failure does not cause per-request fallback, and one request never
+mixes the two paths. All three modes preserve this section's filtering,
+ordering, visibility, and version-catalog semantics.
+
 ## 5. Discover
 
 `AgentDiscoveryRequest` contains:
@@ -577,8 +600,12 @@ define separate single-item commands.
 The Nacos server path is a data-structure adapter over Naming. It transforms
 the complete Endpoint batch into Naming Instances and invokes Naming batch
 registration or whole-publication deregistration. It does not read the prior
-publisher batch, incrementally merge it, add an Agent service lock, directly
-query the Naming client index, or scan other publishers during a write.
+publisher payload, incrementally merge it, add an Agent service lock, or scan
+other publishers during a write. The admission path counts Runtime Endpoint
+entries across only the current publisher Client's complete Agent publication
+batches. It evaluates the pre-operation entry count together with the existing
+and requested target-batch sizes. That soft-watermark check and the Naming
+batch replacement are serialized for the same Client.
 
 ### 7.3 Naming Publication And Multiple Publishers
 
@@ -620,6 +647,19 @@ One version has at most 16 calling interfaces. One declared endpoint set has at
 most 64 endpoints. One runtime endpoint set and one endpoint batch each have at
 most 1000 endpoints. The online-version list has no separate product limit and
 follows the response-size rule in Section 3.4.
+
+One publisher Client has a soft watermark of 100 Runtime Endpoint publication
+entries by default. The watermark is configured by
+`nacos.ai.rad.capacity.publication.max-publications-per-client` in the server
+`application.properties`. Admission evaluates the Client's current entry count
+before one complete registration batch. When that count is below the
+watermark, the whole validated batch is accepted atomically even if its final
+count crosses the watermark. Once the Client is at or above the watermark,
+equal-size or shrinking replacement of an existing
+`(namespaceId, agentName, protocol)` batch remains allowed, while a new batch
+or growing replacement is rejected atomically with `RESOURCE_EXHAUSTED`; no
+partial Naming publication is created. Removing Endpoint entries or
+disconnecting the owner reduces the observed count.
 
 ## 9. Binding Profiles
 

@@ -565,16 +565,6 @@ public class AgentPersistenceService {
                 + agentName, e);
         }
         
-        int deletedResources = resourcePersistService.delete(namespaceId, agentName,
-            Constants.Agent.RESOURCE_TYPE_AGENT);
-        if (deletedResources != 1) {
-            throw serverError("Agent Resource row was not deleted: " + agentName, null);
-        }
-        int deletedVersions = versionPersistService.deleteByNameAndType(namespaceId, agentName,
-            Constants.Agent.RESOURCE_TYPE_AGENT);
-        if (!versionRows.isEmpty() && deletedVersions <= 0) {
-            throw serverError("Agent Version rows were not deleted: " + agentName, null);
-        }
         NacosException firstFailure = null;
         for (AgentVersionStorageDescriptor descriptor : descriptors) {
             try {
@@ -588,8 +578,18 @@ public class AgentPersistenceService {
             }
         }
         if (firstFailure != null) {
-            throw serverError("Agent definition was deleted but some Version content could not be "
-                + "cleaned: " + agentName, firstFailure);
+            throw serverError("Some Agent Version content could not be cleaned: " + agentName,
+                firstFailure);
+        }
+        int deletedResources = resourcePersistService.delete(namespaceId, agentName,
+            Constants.Agent.RESOURCE_TYPE_AGENT);
+        if (deletedResources != 1) {
+            throw serverError("Agent Resource row was not deleted: " + agentName, null);
+        }
+        int deletedVersions = versionPersistService.deleteByNameAndType(namespaceId, agentName,
+            Constants.Agent.RESOURCE_TYPE_AGENT);
+        if (!versionRows.isEmpty() && deletedVersions <= 0) {
+            throw serverError("Agent Version rows were not deleted: " + agentName, null);
         }
     }
     

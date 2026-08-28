@@ -196,6 +196,15 @@ deferred loading must not independently instantiate its implementations while it
 predicate is false. Final configuration and runtime participation must follow the unified result
 before the server becomes available.
 
+An independently deployed Console has no Core application context and therefore does not start the
+regular core plugin manager. Before the Console starts accepting requests, a Console-local auth
+initializer must discover the `AuthPluginService` instances already loaded by the auth domain,
+resolve `STATIC > DEFAULT`, validate and apply every configurable auth implementation, and invoke
+`PluginStartupLifecycle` only for the selected auth implementation. The selected implementation
+must exist; otherwise Console startup fails explicitly. This limited lifecycle does not load other
+plugin types and does not own plugin state, runtime-persisted configuration, local-only overrides,
+storage, or cluster synchronization.
+
 Plugin startup must be deterministic:
 
 - A plugin type and name pair must map to one runtime plugin instance.
@@ -414,10 +423,15 @@ deployments, examples, tests, and plugin implementations must use only the canon
 | `nacos.ai.resource.import.enabled` | `nacos.plugin.ai-resource-import.enabled` | The standard module key remains authoritative and defaults to enabled. |
 | `nacos.plugin.ai.importer.*.enabled` | `nacos.plugin.ai-resource-import.{pluginName}.enabled` or unified plugin state | Migrate old built-in source state keys to managed implementation state. |
 | `nacos.plugin.ai.importer.*` item configuration | `nacos.plugin.ai-resource-import.{pluginName}.{itemKey}` | Migrate display, description, limits, and endpoint inputs to the managed source identity. |
-| `nacos.ai.resource.import.legacy-mcp-api-enabled` and `nacos.ai.resource.import.allow-user-url` | Unified `/v3/{admin|console}/ai/import/*` APIs and managed source endpoint configuration | These switches and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
+| `nacos.ai.resource.import.allow-user-url` | Managed source endpoint configuration | Direct user URL compatibility and the legacy MCP import adapter are planned for removal in Nacos 3.4.0. |
 | `ConfigChangeConfigs` property bridge | Definitions and callbacks on `ConfigChangePluginService` | Old binary plugins without definitions continue receiving legacy properties during the 3.x window. |
 | `VisibilityService.init(Properties)` | Definitions and callbacks inherited from `PluginConfigSpec` | The unified lifecycle applies effective item-key maps before visibility execution. |
 | `CustomEnvironmentPluginManager.join(...)` | Environment SPI discovery through the `PRE_CONTEXT` initializer | Environment implementations must be discoverable before Spring environment customization begins. |
+
+The former `nacos.ai.resource.import.legacy-mcp-api-enabled` input is no longer
+recognized. Deprecated MCP import APIs now use the shared
+`nacos.core.api.compatibility.enabled` gate documented by the
+[Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
 
 For each configuration-key row, a canonical key that is present wins even when its value is empty;
 fallback occurs only when the canonical key is absent. Removing these inputs at their planned
@@ -636,6 +650,12 @@ pre-context implementation is defensively copied and exposed as `RESTART`, with
 a warning containing only the plugin ID and item key. Runtime config APIs,
 persisted or local-only restoration, and `ServerConfigChangeEvent` refresh must
 not update pre-context plugins.
+
+The independently deployed Console auth lifecycle is another restricted source variant. It keeps
+an accepted static snapshot for each configurable auth implementation and resolves only
+`STATIC > DEFAULT`. A `ServerConfigChangeEvent` may refresh fields declared `RUNTIME`; fields
+declared `RESTART`, including auth plugin selection and token secrets, keep their startup value.
+Console must not read or update the Server-owned runtime-persisted or local-only plugin sources.
 
 The `STATIC` resolver keeps an accepted per-plugin snapshot instead of reading
 live environment values independently for every detail query. Startup captures

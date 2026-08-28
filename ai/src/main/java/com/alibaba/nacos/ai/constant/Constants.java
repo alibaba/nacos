@@ -23,17 +23,33 @@ package com.alibaba.nacos.ai.constant;
  */
 public class Constants {
     
+    public static final String AI_RESOURCE_SEARCH_CLIENT_PATH =
+        "/v3/client/ai/resources/search";
+    
     public static final String MCP_PATH = "/ai/mcp";
     
     public static final String MCP_ADMIN_PATH = "/v3/admin" + MCP_PATH;
     
     public static final String MCP_CONSOLE_PATH = "/v3/console" + MCP_PATH;
     
+    public static final String MCP_CLIENT_PATH = "/v3/client" + MCP_PATH;
+    
     public static final String AI_RESOURCE_IMPORT_ADMIN_PATH = "/v3/admin/ai/import";
     
     public static final String AI_RESOURCE_IMPORT_CONSOLE_PATH = "/v3/console/ai/import";
     
     public static final String ARD_ENABLED_KEY = "nacos.ai.ard.enabled";
+    
+    /**
+     * Enables the protocol-neutral AI Resource Search runtime.
+     */
+    public static final String AI_RESOURCE_SEARCH_ENABLED_KEY =
+        "nacos.ai.resource.search.enabled";
+    
+    /**
+     * Selects the default AI Resource storage provider for new writes.
+     */
+    public static final String AI_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.storage.provider";
     
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
@@ -125,12 +141,25 @@ public class Constants {
         public static final String ADMIN_PATH = "/v3/admin/ai/agents";
         
         /**
+         * Selects the RAD Agent Search read path.
+         */
+        public static final String RAD_SEARCH_MODE_CONFIG_KEY = "nacos.ai.rad.search.mode";
+        
+        /**
+         * Soft watermark for Runtime Endpoint publication entries owned by one publisher Client.
+         */
+        public static final String MAX_PUBLICATIONS_PER_CLIENT_CONFIG_KEY =
+            "nacos.ai.rad.capacity.publication.max-publications-per-client";
+        
+        public static final int DEFAULT_MAX_PUBLICATIONS_PER_CLIENT = 100;
+        
+        /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.
          */
         public static final String RESOURCE_TYPE_AGENT = "agent";
         
         /**
-         * Selects the AI Storage provider for Agent Version content.
+         * Compatibility override for the Agent storage provider.
          */
         public static final String AGENT_STORAGE_PROVIDER_CONFIG_KEY =
             "nacos.ai.agent.storage.provider";

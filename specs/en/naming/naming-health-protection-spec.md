@@ -90,6 +90,13 @@ service metadata CP group has completed recovery. Those tasks must be deferred
 until that group is ready. Temporarily unavailable cluster metadata must not be
 interpreted as the default TCP checker or change instance health state.
 
+The instance address used by an active health check must be a plain host. The
+instance IP field must not carry user information, a port, a path, query
+parameters, or a fragment. A processor must validate the address at runtime
+before making a network request. If address parsing fails or extra URL
+components are present, the check must fail without making a network request to
+that address. IPv6 syntax separators are not extra URL components.
+
 ### 3.2 Manual Health Update
 
 Manual instance health update is allowed for instances of persistent services

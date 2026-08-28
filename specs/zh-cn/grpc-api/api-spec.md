@@ -219,6 +219,23 @@ AI payload 语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各资源
 | `BatchAgentEndpointRequest` | `AgentEndpointResponse` | write | `agentName`, `endpoints` | 替换当前客户端为某个 Agent 注册的 endpoints。 |
 | `QueryPromptRequest` | `QueryPromptResponse` | read | `namespace`, `promptKey`, `version`, `label`, `md5` | 按版本、标签、latest 或 md5 查询 Prompt。 |
 
+MCP 管理迁移到通用 AI Resource 生命周期期间，现有三个 MCP Payload 继续作为兼容 Binding：
+
+- `ReleaseMcpServerRequest` 保持 Wire Shape 和 Direct-Online 行为。新的精确 Version
+  立即 Online；同 Version Conflict/Overwrite 行为只存在于该兼容 Facade。托管后的实现通过
+  MCP Storage 写入坐标不变的物理 Config 和 Manifest。
+- `QueryMcpServerRequest` 保持 Wire Shape 和现有 Serving 投影。生命周期托管不修改
+  Manifest、Config、Naming、Latest Version、frontend/backend 或 Endpoint 解析行为。
+- `McpServerEndpointRequest` 保持当前字段、按 Version 划分的 Naming 布局、Metadata、
+  Register/Deregister、Reconnect 和 Redo 行为。首期生命周期托管不增加
+  `supportedTransports`、`versionRange`、无 Version Service 或新的能力协商。
+
+MCP Request 继承的顶层 `AbstractMcpRequest.mcpId` 是 Ignored 且 Deprecated 的 Wire 字段。
+保留其 Field Number；Query 和 Endpoint Handler 保持当前 `mcpName` 必填规则；Release
+继续使用嵌套 Server Specification。任何 Handler 都不为顶层字段增加 ID 查询。当前 Client
+或响应契约实际使用的嵌套 `McpServerBasicInfo.id` 和
+`ReleaseMcpServerResponse.mcpId` 继续作为 Active Compatibility 字段。
+
 下列 Agent/RAD Payload 是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性目标。
 在 Runtime 中具备对应类、Handler、SPI 注册和协商能力位之前，它们不属于当前已实现
 Payload 清单。

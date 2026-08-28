@@ -189,6 +189,27 @@ old connection unregistered, and replays complete desired groups under the new
 connection. HTTP and gRPC publisher records stay separate; one transport must
 not deregister contributions owned by the other.
 
+In Agent `AUTO` transport mode, a Publication selects and caches its
+`ownerTransport` before the first send. Subsequent complete-Batch replacement,
+partial deregistration, whole-publication deregistration, HTTP heartbeat, and
+redo for the same `(namespaceId, agentName, protocol)` use that owner. A client
+may concurrently hold different Publications owned by HTTP and gRPC, but a
+connection-state change never migrates an existing Publication owner, and HTTP
+maintenance never processes a gRPC-owned record.
+
+The SDK uses a soft watermark of 100 Runtime Endpoint entries across retained
+complete publication batches by default, configurable with
+`nacosAiAgentEndpointMaxPublications`. If the entry count before an atomic
+Register is below the watermark, the SDK retains the whole validated batch even
+when it crosses the watermark. At or above it, equal-size or shrinking
+replacement remains allowed, while a new or growing batch is rejected without
+partial cache mutation. The server separately enforces its authoritative
+per-Client watermark. A local or remote publication-capacity rejection is a
+definitive write failure: the rejected identity is removed from the publication
+manager and gRPC redo cache, and HTTP maintenance must not heartbeat or retry
+it. Other transient 5xx transport failures retain the existing rollback and
+redo behavior.
+
 ### 8.3 Local Polling Subscription Identity
 
 The first SDK does not create a server Watch or store a connection-scoped
@@ -206,6 +227,15 @@ gRPC reconnect does not add subscription redo because the next poll naturally
 uses the new connection. A missing target retains the poll without delivering
 an empty snapshot. A changed resolved version, `contentDigest`, or any
 `sourceRevision` atomically replaces the cache and delivers a complete result.
+
+The local polling cache retains at most 300 distinct canonical subscription
+keys by default, configurable with
+`nacosAiAgentDiscoveryMaxSubscriptions`. An over-limit subscribe fails before
+the initial Discover, cache insertion, or scheduler submission. Duplicate
+subscribe is idempotent, and unsubscribe or shutdown releases capacity. The
+current API installs one key per call. Any later batched Watch cache mutation
+must use a soft pre-operation watermark and either retain the whole normalized
+batch from below the watermark or reject growth without partial insertion.
 
 The server Watch/Push design in the
 [Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md) is a separate

@@ -48,11 +48,12 @@ public class ConfigListenerStateDelegate {
         return result;
     }
     
-    public ConfigListenerInfo getListenerStateByIp(String ip, boolean aggregation) {
-        ConfigListenerInfo result = localService.getListenerStateByIp(ip);
+    public ConfigListenerInfo getListenerStateByIp(String ip, String namespaceId,
+        boolean aggregation) {
+        ConfigListenerInfo result = localService.getListenerStateByIp(ip, namespaceId);
         if (aggregation) {
             result.getListenersStatus()
-                .putAll(remoteService.getListenerStateByIp(ip).getListenersStatus());
+                .putAll(remoteService.getListenerStateByIp(ip, namespaceId).getListenersStatus());
         }
         return result;
     }

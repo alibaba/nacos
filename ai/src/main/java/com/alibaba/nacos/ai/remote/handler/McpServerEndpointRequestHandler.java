@@ -17,9 +17,7 @@
 package com.alibaba.nacos.ai.remote.handler;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
@@ -69,16 +67,13 @@ public class McpServerEndpointRequestHandler
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    private final McpServerOperationService mcpServerOperationService;
-    
-    private final McpServerIndex mcpServerIndex;
+    private final McpOperationService mcpServerOperationService;
     
     public McpServerEndpointRequestHandler(
         EphemeralClientOperationServiceImpl clientOperationService,
-        McpServerOperationService mcpServerOperationService, McpServerIndex mcpServerIndex) {
+        McpOperationService mcpServerOperationService) {
         this.clientOperationService = clientOperationService;
         this.mcpServerOperationService = mcpServerOperationService;
-        this.mcpServerIndex = mcpServerIndex;
     }
     
     @Override
@@ -109,17 +104,15 @@ public class McpServerEndpointRequestHandler
     private McpServerEndpointResponse doHandler(McpServerEndpointRequest request, Instance instance,
         RequestMeta meta)
         throws NacosException {
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(),
-            request.getMcpName());
-        if (null == indexData) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
-                String.format("MCP server `%s` not found in namespaceId: `%s`",
-                    request.getMcpName(),
-                    request.getNamespaceId()));
-        }
         McpServerDetailInfo mcpServer =
             mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
-                indexData.getId(), null, request.getVersion());
+                null, request.getMcpName(), request.getVersion());
+        if (mcpServer == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND,
+                ErrorCode.MCP_SERVER_NOT_FOUND,
+                String.format("MCP server `%s` not found in namespaceId: `%s`",
+                    request.getMcpName(), request.getNamespaceId()));
+        }
         McpServiceRef serviceRef = buildServiceRef(mcpServer);
         if (null == serviceRef) {
             throw new NacosApiException(NacosException.NOT_FOUND,

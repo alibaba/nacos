@@ -23,44 +23,138 @@ deterministic listing, pagination, and aggregation.
 
 ## 1. Scope And Activation
 
-AI Resource Search is an internal reusable capability. It does not define a
-Nacos HTTP API, Java SDK API, Console API, or external protocol response.
+AI Resource Search is a reusable, protocol-neutral logical capability in the
+`ai` module. RAD, ARD, generic AI Resource Search, and resource-specific Search
+must share this capability rather than maintain separate indexes or search
+engines. Their HTTP, Java SDK, Console, and external-protocol responses are
+defined by the corresponding API or adaptor specifications.
 
-The ARD adaptor is the only consumer in this version. Consequently,
-`nacos.ai.ard.enabled` activates both the ARD surface and its required search
-runtime. There is no separate operator-facing search switch until another
-consumer exists. The search implementation must not otherwise depend on ARD
-request, response, identifier, federation, media-type, or artifact semantics.
+The base relational search runtime is activated independently by
+`nacos.ai.resource.search.enabled`, whose default is `true`.
+`nacos.ai.ard.enabled` controls only the ARD Web Context and protocol endpoints;
+it must not disable the search runtime required by RAD or other resource APIs.
+The combination `nacos.ai.ard.enabled=true` and
+`nacos.ai.resource.search.enabled=false` is invalid; server startup must fail
+explicitly during configuration validation. It must not create a hidden
+ARD-specific index. The search implementation must
+not depend on ARD request, response, identifier, federation, media-type, or
+artifact semantics.
 
 ## 2. Ownership Boundary
 
 The AI module owns:
 
-- canonical search documents and chunks;
+- canonical search document, chunk, and facet projections;
+- the resource-type handler registry, Query Planner, and multi-channel result
+  fusion;
 - durable index tasks and reconciliation;
 - keyword and optional vector recall;
 - ranking and deterministic tie-breaking;
 - visibility advice and per-resource visibility enforcement;
 - latest-label and current online-version validation;
-- canonical filters, opaque cursor pagination, and complete-set aggregation.
+- typed predicates, opaque cursors, numbered pages, and complete-set
+  aggregation;
+- readiness for each resource projection generation.
 
-Protocol adaptors own request parsing, protocol validation, protocol-specific
-filter translation, identifiers, media types, response DTOs, error bodies,
-artifact URLs, and federation behavior.
+Protocol adaptors or resource-specific API facades own request parsing,
+protocol validation, type-specific filter translation, response DTOs, and
+error mapping. Identifiers, media types, artifact URLs, and federation behavior
+belong only to the corresponding protocol adaptor.
 
 ## 3. Search Model
 
-The internal query model contains namespace, text, canonical resource types,
-canonical filters, time boundaries, sort order, page size, and opaque cursor.
-It must not contain protocol DTOs or protocol-specific field names.
+The internal query model contains namespace, text, one or more canonical
+resource types, typed predicates, time boundaries, sort order, and cursor or
+numbered-page information. It must not contain protocol DTOs or
+protocol-specific field names.
+
+Canonical predicates support at least:
+
+```text
+field
+operator = EXACT_ANY | EXACT_ALL | LITERAL_CONTAINS
+values[]
+caseSensitive
+```
+
+The operator defines ANY, ALL, or literal-contains behavior within one
+predicate, and multiple predicates are combined with AND.
+`metadata.<facetKey>` is a protocol-neutral facet path. Implementations treat
+`%`, `_`, and the escape character as literal input and must not let database
+LIKE wildcards change literal-contains semantics. A type-specific facade may
+fix the resource type, permitted fields, case rules, and field weights, but it
+must not change common visibility, enabled, or currentness rules. Existing
+protocol filters may retain compatibility entry points, but are converted to
+canonical predicates before entering Search Core.
 
 Search results are application DTOs rather than persistence entities. A result
 may expose the canonical resource key, current version, display and search
 metadata, timestamps, and relevance score. Database row identifiers, index
 status, and task state remain internal to the search implementation.
 
-Visibility and current-version validation occur before page limits are
-applied. Cursors use stable resource anchors rather than mutable list offsets.
+Visibility, enabled, and current-version validation occur before totals,
+offsets, and page limits are applied. Cursors use stable resource anchors
+rather than mutable list offsets. A numbered page returns `totalCount`,
+`pageNumber`, `pagesAvailable`, and current-page items. An implementation may
+stream past the offset, but must not truncate candidates before calculating the
+total.
+
+Generic Search provides unified recall and ranking across resource types.
+Resource-specific Search fixes one resource type in the Query Planner and may
+apply type-specific predicates and weights. When generic Search specifies only
+one resource type, its eligibility, visibility, and currentness results match
+the corresponding resource-specific Search. Cross-type Search must not be
+implemented by concatenating already-paginated resource-specific results.
+
+Every Search facade is available while one or more requested projection
+generations are not yet `READY`. It returns the current enabled and current
+index snapshot without falling back to a canonical full scan or failing the
+request. Such a snapshot may omit resources whose Backfill or lifecycle task
+has not converged yet; its total, cursor, and numbered pages describe only the
+currently indexed set. The server emits rate-limited diagnostics for requested
+unready types without logging query content.
+
+### 3.1 Client HTTP Search Facades
+
+The generic Client HTTP facade is:
+
+```text
+GET /v3/client/ai/resources/search
+```
+
+It accepts `namespaceId`, optional `query`, repeated `resourceTypes`, repeated
+`tagsAll`, repeated `capabilitiesAny`, an opaque `cursor`, and `limit`.
+Omitted `namespaceId` resolves to `public`; omitted `resourceTypes` means every
+registered searchable type; omitted `limit` means `20`. `limit` is between
+`1` and `100`, inclusive. Each repeated filter contains at most 32 non-blank
+values, `query` contains at most 1024 characters, and `cursor` contains at most
+2048 characters. Unknown resource types and invalid bounds return the standard
+parameter-validation error.
+
+A blank `query` performs a deterministic current-resource list. A non-blank
+`query` performs relevance-ranked Search. The response is
+`Result<AiResourceSearchResponse>`: `items` contains protocol-neutral resource
+identity, current Version, display/search metadata, timestamps, and score;
+`nextCursor` is omitted when no following page exists. The generic cursor page
+does not expose a numbered-page total.
+
+Resource-specific Client HTTP facades are:
+
+| Resource | Endpoint | Type-specific request fields | Response |
+| --- | --- | --- | --- |
+| Agent | `GET /v3/client/ai/agents/search` | Existing RAD filters, including `agentNameContains`, `tagsAll`, and `protocolsAny` | Existing numbered `Page<AgentSummary>` contract |
+| AgentSpec | `GET /v3/client/ai/agentspecs/search` | Compatibility `keyword`, `tagsAll`, `pageNo`, and `pageSize` | `Page<AgentSpecBasicInfo>` |
+| Skill | `GET /v3/client/ai/skills/search` | `query`, `tagsAll`, `pageNo`, and `pageSize` | `Page<SkillBasicInfo>` |
+| Prompt | `GET /v3/client/ai/prompt/search` | `query`, `tagsAll`, `pageNo`, and `pageSize` | `Page<PromptMetaSummary>` |
+| MCP | `GET /v3/client/ai/mcp/search` | `query`, `tagsAll`, `protocolsAny`, `capabilitiesAny`, `pageNo`, and `pageSize` | `Page<McpServerBasicInfo>` |
+
+For each numbered facade, omitted `pageNo` and `pageSize` use the shared page
+defaults and non-positive values are rejected. Blank text lists current
+resources in stable resource-key order; non-blank text uses the shared recall
+and ranking path. AgentSpec keeps literal resource-name containment for its
+existing `keyword` compatibility contract. These facades map the same eligible
+documents as generic single-type Search and do not perform post-pagination
+filtering.
 
 ## 4. Aggregation
 
@@ -93,20 +187,139 @@ must not create the pgvector extension or an embedding table.
 Canonical resource writes remain authoritative. Search documents and chunks
 are derived state and may be rebuilt.
 
+A logical `IndexProjection` consists of one document, zero or more chunks, and
+a facet set:
+
+- the document stores resource identity, display information, state, current
+  version, source digest, and stable ordering fields;
+- facets store exact-filter properties. The first generation may keep generic
+  key/value or array facets in document metadata without immediately adding a
+  physical table;
+- chunks contain only text used for keyword or vector recall. Facets do not
+  become standalone chunks and are not embedded;
+- structured document/facet and keyword indexes are mandatory for base Search,
+  while the vector index is an optional recall channel; and
+- a resource such as Agent populates only facets it owns and must not require
+  Skill, Prompt, MCP, or AgentSpec to add Agent-specific columns.
+
+One Query Planner/Fusion coordinates candidate generation, structured
+filtering, de-duplication, score fusion, visibility, currentness, and pagination
+across all recall channels. When a vector provider cannot push down facets,
+the planner uses a bounded candidate strategy whose completeness can be
+demonstrated. It must not apply one post-filter to a fixed top-K result and
+claim complete totals or pages.
+
+### 5.1 Resource-Type Handlers
+
+Every resource type declared searchable registers a protocol-neutral type
+handler with at least these semantics:
+
+```text
+resourceType()
+project(namespaceId, resourceName) -> Optional<IndexProjection>
+scan(namespaceId, cursor, batchSize) -> SourcePage
+isCurrent(document) -> boolean
+exists(namespaceId, resourceName) -> boolean
+```
+
+An empty `project` result means that the resource is absent, undiscoverable, or
+has no valid current version, and the index service deletes that logical
+resource's derived document. `scan` is used only by Backfill/Reconciliation
+and scans by stable resource key in bounded batches. `isCurrent` enforces the
+resource's enabled, visibility, current-version, and source-digest rules. A
+handler belongs to the `ai` module and must not reference ARD DTOs, URLs, or
+media types.
+
+Every searchable handler declares a positive `projectionVersion`. The initial
+generation is `1`; a projection-contract change increments it. Readiness is a
+shared completeness and observability signal for every searchable type, not a
+compatibility switch implemented only by types that retain a legacy scan path.
+
+The searchable types declared by this specification are Agent, AgentSpec,
+Skill, Prompt, and MCP. If a future AI Resource does not participate in generic
+Search, its resource specification states that exclusion explicitly; an
+unimplemented handler must not silently omit a declared type.
+
+### 5.2 Agent Projection
+
+At most one enabled document exists per `(namespaceId, agentName)`. Its
+`resourceVersion` is the exact online Version referenced by common `latest`.
+An Agent document projects at least:
+
+- directory fields such as display name, description, business tags, provider,
+  icon, and scope;
+- an ordered compact catalog of all online Versions;
+- `metadata.protocols`, the ordered de-duplicated union of protocols across all
+  online Versions;
+- `metadata.artifactKinds`, the set of complete representation keys exportable
+  from the exact common-latest Version; and
+- `metadata.projectionVersion` plus a `sourceDigest` over stable business facts.
+
+`protocols` describes invocation protocols, while `artifactKinds` describes
+complete version artifacts that can be returned; they are not interchangeable.
+Agent name, description, tags, capabilities, and examples may produce chunks.
+Scope, owner, status, protocols, and artifact kinds remain structured fields.
+Runtime Endpoints, health, Publishers, heartbeats, and Runtime revisions never
+enter the durable search index.
+
+The Agent source digest is canonical-JSON SHA-256 over Agent metadata that
+affects catalog or search projection, the complete version catalog, common
+latest, the latest Version `contentDigest`, artifact kinds, and projection
+version. A semantically irrelevant modification timestamp does not by itself
+change the digest.
+
 Canonical resource identity fields and task-control fields use exact,
 case-sensitive comparison consistent with canonical resource storage. Keyword
 matching remains case-insensitive through locale-stable query normalization;
 it must not depend on a datasource-specific case-insensitive table collation.
 
+### 5.3 MCP Projection
+
+At most one enabled document exists per `(namespaceId, mcpName)`. Its
+`resourceName` is exactly the canonical `mcpName`, never the deprecated
+`mcpId`, and its `resourceVersion` is the online Version referenced by
+common `latest`.
+
+The MCP handler projects from `AiResource`, `AiResourceVersion`, and content
+loaded through the persisted MCP storage descriptor. It must not locate source
+content through the historical MCP operation service, serving Manifest,
+eventually consistent Search, or MCP in-memory ID index. Public description,
+Tools, Resources, business tags, protocols, and capabilities may enter the
+document. Credentials, sensitive auth metadata, Naming instances, health,
+heartbeats, and Runtime endpoint state never enter the durable index.
+
+Historical `mcpId` may remain response metadata only where a compatibility DTO
+requires it; it is not document identity. The lifecycle-hosting projection
+increments the MCP `projectionVersion`. Backfill rebuilds name-keyed
+documents, while reconciliation removes stale or orphaned ID-keyed documents
+and tasks so MCP never retains two canonical Search identities.
+
 ## 6. Consistency
 
-Replacing one resource version's relational document and chunks is atomic.
+Replacing one logical resource's relational document, chunks, and embedded
+facets is atomic.
 Relational and vector indexes do not require a distributed transaction.
 Instead, an idempotent durable `search_index` task re-reads canonical state and
 converges both indexes. Its task key is SHA-256 over task type, namespace, and
 the logical subject composed of resource type and resource name. Including the
 task type permits other AI resource workflows to use the same table without
 colliding with search-index tasks.
+
+After a canonical resource lifecycle transaction commits successfully, one
+coalesced task is scheduled by `(namespaceId, resourceType, resourceName)`.
+Scheduling failure does not roll back the authoritative write; metrics, alerts,
+and reconciliation repair it. Agent creation, directory metadata or governance
+changes, Version publish/online/offline/delete, common-latest or custom-label
+changes, canonical definition changes made through the legacy A2A facade, and
+Agent deletion all schedule the task. Endpoint registration, deregistration,
+heartbeat, health changes, and Runtime revisions do not schedule a catalog
+index task.
+
+For MCP, create/update, publish, online/offline/delete, enable/disable, label,
+and import changes schedule the task by canonical `mcpName`. MCP endpoint
+registration, deregistration, heartbeat, reconnect, and other Runtime-only
+changes do not schedule it. A scheduling failure follows the same durable
+repair rule and never changes identity or write correctness.
 
 The same task row owns two durable stages:
 
@@ -189,27 +402,83 @@ historical full refresh. Reconciliation preserves the durable enhancement
 intent, revision, stage, retry delay, and lease of an active task for the same
 resource. Vector reconciliation compares the relational document identity as
 well as model and chunk count. Discovery reads only enabled documents whose
-configured indexes have converged.
+configured indexes have converged. Each type handler's reconciliation detects
+missing, partial, stale, and orphaned projections. Agent reconciliation also
+compares projection version, source digest, common latest, version catalog,
+and optional vector state. Deleting the derived document is the correct
+converged result for a resource with no online Version or one that is disabled
+or deleted; it is not a permanent retry condition.
 
 ## 7. Resource Bounds
 
 List, aggregation, reconciliation, and durable-task polling scan relational
-state in bounded database batches. List pagination retains only the requested
-page and one look-ahead result in memory after visibility and current-version
-validation. Reconciliation does not retain every canonical resource name in
-memory. Its cluster-wide scan lease records an owner and expiry, renews through
-CAS while scanning, and releases only while the same owner still holds it.
+state in bounded database batches. Source scans and numbered lists use a stable
+resource-key keyset, with an immutable row key breaking ordering ties. After
+predicate, visibility, and current-version validation, list pagination retains
+only the requested page and one look-ahead result in memory. A numbered page
+retains only an additional counter, not all matching items. Reconciliation
+does not retain every canonical resource name in memory. Its cluster-wide scan
+lease records an owner and expiry, renews through CAS while scanning, and
+releases only while the same owner still holds it.
 
 Keyword and vector recall have a configurable per-channel candidate bound.
 When a channel exceeds the bound, discovery fails explicitly instead of
 returning a silently truncated result set. Operators may tune the bound with
 `nacos.ai.resource.search.max-recall-candidates`.
 
-## 8. Upgrade And Initialization
+## 8. Readiness And Read Modes
+
+Every searchable resource type maintains durable, cluster-shared readiness by
+`(resourceType, projectionVersion)`. A Backfill scan lease identifies only the
+current scan owner and does not replace readiness.
+
+A projection generation is marked `READY` through CAS only after all of these
+conditions hold:
+
+1. every valid namespace was enumerated successfully, without using a `public`
+   fallback to hide enumeration failure;
+2. one bounded source scan for the resource type completed and every detected
+   difference was scheduled successfully;
+3. a subsequent verification pass found no unrepaired missing, stale, or
+   orphaned document;
+4. no pending, processing, or retry task from that pass remains; and
+5. the readiness record names the current projection version.
+
+`READY` is sticky for one generation. Ordinary lifecycle work that is briefly
+pending does not return that generation to unready; query currentness checks
+exclude stale documents until the task converges. A projection contract change
+increments the projection version and creates a new readiness generation.
+
+`NOT READY` is not an API availability failure. Generic, resource-specific,
+RAD, and ARD Search continue through Search Core and return the current index
+snapshot. Results may be incomplete until Backfill and durable tasks converge.
+Servers cache readiness observations on the query path, emit rate-limited
+warnings that identify the unready resource types and generations, and must not
+log search text or structured predicate values. One request never combines a
+partial index with a canonical scan. Index runtime failures remain explicit
+errors and are distinct from projection readiness.
+
+RAD Search selects its read path with
+`nacos.ai.rad.search.mode=AUTO|INDEX|SCAN`, defaulting to `AUTO`:
+
+| Mode | Not READY | READY | Index-call failure |
+|---|---|---|---|
+| `AUTO` | Use the current index snapshot and warn that results may be incomplete | Use the index | Fail explicitly; no per-request fallback |
+| `INDEX` | Use the current index snapshot and warn that results may be incomplete | Use the index | Fail explicitly |
+| `SCAN` | Use legacy scan | Always use legacy scan | Not applicable |
+
+`AUTO` remains the default and currently selects the shared index like `INDEX`;
+the separate value is retained for configuration compatibility and future
+selection policy. `SCAN` is an explicit diagnostic and compatibility path. The
+mode must not change RAD name, tag, protocol, case, ordering, visibility, or
+version-catalog contracts. While a generation is not ready, index-backed totals
+and pages intentionally cover only the current indexed set.
+
+## 9. Upgrade And Initialization
 
 Deployments that created the ARD search schema before durable retry was added
 must initialize all three protocol-neutral relational tables before enabling
-`nacos.ai.ard.enabled`:
+`nacos.ai.resource.search.enabled`:
 
 - `ai_resource_search_document`;
 - `ai_resource_search_chunk`;
@@ -248,20 +517,34 @@ PostgreSQL deployments that do not enable the default vector plugin need no
 pgvector objects. Deployments that enable it must separately run the optional
 schema owned by `nacos-default-ai-vector-plugin`.
 
-## 9. Compatibility And Tests
+Backfill and readiness run for every newly added resource type and projection
+generation. Search may use the current snapshot before readiness and naturally
+becomes complete as convergence finishes. The index remains rebuildable derived
+state; it does not change the authoritative canonical resource or Runtime
+Endpoint stores and does not migrate Runtime state into the relational search
+tables.
+
+## 10. Compatibility And Tests
 
 Internal search names, persistence models, tables, configuration, and vector
-SPI packages remain protocol-neutral even while ARD is the only consumer.
+SPI packages remain protocol-neutral. Existing ARD Skill, Prompt, and MCP
+request, cursor, ordering, and artifact behavior remains compatible while the
+shared core is extended.
 
-Tests cover keyword and vector recall, ranking, visibility, current-version
-validation, cursor pagination, full-set aggregation beyond one page,
-transactional replacement, both durable task stages, lease recovery,
+Tests cover keyword and vector recall, structured facets, typed predicates,
+ranking, visibility, current-version validation, cursor and numbered pages,
+full-set aggregation beyond one page, equivalence between generic single-type
+and resource-specific Search, transactional replacement, both durable task
+stages, lease recovery,
 superseded revisions, versioned task payload and result, task-type isolation,
 timezone-independent Epoch scheduling, deterministic-clock lease and retry
 boundaries, consecutive lifecycle coalescing that preserves an active lease,
 stale-worker release fencing by lease token, idempotent enhancement retry,
 configuration-fingerprint recording without global rescheduling, lifecycle
-enhancement intent, and
-repair-triggered reconciliation enhancement without historical full refresh.
-Protocol adaptors separately test their request grammar and response
-conformance.
+enhancement intent, repair-triggered reconciliation enhancement without
+historical full refresh, Agent lifecycle scheduling versus Runtime Endpoint
+non-scheduling, readiness CAS/restart/new generations for every searchable
+type, rate-limited NOT READY observation, non-blocking partial snapshot
+behavior, and the `AUTO/INDEX/SCAN` matrix. Protocol adaptors and resource APIs
+separately test their request grammar, response conformance, and single-type
+cross-results.

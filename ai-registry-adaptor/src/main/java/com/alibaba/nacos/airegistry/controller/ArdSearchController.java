@@ -173,9 +173,11 @@ public class ArdSearchController {
         @RequestParam String resourceType,
         @RequestParam String resourceName,
         @RequestParam String version,
-        @RequestParam(required = false) String mcpName) throws NacosException {
+        @RequestParam(required = false) String mcpName,
+        @RequestParam(required = false) String contentDigest,
+        @RequestParam(required = false) String representation) throws NacosException {
         ArdArtifact artifact = ardArtifactService.get(namespaceId, resourceType, resourceName,
-            version, mcpName);
+            version, mcpName, contentDigest, representation);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(artifact.getMediaType()))
             .body(artifact.getBody());
     }

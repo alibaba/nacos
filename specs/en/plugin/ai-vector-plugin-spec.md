@@ -31,9 +31,11 @@ Vector indexing is optional. An inactive AI resource search runtime or no
 available vector provider must not prevent Nacos startup, canonical AI
 resource writes, or keyword search. The selected provider is configured by
 `nacos.ai.resource.search.vector.provider`; provider-specific settings remain
-owned by the implementation. In the current release, disabling the only
-consumer through `nacos.ai.ard.enabled=false` also leaves this runtime
-inactive.
+owned by the implementation. The shared Search Core controlled by
+`nacos.ai.resource.search.enabled` consumes the vector provider for RAD, ARD,
+generic AI Resource Search, and resource-specific Search. The
+`nacos.ai.ard.enabled` setting controls only ARD protocol endpoints and must
+not independently decide vector-provider activation.
 
 ## 2. Provider Lifecycle
 
@@ -126,5 +128,6 @@ backward-compatible default or a coordinated compatibility change.
 SPI contract tests cover provider selection, no-op fallback, idempotent
 replace/delete, scoped search, and lifecycle cleanup. The default PostgreSQL
 implementation additionally tests schema isolation, operation without
-pgvector when disabled, transactional replacement inside the provider, and
-reconciliation after simulated vector failures.
+pgvector when disabled, availability to non-ARD consumers when the shared
+Search Core is enabled and ARD is disabled, transactional replacement inside
+the provider, and reconciliation after simulated vector failures.

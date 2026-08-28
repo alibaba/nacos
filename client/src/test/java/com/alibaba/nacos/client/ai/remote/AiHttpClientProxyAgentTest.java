@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -369,6 +370,46 @@ class AiHttpClientProxyAgentTest {
             .delete(anyString(), any(Header.class), any(Query.class), eq(String.class));
         assertEquals(418, assertThrows(NacosException.class,
             () -> proxy.deregisterAgentEndpoints("public", "agent-a", "a2a")).getErrCode());
+    }
+    
+    @Test
+    void publicationCapacityFailureIsNotRetriedAcrossServers() throws Exception {
+        HttpRestResult<String> full = error(NacosException.OVER_THRESHOLD,
+            Result.failure(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+                "full", "Client publication capacity reached"));
+        doReturn(full).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> proxy.registerAgentEndpoints(registrationBatch(null)));
+        assertEquals(NacosException.OVER_THRESHOLD, exception.getErrCode());
+        assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
+            exception.getDetailErrCode());
+        verify(restTemplate).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class));
+    }
+    
+    @Test
+    void genericOverThresholdFailureIsRetried() throws Exception {
+        HttpRestResult<String> throttled = error(NacosException.OVER_THRESHOLD,
+            Result.failure(ErrorCode.SERVER_ERROR.getCode(), "throttled", null));
+        doReturn(throttled).doReturn(success(new ClientLivenessInfo())).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        
+        assertNotNull(proxy.registerAgentEndpoints(registrationBatch(null)));
+        verify(restTemplate, times(2)).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class));
+    }
+    
+    @Test
+    void nonCapacityApiThresholdFailureIsRetried() throws Exception {
+        doThrow(new NacosApiException(NacosException.OVER_THRESHOLD, ErrorCode.SERVER_ERROR,
+            "throttled")).doReturn(success(new ClientLivenessInfo())).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        
+        assertNotNull(proxy.registerAgentEndpoints(registrationBatch(null)));
+        verify(restTemplate, times(2)).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class));
     }
     
     @Test

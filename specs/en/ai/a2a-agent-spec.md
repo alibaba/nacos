@@ -78,6 +78,14 @@ The current descriptor baseline supports A2A 1.0 fields and the existing 0.x
 compatibility fields. Adapter normalization must not replace the stored native
 descriptor with a synthetic generic Agent object.
 
+An A2A call interface in the exact common-latest Version declares the ARD
+representation `application/a2a-agent-card+json` only when it passes complete
+AgentCard validation for that baseline. The artifact returns the stored native
+descriptor directly and must not disguise a multi-protocol Nacos Agent wrapper
+as an AgentCard. A2A support only on an older online Version affects RAD
+`protocolsAny=a2a`; it does not create a current A2A ARD representation when
+common latest has no valid AgentCard.
+
 `registrationType=URL` maps to `[DECLARED,RUNTIME]` and
 `registrationType=SERVICE` maps to `[RUNTIME,DECLARED]`. Registration type is a
 legacy projection field, not part of Agent identity or the new APIs.
@@ -219,4 +227,7 @@ of those capabilities.
 
 Changes in upstream AgentCard fields or A2A protocol versions are handled by the
 A2A adapter and versioned Agent call interface. They must not redefine the
-canonical Agent identity or the protocol-neutral RAD result.
+canonical Agent identity or the protocol-neutral RAD result. The AgentCard
+media type and pinned upstream schema baseline used by ARD are versioned with
+the [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md); a change updates
+the adaptor fixtures, validator, specification, and conformance tests together.

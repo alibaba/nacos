@@ -125,6 +125,34 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     }
     
     @Test
+    void standardLifecycleMethodsRequireTypedMaintainerTransport() {
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.listLifecycleVersions("ns", "name", null, 1, 10));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.getLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.createLifecycleDraft("ns", null, null, null, null));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.updateLifecycleDraft("ns", null, null, null, null));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.deleteLifecycleDraft("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> mcpRemoteHandler.updateLifecycleLabels("ns", "name", null));
+    }
+    
+    @Test
     void validateImportThrows() {
         assertThrows(NacosApiException.class,
             () -> mcpRemoteHandler.validateImport("ns", new McpServerImportRequest()));

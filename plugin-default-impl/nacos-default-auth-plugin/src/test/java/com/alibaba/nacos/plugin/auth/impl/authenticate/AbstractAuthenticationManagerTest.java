@@ -34,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -102,6 +103,34 @@ public class AbstractAuthenticationManagerTest {
         assertThrows(AccessException.class, () -> {
             abstractAuthenticationManager.authenticate("nacos", "test");
         });
+    }
+    
+    @Test
+    void testUnknownUserAndWrongPasswordReturnSameFailure() {
+        NacosUserDetails nacosUserDetails = new NacosUserDetails(user);
+        when(userDetailsService.loadUserByUsername("missing"))
+            .thenThrow(new UsernameNotFoundException("User missing not found"));
+        when(userDetailsService.loadUserByUsername("nacos")).thenReturn(nacosUserDetails);
+        
+        AccessException unknownUser = assertThrows(AccessException.class,
+            () -> abstractAuthenticationManager.authenticate("missing", "test"));
+        AccessException wrongPassword = assertThrows(AccessException.class,
+            () -> abstractAuthenticationManager.authenticate("nacos", "wrong"));
+        
+        assertEquals("User not found! Please check user exist or password is right!",
+            unknownUser.getErrMsg());
+        assertEquals(unknownUser.getErrMsg(), wrongPassword.getErrMsg());
+    }
+    
+    @Test
+    void testUnexpectedUserLookupFailureIsNotConvertedToAuthenticationFailure() {
+        when(userDetailsService.loadUserByUsername("nacos"))
+            .thenThrow(new IllegalStateException("database unavailable"));
+        
+        IllegalStateException actual = assertThrows(IllegalStateException.class,
+            () -> abstractAuthenticationManager.authenticate("nacos", "test"));
+        
+        assertEquals("database unavailable", actual.getMessage());
     }
     
     @Test

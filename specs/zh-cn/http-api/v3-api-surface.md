@@ -69,17 +69,19 @@ V3 HTTP 行为当前由以下代码位置定义：
 | --- | ---: | --- | --- |
 | `/v3/client/cs/config` | 1 | GET | 供自定义 HTTP 客户端查询配置。 |
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | 注册、心跳、注销和查询服务实例。 |
-| `/v3/client/ai/prompt` | 1 | GET | 运行时 Prompt 查询。 |
-| `/v3/client/ai/skills` | 1 | GET | 运行时 Skill zip 下载。 |
+| `/v3/client/ai/resources` | 1 | GET | 协议无关的跨资源 Search。 |
+| `/v3/client/ai/prompt` | 2 | GET | 运行时 Prompt 查询和 Search。 |
+| `/v3/client/ai/skills` | 2 | GET | 运行时 Skill zip 下载和 Search。 |
 | `/v3/client/ai/agentspecs` | 2 | GET | 运行时 AgentSpec 获取和搜索。 |
+| `/v3/client/ai/mcp` | 1 | GET | 运行时 MCP Search。 |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
-| `/v3/admin/ai/*` | 89 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
+| `/v3/admin/ai/*` | 101 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | 控制台集群和命名空间操作。 |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | 控制台配置和历史操作。 |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | 控制台服务和实例操作。 |
-| `/v3/console/ai/*` | 67 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
+| `/v3/console/ai/*` | 79 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
 | `/v3/console/copilot/*` | 6 | GET, POST | 配置和 SSE Copilot 操作。 |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | 默认鉴权插件中的用户登录和管理。 |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | 默认鉴权插件中的角色管理。 |
@@ -96,10 +98,14 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `POST /v3/client/ns/instance` | 注册实例，或在 `heartBeat=true` 时发送心跳。 |
 | `DELETE /v3/client/ns/instance` | 注销实例。实例不存在时仍视为成功。 |
 | `GET /v3/client/ns/instance/list` | 查询服务的启用实例列表。会过滤 disabled 实例。 |
+| `GET /v3/client/ai/resources/search` | 通过统一 cursor Facade 搜索当前可见的 Agent、AgentSpec、Skill、Prompt 和 MCP 资源。 |
 | `GET /v3/client/ai/prompt` | 按版本、标签或 latest 查询 Prompt。 |
+| `GET /v3/client/ai/prompt/search` | 使用 numbered pagination 搜索当前可见 Prompt。 |
 | `GET /v3/client/ai/skills` | 以 zip 响应下载在线 Skill 包。 |
+| `GET /v3/client/ai/skills/search` | 使用 numbered pagination 搜索当前可见 Skill。 |
 | `GET /v3/client/ai/agentspecs` | 按版本、标签或 latest 查询 AgentSpec。可能允许匿名访问。 |
 | `GET /v3/client/ai/agentspecs/search` | 搜索运行时可用的已启用 AgentSpec。 |
+| `GET /v3/client/ai/mcp/search` | 使用协议和能力过滤搜索当前可见 MCP Server。 |
 
 ## 5. Admin API 已实现行为
 
@@ -155,6 +161,11 @@ Console API 模块在 UI 需要时会镜像 Admin 模块：
 
 Console API 文档应避免把控制台专用端点呈现为推荐的自动化 API。自动化用户
 应优先使用 Admin API，除非某个功能被明确设计为仅控制台可用。
+
+`GET /v3/console/ai/mcp/importToolsFromMcp` 是由 Console 进程发起出站连接的控制台专用
+辅助接口。公网目标默认允许；私网或本地目标必须命中运维通过
+`nacos.console.ai.mcp.import.allowed-private-addresses` 配置的 IP/CIDR 白名单。运维可以通过
+`nacos.console.ai.mcp.import.enabled` 关闭该能力。
 
 ## 7. Auth API 已实现行为
 
@@ -216,7 +227,61 @@ Admin 路径使用已实现的 `/v3/admin/ai/agents` 前缀；Console 目标路�
 目标 API 不增加 Client HTTP Watch 或 Endpoint List GET。Watch 和 Push 使用协商后的
 gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` 路径。
 
-## 9. 文档 Gap 记录
+## 9. 已批准的 MCP 生命周期 API 面
+
+下列路径是按 [MCP Server 规范](../ai/mcp-server-spec.md)实现的实验性管理 API 面。只有 MCP
+管理权威完成单向切换并达到 `LIFECYCLE_MANAGED` 后才可用；切换前，有效请求返回
+`RESOURCE_CONFLICT`，且不会修改历史 MCP 状态。
+
+Admin 使用 `/v3/admin/ai/mcp`；Console 使用 `/v3/console/ai/mcp`，作为相同相对生命周期
+契约的 UI Facade：
+
+| 相对路径 | Method | 契约 |
+| --- | --- | --- |
+| `/versions` | GET | 受限列举 MCP Version metadata 和生命周期状态。 |
+| `/version` | GET | 读取一个精确 Version 的内容和 metadata。 |
+| `/draft` | POST, PUT, DELETE | 创建 Draft、只更新当前 Draft 或删除 Draft。 |
+| `/submit` | POST | 通过普通发布 Pipeline 提交 Draft。 |
+| `/publish` | POST | 发布 Reviewed Version。 |
+| `/force-publish` | POST | 经审计地执行管理端 Pipeline bypass。 |
+| `/redraft` | POST | 将 Reviewed Version 退回 Draft。 |
+| `/online` | POST | 将 Offline Version 上线并设为 latest。 |
+| `/offline` | POST | 将 Online Version 下线，并在需要时修复 latest。 |
+| `/labels` | PUT | 更新自定义 Label，忽略客户端提供的 `latest`。 |
+
+所有路径都使用 Form/Query 参数。通用身份字段是可选的 `namespaceId`（默认 `public`）、
+必填 `mcpName`，以及除 `/versions` 和 `/labels` 外必填的精确 `version`。`/versions`
+还接受可选 `status` 以及受限的 `pageNo`、`pageSize`。
+
+`POST` 和 `PUT /draft` 还接受必填 JSON `serverSpecification`，以及可选 JSON
+`toolSpecification`、`resourceSpecification`、`endpointSpecification`。外层
+`mcpName` 和 `version` 是 Canonical Identity；`serverSpecification` 中重复出现的名称或
+Version 必须一致，并拒绝 `serverSpecification.id`。`/labels` 接受 JSON String Map；空输入
+表示清空自定义 Label，同时保留服务端管理的 Label。
+
+Version 列表返回 `Page<McpLifecycleVersionSummary>`。精确读取和 Draft 写入返回
+`McpLifecycleVersionDetail`，其中包含生命周期 Metadata 和 Server/Tools/Resources 内容，但不包含
+内部 MCP ID。生命周期命令返回转换后的 Summary，删除 Draft 返回空 Success Result，替换 Label
+返回最终生效的 Label Map。
+
+现有 MCP create/update/delete 路径和参数形态作为兼容专用的 direct-online Facade 保留，
+不能复制为新的生命周期 Form。尤其是同 Version 内容覆盖只允许通过历史更新路由执行。
+
+新的 Lifecycle Form 使用 `namespaceId + mcpName` 定位 Resource，再增加精确
+`version` 定位 Version，不增加 `mcpId`。已经接受 `mcpId` 的历史 Admin、Console
+和 Maintainer HTTP 输入继续作为已废弃兼容字段；服务端通过 `AiResource.ext` 解析，
+校验同时提供的名称，再进入相同的 Name-Based 鉴权和 Lifecycle Service。现有响应 ID
+字段保持 Wire-Compatible。
+
+该目标不新增 MCP Client HTTP query、release、endpoint、heartbeat 或 subscription 路径。
+HTTP 与现有 gRPC/Java Client 表面对齐，需要等生命周期托管完成后再独立设计。
+
+Embedded 或 Standalone Console 直接委托与 Admin 相同的生命周期 Application Service。
+Console-only Remote 部署需要下一 MCP 治理阶段计划的 Typed Maintainer Lifecycle Transport；在该
+Transport 落地前，新 Console 生命周期路径在 Remote 模式下返回 `API_FUNCTION_DISABLED`，不会回退到
+Legacy 或基于 ID 的写路径。
+
+## 10. 文档 Gap 记录
 
 这不是 bug 列表，而是记录当前文档和代码可能描述了不同 API 面的地方。
 
@@ -240,7 +305,7 @@ gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` �
   `ControllerAdvice`，可能返回纯文本错误体。它们应在 v3 API 上收敛到
   `NacosApiExceptionHandler`。
 
-## 10. 废弃兼容说明
+## 11. 废弃兼容说明
 
 部分 v3 AI API 在本规范建立之前已经发布，后续又被更清晰的生命周期 API 或
 REST 风格 API 替代。这些旧端点应视为废弃兼容 API：
@@ -251,3 +316,8 @@ REST 风格 API 替代。这些旧端点应视为废弃兼容 API：
 兼容端点可以在过渡期内继续保留，但面向用户的文档应以新 API 作为主要契约。
 废弃端点只应出现在兼容章节中，并按照
 [兼容与废弃策略规范](../design/compatibility-deprecation-spec.md)提供迁移说明。
+
+旧 Pipeline base-path list、path-variable detail 端点，以及
+`POST /v3/console/ai/mcp/import/{validate|execute}` 默认关闭，返回 HTTP `410 Gone` 和
+`API_DEPRECATED`。运维人员可以通过 `nacos.core.api.compatibility.enabled=true` 临时重新开启全部
+显式接入门禁的 v3 兼容 API。旧的 `nacos.ai.resource.import.legacy-mcp-api-enabled` 参数不再读取。

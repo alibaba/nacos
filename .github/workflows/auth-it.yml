@@ -1,0 +1,63 @@
+# This workflow validates Nacos with Open, Admin, and Console API auth enabled.
+
+name: Auth Integration Test
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  auth-integration-test:
+    name: Auth Integration Test
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+
+      - name: Start Server With All Auth Scopes
+        run: |
+          PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
+          sed 's|^#\?nacos.plugin.auth.nacos.token.secret.key=.*|nacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=testKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=testValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.enabled=.*|nacos.core.auth.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.plugin.auth.nacos.caching.enabled=.*|nacos.plugin.auth.nacos.caching.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
+
+      - name: Wait for Server Startup
+        run: |
+          if ! timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done'; then
+            LOG_DIR=$(ls -d distribution/target/nacos-server-*/nacos/logs 2>/dev/null | head -n 1 || true)
+            if [ -n "$LOG_DIR" ]; then
+              tail -300 "$LOG_DIR/startup.log" || true
+              tail -300 "$LOG_DIR/nacos.log" || true
+            fi
+            exit 1
+          fi
+
+      - name: Bootstrap Administrator
+        run: |
+          curl -fsS -X POST --data-urlencode 'password=NacosAuth123!' \
+            localhost:8848/nacos/v3/auth/user/admin
+
+      - name: Run Auth Integration Tests
+        run: mvn -B -pl test/auth-test clean verify -Pauth-integration-test -DskipTests=false

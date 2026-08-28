@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.PipelineProxy;
+import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -92,6 +93,8 @@ public class ConsolePipelineController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<PipelineExecution> getPipeline(@PathVariable String pipelineId)
         throws NacosException {
+        CompatibilityHelper.check(
+            "GET /v3/console/ai/pipelines/detail?pipelineId={pipelineId}");
         return Result.success(pipelineProxy.getPipeline(pipelineId));
     }
     
@@ -107,6 +110,7 @@ public class ConsolePipelineController {
     public Result<Page<PipelineExecution>> listPipelinesLegacy(PipelineListForm form,
         PageForm pageForm)
         throws NacosException {
+        CompatibilityHelper.check("GET /v3/console/ai/pipelines/list");
         form.validate();
         pageForm.validate();
         return Result.success(

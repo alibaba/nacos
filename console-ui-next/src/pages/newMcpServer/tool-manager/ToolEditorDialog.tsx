@@ -18,7 +18,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import SchemaEditor from './SchemaEditor';
 import type { JsonSchema } from './SchemaEditor';
-import { mergeJsonTemplateFields, parseArgsPosition } from './tool-template-utils';
+import {
+  mergeJsonTemplateFields,
+  mergeToolSecurityConfig,
+  parseArgsPosition,
+  readToolSecurityConfig,
+} from './tool-template-utils';
 import type { McpTool, McpToolAnnotations, McpToolMeta } from '@/types/mcp';
 
 interface ToolEditorDialogProps {
@@ -98,10 +103,11 @@ export default function ToolEditorDialog({
       setOpenWorldHint(false);
     }
     if (meta) {
+      const securityConfig = readToolSecurityConfig(meta);
       setEnabled(meta.enabled !== false);
-      setTransparentAuth(meta.transparentAuth || false);
-      setSecuritySchemeId(meta.securitySchemeId || '');
-      setClientSecuritySchemeId(meta.clientSecuritySchemeId || '');
+      setTransparentAuth(securityConfig.transparentAuth);
+      setSecuritySchemeId(securityConfig.securitySchemeId);
+      setClientSecuritySchemeId(securityConfig.clientSecuritySchemeId);
       const tmpl = meta.templates?.['json-go-template'];
       setRequestTemplateText(tmpl?.requestTemplate ? JSON.stringify(tmpl.requestTemplate, null, 2) : '');
       setArgsPositionText(tmpl?.argsPosition ? JSON.stringify(tmpl.argsPosition, null, 2) : '');
@@ -176,6 +182,16 @@ export default function ToolEditorDialog({
       toast.error(`${t('mcp.responseTemplate')}: ${t('mcp.invalidJson')}`);
       return;
     }
+    const trimmedSecuritySchemeId = securitySchemeId.trim();
+    const trimmedClientSecuritySchemeId = clientSecuritySchemeId.trim();
+    if (transparentAuth && !trimmedSecuritySchemeId) {
+      toast.error(t('mcp.securitySchemeRequired'));
+      return;
+    }
+    if (transparentAuth && !trimmedClientSecuritySchemeId) {
+      toast.error(t('mcp.clientSecuritySchemeRequired'));
+      return;
+    }
 
     const newMeta: McpToolMeta = { ...(meta || {}), enabled };
     const nextTemplates = mergeJsonTemplateFields(meta?.templates, {
@@ -184,17 +200,19 @@ export default function ToolEditorDialog({
       responseTemplate,
       errorResponseTemplate: errorResponseTemplateText,
     });
-    if (nextTemplates) {
-      newMeta.templates = nextTemplates;
+    const nextSecurityTemplates = mergeToolSecurityConfig(nextTemplates, {
+      transparentAuth,
+      securitySchemeId: trimmedSecuritySchemeId,
+      clientSecuritySchemeId: trimmedClientSecuritySchemeId,
+    });
+    if (nextSecurityTemplates) {
+      newMeta.templates = nextSecurityTemplates;
     } else {
       delete newMeta.templates;
     }
-    if (transparentAuth) newMeta.transparentAuth = true;
-    else delete newMeta.transparentAuth;
-    if (securitySchemeId) newMeta.securitySchemeId = securitySchemeId;
-    else delete newMeta.securitySchemeId;
-    if (clientSecuritySchemeId) newMeta.clientSecuritySchemeId = clientSecuritySchemeId;
-    else delete newMeta.clientSecuritySchemeId;
+    delete newMeta.transparentAuth;
+    delete newMeta.securitySchemeId;
+    delete newMeta.clientSecuritySchemeId;
 
     onSave(newTool, newMeta);
     onOpenChange(false);
@@ -262,7 +280,7 @@ export default function ToolEditorDialog({
 
           {/* Output Schema */}
           <TabsContent value="output">
-            <SchemaEditor value={outputSchema} onChange={setOutputSchema} />
+            <SchemaEditor value={outputSchema} onChange={setOutputSchema} allowNullable />
           </TabsContent>
 
           {/* Annotations */}

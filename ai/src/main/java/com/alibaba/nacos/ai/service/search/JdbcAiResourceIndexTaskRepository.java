@@ -60,6 +60,8 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
     
     private static final int MAX_ERROR_LENGTH = 2000;
     
+    private static final int UNFINISHED_SCAN_PAGE_SIZE = 100;
+    
     private static final RowMapper<AiResourceIndexTask> ROW_MAPPER =
         new AiResourceIndexTaskRowMapper();
     
@@ -156,6 +158,40 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             quarantineMalformedTask(malformedTask);
         }
         return rows.tasks;
+    }
+    
+    @Override
+    public boolean hasUnfinishedTasks(String resourceType) {
+        String afterTaskKey = "";
+        while (true) {
+            List<UnfinishedTaskRow> rows = scanUnfinishedTasks(afterTaskKey);
+            if (rows.isEmpty()) {
+                return false;
+            }
+            for (UnfinishedTaskRow row : rows) {
+                if (row.matches(resourceType)) {
+                    return true;
+                }
+            }
+            afterTaskKey = rows.get(rows.size() - 1).taskKey;
+            if (rows.size() < UNFINISHED_SCAN_PAGE_SIZE) {
+                return false;
+            }
+        }
+    }
+    
+    private List<UnfinishedTaskRow> scanUnfinishedTasks(String afterTaskKey) {
+        String sql = "SELECT task_key, task_payload FROM ai_resource_task WHERE task_type=? "
+            + "AND status<>? AND task_key>? ORDER BY task_key";
+        return getJdbcTemplate().query(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, AiResourceIndexTask.TASK_TYPE);
+            statement.setString(2, STATUS_COMPLETED);
+            statement.setString(3, afterTaskKey);
+            statement.setMaxRows(UNFINISHED_SCAN_PAGE_SIZE);
+            return statement;
+        }, (rs, rowNum) -> new UnfinishedTaskRow(rs.getString("task_key"),
+            rs.getString("task_payload")));
     }
     
     @Override
@@ -421,6 +457,34 @@ public class JdbcAiResourceIndexTaskRepository implements AiResourceIndexTaskRep
             this.revision = revision;
             this.taskStage = taskStage;
             this.error = error;
+        }
+    }
+    
+    private static final class UnfinishedTaskRow {
+        
+        private final String taskKey;
+        
+        private final String taskPayload;
+        
+        private UnfinishedTaskRow(String taskKey, String taskPayload) {
+            this.taskKey = taskKey;
+            this.taskPayload = taskPayload;
+        }
+        
+        private boolean matches(String resourceType) {
+            try {
+                AiResourceIndexTaskPayload payload = JacksonUtils.toObj(taskPayload,
+                    AiResourceIndexTaskPayload.class);
+                return payload == null || payload.getSubject() == null
+                    || payload.getOptions() == null
+                    || payload
+                        .getSchemaVersion() != AiResourceIndexTaskPayload.CURRENT_SCHEMA_VERSION
+                    || payload.getSubject().getResourceType() == null
+                    || payload.getSubject().getResourceName() == null
+                    || resourceType.equals(payload.getSubject().getResourceType());
+            } catch (Exception e) {
+                return true;
+            }
         }
     }
 }

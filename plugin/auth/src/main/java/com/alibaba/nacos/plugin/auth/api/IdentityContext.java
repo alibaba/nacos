@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Identity Context.
@@ -30,6 +33,11 @@ public class IdentityContext {
      * get context from request.
      */
     private final Map<String, Object> param = new HashMap<>();
+    
+    /**
+     * Canonical names of identity parameters extracted from the original request.
+     */
+    private final Set<String> requestIdentityNames = new HashSet<>();
     
     /**
      * get key from context.
@@ -83,5 +91,25 @@ public class IdentityContext {
      */
     public void setParameter(String key, Object value) {
         param.put(key, value);
+    }
+    
+    /**
+     * Put an identity parameter extracted from the original request.
+     *
+     * @param key   canonical identity name
+     * @param value identity value from the request
+     */
+    public void setRequestIdentityParameter(String key, String value) {
+        requestIdentityNames.add(key);
+        param.put(key, value);
+    }
+    
+    /**
+     * Get canonical names of identity parameters extracted from the original request.
+     *
+     * @return request identity names
+     */
+    public Set<String> getRequestIdentityNames() {
+        return Collections.unmodifiableSet(requestIdentityNames);
     }
 }

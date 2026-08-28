@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.airegistry.service;
 
-import com.alibaba.nacos.ai.service.McpServerOperationService;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -63,21 +61,17 @@ class NacosAiRegistryServiceTest {
     private static final String RANDOM_NAMESPACE_ID = UUID.randomUUID().toString();
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private NamespaceOperationService namespaceOperationService;
-    
-    @Mock
-    private McpServerIndex mcpServerIndex;
     
     NacosMcpRegistryService mcpRegistryService;
     
     @BeforeEach
     void setUp() {
-        mcpRegistryService =
-            new NacosMcpRegistryService(mcpServerOperationService, namespaceOperationService,
-                mcpServerIndex);
+        mcpRegistryService = new NacosMcpRegistryService(mcpServerOperationService,
+            namespaceOperationService);
     }
     
     @AfterEach
@@ -85,7 +79,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServersWithZeroOffset() {
+    void listMcpServersWithZeroOffset() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(0);
         listServerForm.setLimit(0);
@@ -97,7 +91,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServersWithOffsetLargeThenTotalCount() {
+    void listMcpServersWithOffsetLargeThenTotalCount() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(100);
         listServerForm.setLimit(10);
@@ -109,7 +103,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServersWithoutOffsetAndLargeOffset() {
+    void listMcpServersWithoutOffsetAndLargeOffset() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(0);
         listServerForm.setLimit(100);
@@ -121,7 +115,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithoutOffsetAndSmallLimit() {
+    void listMcpServerWithoutOffsetAndSmallLimit() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(0);
         listServerForm.setLimit(5);
@@ -136,7 +130,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithoutOffsetAndLimitOverNamespace() {
+    void listMcpServerWithoutOffsetAndLimitOverNamespace() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(0);
         listServerForm.setLimit(11);
@@ -154,7 +148,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffsetAndLargeLimit() {
+    void listMcpServerWithOffsetAndLargeLimit() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(5);
         listServerForm.setLimit(100);
@@ -168,7 +162,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffsetAndSmallLimit() {
+    void listMcpServerWithOffsetAndSmallLimit() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(5);
         listServerForm.setLimit(4);
@@ -183,7 +177,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffsetAndLimitOverNamespace() {
+    void listMcpServerWithOffsetAndLimitOverNamespace() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(5);
         listServerForm.setLimit(6);
@@ -201,7 +195,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffsetOverNamespace() {
+    void listMcpServerWithOffsetOverNamespace() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(10);
         listServerForm.setLimit(10);
@@ -217,7 +211,7 @@ class NacosAiRegistryServiceTest {
     }
     
     @Test
-    void listMcpServerForTargetNamespace() {
+    void listMcpServerForTargetNamespace() throws NacosException {
         ListServerForm listServerForm = new ListServerForm();
         listServerForm.setOffset(0);
         listServerForm.setLimit(30);
@@ -316,17 +310,33 @@ class NacosAiRegistryServiceTest {
     @Test
     void getToolsNotFound() throws NacosException {
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(null, null, id, null)).thenReturn(null);
+        mockMultipleNamespace();
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            id, null, null)).thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+        when(mcpServerOperationService.getMcpServerDetail(RANDOM_NAMESPACE_ID, id, null, null))
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         assertNull(mcpRegistryService.getTools(id, null));
     }
     
     @Test
     void getTools() throws NacosException {
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(null, id, null, null)).thenReturn(
-            mockMcpServerDetailInfo(id, RANDOM_NAMESPACE_ID, false, true));
-        when(mcpServerIndex.getMcpServerById(eq(id))).thenReturn(new McpServerIndexData());
+        mockMultipleNamespace();
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            id, null, null)).thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+        when(mcpServerOperationService.getMcpServerDetail(RANDOM_NAMESPACE_ID, id, null, null))
+            .thenReturn(mockMcpServerDetailInfo(id, RANDOM_NAMESPACE_ID, false, true));
         assertNotNull(mcpRegistryService.getTools(id, null));
+    }
+    
+    @Test
+    void getToolsRethrowsLifecycleQueryFailure() throws NacosException {
+        String id = UUID.randomUUID().toString();
+        mockMultipleNamespace();
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+            id, null, null)).thenThrow(new NacosException(NacosException.SERVER_ERROR, "failed"));
+        
+        assertThrows(NacosException.class, () -> mcpRegistryService.getTools(id, null));
     }
     
     @Test
@@ -440,7 +450,8 @@ class NacosAiRegistryServiceTest {
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaces);
     }
     
-    private void mockListMcpServerWithPage(String namespaceId, int totalCount) {
+    private void mockListMcpServerWithPage(String namespaceId, int totalCount)
+        throws NacosException {
         List<McpServerBasicInfo> allServers = new LinkedList<>();
         for (int i = 0; i < totalCount; i++) {
             McpServerBasicInfo basicInfo = mockMcpServerBasicInfo(i, namespaceId);

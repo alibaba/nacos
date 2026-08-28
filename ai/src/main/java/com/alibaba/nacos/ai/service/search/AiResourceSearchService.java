@@ -17,24 +17,21 @@
 package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
-import com.alibaba.nacos.ai.constant.AiResourceConstants;
-import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorHit;
 import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -80,6 +77,8 @@ public class AiResourceSearchService {
     
     private static final int DEFAULT_MAX_RECALL_CANDIDATES = 10000;
     
+    private static final int DEFAULT_NUMBERED_PAGE_SIZE = 20;
+    
     private static final String CURSOR_DOCUMENT_ID = "documentId";
     
     private static final String KEY_RANKING_ENHANCED_ENABLED =
@@ -98,9 +97,7 @@ public class AiResourceSearchService {
     
     private static final Map<String, Double> CHUNK_TYPE_WEIGHTS = chunkTypeWeights();
     
-    private final AiResourceManager resourceManager;
-    
-    private final McpServerOperationService mcpServerOperationService;
+    private final AiResourceSearchTypeHandlerRegistry typeHandlerRegistry;
     
     private final AiResourceSearchRepository repository;
     
@@ -108,14 +105,36 @@ public class AiResourceSearchService {
     
     private final AiResourceVectorIndex vectorIndex;
     
-    public AiResourceSearchService(AiResourceManager resourceManager,
-        McpServerOperationService mcpServerOperationService, AiResourceSearchRepository repository,
-        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
-        this.resourceManager = resourceManager;
-        this.mcpServerOperationService = mcpServerOperationService;
+    private final AiResourceSearchReadinessObserver readinessObserver;
+    
+    @Autowired
+    public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
+        AiResourceSearchRepository repository,
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex,
+        AiResourceSearchReadinessObserver readinessObserver) {
+        this.typeHandlerRegistry = typeHandlerRegistry;
         this.repository = repository;
         this.embeddingService = embeddingService;
         this.vectorIndex = vectorIndex;
+        this.readinessObserver = readinessObserver;
+    }
+    
+    public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
+        AiResourceSearchRepository repository,
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
+        this(typeHandlerRegistry, repository, embeddingService, vectorIndex,
+            AiResourceSearchReadinessObserver.NOOP);
+    }
+    
+    public AiResourceSearchService(AiResourceManager resourceManager,
+        McpOperationService mcpOperationService,
+        AiResourceSearchRepository repository,
+        AiResourceEmbeddingService embeddingService, AiResourceVectorIndex vectorIndex) {
+        this(new AiResourceSearchTypeHandlerRegistry(List.of(
+            new StoredAiResourceSearchTypeHandler(resourceManager,
+                AiResourceIndexContentLoader.NOOP),
+            new McpAiResourceSearchTypeHandler(mcpOperationService))), repository,
+            embeddingService, vectorIndex);
     }
     
     /**
@@ -126,6 +145,7 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public Page search(Query query) throws NacosException {
+        observeReadiness(query);
         return page(searchCandidates(query), query);
     }
     
@@ -156,6 +176,7 @@ public class AiResourceSearchService {
      * @throws NacosException when canonical resource lookup fails
      */
     public Page list(Query query) throws NacosException {
+        observeReadiness(query);
         Comparator<RankedEntry> comparator = listComparator(query);
         RankedEntry cursor = listCursor(query);
         PriorityQueue<RankedEntry> selected =
@@ -189,6 +210,83 @@ public class AiResourceSearchService {
     }
     
     /**
+     * List one numbered page in stable resource-key order.
+     *
+     * <p>Eligibility checks happen before the total and offset are calculated. The scan retains
+     * only the requested page and a total counter.</p>
+     *
+     * @param query canonical discovery query with numbered-page settings
+     * @return numbered page over the complete eligible result set
+     * @throws NacosException when canonical resource lookup fails
+     */
+    public NumberedPage numberedList(Query query) throws NacosException {
+        observeReadiness(query);
+        long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
+        long totalCount = 0L;
+        List<AiResourceSearchResult> items =
+            new ArrayList<>(Math.min(query.getPageSize(), ENTRY_SCAN_BATCH_SIZE));
+        String afterResourceType = null;
+        String afterResourceName = null;
+        long afterId = 0L;
+        while (true) {
+            List<AiResourceSearchDocument> batch = repository.scanEnabledEntriesByResourceKey(
+                query.getNamespaceId(), query.getResourceTypes(), afterResourceType,
+                afterResourceName, afterId, ENTRY_SCAN_BATCH_SIZE);
+            if (batch == null || batch.isEmpty()) {
+                break;
+            }
+            for (AiResourceSearchDocument document : batch) {
+                if (!matches(query, document) || !validateCurrentResource(document)) {
+                    continue;
+                }
+                if (totalCount >= offset && items.size() < query.getPageSize()) {
+                    items.add(toResult(new RankedEntry(document, 0D)));
+                }
+                totalCount++;
+            }
+            AiResourceSearchDocument last = batch.get(batch.size() - 1);
+            validateResourceKeyScanAdvance(last, afterResourceType, afterResourceName, afterId);
+            afterResourceType = last.getResourceType();
+            afterResourceName = last.getResourceName();
+            afterId = last.getId();
+            if (batch.size() < ENTRY_SCAN_BATCH_SIZE) {
+                break;
+            }
+        }
+        long pageCount = totalCount / query.getPageSize()
+            + (totalCount % query.getPageSize() == 0 ? 0 : 1);
+        int pagesAvailable = (int) Math.min(Integer.MAX_VALUE, pageCount);
+        return new NumberedPage(items, totalCount, query.getPageNumber(), pagesAvailable);
+    }
+    
+    /**
+     * Search and relevance-rank one numbered page.
+     *
+     * <p>This adapter preserves the resource-specific numbered-page contract while using the
+     * same recall, filtering, visibility, and currentness pipeline as cursor Search.</p>
+     *
+     * @param query canonical discovery query with text and numbered-page settings
+     * @return numbered page over the complete recalled eligible result set
+     * @throws NacosException when recall or canonical resource lookup fails
+     */
+    public NumberedPage numberedSearch(Query query) throws NacosException {
+        observeReadiness(query);
+        List<RankedEntry> candidates = searchCandidates(query);
+        long offset = (long) (query.getPageNumber() - 1) * query.getPageSize();
+        int fromIndex = (int) Math.min(offset, candidates.size());
+        int toIndex = (int) Math.min((long) fromIndex + query.getPageSize(), candidates.size());
+        List<AiResourceSearchResult> items = new ArrayList<>(toIndex - fromIndex);
+        for (RankedEntry candidate : candidates.subList(fromIndex, toIndex)) {
+            items.add(toResult(candidate));
+        }
+        long totalCount = candidates.size();
+        long pageCount = totalCount / query.getPageSize()
+            + (totalCount % query.getPageSize() == 0 ? 0 : 1);
+        int pagesAvailable = (int) Math.min(Integer.MAX_VALUE, pageCount);
+        return new NumberedPage(items, totalCount, query.getPageNumber(), pagesAvailable);
+    }
+    
+    /**
      * Aggregate canonical fields over the complete eligible result set.
      *
      * @param query canonical discovery query
@@ -198,6 +296,7 @@ public class AiResourceSearchService {
      */
     public AggregationResult aggregate(Query query, List<AggregationRequest> requests)
         throws NacosException {
+        observeReadiness(query);
         if (StringUtils.isBlank(query.getText())) {
             return aggregateList(query, requests);
         }
@@ -209,6 +308,10 @@ public class AiResourceSearchService {
             }
         }
         return new AggregationResult(candidates.size(), aggregations);
+    }
+    
+    private void observeReadiness(Query query) {
+        readinessObserver.observe(query == null ? null : query.getResourceTypes());
     }
     
     private AggregationResult aggregateList(Query query, List<AggregationRequest> requests)
@@ -492,12 +595,24 @@ public class AiResourceSearchService {
                 return false;
             }
         }
+        for (Predicate predicate : query.getPredicates()) {
+            if (predicate != null && predicate.appliesTo(entry.getResourceType())
+                && !matchesPredicate(predicate, fieldValues(entry, predicate.getField()))) {
+                return false;
+            }
+        }
         return true;
     }
     
     private List<String> fieldValues(AiResourceSearchDocument entry, String field) {
+        if (field == null) {
+            return Collections.emptyList();
+        }
         if ("displayName".equals(field)) {
             return singleton(entry.getDisplayName());
+        }
+        if ("resourceName".equals(field)) {
+            return singleton(entry.getResourceName());
         }
         if ("resourceType".equals(field)) {
             return singleton(entry.getResourceType());
@@ -536,50 +651,50 @@ public class AiResourceSearchService {
         return false;
     }
     
+    private boolean matchesPredicate(Predicate predicate, List<String> actual) {
+        if (predicate.getValues().isEmpty()) {
+            return true;
+        }
+        if (actual.isEmpty()) {
+            return false;
+        }
+        if (PredicateOperator.EXACT_ALL == predicate.getOperator()) {
+            for (String expected : predicate.getValues()) {
+                if (!matchesExpected(actual, expected, PredicateOperator.EXACT_ANY,
+                    predicate.isCaseSensitive())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (String expected : predicate.getValues()) {
+            if (matchesExpected(actual, expected, predicate.getOperator(),
+                predicate.isCaseSensitive())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean matchesExpected(List<String> actual, String expected,
+        PredicateOperator operator, boolean caseSensitive) {
+        for (String value : actual) {
+            if (value == null || expected == null) {
+                continue;
+            }
+            String comparedValue = caseSensitive ? value : normalize(value);
+            String comparedExpected = caseSensitive ? expected : normalize(expected);
+            if (PredicateOperator.LITERAL_CONTAINS == operator
+                ? comparedValue.contains(comparedExpected)
+                : comparedValue.equals(comparedExpected)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     private boolean validateCurrentResource(AiResourceSearchDocument entry) throws NacosException {
-        return AiResourceConstants.RESOURCE_TYPE_MCP.equals(entry.getResourceType())
-            ? validateMcp(entry) : validateAiResource(entry);
-    }
-    
-    private boolean validateAiResource(AiResourceSearchDocument entry) throws NacosException {
-        AiResource meta = resourceManager.findMeta(entry.getNamespaceId(),
-            entry.getResourceName(), entry.getResourceType());
-        if (meta == null
-            || !AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-            return false;
-        }
-        try {
-            resourceManager.ensureReadableOrNotFound(meta,
-                entry.getResourceType() + " not found: " + entry.getResourceName());
-        } catch (NacosException e) {
-            return false;
-        }
-        String latestVersion = AiResourceManager.resolveVersion(meta, null,
-            AiResourceConstants.LABEL_LATEST);
-        if (!entry.getResourceVersion().equals(latestVersion)) {
-            return false;
-        }
-        AiResourceVersion version = resourceManager.findVersion(entry.getNamespaceId(),
-            entry.getResourceName(), entry.getResourceType(), entry.getResourceVersion());
-        return version != null
-            && AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(version.getStatus());
-    }
-    
-    private boolean validateMcp(AiResourceSearchDocument entry) {
-        Map<String, Object> metadata = parseMap(entry.getMetadata());
-        String mcpServerId = firstNotBlank(stringValue(metadata.get("mcpServerId")),
-            entry.getResourceName());
-        String mcpName = stringValue(metadata.get("mcpName"));
-        try {
-            McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(
-                entry.getNamespaceId(), mcpServerId, mcpName, entry.getResourceVersion());
-            ServerVersionDetail versionDetail = detail.getVersionDetail();
-            return detail.isEnabled()
-                && AiConstants.Mcp.MCP_STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())
-                && versionDetail != null && Boolean.TRUE.equals(versionDetail.getIs_latest());
-        } catch (NacosException e) {
-            return false;
-        }
+        return typeHandlerRegistry.isCurrent(entry);
     }
     
     private Comparator<RankedEntry> relevanceComparator() {
@@ -680,6 +795,24 @@ public class AiResourceSearchService {
         return last.getId();
     }
     
+    private void validateResourceKeyScanAdvance(AiResourceSearchDocument last,
+        String previousResourceType, String previousResourceName, long previousId) {
+        if (last.getId() == null || last.getResourceType() == null
+            || last.getResourceName() == null) {
+            throw new IllegalStateException("AI resource key scan returned an incomplete anchor");
+        }
+        if (previousResourceType == null) {
+            return;
+        }
+        int typeComparison = last.getResourceType().compareTo(previousResourceType);
+        int nameComparison = typeComparison == 0
+            ? last.getResourceName().compareTo(previousResourceName) : 0;
+        if (typeComparison < 0 || typeComparison == 0 && nameComparison < 0
+            || typeComparison == 0 && nameComparison == 0 && last.getId() <= previousId) {
+            throw new IllegalStateException("AI resource key scan did not advance");
+        }
+    }
+    
     private AiResourceSearchResult toResult(RankedEntry candidate) {
         AiResourceSearchDocument document = candidate.getDocument();
         AiResourceSearchResult result = new AiResourceSearchResult();
@@ -739,7 +872,8 @@ public class AiResourceSearchService {
     }
     
     private NacosException invalidCursor() {
-        return new NacosException(NacosException.INVALID_PARAM, "Invalid discovery cursor");
+        return new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "Invalid discovery cursor");
     }
     
     private boolean enhancedRankingEnabled() {
@@ -871,14 +1005,6 @@ public class AiResourceSearchService {
         return value != null && threshold != null && value.toInstant().isAfter(threshold);
     }
     
-    private String stringValue(Object value) {
-        return value == null ? null : String.valueOf(value);
-    }
-    
-    private String firstNotBlank(String first, String second) {
-        return StringUtils.isNotBlank(first) ? first : second;
-    }
-    
     private static Map<String, Double> chunkTypeWeights() {
         Map<String, Double> weights = new LinkedHashMap<>();
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_SEARCH_INTENT, 1.8D);
@@ -891,6 +1017,8 @@ public class AiResourceSearchService {
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_SKILL_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_PROMPT_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_MCP_CONTENT, 0.7D);
+        weights.put(AiResourceSearchConstants.CHUNK_TYPE_AGENT_CONTENT, 0.7D);
+        weights.put(AiResourceSearchConstants.CHUNK_TYPE_AGENTSPEC_CONTENT, 0.7D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_METADATA_IO, 0.6D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_METADATA_RISK, 0.5D);
         weights.put(AiResourceSearchConstants.CHUNK_TYPE_NOT_FOR, 0.4D);
@@ -910,6 +1038,8 @@ public class AiResourceSearchService {
         
         private Map<String, List<String>> filters = Collections.emptyMap();
         
+        private List<Predicate> predicates = Collections.emptyList();
+        
         private String cursor;
         
         private int limit;
@@ -921,6 +1051,10 @@ public class AiResourceSearchService {
         private Instant createdAfter;
         
         private Instant updatedAfter;
+        
+        private int pageNumber = 1;
+        
+        private int pageSize = DEFAULT_NUMBERED_PAGE_SIZE;
         
         public String getNamespaceId() {
             return namespaceId;
@@ -953,6 +1087,14 @@ public class AiResourceSearchService {
         
         public void setFilters(Map<String, List<String>> filters) {
             this.filters = filters == null ? Collections.emptyMap() : filters;
+        }
+        
+        public List<Predicate> getPredicates() {
+            return predicates;
+        }
+        
+        public void setPredicates(List<Predicate> predicates) {
+            this.predicates = predicates == null ? Collections.emptyList() : predicates;
         }
         
         public String getCursor() {
@@ -1002,6 +1144,110 @@ public class AiResourceSearchService {
         public void setUpdatedAfter(Instant updatedAfter) {
             this.updatedAfter = updatedAfter;
         }
+        
+        public int getPageNumber() {
+            return pageNumber;
+        }
+        
+        public void setPageNumber(int pageNumber) {
+            this.pageNumber = Math.max(1, pageNumber);
+        }
+        
+        public int getPageSize() {
+            return pageSize;
+        }
+        
+        public void setPageSize(int pageSize) {
+            this.pageSize = Math.max(1, pageSize);
+        }
+    }
+    
+    /**
+     * Protocol-neutral structured predicate.
+     */
+    public static class Predicate {
+        
+        private String field;
+        
+        private PredicateOperator operator = PredicateOperator.EXACT_ANY;
+        
+        private List<String> values = Collections.emptyList();
+        
+        private boolean caseSensitive;
+        
+        private List<String> applicableResourceTypes = Collections.emptyList();
+        
+        public Predicate() {
+        }
+        
+        public Predicate(String field, PredicateOperator operator, List<String> values,
+            boolean caseSensitive) {
+            this(field, operator, values, caseSensitive, Collections.emptyList());
+        }
+        
+        public Predicate(String field, PredicateOperator operator, List<String> values,
+            boolean caseSensitive, List<String> applicableResourceTypes) {
+            this.field = field;
+            setOperator(operator);
+            setValues(values);
+            this.caseSensitive = caseSensitive;
+            setApplicableResourceTypes(applicableResourceTypes);
+        }
+        
+        public String getField() {
+            return field;
+        }
+        
+        public void setField(String field) {
+            this.field = field;
+        }
+        
+        public PredicateOperator getOperator() {
+            return operator;
+        }
+        
+        public void setOperator(PredicateOperator operator) {
+            this.operator = operator == null ? PredicateOperator.EXACT_ANY : operator;
+        }
+        
+        public List<String> getValues() {
+            return values;
+        }
+        
+        public void setValues(List<String> values) {
+            this.values = values == null ? Collections.emptyList() : values;
+        }
+        
+        public boolean isCaseSensitive() {
+            return caseSensitive;
+        }
+        
+        public void setCaseSensitive(boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+        }
+        
+        public List<String> getApplicableResourceTypes() {
+            return applicableResourceTypes;
+        }
+        
+        public void setApplicableResourceTypes(List<String> applicableResourceTypes) {
+            this.applicableResourceTypes = applicableResourceTypes == null
+                ? Collections.emptyList() : applicableResourceTypes;
+        }
+        
+        private boolean appliesTo(String resourceType) {
+            return applicableResourceTypes.isEmpty()
+                || applicableResourceTypes.contains(resourceType);
+        }
+    }
+    
+    /**
+     * Supported structured predicate operators.
+     */
+    public enum PredicateOperator {
+        EXACT_ANY,
+        EXACT_ALL,
+        LITERAL_CONTAINS
     }
     
     /**
@@ -1033,6 +1279,44 @@ public class AiResourceSearchService {
         
         public String getNextCursor() {
             return nextCursor;
+        }
+    }
+    
+    /**
+     * Canonical numbered discovery page.
+     */
+    public static class NumberedPage {
+        
+        private final List<AiResourceSearchResult> items;
+        
+        private final long totalCount;
+        
+        private final int pageNumber;
+        
+        private final int pagesAvailable;
+        
+        public NumberedPage(List<AiResourceSearchResult> items, long totalCount, int pageNumber,
+            int pagesAvailable) {
+            this.items = items;
+            this.totalCount = totalCount;
+            this.pageNumber = pageNumber;
+            this.pagesAvailable = pagesAvailable;
+        }
+        
+        public List<AiResourceSearchResult> getItems() {
+            return items;
+        }
+        
+        public long getTotalCount() {
+            return totalCount;
+        }
+        
+        public int getPageNumber() {
+            return pageNumber;
+        }
+        
+        public int getPagesAvailable() {
+            return pagesAvailable;
         }
     }
     

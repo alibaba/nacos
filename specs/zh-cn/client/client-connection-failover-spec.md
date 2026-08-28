@@ -65,6 +65,16 @@ WAIT_INIT -> INITIALIZED -> STARTING -> RUNNING
 运行时应在启动阶段尝试同步建立初始连接。如果启动阶段无法在配置的重试预算内建立运行中连接，
 可以继续异步重连，但公开 SDK 调用必须按照领域契约暴露连接不可用状态。
 
+领域 Client 可以在“从未连接成功”的 `STARTING` 阶段暂停后台初始重连，但必须同时满足：
+
+- 领域契约声明了可用的替代传输；
+- 替代传输已经成功完成至少一次权威请求；
+- 初始异步重连已达到领域定义的探测预算。
+
+暂停只抑制新的初始 reconnect 信号以及正在执行的初始 reconnect 循环，不得把状态伪装为
+`RUNNING` 或 `UNHEALTHY`。显式 gRPC 模式、已经进入 `UNHEALTHY` 的连接，以及其他功能明确
+请求共享 gRPC 连接时都必须继续或恢复重连。公开请求不得等待该后台探测结束。
+
 触发 reconnect 的情况包括：
 
 - request stream error 或 completed；

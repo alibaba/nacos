@@ -392,6 +392,23 @@ Search 必须：
 
 `pageNo` 缺省为 `1`，`pageSize` 缺省为 `20` 且最大为 `100`。
 
+Search 复用 [AI 资源检索规范](ai-resource-search-spec.md)定义的共享 Search Core，并将
+请求固定为 `resourceType=agent`：
+
+- `agentNameContains` 映射为大小写敏感的 `LITERAL_CONTAINS`，其中 `%`、`_` 和 escape
+  char 均为普通字符；
+- `tagsAll` 映射为大小写敏感的 `EXACT_ALL`；
+- `protocolsAny` 映射为大小写敏感的 `EXACT_ANY`；
+- 多类 filter 使用 AND 组合；过滤、可见性和当前性校验都必须在 total 和页截断前完成；
+- Agent 的完整 online Version 目录来自当前 Search document，Runtime Endpoint、健康状态、
+  Publisher 和心跳不进入 Search 索引或响应。
+
+`nacos.ai.rad.search.mode` 可以选择 `AUTO`、`INDEX` 或 `SCAN`。`AUTO` 和 `INDEX` 在
+Agent projection readiness 前后都使用共享索引；generation 未 READY 时返回当前快照，total
+和分页可能不完整，同时输出不包含查询内容的限频诊断。`SCAN` 显式选择旧兼容路径。索引调用
+失败不得按请求回退，单次请求也不得混合两条路径。三种模式必须保持本节的过滤、排序、可见性
+和版本目录语义。
+
 ## 5. Discover
 
 `AgentDiscoveryRequest` 包含：
@@ -501,8 +518,11 @@ Agent 和 Version 定义不拥有 Publication 生命周期。定义的创建、�
 
 Nacos Server 路径只是 Naming 上的数据结构 Adapter：它把完整 Endpoint Batch
 转换成 Naming Instance，再调用 Naming Batch Register 或整份 Publication
-Deregister。它不读取此前 Publisher Batch、不做增量 Merge、不增加 Agent Service
-Lock、不直接查询 Naming Client Index，也不在写入时扫描其他 Publisher。
+Deregister。它不读取此前 Publisher Payload、不做增量 Merge、不增加 Agent Service
+Lock，也不在写入时扫描其他 Publisher。Admission 路径只统计当前 Publisher Client
+全部已发布完整 Agent Batch 中的 Runtime Endpoint 条目，并结合操作前条目数以及目标
+Batch 的既有和请求条目数执行每 Client 软水位判断；该检查与同一 Client 的 Naming Batch
+替换必须串行执行。
 
 ### 7.3 Naming Publication 与多发布者
 
@@ -533,6 +553,15 @@ Transport、Priority、Weight 和 Metadata。Register 不执行跨 Publisher 的
 一个版本最多包含 16 个调用接口；一个声明 EndpointSet 最多包含 64 个 Endpoint；
 一个运行时 EndpointSet 和一个 Endpoint Batch 分别最多包含 1000 个 Endpoint。
 在线版本列表没有独立的产品上限，遵循第 3.4 节的响应大小规则。
+
+每个 Publisher Client 默认具有 100 个 Runtime Endpoint 发布条目的软水位。Server
+`application.properties` 使用
+`nacos.ai.rad.capacity.publication.max-publications-per-client` 配置该水位。准入在一个完整
+Registration Batch 执行前读取 Client 当前条目数；当前值低于水位时，整个已校验 Batch
+原子放行，即使完成后超过水位。一旦 Client 已达到或超过水位，仍允许对已有
+`(namespaceId, agentName, protocol)` Batch 进行等量替换或缩容，但以
+`RESOURCE_EXHAUSTED` 原子拒绝新 Batch 或扩容替换，不创建局部 Naming Publication。
+删除 Endpoint 条目或 Owner 断开会降低后续准入观察到的计数。
 
 ## 9. Binding Profile
 

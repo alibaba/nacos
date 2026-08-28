@@ -21,6 +21,7 @@ import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -94,6 +95,17 @@ class EmbeddedUserPersistServiceImplTest {
     void testFindUserLikeUsername() {
         List<String> username = embeddedUserPersistService.findUserLikeUsername("username");
         assertEquals(0, username.size());
+    }
+    
+    @Test
+    void testFindUserLikeUsernameEscapesTheUnderscoreWildcard() {
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        
+        embeddedUserPersistService.findUserLikeUsername("na_me");
+        
+        Mockito.verify(databaseOperate)
+            .queryMany(any(String.class), args.capture(), eq(String.class));
+        assertEquals("%na\\_me%", args.getValue()[0]);
     }
     
     @Test

@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: draft creation and update persist editable skill content; force-publish makes a
+ *     <li>Expected capability: draft creation and full-content update persist editable skill content and remove
+ *     omitted resource files; force-publish makes a
  *     version online and latest; console detail, version detail, list, ZIP download, labels, bizTags, scope,
  *     online/offline, and delete expose the expected skill state.</li>
  *     <li>Boundary/validation: namespace defaults to public; list supports accurate/blur, scope, and bizTag
@@ -61,11 +62,11 @@ public class SkillConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         addCleanup(() -> deleteSkillQuietly(skillName));
 
         JsonNode updated = putFormOk(CONSOLE_SKILL_PATH + "/draft",
-                skillUpdateForm(skillName, updatedBody, "guide updated"));
+                skillUpdateForm(skillName, updatedBody, null));
         assertEquals("ok", updated.get("data").asText(), updated.toString());
         JsonNode draftDetail = getJsonOk(CONSOLE_SKILL_VERSION_PATH,
                 skillVersionQuery(skillName, "1.0.0")).get("data");
-        assertSkillContent(draftDetail, skillName, "1.0.0", updatedBody, "guide updated");
+        assertSkillContent(draftDetail, skillName, "1.0.0", updatedBody, null);
         assertSkillVersionStatus(skillName, "1.0.0", "draft");
 
         assertError(postRaw(CONSOLE_SKILL_PATH + "/publish", queryFrom(skillPublishForm(skillName, "1.0.0"))),
@@ -85,7 +86,7 @@ public class SkillConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
         JsonNode onlineDetail = getJsonOk(CONSOLE_SKILL_VERSION_PATH,
                 skillVersionQuery(skillName, "1.0.0")).get("data");
-        assertSkillContent(onlineDetail, skillName, "1.0.0", updatedBody, "guide updated");
+        assertSkillContent(onlineDetail, skillName, "1.0.0", updatedBody, null);
         assertSkillListContains(Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("skillName", skillName).addParam("search", "accurate")
                 .addParam("pageNo", "1").addParam("pageSize", "10"), skillName);
@@ -95,7 +96,7 @@ public class SkillConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
         assertSkillZip(getRawBytes(CONSOLE_SKILL_VERSION_DOWNLOAD_PATH,
                 skillVersionQuery(skillName, "1.0.0")), skillName, "1.0.0", updatedBody,
-                "guide updated");
+                null);
 
         assertEquals("ok", putFormOk(CONSOLE_SKILL_PATH + "/labels",
                 skillLabelsForm(skillName, "{\"stable\":\"1.0.0\"}")).get("data").asText());

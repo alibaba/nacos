@@ -134,3 +134,38 @@ verify`。
 Java SDK IT 必须使用独立的 `java-sdk-integration-test` Maven profile。通用
 `integration-test` profile 保留给 HTTP API IT 工作流，不能意外运行依赖 SDK
 gRPC 连接就绪状态或可选服务端能力的 SDK 测试。
+
+## 8. AI Resource Search 与 Agent 场景
+
+公共 AI SDK Search 或 Agent 行为变更时，Java SDK IT 至少覆盖：
+
+- 真实 SDK Client 对 Agent 单条件、组合 predicate、numbered page 和默认 namespace 的结果；
+- HTTP 与 gRPC Agent Search 在相同事实和传输选择下返回等价目录；
+- Agent publish/online/offline/latest 切换后的有界收敛，且 Endpoint 操作只改变 Discover；
+- 通用单类型 Search 与 Agent、AgentSpec、Skill、Prompt、MCP 资源专用 Search 的候选资格一致；
+- Client transport `AUTO/HTTP/GRPC` 可用时保持同一 Search 契约，协商不支持时返回受控异常；
+- SDK shutdown、重连和 redo 不重复写目录索引，也不把 Runtime Endpoint 带入 Search 结果。
+
+涉及 ARD Artifact 的协议一致性继续由 OpenAPI/适配器 IT 覆盖；Java SDK IT 只通过公开 SDK
+合同验证其可观察目录与 Discover 行为。
+
+## 9. MCP 兼容与 Runtime Endpoint 场景
+
+MCP Storage 路由或生命周期托管发生变化时，Java SDK IT 至少覆盖：
+
+- 真实 `AiService` 发布新的 MCP Resource/Version，保留历史 ID 响应，按精确 Version
+  和 Latest 查询，并观察到与之前相同的 Enable 和 Published Serving 内容；
+- 历史精确 Version Conflict/Overwrite 行为只存在于兼容 Facade，不影响标准生命周期写入；
+- `subscribeMcpServer` 初始投递、完整结果变化回调、Unsubscribe、重新 Subscribe 和
+  Shutdown 清理，且不建立直接 Naming Subscription；
+- 当前按 Version 划分的 Runtime Endpoint Register/Deregister、Service/Cluster/Metadata
+  兼容性，以及断连、重连和 Redo 恢复同一份防御性 Publication Snapshot，不重复 Instance，
+  也不丢失其他 MCP Publication；
+- Java Client 继续使用 `mcpName`，不填充 Dormant 顶层 gRPC `mcpId`，同时 Active
+  Model、Event 和 Response ID 字段保持当前值；
+- 生命周期对账和管理切换不新增 Runtime Publication、Naming Layout、能力协商或公开
+  `AiService` Interface 行为；
+- 默认 JSON Adapter 与 Jackson 3 Adapter 使用当前 Request Fixture 和 Response Model 时行为等价。
+
+无 Version Runtime Service、显式 Transport List、MCP Version Range、Client HTTP 对齐和
+心跳续约在独立设计批准前不属于该矩阵。

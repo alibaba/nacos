@@ -82,6 +82,8 @@ public class AiConstants {
     
     public static final String AI_TRANSPORT_MODE_HTTP = "http";
     
+    public static final String AI_TRANSPORT_MODE_AUTO = "auto";
+    
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL =
@@ -96,6 +98,22 @@ public class AiConstants {
     
     public static final String AI_AGENTSPEC_CACHE_UPDATE_INTERVAL =
         "nacosAiAgentSpecCacheUpdateInterval";
+    
+    /**
+     * Soft watermark for Agent Endpoint publication entries retained by one AI SDK instance.
+     */
+    public static final String AI_AGENT_ENDPOINT_MAX_PUBLICATIONS =
+        "nacosAiAgentEndpointMaxPublications";
+    
+    /**
+     * Maximum local Agent Discover polling subscriptions retained by one AI SDK instance.
+     */
+    public static final String AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS =
+        "nacosAiAgentDiscoveryMaxSubscriptions";
+    
+    public static final int DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS = 100;
+    
+    public static final int DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS = 300;
     
     public static final long DEFAULT_AI_CACHE_UPDATE_INTERVAL = 10000L;
     

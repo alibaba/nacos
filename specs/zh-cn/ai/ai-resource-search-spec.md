@@ -21,38 +21,105 @@
 
 ## 1. 范围与激活
 
-AI Resource Search 是可复用的内部能力，不定义 Nacos HTTP API、Java SDK API、
-Console API 或外部协议响应。
+AI Resource Search 是 `ai` 模块内可复用、协议无关的逻辑能力。RAD、ARD、通用 AI Resource
+Search 和资源专用 Search 都必须复用该能力，不得分别维护索引或搜索引擎。HTTP、Java SDK、
+Console 和外部协议响应由各自的 API 或适配器规范定义。
 
-当前版本只有 ARD 适配器使用该能力，因此 `nacos.ai.ard.enabled` 同时激活 ARD 协议面
-及其依赖的检索运行时。在出现其他消费者之前，不增加独立的运维检索开关。除激活关系外，
-检索实现不得依赖 ARD 请求、响应、identifier、federation、media type 或 artifact 语义。
+基础关系检索运行时由 `nacos.ai.resource.search.enabled` 独立激活，默认值为 `true`。
+`nacos.ai.ard.enabled` 只控制 ARD Web Context 和协议端点，不得关闭 RAD 或其他资源 API
+依赖的检索运行时。`nacos.ai.ard.enabled=true` 且
+`nacos.ai.resource.search.enabled=false` 是非法组合，服务端必须在启动配置校验时明确失败，
+不能隐式创建一套 ARD 专属索引。检索实现不得依赖 ARD 请求、响应、identifier、federation、media type 或
+artifact 语义。
 
 ## 2. 所有权边界
 
 AI 模块负责：
 
-- 标准 search document 和 chunk；
+- 标准 search document、chunk 和 facet 投影；
+- 资源类型处理器注册、Query Planner 和多召回通道结果融合；
 - 持久化索引任务与 reconciliation；
 - 关键词召回和可选向量召回；
 - 排序及确定性 tie-breaking；
 - 可见性 query advice 和逐资源可见性校验；
 - latest label 和当前 online version 校验；
-- 标准 filter、不透明 cursor 分页和完整结果集聚合。
+- 类型化 predicate、不透明 cursor、numbered page 和完整结果集聚合；
+- 每种资源投影代际的 readiness。
 
-协议适配器负责请求解析、协议校验、协议 filter 转换、identifier、media type、响应 DTO、
-错误响应、artifact URL 和 federation 行为。
+协议适配器或资源专用 API Facade 负责请求解析、协议校验、类型专用 filter 转换、响应 DTO
+和错误映射。identifier、media type、artifact URL 和 federation 行为仅属于对应协议适配器。
 
 ## 3. 检索模型
 
-内部 query model 包含 namespace、text、标准 resource type、标准 filter、时间边界、
-排序、page size 和不透明 cursor，不得包含协议 DTO 或协议专属字段名。
+内部 query model 包含 namespace、text、一个或多个标准 resource type、类型化 predicate、
+时间边界、排序及 cursor 或 numbered page 信息，不得包含协议 DTO 或协议专属字段名。
+
+标准 predicate 至少支持：
+
+```text
+field
+operator = EXACT_ANY | EXACT_ALL | LITERAL_CONTAINS
+values[]
+caseSensitive
+```
+
+同一个 predicate 内由 operator 定义 ANY、ALL 或 literal contains；多个 predicate 使用 AND
+组合。`metadata.<facetKey>` 是协议无关 facet 路径。实现必须把 `%`、`_` 和 escape char 当作
+普通输入字符，不能让数据库 LIKE 通配符改变 literal contains 语义。类型专用 Facade 可以固定
+resource type、允许的字段、大小写和字段权重，但不得改变公共可见性、enabled 和 currentness
+规则。现有协议 filter 可保留兼容入口，但进入 Search Core 前必须转换为标准 predicate。
 
 检索结果使用 application DTO，而不是持久化实体。结果可以暴露标准资源键、当前版本、
 展示与检索元数据、时间戳和相关度分数。数据库行 ID、索引状态和任务状态保留在检索实现内部。
 
-可见性和当前版本校验必须在 page limit 之前完成。Cursor 使用稳定资源锚点，不能使用可变
-列表 offset。
+可见性、enabled 和当前版本校验必须在 total、offset 和 page limit 之前完成。Cursor 使用稳定
+资源锚点，不能使用可变列表 offset。Numbered page 返回 `totalCount`、`pageNumber`、
+`pagesAvailable` 和当前页 items；实现可以流式跳过 offset，但不得先截断候选再计算 total。
+
+通用 Search 支持跨资源类型统一召回和排名；资源专用 Search 在 Query Planner 中固定一个
+resource type，并可以使用类型专用 predicate 和权重。通用 Search 只指定一个 resource type
+时，其候选资格、可见性和当前性结果必须与对应资源专用 Search 一致。跨类型 Search 不得通过
+拼接多个已经分页的专用结果实现。
+
+一个或多个请求的 projection generation 尚未 `READY` 时，所有 Search Facade 仍然可用。
+它们返回当前 enabled 且 current 的索引快照，不回退到标准资源全量扫描，也不因 readiness
+失败。Backfill 或生命周期任务尚未收敛的资源可能暂时缺失；total、cursor 和 numbered page
+只描述当前已索引集合。服务端对请求涉及的未就绪类型输出限频诊断，但不得记录查询内容。
+
+### 3.1 Client HTTP Search Facade
+
+通用 Client HTTP Facade 为：
+
+```text
+GET /v3/client/ai/resources/search
+```
+
+请求参数包括 `namespaceId`、可选 `query`、可重复的 `resourceTypes`、可重复的
+`tagsAll`、可重复的 `capabilitiesAny`、不透明 `cursor` 和 `limit`。省略
+`namespaceId` 时使用 `public`；省略 `resourceTypes` 时检索所有已注册的可检索类型；
+省略 `limit` 时使用 `20`。`limit` 取值范围为 `1` 到 `100`（含边界）。每个重复
+filter 最多包含 32 个非空值，`query` 最长 1024 字符，`cursor` 最长 2048 字符。
+未知资源类型和非法边界统一返回参数校验错误。
+
+空白 `query` 执行确定性的当前资源列表；非空 `query` 执行相关度 Search。响应为
+`Result<AiResourceSearchResponse>`：`items` 包含协议无关资源身份、当前 Version、
+展示/检索元数据、时间戳和 score；没有下一页时不返回 `nextCursor`。通用 cursor page
+不暴露 numbered-page total。
+
+资源专用 Client HTTP Facade 为：
+
+| 资源 | Endpoint | 类型专用请求字段 | 响应 |
+| --- | --- | --- | --- |
+| Agent | `GET /v3/client/ai/agents/search` | 既有 RAD filter，包括 `agentNameContains`、`tagsAll` 和 `protocolsAny` | 既有 numbered `Page<AgentSummary>` 契约 |
+| AgentSpec | `GET /v3/client/ai/agentspecs/search` | 兼容字段 `keyword`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<AgentSpecBasicInfo>` |
+| Skill | `GET /v3/client/ai/skills/search` | `query`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<SkillBasicInfo>` |
+| Prompt | `GET /v3/client/ai/prompt/search` | `query`、`tagsAll`、`pageNo` 和 `pageSize` | `Page<PromptMetaSummary>` |
+| MCP | `GET /v3/client/ai/mcp/search` | `query`、`tagsAll`、`protocolsAny`、`capabilitiesAny`、`pageNo` 和 `pageSize` | `Page<McpServerBasicInfo>` |
+
+各 numbered Facade 省略 `pageNo` 和 `pageSize` 时使用公共分页默认值，非正数必须拒绝。
+空白 text 按稳定资源键列出当前资源；非空 text 复用共享召回和排序路径。AgentSpec 为兼容
+既有 `keyword` 契约，保留 resource name 的 literal contains 语义。各 Facade 映射与通用
+单类型 Search 相同的合法 Document，不得在分页后再次过滤。
 
 ## 4. 聚合
 
@@ -79,17 +146,102 @@ embedding 表。
 
 标准资源写入始终是事实来源。Search document 和 chunk 属于可重建的派生状态。
 
+逻辑 `IndexProjection` 由一个 document、零到多个 chunk 和 facet 集合组成：
+
+- document 保存资源身份、展示信息、状态、当前版本、source digest 和稳定排序字段；
+- facet 保存精确过滤属性。第一代实现可以将通用 key/value 或 array facet 保存在 document
+  metadata 中，不要求立即增加物理表；
+- chunk 只保存关键词或向量召回所需的文本内容。Facet 不生成独立 chunk，也不进入 embedding；
+- 结构化 document/facet 和关键词索引是基础 Search 的必选组成，向量索引是可选召回通道；
+- Agent 等资源只能填充自己拥有的 facet，不能要求 Skill、Prompt、MCP 或 AgentSpec 增加
+  Agent 专属列。
+
+所有召回通道由同一个 Query Planner/Fusion 负责候选生成、结构化过滤、去重、分数融合、
+可见性、当前性和分页。向量 Provider 不能下推 facet 时，Planner 必须使用有界且可证明完整的
+候选策略；禁止对固定 top-K 结果只做一次后过滤后声称 total 或分页完整。
+
+### 5.1 资源类型处理器
+
+每个声明可检索的资源类型必须注册协议无关的类型处理器，至少提供以下语义：
+
+```text
+resourceType()
+project(namespaceId, resourceName) -> Optional<IndexProjection>
+scan(namespaceId, cursor, batchSize) -> SourcePage
+isCurrent(document) -> boolean
+exists(namespaceId, resourceName) -> boolean
+```
+
+`project` 返回空表示资源不存在、不可发现或没有合法当前版本，索引服务删除该逻辑资源的派生
+文档。`scan` 只用于 Backfill/Reconciliation，必须按稳定资源键有界扫描。`isCurrent` 必须执行
+该资源的 enabled、可见性、当前版本和 source digest 校验。处理器属于 `ai` 模块，不能引用
+ARD DTO、URL 或 media type。
+
+每个可检索处理器必须声明正数 `projectionVersion`，初始 generation 为 `1`，投影契约变化时
+递增。Readiness 是所有可检索类型共享的完整性与可观测信号，而不是仅由保留旧扫描路径的类型
+实现的兼容切换开关。
+
+本规范声明的可检索类型为 Agent、AgentSpec、Skill、Prompt 和 MCP。若将来某个 AI Resource
+不参加通用 Search，必须在该资源规范中明确声明；不能仅因为尚未实现处理器而静默漏掉。
+
+### 5.2 Agent 投影
+
+每个 `(namespaceId, agentName)` 最多维护一个 enabled document。其 `resourceVersion` 是
+common `latest` 指向的精确 online Version。Agent document 至少投影：
+
+- display name、description、business tags、provider、icon 和 scope 等目录字段；
+- 全部 online Version 的有序紧凑 version catalog；
+- 全部 online Version 的 protocol 有序去重并集 `metadata.protocols`；
+- common latest 精确 Version 可完整导出的表示 key 集合 `metadata.artifactKinds`；
+- `metadata.projectionVersion` 和由稳定业务事实生成的 `sourceDigest`。
+
+`protocols` 表示调用协议，`artifactKinds` 表示可完整返回的版本制品，两者不得混用。Agent name、
+description、tags、能力和示例可以生成 chunk；scope、owner、status、protocols 和
+artifactKinds 仅作为结构化字段。Runtime Endpoint、健康状态、Publisher、心跳和 Runtime
+revision 永远不进入持久搜索索引。
+
+Agent source digest 使用 canonical JSON 的 SHA-256，覆盖影响目录或检索投影的 Agent metadata、
+完整 version catalog、common latest、latest Version `contentDigest`、artifactKinds 和
+projection version；无语义的修改时间不单独触发 digest 变化。
+
 标准资源标识字段和任务控制字段必须与标准资源存储保持一致，使用精确且大小写敏感的比较。
 关键词匹配继续通过与 Locale 无关的查询规范化实现大小写不敏感，不得依赖数据源专属的表级
 大小写不敏感排序规则。
 
+### 5.3 MCP 投影
+
+每个 `(namespaceId, mcpName)` 最多存在一个 Enable Document。`resourceName`
+必须是标准 `mcpName`，绝不能是已废弃 `mcpId`；`resourceVersion` 是 Common
+`latest` 指向的 Online Version。
+
+MCP Handler 从 `AiResource`、`AiResourceVersion` 以及通过持久化 MCP Storage
+Descriptor 加载的内容生成投影。它不得通过历史 MCP Operation Service、Serving Manifest、
+最终一致的 Search 或 MCP 内存 ID Index 定位源内容。公开 Description、Tools、Resources、
+Business Tag、Protocol 和 Capability 可以进入 Document；Credential、敏感 Auth Metadata、
+Naming Instance、Health、Heartbeat 和 Runtime Endpoint 状态绝不进入耐久索引。
+
+只有兼容 DTO 要求时，历史 `mcpId` 才可以作为 Response Metadata 保留，不能成为 Document
+Identity。生命周期托管投影递增 MCP `projectionVersion`；Backfill 重建 Name-Keyed
+Document，Reconciliation 删除过期或孤立的 ID-Keyed Document 与 Task，确保 MCP 不会长期
+保留两个标准 Search 身份。
+
 ## 6. 一致性
 
-单个资源版本的关系 document 和 chunks 必须原子替换。关系索引与向量索引之间不要求分布式
+单个逻辑资源的关系 document、chunks 和内嵌 facets 必须原子替换。关系索引与向量索引之间不要求分布式
 事务；系统使用幂等的 `search_index` 持久化任务重新读取标准资源状态并收敛两类索引。任务
 key 是 task type、namespace 以及由 resource type 和 resource name 组成的逻辑 subject
 的 SHA-256。Key 包含 task type，因此其他 AI 资源工作流复用同一张表时不会与检索索引任务
 冲突。
+
+标准资源生命周期事务成功提交后，按 `(namespaceId, resourceType, resourceName)` 调度合并任务。
+调度失败不得回滚已经成功的事实写入，由指标、告警和 reconciliation 修复。Agent 创建、目录
+metadata 或治理字段变化、Version publish/online/offline/delete、common latest 或自定义 label
+变化、legacy A2A facade 产生的 canonical 定义变化，以及 Agent 删除都必须调度。Endpoint
+register、deregister、heartbeat、健康变化和 Runtime revision 不得调度目录索引任务。
+
+对 MCP，Create/Update、Publish、Online/Offline/Delete、Enable/Disable、Label 和 Import
+变更按标准 `mcpName` 调度任务。MCP Endpoint Register/Deregister、Heartbeat、Reconnect
+和其他仅 Runtime 变更不调度。调度失败遵循相同的耐久修复规则，绝不能改变身份或写入正确性。
 
 同一任务行负责两个持久化阶段：
 
@@ -148,12 +300,17 @@ Enhancement 不得重新调度该已完成资源。开关已开启但配置不�
 因此开启 Enhancement 不会导致历史数据全量刷新。同一资源已有活动任务时，
 reconciliation 必须保留其 Payload 中持久化的 Enhancement 意图，以及 revision、阶段、
 重试延迟和 lease。向量 reconciliation 除模型和 chunk 数量外，还必须比较关系 document
-标识。检索只读取所配置索引已经收敛的 enabled document。
+标识。检索只读取所配置索引已经收敛的 enabled document。每个类型处理器的 reconciliation
+必须检测缺失、部分、过期和孤儿投影；Agent 还必须比较 projection version、source digest、
+common latest、version catalog 和可选向量状态。无 online Version、disabled 或 deleted
+资源的正确收敛结果是删除派生文档，而不是永久重试。
 
 ## 7. 资源边界
 
-列表、聚合、reconciliation 和持久化任务轮询必须按有界数据库批次扫描关系状态。完成
-可见性和当前版本校验后，列表分页在内存中只保留请求页及一条用于判断下一页的记录。
+列表、聚合、reconciliation 和持久化任务轮询必须按有界数据库批次扫描关系状态。资源源扫描和
+numbered list 使用稳定的 resource-key keyset；排序并列时使用不可变行键消除歧义。完成
+predicate、可见性和当前版本校验后，列表分页在内存中只保留请求页及一条用于判断下一页的记录，
+numbered page 只额外保留计数器，不能保留全部匹配项。
 Reconciliation 不得在内存中保留全部标准资源名称。集群扫描 lease 必须记录 owner 和
 过期时间，扫描期间通过 CAS 续租，并且只有相同 owner 仍持有 lease 时才能释放。
 
@@ -161,10 +318,45 @@ Reconciliation 不得在内存中保留全部标准资源名称。集群扫描 l
 返回静默截断的结果。运维可通过 `nacos.ai.resource.search.max-recall-candidates`
 调整该上限。
 
-## 8. 升级与初始化
+## 8. Readiness 与读模式
+
+每个可检索资源类型都必须按 `(resourceType, projectionVersion)` 维护持久、集群共享的
+readiness。Backfill 扫描 lease 只表示当前扫描 owner，不能替代 readiness。
+
+一个 projection generation 只有在以下条件全部满足时才能通过 CAS 标记为 `READY`：
+
+1. 成功枚举全部有效 namespace，且没有用 `public` fallback 掩盖枚举失败；
+2. 完成一轮该资源类型的有界 source scan，扫描差异均已成功调度；
+3. 后续验证轮没有未修复的缺失、过期或孤儿文档；
+4. 没有属于该轮的 pending、processing 或 retry 任务；
+5. readiness record 写入当前 projection version。
+
+`READY` 对同一 generation 是 sticky 的。普通生命周期任务短暂 pending 不把该 generation
+退回未就绪；查询的 currentness 校验先排除陈旧文档，任务随后收敛。投影契约变化必须递增
+projection version 并创建新的 readiness generation。
+
+`NOT READY` 不是 API 可用性错误。通用 Search、资源专用 Search、RAD 和 ARD 都继续调用
+Search Core 并返回当前索引快照；在 Backfill 和持久化任务收敛前，结果可能不完整。查询路径
+缓存 readiness 观测，并对未就绪的资源类型和 generation 输出限频警告；日志不得包含查询文本
+或结构化 predicate 值。一次请求不得混合部分索引和标准资源扫描结果。索引运行时失败仍然
+明确返回错误，并与 projection readiness 区分。
+
+RAD Search 使用 `nacos.ai.rad.search.mode=AUTO|INDEX|SCAN` 选择读路径，默认 `AUTO`：
+
+| 模式 | 未 READY | READY | 索引调用失败 |
+|---|---|---|---|
+| `AUTO` | 使用当前索引快照并警告结果可能不完整 | 使用索引 | 明确失败，不逐请求回退 |
+| `INDEX` | 使用当前索引快照并警告结果可能不完整 | 使用索引 | 明确失败 |
+| `SCAN` | 使用旧扫描 | 始终使用旧扫描 | 不涉及索引 |
+
+`AUTO` 仍是默认值，当前与 `INDEX` 一样选择共享索引；保留独立值用于配置兼容和未来选择策略。
+`SCAN` 是显式诊断与兼容路径。模式不得改变 RAD 名称、Tag、Protocol、大小写、排序、可见性
+或 version catalog 契约。Generation 未就绪时，索引支持的 total 和分页只覆盖当前已索引集合。
+
+## 9. 升级与初始化
 
 如果部署环境曾在引入持久化重试之前创建 ARD 检索表，则在开启
-`nacos.ai.ard.enabled` 前，必须使用当前数据库对应的 Schema 补齐以下三个协议无关关系表：
+`nacos.ai.resource.search.enabled` 前，必须使用当前数据库对应的 Schema 补齐以下三个协议无关关系表：
 
 - `ai_resource_search_document`；
 - `ai_resource_search_chunk`；
@@ -194,15 +386,22 @@ Result、阶段、重试、租约、revision 和完成检查点，不能替代�
 PostgreSQL 环境如果不开启默认向量插件，无需创建任何 pgvector 对象；如果开启，则必须另外
 执行 `nacos-default-ai-vector-plugin` 自己维护的可选 Schema。
 
-## 9. 兼容与测试
+每个新增资源类型和 projection generation 都运行 Backfill 与 readiness；Search 可以在
+readiness 前使用当前快照，并随收敛自然变得完整。索引是可重建派生状态，不改变标准资源或
+Runtime Endpoint 的事实源，也不要求把 Runtime 状态迁移到关系检索表。
 
-即使当前只有 ARD 消费者，内部检索命名、持久化模型、表、配置和 Vector SPI package 仍须
-保持协议无关。
+## 10. 兼容与测试
 
-测试覆盖关键词和向量召回、排序、可见性、当前版本校验、cursor 分页、超过单页范围的全量
-聚合、事务替换、两个持久化任务阶段、lease 恢复、过期 revision、Enhancement 幂等重试、
+内部检索命名、持久化模型、表、配置和 Vector SPI package 必须保持协议无关。现有 ARD
+Skill、Prompt 和 MCP 的请求、cursor、排序与 artifact 行为在共享内核扩展时保持兼容。
+
+测试覆盖关键词和向量召回、结构化 facet、类型化 predicate、排序、可见性、当前版本校验、
+cursor 和 numbered page、超过单页范围的全量聚合、通用单类型与资源专用 Search 一致性、
+事务替换、两个持久化任务阶段、lease 恢复、过期 revision、Enhancement 幂等重试、
 版本化任务 Payload 和 Result、task type 隔离、时区无关的 Epoch 调度、确定性时钟下的
 lease 与重试边界、连续生命周期合并保留活动租约、基于 lease token 防止旧 worker 释放
 新租约、配置 fingerprint 记录但不全量重调度、生命周期 Enhancement 意图，
-以及仅对实际修复资源执行 Enhancement 且不全量刷新历史数据的 reconciliation。各协议
-适配器分别测试自己的请求语法和响应一致性。
+仅对实际修复资源执行 Enhancement 且不全量刷新历史数据的 reconciliation、Agent lifecycle
+调度与 Runtime Endpoint 非调度、所有可检索类型的 readiness CAS/重启/新 generation、
+NOT READY 限频观测、非阻塞部分快照行为，以及 `AUTO/INDEX/SCAN` 交叉行为。各协议适配器和
+资源 API 分别测试自己的请求语法、响应一致性和单类型交叉结果。

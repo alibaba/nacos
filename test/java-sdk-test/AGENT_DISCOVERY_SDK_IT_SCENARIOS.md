@@ -51,9 +51,15 @@ Watch request, Push payload, ACK, or Watch ability.
 | `shouldApplyPublicationRangeAcrossOnlineVersions` | Inclusive Version ranges, replacement with a different range, matching exact Versions, and exclusion of nonmatching Versions. |
 | `shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown` | HTTP publication cleanup during active and repeated SDK shutdown. |
 | `shouldKeepHttpAndGrpcDiscoverySemanticsEquivalent` | Search, Discover, HTTP publication, gRPC observation, and deregistration transport parity. |
+| `shouldUseGrpcForAutoWhenInitialConnectionIsAvailable` | AUTO synchronous startup with an available negotiated gRPC connection, followed by Search, Endpoint Publication, Discover, and Deregister. |
+| `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, polling subscription, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
+| `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
+| `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
+| `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
+| `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
-The same twelve stable workflows pass with both the default JSON adapter and
+The same eighteen stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
 regression. The opt-in
 `shouldRestoreGrpcAndHttpPublicationsAndPollingAfterRealServerRestart` workflow also passed
@@ -78,13 +84,18 @@ is never stopped.
 | Shutdown with no subscription or publication | Polling, heartbeat, HTTP resources, and gRPC resources stop cleanly. | IT + UT |
 | Shutdown with active subscriptions and publications | The SDK cancels polling and heartbeat and best-effort deregisters every complete publication. | IT + UT |
 | Repeated shutdown | No duplicate callback, uncontrolled exception, or leaked task is produced. | UT |
+| `grpc` Agent transport mode | Initial gRPC connection is attempted synchronously; an unavailable connection keeps retrying and Agent operations never fall back to HTTP. | IT + UT |
+| `http` Agent transport mode | Agent operations do not depend on initial gRPC startup and remain usable when the configured gRPC port is unreachable. | IT + UT |
+| `auto` with available negotiated gRPC | Agent operations prefer gRPC. | IT + UT |
+| `auto` with gRPC remaining `STARTING` | The public request does not wait for the background probe, succeeds through HTTP, and settles on HTTP only after the retry budget plus a successful HTTP operation. | IT + UT |
+| Invalid, padded, or unknown transport mode | Factory creation fails locally with a controlled invalid-parameter exception. | UT |
 
 ## Search
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
 | Search with only default page inputs | Enabled visible Agents with an online latest Version are returned in stable pages. | IT |
-| Search by literal `agentNameContains` | Only literal contains matches are returned. | IT |
+| Search by literal `agentNameContains` | Only case-sensitive literal contains matches are returned; `%`, `_`, and `\` are not interpreted as datastore wildcards. | OpenAPI IT + Java SDK IT |
 | Search by multiple `tagsAll` | Every returned Agent contains all requested tags. | IT |
 | Search by multiple `protocolsAny` | Every returned Agent contains at least one requested protocol. | IT |
 | Combine name, tags, protocols, and pagination | Filters compose with AND semantics except `protocolsAny`, and page metadata is correct. | IT |
@@ -93,6 +104,8 @@ is never stopped.
 | gRPC ability is `SUPPORTED` | Exactly one Search RPC is sent and the typed page is returned. | UT |
 | gRPC ability is `NOT_SUPPORTED` or `UNKNOWN` | A local unsupported error is raised without legacy or HTTP fallback. | UT |
 | HTTP transport | The documented GET query, auth resource, and stable HTTP Client id are used. | IT + UT |
+| AUTO read and gRPC is not currently available | HTTP is selected immediately without waiting for asynchronous reconnect. | IT + UT |
+| AUTO read encounters a gRPC connection-class failure | The read may be repeated through HTTP; a definite business error is returned without fallback. | UT |
 
 ## Discover
 
@@ -111,6 +124,7 @@ is never stopped.
 | Version and label are both set, or reference/filter is invalid | The SDK rejects the call locally without mutating the input. | IT + UT |
 | gRPC ability is missing or unknown | A local unsupported error is raised and no remote request is sent. | UT |
 | HTTP and gRPC transport parity | Both transports return equivalent typed snapshots for the same server state. | IT |
+| AUTO with available or never-connected gRPC | The same typed snapshot is returned through gRPC or immediate HTTP routing respectively. | IT + UT |
 
 ## Definition And Version Evolution
 
@@ -133,6 +147,8 @@ Endpoint, and replacement across an already-online Version.
 | Omitted-selector subscription through a latest change | It receives latest metadata immediately but keeps older online-version Endpoints until their Versions go offline. | IT + UT |
 | Explicit-latest subscription through Endpoint replacement and Version changes | It switches strictly to the new latest pool, including an intentionally empty interval, and suppresses unchanged polls. | IT + UT |
 | Search after multiple online Versions | One catalog entry lists all online Versions in descending SemVer order and reports the current latest. | IT |
+| Register or deregister Runtime Endpoints without changing definitions | Search catalog fields and Version membership remain unchanged because Runtime Endpoints are not indexed. | OpenAPI IT + Java SDK IT |
+| Take one of two online Versions offline, then take the final Version offline | The catalog first converges to the remaining Version, then the Agent leaves Search entirely. | OpenAPI IT + Java SDK IT |
 | Publication range spans multiple Versions | Every matching exact/latest Discover sees the shared Endpoint; a nonmatching Version does not. | IT + UT |
 | Offline and then bring the current latest online while another Version remains online | Search/Discover follow the server-managed recalculated latest without changing publisher intent. | IT |
 
@@ -151,6 +167,8 @@ Endpoint, and replacement across an already-online Version.
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
 | Same reference/filter and two listener instances | Listener identities are isolated and both receive changes. | UT |
 | Repeat subscribe with the same listener identity | Only one polling record and one callback per change are retained. | UT |
+| Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
+| Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
 | Unsubscribe an absent or different listener | The operation is an idempotent no-op. | UT |
 | Listener throws | Polling and other listeners continue. | UT |
@@ -168,6 +186,9 @@ Endpoint, and replacement across an already-online Version.
 | Replace a Batch while omitting a previous Endpoint | The omitted Endpoint is removed. | IT |
 | Publish two protocols | Each `(namespace, agent, protocol)` state is independent and Discover filters correctly. | IT + UT |
 | Publish from two SDK instances | Contributions aggregate by natural key and one publisher deregistration does not remove the other. | IT |
+| Cross the configured local publication watermark with one complete Batch | When the pre-operation Endpoint-entry count is below the watermark, the whole Batch is admitted and cached even if the resulting count exceeds it; no partial Batch is retained. | IT + UT |
+| Grow while already at or above the local publication watermark | Equal-size or shrinking replacement remains allowed, while a new identity or growing replacement throws `CLIENT_OVER_THRESHOLD` without entering either publication or gRPC redo cache. | IT + UT |
+| Server rejects publication growth at its per-Client watermark | The SDK surfaces `OVER_THRESHOLD`, removes the rejected identity from all redo/heartbeat state, and accepts it after enough Endpoint entries are deregistered. | OpenAPI IT + Java SDK IT + UT |
 | Missing range | The server receives a valid Batch whose range defaults to exact runtime Version semantics. | IT + UT |
 | Duplicate natural key, invalid URI/transport/version/range, empty Batch, or `healthy` input | The SDK rejects the Batch locally and does not retain invalid redo intent. | IT + UT |
 | Caller changes Batch or Endpoint objects after registration | Stored expected state and redo payload remain the original canonical copy. | UT |
@@ -237,6 +258,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Subscription starts before Agent creation, then definition and Runtime Endpoint appear | Listener receives complete snapshots only when the public fingerprint changes. | IT |
 | Subscription is removed, then definition or Runtime Endpoint changes | No post-unsubscribe callback occurs. | IT |
 | Same workflow through gRPC and explicit HTTP clients | Query shapes and publication semantics are transport-equivalent. | IT |
+| Maintainer publishes three Agents, then gRPC and HTTP SDKs immediately query the current snapshot and subsequently page/filter the converged catalog while one Agent gains a Version, receives a Runtime Endpoint, and is taken offline Version by Version | Both transports remain available without a readiness error, then return the same stable order and complete catalog after convergence; typed filters compose identically, Endpoint publication does not alter Search, and lifecycle projection converges without stale Versions. | IT |
 | Public and custom namespace workflows run together | Search, Discover, subscription, and publication never cross namespaces. | IT |
 | Version 1 online + Version 2 Endpoint pre-registration + Version 2 publish | Search, latest/exact/label Discover, and subscriptions agree at every transition. | IT |
 | Version 1 online + Version 2 publish before Endpoint registration + independent Version 2 publisher | Omitted selection preserves the rollout pool across the transition, explicit latest observes only Version 2, and both polling subscriptions converge without duplicate callbacks. | IT |

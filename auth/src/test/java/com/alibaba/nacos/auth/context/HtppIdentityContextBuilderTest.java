@@ -29,9 +29,12 @@ import org.mockito.quality.Strictness;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,11 +79,15 @@ class HtppIdentityContextBuilderTest {
     
     @Test
     void testBuildWithHeader() {
-        mockHeader(true);
+        String requestHeaderName = IDENTITY_TEST_KEY.toUpperCase(Locale.ROOT);
+        mockHeader(requestHeaderName);
         mockParameter(false);
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
         assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));
+        assertTrue(actual.getRequestIdentityNames().contains(IDENTITY_TEST_KEY));
+        assertFalse(actual.getRequestIdentityNames().contains(requestHeaderName));
+        assertFalse(actual.getRequestIdentityNames().contains(Constants.Identity.REMOTE_IP));
     }
     
     @Test
@@ -89,6 +96,7 @@ class HtppIdentityContextBuilderTest {
         mockParameter(true);
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
+        assertTrue(actual.getRequestIdentityNames().contains(IDENTITY_TEST_KEY));
     }
     
     @Test
@@ -102,11 +110,15 @@ class HtppIdentityContextBuilderTest {
     }
     
     private void mockHeader(boolean contained) {
+        mockHeader(contained ? IDENTITY_TEST_KEY : null);
+    }
+    
+    private void mockHeader(String headerName) {
         when(request.getHeaderNames()).thenReturn(headerNames);
-        if (contained) {
+        if (headerName != null) {
             when(headerNames.hasMoreElements()).thenReturn(Boolean.TRUE, Boolean.FALSE);
-            when(headerNames.nextElement()).thenReturn(IDENTITY_TEST_KEY, (String) null);
-            when(request.getHeader(IDENTITY_TEST_KEY)).thenReturn(IDENTITY_TEST_VALUE);
+            when(headerNames.nextElement()).thenReturn(headerName, (String) null);
+            when(request.getHeader(headerName)).thenReturn(IDENTITY_TEST_VALUE);
             when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
         }
     }

@@ -90,6 +90,13 @@ and clears the token cache. Changing token expiration also clears the wrapper
 cache so the next token request uses the accepted runtime lifetime; tokens
 already returned to clients remain valid until their signed expiration.
 
+In an independently deployed Console, the Console-local auth initializer applies the built-in
+`auth:nacos` configuration from `STATIC > DEFAULT` before requests are accepted. This initializes
+the stable `TokenManagerDelegate` with its concrete token managers. All configurable auth
+implementations are applied because identity providers such as LDAP continue to consume token and
+authorization infrastructure owned by `auth:nacos`; only the selected implementation receives the
+optional startup lifecycle callback.
+
 The `ldap` implementation also implements `PluginConfigSpec` and is registered
 as configurable plugin `auth:ldap`. Its canonical configuration prefix is
 `nacos.plugin.auth.ldap.`.
@@ -187,6 +194,22 @@ auth implementations, including [RAM](ram-auth-plugin-spec.md) and
 [OIDC](oidc-auth-plugin-spec.md), are documented as Java Client SDK extensions
 in the [Java SDK Implementation Spec](../sdk/sdk-java-impl-spec.md).
 
+### Login Response Compatibility
+
+Successful default-auth login responses from `/v3/auth/user/login` and the
+legacy v1 login routes remain a flat token object containing `accessToken`,
+`tokenTtl`, `globalAdmin`, and `username`. They are not wrapped in `Result<T>`
+because released Java clients parse this flat shape directly.
+
+An unknown username, an incorrect password, or blank credentials must produce
+the same HTTP 403 status and the same generic
+`User not found! Please check user exist or password is right!` response body.
+The HTTP status and response body must not disclose whether the username exists.
+Unknown-user authentication does not perform a password hash comparison, so
+arbitrary usernames cannot force the server to execute the CPU-intensive
+password encoder. Unexpected user storage or token issuance failures are
+operational errors and must not be converted into credential failures.
+
 ## RBAC Storage Model
 
 The default plugin stores:
@@ -199,6 +222,18 @@ The default plugin stores:
 
 `ROLE_ADMIN` is the global administrator role. Users with this role may access
 all resources and console management operations.
+
+Fuzzy search over users, roles, and permissions escapes the `_` wildcard with a
+backslash so that it is matched literally. A backslash is only the default LIKE
+escape character on some databases, so the embedded storage declares
+`ESCAPE '\'` explicitly. The clause qualifies the single `LIKE` predicate it
+immediately follows, so a query combining several fuzzy filters MUST repeat the
+clause after every one of them.
+
+The rule applies to every fuzzy entry point of a resource, not only to the paged
+search. The name searches backing the console autocompletion (`findRoleNames`,
+`findUserNames`) MUST escape their argument the same way the paged searches do,
+so that one keyword selects the same rows in both.
 
 ## Permission Resource Format
 

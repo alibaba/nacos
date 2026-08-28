@@ -116,6 +116,16 @@ Version、`contentDigest`、任一 `sourceRevision` 发生变化时，Listener �
 替换结果。`getAll`、`selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent
 Calling 是 SDK 本地 helper，不增加远程操作。
 
+一个 SDK 实例默认最多保存 300 个不同的本地轮询订阅记录，Client 配置键
+`nacosAiAgentDiscoveryMaxSubscriptions` 可修改该上限。重复相同的规范化 Reference、
+Filter 和 Listener identity 是幂等操作，不占用新槽位。超过上限的新订阅同步返回
+`CLIENT_OVER_THRESHOLD` 与 `AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT`，不写缓存、
+不启动调度；Unsubscribe 和 Shutdown 释放槽位。后续 Server Watch Binding 还必须独立
+执行每 Owner Connection 默认 300 个 Active Wire Watch 的权威门禁。当前 SDK 的每次公开
+调用只安装一条订阅；后续批量 Wire Watch 操作必须使用相同的操作前软水位语义：当前用量
+低于水位时整批放行，即使最终数量越过水位；已达到或超过水位时原子拒绝增长，且不得局部
+缓存一个批次。
+
 `AgentReference` 同时省略 `version` 和 `label` 时使用面向发布切换安全的默认语义：
 返回 latest 定义元数据，以及兼容任一当前在线版本的 Runtime Endpoint。显式
 `label=latest` 请求严格的 latest-only Runtime 地址池；精确 version 和自定义 label
@@ -125,6 +135,13 @@ Calling 是 SDK 本地 helper，不增加远程操作。
 `(namespaceId, agentName, protocol)` 下的完整期望状态。Register 完整替换此前
 Batch 及其唯一的 `runtimeVersion` 和 `versionRange`，未提交的 Endpoint 会被删除。
 SDK 将该完整 Batch 保存为 redo 意图。
+
+一个 SDK 实例默认对全部完整意图中的 Endpoint Publication 条目使用 100 的软水位，Client
+配置键 `nacosAiAgentEndpointMaxPublications` 可修改本地水位。操作前条目数低于水位时，
+SDK 整批放行并缓存已校验 Batch，即使最终数量越过水位；已达到或超过水位时仍允许等量
+替换或缩容，但原子拒绝新身份或扩容替换。Server 仍是权威门禁，并独立应用其每 Client
+软水位。命中本地或服务端 Publication 容量限制时，本次身份的公开 API 直接抛出容量异常，
+SDK 从 Heartbeat 与 Reconnect 的全部 Redo Cache 中移除被拒绝的 Publication，不得无限重试。
 
 `deregisterAgentEndpoints` 保留为按自然键操作的便利方法。SDK 从期望 Batch 中删除
 这些自然键，再通过 Register 发送完整的剩余 Batch；没有 Endpoint 剩余时发送整份
@@ -162,6 +179,34 @@ Publisher 续约行为。普通 Discover 和订阅轮询只刷新 HTTP Client �
 Publisher。写入超时后，只有 SDK 确定服务端未处理请求时才允许切换传输；结果未知的
 gRPC 写入不得盲目通过 HTTP 重试。
 
+#### 2.2.1 Java SDK Agent Transport 模式
+
+Java SDK 使用 `nacosAiTransportMode` 配置通用 Agent/RAD 操作，公开取值为
+`grpc`、`http` 和 `auto`，未设置时保持 `grpc`。取值大小写不敏感，但不接受首尾空白或
+未知值；非法值必须在创建 `AiService` 时返回参数错误。该配置只约束本节中的通用 Agent
+操作，不改变 MCP、旧 A2A、Prompt、Skill 或 AgentSpec 的既有传输契约。
+
+- `grpc`：SDK 创建时同步执行初始 gRPC 连接；失败后持续异步重连，不切换到 HTTP；
+- `http`：通用 Agent 操作不启动初始 gRPC 连接。其他只支持 gRPC 的 AI 功能被调用时可按
+  既有契约延迟启动共享 gRPC Client；
+- `auto`：SDK 创建时同样同步尝试 gRPC。当前连接为 `RUNNING` 且已协商完整的
+  `SERVER_RAD_V1` 能力时优先使用 gRPC，否则当前调用立即使用 HTTP，不等待后台连接探测。
+
+`auto` 下，只有 gRPC 从未连接成功、状态持续为 `STARTING`、异步初始重连失败次数达到
+配置的 gRPC retry 次数，并且至少一个 Agent HTTP 操作已经成功时，Client 才暂停该初始
+重连循环并稳定使用 HTTP。`UNHEALTHY` 表示曾经建立过连接，不适用此降级规则。若同一
+`AiService` 中其他功能明确需要 gRPC，Client 必须恢复并继续该连接的重试，但 Agent 路由可
+继续保持已稳定的 HTTP 选择。
+
+Search 和 Discover 是只读操作；`auto` 中已选择 gRPC 后出现连接类失败，可以通过 HTTP
+重新读取。连接类失败仅包括 RPC connection 已断开、已注销、失败后连接已不再处于
+`RUNNING`，或底层 gRPC 返回
+`UNAVAILABLE`；通用 `SERVER_ERROR`、`BAD_GATEWAY`、Ability/Handler 不支持及其他服务端
+响应都不是传输不可用的证据，必须原样暴露给调用方。鉴权、参数、冲突、未找到和容量等确定
+业务错误同样不得触发 fallback。定义发布一旦交给某个传输就不得跨传输重放。Endpoint
+Publication 第一次发送时选择 owner transport，后续替换、注销、Heartbeat 和 Redo 在该
+Publication 生命周期内始终使用同一 owner。
+
 ### 2.3 Client HTTP 路径
 
 | Method | Path | 输入 | 返回 |
@@ -175,6 +220,17 @@ gRPC 写入不得盲目通过 HTTP 重试。
 
 Search query 名称与 RAD 字段相同。重复 `tagsAll` 取 AND，重复 `protocolsAny` 取 OR；
 `agentNameContains` 是大小写敏感的 literal substring。
+
+Agent Search 是共享 Search Core 上固定 `resourceType=agent` 的资源专用 Facade，不维护第二套
+索引或在索引分页后执行二次业务过滤。`agentNameContains`、`tagsAll` 和 `protocolsAny` 必须
+在 total 与分页截断前转换为 [AI 资源检索规范](ai-resource-search-spec.md)的类型化 predicate。
+通用 AI Resource Search 只查询 Agent 时，候选资格、可见性和当前性必须与本 API 一致；响应 DTO、
+排序和 numbered page 仍遵循 RAD。
+
+`nacos.ai.rad.search.mode=AUTO` 或 `INDEX` 时，即使 Agent projection 未 READY，HTTP 和
+gRPC Binding 也使用共享索引并返回可能不完整的当前快照；服务端输出不包含查询内容的限频诊断。
+`SCAN` 显式选择旧兼容路径。Binding 不暴露当前物理路径，也不得因索引调用失败在一次请求内
+降级或混合结果。
 
 Discover 直接映射 `agentName`、`version` 和 `label`。重复 Filter 参数为 `protocol`、
 `transport` 和 `endpointSource`，`protocolVersion` 为单值。`metadataSelector` 使用一个
@@ -278,8 +334,10 @@ Endpoint Key。
 
 Endpoint Handler 是 Naming Adapter。Register 校验完整 Endpoint Batch，将其转换为
 Naming Instance，再调用 Naming Batch Register；Deregister 调用 Naming 的整份
-Publication 注销。写入时不读取或合并此前 Publisher Batch、不增加 Agent Service
-Lock、不直接查询 Naming Client Index，也不扫描其他 Publisher。
+Publication 注销。写入时不读取或合并此前 Publisher Payload、不增加 Agent Service
+Lock，也不扫描其他 Publisher。Admission 步骤只统计当前 Client 全部完整 Agent
+Publication Batch 中的 Runtime Endpoint 条目。Admission 根据操作前条目数以及目标
+Batch 的既有和请求条目数执行软水位判断，并把该检查与同一 Client 的 Naming 替换串行执行。
 
 Runtime Snapshot 和 Discover 从 Naming `ServiceStorage` 读取完整内部投影，
 根据每个 Instance 的 singular runtime Version 和 Version-range metadata 构造一个 Binding，
@@ -293,9 +351,12 @@ Java SDK 本地实现，不扩展 RAD 的六个根消息。
 
 | 常量 | Wire key | 含义 |
 |---|---|---|
-| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server 接受 RAD Search 和 Discover Payload |
-| `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server 接受 RAD Endpoint Publication Payload |
-| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server 接受通用 Agent 代码式发布 Payload |
+| `SERVER_RAD_V1` | `radV1` | Server 接受 Nacos 3.3 完整 RAD v1 契约 |
+
+Ability 表达兼容与发布单元，而不是逐个 Handler 的清单。Nacos 3.3 将 Agent Definition
+Publication、Search/Discover 和 Runtime Endpoint Publication 作为同一套 RAD v1 能力实现、
+发布与测试，因此使用一个能力位。未来能够独立部署或启用的契约（例如 Server Watch/Push）
+必须使用独立能力位。
 
 旧 `SERVER_AGENT_REGISTRY`、`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 只约束
 旧 A2A 契约。新能力位缺失时，不得通过旧能力位 fallback 发送 RAD Payload。
@@ -314,12 +375,13 @@ Java SDK 本地实现，不扩展 RAD 的六个根消息。
 | 携带已存在 Client id 的重复查询 | 只刷新 Client 活性，不创建 Client 或刷新 Publisher |
 | HTTP timeout | 保持 Client id 和 payload，退避重试 |
 | `HTTP_CLIENT_NOT_FOUND` | 将本地 Endpoint 意图标记为未注册，并 redo 每个完整 Service Batch |
+| 本地或服务端 Publication 容量拒绝 | 抛出容量异常，并从 Publication、Heartbeat 和 Reconnect Redo Cache 中移除该身份 |
 | gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch；本地轮询订阅不需要服务端 redo |
 | 跨传输注销 | 禁止；一个 Publisher identity 不能删除另一传输的 Contribution |
 
 SDK 在第一次写入前记录期望状态，并按 Agent 和 Protocol 串行修改期望 Batch。
 Shutdown 执行 best-effort 整份 Publication 注销，expire 作为清理兜底。参数和鉴权
-错误不进入无限 redo。
+错误和容量拒绝不进入无限 redo。
 
 ## 3. Admin API 与 Maintainer SDK
 

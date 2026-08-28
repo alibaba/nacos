@@ -23,8 +23,6 @@ import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.List;
-
 /**
  * The derby implementation of {@link AiResourceMapper}.
  *
@@ -47,26 +45,6 @@ public class AiResourceMapperByDerby extends AbstractMapperByDerby implements Ai
             built.getSql() + resolveOrderByClause(context) + " OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, built.getParamList());
-    }
-    
-    @Override
-    public void appendSingleAndCondition(WhereBuilder where, String field, Object value,
-        boolean likeMatch) {
-        if (field == null || value == null) {
-            return;
-        }
-        if (value instanceof List) {
-            if (((List<?>) value).isEmpty()) {
-                return;
-            }
-            where.and().in(field, ((List<?>) value).toArray());
-            return;
-        }
-        if (likeMatch) {
-            where.and().likeWithEscape(field, value);
-        } else {
-            where.and().eq(field, value);
-        }
     }
     
     @Override

@@ -71,17 +71,19 @@ guide, not as a final OpenAPI export.
 | --- | ---: | --- | --- |
 | `/v3/client/cs/config` | 1 | GET | Query config for custom HTTP clients. |
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | Register, heartbeat, deregister, and list service instances. |
-| `/v3/client/ai/prompt` | 1 | GET | Runtime prompt query. |
-| `/v3/client/ai/skills` | 1 | GET | Runtime skill zip download. |
+| `/v3/client/ai/resources` | 1 | GET | Protocol-neutral cross-resource Search. |
+| `/v3/client/ai/prompt` | 2 | GET | Runtime prompt query and Search. |
+| `/v3/client/ai/skills` | 2 | GET | Runtime skill zip download and Search. |
 | `/v3/client/ai/agentspecs` | 2 | GET | Runtime AgentSpec get and search. |
+| `/v3/client/ai/mcp` | 1 | GET | Runtime MCP Search. |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 89 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 101 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
-| `/v3/console/ai/*` | 67 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
+| `/v3/console/ai/*` | 79 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
 | `/v3/console/copilot/*` | 6 | GET, POST | Config plus SSE copilot operations. |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | User login and management in default auth plugin. |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | Role management in default auth plugin. |
@@ -98,10 +100,14 @@ Implemented Open API surface:
 | `POST /v3/client/ns/instance` | Register an instance, or send heartbeat when `heartBeat=true`. |
 | `DELETE /v3/client/ns/instance` | Deregister an instance. Missing instance is still successful. |
 | `GET /v3/client/ns/instance/list` | List enabled instances for a service. Disabled instances are filtered out. |
+| `GET /v3/client/ai/resources/search` | Search current visible Agent, AgentSpec, Skill, Prompt, and MCP resources through one cursor-based facade. |
 | `GET /v3/client/ai/prompt` | Query prompt by version, label, or latest. |
+| `GET /v3/client/ai/prompt/search` | Search current visible Prompts with numbered pagination. |
 | `GET /v3/client/ai/skills` | Download online skill package as a zip response. |
+| `GET /v3/client/ai/skills/search` | Search current visible Skills with numbered pagination. |
 | `GET /v3/client/ai/agentspecs` | Query AgentSpec by version, label, or latest. May allow anonymous access. |
 | `GET /v3/client/ai/agentspecs/search` | Search enabled AgentSpecs for runtime use. |
+| `GET /v3/client/ai/mcp/search` | Search current visible MCP servers with protocol and capability filters. |
 
 ## 5. Admin API Implemented Behavior
 
@@ -168,6 +174,12 @@ Console API modules mirror Admin modules where the UI needs them:
 Console API docs should avoid presenting console-only endpoints as recommended
 automation APIs. Automation users should prefer Admin APIs unless a feature is
 intentionally console-only.
+
+`GET /v3/console/ai/mcp/importToolsFromMcp` is a console-only helper that opens
+an outbound connection from the Console process. Public targets are allowed by
+default, private or local targets require the operator-owned
+`nacos.console.ai.mcp.import.allowed-private-addresses` IP/CIDR allowlist, and
+operators may disable the helper with `nacos.console.ai.mcp.import.enabled`.
 
 ## 7. Auth API Implemented Behavior
 
@@ -236,7 +248,74 @@ The target does not add Client HTTP Watch or Endpoint-list GET APIs. Watch and
 push use the negotiated gRPC binding; runtime inspection uses the Admin or
 Console `/runtime-endpoints` path.
 
-## 9. Documentation Gap Notes
+## 9. Approved MCP Lifecycle Surface
+
+The following paths are the Experimental management surface implemented from
+the [MCP Server Spec](../ai/mcp-server-spec.md). They are available only after
+the one-way MCP management authority reaches `LIFECYCLE_MANAGED`; before that
+cutover, a valid request fails with `RESOURCE_CONFLICT` and does not mutate
+legacy MCP state.
+
+Admin uses `/v3/admin/ai/mcp`; Console uses `/v3/console/ai/mcp` as a UI facade
+over the same relative lifecycle contract:
+
+| Relative path | Methods | Contract |
+| --- | --- | --- |
+| `/versions` | GET | List bounded MCP Version metadata and lifecycle status. |
+| `/version` | GET | Read one exact Version content and metadata. |
+| `/draft` | POST, PUT, DELETE | Create a draft, update only the current draft, or delete it. |
+| `/submit` | POST | Submit a draft through the ordinary publish Pipeline. |
+| `/publish` | POST | Publish a reviewed Version. |
+| `/force-publish` | POST | Perform an audited administrative Pipeline bypass. |
+| `/redraft` | POST | Return a reviewed Version to draft. |
+| `/online` | POST | Bring an offline Version online and make it latest. |
+| `/offline` | POST | Take an online Version offline and repair latest when needed. |
+| `/labels` | PUT | Update custom labels while ignoring a client-provided `latest`. |
+
+All routes use form/query parameters. The common identity fields are
+`namespaceId` (optional, default `public`), required `mcpName`, and, except for
+`/versions` and `/labels`, required exact `version`. `/versions` additionally
+accepts optional `status` plus bounded `pageNo` and `pageSize`.
+
+`POST` and `PUT /draft` additionally accept required JSON
+`serverSpecification` and optional JSON `toolSpecification`,
+`resourceSpecification`, and `endpointSpecification`. The outer `mcpName` and
+`version` are canonical. Repeated name or Version fields in
+`serverSpecification` must match them, and `serverSpecification.id` is
+rejected. `/labels` accepts a JSON string map; blank input clears custom labels
+while preserving server-managed labels.
+
+Version list results use `Page<McpLifecycleVersionSummary>`. Exact reads and
+draft writes return `McpLifecycleVersionDetail`, including lifecycle metadata
+and Server/Tools/Resources content without the internal MCP ID. Lifecycle
+commands return the resulting summary, draft deletion returns an empty success
+result, and label replacement returns the effective label map.
+
+Existing MCP create/update/delete paths and parameter shapes remain
+compatibility-only direct-online facades. They are not copied into the new
+lifecycle forms. In particular, same-Version content overwrite remains
+available only through the historical update route.
+
+New lifecycle forms identify a Resource with `namespaceId + mcpName` and a
+Version with the additional exact `version`; they do not add `mcpId`.
+Historical Admin, Console, and Maintainer HTTP inputs that already accept
+`mcpId` remain deprecated compatibility fields. The server resolves them
+through `AiResource.ext`, verifies a simultaneously supplied name, and enters
+the same name-based authorization and lifecycle service. Existing response ID
+fields remain wire-compatible.
+
+This target does not add MCP Client HTTP query, release, endpoint, heartbeat,
+or subscription paths. HTTP parity with the existing gRPC/Java Client surface
+is deferred to a separate design after lifecycle hosting is complete.
+
+In an embedded or standalone Console process, the Console facade delegates to
+the same lifecycle application service as Admin. Console-only remote deployment
+requires the typed Maintainer lifecycle transport planned by the next MCP
+governance stage; until that transport is present, these new Console lifecycle
+routes return `API_FUNCTION_DISABLED` in remote mode rather than falling back
+to a legacy or ID-based write path.
+
+## 10. Documentation Gap Notes
 
 This is not a bug list. It records places where the current documentation and
 code appear to describe different surfaces.
@@ -264,7 +343,7 @@ code appear to describe different surfaces.
   module-level `ControllerAdvice` classes that may return plain text error
   bodies. They should converge to `NacosApiExceptionHandler` for v3 APIs.
 
-## 10. Deprecated Compatibility Notes
+## 11. Deprecated Compatibility Notes
 
 Some v3 AI APIs were released before this spec existed and were later replaced by
 clearer lifecycle or REST-style APIs. These old endpoints should be treated as
@@ -279,3 +358,10 @@ user-facing documentation should describe the new APIs as the primary contract.
 Deprecated endpoints should be documented only in compatibility sections with
 migration guidance, following the
 [Compatibility And Deprecation Spec](../design/compatibility-deprecation-spec.md).
+
+The legacy Pipeline base-path list and path-variable detail endpoints, together
+with `POST /v3/console/ai/mcp/import/{validate|execute}`, are disabled by default.
+They return HTTP `410 Gone` with `API_DEPRECATED`. Operators may temporarily
+reopen all explicitly gated v3 compatibility endpoints with
+`nacos.core.api.compatibility.enabled=true`. The former
+`nacos.ai.resource.import.legacy-mcp-api-enabled` property is no longer read.

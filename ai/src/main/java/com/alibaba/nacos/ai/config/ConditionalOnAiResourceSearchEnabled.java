@@ -28,14 +28,15 @@ import java.lang.annotation.Target;
 /**
  * Enables the protocol-neutral AI resource search runtime.
  *
- * <p>ARD is the only consumer in this version, so the runtime follows the ARD
- * feature switch without exposing a separate operator-facing switch.</p>
+ * <p>The shared runtime is enabled by default and is independent from protocol
+ * adaptor switches such as ARD.</p>
  *
  * @author nacos
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(value = Constants.ARD_ENABLED_KEY, havingValue = "true")
+@ConditionalOnProperty(value = Constants.AI_RESOURCE_SEARCH_ENABLED_KEY, havingValue = "true",
+    matchIfMissing = true)
 public @interface ConditionalOnAiResourceSearchEnabled {
 }

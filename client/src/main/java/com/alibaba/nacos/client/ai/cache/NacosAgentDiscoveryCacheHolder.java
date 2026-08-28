@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.client.ai.remote.AiClientProxy;
+import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -53,6 +53,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Local Discover polling subscriptions for protocol-neutral Agents.
  *
+ * <p>This holder owns only normalized subscription intent, snapshots, scheduling, and listener
+ * dispatch. Transport selection remains in the injected {@link AgentClientProxy}.</p>
+ *
  * @author Nacos
  */
 public class NacosAgentDiscoveryCacheHolder implements Closeable {
@@ -62,7 +65,7 @@ public class NacosAgentDiscoveryCacheHolder implements Closeable {
     
     private final String namespaceId;
     
-    private final AiClientProxy clientProxy;
+    private final AgentClientProxy clientProxy;
     
     private final long updateIntervalMillis;
     
@@ -70,27 +73,47 @@ public class NacosAgentDiscoveryCacheHolder implements Closeable {
     
     private final ExecutorService callbackExecutor;
     
+    private final int maxSubscriptions;
+    
     private final Map<SubscriptionKey, Subscription> subscriptions =
         new HashMap<SubscriptionKey, Subscription>();
     
     private boolean closed;
     
-    public NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy) {
+    public NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy) {
+        this(namespaceId, clientProxy,
+            AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS);
+    }
+    
+    public NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,
+        int maxSubscriptions) {
         this(namespaceId, clientProxy, AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL,
             new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.client.ai.agent.discovery")),
             Executors.newCachedThreadPool(
-                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.listener")));
+                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.listener")),
+            maxSubscriptions);
     }
     
-    NacosAgentDiscoveryCacheHolder(String namespaceId, AiClientProxy clientProxy,
+    NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,
         long updateIntervalMillis, ScheduledExecutorService pollingExecutor,
         ExecutorService callbackExecutor) {
+        this(namespaceId, clientProxy, updateIntervalMillis, pollingExecutor, callbackExecutor,
+            AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS);
+    }
+    
+    NacosAgentDiscoveryCacheHolder(String namespaceId, AgentClientProxy clientProxy,
+        long updateIntervalMillis, ScheduledExecutorService pollingExecutor,
+        ExecutorService callbackExecutor, int maxSubscriptions) {
+        if (maxSubscriptions < 1) {
+            throw new IllegalArgumentException("maxSubscriptions must be greater than 0");
+        }
         this.namespaceId = namespaceId;
         this.clientProxy = clientProxy;
         this.updateIntervalMillis = updateIntervalMillis;
         this.pollingExecutor = pollingExecutor;
         this.callbackExecutor = callbackExecutor;
+        this.maxSubscriptions = maxSubscriptions;
     }
     
     /**
@@ -116,6 +139,12 @@ public class NacosAgentDiscoveryCacheHolder implements Closeable {
         Subscription existing = subscriptions.get(key);
         if (existing != null) {
             return AgentModelUtils.copyDiscoveryResult(existing.current);
+        }
+        if (subscriptions.size() >= maxSubscriptions) {
+            throw new NacosApiException(NacosException.CLIENT_OVER_THRESHOLD,
+                ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
+                "Agent discovery subscription limit of " + maxSubscriptions
+                    + " reached for this SDK Client.");
         }
         AgentDiscoveryResult current = discoverOrNull(request);
         Subscription subscription = new Subscription(key, request, listener, current);

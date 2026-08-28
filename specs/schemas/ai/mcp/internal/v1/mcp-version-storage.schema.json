@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nacos:schema:ai:mcp:internal:v1:mcp-version-storage",
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0. This is an internal schema and not a public wire compatibility contract.",
+  "title": "Nacos MCP Version Storage Descriptor Schema v1",
+  "description": "Points one MCP AI Resource Version to its existing Server and optional Tools and Resources Config objects without copying or extending their payloads.",
+  "x-status": "experimental",
+  "x-visibility": "internal",
+  "x-schema-version": 1,
+  "x-identifiers": {
+    "resourceType": "mcp",
+    "versionStorageKeyFormat": "mcp-config-v1"
+  },
+  "x-entrypoints": {
+    "McpVersionStorageDescriptor": "#/$defs/McpVersionStorageDescriptor"
+  },
+  "$defs": {
+    "SchemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "ServerStorageKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^:]+:mcp-server:.+-mcp-server\\.json$",
+      "description": "The built-in provider splits only the first two colons and treats the remainder as the Config data id."
+    },
+    "ToolStorageKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^:]+:mcp-tools:.+-mcp-tools\\.json$"
+    },
+    "ResourceStorageKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^:]+:mcp-resources:.+-mcp-resources\\.json$"
+    },
+    "McpVersionStorageDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "keyFormat",
+        "serverKey",
+        "schemaVersion"
+      ],
+      "properties": {
+        "provider": {
+          "const": "nacos_config"
+        },
+        "keyFormat": {
+          "const": "mcp-config-v1"
+        },
+        "serverKey": {
+          "$ref": "#/$defs/ServerStorageKey"
+        },
+        "toolKey": {
+          "$ref": "#/$defs/ToolStorageKey"
+        },
+        "resourceKey": {
+          "$ref": "#/$defs/ResourceStorageKey"
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/SchemaVersion"
+        }
+      },
+      "description": "Points to the existing MCP Config objects without copying or changing their bytes. serverKey is required; optional content keys are omitted rather than serialized as null."
+    }
+  }
+}

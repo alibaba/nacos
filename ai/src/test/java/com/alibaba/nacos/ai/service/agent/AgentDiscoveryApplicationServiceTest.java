@@ -20,10 +20,16 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageDescriptorSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -54,6 +60,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +71,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -105,12 +114,16 @@ class AgentDiscoveryApplicationServiceTest {
     @Mock
     private AgentRuntimeRegistryService runtimeRegistryService;
     
+    @Mock
+    private AiResourceSearchService searchService;
+    
     private AgentDiscoveryApplicationService service;
     
     @BeforeEach
     void setUp() {
         service = new AgentDiscoveryApplicationService(operationService, persistenceService,
-            resourceManager, runtimeRegistryService);
+            resourceManager, runtimeRegistryService, searchService,
+            new AgentSearchModeResolver(() -> AgentSearchMode.SCAN.name()));
     }
     
     @Test
@@ -230,6 +243,151 @@ class AgentDiscoveryApplicationServiceTest {
         assertEquals(0, result.getTotalCount());
         assertTrue(result.getPageItems().isEmpty());
         verifyNoInteractions(persistenceService);
+    }
+    
+    @Test
+    void testSearchIndexMapsTypedPredicatesAndCompleteCatalog() throws NacosException {
+        AgentSearchModeResolver resolver = mock(AgentSearchModeResolver.class);
+        when(resolver.resolve()).thenReturn(AgentSearchMode.INDEX);
+        service = new AgentDiscoveryApplicationService(operationService, persistenceService,
+            resourceManager, runtimeRegistryService, searchService, resolver);
+        AgentSearchRequest request = searchRequest();
+        request.setAgentNameContains("Agent%_\\A");
+        request.setTagsAll(Arrays.asList("team", "blue"));
+        request.setProtocolsAny(Arrays.asList("a2a", "mcp"));
+        request.setPageNo(2);
+        request.setPageSize(2);
+        
+        AgentVersionCatalog versionCatalog = new AgentVersionCatalog();
+        versionCatalog.setLatestVersion("2.0.0");
+        versionCatalog.setOnlineVersions(Arrays.asList(
+            catalog("1.0.0", null, "a2a"),
+            catalog("2.0.0", Arrays.asList(AiResourceConstants.LABEL_LATEST, "stable"),
+                "a2a", "mcp")));
+        AgentProvider provider = new AgentProvider();
+        provider.setName("Nacos");
+        provider.setUrl("https://nacos.io");
+        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+        metadata.put("iconUrl", "https://example.com/icon.png");
+        metadata.put("provider", provider);
+        metadata.put("tags", null);
+        metadata.put("versionCatalog", versionCatalog);
+        AiResourceSearchResult indexed = indexedResult("beta-Agent", metadata);
+        when(searchService.numberedList(any(Query.class))).thenReturn(
+            new NumberedPage(Collections.singletonList(indexed), 3L, 2, 2));
+        
+        Page<AgentCatalogEntry> result = service.search(request);
+        
+        assertEquals(3, result.getTotalCount());
+        assertEquals(2, result.getPageNumber());
+        assertEquals(2, result.getPagesAvailable());
+        AgentCatalogEntry item = result.getPageItems().get(0);
+        assertEquals("beta-Agent", item.getAgentName());
+        assertEquals("Beta Agent", item.getDisplayName());
+        assertEquals("Indexed Agent", item.getDescription());
+        assertEquals("https://example.com/icon.png", item.getIconUrl());
+        assertEquals("Nacos", item.getProvider().getName());
+        assertNull(item.getTags());
+        assertEquals("2.0.0", item.getLatestVersion());
+        assertEquals("2.0.0", item.getVersions().get(0).getVersion());
+        assertEquals(Collections.singletonList("stable"),
+            item.getVersions().get(0).getLabels());
+        assertEquals("1.0.0", item.getVersions().get(1).getVersion());
+        
+        org.mockito.ArgumentCaptor<Query> queryCaptor =
+            org.mockito.ArgumentCaptor.forClass(Query.class);
+        verify(searchService).numberedList(queryCaptor.capture());
+        Query query = queryCaptor.getValue();
+        assertEquals(NAMESPACE_ID, query.getNamespaceId());
+        assertEquals(Collections.singletonList(Constants.Agent.RESOURCE_TYPE_AGENT),
+            query.getResourceTypes());
+        assertEquals(2, query.getPageNumber());
+        assertEquals(2, query.getPageSize());
+        assertPredicate(query.getPredicates().get(0), "resourceName",
+            PredicateOperator.LITERAL_CONTAINS, Collections.singletonList("Agent%_\\A"));
+        assertPredicate(query.getPredicates().get(1), "tags", PredicateOperator.EXACT_ALL,
+            Arrays.asList("team", "blue"));
+        assertPredicate(query.getPredicates().get(2), "metadata.protocols",
+            PredicateOperator.EXACT_ANY, Arrays.asList("a2a", "mcp"));
+        verifyNoInteractions(resourceManager, persistenceService);
+    }
+    
+    @Test
+    void testSearchIndexUsesDefaultsAndLegacyTagFallback() throws NacosException {
+        AgentSearchModeResolver resolver = mock(AgentSearchModeResolver.class);
+        when(resolver.resolve()).thenReturn(AgentSearchMode.INDEX);
+        service = new AgentDiscoveryApplicationService(operationService, persistenceService,
+            resourceManager, runtimeRegistryService, searchService, resolver);
+        AgentVersionCatalog catalog = new AgentVersionCatalog();
+        catalog.setLatestVersion("1.0.0");
+        catalog.setOnlineVersions(
+            Collections.singletonList(catalog("1.0.0", null, "a2a")));
+        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+        metadata.put("versionCatalog", catalog);
+        AiResourceSearchResult indexed = indexedResult("legacy-Agent", metadata);
+        indexed.setTags(Collections.singletonList("legacy"));
+        when(searchService.numberedList(any(Query.class))).thenReturn(
+            new NumberedPage(Collections.singletonList(indexed), 1L, 1, 1));
+        
+        Page<AgentCatalogEntry> result = service.search(searchRequest());
+        
+        assertEquals(Collections.singletonList("legacy"),
+            result.getPageItems().get(0).getTags());
+        org.mockito.ArgumentCaptor<Query> queryCaptor =
+            org.mockito.ArgumentCaptor.forClass(Query.class);
+        verify(searchService).numberedList(queryCaptor.capture());
+        assertEquals(1, queryCaptor.getValue().getPageNumber());
+        assertEquals(20, queryCaptor.getValue().getPageSize());
+        assertTrue(queryCaptor.getValue().getPredicates().isEmpty());
+    }
+    
+    @Test
+    void testSearchIndexFailsWithoutFallbackForUnavailableInvalidOrOversizedIndex()
+        throws NacosException {
+        AgentSearchModeResolver resolver = mock(AgentSearchModeResolver.class);
+        when(resolver.resolve()).thenReturn(AgentSearchMode.INDEX);
+        service = new AgentDiscoveryApplicationService(operationService, persistenceService,
+            resourceManager, runtimeRegistryService, searchService, resolver);
+        NacosException failure = new NacosException(NacosException.SERVER_ERROR, "index failed");
+        when(searchService.numberedList(any(Query.class))).thenThrow(failure);
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> service.search(searchRequest())));
+        verifyNoInteractions(resourceManager, persistenceService);
+        
+        resetSearchService();
+        AiResourceSearchResult invalid = indexedResult("invalid-Agent",
+            Collections.emptyMap());
+        when(searchService.numberedList(any(Query.class))).thenReturn(
+            new NumberedPage(Collections.singletonList(invalid), 1L, 1, 1));
+        NacosApiException invalidError = assertThrows(NacosApiException.class,
+            () -> service.search(searchRequest()));
+        assertEquals(NacosException.SERVER_ERROR, invalidError.getErrCode());
+        
+        resetSearchService();
+        when(searchService.numberedList(any(Query.class))).thenReturn(
+            new NumberedPage(Collections.emptyList(), (long) Integer.MAX_VALUE + 1L, 1, 1));
+        NacosApiException oversized = assertThrows(NacosApiException.class,
+            () -> service.search(searchRequest()));
+        assertEquals(NacosException.SERVER_ERROR, oversized.getErrCode());
+    }
+    
+    @Test
+    void testSearchIndexReportsUnavailableRuntimeAndProductionConstructor() throws Exception {
+        AgentSearchModeResolver resolver = mock(AgentSearchModeResolver.class);
+        when(resolver.resolve()).thenReturn(AgentSearchMode.INDEX);
+        service = new AgentDiscoveryApplicationService(operationService, persistenceService,
+            resourceManager, runtimeRegistryService, (AiResourceSearchService) null, resolver);
+        NacosException unavailable = assertThrows(NacosException.class,
+            () -> service.search(searchRequest()));
+        assertEquals(503, unavailable.getErrCode());
+        
+        @SuppressWarnings("unchecked")
+        ObjectProvider<AiResourceSearchService> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(searchService);
+        AgentDiscoveryApplicationService injected = new AgentDiscoveryApplicationService(
+            operationService, persistenceService, resourceManager, runtimeRegistryService,
+            provider, resolver);
+        assertNotNull(injected);
     }
     
     @Test
@@ -485,6 +643,31 @@ class AgentDiscoveryApplicationServiceTest {
         
         assertEquals(NacosException.SERVER_ERROR, error.getErrCode());
         assertNull(error.getCause());
+    }
+    
+    private AiResourceSearchResult indexedResult(String agentName,
+        Map<String, Object> metadata) {
+        AiResourceSearchResult result = new AiResourceSearchResult();
+        result.setNamespaceId(NAMESPACE_ID);
+        result.setResourceType(Constants.Agent.RESOURCE_TYPE_AGENT);
+        result.setResourceName(agentName);
+        result.setResourceVersion("2.0.0");
+        result.setDisplayName("Beta Agent");
+        result.setDescription("Indexed Agent");
+        result.setMetadata(metadata);
+        return result;
+    }
+    
+    private void assertPredicate(Predicate predicate, String field,
+        PredicateOperator operator, List<String> values) {
+        assertEquals(field, predicate.getField());
+        assertEquals(operator, predicate.getOperator());
+        assertEquals(values, predicate.getValues());
+        assertTrue(predicate.isCaseSensitive());
+    }
+    
+    private void resetSearchService() {
+        org.mockito.Mockito.reset(searchService);
     }
     
     private void stubDiscover(String digest, List<AgentCallInterface> interfaces)

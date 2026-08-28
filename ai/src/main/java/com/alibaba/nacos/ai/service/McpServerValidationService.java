@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
@@ -43,7 +44,7 @@ import java.util.Set;
 public class McpServerValidationService {
     
     @Autowired
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     /**
      * Validate MCP servers for import.
@@ -177,7 +178,7 @@ public class McpServerValidationService {
         throws NacosException {
         try {
             McpServerDetailInfo existingServer = mcpServerOperationService
-                .getMcpServerDetail(namespaceId, version, serverName, null);
+                .getMcpServerDetail(namespaceId, null, serverName, version);
             return existingServer != null;
         } catch (NacosApiException e) {
             if (e.getDetailErrCode() == ErrorCode.MCP_SERVER_NOT_FOUND.getCode()) {

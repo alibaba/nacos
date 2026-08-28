@@ -127,6 +127,20 @@ complete replacement result. `getAll`, `selectOneHealthy`, protocol choice,
 priority/weight selection, and actual Agent calling are local SDK helpers, not
 additional remote operations.
 
+One SDK instance keeps at most 300 distinct local polling-subscription records
+by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
+limit. Repeating the same canonical Reference, Filter, and Listener identity is
+idempotent and consumes no new slot. A new subscription over the limit fails
+synchronously with `CLIENT_OVER_THRESHOLD` and
+`AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT`; it is not cached or scheduled.
+Unsubscribe and shutdown release the slot. The later server Watch binding MUST
+independently enforce the same default of 300 active Wire Watches per owner
+connection. The current SDK installs one subscription per public call. A later
+batched Wire Watch operation MUST apply the same soft pre-operation watermark:
+when current usage is below the watermark it admits the whole normalized batch
+even if the final count crosses it; at or above the watermark it rejects growth
+atomically and never partially caches a batch.
+
 An `AgentReference` with neither `version` nor `label` is the rollout-safe
 default: it returns latest definition metadata and Runtime Endpoints compatible
 with any current online Version. Explicit `label=latest` requests a strict
@@ -138,6 +152,19 @@ One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
 including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
 removed. The SDK stores that complete batch as redo intent.
+
+One SDK instance has a soft watermark of 100 Endpoint publication entries
+across all retained complete intents by default;
+`nacosAiAgentEndpointMaxPublications` configures the local watermark. When the
+pre-operation entry count is below the watermark, the SDK admits and caches a
+whole validated batch even if the resulting count crosses it. At or above the
+watermark, equal-size or shrinking replacement remains allowed, while a new
+identity or growing replacement is rejected atomically. The server remains
+authoritative and independently applies its configured per-Client watermark.
+A local or server publication-capacity rejection is terminal for that attempted
+identity: the public API throws the capacity exception and the SDK removes the
+rejected publication from every heartbeat and reconnect redo cache instead of
+retrying it indefinitely.
 
 `deregisterAgentEndpoints` remains a convenience method over natural keys. The
 SDK removes those keys from its expected batch and sends the complete remaining
@@ -185,6 +212,48 @@ write timeout, an SDK may change transport only when it knows the server did
 not process the request. An unknown gRPC write result must not be blindly
 repeated through HTTP.
 
+#### 2.2.1 Java SDK Agent Transport Modes
+
+The Java SDK configures protocol-neutral Agent/RAD operations with
+`nacosAiTransportMode`. Its public values are `grpc`, `http`, and `auto`, and
+the unset default remains `grpc`. Values are case-insensitive, but surrounding
+whitespace and unknown values are rejected while creating `AiService`. This
+property controls only the protocol-neutral Agent operations in this section;
+it does not change the existing transport contracts of MCP, legacy A2A,
+Prompt, Skill, or AgentSpec.
+
+- `grpc`: synchronously attempts the initial gRPC connection while creating the
+  SDK and keeps reconnecting asynchronously after failure, without HTTP fallback;
+- `http`: does not start gRPC initially for protocol-neutral Agent operations.
+  Another AI feature that only supports gRPC may start the shared gRPC client
+  lazily under its existing contract;
+- `auto`: also attempts gRPC synchronously during SDK creation. An operation
+  prefers gRPC only when the connection is `RUNNING` and the complete
+  `SERVER_RAD_V1` ability is negotiated; otherwise that invocation uses HTTP
+  immediately and never waits for a background probe.
+
+In `auto`, the client suspends the initial reconnect loop and settles Agent
+routing on HTTP only when gRPC has never connected, remains `STARTING`, reaches
+the configured gRPC retry count in failed asynchronous initial reconnects, and
+at least one Agent HTTP operation has succeeded. `UNHEALTHY` means that a
+connection existed previously and is not eligible for this startup fallback.
+If another feature of the same `AiService` explicitly requires gRPC, the client
+resumes and keeps retrying that connection, while Agent routing may remain on
+its settled HTTP choice.
+
+Search and Discover are reads. In `auto`, a connection-class failure after
+selecting gRPC may be reread through HTTP. Definite business failures such as
+authorization, validation, conflict, not-found, and capacity errors do not
+trigger fallback. A connection-class failure is limited to a disconnected or
+unregistered RPC connection, a connection that is no longer `RUNNING` after
+the failed invocation, or an underlying gRPC `UNAVAILABLE` status.
+Generic `SERVER_ERROR`, `BAD_GATEWAY`, unsupported ability/handler errors, and
+other server responses are not transport evidence and must remain visible to
+the caller. Definition publication never crosses transports after it is handed
+to one transport. Endpoint Publication selects an owner transport on its first
+send and keeps that owner for replacement, deregistration, heartbeat, and redo
+throughout the Publication lifetime.
+
 ### 2.3 Client HTTP Paths
 
 | Method | Path | Input | Result |
@@ -199,6 +268,23 @@ repeated through HTTP.
 Search query names equal RAD field names. Repeated `tagsAll` values use AND;
 repeated `protocolsAny` values use OR. `agentNameContains` is a literal,
 case-sensitive substring.
+
+Agent Search is a resource-specific facade over shared Search Core with
+`resourceType=agent` fixed. It maintains no second index and performs no
+secondary business filtering after index pagination. `agentNameContains`,
+`tagsAll`, and `protocolsAny` are converted to typed predicates from the
+[AI Resource Search Spec](ai-resource-search-spec.md) before totals and page
+truncation. When generic AI Resource Search queries only Agent, its candidate
+eligibility, visibility, and currentness match this API; the response DTO,
+ordering, and numbered-page contract continue to follow RAD.
+
+With `nacos.ai.rad.search.mode=AUTO` or `INDEX`, the HTTP and gRPC bindings use
+the shared index even when the Agent projection is not READY. They return the
+current snapshot, which may be incomplete, and the server emits rate-limited
+diagnostics without logging query content. `SCAN` explicitly selects the
+legacy compatibility path. A binding does not expose the selected physical
+path and does not downgrade or mix results within one request after an
+index-call failure.
 
 Discover maps `agentName`, `version`, and `label` directly. Repeated filter
 parameters are `protocol`, `transport`, and `endpointSource`.
@@ -325,9 +411,12 @@ identity object or accept partial Endpoint keys.
 The endpoint handlers are Naming adapters. Register validates and converts the
 submitted complete Endpoint batch to Naming Instances, then invokes Naming
 batch registration. Deregister invokes Naming whole-publication deregistration.
-They do not read or merge the previous publisher batch, add an Agent service
-lock, directly query Naming's client index, or scan other publishers during a
-write.
+They do not read or merge the previous publisher payload, add an Agent service
+lock, or scan other publishers during a write. The admission step counts
+Runtime Endpoint entries across only the current Client's complete Agent
+publication batches. It evaluates the pre-operation entry count together with
+the existing and requested target-batch sizes, and serializes that soft-watermark
+check with the Naming replacement for the same Client.
 
 Runtime Snapshot and Discover read the complete internal Naming
 `ServiceStorage` projection. They construct one binding from each Instance's
@@ -345,9 +434,14 @@ The target ability keys are:
 
 | Constant | Wire key | Meaning |
 |---|---|---|
-| `SERVER_AGENT_DISCOVERY_V1` | `agentDiscoveryV1` | Server accepts RAD Search and Discover payloads |
-| `SERVER_AGENT_ENDPOINT_V1` | `agentEndpointV1` | Server accepts RAD endpoint publication payloads |
-| `SERVER_AGENT_PUBLISH_V1` | `agentPublishV1` | Server accepts generic code-first Agent publication payloads |
+| `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 contract |
+
+This ability is a compatibility and release unit rather than a per-handler
+inventory. It covers Agent definition publication, Search and Discover, and
+Runtime Endpoint publication because Nacos 3.3 implements, advertises, and
+tests them as one RAD v1 capability set. A future contract that can be deployed
+or enabled independently, such as server Watch/Push, must use a separate
+ability key.
 
 Legacy `SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and
 `SDK_AGENT_REGISTRY` gate only the old A2A contract. Absence of a new ability
@@ -367,13 +461,14 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Repeat query carrying an existing Client id | Refresh Client liveness only; do not create a Client or renew Publisher |
 | HTTP timeout | Retry with the same client id and identical payload using backoff |
 | `HTTP_CLIENT_NOT_FOUND` | Mark local endpoint intent unregistered and redo each complete service batch |
+| Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
 | gRPC reconnect | Redo complete endpoint batches under the new connection id; local polling subscriptions require no server redo |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
-Parameter and authorization errors do not enter infinite redo.
+Parameter, authorization, and capacity errors do not enter infinite redo.
 
 ## 3. Admin API And Maintainer SDK
 

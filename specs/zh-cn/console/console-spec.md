@@ -163,10 +163,11 @@ Console Controller
 
 ## 8. 安全边界
 
-Console 存在两个安全方向：
+Console 存在三个安全方向：
 
 1. 浏览器或运维人员访问 Console API；
-2. 独立 Console 进程访问 Nacos Server。
+2. 独立 Console 进程访问 Nacos Server；
+3. Console 进程访问显式配置或由请求选择的外部系统。
 
 规则：
 
@@ -176,10 +177,31 @@ Console 存在两个安全方向：
 - 只读 Console API 也必须声明读权限，除非它们被明确设计为公开健康检查、静态资源、初始化或
   展示端点；
 - 进入 Console 的浏览器请求不得被当作 server identity 请求信任；
-- 独立 Console 到 Server 的调用在启用 server identity 时必须携带配置的 server identity；
+- Console API 不得把请求选择的 URL 直接变成不受限制的服务端网络目标。
+  `GET /v3/console/ai/mcp/importToolsFromMcp` 默认允许公网目标，并可通过
+  `nacos.console.ai.mcp.import.enabled` 关闭；目标解析得到的每一个私网或本地地址都必须命中运维通过
+  `nacos.console.ai.mcp.import.allowed-private-addresses` 配置的 IP/CIDR 白名单，endpoint 必须保持为
+  已校验 base URL 下的相对地址，非法配置必须按拒绝处理，并且不得跟随重定向；
+- 独立 Console 代表已认证运维人员调用 Server 时，必须使用当前鉴权插件声明的标准名称，透传
+  identity builder 记录的全部非空请求身份字段；
+- `IdentityContext` 中的传输层派生字段和鉴权结果元数据不得透传；
+- 至少透传一个请求身份字段时不得同时携带配置的 server identity，使目标 Server 能够认证该
+  运维人员并校验其权限；
+- 无可用的非空请求身份字段时，独立 Console 到 Server 的调用在启用 server identity 时必须
+  降级使用配置的 server identity；
 - `nacos.core.auth.server.identity.key` 和 `nacos.core.auth.server.identity.value` 必须在独立
   Console 和目标 Nacos Server 部署之间保持一致；
+- 使用运维人员身份透传时，目标 Server 必须开启 Admin API 鉴权并使用兼容的鉴权插件；
 - Console 登录和 token 校验所需的 auth plugin token secret 必须与所选鉴权插件行为保持一致。
+
+独立部署的 Console 必须在开始接收请求前初始化本地鉴权插件运行环境。它对所有可配置鉴权实现
+应用 `STATIC > DEFAULT` 配置，以保证共享鉴权基础设施可用，但只为当前选中实现启动插件持有的
+运行资源。选中的实现不存在属于启动错误。该 Console 本地生命周期不得启动 Core 插件管理器，
+也不得访问由 Server 持有的插件 state、runtime-persisted 配置、local-only override、storage
+或集群同步能力。
+
+静态配置刷新可以重新应用声明为 `RUNTIME` 的鉴权字段。鉴权插件选择、token secret 和其他
+`RESTART` 字段在 Console 重启前保持启动值。
 
 Console 鉴权属于共享鉴权模型，必须遵循[鉴权规范](../http-api/authorization-spec.md)。
 

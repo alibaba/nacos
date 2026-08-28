@@ -68,6 +68,11 @@ A2A Binding 是一个 `AgentCallInterface`：
 当前 descriptor 基线支持 A2A 1.0 字段和现有 0.x 兼容字段。Adapter 规范化时不得
 用拼装出的通用 Agent 对象替换保存的 native descriptor。
 
+common latest 精确 Version 中的 A2A CallInterface 只有通过该版本基线的完整 AgentCard 校验时，
+才声明 ARD 表示 `application/a2a-agent-card+json`。Artifact 直接返回保存的 native descriptor，
+不得把多协议 Nacos Agent 外层对象伪装成 AgentCard。旧 online Version 支持 A2A 只影响 RAD
+`protocolsAny=a2a`；如果 common latest 不含合法 AgentCard，则不产生当前 A2A ARD 表示。
+
 `registrationType=URL` 映射为 `[DECLARED,RUNTIME]`，
 `registrationType=SERVICE` 映射为 `[RUNTIME,DECLARED]`。Registration type 是旧投影
 字段，不参与 Agent 身份，也不进入新 API。
@@ -173,4 +178,6 @@ SDK shutdown 必须停止所有旧 AgentCard 轮询任务。
 ## 7. 演进
 
 上游 AgentCard 字段或 A2A 协议版本变化由 A2A Adapter 和版本化 Agent CallInterface 处理，
-不得重新定义标准 Agent 身份或协议无关的 RAD 结果。
+不得重新定义标准 Agent 身份或协议无关的 RAD 结果。ARD 使用的 AgentCard media type 与固定
+上游 Schema 基线由 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)共同版本化；变化时必须
+同步更新 adapter fixture、校验器、规范和一致性测试。

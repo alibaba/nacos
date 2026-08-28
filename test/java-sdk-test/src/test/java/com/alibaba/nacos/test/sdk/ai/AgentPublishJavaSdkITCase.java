@@ -17,7 +17,6 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
@@ -423,13 +422,11 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private AiService createAiService(String namespaceId, String transport)
-            throws NacosException {
+            throws Exception {
         Properties properties = sdkProperties();
         properties.setProperty(PropertyKeyConst.NAMESPACE, namespaceId);
         properties.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
-        AiService result = AiFactory.createAiService(properties);
-        addCleanup(result::shutdown);
-        return result;
+        return createAiService(properties);
     }
 
     private void assertNotFound(CheckedRunnable runnable) {

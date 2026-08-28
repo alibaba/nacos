@@ -138,7 +138,7 @@ class ArdWebContextIsolationTest {
         @Bean
         ArdArtifactService ardArtifactService() throws Exception {
             ArdArtifactService service = mock(ArdArtifactService.class);
-            when(service.get(any(), any(), any(), any(), any())).thenReturn(
+            when(service.get(any(), any(), any(), any(), any(), any(), any())).thenReturn(
                 new ArdArtifact(ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
                     "skill-zip".getBytes(StandardCharsets.UTF_8)));
             return service;

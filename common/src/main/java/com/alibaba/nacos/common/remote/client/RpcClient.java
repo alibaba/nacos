@@ -50,10 +50,13 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,6 +85,10 @@ public abstract class RpcClient implements Closeable {
     
     private final BlockingQueue<ReconnectContext> reconnectionSignal = new ArrayBlockingQueue<>(1);
     
+    private final AtomicBoolean initialReconnectSuspended = new AtomicBoolean();
+    
+    private final AtomicInteger initialConnectionFailureCount = new AtomicInteger();
+    
     protected volatile Connection currentConnection;
     
     private String tenant;
@@ -92,6 +99,12 @@ public abstract class RpcClient implements Closeable {
      * listener called where connection's status changed.
      */
     protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<>();
+    
+    /**
+     * listeners called after asynchronous initial connection attempts fail.
+     */
+    protected List<InitialConnectionFailureListener> initialConnectionFailureListeners =
+        new CopyOnWriteArrayList<>();
     
     /**
      * handlers to process server push request.
@@ -205,6 +218,66 @@ public abstract class RpcClient implements Closeable {
      */
     public boolean isRunning() {
         return this.rpcClientStatus.get() == RpcClientStatus.RUNNING;
+    }
+    
+    /**
+     * Check whether this client has never connected and is still in its initial startup phase.
+     *
+     * @return {@code true} when the current status is {@link RpcClientStatus#STARTING}
+     */
+    public boolean isStarting() {
+        return this.rpcClientStatus.get() == RpcClientStatus.STARTING;
+    }
+    
+    /**
+     * Return the number of failed asynchronous connection attempts in the initial startup phase.
+     *
+     * @return cumulative initial asynchronous connection failure count
+     */
+    public int getInitialConnectionFailureCount() {
+        return initialConnectionFailureCount.get();
+    }
+    
+    /**
+     * Pause background reconnect only while the client has never established a connection.
+     *
+     * @return {@code true} when initial reconnect is suspended
+     */
+    public synchronized boolean suspendInitialReconnect() {
+        if (!isStarting() || currentConnection != null) {
+            return false;
+        }
+        initialReconnectSuspended.set(true);
+        if (!isStarting() || currentConnection != null) {
+            initialReconnectSuspended.set(false);
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Resume a previously suspended initial reconnect loop.
+     *
+     * @return {@code true} when a reconnect signal is scheduled
+     */
+    public boolean resumeInitialReconnect() {
+        if (!initialReconnectSuspended.compareAndSet(true, false)) {
+            return false;
+        }
+        if (!isStarting() || isShutdown()) {
+            return false;
+        }
+        switchServerAsync();
+        return true;
+    }
+    
+    /**
+     * Check whether background initial reconnect has been suspended.
+     *
+     * @return {@code true} when suspended
+     */
+    public boolean isInitialReconnectSuspended() {
+        return initialReconnectSuspended.get();
     }
     
     /**
@@ -479,6 +552,9 @@ public abstract class RpcClient implements Closeable {
     }
     
     protected void switchServerAsync(final ServerInfo recommendServerInfo, boolean onRequestFail) {
+        if (isInitialReconnectSuspended()) {
+            return;
+        }
         reconnectionSignal.offer(new ReconnectContext(recommendServerInfo, onRequestFail));
     }
     
@@ -488,6 +564,9 @@ public abstract class RpcClient implements Closeable {
     protected void reconnect(final ServerInfo recommendServerInfo, boolean onRequestFail) {
         
         try {
+            if (isInitialReconnectSuspended()) {
+                return;
+            }
             
             AtomicReference<ServerInfo> recommendServer =
                 new AtomicReference<>(recommendServerInfo);
@@ -511,7 +590,7 @@ public abstract class RpcClient implements Closeable {
             int reConnectTimes = 0;
             int retryTurns = 0;
             Exception lastException;
-            while (!switchSuccess && !isShutdown()) {
+            while (!switchSuccess && !isShutdown() && !isInitialReconnectSuspended()) {
                 
                 // 1.get a new server
                 ServerInfo serverInfo = null;
@@ -521,24 +600,31 @@ public abstract class RpcClient implements Closeable {
                     // 2.create a new channel to new server
                     Connection connectionNew = connectToServer(serverInfo);
                     if (connectionNew != null) {
-                        LoggerUtils
-                            .printIfInfoEnabled(LOGGER,
-                                "[{}] Success to connect a server [{}], connectionId = {}",
-                                rpcClientConfig.name(), serverInfo.getAddress(),
-                                connectionNew.getConnectionId());
-                        // successfully create a new connect.
-                        if (currentConnection != null) {
-                            LoggerUtils.printIfInfoEnabled(LOGGER,
-                                "[{}] Abandon prev connection, server is {}, connectionId is {}",
-                                rpcClientConfig.name(), currentConnection.serverInfo.getAddress(),
-                                currentConnection.getConnectionId());
-                            // set current connection to enable connection event.
-                            currentConnection.setAbandon(true);
-                            closeConnection(currentConnection);
+                        synchronized (this) {
+                            if (isStarting() && isInitialReconnectSuspended()) {
+                                connectionNew.close();
+                                return;
+                            }
+                            LoggerUtils
+                                .printIfInfoEnabled(LOGGER,
+                                    "[{}] Success to connect a server [{}], connectionId = {}",
+                                    rpcClientConfig.name(), serverInfo.getAddress(),
+                                    connectionNew.getConnectionId());
+                            // successfully create a new connect.
+                            if (currentConnection != null) {
+                                LoggerUtils.printIfInfoEnabled(LOGGER,
+                                    "[{}] Abandon prev connection, server is {}, connectionId is {}",
+                                    rpcClientConfig.name(),
+                                    currentConnection.serverInfo.getAddress(),
+                                    currentConnection.getConnectionId());
+                                // set current connection to enable connection event.
+                                currentConnection.setAbandon(true);
+                                closeConnection(currentConnection);
+                            }
+                            currentConnection = connectionNew;
+                            rpcClientStatus.set(RpcClientStatus.RUNNING);
+                            switchSuccess = true;
                         }
-                        currentConnection = connectionNew;
-                        rpcClientStatus.set(RpcClientStatus.RUNNING);
-                        switchSuccess = true;
                         eventLinkedBlockingQueue
                             .add(new ConnectionEvent(ConnectionEvent.CONNECTED, currentConnection));
                         return;
@@ -557,6 +643,10 @@ public abstract class RpcClient implements Closeable {
                     lastException = new Exception(throwable);
                 } finally {
                     recommendServer.set(null);
+                }
+                notifyInitialConnectionFailure();
+                if (isInitialReconnectSuspended()) {
+                    return;
                 }
                 
                 if (CollectionUtils.isEmpty(RpcClient.this.serverListFactory.getServerList())) {
@@ -889,6 +979,32 @@ public abstract class RpcClient implements Closeable {
             "[{}] Registry connection listener to current client:{}",
             rpcClientConfig.name(), connectionEventListener.getClass().getName());
         this.connectionEventListeners.add(connectionEventListener);
+    }
+    
+    /**
+     * Register a listener for failed asynchronous initial connection attempts.
+     *
+     * @param listener initial connection failure listener
+     */
+    public synchronized void registerInitialConnectionFailureListener(
+        InitialConnectionFailureListener listener) {
+        this.initialConnectionFailureListeners.add(listener);
+    }
+    
+    private void notifyInitialConnectionFailure() {
+        if (!isStarting()) {
+            return;
+        }
+        int failureCount = initialConnectionFailureCount.incrementAndGet();
+        for (InitialConnectionFailureListener listener : initialConnectionFailureListeners) {
+            try {
+                listener.onFailure(failureCount);
+            } catch (Throwable throwable) {
+                LoggerUtils.printIfWarnEnabled(LOGGER,
+                    "[{}] Initial connection failure listener failed, count = {}",
+                    rpcClientConfig.name(), failureCount, throwable);
+            }
+        }
     }
     
     /**

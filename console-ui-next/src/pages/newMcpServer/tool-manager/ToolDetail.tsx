@@ -100,7 +100,7 @@ export default function ToolDetail({ tool, meta, onEdit, onDelete }: ToolDetailP
               ({t('mcp.toolParams', { count: outputParamCount })})
             </span>
           </h4>
-          <SchemaEditor value={outputSchema} onChange={() => {}} readOnly />
+          <SchemaEditor value={outputSchema} onChange={() => {}} readOnly allowNullable />
         </div>
       )}
 

@@ -34,6 +34,9 @@ class MemberMetaDataConstantsTest {
         assertEquals("remoteConnectType", MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE);
         assertEquals("readyToUpgrade", MemberMetaDataConstants.READY_TO_UPGRADE);
         assertEquals("supportGrayModel", MemberMetaDataConstants.SUPPORT_GRAY_MODEL);
+        assertEquals("supportJraftAuth", MemberMetaDataConstants.SUPPORT_JRAFT_AUTH);
+        assertEquals("supportMcpLifecycleManagement",
+            MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT);
     }
     
     @Test
@@ -45,18 +48,22 @@ class MemberMetaDataConstantsTest {
         assertNotNull(MemberMetaDataConstants.RAFT_PORT);
         assertNotNull(MemberMetaDataConstants.LAST_REFRESH_TIME);
         assertNotNull(MemberMetaDataConstants.SUPPORT_GRAY_MODEL);
+        assertNotNull(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH);
+        assertNotNull(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT);
     }
     
     @Test
     void testBasicMetaKeys() {
         String[] keys = MemberMetaDataConstants.BASIC_META_KEYS;
         assertNotNull(keys);
-        assertEquals(6, keys.length);
+        assertEquals(8, keys.length);
         assertEquals(MemberMetaDataConstants.SITE_KEY, keys[0]);
         assertEquals(MemberMetaDataConstants.AD_WEIGHT, keys[1]);
         assertEquals(MemberMetaDataConstants.RAFT_PORT, keys[2]);
         assertEquals(MemberMetaDataConstants.WEIGHT, keys[3]);
         assertEquals(MemberMetaDataConstants.VERSION, keys[4]);
         assertEquals(MemberMetaDataConstants.READY_TO_UPGRADE, keys[5]);
+        assertEquals(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH, keys[6]);
+        assertEquals(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT, keys[7]);
     }
 }

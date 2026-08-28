@@ -22,6 +22,7 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alipay.sofa.jraft.Node;
 import com.google.protobuf.Message;
@@ -65,6 +66,9 @@ class JRaftProtocolTest {
     @Mock
     private ServerMemberManager memberManager;
     
+    @Mock
+    private JRaftAuthUpgradeCoordinator jRaftAuthUpgradeCoordinator;
+    
     private ReadRequest readRequest;
     
     private WriteRequest writeRequest;
@@ -79,7 +83,7 @@ class JRaftProtocolTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        raftProtocol = new JRaftProtocol(memberManager);
+        raftProtocol = new JRaftProtocol(memberManager, jRaftAuthUpgradeCoordinator);
         ReadRequest.Builder readRequestBuilder = ReadRequest.newBuilder();
         readRequest = readRequestBuilder.build();
         

@@ -17,8 +17,12 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.service.McpLegacyImportAdapter;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -32,6 +36,8 @@ import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 /**
  * Inner implementation of Mcp handler.
  *
@@ -42,20 +48,24 @@ import org.springframework.stereotype.Service;
 @EnabledAiHandler
 public class McpInnerHandler implements McpHandler {
     
-    private final McpServerOperationService mcpServerOperationService;
+    private final McpOperationService mcpServerOperationService;
     
     private final McpLegacyImportAdapter mcpLegacyImportAdapter;
     
-    public McpInnerHandler(McpServerOperationService mcpServerOperationService,
-        McpLegacyImportAdapter mcpLegacyImportAdapter) {
+    private final McpCompatibilityOperationService lifecycleOperationService;
+    
+    public McpInnerHandler(McpOperationService mcpServerOperationService,
+        McpLegacyImportAdapter mcpLegacyImportAdapter,
+        McpCompatibilityOperationService lifecycleOperationService) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.mcpLegacyImportAdapter = mcpLegacyImportAdapter;
+        this.lifecycleOperationService = lifecycleOperationService;
     }
     
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName,
         String search, int pageNo,
-        int pageSize) {
+        int pageSize) throws NacosException {
         return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo,
             pageSize);
     }
@@ -90,6 +100,86 @@ public class McpInnerHandler implements McpHandler {
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId,
         String version) throws NacosException {
         mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
+    }
+    
+    @Override
+    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        return lifecycleOperationService.listLifecycleVersions(namespaceId, mcpName, status,
+            pageNo, pageSize);
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.getLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return lifecycleOperationService.createLifecycleDraft(namespaceId, serverSpecification,
+            toolSpecification, resourceSpecification, endpointSpecification);
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return lifecycleOperationService.updateLifecycleDraft(namespaceId, serverSpecification,
+            toolSpecification, resourceSpecification, endpointSpecification);
+    }
+    
+    @Override
+    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+        throws NacosException {
+        lifecycleOperationService.deleteLifecycleDraft(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.submitLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.publishLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        String mcpName, String version) throws NacosException {
+        return lifecycleOperationService.forcePublishLifecycleVersion(namespaceId, mcpName,
+            version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.redraftLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.onlineLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return lifecycleOperationService.offlineLifecycleVersion(namespaceId, mcpName, version);
+    }
+    
+    @Override
+    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+        Map<String, String> labels) throws NacosException {
+        return lifecycleOperationService.updateLifecycleLabels(namespaceId, mcpName, labels);
     }
     
     @Deprecated

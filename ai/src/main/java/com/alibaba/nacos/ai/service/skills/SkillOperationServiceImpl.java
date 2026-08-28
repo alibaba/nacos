@@ -35,7 +35,9 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
+import com.alibaba.nacos.ai.storage.AiResourceStorageUtils;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
@@ -73,9 +75,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -186,7 +190,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<UploadVersionCandidate> uploadVersions = resolveUploadVersionCandidates(skill,
             request.getTargetVersion());
         return doUploadSingleSkill(request.getNamespaceId(), skill, uploadVersions,
-            request.isOverwrite(), request.getUploadAction(), request.getCommitMsg());
+            request.isOverwrite(), request.getUploadAction(), request.getCommitMsg(),
+            request.isAutoPublishIfNew());
     }
     
     @Override
@@ -333,7 +338,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 }
                 List<UploadVersionCandidate> uploadVersions =
                     resolveUploadVersionCandidates(skill, null);
-                doUploadSingleSkill(namespaceId, skill, uploadVersions, overwrite, null, null);
+                doUploadSingleSkill(namespaceId, skill, uploadVersions, overwrite, null, null,
+                    false);
                 result.addResult(BatchUploadItemResult.success(skillName));
             } catch (Exception e) {
                 LOGGER.warn("Batch upload failed for skill [{}]: {}", skillName, e.getMessage());
@@ -375,7 +381,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private String doUploadSingleSkill(String namespaceId, Skill skill,
         List<UploadVersionCandidate> uploadVersions,
-        boolean overwrite, String uploadAction, String commitMsg) throws NacosException {
+        boolean overwrite, String uploadAction, String commitMsg, boolean autoPublishIfNew)
+        throws NacosException {
         String name = skill.getName();
         validateSkillNameByParamChecker(name);
         
@@ -384,26 +391,31 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             checkWritableUploadResource(meta);
         }
         String targetVersion = resolveUploadTargetVersion(namespaceId, name, meta, uploadVersions);
+        String result;
         if (StringUtils.isBlank(uploadAction)) {
             if (overwrite) {
-                return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, false,
+                result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, false,
+                    commitMsg);
+            } else {
+                result = createUploadedSkillDraft(namespaceId, skill, targetVersion, meta,
                     commitMsg);
             }
-            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_CREATE_DRAFT.equals(uploadAction)) {
-            return createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
+        } else if (SkillUploadPrecheckResult.ACTION_CREATE_DRAFT.equals(uploadAction)) {
+            result = createUploadedSkillDraft(namespaceId, skill, targetVersion, meta, commitMsg);
+        } else if (SkillUploadPrecheckResult.ACTION_OVERWRITE_DRAFT.equals(uploadAction)) {
+            result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
-        }
-        if (SkillUploadPrecheckResult.ACTION_DELETE_DRAFT_AND_CREATE.equals(uploadAction)) {
-            return overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
+        } else if (SkillUploadPrecheckResult.ACTION_DELETE_DRAFT_AND_CREATE.equals(uploadAction)) {
+            result = overwriteUploadedSkill(namespaceId, skill, targetVersion, meta, true,
                 commitMsg);
+        } else {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
         }
-        throw new NacosApiException(NacosException.INVALID_PARAM,
-            ErrorCode.PARAMETER_VALIDATE_ERROR, "Unsupported uploadAction: " + uploadAction);
+        if (meta == null && autoPublishIfNew) {
+            forcePublish(namespaceId, name, targetVersion, true);
+        }
+        return result;
     }
     
     private void checkWritableUploadResource(AiResource meta) throws NacosException {
@@ -455,11 +467,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resolveUploadVersion(skill.getSkillMd(), null, null));
         // Normalize frontmatter before writing (bootstrap = first create)
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, true);
-        List<String> files = writeSkillToStorage(namespaceId, skill, version);
+        String provider = resolveSkillStorageProvider();
+        List<String> files = writeSkillToStorage(namespaceId, skill, version, provider);
         
         // Step 4: Insert meta + version rows with status directly set to online (published)
         String storageJson = buildStorageJson(namespaceId, skillName, version, files,
-            SkillContentDigestUtils.computeContentMd5(skill));
+            SkillContentDigestUtils.computeContentMd5(skill), provider);
         resourceManager.insertBootstrapMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson);
         
@@ -911,13 +924,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void overwriteEditingDraft(String namespaceId, Skill skill, AiResource meta,
         String editing, String commitMsg)
         throws NacosException {
-        resourceManager.requireDraftVersion(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL,
-            editing);
+        AiResourceVersion draftVersion = resourceManager.requireDraftVersion(namespaceId,
+            skill.getName(), RESOURCE_TYPE_SKILL, editing);
         // Normalize frontmatter before writing (overwrite = existing skill, not first create)
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skill.getName(), editing, false);
-        List<String> files = writeSkillToStorage(namespaceId, skill, editing);
+        String provider = parseStorageProvider(draftVersion.getStorage());
+        List<String> files = writeSkillToStorage(namespaceId, skill, editing, provider);
+        deleteRemovedSkillStorageFiles(namespaceId, skill.getName(), editing,
+            draftVersion.getStorage(), provider, files);
         String storageJson = buildStorageJson(namespaceId, skill.getName(), editing, files,
-            SkillContentDigestUtils.computeContentMd5(skill));
+            SkillContentDigestUtils.computeContentMd5(skill), provider);
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson, commitMsg);
@@ -1202,7 +1218,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 RESOURCE_TYPE_SKILL, base);
             Skill baseSkill = loadSkillFromStorage(namespaceId, name, base,
                 baseVersionRow != null ? baseVersionRow.getStorage() : null);
-            List<String> files = writeSkillToStorage(namespaceId, baseSkill, newVersion);
+            String provider = resolveSkillStorageProvider();
+            List<String> files = writeSkillToStorage(namespaceId, baseSkill, newVersion, provider);
             
             // Step 2: Insert draft version row
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
@@ -1211,7 +1228,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
                 AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
                 buildStorageJson(namespaceId, name, newVersion, files,
-                    SkillContentDigestUtils.computeContentMd5(baseSkill)));
+                    SkillContentDigestUtils.computeContentMd5(baseSkill), provider));
             
             // Step 3: Update meta's editingVersion pointer
             resourceManager.markEditingVersionCas(namespaceId, meta, info, newVersion,
@@ -1250,15 +1267,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "No editing draft exists for skill: " + name);
         }
-        resourceManager.requireDraftVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
+        AiResourceVersion draftVersion = resourceManager.requireDraftVersion(namespaceId, name,
+            RESOURCE_TYPE_SKILL, editing);
         
         // Normalize frontmatter before writing to storage (editing = existing skill, not first create)
         SkillRequestUtil.normalizeSkillFrontmatter(draftSkill, name, editing, false);
         
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
-        List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
+        String provider = parseStorageProvider(draftVersion.getStorage());
+        List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing, provider);
+        deleteRemovedSkillStorageFiles(namespaceId, name, editing, draftVersion.getStorage(),
+            provider, files);
         String storageJson = buildStorageJson(namespaceId, name, editing, files,
-            SkillContentDigestUtils.computeContentMd5(draftSkill));
+            SkillContentDigestUtils.computeContentMd5(draftSkill), provider);
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, name, RESOURCE_TYPE_SKILL,
                 editing,
@@ -1520,7 +1541,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     /**
      * Query a skill for client consumption. Resolves the target version via explicit version, label, or manifest,
-     * loads the skill content from the index manifest's file list, and publishes a download event.
+     * loads the skill content from the version's persisted storage descriptor, and publishes a download event.
      */
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label)
@@ -1547,14 +1568,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 "Skill version not found: " + name);
         }
         
-        // Step 4: Get file list from manifest and read storage content
+        // Step 4: Verify the version is indexed, then read using its persisted storage descriptor
         List<String> files = manifest.getVersions().get(resolved);
         if (files == null || files.isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "Skill version not found: " + name + "@" + resolved);
         }
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, name,
+            RESOURCE_TYPE_SKILL, resolved);
+        if (versionRow == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill version not found: " + name + "@" + resolved);
+        }
         
-        Skill skill = loadSkillFromFiles(namespaceId, name, resolved, files);
+        Skill skill = loadSkillFromStorage(namespaceId, name, resolved, versionRow.getStorage());
         // Step 5: Publish download event for download count tracking
         NotifyCenter.publishEvent(
             new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
@@ -1584,7 +1611,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, existedMeta == null);
         
         // 1) write all resources (including SKILL.md) to storage
-        List<String> files = writeSkillToStorage(namespaceId, skill, version);
+        String provider = resolveSkillStorageProvider();
+        List<String> files = writeSkillToStorage(namespaceId, skill, version, provider);
         
         // 2) insert draft version row
         String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : "";
@@ -1592,7 +1620,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
             AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
             buildStorageJson(namespaceId, skillName, version, files,
-                SkillContentDigestUtils.computeContentMd5(skill)));
+                SkillContentDigestUtils.computeContentMd5(skill), provider));
         
         // 3) create or update meta for editingVersion
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
@@ -1603,10 +1631,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Resolve the storage provider from system config. Defaults to "nacos_config".
      */
     private static String resolveSkillStorageProvider() {
-        String provider =
-            EnvUtil.getProperty(Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
-                STORAGE_PROVIDER_NACOS_CONFIG);
-        return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
+        return AiResourceStorageUtils.resolveProvider(Skills.SKILL_STORAGE_PROVIDER_CONFIG_KEY,
+            STORAGE_PROVIDER_NACOS_CONFIG);
     }
     
     /**
@@ -1616,9 +1642,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      *                   yet need to persist the listener-related fingerprint
      */
     private static String buildStorageJson(String namespaceId, String skillName, String version,
-        List<String> files, String contentMd5) {
+        List<String> files, String contentMd5, String provider) {
         Map<String, Object> json = new LinkedHashMap<>(8);
-        json.put("provider", resolveSkillStorageProvider());
+        json.put("provider", provider);
         json.put("scope", namespaceId + ":" + skillName + ":" + version);
         json.put("files", files);
         if (StringUtils.isNotBlank(contentMd5)) {
@@ -1645,6 +1671,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         } catch (Exception ignored) {
         }
         return null;
+    }
+    
+    /**
+     * Parse the provider persisted with a version. Historical descriptors without a provider belong to
+     * nacos_config, regardless of the provider selected for new writes.
+     */
+    private static String parseStorageProvider(String storageJson) {
+        if (StringUtils.isNotBlank(storageJson)) {
+            try {
+                Map<String, Object> map = JacksonUtils.toObj(storageJson, Map.class);
+                Object provider = map.get("provider");
+                if (provider instanceof String && StringUtils.isNotBlank((String) provider)) {
+                    return ((String) provider).trim();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return STORAGE_PROVIDER_NACOS_CONFIG;
     }
     
     /**
@@ -1714,9 +1758,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      *
      * @return list of stored file paths (for use in buildStorageJson)
      */
-    private List<String> writeSkillToStorage(String namespaceId, Skill skill, String version)
-        throws NacosException {
-        String provider = resolveSkillStorageProvider();
+    private List<String> writeSkillToStorage(String namespaceId, Skill skill, String version,
+        String provider) throws NacosException {
         String skillName = skill.getName();
         List<String> files = new ArrayList<>();
         
@@ -1821,7 +1864,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                 "No files found in storage for skill: " + skillName + "@" + version);
         }
-        return loadSkillFromFiles(namespaceId, skillName, version, files);
+        return loadSkillFromFiles(namespaceId, skillName, version,
+            parseStorageProvider(storageJson), files);
     }
     
     /**
@@ -1829,9 +1873,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * SKILL.md content provides name/description and markdown body; others populate the resource map.
      */
     private Skill loadSkillFromFiles(String namespaceId, String skillName, String version,
-        List<String> files)
+        String provider, List<String> files)
         throws NacosException {
-        String provider = resolveSkillStorageProvider();
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
         Map<String, SkillResource> resourceMap = new HashMap<>(files.size());
@@ -1920,16 +1963,53 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void deleteSkillStorageForVersion(String namespaceId, String skillName, String version,
         String storageJson)
         throws NacosException {
-        List<String> files = parseStorageFiles(storageJson);
-        if (files == null || files.isEmpty()) {
+        List<String> files = AiResourceVersionStorageJsonUtil.requireFiles(storageJson);
+        String provider = AiResourceVersionStorageJsonUtil.resolveProvider(storageJson,
+            STORAGE_PROVIDER_NACOS_CONFIG);
+        deleteSkillStorageFiles(namespaceId, skillName, version, provider, files);
+    }
+    
+    /**
+     * Delete files that were present in the previous draft but omitted from its replacement.
+     */
+    private void deleteRemovedSkillStorageFiles(String namespaceId, String skillName,
+        String version,
+        String storageJson, String provider, List<String> retainedFiles) throws NacosException {
+        List<String> previousFiles = parseStorageFiles(storageJson);
+        if (previousFiles == null || previousFiles.isEmpty()) {
             return;
         }
-        String provider = resolveSkillStorageProvider();
+        Set<String> retainedFileSet = new HashSet<>(retainedFiles);
+        List<String> removedFiles = new ArrayList<>();
+        for (String filePath : previousFiles) {
+            if (!retainedFileSet.contains(filePath)) {
+                removedFiles.add(filePath);
+            }
+        }
+        deleteSkillStorageFiles(namespaceId, skillName, version, provider, removedFiles);
+    }
+    
+    private void deleteSkillStorageFiles(String namespaceId, String skillName, String version,
+        String provider, List<String> files) throws NacosException {
+        NacosException firstFailure = null;
         for (String filePath : files) {
-            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-                skillName, version,
-                filePath);
-            storageRouter.route(key).delete(key);
+            try {
+                StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider,
+                    namespaceId, skillName, version, filePath);
+                storageRouter.route(key).delete(key);
+            } catch (Exception e) {
+                NacosException failure = e instanceof NacosException ? (NacosException) e
+                    : new NacosException(NacosException.SERVER_ERROR,
+                        "Failed to delete Skill storage: " + skillName + '@' + version, e);
+                if (firstFailure == null) {
+                    firstFailure = failure;
+                } else {
+                    firstFailure.addSuppressed(failure);
+                }
+            }
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
         }
     }
     

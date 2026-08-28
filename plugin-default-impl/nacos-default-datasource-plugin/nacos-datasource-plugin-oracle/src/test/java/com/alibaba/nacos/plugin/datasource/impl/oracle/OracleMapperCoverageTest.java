@@ -121,9 +121,9 @@ class OracleMapperCoverageTest {
                 + "t.config_tags FROM config_info a JOIN "
                 + "(SELECT DISTINCT a.id FROM config_info a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "WHERE a.tenant_id LIKE ? AND a.data_id LIKE ? "
-                + "AND a.group_id LIKE ? AND a.app_name = ? "
-                + "AND a.content LIKE ? AND ( b.tag_name LIKE ? ) "
+                + "WHERE a.tenant_id LIKE ? ESCAPE '\\' AND a.data_id LIKE ? ESCAPE '\\' "
+                + "AND a.group_id LIKE ? ESCAPE '\\' AND a.app_name = ? "
+                + "AND a.content LIKE ? ESCAPE '\\' AND ( b.tag_name LIKE ? ESCAPE '\\' ) "
                 + "AND a.type IN (?, ?) ORDER BY a.id OFFSET 3 ROWS "
                 + "FETCH NEXT 7 ROWS ONLY) x ON a.id = x.id "
                 + "LEFT JOIN tag_agg t ON a.id = t.id",
@@ -174,7 +174,7 @@ class OracleMapperCoverageTest {
             "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
                 + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,"
                 + "download_count FROM ai_resource WHERE namespace_id = ? "
-                + "AND name LIKE ? AND biz_tags LIKE ? AND type = ? "
+                + "AND name LIKE ? ESCAPE '\\' AND biz_tags LIKE ? ESCAPE '\\' AND type = ? "
                 + "AND scope = ? AND owner = ? ORDER BY download_count DESC "
                 + "OFFSET 3 ROWS FETCH NEXT 7 ROWS ONLY",
             namespaceId, "nacos", "tag", "mcp", "public", "owner");

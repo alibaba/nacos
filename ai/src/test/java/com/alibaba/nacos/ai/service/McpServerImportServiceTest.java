@@ -17,8 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
-import com.alibaba.nacos.ai.index.McpCacheIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -67,17 +66,14 @@ class McpServerImportServiceTest {
     private McpServerValidationService validationService;
     
     @Mock
-    private McpServerOperationService operationService;
-    
-    @Mock
-    private McpCacheIndex mcpCacheIndex;
+    private McpOperationService operationService;
     
     private McpServerImportService importService;
     
     @BeforeEach
     void setUp() {
         importService = new McpServerImportService(transformService, validationService,
-            operationService, mcpCacheIndex);
+            operationService);
     }
     
     @Test
@@ -442,11 +438,6 @@ class McpServerImportServiceTest {
         List<McpServerDetailInfo> servers = new ArrayList<>();
         when(transformService.adaptExternalDataToNacosMcpServerFormat(any())).thenReturn(
             servers);
-        
-        // Mock existing server in cache index
-        McpServerIndexData data = new McpServerIndexData();
-        when(mcpCacheIndex.getMcpServerByName(eq("test-namespace"), eq("Test Server")))
-            .thenReturn(data);
         
         // Mock validation with existing server
         McpServerImportValidationResult validationResult = new McpServerImportValidationResult();

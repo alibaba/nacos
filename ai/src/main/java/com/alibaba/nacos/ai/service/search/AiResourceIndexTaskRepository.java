@@ -45,6 +45,14 @@ public interface AiResourceIndexTaskRepository {
     List<AiResourceIndexTask> findDueTasks(int limit);
     
     /**
+     * Check whether one resource type still has pending, processing, or retry work.
+     *
+     * @param resourceType exact canonical resource type
+     * @return {@code true} when unfinished work or an undecodable unfinished task exists
+     */
+    boolean hasUnfinishedTasks(String resourceType);
+    
+    /**
      * Claim one task revision for exclusive processing with a new lease token for the given
      * duration in milliseconds.
      */

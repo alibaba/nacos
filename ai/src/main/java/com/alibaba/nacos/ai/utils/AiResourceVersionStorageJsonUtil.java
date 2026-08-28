@@ -17,11 +17,14 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -62,5 +65,91 @@ public final class AiResourceVersionStorageJsonUtil {
         }
         map.put(Constants.Skills.STORAGE_KEY_CONTENT_MD5, contentMd5);
         return JacksonUtils.toJson(map);
+    }
+    
+    /**
+     * Read the persisted provider from a version storage descriptor.
+     *
+     * @param storageJson version storage descriptor
+     * @return persisted provider
+     * @throws NacosException when the descriptor is missing or invalid
+     */
+    public static String requireProvider(String storageJson) throws NacosException {
+        Object provider = requireDescriptor(storageJson).get("provider");
+        if (!(provider instanceof String) || StringUtils.isBlank((String) provider)) {
+            throw invalidDescriptor("provider is missing");
+        }
+        return ((String) provider).trim();
+    }
+    
+    /**
+     * Resolve the provider from a version storage descriptor, using the given default for legacy
+     * descriptors that do not contain a provider.
+     *
+     * @param storageJson version storage descriptor
+     * @param defaultProvider provider for legacy descriptors
+     * @return persisted provider, or the default provider when missing
+     * @throws NacosException when the descriptor or provider value is invalid
+     */
+    public static String resolveProvider(String storageJson, String defaultProvider)
+        throws NacosException {
+        Map<String, Object> descriptor = requireDescriptor(storageJson);
+        Object provider = descriptor.get("provider");
+        if (provider == null || provider instanceof String
+            && StringUtils.isBlank((String) provider)) {
+            return defaultProvider;
+        }
+        if (!(provider instanceof String)) {
+            throw invalidDescriptor("provider is invalid");
+        }
+        return ((String) provider).trim();
+    }
+    
+    /**
+     * Read the persisted file list from a version storage descriptor.
+     *
+     * @param storageJson version storage descriptor
+     * @return persisted file paths
+     * @throws NacosException when the descriptor is missing or invalid
+     */
+    public static List<String> requireFiles(String storageJson) throws NacosException {
+        Object files = requireDescriptor(storageJson).get("files");
+        if (!(files instanceof List) || ((List<?>) files).isEmpty()) {
+            throw invalidDescriptor("files are missing");
+        }
+        List<String> result = new ArrayList<>(((List<?>) files).size());
+        for (Object file : (List<?>) files) {
+            if (!(file instanceof String) || StringUtils.isBlank((String) file)) {
+                throw invalidDescriptor("file path is invalid");
+            }
+            result.add((String) file);
+        }
+        return result;
+    }
+    
+    private static Map<String, Object> requireDescriptor(String storageJson)
+        throws NacosException {
+        if (StringUtils.isBlank(storageJson)) {
+            throw invalidDescriptor("descriptor is missing");
+        }
+        try {
+            Map<String, Object> result = JacksonUtils.toObj(storageJson,
+                new TypeReference<LinkedHashMap<String, Object>>() {
+                });
+            if (result == null) {
+                throw invalidDescriptor("descriptor is missing");
+            }
+            return result;
+        } catch (NacosException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "AI resource storage descriptor is invalid", e);
+        }
+    }
+    
+    private static NacosException invalidDescriptor(String reason) {
+        return new NacosException(NacosException.SERVER_ERROR,
+            "AI resource storage descriptor is invalid: " + reason);
     }
 }

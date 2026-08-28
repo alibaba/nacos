@@ -48,6 +48,12 @@ public final class ArdProtocolConstants {
     
     public static final String MEDIA_TYPE_MCP = "application/mcp-server-card+json";
     
+    public static final String MEDIA_TYPE_A2A_AGENT_CARD =
+        "application/a2a-agent-card+json";
+    
+    public static final String MEDIA_TYPE_NACOS_AGENT =
+        "application/vnd.nacos.ai-agent+json";
+    
     private ArdProtocolConstants() {
     }
 }

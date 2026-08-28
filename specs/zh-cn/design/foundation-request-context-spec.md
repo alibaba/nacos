@@ -43,6 +43,8 @@ Nacos 使用 `RequestContextHolder` 和 `RequestContext` 作为进程内请求�
   `AuthContext` 和具名扩展上下文。
 - `BasicContext` 记录协议、请求目标、编码、app、user agent 和远端/source 地址信息。
 - 当鉴权过滤器执行后，`AuthContext` 记录 API 类型、解析出的 identity、resource 和鉴权结果。
+- 解析出的 identity 必须把实际从请求提取的身份字段标准名称与传输层派生字段、插件补充元数据分开
+  记录；HTTP 身份字段名称按大小写不敏感方式匹配。
 - 扩展上下文可以增加运行时元数据，但不得重新定义标准字段，也不得保存持久领域状态。
 - 上下文仅属于运行时。它不是持久化数据，不是集群复制 payload，也不会自动传播到异步任务；如果
   组件需要跨线程使用，必须显式复制必要字段。
@@ -79,6 +81,20 @@ filter 顺序规则：
 - 拒绝 HTTP 请求的 filter 必须在目标 API 家族期望包裹响应时返回标准 Nacos result 格式。
 - 当 filter 拥有拒绝逻辑时，filter 异常应转换为统一异常或 result 模型。未预期的基础设施失败
   可以抛出给全局异常处理。
+
+HTTP Controller 方法解析规则：
+
+- 在 Spring MVC 分发前解析 Controller 方法的组件必须复用当前 Spring MVC 的
+  `RequestMappingHandlerMapping`。鉴权与分发必须基于同一个 Servlet request、请求级
+  context path 和路径匹配配置选择同一个 Controller 方法。
+- 字面量 path parameter、单次或多次百分号编码、重复空 segment、dot segment、非法编码、
+  非法 UTF-8、控制字符、Unicode 分隔符近似字符、absolute-form request target 和编码后的
+  路径分隔符，不得由鉴权流程使用独立的归一化算法处理。
+- query parameter 不参与 Controller 路径匹配。
+- 可通过 `nacos.core.auth.controller-method-cache.legacy-enabled=true` 临时降级到旧注解缓存
+  解析器。旧解析器从 3.3.0 起废弃，计划在 3.4.0 移除，且可能与 Spring MVC 路径匹配结果
+  不一致，因此默认必须关闭。启用旧解析器时，必须在移除 context path 前使用一致的方式解析
+  request URI 和 context path，包括任一值包含百分号编码字符的情况。
 
 ## 4. gRPC 请求过滤模型
 

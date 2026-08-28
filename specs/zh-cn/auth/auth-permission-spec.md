@@ -148,6 +148,10 @@ Nacos 将请求级授权和数据级可见性分开处理。
 
 服务端内部请求在继续处理前，还可能要求配置的服务端身份 key 和 value 校验通过。
 
+JRaft 原生 gRPC 虽然不使用 Nacos `RequestHandler`，仍属于服务端内部传输。客户端通过 gRPC
+`CallCredentials` 传输 server identity，服务端通过 `ServerInterceptor` 校验。集群进入强制状态后，
+关闭公开 Open API 鉴权不得绕过 JRaft server identity。
+
 ## 资源权限名
 
 Nacos 权限基于[资源模型](../design/resource-model-spec.md)派生的资源进行评估：

@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,16 +36,21 @@ class NacosConsoleAuthConfigTest {
     
     private MockEnvironment environment;
     
+    private DeploymentType cachedDeploymentType;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
+        cachedDeploymentType = EnvUtil.getDeploymentType();
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setDeploymentType(DeploymentType.MERGED);
     }
     
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
+        EnvUtil.setDeploymentType(cachedDeploymentType);
     }
     
     @Test
@@ -73,5 +79,17 @@ class NacosConsoleAuthConfigTest {
         assertFalse(config.isSupportServerIdentity());
         assertEquals("", config.getServerIdentityKey());
         assertEquals("", config.getServerIdentityValue());
+    }
+    
+    @Test
+    void keepStartupAuthPluginTypeForIndependentConsole() {
+        EnvUtil.setDeploymentType(DeploymentType.CONSOLE);
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        NacosConsoleAuthConfig config = new NacosConsoleAuthConfig();
+        
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "ldap");
+        config.onEvent(ServerConfigChangeEvent.newEvent());
+        
+        assertEquals("nacos", config.getNacosAuthSystemType());
     }
 }

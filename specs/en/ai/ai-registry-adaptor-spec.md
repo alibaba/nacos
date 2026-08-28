@@ -29,7 +29,7 @@ Nacos AI Registry resources into external registry response shapes, including:
 - MCP Server data exposed through MCP Registry v0-compatible read APIs;
 - Skill data exposed through skills CLI and well-known discovery-compatible
   endpoints;
-- Skill, Prompt, and MCP data exposed through Agentic Resource Discovery (ARD)
+- Agent, Skill, Prompt, and MCP data exposed through Agentic Resource Discovery (ARD)
   search, explore, catalog, and artifact endpoints;
 - protocol-specific pagination, search, response, and file-fetch behavior
   required by those ecosystems.
@@ -57,13 +57,20 @@ registry surface is explicitly enabled:
 | --- | --- | --- |
 | `nacos.ai.mcp.registry.enabled` | `false` | Enables MCP Registry-compatible endpoints. |
 | `nacos.ai.skill.registry.enabled` | `false` | Enables Skill registry-compatible endpoints. |
-| `nacos.ai.ard.enabled` | `false` | Enables ARD endpoints and their required AI resource search runtime. |
+| `nacos.ai.ard.enabled` | `false` | Enables only ARD endpoints; it does not own the base AI resource search runtime. |
+| `nacos.ai.resource.search.enabled` | `true` | Enables the base relational search shared by RAD, ARD, and resource APIs in the main AI module. |
 | `nacos.ai.registry.port` | `9080` | HTTP port used by the adaptor context. |
 | `nacos.ai.mcp.registry.port` | deprecated | Legacy fallback for the adaptor port. |
 
 Users must opt in because the adaptor consumes an additional port and exposes
 protocol shapes that are designed for community clients rather than Nacos
 Admin, Console, or Client API consumers.
+
+With `nacos.ai.ard.enabled=true` and
+`nacos.ai.resource.search.enabled=false`, server startup fails explicitly
+during configuration validation and does not create an ARD-specific index.
+Disabling ARD does not affect the index, tasks, or
+Reconciliation used by RAD or resource-specific Search.
 
 Disabling ARD must not require PostgreSQL pgvector. AI resource search document
 and chunk metadata use the main datasource, while the pgvector extension and
@@ -187,7 +194,7 @@ endpoints from the adaptor web context:
 
 | Method | Path | Behavior |
 | --- | --- | --- |
-| `POST` | `/v3/ai/ard/search` | Searches the latest online Skill, Prompt, and MCP resources. |
+| `POST` | `/v3/ai/ard/search` | Searches the latest online Agent, Skill, Prompt, and MCP resources. |
 | `POST` | `/v3/ai/ard/explore` | Returns facets for discoverable resources. |
 | `GET` | `/v3/ai/ard/agents` | Lists discoverable resources with filters and pagination. |
 | `GET` | `/v3/ai/ard/ai-catalog.json` | Returns a namespace-scoped catalog. |
@@ -233,17 +240,50 @@ implementation must not append the main Nacos server context path to it.
 For Skill resources, the artifact endpoint returns the complete Skill archive,
 including `SKILL.md` and its packaged resources, using
 `application/agent-skills+zip`. Prompt and MCP artifacts use their
-protocol-defined representations. A deployment with the default Nacos server
-on port 8848 and the adaptor on port 9080 must work without gateway path
-co-location.
+protocol-defined representations. Agent supports:
+
+```text
+application/a2a-agent-card+json
+application/vnd.nacos.ai-agent+json
+```
+
+The former is available only when the exact common-latest Version contains a
+complete valid A2A Agent Card and returns only that native card. The latter
+returns a versioned, protocol-neutral Nacos Agent definition without Runtime
+Endpoints, health, Publishers, heartbeats, owner, scope, or review state. An
+artifact URL includes the exact Version, its `contentDigest`, and the
+representation key. An offline Version, digest mismatch, or unavailable
+representation returns ARD not found. The Nacos representation validates
+against
+[`NacosAgentArtifact`](../../schemas/ai/agent/0.2.0/agent-artifact.schema.json#/$defs/NacosAgentArtifact).
+A deployment with the default Nacos server on port 8848 and the adaptor on port
+9080 must work without gateway path co-location.
+
+The shared Agent Search document remains singular per logical Agent. Its
+`artifactKinds` uses at least the stable keys `a2a-agent-card` and
+`nacos-agent`. An ARD media-type filter maps to
+`resourceType=agent + artifactKinds`, not merely to `protocols`. One ARD
+request returns at most one entry for one logical Agent. Without a type filter,
+a pure-A2A latest prefers the A2A representation, while a multi-protocol or
+custom-protocol latest prefers the Nacos representation. With a type filter,
+selection uses the same deterministic primary order among requested and
+actually available representations. Representation selection does not change
+the logical resource identifier; the representation-specific artifact URL
+distinguishes content. Filtering and representation selection occur before
+totals and page-token calculation.
 
 ### 6.3 Discovery Boundary
 
 The AI module owns the protocol-neutral capability defined by the
-[AI Resource Search Spec](ai-resource-search-spec.md). ARD is its only consumer
-in this version, so `nacos.ai.ard.enabled` activates the required search
-runtime without creating a separate operator-facing search switch or another
-public API.
+[AI Resource Search Spec](ai-resource-search-spec.md). RAD, ARD, generic AI
+Resource Search, and resource-specific Search share that runtime;
+`nacos.ai.ard.enabled` controls only the adaptor protocol surface and neither
+activates nor disables base Search Core.
+
+Readiness is tracked for every requested searchable resource type. A type that
+is not READY does not make ARD Search unavailable: the adaptor returns the
+current shared-index snapshot, which may be incomplete until convergence, and
+the server emits rate-limited diagnostics without logging query content.
 
 Visibility and current-version validation occur before the requested result
 limit is applied. List and aggregation scans use bounded database batches.
@@ -293,9 +333,9 @@ aggregation.
 ### 6.4 Index Consistency
 
 Canonical resource writes remain authoritative. Relational replacement of one
-resource's search document and chunks is atomic: deleting the previous index
-rows, inserting the new document, and inserting all chunks occur in one
-datasource transaction.
+resource's search document, chunks, and embedded facets is atomic: deleting
+the previous index rows, inserting the new document, and inserting all chunks
+occur in one datasource transaction.
 
 Relational and vector indexes do not require a distributed transaction.
 Instead, the AI module records an idempotent, durable resource-level indexing
@@ -331,6 +371,10 @@ it, against the actual adaptor web context.
 At minimum, integration coverage includes list `items`, integer search score,
 URI `source`, trust identity behavior, protocol error bodies, catalog schema,
 and Skill ZIP retrieval when the main server and adaptor use separate ports.
+Agent coverage also includes pure A2A, multi-protocol, A2A only on an older
+online Version, both media-type filters, stable logical identifiers,
+representation-specific URLs, offline/digest invalidation, and artifacts that
+exclude Runtime state.
 
 ## 7. Compatibility Rules
 

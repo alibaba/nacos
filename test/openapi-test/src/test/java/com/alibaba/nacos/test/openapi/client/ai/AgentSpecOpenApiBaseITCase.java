@@ -61,6 +61,14 @@ public abstract class AgentSpecOpenApiBaseITCase extends AiOpenApiBaseITCase {
         JsonNode root = putFormOk(AGENT_SPEC_ADMIN_PATH + "/labels", form);
         assertEquals("ok", root.get("data").asText(), root.toString());
     }
+
+    protected void updateAgentSpecBizTags(String name, String bizTags) throws Exception {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("agentSpecName", name);
+        form.put("bizTags", bizTags);
+        JsonNode root = putFormOk(AGENT_SPEC_ADMIN_PATH + "/biz-tags", form);
+        assertEquals("ok", root.get("data").asText(), root.toString());
+    }
     
     protected void deleteAgentSpec(String name) throws Exception {
         deleteQuietly(AGENT_SPEC_ADMIN_PATH, Query.newInstance().addParam("agentSpecName", name));

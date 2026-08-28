@@ -58,6 +58,7 @@ A Nacos server member is represented by `Member`, which extends the public
 | `abilities` | Server ability table reported by the member, including remote, config, and naming abilities. |
 | `failAccessCnt` | Local transient failure counter used to move a member from suspicious to down. |
 | `grpcReportEnabled` | Compatibility flag for mixed-version member reporting. It is not a new semantic capability. |
+| `supportJraftAuth` | Temporary rolling-upgrade capability indicating that the member can send and validate JRaft server identity credentials. It is not an identity proof. |
 
 Member identity rules:
 
@@ -122,6 +123,13 @@ existing member. It must not add an unknown member. If the update changes basic
 metadata, it publishes a `MembersChangeEvent` with the changed member as the
 trigger.
 
+The temporary `supportJraftAuth` metadata is set only by the local member that
+implements the capability. Address lookup must not infer it for a remote member.
+It participates in basic metadata change detection so authenticated member
+reports can converge the capability view. Consumers may use the all-member view
+to finish a rolling-upgrade transition, but they must not use the field as
+request identity or authorization evidence.
+
 ## 5. Member Readiness And Health Observation
 
 Local readiness is set by `ServerMemberManager.setSelfReady`. It marks the local
@@ -184,6 +192,8 @@ Consumers of cluster membership must follow these rules:
 - do not treat member ordering as a domain sharding rule unless the domain spec
   explicitly defines that behavior;
 - do not write domain ownership into `Member.extendInfo`.
+- an upgrade consumer that latches a security capability must not disable it
+  because a member is later added, removed, or updated.
 
 ## 8. Related Specs
 

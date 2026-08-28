@@ -84,6 +84,9 @@ Config 容量用于保护 cluster、namespace 和 group 资源，避免配置无
 Capacity Admin API 可以查询或更新 namespace 或 group 的容量。必须至少提供 `namespaceId` 或
 `groupName` 之一。当容量记录不存在时，服务端可以先初始化，再返回应用默认值后的有效容量。
 
+响应暴露容量记录的持久化 ID 时，该 ID 必须是十进制 JSON 字符串，而不是 JSON number，以确保客户端
+保留准确的 64 位值。
+
 容量 API 是管理 API，不应通过运行时 Client SDK 暴露。
 
 ## 6. 运维 API

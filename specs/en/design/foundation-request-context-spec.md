@@ -50,6 +50,9 @@ Context rules:
   and remote/source address information.
 - `AuthContext` records API type, parsed identity, resource, and auth result
   when an auth filter has executed.
+- Parsed identity records the canonical names of identity parameters actually
+  extracted from the request separately from transport-derived and
+  plugin-enriched metadata. HTTP identity names are matched case-insensitively.
 - Extension contexts may add runtime metadata, but must not redefine standard
   fields or store durable domain state.
 - Context is runtime-only. It is not persisted, not a cluster replication
@@ -98,6 +101,24 @@ Filter order rules:
 - Filter exceptions should be converted through the unified exception or result
   model when the filter owns the rejection. Unexpected infrastructure failures
   may be rethrown for global exception handling.
+
+HTTP controller-method resolution rules:
+
+- Components that resolve controller methods before Spring MVC dispatch must reuse the active
+  Spring MVC `RequestMappingHandlerMapping`. Authorization and dispatch must therefore select the
+  same controller method from the same servlet request, including its request-specific context
+  path and configured path matching rules.
+- Literal path parameters, single or repeated percent encoding, duplicate empty segments, dot
+  segments, malformed encodings, invalid UTF-8, control characters, Unicode separator lookalikes,
+  absolute-form request targets, and encoded path separators must not be processed by an
+  independent authorization-only normalization algorithm.
+- Query parameters do not participate in controller path matching.
+- `nacos.core.auth.controller-method-cache.legacy-enabled=true` may temporarily downgrade method
+  resolution to the legacy annotation cache. The legacy resolver is deprecated since 3.3.0,
+  scheduled for removal in 3.4.0, and can differ from Spring MVC path matching, so it must remain
+  disabled by default. While enabled, it must parse the request URI and context path consistently
+  before removing the context path, including when either value contains percent-encoded
+  characters.
 
 ## 4. gRPC Request Filter Model
 

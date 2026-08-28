@@ -282,16 +282,18 @@ public class ConfigInfoMapperByOracle extends AbstractMapperByOracle implements 
         
         List<Object> paramList = new ArrayList<>();
         
+        String escapeClause = getLikeEscapeClause();
         StringBuilder idSql =
-            new StringBuilder("SELECT id FROM config_info WHERE tenant_id LIKE ?");
+            new StringBuilder("SELECT id FROM config_info WHERE tenant_id LIKE ? ");
+        idSql.append(escapeClause);
         paramList.add(tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
-            idSql.append(" AND data_id LIKE ?");
+            idSql.append(" AND data_id LIKE ? ").append(escapeClause);
             paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            idSql.append(" AND group_id LIKE ?");
+            idSql.append(" AND group_id LIKE ? ").append(escapeClause);
             paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
@@ -299,7 +301,7 @@ public class ConfigInfoMapperByOracle extends AbstractMapperByOracle implements 
             paramList.add(appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            idSql.append(" AND content LIKE ?");
+            idSql.append(" AND content LIKE ? ").append(escapeClause);
             paramList.add(content);
         }
         if (!ArrayUtils.isEmpty(types)) {

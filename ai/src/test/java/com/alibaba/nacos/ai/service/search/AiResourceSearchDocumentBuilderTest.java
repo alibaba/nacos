@@ -62,7 +62,7 @@ class AiResourceSearchDocumentBuilderTest {
     }
     
     @Test
-    void fromMcpServerShouldRetainArtifactLookupMetadata() {
+    void fromMcpServerShouldUseCanonicalNameAndRetainCompatibilityMetadata() {
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setId("mcp/avatar server");
         server.setName("avatar-server");
@@ -71,9 +71,10 @@ class AiResourceSearchDocumentBuilderTest {
         AiResourceSearchDocument entry = builder.fromMcpServer("public", server);
         
         assertEquals(AiResourceConstants.RESOURCE_TYPE_MCP, entry.getResourceType());
-        assertEquals("mcp/avatar server", entry.getResourceName());
+        assertEquals("avatar-server", entry.getResourceName());
         Map<?, ?> metadata = JacksonUtils.toObj(entry.getMetadata(), Map.class);
         assertEquals("avatar-server", metadata.get("mcpName"));
+        assertEquals("mcp/avatar server", metadata.get("mcpServerId"));
     }
     
     @Test

@@ -31,6 +31,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -261,6 +262,30 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
     }
     
     @Override
+    public List<AiResourceSearchDocument> scanEnabledEntriesByResourceKey(String namespaceId,
+        List<String> resourceTypes, String afterResourceType, String afterResourceName,
+        long afterId, int limit) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM ai_resource_search_document WHERE namespace_id=? AND status=?");
+        args.add(namespaceId);
+        args.add(AiResourceSearchConstants.STATUS_ENABLED);
+        appendResourceTypeFilter(sql, args, resourceTypes);
+        if (afterResourceType != null) {
+            sql.append(" AND (resource_type>? OR (resource_type=? AND resource_name>?) "
+                + "OR (resource_type=? AND resource_name=? AND id>?))");
+            args.add(afterResourceType);
+            args.add(afterResourceType);
+            args.add(afterResourceName);
+            args.add(afterResourceType);
+            args.add(afterResourceName);
+            args.add(afterId);
+        }
+        sql.append(" ORDER BY resource_type, resource_name, id");
+        return queryWithMaxRows(sql.toString(), args, ENTRY_ROW_MAPPER, limit);
+    }
+    
+    @Override
     public List<AiResourceSearchDocument> scanEntries(String namespaceId,
         List<String> resourceTypes, long afterId, int limit) {
         return scanEntriesBatch(namespaceId, resourceTypes, afterId, limit, false);
@@ -277,8 +302,8 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
     private long insertEntry(AiResourceSearchDocument entry) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         getJdbcTemplate().update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(SQL_INSERT_ENTRY,
-                new String[] {"id"});
+            PreparedStatement ps = prepareStatementWithGeneratedKey(connection,
+                SQL_INSERT_ENTRY);
             ps.setString(1, entry.getNamespaceId());
             ps.setString(2, entry.getResourceType());
             ps.setString(3, entry.getResourceName());
@@ -305,8 +330,8 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
     private AiResourceSearchChunk insertChunk(AiResourceSearchChunk chunk) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         getJdbcTemplate().update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(SQL_INSERT_CHUNK,
-                new String[] {"id"});
+            PreparedStatement ps = prepareStatementWithGeneratedKey(connection,
+                SQL_INSERT_CHUNK);
             ps.setLong(1, chunk.getDocumentId());
             ps.setString(2, chunk.getNamespaceId());
             ps.setString(3, chunk.getResourceType());
@@ -328,6 +353,12 @@ public class JdbcAiResourceSearchRepository implements AiResourceSearchRepositor
         }
         chunk.setId(key.longValue());
         return chunk;
+    }
+    
+    private PreparedStatement prepareStatementWithGeneratedKey(Connection connection, String sql)
+        throws SQLException {
+        String primaryKey = connection.getMetaData().storesUpperCaseIdentifiers() ? "ID" : "id";
+        return connection.prepareStatement(sql, new String[] {primaryKey});
     }
     
     private boolean entryExists(AiResourceSearchDocument entry) {

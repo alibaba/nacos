@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.processor;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
+import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.Status;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,7 +56,7 @@ class AbstractProcessorTest {
     @Mock
     private Node followerNode;
     
-    private JRaftServer server = new JRaftServer() {
+    private JRaftServer server = new JRaftServer(mock(JRaftAuthUpgradeCoordinator.class)) {
         
         @Override
         public void applyOperation(Node node, Message data, FailoverClosure closure) {

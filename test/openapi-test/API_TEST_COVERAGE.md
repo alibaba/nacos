@@ -55,22 +55,27 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 11 | 11 | 0 | 0 | 100.00% | 100.00% |
+| Client OpenAPI | 11 | 10 | 1 | 0 | 90.91% | 95.45% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
-| Console API | 28 | 25 | 3 | 0 | 88.89% | 94.44% |
-| Auth API | 4 | 0 | 1 | 3 | 0.00% | 12.50% |
-| Total | 81 | 67 | 11 | 3 | 82.72% | 89.51% |
+| Console API | 29 | 24 | 5 | 0 | 82.76% | 91.38% |
+| Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
+| Total | 82 | 65 | 15 | 2 | 79.27% | 88.41% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
 shared runtime/storage state, require publish-pipeline plugin data, require a
-data-plane publisher binding not yet present in standalone IT, or require an
-external LLM provider.
+data-plane publisher binding not yet present in standalone IT, require an
+external MCP runtime or LLM provider, require authenticated multi-identity AI resource
+visibility scenarios, or belong to the remaining default-auth user management operations outside
+the covered login contract.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
-has three covered scenario rows and one partial row; the remaining gap is a
-live standalone-adaptor conformance suite.
+has four covered scenario rows and no partial rows. Its standalone conformance
+suite publishes canonical resources through the main-server Admin APIs and then
+verifies the separate ARD port against the same shared index, including singular
+Agent catalog entries, A2A/Nacos representation selection and filtering,
+latest-Version eligibility, facets, and exact Version/digest artifacts.
 
 Plugin management API IT covers detail metadata, request validation, not-found
 responses, rejection of config updates for non-configurable plugins, and the
@@ -94,7 +99,8 @@ namespace inputs are expected to use `public`, and beta/tag gray behavior is
 verified through the current gray model. Batch delete and export-by-id scenarios
 verify that storage IDs remain scoped by the requested namespace, and clone
 scenarios verify that storage IDs are resolved only within the requested source
-namespace before writing to the target namespace. Removed pre-3.0 compatibility
+namespace before writing to the target namespace. Config, history, and capacity
+responses also verify that storage IDs remain JSON strings. Removed pre-3.0 compatibility
 migration paths, including empty-tenant storage migration and legacy
 `config_info_beta` / `config_info_tag` old-table migration, are not counted as
 missing OpenAPI IT coverage.
@@ -109,6 +115,13 @@ fields `succeeded` and `failed`, plus per-item `success`, `errorCode`, and
 `errorMessage` in `results`. Contract-only field changes do not alter the
 scenario-row totals above.
 
+Skill draft update and upload-overwrite rows on both Admin and Console surfaces
+create content with a resource file, replace the draft without that file, and
+verify that query/download results no longer expose it. Deletion through the
+persisted storage provider and descriptor retention when cleanup fails are
+covered by focused service tests because backing storage objects and injected
+provider failures are not externally observable in the standalone API suite.
+
 Skill, Prompt, and AgentSpec submit scenarios retry submit when the standalone
 environment leaves the target in `reviewing`, proving the HTTP operation is
 idempotent and does not require a new draft. Resubmitting a `reviewed` version
@@ -117,6 +130,14 @@ covered by service tests because the standalone suite does not install a
 deterministic publish pipeline that can create those states. Service tests also
 verify that a terminal result marked `historical=true` remains an idempotent
 `reviewing` submit because it belongs to a previous review cycle.
+
+AI Agent, AgentSpec, Prompt, and Skill deletion success and post-delete absence
+remain covered by the existing Admin and Console rows. Storage-provider failure,
+multi-file partial failure, persisted-provider routing, and deletion of more
+than one storage page are covered by focused service tests because the
+standalone suite has no storage fault-injection provider and cannot safely seed
+those failure states. Those tests verify that the HTTP service reports the
+cleanup error and retains the resource/version descriptors for retry.
 
 Agent Admin definition creation is counted in the existing Agent Admin and
 Version scenario rows. The unified `POST /v3/admin/ai/agents/draft` operation
@@ -148,18 +169,52 @@ Config definition layout; legacy SERVICE Runtime lookup remains a separate
 exact-Version Naming concern.
 
 The legacy MCP Console import validation and execute endpoints remain covered
-by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x.
-They are deprecated and planned for removal in Nacos 3.4.0; the managed
-`/v3/console/ai/import/*` flow is covered separately by
+by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and
+`API_DEPRECATED` responses use the shared
+`nacos.core.api.compatibility.enabled` gate. They are planned for removal in
+Nacos 3.4.0; the managed `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
+
+`McpToolsImportConsoleApiOpenApiITCase` verifies that
+`GET /v3/console/ai/mcp/importToolsFromMcp` rejects private or local targets by
+default with an explicit private-allowlist message, without opening a network
+connection. The standalone suite also covers its required endpoint parameter
+and unsupported transport response. Public-target protocol success,
+operator-approved private-target success, and optional token forwarding remain
+an end-to-end gap because they require an external MCP runtime and controlled
+server configuration. The operator switch, public-target policy, IP/CIDR
+matching, DNS multi-address rejection, endpoint-origin enforcement, and invalid
+configuration are verified by focused Console module tests.
 
 MCP Admin detail coverage verifies the version-selection contract: when a
 newer draft exists after a published version, an omitted `version` resolves the
 latest published version, while the draft remains queryable by its explicit
 version.
 
+The Admin and Console MCP scenarios also remain the wire-contract regression
+coverage for the compatibility router while management authority is `SYNCING`.
+They exercise all twelve standard lifecycle routes at their public HTTP
+boundary: name-only identity and exact-Version validation, nested legacy ID
+rejection, case-insensitive status input, and the controlled pre-cutover
+conflict envelope. If background reconciliation has already completed the
+one-way cutover, the same scenario accepts only controlled absent-resource
+responses and verifies one real draft create/delete pair. The test does not
+publish the `LIFECYCLE_MANAGED` marker into the shared standalone process.
+Focused component tests instead cover the
+zero-difference, all-member capability, and Search-projection gates; permanent
+marker retry/observation; per-request authority pinning; lifecycle
+create/read/update/delete and state-transition success paths; storage-first
+draft deletion/retry; and canonical re-authorization of deprecated ID-only
+requests. Embedded and standalone Console use this local lifecycle facade;
+remote Console remains disabled until the typed Maintainer SDK transport is
+introduced, so it does not fall back to the legacy Config-writing path.
+
 RAD Agent Client coverage is split into three rows. Search/Discover validates
-the online catalog and discovery projection. Definition publication validates
+the online catalog and discovery projection. The Search scenario is reusable
+against `AUTO`, `INDEX`, and `SCAN`: `AUTO` and `INDEX` return the current
+snapshot immediately without a readiness 503, then the test verifies literal and case-sensitive filters, stable
+numbered pagination, complete online-Version catalog changes, and Runtime
+Endpoint non-indexing. Definition publication validates
 draft-only and `autoSubmit` workflows, idempotent retry/resume, direct and
 inherited Versions, validation/conflict handling, namespace isolation, and
 cross-surface canonical projections. Endpoint publication validates the
@@ -167,9 +222,21 @@ Form-based independent HTTP Publisher lifecycle, required headers, idempotency,
 and the `HTTP_CLIENT_NOT_FOUND (50404)` recovery signal. The Endpoint row also
 cross-validates the published definition and Runtime state through Admin,
 Client, and Console reads. Querying with a Client id is explicitly covered as
-not creating an empty Client or Publisher. The Client-only renewal and
-Publisher-renewal separation is covered by the corresponding lifecycle unit
-tests.
+not creating an empty Client or Publisher. CI configures a small authoritative
+Server Publication soft watermark, allowing the same row to prove whole-batch
+crossing, atomic growth rejection, and slot reuse without creating 100 test
+entries. The Client-only renewal and Publisher-renewal separation is covered by
+the corresponding lifecycle unit tests.
+
+Protocol-neutral AI Resource Search coverage publishes one current online
+resource for each declared type (Agent, AgentSpec, Skill, Prompt, and MCP),
+waits for the durable projection rather than assuming synchronous indexing,
+and validates both cross-type global recall and every generic-single-type to
+resource-specific eligibility boundary. Its cursor scenario drains all pages
+and rejects duplicates, while structured-filter scenarios cover exact-all
+tags, exact-any capabilities, and MCP protocol filtering. Validation coverage
+includes unknown types, malformed cursors, query/limit bounds, numbered-page
+bounds, default namespace, and successful empty results.
 
 ## Coverage Documents
 
@@ -179,4 +246,4 @@ tests.
 | Admin API | [ADMIN_API_TEST_SCENARIOS.md](ADMIN_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi` |
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
 | Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth` |
-| AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry` |
+| AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry`, `src/test/java/com/alibaba/nacos/test/openapi/ard` |

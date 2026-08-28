@@ -43,7 +43,25 @@ AgentSpec upload 接收 ZIP 包。解析器必须先校验 manifest 和资源引
 AgentSpec 使用标准 `ai_resource` 和 `ai_resource_version` 模型。它通过 AI 存储保存
 `manifest.json` 和资源文件。
 
+每个版本描述都持久化选定的存储 provider。读取、draft 覆盖和删除使用已持久化的
+provider，有效 provider 配置只选择新版本。缺少 provider 的历史描述使用
+`nacos_config`。
+
+更新或覆盖 draft 会替换完整 AgentSpec 包。服务端先写入替换包中的资源文件，再通过该版本
+持久化的 provider 删除旧 `manifest.json` 引用但替换包已省略的资源文件，最后持久化新的
+`manifest.json` 和存储描述。清理失败时更新必须失败，并保留旧 manifest 和存储描述以便
+重试清理。
+
 不同于 Skill，AgentSpec 不维护独立 manifest index。版本元数据和存储指针是事实来源。
+
+AgentSpec 参与通用 AI Resource Search，并提供固定 `resourceType=agentspec` 的资源专用 Search
+Facade。两者复用 [AI 资源检索规范](ai-resource-search-spec.md)的 document/chunk/facet、
+当前性、可见性和分页。AgentSpec handler 投影 latest online Version 的名称、description、业务
+tags、公开依赖和能力说明；嵌入 credential 或私有运行时值的资源内容不得进入 chunk。现有按 keyword
+分页的 Client Search 必须逐步切换为该 Facade，不能在共享索引分页后再次过滤。通用 Search 只指定
+AgentSpec 时与专用 Search 候选资格一致。
+Client Facade 为 `GET /v3/client/ai/agentspecs/search`；它保留既有 `keyword`、
+`pageNo` 和 `pageSize` 契约，并增加可重复的 `tagsAll` 参数。
 
 ## 4. 生命周期
 

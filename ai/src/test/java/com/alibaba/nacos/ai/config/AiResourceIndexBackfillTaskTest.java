@@ -21,20 +21,30 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexSource;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexSourcePage;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchDocumentBuilder;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchReadinessService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandler;
+import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandlerRegistry;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -59,13 +69,17 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -89,7 +103,7 @@ class AiResourceIndexBackfillTaskTest {
     private AiResourceManager resourceManager;
     
     @Mock
-    private McpServerOperationService mcpServerOperationService;
+    private McpOperationService mcpServerOperationService;
     
     @Mock
     private AiResourceSearchRepository repository;
@@ -112,10 +126,13 @@ class AiResourceIndexBackfillTaskTest {
     @Mock
     private ConfigOperationService configOperationService;
     
+    @Mock
+    private AiResourceSearchReadinessService readinessService;
+    
     private AiResourceIndexBackfillTask task;
     
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         lenient().when(namespaceOperationService.getNamespaceList())
             .thenReturn(List.of(new Namespace(PUBLIC_NAMESPACE, "public")));
@@ -256,6 +273,31 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     @Test
+    void shouldContinueAfterOneResourceProjectionFails() throws Exception {
+        AiResource first = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "first", "1.0.0");
+        AiResource second = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+            "second", "1.0.0");
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 1, 100))
+            .thenReturn(page(List.of(first, second)));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "first",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenThrow(new IllegalStateException("projection failure"));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "second",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(second, "1.0.0"));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "second");
+        verify(indexMaintenanceService, never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "first");
+        verifyMarkerReleased();
+    }
+    
+    @Test
     void shouldScheduleWhenVectorDocumentsAreIncomplete() throws Exception {
         AiResource skill = resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
             "vector-stale", "1.0.0");
@@ -303,6 +345,66 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     @Test
+    void shouldKeepCanonicalEntryAndSkipTransientExistenceFailure() throws Exception {
+        AiResourceSearchDocument stored = new AiResourceSearchDocument();
+        stored.setId(1L);
+        stored.setNamespaceId(PUBLIC_NAMESPACE);
+        stored.setResourceType(Constants.Skills.RESOURCE_TYPE_SKILL);
+        stored.setResourceName("stored-skill");
+        AiResourceSearchDocument uncertain = new AiResourceSearchDocument();
+        uncertain.setId(2L);
+        uncertain.setNamespaceId(PUBLIC_NAMESPACE);
+        uncertain.setResourceType(AiResourceConstants.RESOURCE_TYPE_MCP);
+        uncertain.setResourceName("uncertain-mcp");
+        when(repository.scanEntries(eq(PUBLIC_NAMESPACE), anyList(), eq(0L), eq(100)))
+            .thenAnswer(invocation -> {
+                List<?> resourceTypes = invocation.getArgument(1);
+                if (resourceTypes.contains(Constants.Skills.RESOURCE_TYPE_SKILL)) {
+                    return List.of(stored);
+                }
+                if (resourceTypes.contains(AiResourceConstants.RESOURCE_TYPE_MCP)) {
+                    return List.of(uncertain);
+                }
+                return Collections.emptyList();
+            });
+        when(resourceManager.findMeta(PUBLIC_NAMESPACE, "stored-skill",
+            Constants.Skills.RESOURCE_TYPE_SKILL))
+            .thenReturn(resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
+                "stored-skill", "1.0.0"));
+        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, null,
+            "uncertain-mcp", null)).thenThrow(new NacosException(NacosException.SERVER_ERROR,
+                "temporary failure"));
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, after(ASYNC_TIMEOUT).never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "stored-skill");
+        verify(indexMaintenanceService, never()).scheduleReconciliation(
+            PUBLIC_NAMESPACE, AiResourceConstants.RESOURCE_TYPE_MCP, "uncertain-mcp");
+        verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldRecordRejectedReconciliationWithoutStoppingBackfill() throws Exception {
+        AiResource rejected = resource(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "rejected", "1.0.0");
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, null, null, 1, 100))
+            .thenReturn(page(List.of(rejected)));
+        when(resourceManager.findVersion(PUBLIC_NAMESPACE, "rejected",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0"))
+            .thenReturn(version(rejected, "1.0.0"));
+        when(indexMaintenanceService.scheduleReconciliation(PUBLIC_NAMESPACE,
+            Constants.Skills.RESOURCE_TYPE_SKILL, "rejected")).thenReturn(false);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL, "rejected");
+        verifyMarkerReleased();
+    }
+    
+    @Test
     void shouldScheduleMcpReconciliation() throws Exception {
         McpServerBasicInfo basic = mcpServer("avatar-mcp", "1.0.0");
         when(mcpServerOperationService.listMcpServerWithPage(PUBLIC_NAMESPACE, null,
@@ -311,8 +413,84 @@ class AiResourceIndexBackfillTaskTest {
         task.onApplicationEvent(rootContextEvent());
         
         verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
-            PUBLIC_NAMESPACE, "mcp", "avatar-mcp");
+            PUBLIC_NAMESPACE, "mcp", "Avatar MCP");
         verifyMarkerReleased();
+    }
+    
+    @Test
+    void shouldRecordCleanAgentProjectionScanReadiness() throws Exception {
+        AiResourceSearchTypeHandler handler = agentHandler();
+        when(handler.scan(PUBLIC_NAMESPACE, Constants.Agent.RESOURCE_TYPE_AGENT, 1, 100))
+            .thenReturn(new AiResourceIndexSourcePage(Collections.emptyList(), false));
+        useHandlers(handler);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            Constants.Agent.RESOURCE_TYPE_AGENT, 1, true);
+    }
+    
+    @Test
+    void shouldRecordReadinessForEverySearchableTypeByDefault() throws Exception {
+        AiResourceSearchTypeHandler handler =
+            mock(AiResourceSearchTypeHandler.class, CALLS_REAL_METHODS);
+        when(handler.resourceTypes()).thenReturn(List.of(
+            Constants.Skills.RESOURCE_TYPE_SKILL,
+            AiResourceConstants.RESOURCE_TYPE_PROMPT,
+            AiResourceConstants.RESOURCE_TYPE_MCP));
+        when(handler.scan(eq(PUBLIC_NAMESPACE), anyString(), eq(1), eq(100)))
+            .thenReturn(new AiResourceIndexSourcePage(Collections.emptyList(), false));
+        useHandlers(handler);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            Constants.Skills.RESOURCE_TYPE_SKILL, 1, true);
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            AiResourceConstants.RESOURCE_TYPE_PROMPT, 1, true);
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            AiResourceConstants.RESOURCE_TYPE_MCP, 1, true);
+    }
+    
+    @Test
+    void shouldRecordDirtyAgentProjectionScanBeforeTasksDrain() throws Exception {
+        AiResourceSearchTypeHandler handler = agentHandler();
+        AiResourceSearchDocument document = new AiResourceSearchDocument();
+        document.setNamespaceId(PUBLIC_NAMESPACE);
+        document.setResourceType(Constants.Agent.RESOURCE_TYPE_AGENT);
+        document.setResourceName("agent-a");
+        document.setResourceVersion("1.0.0");
+        document.setSourceDigest("digest");
+        AiResourceIndexProjection projection =
+            new AiResourceIndexProjection(document, null, null, null);
+        when(handler.scan(PUBLIC_NAMESPACE, Constants.Agent.RESOURCE_TYPE_AGENT, 1, 100))
+            .thenReturn(new AiResourceIndexSourcePage(
+                List.of(AiResourceIndexSource.success("agent-a", projection)), false));
+        useHandlers(handler);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(indexMaintenanceService, timeout(ASYNC_TIMEOUT)).scheduleReconciliation(
+            PUBLIC_NAMESPACE, Constants.Agent.RESOURCE_TYPE_AGENT, "agent-a");
+        verify(readinessService, timeout(ASYNC_TIMEOUT)).recordCompletedScan(
+            Constants.Agent.RESOURCE_TYPE_AGENT, 1, false);
+    }
+    
+    @Test
+    void shouldNotAdvanceReadinessWhenNamespaceEnumerationFallsBack() throws Exception {
+        AiResourceSearchTypeHandler handler = agentHandler();
+        when(namespaceOperationService.getNamespaceList())
+            .thenThrow(new IllegalStateException("namespace unavailable"));
+        when(handler.scan(PUBLIC_NAMESPACE, Constants.Agent.RESOURCE_TYPE_AGENT, 1, 100))
+            .thenReturn(new AiResourceIndexSourcePage(Collections.emptyList(), false));
+        useHandlers(handler);
+        
+        task.onApplicationEvent(rootContextEvent());
+        
+        verify(handler, timeout(ASYNC_TIMEOUT)).scan(PUBLIC_NAMESPACE,
+            Constants.Agent.RESOURCE_TYPE_AGENT, 1, 100);
+        verify(readinessService, after(ASYNC_TIMEOUT).never()).recordCompletedScan(
+            anyString(), anyInt(), org.mockito.ArgumentMatchers.anyBoolean());
     }
     
     @Test
@@ -344,16 +522,46 @@ class AiResourceIndexBackfillTaskTest {
         
         task.onApplicationEvent(rootContextEvent());
         
+        ArgumentCaptor<ConfigForm> forms = ArgumentCaptor.forClass(ConfigForm.class);
         ArgumentCaptor<ConfigRequestInfo> requestInfo =
             ArgumentCaptor.forClass(ConfigRequestInfo.class);
-        verify(configOperationService, timeout(ASYNC_TIMEOUT).times(2))
-            .publishConfig(any(), requestInfo.capture(), isNull());
+        verify(configOperationService, timeout(ASYNC_TIMEOUT).times(3))
+            .publishConfig(forms.capture(), requestInfo.capture(), isNull());
         assertEquals("stale-marker-md5", requestInfo.getAllValues().get(1).getCasMd5());
+        assertTrue(forms.getAllValues().get(2).getContent().endsWith("|0"));
+        assertEquals(MD5Utils.md5Hex(forms.getAllValues().get(1).getContent(),
+            com.alibaba.nacos.api.common.Constants.ENCODE),
+            requestInfo.getAllValues().get(2).getCasMd5());
     }
     
     private void verifyMarkerReleased() throws Exception {
-        verify(configOperationService, timeout(ASYNC_TIMEOUT)).publishConfig(any(), any(),
-            isNull());
+        ArgumentCaptor<ConfigForm> forms = ArgumentCaptor.forClass(ConfigForm.class);
+        ArgumentCaptor<ConfigRequestInfo> requestInfo =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configOperationService, timeout(ASYNC_TIMEOUT).times(2))
+            .publishConfig(forms.capture(), requestInfo.capture(), isNull());
+        ConfigForm acquired = forms.getAllValues().get(0);
+        ConfigForm released = forms.getAllValues().get(1);
+        assertTrue(released.getContent().endsWith("|0"));
+        assertEquals(MD5Utils.md5Hex(acquired.getContent(),
+            com.alibaba.nacos.api.common.Constants.ENCODE),
+            requestInfo.getAllValues().get(1).getCasMd5());
+    }
+    
+    private AiResourceSearchTypeHandler agentHandler() {
+        AiResourceSearchTypeHandler result = mock(AiResourceSearchTypeHandler.class);
+        when(result.resourceTypes())
+            .thenReturn(List.of(Constants.Agent.RESOURCE_TYPE_AGENT));
+        when(result.projectionVersion()).thenReturn(1);
+        return result;
+    }
+    
+    private void useHandlers(AiResourceSearchTypeHandler handler) {
+        task.destroy();
+        task = new AiResourceIndexBackfillTask(
+            new AiResourceSearchTypeHandlerRegistry(List.of(handler)), repository,
+            indexMaintenanceService, embeddingService, vectorIndex, namespaceOperationService,
+            configQueryChainService, configOperationService, readinessService);
     }
     
     private ApplicationReadyEvent rootContextEvent() {
@@ -392,10 +600,14 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     private McpServerBasicInfo mcpServer(String id, String version) {
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(version);
+        versionDetail.setIs_latest(true);
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setId(id);
         server.setName("Avatar MCP");
         server.setVersion(version);
+        server.setVersionDetail(versionDetail);
         server.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
         return server;
     }

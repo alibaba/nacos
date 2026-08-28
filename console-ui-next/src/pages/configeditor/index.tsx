@@ -2,18 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown, SlidersHorizontal } from 'lucide-react';
 
 import { configApi } from '@/api/config';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
 import { DiffEditor } from '@/components/config/DiffEditor';
+import { ConfigTagsInput } from '@/components/config/ConfigTagsInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -83,6 +89,7 @@ export default function ConfigEditorPage() {
   const [appName, setAppName] = useState('');
   const [configTags, setConfigTags] = useState('');
   const [type, setType] = useState<ConfigType>('text');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Beta state
   const [activeTab, setActiveTab] = useState('production');
@@ -121,6 +128,7 @@ export default function ConfigEditorPage() {
     setAppName('');
     setConfigTags('');
     setType('text');
+    setAdvancedOpen(false);
     setActiveTab('production');
     setBetaContent('');
     setBetaIps('');
@@ -364,7 +372,7 @@ export default function ConfigEditorPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={handleBack}>
@@ -374,59 +382,41 @@ export default function ConfigEditorPage() {
       </div>
 
       {/* Form Card with Tabs */}
-      <Card>
-        <CardHeader>
+      <Card className="gap-3 py-4">
+        <CardHeader className="px-5">
           <CardTitle>{t('config.editConfig')}</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 pt-0 space-y-6">
+        <CardContent className="space-y-4 px-5">
           {/* Shared fields - always visible */}
-          <div className="space-y-2">
-            <Label>{t('config.dataId')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label className="md:text-right">{t('config.dataId')}</Label>
             <div className="h-9 px-3 py-1 rounded-md border bg-muted text-muted-foreground text-sm flex items-center">
               {dataId}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>{t('config.group')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label className="md:text-right">{t('config.group')}</Label>
             <div className="h-9 px-3 py-1 rounded-md border bg-muted text-muted-foreground text-sm flex items-center">
               {groupName}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="desc">{t('config.description')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-start">
+            <Label htmlFor="desc" className="md:pt-2 md:text-right">
+              {t('config.description')}
+            </Label>
             <Textarea
               id="desc"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder={t('config.description')}
-              rows={3}
+              rows={2}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="appName">{t('config.appName')}</Label>
-            <Input
-              id="appName"
-              value={appName}
-              onChange={(e) => setAppName(e.target.value)}
-              placeholder={t('config.appName')}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">{t('config.tags')}</Label>
-            <Input
-              id="tags"
-              value={configTags}
-              onChange={(e) => setConfigTags(e.target.value)}
-              placeholder={t('config.tags')}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="type">{t('config.type')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label htmlFor="type" className="md:text-right">{t('config.type')}</Label>
             <Select value={type} onValueChange={(value) => setType(value as ConfigType)}>
               <SelectTrigger id="type">
                 <SelectValue placeholder={t('config.type')} />
@@ -440,6 +430,50 @@ export default function ConfigEditorPage() {
               </SelectContent>
             </Select>
           </div>
+
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <div className="rounded-lg border border-dashed bg-muted/20">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto w-full justify-between px-4 py-3 hover:bg-muted/50"
+                >
+                  <span className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                    <span>{t('config.advancedOptions')}</span>
+                    <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
+                      {t('config.appName')} · {t('config.tags')}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 px-4 pb-4 pt-3">
+                <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+                  <Label htmlFor="appName" className="md:text-right">{t('config.appName')}</Label>
+                  <Input
+                    id="appName"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    placeholder={t('config.appName')}
+                  />
+                </div>
+
+                <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+                  <Label htmlFor="tags" className="md:text-right">{t('config.tags')}</Label>
+                  <ConfigTagsInput
+                    id="tags"
+                    value={configTags}
+                    onChange={setConfigTags}
+                    placeholder={t('config.tagsInputPlaceholder')}
+                  />
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
 
           {/* Tabs for Production / Beta content */}
           {isEditing ? (
@@ -470,8 +504,8 @@ export default function ConfigEditorPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* Beta IPs */}
-                    <div className="space-y-2">
-                      <Label>{t('config.betaIps')}</Label>
+                    <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+                      <Label className="md:text-right">{t('config.betaIps')}</Label>
                       <Input
                         value={betaIps}
                         onChange={(e) => setBetaIps(e.target.value)}
