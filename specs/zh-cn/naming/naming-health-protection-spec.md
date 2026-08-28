@@ -72,6 +72,10 @@ gRPC 连接层之后。Naming 应依赖
 
 主动健康检查只能在负责节点执行检查且 service health check switch 允许时改变健康状态。
 
+持久实例恢复可能在本地 service metadata CP group 完成恢复前调度健康检查任务。这些任务必须延迟到
+该 group 就绪后执行。暂时不可用的 cluster metadata 不得被解释为默认 TCP checker，也不得改变实例
+健康状态。
+
 ### 3.2 手动健康更新
 
 仅当 cluster health checker 为 `NONE` 时，才允许手动更新持久服务实例健康状态。如果配置了主动健康

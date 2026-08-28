@@ -100,6 +100,12 @@ Loading a persistent instance snapshot must:
 Metadata groups must also provide snapshots. Loading metadata snapshots must
 rebuild in-memory metadata maps and keep service identity attached to metadata.
 
+Persistent client snapshot recovery may initialize scheduled health-check
+tasks while the independent metadata group is still recovering. Active health
+checks must remain gated until the local service metadata CP group is ready, so
+temporarily missing metadata cannot select a fallback checker and persist an
+incorrect health state.
+
 ## 6. Visibility
 
 A successful CP write means the operation was accepted by the corresponding

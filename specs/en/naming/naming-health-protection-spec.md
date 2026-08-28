@@ -85,6 +85,11 @@ checker types may be registered through the health checker registry.
 Active health checks should only change health state when the responsible
 server performs the check and the service health check switch allows it.
 
+Persistent instance recovery may schedule health-check tasks before the local
+service metadata CP group has completed recovery. Those tasks must be deferred
+until that group is ready. Temporarily unavailable cluster metadata must not be
+interpreted as the default TCP checker or change instance health state.
+
 ### 3.2 Manual Health Update
 
 Manual instance health update is allowed for instances of persistent services
