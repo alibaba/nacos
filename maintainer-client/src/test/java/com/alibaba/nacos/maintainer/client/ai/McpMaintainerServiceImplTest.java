@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -113,6 +114,7 @@ class McpMaintainerServiceImplTest {
         
         List<HttpRequest> requests = captureRequests(3);
         assertRequest(requests.get(0), HttpMethod.POST, rootPath() + "/draft");
+        assertEquals(VERSION, requests.get(0).getParamValues().get("version"));
         assertEquals(MCP_NAME, JsonUtils.toObj(
             requests.get(0).getParamValues().get("serverSpecification"),
             McpServerBasicInfo.class).getName());
@@ -126,7 +128,22 @@ class McpMaintainerServiceImplTest {
             requests.get(0).getParamValues().get("endpointSpecification"),
             McpEndpointSpec.class).getClass());
         assertRequest(requests.get(1), HttpMethod.PUT, rootPath() + "/draft");
+        assertEquals(VERSION, requests.get(1).getParamValues().get("version"));
         assertRequest(requests.get(2), HttpMethod.DELETE, rootPath() + "/draft");
+    }
+    
+    @Test
+    void testDraftTransportFallsBackToLegacyVersionField() throws NacosException {
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(response(detail()));
+        McpLifecycleDraftRequest request = draftRequest();
+        request.getServerSpecification().setVersionDetail(null);
+        request.getServerSpecification().setVersion(VERSION);
+        
+        service.createLifecycleDraft(NAMESPACE_ID, request);
+        
+        HttpRequest actual = captureRequests(1).get(0);
+        assertEquals(VERSION, actual.getParamValues().get("version"));
     }
     
     @Test
@@ -239,6 +256,9 @@ class McpMaintainerServiceImplTest {
         McpLifecycleDraftRequest result = new McpLifecycleDraftRequest();
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setName(MCP_NAME);
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(VERSION);
+        server.setVersionDetail(versionDetail);
         result.setServerSpecification(server);
         result.setToolSpecification(new McpToolSpecification());
         result.setResourceSpecification(new McpResourceSpecification());
