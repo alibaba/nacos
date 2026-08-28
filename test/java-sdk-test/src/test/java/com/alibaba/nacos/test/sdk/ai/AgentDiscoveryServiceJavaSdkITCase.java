@@ -547,6 +547,91 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = SERVER_WATCH_CAPACITY_PROPERTY,
+        matches = "[2-9]|[1-9][0-9]+")
+    void shouldRejectOnlyLatestHttpWatchAndRetainExistingBatch() throws Exception {
+        int watchCapacity = Integer.getInteger(SERVER_WATCH_CAPACITY_PROPERTY);
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.HTTP.getValue());
+        properties.setProperty(AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
+            String.valueOf(watchCapacity + 1));
+        AiService reader = createAiService(properties);
+        AiService publisher = createAiService();
+        List<AgentReference> references = new ArrayList<>();
+        List<RecordingAgentEventListener> listeners = new ArrayList<>();
+        for (int i = 0; i <= watchCapacity; i++) {
+            String agentName = randomServiceName("http-watch-capacity-" + i);
+            createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+                Collections.singletonList("java-sdk-it"),
+                Collections.singletonList(PROTOCOL_A2A), false);
+            references.add(reference(agentName, null, null));
+            listeners.add(new RecordingAgentEventListener());
+        }
+        for (int i = 0; i < watchCapacity; i++) {
+            assertEquals(VERSION, reader.subscribeAgent(references.get(i),
+                listeners.get(i)).getVersion());
+        }
+
+        Endpoint admissionProbe = endpoint(randomPort(), "/http-capacity-admitted", "admitted");
+        publisher.registerAgentEndpoints(registration(
+            references.get(0).getAgentName(), PROTOCOL_A2A,
+            Collections.singletonList(admissionProbe)));
+        awaitDiscoveryEvent(listeners.get(0),
+            "the original HTTP batch must be active before its capacity is tested",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
+                && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
+                    admissionProbe.getUri()));
+
+        assertEquals(VERSION, reader.subscribeAgent(references.get(watchCapacity),
+            listeners.get(watchCapacity)).getVersion());
+        NacosAgentDiscoveryEvent rejected = awaitDiscoveryEvent(listeners.get(watchCapacity),
+            "the HTTP batch must surface one terminal server-capacity event",
+            event -> event.getType() == NacosAgentDiscoveryEventType.UNAVAILABLE);
+        assertEquals(NacosException.OVER_THRESHOLD, rejected.getErrorCode());
+        assertNull(rejected.getAgentDiscoveryResult());
+
+        Endpoint retained = endpoint(randomPort(), "/http-capacity-retained", "retained");
+        publisher.registerAgentEndpoints(registration(
+            references.get(1).getAgentName(), PROTOCOL_A2A,
+            Collections.singletonList(retained)));
+        awaitDiscoveryEvent(listeners.get(1),
+            "a rejected addition must not remove previously admitted HTTP Watches",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
+                && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
+                    retained.getUri()));
+
+        reader.unsubscribeAgent(references.get(0), listeners.get(0));
+        Endpoint reduced = endpoint(randomPort(), "/http-capacity-reduced", "reduced");
+        publisher.registerAgentEndpoints(registration(
+            references.get(1).getAgentName(), PROTOCOL_A2A,
+            Collections.singletonList(reduced)));
+        awaitDiscoveryEvent(listeners.get(1),
+            "the reduced HTTP Watch generation must become active",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
+                && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
+                    reduced.getUri()));
+
+        RecordingAgentEventListener reused = new RecordingAgentEventListener();
+        assertEquals(VERSION,
+            reader.subscribeAgent(references.get(watchCapacity), reused).getVersion());
+        Endpoint reusedEndpoint = endpoint(randomPort(), "/http-capacity-reused", "reused");
+        publisher.registerAgentEndpoints(registration(
+            references.get(watchCapacity).getAgentName(), PROTOCOL_A2A,
+            Collections.singletonList(reusedEndpoint)));
+        awaitDiscoveryEvent(reused, "the released HTTP Watch slot must be reusable",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
+                && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
+                    reusedEndpoint.getUri()));
+
+        for (int i = 1; i < watchCapacity; i++) {
+            reader.unsubscribeAgent(references.get(i), listeners.get(i));
+        }
+        reader.unsubscribeAgent(references.get(watchCapacity), reused);
+    }
+
+    @Test
     void shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot() throws Exception {
         int publicationCapacity = Integer.getInteger(CLIENT_PUBLICATION_CAPACITY_PROPERTY,
             DEFAULT_CLIENT_TEST_CAPACITY);
@@ -852,6 +937,81 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(replacement))));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
+    }
+
+    @Test
+    void shouldBatchHttpWatchesAcrossTimeoutUnsubscribeResubscribeAndShutdown()
+        throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService reader = createAiService(Constants.DEFAULT_NAMESPACE_ID,
+            AgentTransportMode.HTTP.getValue());
+        AiService publisher = createAiService();
+        String firstAgent = randomServiceName("agent-http-watch-first");
+        String secondAgent = randomServiceName("agent-http-watch-second");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, firstAgent,
+            Collections.singletonList("java-sdk-it"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, secondAgent,
+            Collections.singletonList("java-sdk-it"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+        AgentReference firstReference = reference(firstAgent, null, null);
+        AgentReference secondReference = reference(secondAgent, null, null);
+        RecordingAgentListener first = new RecordingAgentListener();
+        RecordingAgentListener second = new RecordingAgentListener();
+        assertEquals(VERSION, reader.subscribeAgent(firstReference, first).getVersion());
+        assertEquals(VERSION, reader.subscribeAgent(secondReference, second).getVersion());
+
+        assertNull(first.events.poll(32000L, TimeUnit.MILLISECONDS),
+            "an HTTP long-poll timeout must not create a Listener callback");
+        assertNull(second.events.poll(),
+            "one shared timeout must remain silent for every Watch in the batch");
+
+        Endpoint firstEndpoint = endpoint(randomPort(), "/http-watch-first", "first");
+        Endpoint secondEndpoint = endpoint(randomPort(), "/http-watch-second", "second");
+        publisher.registerAgentEndpoints(registration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(firstEndpoint)));
+        awaitEvent(first, "HTTP Watch must immediately refresh the first changed Agent",
+            result -> containsEndpoint(result, PROTOCOL_A2A, firstEndpoint.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
+        publisher.registerAgentEndpoints(registration(secondAgent, PROTOCOL_A2A,
+            Collections.singletonList(secondEndpoint)));
+        awaitEvent(second, "the same HTTP batch must refresh another Agent",
+            result -> containsEndpoint(result, PROTOCOL_A2A, secondEndpoint.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
+
+        reader.unsubscribeAgent(firstReference, first);
+        first.events.clear();
+        second.events.clear();
+        Endpoint ignored = endpoint(randomPort(), "/http-watch-ignored", "ignored");
+        Endpoint retained = endpoint(randomPort(), "/http-watch-retained", "retained");
+        publisher.registerAgentEndpoints(registration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(ignored)));
+        publisher.registerAgentEndpoints(registration(secondAgent, PROTOCOL_A2A,
+            Collections.singletonList(retained)));
+        awaitEvent(second, "the remaining HTTP Watch must survive a partial unsubscribe",
+            result -> containsEndpoint(result, PROTOCOL_A2A, retained.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
+        assertNull(first.events.poll(1500L, TimeUnit.MILLISECONDS),
+            "the removed HTTP Listener must remain silent");
+
+        RecordingAgentListener resubscribed = new RecordingAgentListener();
+        assertTrue(containsEndpoint(reader.subscribeAgent(firstReference, resubscribed),
+            PROTOCOL_A2A, ignored.getUri()));
+        Endpoint afterResubscribe =
+            endpoint(randomPort(), "/http-watch-resubscribed", "resubscribed");
+        publisher.registerAgentEndpoints(registration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(afterResubscribe)));
+        awaitEvent(resubscribed, "a removed HTTP Watch must support a clean resubscribe",
+            result -> containsEndpoint(result, PROTOCOL_A2A, afterResubscribe.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
+
+        resubscribed.events.clear();
+        reader.shutdown();
+        Endpoint afterShutdown = endpoint(randomPort(), "/http-watch-shutdown", "shutdown");
+        publisher.registerAgentEndpoints(registration(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(afterShutdown)));
+        assertNull(resubscribed.events.poll(1500L, TimeUnit.MILLISECONDS),
+            "shutdown must stop HTTP long poll, refresh, and Listener callbacks");
     }
     
     @Test
@@ -1174,7 +1334,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A,
                     legacyEndpointUri(legacyVersionTwo)), WATCH_HINT_TIMEOUT_MILLIS);
-        awaitEvent(httpLatestListener, "HTTP polling resumes with Version 2 after reconnect",
+        awaitEvent(httpLatestListener, "HTTP Watch resumes with Version 2 after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A,
                     legacyEndpointUri(legacyVersionTwo)));
@@ -1188,7 +1348,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri()));
         awaitEvent(httpLatestListener,
-            "HTTP polling observes the Version 2 gRPC Endpoint after reconnect",
+            "HTTP Watch observes the Version 2 gRPC Endpoint after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri()));
         Endpoint httpVersionTwo =
@@ -1202,7 +1362,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri()));
         awaitEvent(httpLatestListener,
-            "HTTP polling observes both Version 2 Endpoints after reconnect",
+            "HTTP Watch observes both Version 2 Endpoints after reconnect",
             result -> VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri()));
@@ -1359,11 +1519,17 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Arrays.asList("java-sdk-it", "auto-grpc"),
             Collections.singletonList(PROTOCOL_A2A), false);
         waitForSearchTotal(service, agentName, 1);
+        AgentReference reference = reference(agentName, null, null);
+        RecordingAgentListener listener = new RecordingAgentListener();
+        assertEquals(VERSION, service.subscribeAgent(reference, listener).getVersion());
         Endpoint endpoint = endpoint(randomPort(), "/auto-grpc", "auto-grpc");
         service.registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(endpoint)));
-        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
+        awaitEvent(listener, "AUTO must use the negotiated gRPC Watch without polling delay",
+            result -> containsEndpoint(result, PROTOCOL_A2A, endpoint.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
         
+        service.unsubscribeAgent(reference, listener);
         service.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
             Collections.singletonList(deregistrationEndpoint(endpoint))));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
@@ -1390,8 +1556,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint endpoint = endpoint(randomPort(), "/auto-http", "auto-http");
         autoService.registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(endpoint)));
-        awaitEvent(listener, "AUTO polling should observe its HTTP-owned publication",
-            result -> containsEndpoint(result, PROTOCOL_A2A, endpoint.getUri()));
+        awaitEvent(listener, "AUTO HTTP Watch should observe its HTTP-owned publication",
+            result -> containsEndpoint(result, PROTOCOL_A2A, endpoint.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
         
         Properties httpProperties = sdkProperties();
         httpProperties.setProperty(AiConstants.AI_TRANSPORT_MODE,

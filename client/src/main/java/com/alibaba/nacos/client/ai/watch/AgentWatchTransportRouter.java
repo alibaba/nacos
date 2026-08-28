@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AgentHttpWatchClient;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import org.slf4j.Logger;
@@ -33,20 +34,24 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 /**
  * Selects one Wire owner for each Agent Watch without owning business cache state.
  *
- * <p>W5 routes a negotiated gRPC Watch to {@link GrpcAgentWatchTransport} and otherwise uses
- * bounded polling. The later HTTP Watch stage adds its concrete transport without moving
- * canonical intent or listener state out of {@link AgentWatchManager}.</p>
+ * <p>A negotiated gRPC Watch is preferred in AUTO mode. HTTP mode and AUTO mode without an
+ * available gRPC Watch use one batch long-poll binding, while bounded discover polling remains
+ * the compatibility fallback. Canonical intent and listener state stay in
+ * {@link AgentWatchManager}.</p>
  *
  * @author Nacos
  */
 public final class AgentWatchTransportRouter
-    implements AgentWatchTransport, GrpcAgentWatchTransport.WireLifecycleListener {
+    implements AgentWatchTransport, GrpcAgentWatchTransport.WireLifecycleListener,
+    HttpAgentWatchTransport.WireLifecycleListener {
     
     private static final Logger LOGGER = LogUtils.logger(AgentWatchTransportRouter.class);
     
     private final AgentTransportMode mode;
     
     private final GrpcAgentWatchTransport grpcTransport;
+    
+    private final HttpAgentWatchTransport httpTransport;
     
     private final AgentWatchTransport pollingTransport;
     
@@ -65,7 +70,24 @@ public final class AgentWatchTransportRouter
      */
     public AgentWatchTransportRouter(AgentTransportMode mode, AiGrpcClient grpcClient,
         long pollingIntervalMillis) {
+        this(mode, new GrpcAgentWatchTransport(grpcClient), null,
+            new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.ai.agent.watch.polling")),
+            pollingIntervalMillis);
+    }
+    
+    /**
+     * Create a Watch transport router with gRPC, HTTP batch long poll, and polling fallback.
+     *
+     * @param mode configured Agent transport mode
+     * @param grpcClient shared AI gRPC client
+     * @param httpWatchClient Agent HTTP Watch binding
+     * @param pollingIntervalMillis compatibility polling interval
+     */
+    public AgentWatchTransportRouter(AgentTransportMode mode, AiGrpcClient grpcClient,
+        AgentHttpWatchClient httpWatchClient, long pollingIntervalMillis) {
         this(mode, new GrpcAgentWatchTransport(grpcClient),
+            new HttpAgentWatchTransport(httpWatchClient),
             new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.client.ai.agent.watch.polling")),
             pollingIntervalMillis);
@@ -74,7 +96,15 @@ public final class AgentWatchTransportRouter
     AgentWatchTransportRouter(AgentTransportMode mode,
         GrpcAgentWatchTransport grpcTransport, ScheduledExecutorService pollingExecutor,
         long pollingIntervalMillis) {
-        this(mode, grpcTransport,
+        this(mode, grpcTransport, null,
+            new PollingAgentWatchTransport(pollingExecutor, pollingIntervalMillis),
+            pollingExecutor);
+    }
+    
+    AgentWatchTransportRouter(AgentTransportMode mode,
+        GrpcAgentWatchTransport grpcTransport, HttpAgentWatchTransport httpTransport,
+        ScheduledExecutorService pollingExecutor, long pollingIntervalMillis) {
+        this(mode, grpcTransport, httpTransport,
             new PollingAgentWatchTransport(pollingExecutor, pollingIntervalMillis),
             pollingExecutor);
     }
@@ -82,11 +112,21 @@ public final class AgentWatchTransportRouter
     AgentWatchTransportRouter(AgentTransportMode mode,
         GrpcAgentWatchTransport grpcTransport, AgentWatchTransport pollingTransport,
         ScheduledExecutorService pollingExecutor) {
+        this(mode, grpcTransport, null, pollingTransport, pollingExecutor);
+    }
+    
+    AgentWatchTransportRouter(AgentTransportMode mode,
+        GrpcAgentWatchTransport grpcTransport, HttpAgentWatchTransport httpTransport,
+        AgentWatchTransport pollingTransport, ScheduledExecutorService pollingExecutor) {
         this.mode = mode;
         this.grpcTransport = grpcTransport;
+        this.httpTransport = httpTransport;
         this.pollingTransport = pollingTransport;
         this.pollingExecutor = pollingExecutor;
         grpcTransport.setLifecycleListener(this);
+        if (httpTransport != null) {
+            httpTransport.setLifecycleListener(this);
+        }
     }
     
     @Override
@@ -103,15 +143,16 @@ public final class AgentWatchTransportRouter
             }
             routes.put(registration.getClientWatchId(), route);
         }
-        AgentWatchTransport owner = selectOwner();
+        AgentWatchTransport owner = selectOwner(registration);
         try {
             owner.start(registration, callback);
         } catch (NacosException e) {
-            if (owner != grpcTransport || !canFallback(e)) {
+            AgentWatchTransport fallback = fallbackOwner(owner, registration, e);
+            if (fallback == null) {
                 removeRoute(route);
                 throw e;
             }
-            owner = pollingTransport;
+            owner = fallback;
             try {
                 owner.start(registration, callback);
             } catch (NacosException fallbackFailure) {
@@ -122,6 +163,7 @@ public final class AgentWatchTransportRouter
                 throw fallbackFailure;
             }
         } catch (RuntimeException e) {
+            owner.stop(registration.getClientWatchId());
             removeRoute(route);
             throw e;
         }
@@ -162,6 +204,9 @@ public final class AgentWatchTransportRouter
         }
         if (route == null || route.owner == null) {
             grpcTransport.stop(clientWatchId);
+            if (httpTransport != null) {
+                httpTransport.stop(clientWatchId);
+            }
             pollingTransport.stop(clientWatchId);
             return;
         }
@@ -179,7 +224,7 @@ public final class AgentWatchTransportRouter
                 return;
             }
             for (Route route : routes.values()) {
-                if (route.owner == pollingTransport) {
+                if (route.owner != grpcTransport) {
                     candidates.add(route);
                 }
             }
@@ -207,20 +252,47 @@ public final class AgentWatchTransportRouter
             route.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
             return;
         }
+        AgentWatchTransport fallback = selectNonGrpcOwner(route.registration);
         try {
-            pollingTransport.start(route.registration, route.callback);
+            fallback.start(route.registration, route.callback);
             synchronized (this) {
                 if (!closed && routes.get(clientWatchId) == route && route.owner == null) {
-                    route.owner = pollingTransport;
+                    route.owner = fallback;
                     return;
                 }
             }
-            pollingTransport.stop(clientWatchId);
+            fallback.stop(clientWatchId);
         } catch (NacosException e) {
             route.callback.unavailable(e.getErrCode(), e.getErrMsg(), true);
         } catch (RuntimeException e) {
             route.callback.unavailable(NacosException.CLIENT_ERROR,
                 "Failed to start fallback Agent Watch polling.", true);
+        }
+    }
+    
+    @Override
+    public void onWireUnavailable(NacosException exception) {
+        if (httpTransport == null) {
+            return;
+        }
+        List<Route> candidates = new ArrayList<Route>();
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            for (Route route : routes.values()) {
+                if (route.owner == httpTransport) {
+                    route.owner = null;
+                    candidates.add(route);
+                }
+            }
+        }
+        for (Route route : candidates) {
+            if (isHttpTerminal(exception)) {
+                route.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
+            } else {
+                fallbackHttpRoute(route);
+            }
         }
     }
     
@@ -241,11 +313,22 @@ public final class AgentWatchTransportRouter
             }
         }
         grpcTransport.shutdown();
+        if (httpTransport != null) {
+            httpTransport.shutdown();
+        }
         pollingTransport.shutdown();
         pollingExecutor.shutdownNow();
     }
     
     private void upgradeToGrpc(Route route) {
+        AgentWatchTransport previous;
+        synchronized (this) {
+            previous = route.owner;
+            if (closed || previous == null || previous == grpcTransport
+                || routes.get(route.registration.getClientWatchId()) != route) {
+                return;
+            }
+        }
         try {
             grpcTransport.start(route.registration, route.callback);
         } catch (NacosException e) {
@@ -265,13 +348,13 @@ public final class AgentWatchTransportRouter
         synchronized (this) {
             upgraded = !closed
                 && routes.get(route.registration.getClientWatchId()) == route
-                && route.owner == pollingTransport;
+                && route.owner == previous;
             if (upgraded) {
                 route.owner = grpcTransport;
             }
         }
         if (upgraded) {
-            pollingTransport.stop(route.registration.getClientWatchId());
+            previous.stop(route.registration.getClientWatchId());
         } else {
             grpcTransport.stop(route.registration.getClientWatchId());
         }
@@ -283,9 +366,65 @@ public final class AgentWatchTransportRouter
         }
     }
     
-    private AgentWatchTransport selectOwner() {
-        return mode != AgentTransportMode.HTTP && grpcTransport.isAvailable()
-            ? grpcTransport : pollingTransport;
+    private AgentWatchTransport selectOwner(AgentWatchRegistration registration) {
+        if (mode != AgentTransportMode.HTTP && grpcTransport.isAvailable()) {
+            return grpcTransport;
+        }
+        return selectNonGrpcOwner(registration);
+    }
+    
+    private AgentWatchTransport selectNonGrpcOwner(AgentWatchRegistration registration) {
+        if (mode != AgentTransportMode.GRPC && httpTransport != null
+            && httpTransport.isAvailable()
+            && registration.getMaterializedFingerprint() != null) {
+            return httpTransport;
+        }
+        return pollingTransport;
+    }
+    
+    private AgentWatchTransport fallbackOwner(AgentWatchTransport failed,
+        AgentWatchRegistration registration, NacosException exception) {
+        if (!canFallback(exception)) {
+            return null;
+        }
+        if (failed == grpcTransport) {
+            return selectNonGrpcOwner(registration);
+        }
+        if (failed == httpTransport) {
+            return pollingTransport;
+        }
+        return null;
+    }
+    
+    private void fallbackHttpRoute(Route route) {
+        try {
+            pollingTransport.start(route.registration, route.callback);
+            boolean retained;
+            synchronized (this) {
+                retained = !closed && routes.get(route.registration.getClientWatchId()) == route
+                    && route.owner == null;
+                if (retained) {
+                    route.owner = pollingTransport;
+                }
+            }
+            httpTransport.stop(route.registration.getClientWatchId());
+            if (!retained) {
+                pollingTransport.stop(route.registration.getClientWatchId());
+            }
+        } catch (NacosException e) {
+            route.callback.unavailable(e.getErrCode(), e.getErrMsg(), true);
+        } catch (RuntimeException e) {
+            route.callback.unavailable(NacosException.CLIENT_ERROR,
+                "Failed to start fallback Agent Watch polling.", true);
+        }
+    }
+    
+    private boolean isHttpTerminal(NacosException exception) {
+        int code = exception.getErrCode();
+        return code == NacosException.OVER_THRESHOLD
+            || code == NacosException.CLIENT_OVER_THRESHOLD
+            || code == NacosException.INVALID_PARAM
+            || code == NacosException.CLIENT_INVALID_PARAM || code == NacosException.CONFLICT;
     }
     
     private synchronized void removeRoute(Route route) {

@@ -177,7 +177,7 @@ public class NacosAiService implements AiService {
                 resolvePositiveCapacity(clientProperties,
                     AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
                     AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
-                new AgentWatchTransportRouter(transportMode, grpcClient,
+                new AgentWatchTransportRouter(transportMode, grpcClient, httpProxy,
                     AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
         this.agentEndpointPublicationManager =
             new AgentEndpointPublicationManager(this.agentTransportRouter,

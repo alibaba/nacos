@@ -30,6 +30,9 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -40,6 +43,7 @@ import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -247,6 +251,66 @@ class AiHttpClientProxyAgentTest {
         assertFalse(urls.getAllValues().get(0).contains("protocolsAny="));
         assertFalse(urls.getAllValues().get(1).contains("version="));
         assertFalse(urls.getAllValues().get(1).contains("protocol="));
+    }
+    
+    @Test
+    void watchUsesBatchFormStableIdentityAndLongPollReadTimeout() throws Exception {
+        AgentWatchBatchResponse expected = new AgentWatchBatchResponse();
+        expected.setGeneration(7L);
+        expected.setChanged(true);
+        expected.setChangedClientWatchIds(Collections.singletonList("watch-a"));
+        doReturn(success(expected)).when(restTemplate)
+            .postForm(anyString(), any(HttpClientConfig.class), any(Header.class),
+                any(Map.class), eq(String.class));
+        AgentWatchBatchRequest request = watchRequest(7L, 30000L);
+        
+        AgentWatchBatchResponse result = proxy.watchAgents(request);
+        
+        assertTrue(result.isChanged());
+        assertEquals("watch-a", result.getChangedClientWatchIds().get(0));
+        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<HttpClientConfig> config =
+            ArgumentCaptor.forClass(HttpClientConfig.class);
+        ArgumentCaptor<Header> header = ArgumentCaptor.forClass(Header.class);
+        ArgumentCaptor<Map> form = ArgumentCaptor.forClass(Map.class);
+        verify(restTemplate).postForm(url.capture(), config.capture(), header.capture(),
+            form.capture(), eq(String.class));
+        assertTrue(url.getValue().endsWith("/nacos/v3/client/ai/agents/watch"));
+        assertEquals(35000, config.getValue().getReadTimeOutMillis());
+        assertEquals(3000, config.getValue().getConTimeOutMillis());
+        assertEquals(Constants.AI.AI_MODULE,
+            header.getValue().getValue(HttpHeaderConsts.REQUEST_MODULE));
+        assertNotNull(header.getValue().getValue(CLIENT_ID_HEADER));
+        assertEquals("7", form.getValue().get("generation"));
+        assertEquals("30000", form.getValue().get("timeoutMillis"));
+        assertTrue(String.valueOf(form.getValue().get("watches")).contains("watch-a"));
+        assertTrue(String.valueOf(form.getValue().get("watches"))
+            .contains("materializedFingerprint"));
+    }
+    
+    @Test
+    void watchCapacityIsTypedAndNotRetriedWhileTransportErrorsAreBounded() throws Exception {
+        HttpRestResult<String> full = error(NacosException.OVER_THRESHOLD,
+            Result.failure(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+                "full", "Watch capacity reached"));
+        doReturn(full).when(restTemplate)
+            .postForm(anyString(), any(HttpClientConfig.class), any(Header.class),
+                any(Map.class), eq(String.class));
+        NacosApiException capacity = assertThrows(NacosApiException.class,
+            () -> proxy.watchAgents(watchRequest(1L, 1000L)));
+        assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
+            capacity.getDetailErrCode());
+        verify(restTemplate).postForm(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Map.class), eq(String.class));
+        
+        doThrow(new IllegalStateException("network")).when(restTemplate)
+            .postForm(anyString(), any(HttpClientConfig.class), any(Header.class),
+                any(Map.class), eq(String.class));
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> proxy.watchAgents(watchRequest(2L, 1000L))).getErrCode());
+        verify(restTemplate, times(4)).postForm(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Map.class), eq(String.class));
     }
     
     @Test
@@ -483,6 +547,19 @@ class AiHttpClientProxyAgentTest {
         result.setVersionRange(versionRange);
         result.setProtocol("a2a");
         result.setEndpoints(Collections.singletonList(endpoint));
+        return result;
+    }
+    
+    private AgentWatchBatchRequest watchRequest(long generation, long timeoutMillis) {
+        AgentWatchBatchItem item = new AgentWatchBatchItem();
+        item.setClientWatchId("watch-a");
+        item.setDiscoveryRequest(discoveryRequest());
+        item.setMaterializedFingerprint("sha256-v1:"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+        AgentWatchBatchRequest result = new AgentWatchBatchRequest();
+        result.setGeneration(generation);
+        result.setTimeoutMillis(timeoutMillis);
+        result.setWatches(Collections.singletonList(item));
         return result;
     }
     

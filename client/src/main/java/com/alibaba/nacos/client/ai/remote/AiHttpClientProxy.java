@@ -29,6 +29,8 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -46,6 +48,7 @@ import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -85,7 +88,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  *
  * @author nacos
  */
-public class AiHttpClientProxy implements AiClientProxy {
+public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AiHttpClientProxy.class);
     
@@ -99,6 +102,8 @@ public class AiHttpClientProxy implements AiClientProxy {
     
     private static final String AGENT_SEARCH_PATH = AGENT_CLIENT_PATH + "/search";
     
+    private static final String AGENT_WATCH_PATH = AGENT_CLIENT_PATH + "/watch";
+    
     private static final String AGENT_ENDPOINT_PATH = AGENT_CLIENT_PATH + "/endpoints";
     
     private static final String AGENT_ENDPOINT_HEARTBEAT_PATH =
@@ -107,6 +112,10 @@ public class AiHttpClientProxy implements AiClientProxy {
     private static final String HTTP_CLIENT_ID_HEADER = "X-Nacos-Client-Id";
     
     private static final int MAX_RETRY = 3;
+    
+    private static final int AGENT_WATCH_READ_TIMEOUT_GRACE_MILLIS = 5000;
+    
+    private static final int AGENT_WATCH_CONNECT_TIMEOUT_MILLIS = 3000;
     
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -205,6 +214,20 @@ public class AiHttpClientProxy implements AiClientProxy {
             buildAgentResource(reference.getAgentName()));
         Result<AgentDiscoveryResult> result = JsonUtils.toObj(response,
             new NacosTypeReference<Result<AgentDiscoveryResult>>() {
+            });
+        return requireSuccess(result);
+    }
+    
+    @Override
+    public AgentWatchBatchResponse watchAgents(AgentWatchBatchRequest request)
+        throws NacosException {
+        Map<String, String> form = new HashMap<String, String>();
+        form.put("generation", String.valueOf(request.getGeneration()));
+        form.put("timeoutMillis", String.valueOf(request.getTimeoutMillis()));
+        form.put("watches", JsonUtils.toJson(request.getWatches()));
+        String response = requestAgentWatchApi(form, request.getTimeoutMillis());
+        Result<AgentWatchBatchResponse> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<AgentWatchBatchResponse>>() {
             });
         return requireSuccess(result);
     }
@@ -468,6 +491,55 @@ public class AiHttpClientProxy implements AiClientProxy {
                 + exception.getMessage());
     }
     
+    private String requestAgentWatchApi(Map<String, String> form, long timeoutMillis)
+        throws NacosException {
+        List<String> servers = serverListManager.getServerList();
+        if (servers.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM, "no server available");
+        }
+        NacosException exception = new NacosException();
+        int index = ThreadLocalRandom.current().nextInt(servers.size());
+        for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
+            String server = servers.get(index % servers.size());
+            try {
+                return callAgentWatchServer(form, server, timeoutMillis);
+            } catch (NacosException e) {
+                if (isWatchCapacityRejected(e)) {
+                    throw e;
+                }
+                exception = e;
+            }
+            index = (index + 1) % servers.size();
+        }
+        throw new NacosException(exception.getErrCode(),
+            "Failed to request API: " + AGENT_WATCH_PATH + " after all servers(" + servers
+                + ") tried: " + exception.getMessage());
+    }
+    
+    private String callAgentWatchServer(Map<String, String> form, String server,
+        long timeoutMillis) throws NacosException {
+        Header header = Header.newInstance();
+        header.addAll(securityProxy.getIdentityContext(buildAgentResource(null)));
+        header.addParam(HTTP_CLIENT_ID_HEADER, httpClientId);
+        header.addParam(HttpHeaderConsts.REQUEST_MODULE, Constants.AI.AI_MODULE);
+        String url = buildUrl(server, AGENT_WATCH_PATH);
+        int readTimeoutMillis = (int) Math.min(Integer.MAX_VALUE,
+            timeoutMillis + AGENT_WATCH_READ_TIMEOUT_GRACE_MILLIS);
+        HttpClientConfig config = HttpClientConfig.builder()
+            .setConTimeOutMillis(AGENT_WATCH_CONNECT_TIMEOUT_MILLIS)
+            .setReadTimeOutMillis(readTimeoutMillis).build();
+        try {
+            HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, config, header,
+                form, String.class);
+            return resolveAgentResponse(restResult);
+        } catch (NacosException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.debug("[AI-HTTP] Agent Watch request to {} failed.", url, e);
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
     private String callAgentServer(String api, AgentHttpMethod method,
         List<QueryParameter> parameters, Map<String, String> form, String server,
         RequestResource resource) throws NacosException {
@@ -521,6 +593,11 @@ public class AiHttpClientProxy implements AiClientProxy {
                     throw new NacosApiException(NacosException.OVER_THRESHOLD,
                         ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT, errorMessage);
                 }
+                if (ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode()
+                    .equals(result.getCode())) {
+                    throw new NacosApiException(NacosException.OVER_THRESHOLD,
+                        ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, errorMessage);
+                }
                 int errorCode = ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
                     ? result.getCode() : restResult.getCode();
                 throw new NacosException(errorCode, errorMessage);
@@ -538,6 +615,12 @@ public class AiHttpClientProxy implements AiClientProxy {
         return exception instanceof NacosApiException
             && ((NacosApiException) exception)
                 .getDetailErrCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode();
+    }
+    
+    private boolean isWatchCapacityRejected(NacosException exception) {
+        return exception instanceof NacosApiException
+            && ((NacosApiException) exception)
+                .getDetailErrCode() == ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode();
     }
     
     private <T> T requireSuccess(Result<T> result) throws NacosException {

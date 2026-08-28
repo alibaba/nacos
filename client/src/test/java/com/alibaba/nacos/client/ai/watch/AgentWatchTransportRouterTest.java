@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AgentHttpWatchClient;
 import com.alibaba.nacos.common.remote.client.Connection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,9 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,12 +58,16 @@ class AgentWatchTransportRouterTest {
     
     private FakeTransport polling;
     
+    private HttpAgentWatchTransport http;
+    
     private ScheduledExecutorService pollingExecutor;
     
     @BeforeEach
     void setUp() {
         client = mock(AiGrpcClient.class);
         grpc = new GrpcAgentWatchTransport(client, new DirectExecutorService());
+        http = mock(HttpAgentWatchTransport.class);
+        when(http.isAvailable()).thenReturn(true);
         polling = new FakeTransport();
         pollingExecutor = mock(ScheduledExecutorService.class);
     }
@@ -70,10 +77,144 @@ class AgentWatchTransportRouterTest {
         AgentWatchTransportRouter publicRouter =
             new AgentWatchTransportRouter(AgentTransportMode.AUTO, client, 1000L);
         publicRouter.shutdown();
+        AgentWatchTransportRouter httpRouter = new AgentWatchTransportRouter(
+            AgentTransportMode.HTTP, client, mock(AgentHttpWatchClient.class), 1000L);
+        httpRouter.shutdown();
         
         AgentWatchTransportRouter packageRouter =
             new AgentWatchTransportRouter(AgentTransportMode.AUTO, grpc, pollingExecutor, 1000L);
         packageRouter.shutdown();
+    }
+    
+    @Test
+    void explicitHttpAndAutoWithoutGrpcUseBatchHttpOwner() throws Exception {
+        AgentWatchTransportRouter explicit = routerWithHttp(AgentTransportMode.HTTP);
+        AgentWatchRegistration first = registration("watch-http");
+        TestCallback callback = new TestCallback();
+        explicit.start(first, callback);
+        verify(http).start(first, callback);
+        assertEquals(0, polling.startCount);
+        explicit.update(registration("watch-http"));
+        verify(http).update(any(AgentWatchRegistration.class));
+        explicit.stop("watch-http");
+        verify(http).stop("watch-http");
+        explicit.shutdown();
+        verify(http).shutdown();
+        
+        setUp();
+        AgentWatchTransportRouter automatic = routerWithHttp(AgentTransportMode.AUTO);
+        AgentWatchRegistration second = registration("watch-auto");
+        automatic.start(second, new TestCallback());
+        verify(http).start(eq(second), any(AgentWatchTransportCallback.class));
+        assertEquals(0, polling.startCount);
+        automatic.shutdown();
+    }
+    
+    @Test
+    void autoMigratesBetweenHttpAndNegotiatedGrpcWithoutDuplicateOwner() throws Exception {
+        AgentWatchTransportRouter router = routerWithHttp(AgentTransportMode.AUTO);
+        AgentWatchRegistration registration = registration("watch-a");
+        router.start(registration, new TestCallback());
+        verify(http).start(eq(registration), any(AgentWatchTransportCallback.class));
+        
+        when(client.getCurrentConnectionId()).thenReturn("connection-a");
+        when(client.isAgentWatchAvailable()).thenReturn(true);
+        when(client.subscribeAgentWatch(any(), any(), any())).thenReturn(response("wire-a"));
+        grpc.onConnected(connection("connection-a", AbilityStatus.SUPPORTED));
+        verify(http).stop("watch-a");
+        verify(client).subscribeAgentWatch(any(), any(), any());
+        
+        grpc.onDisConnect(connection("connection-a", AbilityStatus.SUPPORTED));
+        when(client.getCurrentConnectionId()).thenReturn("connection-b");
+        when(client.isAgentWatchAvailable()).thenReturn(false);
+        grpc.onConnected(connection("connection-b", AbilityStatus.NOT_SUPPORTED));
+        verify(http, times(2)).start(eq(registration),
+            any(AgentWatchTransportCallback.class));
+        router.shutdown();
+    }
+    
+    @Test
+    void httpBindingFailuresFallbackOrTerminateAccordingToCategory() throws Exception {
+        AgentWatchTransportRouter fallback = routerWithHttp(AgentTransportMode.HTTP);
+        AgentWatchRegistration registration = registration("watch-a");
+        TestCallback callback = new TestCallback();
+        fallback.start(registration, callback);
+        fallback.onWireUnavailable(
+            new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported"));
+        assertEquals(1, polling.startCount);
+        verify(http).stop("watch-a");
+        assertEquals(0, callback.unavailable);
+        fallback.shutdown();
+        
+        setUp();
+        AgentWatchTransportRouter terminal = routerWithHttp(AgentTransportMode.HTTP);
+        TestCallback rejected = new TestCallback();
+        terminal.start(registration("watch-full"), rejected);
+        terminal.onWireUnavailable(new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "full"));
+        assertEquals(1, rejected.unavailable);
+        assertTrue(rejected.terminal);
+        assertEquals(0, polling.startCount);
+        terminal.shutdown();
+    }
+    
+    @Test
+    void httpFallbackCancellationAndFailuresDoNotLeakRoutes() throws Exception {
+        AgentWatchTransportRouter canceled = routerWithHttp(AgentTransportMode.HTTP);
+        canceled.start(registration("watch-canceled"), new TestCallback());
+        polling.startHook = () -> canceled.stop("watch-canceled");
+        canceled.onWireUnavailable(
+            new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported"));
+        assertFalse(polling.registrations.containsKey("watch-canceled"));
+        assertEquals(1, polling.stopCount);
+        verify(http, times(2)).stop("watch-canceled");
+        canceled.stop("missing");
+        verify(http).stop("missing");
+        canceled.shutdown();
+        canceled.onWireUnavailable(new NacosException(NacosException.SERVER_ERROR, "late"));
+        
+        setUp();
+        AgentWatchTransportRouter checked = routerWithHttp(AgentTransportMode.HTTP);
+        TestCallback checkedFailure = new TestCallback();
+        checked.start(registration("watch-checked"), checkedFailure);
+        polling.startFailure = new NacosException(NacosException.CLIENT_ERROR, "failed");
+        checked.onWireUnavailable(
+            new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported"));
+        assertEquals(1, checkedFailure.unavailable);
+        assertTrue(checkedFailure.terminal);
+        checked.shutdown();
+        
+        setUp();
+        AgentWatchTransportRouter runtime = routerWithHttp(AgentTransportMode.HTTP);
+        TestCallback runtimeFailure = new TestCallback();
+        runtime.start(registration("watch-runtime"), runtimeFailure);
+        polling.runtimeStartFailure = new IllegalStateException("failed");
+        runtime.onWireUnavailable(
+            new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported"));
+        assertEquals(1, runtimeFailure.unavailable);
+        assertEquals(NacosException.CLIENT_ERROR, runtimeFailure.errorCode);
+        assertTrue(runtimeFailure.terminal);
+        runtime.shutdown();
+        
+        setUp();
+        AgentWatchTransportRouter noHttp = router(AgentTransportMode.HTTP);
+        noHttp.onWireUnavailable(new NacosException(NacosException.SERVER_ERROR, "ignored"));
+        polling.startFailure = new NacosException(NacosException.CLIENT_ERROR, "failed");
+        assertEquals(NacosException.CLIENT_ERROR,
+            assertThrows(NacosException.class,
+                () -> noHttp.start(registration("watch-polling"), new TestCallback()))
+                .getErrCode());
+        noHttp.shutdown();
+    }
+    
+    @Test
+    void synchronousHttpActivationFailureFallsBackToPolling() throws Exception {
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "temporary"))
+            .when(http).start(any(), any());
+        AgentWatchTransportRouter router = routerWithHttp(AgentTransportMode.HTTP);
+        router.start(registration("watch-a"), new TestCallback());
+        assertEquals(1, polling.startCount);
+        router.shutdown();
     }
     
     @Test
@@ -389,6 +530,10 @@ class AgentWatchTransportRouterTest {
     
     private AgentWatchTransportRouter router(AgentTransportMode mode) {
         return new AgentWatchTransportRouter(mode, grpc, polling, pollingExecutor);
+    }
+    
+    private AgentWatchTransportRouter routerWithHttp(AgentTransportMode mode) {
+        return new AgentWatchTransportRouter(mode, grpc, http, polling, pollingExecutor);
     }
     
     private void connectSupported() {
