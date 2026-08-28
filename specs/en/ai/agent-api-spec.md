@@ -327,6 +327,14 @@ fingerprints, and an empty Watch list are invalid. The first binding performs
 request-level AI read authorization only; mandatory Discover re-fetch remains
 the fine-grained visibility and content authorization boundary.
 
+The HTTP binding additionally enforces per-node active-request and active-byte
+limits plus a per-request byte limit through
+`nacos.ai.rad.capacity.watch.http.max-active-requests-per-node`,
+`nacos.ai.rad.capacity.watch.http.max-active-bytes-per-node`, and
+`nacos.ai.rad.capacity.watch.http.max-request-bytes`. The 1000-item and
+128-character client Watch id bounds also place a fixed upper bound on the
+changed-id response. Capacity rejection is atomic and returns no partial set.
+
 Agent Search is a resource-specific facade over shared Search Core with
 `resourceType=agent` fixed. It maintains no second index and performs no
 secondary business filtering after index pagination. `agentNameContains`,

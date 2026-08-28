@@ -154,12 +154,37 @@ public class Constants {
         public static final int DEFAULT_MAX_PUBLICATIONS_PER_CLIENT = 100;
         
         /**
-         * Soft watermark for gRPC Watches owned by one client connection.
+         * Soft watermark for gRPC Watches or HTTP Batch items owned by one client.
          */
         public static final String MAX_WATCHES_PER_CLIENT_CONFIG_KEY =
             "nacos.ai.rad.capacity.watch.max-per-client";
         
         public static final int DEFAULT_MAX_WATCHES_PER_CLIENT = 300;
+        
+        /**
+         * Hard limit for request-scoped HTTP Watch waiters retained by one server node.
+         */
+        public static final String MAX_HTTP_WATCH_WAITERS_PER_NODE_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-active-requests-per-node";
+        
+        public static final int DEFAULT_MAX_HTTP_WATCH_WAITERS_PER_NODE = 10000;
+        
+        /**
+         * Hard aggregate byte limit for active HTTP Watch JSON fields on one server node.
+         */
+        public static final String MAX_HTTP_WATCH_ACTIVE_BYTES_PER_NODE_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-active-bytes-per-node";
+        
+        public static final long DEFAULT_MAX_HTTP_WATCH_ACTIVE_BYTES_PER_NODE =
+            64L * 1024L * 1024L;
+        
+        /**
+         * Hard byte limit for one HTTP Watch JSON-valued form field.
+         */
+        public static final String MAX_HTTP_WATCH_REQUEST_BYTES_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-request-bytes";
+        
+        public static final long DEFAULT_MAX_HTTP_WATCH_REQUEST_BYTES = 1024L * 1024L;
         
         /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
 import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
@@ -31,10 +32,13 @@ import com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -54,6 +58,40 @@ class AgentClientParamExtractorTest {
         assertEquals(1, actual.size());
         assertEquals("team", actual.get(0).getNamespaceId());
         assertEquals("demo", actual.get(0).getAgentName());
+    }
+    
+    @Test
+    void testHttpWatchExtractorUsesNestedNamespaceOnly() throws Exception {
+        AgentReference reference = new AgentReference();
+        reference.setAgentName("watch-agent");
+        AgentDiscoveryRequest discovery = new AgentDiscoveryRequest();
+        discovery.setNamespaceId(null);
+        discovery.setReference(reference);
+        AgentWatchBatchItem item = new AgentWatchBatchItem();
+        item.setClientWatchId("watch-1");
+        item.setDiscoveryRequest(discovery);
+        item.setMaterializedFingerprint(AgentDiscoveryCanonicalizer.ALGORITHM_ID + ":"
+            + "a".repeat(64));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/nacos/v3/client/ai/agents/watch");
+        when(request.getParameter("watches"))
+            .thenReturn(JsonUtils.toJson(Collections.singletonList(item)));
+        
+        ParamInfo actual = new AgentClientHttpParamExtractor().extractParam(request).get(0);
+        assertEquals("public", actual.getNamespaceId());
+        assertNull(actual.getAgentName());
+    }
+    
+    @Test
+    void testHttpWatchExtractorDefersMalformedPayloadValidation() throws Exception {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/nacos/v3/client/ai/agents/watch");
+        when(request.getParameter("watches")).thenReturn("[]");
+        
+        ParamInfo actual = new AgentClientHttpParamExtractor().extractParam(request).get(0);
+        
+        assertNull(actual.getNamespaceId());
+        assertNull(actual.getAgentName());
     }
     
     @Test

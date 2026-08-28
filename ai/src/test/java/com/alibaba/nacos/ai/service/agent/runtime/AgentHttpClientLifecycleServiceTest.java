@@ -105,6 +105,23 @@ class AgentHttpClientLifecycleServiceTest {
     }
     
     @Test
+    void testWatchValidatesHeadersAndRenewsExistingClient() throws Exception {
+        when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(null);
+        service.renewForWatch(EXTERNAL_CLIENT_ID, "ai", "team");
+        verify(clientManager, never()).renewClient(any());
+        
+        when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(client("alice", "team"));
+        service.renewForWatch(EXTERNAL_CLIENT_ID, "AI", "team");
+        verify(clientManager).renewClient(INTERNAL_CLIENT_ID);
+        
+        assertInvalidWatchHeader(null, "AI", "team");
+        assertInvalidWatchHeader(EXTERNAL_CLIENT_ID, "naming", "team");
+        assertDetailCode(ErrorCode.ACCESS_DENIED,
+            assertThrows(NacosApiException.class,
+                () -> service.renewForWatch(EXTERNAL_CLIENT_ID, "AI", "other")));
+    }
+    
+    @Test
     void testRegisterCreatesAndBindsHttpClient() throws Exception {
         HttpConnectionBasedClient client = client("alice", "team");
         when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(null, client);
@@ -235,6 +252,12 @@ class AgentHttpClientLifecycleServiceTest {
         assertDetailCode(ErrorCode.PARAMETER_VALIDATE_ERROR,
             assertThrows(NacosApiException.class,
                 () -> service.heartbeat(clientId, module)));
+    }
+    
+    private void assertInvalidWatchHeader(String clientId, String module, String namespaceId) {
+        assertDetailCode(ErrorCode.PARAMETER_VALIDATE_ERROR,
+            assertThrows(NacosApiException.class,
+                () -> service.renewForWatch(clientId, module, namespaceId)));
     }
     
     private void assertDetailCode(ErrorCode errorCode, NacosApiException actual) {

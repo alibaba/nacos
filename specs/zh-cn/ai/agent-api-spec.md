@@ -264,6 +264,12 @@ Watch ID，不返回 Descriptor、Endpoint、Fingerprint 或逐 Item 鉴权结�
 或空 Watch List 都是非法参数。首版 Binding 只执行请求级 AI Read 鉴权；强制 Discover
 重新查询仍是精细可见性和内容鉴权边界。
 
+HTTP Binding 还通过 `nacos.ai.rad.capacity.watch.http.max-active-requests-per-node`、
+`nacos.ai.rad.capacity.watch.http.max-active-bytes-per-node` 和
+`nacos.ai.rad.capacity.watch.http.max-request-bytes` 分别执行每节点 Active Request、Active
+Byte 和单请求 Byte 硬门禁。1000 Item 与 128 字符 Client Watch ID 上限同时为 Changed-ID
+Response 提供固定大小上界。容量拒绝必须原子完成，不返回部分接纳集合。
+
 Agent Search 是共享 Search Core 上固定 `resourceType=agent` 的资源专用 Facade，不维护第二套
 索引或在索引分页后执行二次业务过滤。`agentNameContains`、`tagsAll` 和 `protocolsAny` 必须
 在 total 与分页截断前转换为 [AI 资源检索规范](ai-resource-search-spec.md)的类型化 predicate。

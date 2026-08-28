@@ -34,6 +34,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <nacos.agent.it.server.publication.capacity>100</nacos.agent.it.server.publication.capacity>
+        <nacos.agent.it.server.watch.capacity>300</nacos.agent.it.server.watch.capacity>
+        <nacos.agent.it.server.http.watch.waiter.capacity>0</nacos.agent.it.server.http.watch.waiter.capacity>
     </properties>
 
     <dependencies>
@@ -130,6 +132,8 @@
                                 <nacos.console.port>8080</nacos.console.port>
                                 <nacos.ai.registry.port>9080</nacos.ai.registry.port>
                                 <nacos.agent.it.server.publication.capacity>${nacos.agent.it.server.publication.capacity}</nacos.agent.it.server.publication.capacity>
+                                <nacos.agent.it.server.watch.capacity>${nacos.agent.it.server.watch.capacity}</nacos.agent.it.server.watch.capacity>
+                                <nacos.agent.it.server.http.watch.waiter.capacity>${nacos.agent.it.server.http.watch.waiter.capacity}</nacos.agent.it.server.http.watch.waiter.capacity>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.ai.param;
 
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.agent.client.AgentWatchBatchForm;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,8 +37,21 @@ public class AgentClientHttpParamExtractor extends AbstractHttpParamExtractor {
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo result = new ParamInfo();
-        result.setNamespaceId(request.getParameter("namespaceId"));
-        result.setAgentName(request.getParameter("agentName"));
+        String requestUri = request.getRequestURI();
+        if (requestUri != null
+            && requestUri.endsWith(Constants.Agent.CLIENT_PATH + "/watch")) {
+            try {
+                result.setNamespaceId(
+                    AgentWatchBatchForm.extractNamespaceId(request.getParameter("watches")));
+            } catch (NacosApiException ignored) {
+                // Leave malformed Watch payload validation to the controller form. Throwing from
+                // an HTTP parameter extractor is wrapped by the shared parameter-check filter and
+                // would prevent the API exception handler from returning the canonical 400 body.
+            }
+        } else {
+            result.setNamespaceId(request.getParameter("namespaceId"));
+            result.setAgentName(request.getParameter("agentName"));
+        }
         return Collections.singletonList(result);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.web;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -72,6 +73,10 @@ public class AiDistroFilter implements Filter {
         ReuseHttpServletRequest request =
             new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse response = (HttpServletResponse) servletResponse;
+        if (request.getRequestURI().endsWith(Constants.Agent.CLIENT_PATH + "/watch")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String externalClientId = request.getHeader(ClientConstants.HTTP_CLIENT_ID_HEADER);
         if (StringUtils.isBlank(externalClientId)) {
             filterChain.doFilter(request, response);

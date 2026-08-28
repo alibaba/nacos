@@ -97,6 +97,20 @@ class AiDistroFilterTest {
     }
     
     @Test
+    void testWatchRequestAlwaysStaysOnSelectedNode() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST",
+            "/nacos/v3/client/ai/agents/watch");
+        request.addHeader(ClientConstants.HTTP_CLIENT_ID_HEADER, "client");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        
+        filter.doFilter(request, response, chain);
+        
+        verify(chain).doFilter(any(ReuseHttpServletRequest.class), same(response));
+        verify(distroMapper, never()).responsible(anyString());
+    }
+    
+    @Test
     void testPeerRedirectIsRejected() throws Exception {
         MockHttpServletRequest request = statefulRequest("GET");
         request.addHeader(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v3");
