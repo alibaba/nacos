@@ -355,7 +355,7 @@ maintenance belong to the Maintainer SDK.
 
 `AiMaintainerService` exposes typed delegates:
 
-- `mcp()` for MCP Server list, search, detail, create, update, and delete;
+- `mcp()` for MCP Server compatibility operations and typed Version management;
 - `a2a()` for AgentCard register, query, update, delete, version, search, and
   list operations;
 - `prompt()` for Prompt management;
@@ -372,6 +372,27 @@ take it as a separate method argument. Agent definition creation uses
 `createDraft`: the first draft creates missing Agent metadata, while later
 drafts reuse that metadata. `a2a()` remains available for its compatibility
 window.
+
+The MCP management delegate is `mcp()`, which returns `McpMaintainerService`.
+Its historical methods remain binary-compatible. Detail and direct-online
+create/update methods are deprecated since 3.3.0 and planned for removal in
+4.0.0; their Javadoc points to exact Version reads and the typed
+draft-submit-publish flow. Historical cross-resource list/search and
+published-Version or full-Resource delete methods remain non-deprecated until
+semantics-equivalent typed replacements exist. Typed Version-management
+additions map one-to-one to the MCP Admin form/query routes: list/get Version,
+create/update/delete draft, submit, publish, force-publish, redraft, online,
+offline, and label replacement.
+Draft create/update additions reuse the established method names as
+`createMcpServer(McpServerDraftRequest)` and `updateMcpServer(McpServerDraftRequest)`
+overloads; other methods use user-facing Version and operation names rather
+than exposing the internal Lifecycle hosting mechanism.
+Explicit methods accept `namespaceId` separately; convenience overloads use
+the default namespace. `McpServerDraftRequest`,
+`McpServerVersionCommand`, and `McpServerLabelsUpdateRequest` add no
+top-level namespace or compatibility `mcpId` selector, and they do not expose
+JSON-library types. Historical identity fields inside the reused
+`McpServerBasicInfo` content do not participate in lifecycle target resolution.
 
 Runtime AI registration and subscription can remain in `AiService`; broad AI
 resource management belongs to `AiMaintainerService`.

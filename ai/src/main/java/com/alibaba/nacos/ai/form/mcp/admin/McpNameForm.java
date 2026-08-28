@@ -31,7 +31,7 @@ import java.io.Serial;
  *
  * @author Nacos
  */
-public class McpLifecycleForm implements NacosForm {
+public class McpNameForm implements NacosForm {
     
     @Serial
     private static final long serialVersionUID = 1L;

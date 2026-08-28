@@ -304,7 +304,7 @@ Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 
 
 `AiMaintainerService` 暴露类型化 delegate：
 
-- `mcp()`：MCP Server 列表、搜索、详情、创建、更新和删除；
+- `mcp()`：MCP Server 兼容操作和类型化 Version 生命周期管理；
 - `a2a()`：AgentCard 注册、查询、更新、删除、版本、搜索和列表；
 - `prompt()`：Prompt 管理；
 - `skill()`：Skill 管理；
@@ -317,6 +317,20 @@ namespace `public` 的便利重载。Agent Request 和 Command 对象不包含 `
 显式重载将其作为独立方法参数。Agent 定义统一通过 `createDraft` 创建：首个 draft
 在 metadata 不存在时创建 Agent，后续 draft 复用已有 metadata。`a2a()` 在兼容窗口内
 继续保留。
+
+MCP 管理委托为 `mcp()`，返回 `McpMaintainerService`。历史方法保持二进制兼容；旧 Detail 和
+Direct-online Create/Update 方法自 3.3.0 起废弃，计划在 4.0.0 删除，其 Javadoc 指向精确
+Version 读取和类型化 Draft-Submit-Publish 流程。历史跨 Resource List/Search，以及 Published
+Version 或完整 Resource Delete 在提供语义等价的类型化替代前暂不废弃。新增类型化 Version 管理
+方法与 MCP Admin Form/Query Route 一一映射：Version 列表/详情、Draft 创建/更新/删除、Submit、
+Publish、Force-publish、Redraft、Online、Offline 和 Label 替换。
+Draft 创建/更新通过 `createMcpServer(McpServerDraftRequest)` 和
+`updateMcpServer(McpServerDraftRequest)` 重载复用既有方法名；其余方法使用面向用户的 Version
+和操作名称，不暴露内部 Lifecycle 托管机制。
+显式方法独立接收 `namespaceId`，便利重载使用默认 Namespace。`McpServerDraftRequest`、
+`McpServerVersionCommand` 和 `McpServerLabelsUpdateRequest` 不新增顶层 Namespace、
+兼容 `mcpId` 选择器，也不暴露 JSON Library 类型。复用 `McpServerBasicInfo` 内容内的历史
+身份字段不参与 Lifecycle Target 解析。
 
 运行时 AI 注册和订阅可以继续保留在 `AiService`；大范围 AI 资源管理属于
 `AiMaintainerService`。

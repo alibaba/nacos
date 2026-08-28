@@ -17,8 +17,8 @@
 package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -167,57 +167,57 @@ public class McpProxyTest {
         McpToolSpecification tools = new McpToolSpecification();
         McpResourceSpecification resources = new McpResourceSpecification();
         McpEndpointSpec endpoint = new McpEndpointSpec();
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
-        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
-        Page<McpLifecycleVersionSummary> page = new Page<>();
+        McpServerVersionDetail detail = new McpServerVersionDetail();
+        McpServerVersionSummary summary = new McpServerVersionSummary();
+        Page<McpServerVersionSummary> page = new Page<>();
         Map<String, String> labels = Map.of("stable", "1.0.0");
-        when(mcpHandler.listLifecycleVersions(NAMESPACE_ID, MCP_NAME, "draft", 1, 10))
+        when(mcpHandler.listMcpServerVersions(NAMESPACE_ID, MCP_NAME, "draft", 1, 10))
             .thenReturn(page);
-        when(mcpHandler.getLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(detail);
-        when(mcpHandler.createLifecycleDraft(NAMESPACE_ID, server, tools, resources, endpoint))
+        when(mcpHandler.createMcpServerDraft(NAMESPACE_ID, server, tools, resources, endpoint))
             .thenReturn(detail);
-        when(mcpHandler.updateLifecycleDraft(NAMESPACE_ID, server, tools, resources, endpoint))
+        when(mcpHandler.updateMcpServerDraft(NAMESPACE_ID, server, tools, resources, endpoint))
             .thenReturn(detail);
-        when(mcpHandler.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.submitMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.publishLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.publishMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.forcePublishLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.forcePublishMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.redraftLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.redraftMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.onlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.onlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.offlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
+        when(mcpHandler.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"))
             .thenReturn(summary);
-        when(mcpHandler.updateLifecycleLabels(NAMESPACE_ID, MCP_NAME, labels))
+        when(mcpHandler.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels))
             .thenReturn(labels);
         
         assertEquals(page,
-            mcpProxy.listLifecycleVersions(NAMESPACE_ID, MCP_NAME, "draft", 1, 10));
+            mcpProxy.listMcpServerVersions(NAMESPACE_ID, MCP_NAME, "draft", 1, 10));
         assertEquals(detail,
-            mcpProxy.getLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(detail,
-            mcpProxy.createLifecycleDraft(NAMESPACE_ID, server, tools, resources, endpoint));
+            mcpProxy.createMcpServerDraft(NAMESPACE_ID, server, tools, resources, endpoint));
         assertEquals(detail,
-            mcpProxy.updateLifecycleDraft(NAMESPACE_ID, server, tools, resources, endpoint));
-        mcpProxy.deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
+            mcpProxy.updateMcpServerDraft(NAMESPACE_ID, server, tools, resources, endpoint));
+        mcpProxy.deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
         assertEquals(summary,
-            mcpProxy.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.submitMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(summary,
-            mcpProxy.publishLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.publishMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(summary,
-            mcpProxy.forcePublishLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.forcePublishMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(summary,
-            mcpProxy.redraftLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.redraftMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(summary,
-            mcpProxy.onlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.onlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(summary,
-            mcpProxy.offlineLifecycleVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+            mcpProxy.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(labels,
-            mcpProxy.updateLifecycleLabels(NAMESPACE_ID, MCP_NAME, labels));
-        verify(mcpHandler).deleteLifecycleDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
+            mcpProxy.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels));
+        verify(mcpHandler).deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
     }
     
     @Test

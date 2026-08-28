@@ -304,9 +304,39 @@ operations under `/v3/console/ai/mcp`. Exact routes are listed in the
 These standard routes are enabled only after management authority reaches
 `LIFECYCLE_MANAGED`. Embedded and standalone Console use the same application
 service directly. A Console-only remote deployment must use the typed
-Maintainer lifecycle transport; until that transport is available, the remote
-handler reports the capability as disabled and must not fall back to a legacy
-write.
+Maintainer Version-management transport and must not fall back to a legacy
+write. The
+transport maps typed request objects onto the same form/query Admin routes; it
+does not introduce a second JSON-body HTTP contract.
+
+`McpMaintainerService` exposes Version-management methods with
+explicit-namespace and default-namespace overloads. New draft creation and
+replacement reuse the established `createMcpServer` and `updateMcpServer`
+names through `McpServerDraftRequest` overloads. Exact reads use
+`listMcpServerVersions` and `getMcpServerVersion`; exact Version transitions
+use `McpServerVersionCommand`, and label replacement uses
+`McpServerLabelsUpdateRequest`. Public method and model names describe the user
+operation and must not expose the internal Lifecycle hosting mechanism. These
+models do not carry
+top-level `namespaceId` or `mcpId` selectors; the namespace is a separate
+method argument and the canonical resource identity is `mcpName`. Historical
+`id` or `namespaceId` fields inside the reused `McpServerBasicInfo` payload are
+compatibility content only: the server ignores them for identity resolution
+and applies the internal coordinates resolved from the lifecycle target.
+
+The legacy Maintainer detail and direct-online create/update methods are
+deprecated since 3.3.0 and planned for removal in 4.0.0. Their Javadoc must
+identify the exact typed Version read or draft-submit-publish replacement.
+Cross-resource list/search and published-Version or full-Resource delete remain
+outside this deprecation until equivalent lifecycle operations are defined.
+
+Submit builds a `ResourceFilesPipelineContext` with resource type `MCP` and
+the preserved Server, optional Tools, and optional Resources payloads. If no
+enabled Pipeline node supports MCP, submit follows the common direct-publish
+path. Otherwise the Version enters `reviewing`; an approved or rejected
+callback moves it to `reviewed`, and only an explicit approved publish updates
+the online lifecycle state and compatibility Manifest. Force-publish remains
+the audited Pipeline bypass.
 
 ### 6.2 Historical Direct-Online Facades
 

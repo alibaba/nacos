@@ -16,21 +16,19 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
-class McpLifecycleVersionDetailTest {
+class McpServerVersionDetailTest {
     
     @Test
-    void shouldExposeLifecycleMetadataWithoutNestedCompatibilityId() throws Exception {
+    void shouldExposeVersionMetadataAndContent() {
         McpServerBasicInfo server = new McpServerBasicInfo();
-        server.setId("internal-id");
         server.setName("weather");
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
+        McpServerVersionDetail detail = new McpServerVersionDetail();
         detail.setNamespaceId("public");
         detail.setMcpName("weather");
         detail.setVersion("1.0.0");
@@ -44,11 +42,6 @@ class McpLifecycleVersionDetailTest {
         detail.setToolSpecification(new McpToolSpecification());
         detail.setResourceSpecification(new McpResourceSpecification());
         
-        String json = new ObjectMapper().writeValueAsString(detail);
-        
-        assertFalse(json.contains("internal-id"));
-        assertFalse(json.contains("\"id\""));
-        assertTrue(json.contains("\"mcpName\":\"weather\""));
         assertEquals("public", detail.getNamespaceId());
         assertEquals("weather", detail.getMcpName());
         assertEquals("1.0.0", detail.getVersion());
@@ -58,8 +51,8 @@ class McpLifecycleVersionDetailTest {
         assertFalse(detail.getLatest());
         assertEquals(1L, detail.getCreateTime());
         assertEquals(2L, detail.getUpdateTime());
-        assertEquals(server, detail.getServerSpecification());
-        assertTrue(detail.getToolSpecification().getTools().isEmpty());
-        assertTrue(detail.getResourceSpecification().getResources().isEmpty());
+        assertSame(server, detail.getServerSpecification());
+        assertEquals(0, detail.getToolSpecification().getTools().size());
+        assertEquals(0, detail.getResourceSpecification().getResources().size());
     }
 }

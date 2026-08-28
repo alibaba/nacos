@@ -21,18 +21,18 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleDraftForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleLabelsForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleVersionForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleVersionListForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerDraftForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerLabelsForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
 import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -181,30 +181,30 @@ public class McpAdminController {
     }
     
     /**
-     * Page lifecycle metadata for the Versions of one MCP resource.
+     * Page management metadata for the Versions of one MCP resource.
      */
     @Since("3.3.0")
     @GetMapping("/versions")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<McpLifecycleVersionSummary>> listLifecycleVersions(
-        McpLifecycleVersionListForm form, PageForm pageForm) throws NacosException {
+    public Result<Page<McpServerVersionSummary>> listMcpServerVersions(
+        McpServerVersionListForm form, PageForm pageForm) throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(lifecycleOperationService.listLifecycleVersions(
+        return Result.success(lifecycleOperationService.listMcpServerVersions(
             form.getNamespaceId(), form.getMcpName(), form.getStatus(), pageForm.getPageNo(),
             pageForm.getPageSize()));
     }
     
     /**
-     * Read one exact MCP lifecycle Version.
+     * Read one exact MCP Version.
      */
     @Since("3.3.0")
     @GetMapping("/version")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionDetail> getLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionDetail> getMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.getLifecycleVersion(
+        return Result.success(lifecycleOperationService.getMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -214,11 +214,11 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionDetail> createLifecycleDraft(
-        McpLifecycleDraftForm form) throws NacosException {
+    public Result<McpServerVersionDetail> createMcpServerDraft(
+        McpServerDraftForm form) throws NacosException {
         form.validate();
         McpServerBasicInfo server = McpRequestUtil.parseMcpServerBasicInfo(form);
-        return Result.success(lifecycleOperationService.createLifecycleDraft(
+        return Result.success(lifecycleOperationService.createMcpServerDraft(
             form.getNamespaceId(), server, McpRequestUtil.parseMcpTools(form),
             McpRequestUtil.parseMcpResources(form),
             McpRequestUtil.parseMcpEndpointSpec(server, form)));
@@ -230,11 +230,11 @@ public class McpAdminController {
     @Since("3.3.0")
     @PutMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionDetail> updateLifecycleDraft(
-        McpLifecycleDraftForm form) throws NacosException {
+    public Result<McpServerVersionDetail> updateMcpServerDraft(
+        McpServerDraftForm form) throws NacosException {
         form.validate();
         McpServerBasicInfo server = McpRequestUtil.parseMcpServerBasicInfo(form);
-        return Result.success(lifecycleOperationService.updateLifecycleDraft(
+        return Result.success(lifecycleOperationService.updateMcpServerDraft(
             form.getNamespaceId(), server, McpRequestUtil.parseMcpTools(form),
             McpRequestUtil.parseMcpResources(form),
             McpRequestUtil.parseMcpEndpointSpec(server, form)));
@@ -246,10 +246,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @DeleteMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Void> deleteLifecycleDraft(McpLifecycleVersionForm form)
+    public Result<Void> deleteMcpServerDraft(McpServerVersionForm form)
         throws NacosException {
         form.validate();
-        lifecycleOperationService.deleteLifecycleDraft(form.getNamespaceId(), form.getMcpName(),
+        lifecycleOperationService.deleteMcpServerDraft(form.getNamespaceId(), form.getMcpName(),
             form.getVersion());
         return Result.success();
     }
@@ -260,10 +260,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/submit")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> submitLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> submitMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.submitLifecycleVersion(
+        return Result.success(lifecycleOperationService.submitMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -273,10 +273,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/publish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> publishLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> publishMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.publishLifecycleVersion(
+        return Result.success(lifecycleOperationService.publishMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -287,10 +287,10 @@ public class McpAdminController {
     @PostMapping("/force-publish")
     @Secured(resource = Constants.MCP_ADMIN_PATH + "/force-publish",
         action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> forcePublishLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> forcePublishMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.forcePublishLifecycleVersion(
+        return Result.success(lifecycleOperationService.forcePublishMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -300,10 +300,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/redraft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> redraftLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> redraftMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.redraftLifecycleVersion(
+        return Result.success(lifecycleOperationService.redraftMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -313,10 +313,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/online")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> onlineLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> onlineMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.onlineLifecycleVersion(
+        return Result.success(lifecycleOperationService.onlineMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -326,10 +326,10 @@ public class McpAdminController {
     @Since("3.3.0")
     @PostMapping("/offline")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<McpLifecycleVersionSummary> offlineLifecycleVersion(
-        McpLifecycleVersionForm form) throws NacosException {
+    public Result<McpServerVersionSummary> offlineMcpServerVersion(
+        McpServerVersionForm form) throws NacosException {
         form.validate();
-        return Result.success(lifecycleOperationService.offlineLifecycleVersion(
+        return Result.success(lifecycleOperationService.offlineMcpServerVersion(
             form.getNamespaceId(), form.getMcpName(), form.getVersion()));
     }
     
@@ -339,11 +339,11 @@ public class McpAdminController {
     @Since("3.3.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Map<String, String>> updateLifecycleLabels(McpLifecycleLabelsForm form)
+    public Result<Map<String, String>> updateMcpServerLabels(McpServerLabelsForm form)
         throws NacosException {
         form.validate();
-        Map<String, String> labels = McpRequestUtil.parseLifecycleLabels(form.getLabels());
-        return Result.success(lifecycleOperationService.updateLifecycleLabels(
+        Map<String, String> labels = McpRequestUtil.parseMcpServerLabels(form.getLabels());
+        return Result.success(lifecycleOperationService.updateMcpServerLabels(
             form.getNamespaceId(), form.getMcpName(), labels));
     }
 }

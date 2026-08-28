@@ -17,8 +17,8 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -95,19 +95,19 @@ public class McpNoopHandler implements McpHandler {
     }
     
     @Override
-    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+    public Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
         String mcpName, String status, int pageNo, int pageSize) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail createMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
@@ -115,7 +115,7 @@ public class McpNoopHandler implements McpHandler {
     }
     
     @Override
-    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail updateMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
@@ -123,49 +123,49 @@ public class McpNoopHandler implements McpHandler {
     }
     
     @Override
-    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+    public void deleteMcpServerDraft(String namespaceId, String mcpName, String version)
         throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary submitMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary publishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+    public McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
         String mcpName, String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary redraftMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary onlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary offlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         throw disabled();
     }
     
     @Override
-    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+    public Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException {
         throw disabled();
     }

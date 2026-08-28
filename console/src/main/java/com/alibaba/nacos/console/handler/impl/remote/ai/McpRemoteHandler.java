@@ -18,8 +18,11 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -48,9 +51,6 @@ import java.util.Map;
 @EnabledRemoteHandler
 @EnabledAiHandler
 public class McpRemoteHandler implements McpHandler {
-    
-    private static final String LIFECYCLE_REMOTE_MESSAGE =
-        "Remote MCP lifecycle management requires the typed Maintainer SDK lifecycle API";
     
     private final NacosMaintainerClientHolder clientHolder;
     
@@ -108,79 +108,96 @@ public class McpRemoteHandler implements McpHandler {
     }
     
     @Override
-    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+    public Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
         String mcpName, String status, int pageNo, int pageSize) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().listMcpServerVersions(namespaceId,
+            mcpName, status, pageNo, pageSize);
     }
     
     @Override
-    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().getMcpServerVersion(namespaceId,
+            mcpName, version);
     }
     
     @Override
-    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail createMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().createMcpServer(namespaceId,
+            draftRequest(serverSpecification, toolSpecification, resourceSpecification,
+                endpointSpecification));
     }
     
     @Override
-    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail updateMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().updateMcpServer(namespaceId,
+            draftRequest(serverSpecification, toolSpecification, resourceSpecification,
+                endpointSpecification));
     }
     
     @Override
-    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+    public void deleteMcpServerDraft(String namespaceId, String mcpName, String version)
         throws NacosException {
-        throw lifecycleDisabled();
+        clientHolder.getAiMaintainerService().mcp().deleteMcpServerDraft(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary submitMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().submitMcpServerVersion(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary publishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().publishMcpServerVersion(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+    public McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
         String mcpName, String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp()
+            .forcePublishMcpServerVersion(namespaceId, versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary redraftMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().redraftMcpServerVersion(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary onlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().onlineMcpServerVersion(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary offlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
-        throw lifecycleDisabled();
+        return clientHolder.getAiMaintainerService().mcp().offlineMcpServerVersion(namespaceId,
+            versionCommand(mcpName, version));
     }
     
     @Override
-    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+    public Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException {
-        throw lifecycleDisabled();
+        McpServerLabelsUpdateRequest request = new McpServerLabelsUpdateRequest();
+        request.setMcpName(mcpName);
+        request.setLabels(labels);
+        return clientHolder.getAiMaintainerService().mcp().updateMcpServerLabels(namespaceId,
+            request);
     }
     
     @Deprecated
@@ -202,8 +219,21 @@ public class McpRemoteHandler implements McpHandler {
             "MCP import functionality is not supported in remote mode");
     }
     
-    private NacosApiException lifecycleDisabled() {
-        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED,
-            ErrorCode.API_FUNCTION_DISABLED, LIFECYCLE_REMOTE_MESSAGE);
+    private McpServerDraftRequest draftRequest(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
+        McpEndpointSpec endpointSpecification) {
+        McpServerDraftRequest request = new McpServerDraftRequest();
+        request.setServerSpecification(serverSpecification);
+        request.setToolSpecification(toolSpecification);
+        request.setResourceSpecification(resourceSpecification);
+        request.setEndpointSpecification(endpointSpecification);
+        return request;
+    }
+    
+    private McpServerVersionCommand versionCommand(String mcpName, String version) {
+        McpServerVersionCommand command = new McpServerVersionCommand();
+        command.setMcpName(mcpName);
+        command.setVersion(version);
+        return command;
     }
 }

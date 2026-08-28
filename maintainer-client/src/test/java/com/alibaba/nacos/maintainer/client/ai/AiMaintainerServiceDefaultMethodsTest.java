@@ -24,6 +24,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -41,6 +46,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,6 +64,7 @@ import static org.mockito.Mockito.when;
  *
  * @author nacos
  */
+@SuppressWarnings("deprecation")
 @ExtendWith(MockitoExtension.class)
 class AiMaintainerServiceDefaultMethodsTest {
     
@@ -191,6 +198,63 @@ class AiMaintainerServiceDefaultMethodsTest {
         
         boolean result = aiMaintainerService.deleteMcpServer("public", "testMcp", "id", "1.0");
         assertTrue(result);
+    }
+    
+    @Test
+    @DisplayName("AiMaintainerService lifecycle methods should delegate to mcp()")
+    void testMcpLifecycleDelegation() throws NacosException {
+        McpServerVersionSummary summary = new McpServerVersionSummary();
+        summary.setVersion("1.0.0");
+        McpServerVersionDetail detail = new McpServerVersionDetail();
+        detail.setMcpName("testMcp");
+        detail.setVersion("1.0.0");
+        Page<McpServerVersionSummary> page = new Page<>();
+        page.setPageItems(Collections.singletonList(summary));
+        Map<String, String> labels = Collections.singletonMap("stable", "1.0.0");
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
+            httpResult(page), httpResult(detail), httpResult(detail), httpResult(detail),
+            httpResult(null), httpResult(summary), httpResult(summary), httpResult(summary),
+            httpResult(summary), httpResult(summary), httpResult(summary), httpResult(labels));
+        McpServerDraftRequest draftRequest = new McpServerDraftRequest();
+        McpServerBasicInfo server = new McpServerBasicInfo();
+        server.setName("testMcp");
+        draftRequest.setServerSpecification(server);
+        McpServerVersionCommand command = new McpServerVersionCommand();
+        command.setMcpName("testMcp");
+        command.setVersion("1.0.0");
+        McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
+        labelsRequest.setMcpName("testMcp");
+        labelsRequest.setLabels(labels);
+        
+        assertEquals(1, aiMaintainerService.listMcpServerVersions("public", "testMcp", null, 1,
+            10).getPageItems().size());
+        assertEquals("testMcp",
+            aiMaintainerService.getMcpServerVersion("public", "testMcp", "1.0.0").getMcpName());
+        assertEquals("testMcp",
+            aiMaintainerService.createMcpServer("public", draftRequest).getMcpName());
+        assertEquals("testMcp",
+            aiMaintainerService.updateMcpServer("public", draftRequest).getMcpName());
+        aiMaintainerService.deleteMcpServerDraft("public", command);
+        assertEquals("1.0.0",
+            aiMaintainerService.submitMcpServerVersion("public", command).getVersion());
+        assertEquals("1.0.0",
+            aiMaintainerService.publishMcpServerVersion("public", command).getVersion());
+        assertEquals("1.0.0",
+            aiMaintainerService.forcePublishMcpServerVersion("public", command).getVersion());
+        assertEquals("1.0.0",
+            aiMaintainerService.redraftMcpServerVersion("public", command).getVersion());
+        assertEquals("1.0.0",
+            aiMaintainerService.onlineMcpServerVersion("public", command).getVersion());
+        assertEquals("1.0.0",
+            aiMaintainerService.offlineMcpServerVersion("public", command).getVersion());
+        assertEquals(labels,
+            aiMaintainerService.updateMcpServerLabels("public", labelsRequest));
+    }
+    
+    private HttpRestResult<String> httpResult(Object data) {
+        HttpRestResult<String> result = new HttpRestResult<>();
+        result.setData(JacksonUtils.toJson(Result.success(data)));
+        return result;
     }
     
     // ========== AiMaintainerService -> a2a() delegation tests ==========

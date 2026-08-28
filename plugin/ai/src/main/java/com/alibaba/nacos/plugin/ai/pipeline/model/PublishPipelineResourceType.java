@@ -41,6 +41,11 @@ public enum PublishPipelineResourceType {
     PROMPT,
     
     /**
+     * MCP Server resource type.
+     */
+    MCP,
+    
+    /**
      * AgentSpec resource type.
      */
     AGENTSPEC,

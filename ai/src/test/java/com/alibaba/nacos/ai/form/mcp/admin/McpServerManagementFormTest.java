@@ -27,11 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class McpLifecycleFormTest {
+class McpServerManagementFormTest {
     
     @Test
     void baseFormShouldDefaultNamespaceAndRequireName() throws NacosApiException {
-        McpLifecycleForm form = new McpLifecycleForm();
+        McpNameForm form = new McpNameForm();
         form.setMcpName("weather");
         
         form.validate();
@@ -45,7 +45,7 @@ class McpLifecycleFormTest {
     
     @Test
     void baseFormShouldRejectInvalidNamespace() {
-        McpLifecycleForm form = new McpLifecycleForm();
+        McpNameForm form = new McpNameForm();
         form.setNamespaceId("invalid namespace");
         form.setMcpName("weather");
         
@@ -54,11 +54,11 @@ class McpLifecycleFormTest {
     
     @Test
     void versionAndDraftFormsShouldRequireExactVersionAndServerContent() {
-        McpLifecycleVersionForm versionForm = new McpLifecycleVersionForm();
+        McpServerVersionForm versionForm = new McpServerVersionForm();
         versionForm.setMcpName("weather");
         assertThrows(NacosApiException.class, versionForm::validate);
         
-        McpLifecycleDraftForm draftForm = new McpLifecycleDraftForm();
+        McpServerDraftForm draftForm = new McpServerDraftForm();
         draftForm.setMcpName("weather");
         draftForm.setVersion("1.0.0");
         assertThrows(NacosApiException.class, draftForm::validate);
@@ -66,7 +66,7 @@ class McpLifecycleFormTest {
     
     @Test
     void versionListShouldAcceptKnownStatusCaseInsensitively() throws NacosApiException {
-        McpLifecycleVersionListForm form = new McpLifecycleVersionListForm();
+        McpServerVersionListForm form = new McpServerVersionListForm();
         form.setMcpName("weather");
         form.validate();
         assertNull(form.getStatus());
@@ -81,7 +81,7 @@ class McpLifecycleFormTest {
     
     @Test
     void labelsFormShouldCarryReplacementPayload() throws NacosApiException {
-        McpLifecycleLabelsForm form = new McpLifecycleLabelsForm();
+        McpServerLabelsForm form = new McpServerLabelsForm();
         form.setMcpName("weather");
         form.setLabels("{\"stable\":\"1.0.0\"}");
         

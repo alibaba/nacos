@@ -90,6 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("deprecation")
 class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     
     private static final String NAMESPACE_ID = Constants.DEFAULT_NAMESPACE_ID;

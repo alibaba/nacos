@@ -22,6 +22,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -29,6 +34,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Nacos AI module maintainer service.
@@ -82,7 +88,14 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
     }
     
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use {@link #getMcpServerVersion(String, String, String)}. Planned
+     *     for removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId,
         String version)
@@ -90,7 +103,17 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
     }
     
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use
+     *     {@link #createMcpServer(String, McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(String, McpServerVersionCommand)}. If review is
+     *     enabled, use {@link #publishMcpServerVersion(String, McpServerVersionCommand)}.
+     *     Planned for removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default String createMcpServer(String namespaceId, String mcpName,
         McpServerBasicInfo serverSpec,
@@ -98,7 +121,26 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().createMcpServer(namespaceId, mcpName, serverSpec, toolSpec, endpointSpec);
     }
     
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionDetail createMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException {
+        return mcp().createMcpServer(namespaceId, request);
+    }
+    
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use
+     *     {@link #createMcpServer(String, McpServerDraftRequest)} for a new Version or
+     *     {@link #updateMcpServer(String, McpServerDraftRequest)} for an existing draft,
+     *     then use {@link #submitMcpServerVersion(String, McpServerVersionCommand)} and, when
+     *     review is enabled,
+     *     {@link #publishMcpServerVersion(String, McpServerVersionCommand)}. Planned for
+     *     removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
         McpServerBasicInfo serverSpec, McpToolSpecification toolSpec, McpEndpointSpec endpointSpec,
@@ -108,12 +150,89 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
             overrideExisting);
     }
     
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionDetail updateMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException {
+        return mcp().updateMcpServer(namespaceId, request);
+    }
+    
     @Since("3.2.0")
     @Override
     default boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId,
         String version)
         throws NacosException {
         return mcp().deleteMcpServer(namespaceId, mcpName, mcpId, version);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        return mcp().listMcpServerVersions(namespaceId, mcpName, status, pageNo, pageSize);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        return mcp().getMcpServerVersion(namespaceId, mcpName, version);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default void deleteMcpServerDraft(String namespaceId, McpServerVersionCommand command)
+        throws NacosException {
+        mcp().deleteMcpServerDraft(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary submitMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().submitMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary publishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().publishMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().forcePublishMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary redraftMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().redraftMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary onlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().onlineMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default McpServerVersionSummary offlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
+        return mcp().offlineMcpServerVersion(namespaceId, command);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default Map<String, String> updateMcpServerLabels(String namespaceId,
+        McpServerLabelsUpdateRequest request) throws NacosException {
+        return mcp().updateMcpServerLabels(namespaceId, request);
     }
     
     @Since("3.2.0")

@@ -14,34 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp.admin;
+package com.alibaba.nacos.api.ai.model.mcp;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.StringUtils;
-
-import java.io.Serial;
+import java.io.Serializable;
 
 /**
- * Exact MCP Version identity for standard lifecycle operations.
+ * Command identifying one exact MCP Server Version management target.
  *
  * @author Nacos
  */
-public class McpLifecycleVersionForm extends McpLifecycleForm {
+public class McpServerVersionCommand implements Serializable {
     
-    @Serial
     private static final long serialVersionUID = 1L;
+    
+    private String mcpName;
     
     private String version;
     
-    @Override
-    public void validate() throws NacosApiException {
-        super.validate();
-        if (StringUtils.isBlank(version)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                "Required parameter 'version' type String is not present");
-        }
+    public String getMcpName() {
+        return mcpName;
+    }
+    
+    public void setMcpName(String mcpName) {
+        this.mcpName = mcpName;
     }
     
     public String getVersion() {

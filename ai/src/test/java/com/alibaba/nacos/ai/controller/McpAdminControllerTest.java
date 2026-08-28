@@ -20,8 +20,8 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
 import com.alibaba.nacos.ai.service.mcp.McpOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -358,39 +358,39 @@ class McpAdminControllerTest {
     
     @Test
     void standardLifecycleApisDelegateByNameAndExactVersion() throws Exception {
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
-        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
-        when(lifecycleOperationService.listLifecycleVersions(
+        McpServerVersionDetail detail = new McpServerVersionDetail();
+        McpServerVersionSummary summary = new McpServerVersionSummary();
+        when(lifecycleOperationService.listMcpServerVersions(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "draft", 1, 10))
             .thenReturn(new Page<>());
-        when(lifecycleOperationService.getLifecycleVersion(
+        when(lifecycleOperationService.getMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(detail);
-        when(lifecycleOperationService.createLifecycleDraft(
+        when(lifecycleOperationService.createMcpServerDraft(
             eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), any(McpServerBasicInfo.class), isNull(),
             isNull(), isNull())).thenReturn(detail);
-        when(lifecycleOperationService.updateLifecycleDraft(
+        when(lifecycleOperationService.updateMcpServerDraft(
             eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), any(McpServerBasicInfo.class), isNull(),
             isNull(), isNull())).thenReturn(detail);
-        when(lifecycleOperationService.submitLifecycleVersion(
+        when(lifecycleOperationService.submitMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.publishLifecycleVersion(
+        when(lifecycleOperationService.publishMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.forcePublishLifecycleVersion(
+        when(lifecycleOperationService.forcePublishMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.redraftLifecycleVersion(
+        when(lifecycleOperationService.redraftMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.onlineLifecycleVersion(
+        when(lifecycleOperationService.onlineMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.offlineLifecycleVersion(
+        when(lifecycleOperationService.offlineMcpServerVersion(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0"))
             .thenReturn(summary);
-        when(lifecycleOperationService.updateLifecycleLabels(
+        when(lifecycleOperationService.updateMcpServerLabels(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", Map.of()))
             .thenReturn(Map.of());
         
@@ -422,9 +422,9 @@ class McpAdminControllerTest {
             Constants.MCP_ADMIN_PATH + "/labels").param("mcpName", "nacos-mcp-server"))
             .andReturn().getResponse().getStatus());
         
-        verify(lifecycleOperationService).deleteLifecycleDraft(
+        verify(lifecycleOperationService).deleteMcpServerDraft(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0");
-        verify(lifecycleOperationService).updateLifecycleLabels(
+        verify(lifecycleOperationService).updateMcpServerLabels(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", Map.of());
     }
     
