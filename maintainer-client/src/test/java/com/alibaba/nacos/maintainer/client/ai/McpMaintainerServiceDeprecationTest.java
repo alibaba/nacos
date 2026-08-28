@@ -18,6 +18,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import org.junit.jupiter.api.Test;
 
@@ -44,25 +45,39 @@ class McpMaintainerServiceDeprecationTest {
     private static final Set<String> RETAINED_METHOD_NAMES = new HashSet<>(Arrays.asList(
         "listMcpServer", "searchMcpServer", "deleteMcpServer"));
     
+    private static final Set<String> CANONICAL_METHOD_NAMES = new HashSet<>(Arrays.asList(
+        "listMcpServerVersions", "getMcpServerVersion", "deleteMcpServerDraft",
+        "submitMcpServerVersion", "publishMcpServerVersion", "forcePublishMcpServerVersion",
+        "redraftMcpServerVersion", "onlineMcpServerVersion", "offlineMcpServerVersion",
+        "updateMcpServerLabels"));
+    
     @Test
-    void legacyMethodsWithLifecycleReplacementsShouldBeDeprecated() {
+    void legacyMethodsWithCanonicalReplacementsShouldBeDeprecated() {
         int deprecatedMethodCount = 0;
         int retainedMethodCount = 0;
+        int canonicalMethodCount = 0;
         for (Method method : McpMaintainerService.class.getDeclaredMethods()) {
             if (DEPRECATED_METHOD_NAMES.contains(method.getName())) {
-                assertTrue(method.isAnnotationPresent(Deprecated.class), method::toString);
-                deprecatedMethodCount++;
+                if (isCanonicalDraftOverload(method)) {
+                    assertFalse(method.isAnnotationPresent(Deprecated.class), method::toString);
+                    canonicalMethodCount++;
+                } else {
+                    assertTrue(method.isAnnotationPresent(Deprecated.class), method::toString);
+                    deprecatedMethodCount++;
+                }
             }
             if (RETAINED_METHOD_NAMES.contains(method.getName())) {
                 assertFalse(method.isAnnotationPresent(Deprecated.class), method::toString);
                 retainedMethodCount++;
             }
-            if (method.getName().contains("Lifecycle")) {
+            if (CANONICAL_METHOD_NAMES.contains(method.getName())) {
                 assertFalse(method.isAnnotationPresent(Deprecated.class), method::toString);
+                canonicalMethodCount++;
             }
         }
         assertEquals(21, deprecatedMethodCount);
         assertEquals(9, retainedMethodCount);
+        assertEquals(24, canonicalMethodCount);
     }
     
     @Test
@@ -86,5 +101,17 @@ class McpMaintainerServiceDeprecationTest {
             String.class, String.class, boolean.class, McpServerBasicInfo.class,
             McpToolSpecification.class, McpEndpointSpec.class, boolean.class)
             .isAnnotationPresent(Deprecated.class));
+        assertFalse(AiMaintainerService.class.getDeclaredMethod("createMcpServer", String.class,
+            McpServerDraftRequest.class).isAnnotationPresent(Deprecated.class));
+        assertFalse(AiMaintainerService.class.getDeclaredMethod("updateMcpServer", String.class,
+            McpServerDraftRequest.class).isAnnotationPresent(Deprecated.class));
+        assertFalse(McpMaintainerServiceImpl.class.getDeclaredMethod("createMcpServer",
+            String.class, McpServerDraftRequest.class).isAnnotationPresent(Deprecated.class));
+        assertFalse(McpMaintainerServiceImpl.class.getDeclaredMethod("updateMcpServer",
+            String.class, McpServerDraftRequest.class).isAnnotationPresent(Deprecated.class));
+    }
+    
+    private boolean isCanonicalDraftOverload(Method method) {
+        return Arrays.asList(method.getParameterTypes()).contains(McpServerDraftRequest.class);
     }
 }

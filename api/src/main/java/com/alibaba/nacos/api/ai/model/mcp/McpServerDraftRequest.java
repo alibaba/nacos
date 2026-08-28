@@ -23,7 +23,7 @@ import java.io.Serializable;
  *
  * @author Nacos
  */
-public class McpLifecycleDraftRequest implements Serializable {
+public class McpServerDraftRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

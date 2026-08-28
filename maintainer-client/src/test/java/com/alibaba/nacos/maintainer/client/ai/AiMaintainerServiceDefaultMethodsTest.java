@@ -24,11 +24,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -203,52 +203,52 @@ class AiMaintainerServiceDefaultMethodsTest {
     @Test
     @DisplayName("AiMaintainerService lifecycle methods should delegate to mcp()")
     void testMcpLifecycleDelegation() throws NacosException {
-        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
+        McpServerVersionSummary summary = new McpServerVersionSummary();
         summary.setVersion("1.0.0");
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
+        McpServerVersionDetail detail = new McpServerVersionDetail();
         detail.setMcpName("testMcp");
         detail.setVersion("1.0.0");
-        Page<McpLifecycleVersionSummary> page = new Page<>();
+        Page<McpServerVersionSummary> page = new Page<>();
         page.setPageItems(Collections.singletonList(summary));
         Map<String, String> labels = Collections.singletonMap("stable", "1.0.0");
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
             httpResult(page), httpResult(detail), httpResult(detail), httpResult(detail),
             httpResult(null), httpResult(summary), httpResult(summary), httpResult(summary),
             httpResult(summary), httpResult(summary), httpResult(summary), httpResult(labels));
-        McpLifecycleDraftRequest draftRequest = new McpLifecycleDraftRequest();
+        McpServerDraftRequest draftRequest = new McpServerDraftRequest();
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setName("testMcp");
         draftRequest.setServerSpecification(server);
-        McpLifecycleVersionCommand command = new McpLifecycleVersionCommand();
+        McpServerVersionCommand command = new McpServerVersionCommand();
         command.setMcpName("testMcp");
         command.setVersion("1.0.0");
-        McpLifecycleLabelsUpdateRequest labelsRequest = new McpLifecycleLabelsUpdateRequest();
+        McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         labelsRequest.setMcpName("testMcp");
         labelsRequest.setLabels(labels);
         
-        assertEquals(1, aiMaintainerService.listLifecycleVersions("public", "testMcp", null, 1,
+        assertEquals(1, aiMaintainerService.listMcpServerVersions("public", "testMcp", null, 1,
             10).getPageItems().size());
         assertEquals("testMcp",
-            aiMaintainerService.getLifecycleVersion("public", "testMcp", "1.0.0").getMcpName());
+            aiMaintainerService.getMcpServerVersion("public", "testMcp", "1.0.0").getMcpName());
         assertEquals("testMcp",
-            aiMaintainerService.createLifecycleDraft("public", draftRequest).getMcpName());
+            aiMaintainerService.createMcpServer("public", draftRequest).getMcpName());
         assertEquals("testMcp",
-            aiMaintainerService.updateLifecycleDraft("public", draftRequest).getMcpName());
-        aiMaintainerService.deleteLifecycleDraft("public", command);
+            aiMaintainerService.updateMcpServer("public", draftRequest).getMcpName());
+        aiMaintainerService.deleteMcpServerDraft("public", command);
         assertEquals("1.0.0",
-            aiMaintainerService.submitLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.submitMcpServerVersion("public", command).getVersion());
         assertEquals("1.0.0",
-            aiMaintainerService.publishLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.publishMcpServerVersion("public", command).getVersion());
         assertEquals("1.0.0",
-            aiMaintainerService.forcePublishLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.forcePublishMcpServerVersion("public", command).getVersion());
         assertEquals("1.0.0",
-            aiMaintainerService.redraftLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.redraftMcpServerVersion("public", command).getVersion());
         assertEquals("1.0.0",
-            aiMaintainerService.onlineLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.onlineMcpServerVersion("public", command).getVersion());
         assertEquals("1.0.0",
-            aiMaintainerService.offlineLifecycleVersion("public", command).getVersion());
+            aiMaintainerService.offlineMcpServerVersion("public", command).getVersion());
         assertEquals(labels,
-            aiMaintainerService.updateLifecycleLabels("public", labelsRequest));
+            aiMaintainerService.updateMcpServerLabels("public", labelsRequest));
     }
     
     private HttpRestResult<String> httpResult(Object data) {

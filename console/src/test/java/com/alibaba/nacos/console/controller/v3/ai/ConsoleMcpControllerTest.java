@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
@@ -167,29 +167,29 @@ class ConsoleMcpControllerTest {
     
     @Test
     void testStandardLifecycleApisDelegateByNameAndExactVersion() throws Exception {
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
-        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
-        when(mcpProxy.listLifecycleVersions("nacos-default-mcp", "test", "draft", 1, 10))
+        McpServerVersionDetail detail = new McpServerVersionDetail();
+        McpServerVersionSummary summary = new McpServerVersionSummary();
+        when(mcpProxy.listMcpServerVersions("nacos-default-mcp", "test", "draft", 1, 10))
             .thenReturn(new Page<>());
-        when(mcpProxy.getLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.getMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(detail);
-        when(mcpProxy.createLifecycleDraft(eq("nacos-default-mcp"),
+        when(mcpProxy.createMcpServerDraft(eq("nacos-default-mcp"),
             any(McpServerBasicInfo.class), isNull(), isNull(), isNull())).thenReturn(detail);
-        when(mcpProxy.updateLifecycleDraft(eq("nacos-default-mcp"),
+        when(mcpProxy.updateMcpServerDraft(eq("nacos-default-mcp"),
             any(McpServerBasicInfo.class), isNull(), isNull(), isNull())).thenReturn(detail);
-        when(mcpProxy.submitLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.submitMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.publishLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.publishMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.forcePublishLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.forcePublishMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.redraftLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.redraftMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.onlineLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.onlineMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.offlineLifecycleVersion("nacos-default-mcp", "test", "1.0.0"))
+        when(mcpProxy.offlineMcpServerVersion("nacos-default-mcp", "test", "1.0.0"))
             .thenReturn(summary);
-        when(mcpProxy.updateLifecycleLabels("nacos-default-mcp", "test", Map.of()))
+        when(mcpProxy.updateMcpServerLabels("nacos-default-mcp", "test", Map.of()))
             .thenReturn(Map.of());
         
         assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.get(
@@ -220,8 +220,8 @@ class ConsoleMcpControllerTest {
             "/v3/console/ai/mcp/labels").param("namespaceId", "nacos-default-mcp")
             .param("mcpName", "test")).andReturn().getResponse().getStatus());
         
-        verify(mcpProxy).deleteLifecycleDraft("nacos-default-mcp", "test", "1.0.0");
-        verify(mcpProxy).updateLifecycleLabels("nacos-default-mcp", "test", Map.of());
+        verify(mcpProxy).deleteMcpServerDraft("nacos-default-mcp", "test", "1.0.0");
+        verify(mcpProxy).updateMcpServerLabels("nacos-default-mcp", "test", Map.of());
     }
     
     @Test

@@ -23,7 +23,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-class McpLifecycleRequestModelTest {
+class McpServerRequestModelTest {
     
     @Test
     void testDraftRequestAccessors() {
@@ -31,7 +31,7 @@ class McpLifecycleRequestModelTest {
         McpToolSpecification tools = new McpToolSpecification();
         McpResourceSpecification resources = new McpResourceSpecification();
         McpEndpointSpec endpoint = new McpEndpointSpec();
-        McpLifecycleDraftRequest request = new McpLifecycleDraftRequest();
+        McpServerDraftRequest request = new McpServerDraftRequest();
         
         request.setServerSpecification(server);
         request.setToolSpecification(tools);
@@ -49,8 +49,8 @@ class McpLifecycleRequestModelTest {
         String mcpName = "weather";
         String version = "1.0.0";
         Map<String, String> labels = Collections.singletonMap("stable", version);
-        McpLifecycleVersionCommand command = new McpLifecycleVersionCommand();
-        McpLifecycleLabelsUpdateRequest labelsRequest = new McpLifecycleLabelsUpdateRequest();
+        McpServerVersionCommand command = new McpServerVersionCommand();
+        McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         
         command.setMcpName(mcpName);
         command.setVersion(version);

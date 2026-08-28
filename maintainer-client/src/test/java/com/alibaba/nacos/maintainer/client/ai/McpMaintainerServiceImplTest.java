@@ -17,11 +17,11 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -82,15 +82,15 @@ class McpMaintainerServiceImplTest {
     
     @Test
     void testLifecycleReadsUseFormQueryParameters() throws NacosException {
-        Page<McpLifecycleVersionSummary> page = new Page<>();
+        Page<McpServerVersionSummary> page = new Page<>();
         page.setPageItems(Collections.singletonList(summary()));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(page), response(detail()));
         
-        Page<McpLifecycleVersionSummary> actual = service.listLifecycleVersions(NAMESPACE_ID,
+        Page<McpServerVersionSummary> actual = service.listMcpServerVersions(NAMESPACE_ID,
             MCP_NAME, "draft", 2, 20);
-        McpLifecycleVersionDetail detail =
-            service.getLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION);
+        McpServerVersionDetail detail =
+            service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION);
         
         assertEquals(VERSION, actual.getPageItems().get(0).getVersion());
         assertEquals(MCP_NAME, detail.getMcpName());
@@ -106,11 +106,11 @@ class McpMaintainerServiceImplTest {
     void testDraftTransportSerializesAllOptionalContent() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(detail()), response(detail()), response(null));
-        McpLifecycleDraftRequest request = draftRequest();
+        McpServerDraftRequest request = draftRequest();
         
-        service.createLifecycleDraft(NAMESPACE_ID, request);
-        service.updateLifecycleDraft(NAMESPACE_ID, request);
-        service.deleteLifecycleDraft(NAMESPACE_ID, versionCommand());
+        service.createMcpServer(NAMESPACE_ID, request);
+        service.updateMcpServer(NAMESPACE_ID, request);
+        service.deleteMcpServerDraft(NAMESPACE_ID, versionCommand());
         
         List<HttpRequest> requests = captureRequests(3);
         assertRequest(requests.get(0), HttpMethod.POST, rootPath() + "/draft");
@@ -136,11 +136,11 @@ class McpMaintainerServiceImplTest {
     void testDraftTransportFallsBackToLegacyVersionField() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(detail()));
-        McpLifecycleDraftRequest request = draftRequest();
+        McpServerDraftRequest request = draftRequest();
         request.getServerSpecification().setVersionDetail(null);
         request.getServerSpecification().setVersion(VERSION);
         
-        service.createLifecycleDraft(NAMESPACE_ID, request);
+        service.createMcpServer(NAMESPACE_ID, request);
         
         HttpRequest actual = captureRequests(1).get(0);
         assertEquals(VERSION, actual.getParamValues().get("version"));
@@ -151,14 +151,14 @@ class McpMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(summary()), response(summary()), response(summary()),
                 response(summary()), response(summary()), response(summary()));
-        McpLifecycleVersionCommand command = versionCommand();
+        McpServerVersionCommand command = versionCommand();
         
-        service.submitLifecycleVersion(NAMESPACE_ID, command);
-        service.publishLifecycleVersion(NAMESPACE_ID, command);
-        service.forcePublishLifecycleVersion(NAMESPACE_ID, command);
-        service.redraftLifecycleVersion(NAMESPACE_ID, command);
-        service.onlineLifecycleVersion(NAMESPACE_ID, command);
-        service.offlineLifecycleVersion(NAMESPACE_ID, command);
+        service.submitMcpServerVersion(NAMESPACE_ID, command);
+        service.publishMcpServerVersion(NAMESPACE_ID, command);
+        service.forcePublishMcpServerVersion(NAMESPACE_ID, command);
+        service.redraftMcpServerVersion(NAMESPACE_ID, command);
+        service.onlineMcpServerVersion(NAMESPACE_ID, command);
+        service.offlineMcpServerVersion(NAMESPACE_ID, command);
         
         List<HttpRequest> requests = captureRequests(6);
         List<String> paths = Arrays.asList("/submit", "/publish", "/force-publish", "/redraft",
@@ -175,13 +175,13 @@ class McpMaintainerServiceImplTest {
         Map<String, String> labels = Collections.singletonMap("stable", VERSION);
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(labels), response(summary()), response(new Page<>()));
-        McpLifecycleLabelsUpdateRequest request = new McpLifecycleLabelsUpdateRequest();
+        McpServerLabelsUpdateRequest request = new McpServerLabelsUpdateRequest();
         request.setMcpName(MCP_NAME);
         request.setLabels(labels);
         
-        assertEquals(labels, service.updateLifecycleLabels(request));
-        service.submitLifecycleVersion(versionCommand());
-        service.listLifecycleVersions(MCP_NAME, null, 1, 100);
+        assertEquals(labels, service.updateMcpServerLabels(request));
+        service.submitMcpServerVersion(versionCommand());
+        service.listMcpServerVersions(MCP_NAME, null, 1, 100);
         
         List<HttpRequest> requests = captureRequests(3);
         for (HttpRequest httpRequest : requests) {
@@ -197,15 +197,15 @@ class McpMaintainerServiceImplTest {
     void testOptionalLifecycleParametersMayBeOmitted() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(Collections.emptyMap()), response(detail()));
-        McpLifecycleLabelsUpdateRequest labelsRequest = new McpLifecycleLabelsUpdateRequest();
+        McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         labelsRequest.setMcpName(MCP_NAME);
-        McpLifecycleDraftRequest draftRequest = draftRequest();
+        McpServerDraftRequest draftRequest = draftRequest();
         draftRequest.setToolSpecification(null);
         draftRequest.setResourceSpecification(null);
         draftRequest.setEndpointSpecification(null);
         
-        assertEquals(Collections.emptyMap(), service.updateLifecycleLabels("", labelsRequest));
-        service.createLifecycleDraft("", draftRequest);
+        assertEquals(Collections.emptyMap(), service.updateMcpServerLabels("", labelsRequest));
+        service.createMcpServer("", draftRequest);
         
         List<HttpRequest> requests = captureRequests(2);
         assertFalse(requests.get(0).getParamValues().containsKey("labels"));
@@ -220,29 +220,29 @@ class McpMaintainerServiceImplTest {
     
     @Test
     void testAllDefaultNamespaceOverloads() throws NacosException {
-        Page<McpLifecycleVersionSummary> page = new Page<>();
+        Page<McpServerVersionSummary> page = new Page<>();
         page.setPageItems(Collections.singletonList(summary()));
         Map<String, String> labels = Collections.singletonMap("stable", VERSION);
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
             response(page), response(detail()), response(detail()), response(detail()),
             response(null), response(summary()), response(summary()), response(summary()),
             response(summary()), response(summary()), response(summary()), response(labels));
-        McpLifecycleLabelsUpdateRequest labelsRequest = new McpLifecycleLabelsUpdateRequest();
+        McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         labelsRequest.setMcpName(MCP_NAME);
         labelsRequest.setLabels(labels);
         
-        service.listLifecycleVersions(MCP_NAME, "draft", 1, 10);
-        service.getLifecycleVersion(MCP_NAME, VERSION);
-        service.createLifecycleDraft(draftRequest());
-        service.updateLifecycleDraft(draftRequest());
-        service.deleteLifecycleDraft(versionCommand());
-        service.submitLifecycleVersion(versionCommand());
-        service.publishLifecycleVersion(versionCommand());
-        service.forcePublishLifecycleVersion(versionCommand());
-        service.redraftLifecycleVersion(versionCommand());
-        service.onlineLifecycleVersion(versionCommand());
-        service.offlineLifecycleVersion(versionCommand());
-        assertEquals(labels, service.updateLifecycleLabels(labelsRequest));
+        service.listMcpServerVersions(MCP_NAME, "draft", 1, 10);
+        service.getMcpServerVersion(MCP_NAME, VERSION);
+        service.createMcpServer(draftRequest());
+        service.updateMcpServer(draftRequest());
+        service.deleteMcpServerDraft(versionCommand());
+        service.submitMcpServerVersion(versionCommand());
+        service.publishMcpServerVersion(versionCommand());
+        service.forcePublishMcpServerVersion(versionCommand());
+        service.redraftMcpServerVersion(versionCommand());
+        service.onlineMcpServerVersion(versionCommand());
+        service.offlineMcpServerVersion(versionCommand());
+        assertEquals(labels, service.updateMcpServerLabels(labelsRequest));
         
         for (HttpRequest request : captureRequests(12)) {
             assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
@@ -253,12 +253,12 @@ class McpMaintainerServiceImplTest {
     @Test
     void testInvalidDraftRequestsAreRejectedLocally() {
         assertThrows(IllegalArgumentException.class,
-            () -> service.createLifecycleDraft(NAMESPACE_ID, null));
-        McpLifecycleDraftRequest request = new McpLifecycleDraftRequest();
+            () -> service.createMcpServer(NAMESPACE_ID, null));
+        McpServerDraftRequest request = new McpServerDraftRequest();
         assertThrows(IllegalArgumentException.class,
-            () -> service.updateLifecycleDraft(NAMESPACE_ID, request));
+            () -> service.updateMcpServer(NAMESPACE_ID, request));
         assertThrows(IllegalArgumentException.class,
-            () -> service.submitLifecycleVersion(NAMESPACE_ID, null));
+            () -> service.submitMcpServerVersion(NAMESPACE_ID, null));
     }
     
     private List<HttpRequest> captureRequests(int count) throws NacosException {
@@ -277,8 +277,8 @@ class McpMaintainerServiceImplTest {
         return Constants.AdminApiPath.AI_MCP_ADMIN_PATH;
     }
     
-    private McpLifecycleDraftRequest draftRequest() {
-        McpLifecycleDraftRequest result = new McpLifecycleDraftRequest();
+    private McpServerDraftRequest draftRequest() {
+        McpServerDraftRequest result = new McpServerDraftRequest();
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setName(MCP_NAME);
         ServerVersionDetail versionDetail = new ServerVersionDetail();
@@ -291,22 +291,22 @@ class McpMaintainerServiceImplTest {
         return result;
     }
     
-    private McpLifecycleVersionCommand versionCommand() {
-        McpLifecycleVersionCommand result = new McpLifecycleVersionCommand();
+    private McpServerVersionCommand versionCommand() {
+        McpServerVersionCommand result = new McpServerVersionCommand();
         result.setMcpName(MCP_NAME);
         result.setVersion(VERSION);
         return result;
     }
     
-    private McpLifecycleVersionDetail detail() {
-        McpLifecycleVersionDetail result = new McpLifecycleVersionDetail();
+    private McpServerVersionDetail detail() {
+        McpServerVersionDetail result = new McpServerVersionDetail();
         result.setMcpName(MCP_NAME);
         result.setVersion(VERSION);
         return result;
     }
     
-    private McpLifecycleVersionSummary summary() {
-        McpLifecycleVersionSummary result = new McpLifecycleVersionSummary();
+    private McpServerVersionSummary summary() {
+        McpServerVersionSummary result = new McpServerVersionSummary();
         result.setVersion(VERSION);
         return result;
     }

@@ -255,9 +255,9 @@ should migrate as follows:
 
 | Deprecated operation | Canonical replacement |
 | --- | --- |
-| Serving-projection detail | Select an exact Version with `listLifecycleVersions`, then use `getLifecycleVersion`. |
-| Local, remote, or generic direct-online create | Use `createLifecycleDraft`, then `submitLifecycleVersion`; when review applies, explicitly use `publishLifecycleVersion` after approval. |
-| Direct-online update | Use `createLifecycleDraft` for a new Version or `updateLifecycleDraft` for an existing draft, then submit and, when required, publish it. |
+| Serving-projection detail | Select an exact Version with `listMcpServerVersions`, then use `getMcpServerVersion`. |
+| Local, remote, or generic direct-online create | Use `createMcpServer(McpServerDraftRequest)`, then `submitMcpServerVersion`; when review applies, explicitly use `publishMcpServerVersion` after approval. |
+| Direct-online update | Use `createMcpServer(McpServerDraftRequest)` for a new Version or `updateMcpServer(McpServerDraftRequest)` for an existing draft, then submit and, when required, publish it. |
 
 Legacy cross-resource list/search and published-Version or full-Resource
 delete methods are not deprecated by this decision because the typed lifecycle

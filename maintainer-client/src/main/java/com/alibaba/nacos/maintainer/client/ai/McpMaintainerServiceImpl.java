@@ -18,11 +18,11 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -108,6 +108,12 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return result.getData();
     }
     
+    @Override
+    public McpServerVersionDetail createMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException {
+        return executeDraftRequest(HttpMethod.POST, namespaceId, request);
+    }
+    
     @Deprecated
     @Override
     public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
@@ -131,6 +137,12 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     }
     
     @Override
+    public McpServerVersionDetail updateMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException {
+        return executeDraftRequest(HttpMethod.PUT, namespaceId, request);
+    }
+    
+    @Override
     public boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
         throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
@@ -151,7 +163,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     }
     
     @Override
-    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+    public Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
         String mcpName, String status, int pageNo, int pageSize) throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
@@ -160,39 +172,27 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         params.put("pageSize", String.valueOf(pageSize));
         HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.GET,
             ROOT_PATH + "/versions", namespaceId, mcpName, params);
-        Result<Page<McpLifecycleVersionSummary>> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<Page<McpLifecycleVersionSummary>>>() {
+        Result<Page<McpServerVersionSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<McpServerVersionSummary>>>() {
             });
         return result.getData();
     }
     
     @Override
-    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = lifecycleVersionParams(namespaceId, mcpName, version);
         HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.GET,
             ROOT_PATH + "/version", namespaceId, mcpName, params);
-        Result<McpLifecycleVersionDetail> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<McpLifecycleVersionDetail>>() {
+        Result<McpServerVersionDetail> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpServerVersionDetail>>() {
             });
         return result.getData();
     }
     
     @Override
-    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
-        McpLifecycleDraftRequest request) throws NacosException {
-        return executeDraftRequest(HttpMethod.POST, namespaceId, request);
-    }
-    
-    @Override
-    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
-        McpLifecycleDraftRequest request) throws NacosException {
-        return executeDraftRequest(HttpMethod.PUT, namespaceId, request);
-    }
-    
-    @Override
-    public void deleteLifecycleDraft(String namespaceId, McpLifecycleVersionCommand command)
+    public void deleteMcpServerDraft(String namespaceId, McpServerVersionCommand command)
         throws NacosException {
         command = requireRequest(command);
         namespaceId = resolveMcpNamespace(namespaceId);
@@ -202,44 +202,44 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     }
     
     @Override
-    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary submitMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/submit");
     }
     
     @Override
-    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary publishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/publish");
     }
     
     @Override
-    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/force-publish");
     }
     
     @Override
-    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary redraftMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/redraft");
     }
     
     @Override
-    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary onlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/online");
     }
     
     @Override
-    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException {
+    public McpServerVersionSummary offlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException {
         return executeVersionCommand(namespaceId, command, "/offline");
     }
     
     @Override
-    public Map<String, String> updateLifecycleLabels(String namespaceId,
-        McpLifecycleLabelsUpdateRequest request) throws NacosException {
+    public Map<String, String> updateMcpServerLabels(String namespaceId,
+        McpServerLabelsUpdateRequest request) throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = lifecycleIdentityParams(namespaceId, request.getMcpName());
@@ -276,8 +276,8 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return result.getData();
     }
     
-    private McpLifecycleVersionDetail executeDraftRequest(String method, String namespaceId,
-        McpLifecycleDraftRequest request) throws NacosException {
+    private McpServerVersionDetail executeDraftRequest(String method, String namespaceId,
+        McpServerDraftRequest request) throws NacosException {
         request = requireRequest(request);
         McpServerBasicInfo serverSpecification = request.getServerSpecification();
         if (serverSpecification == null) {
@@ -298,22 +298,22 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         putJsonIfNotNull(params, "endpointSpecification", request.getEndpointSpecification());
         HttpRestResult<String> restResult = executeLifecycleRequest(method, ROOT_PATH + "/draft",
             namespaceId, mcpName, params);
-        Result<McpLifecycleVersionDetail> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<McpLifecycleVersionDetail>>() {
+        Result<McpServerVersionDetail> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpServerVersionDetail>>() {
             });
         return result.getData();
     }
     
-    private McpLifecycleVersionSummary executeVersionCommand(String namespaceId,
-        McpLifecycleVersionCommand command, String path) throws NacosException {
+    private McpServerVersionSummary executeVersionCommand(String namespaceId,
+        McpServerVersionCommand command, String path) throws NacosException {
         command = requireRequest(command);
         namespaceId = resolveMcpNamespace(namespaceId);
         Map<String, String> params = lifecycleVersionParams(namespaceId, command.getMcpName(),
             command.getVersion());
         HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.POST,
             ROOT_PATH + path, namespaceId, command.getMcpName(), params);
-        Result<McpLifecycleVersionSummary> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<McpLifecycleVersionSummary>>() {
+        Result<McpServerVersionSummary> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpServerVersionSummary>>() {
             });
         return result.getData();
     }
@@ -347,7 +347,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     
     private <T> T requireRequest(T request) {
         if (request == null) {
-            throw new IllegalArgumentException("MCP lifecycle request must not be null");
+            throw new IllegalArgumentException("MCP management request must not be null");
         }
         return request;
     }

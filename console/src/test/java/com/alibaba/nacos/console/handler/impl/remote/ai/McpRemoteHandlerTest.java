@@ -19,11 +19,11 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -136,31 +136,31 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     
     @Test
     void standardLifecycleMethodsUseTypedMaintainerTransport() throws NacosException {
-        Page<McpLifecycleVersionSummary> page = new Page<>();
-        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
-        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
+        Page<McpServerVersionSummary> page = new Page<>();
+        McpServerVersionDetail detail = new McpServerVersionDetail();
+        McpServerVersionSummary summary = new McpServerVersionSummary();
         Map<String, String> labels = Collections.singletonMap("stable", "1.0.0");
-        when(mcpMaintainerService.listLifecycleVersions("ns", "name", null, 1, 10))
+        when(mcpMaintainerService.listMcpServerVersions("ns", "name", null, 1, 10))
             .thenReturn(page);
-        when(mcpMaintainerService.getLifecycleVersion("ns", "name", "1.0.0"))
+        when(mcpMaintainerService.getMcpServerVersion("ns", "name", "1.0.0"))
             .thenReturn(detail);
-        when(mcpMaintainerService.createLifecycleDraft(eq("ns"), any()))
+        when(mcpMaintainerService.createMcpServer(eq("ns"), any()))
             .thenReturn(detail);
-        when(mcpMaintainerService.updateLifecycleDraft(eq("ns"), any()))
+        when(mcpMaintainerService.updateMcpServer(eq("ns"), any()))
             .thenReturn(detail);
-        when(mcpMaintainerService.submitLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.submitMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.publishLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.publishMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.forcePublishLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.forcePublishMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.redraftLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.redraftMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.onlineLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.onlineMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.offlineLifecycleVersion(eq("ns"), any()))
+        when(mcpMaintainerService.offlineMcpServerVersion(eq("ns"), any()))
             .thenReturn(summary);
-        when(mcpMaintainerService.updateLifecycleLabels(eq("ns"), any()))
+        when(mcpMaintainerService.updateMcpServerLabels(eq("ns"), any()))
             .thenReturn(labels);
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setName("name");
@@ -169,42 +169,42 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
         McpEndpointSpec endpoint = new McpEndpointSpec();
         
         assertEquals(page,
-            mcpRemoteHandler.listLifecycleVersions("ns", "name", null, 1, 10));
+            mcpRemoteHandler.listMcpServerVersions("ns", "name", null, 1, 10));
         assertEquals(detail,
-            mcpRemoteHandler.getLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.getMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(detail,
-            mcpRemoteHandler.createLifecycleDraft("ns", server, tools, resources, endpoint));
+            mcpRemoteHandler.createMcpServerDraft("ns", server, tools, resources, endpoint));
         assertEquals(detail,
-            mcpRemoteHandler.updateLifecycleDraft("ns", server, tools, resources, endpoint));
-        mcpRemoteHandler.deleteLifecycleDraft("ns", "name", "1.0.0");
+            mcpRemoteHandler.updateMcpServerDraft("ns", server, tools, resources, endpoint));
+        mcpRemoteHandler.deleteMcpServerDraft("ns", "name", "1.0.0");
         assertEquals(summary,
-            mcpRemoteHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.submitMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(summary,
-            mcpRemoteHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.publishMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(summary,
-            mcpRemoteHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.forcePublishMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(summary,
-            mcpRemoteHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.redraftMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(summary,
-            mcpRemoteHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.onlineMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(summary,
-            mcpRemoteHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
+            mcpRemoteHandler.offlineMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(labels,
-            mcpRemoteHandler.updateLifecycleLabels("ns", "name", labels));
+            mcpRemoteHandler.updateMcpServerLabels("ns", "name", labels));
         
-        ArgumentCaptor<McpLifecycleDraftRequest> draftCaptor =
-            ArgumentCaptor.forClass(McpLifecycleDraftRequest.class);
-        verify(mcpMaintainerService).createLifecycleDraft(eq("ns"), draftCaptor.capture());
+        ArgumentCaptor<McpServerDraftRequest> draftCaptor =
+            ArgumentCaptor.forClass(McpServerDraftRequest.class);
+        verify(mcpMaintainerService).createMcpServer(eq("ns"), draftCaptor.capture());
         assertEquals(server, draftCaptor.getValue().getServerSpecification());
         assertEquals(resources, draftCaptor.getValue().getResourceSpecification());
-        ArgumentCaptor<McpLifecycleVersionCommand> commandCaptor =
-            ArgumentCaptor.forClass(McpLifecycleVersionCommand.class);
-        verify(mcpMaintainerService).deleteLifecycleDraft(eq("ns"), commandCaptor.capture());
+        ArgumentCaptor<McpServerVersionCommand> commandCaptor =
+            ArgumentCaptor.forClass(McpServerVersionCommand.class);
+        verify(mcpMaintainerService).deleteMcpServerDraft(eq("ns"), commandCaptor.capture());
         assertEquals("name", commandCaptor.getValue().getMcpName());
         assertEquals("1.0.0", commandCaptor.getValue().getVersion());
-        ArgumentCaptor<McpLifecycleLabelsUpdateRequest> labelsCaptor =
-            ArgumentCaptor.forClass(McpLifecycleLabelsUpdateRequest.class);
-        verify(mcpMaintainerService).updateLifecycleLabels(eq("ns"), labelsCaptor.capture());
+        ArgumentCaptor<McpServerLabelsUpdateRequest> labelsCaptor =
+            ArgumentCaptor.forClass(McpServerLabelsUpdateRequest.class);
+        verify(mcpMaintainerService).updateMcpServerLabels(eq("ns"), labelsCaptor.capture());
         assertEquals(labels, labelsCaptor.getValue().getLabels());
     }
     

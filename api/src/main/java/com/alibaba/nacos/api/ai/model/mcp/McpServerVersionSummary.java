@@ -16,17 +16,20 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 
 /**
- * Bounded MCP Version lifecycle summary for management views.
+ * Canonical management summary for one exact MCP Server Version.
+ *
+ * <p>This single-Version model is distinct from {@link McpServerVersionInfo}, which is the legacy
+ * serving Manifest aggregate, and from the Registry-compatible
+ * {@link com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail} descriptor.</p>
  *
  * @author Nacos
+ * @see McpServerVersionDetail
+ * @see McpServerVersionInfo
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class McpLifecycleVersionSummary implements Serializable {
+public class McpServerVersionSummary implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

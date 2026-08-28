@@ -202,9 +202,9 @@ nacos.core.api.compatibility.enabled=true
 
 | 已废弃操作 | 标准替代方式 |
 | --- | --- |
-| Serving 投影详情 | 先通过 `listLifecycleVersions` 选择精确 Version，再使用 `getLifecycleVersion`。 |
-| Local、Remote 或通用 Direct-online Create | 使用 `createLifecycleDraft`，随后调用 `submitLifecycleVersion`；启用审核时，在审核通过后显式调用 `publishLifecycleVersion`。 |
-| Direct-online Update | 新 Version 使用 `createLifecycleDraft`，已有 Draft 使用 `updateLifecycleDraft`，随后 Submit，并在需要时 Publish。 |
+| Serving 投影详情 | 先通过 `listMcpServerVersions` 选择精确 Version，再使用 `getMcpServerVersion`。 |
+| Local、Remote 或通用 Direct-online Create | 使用 `createMcpServer(McpServerDraftRequest)`，随后调用 `submitMcpServerVersion`；启用审核时，在审核通过后显式调用 `publishMcpServerVersion`。 |
+| Direct-online Update | 新 Version 使用 `createMcpServer(McpServerDraftRequest)`，已有 Draft 使用 `updateMcpServer(McpServerDraftRequest)`，随后 Submit，并在需要时 Publish。 |
 
 旧的跨 Resource List/Search，以及 Published Version 或完整 Resource Delete 方法不在本次废弃
 范围内，因为 Typed Lifecycle 接口尚未提供语义等价的替代方法。它们必须在补齐独立 API 设计并完成

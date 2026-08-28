@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleDraftForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerDraftForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -238,7 +238,7 @@ class McpRequestUtilTest {
     @Test
     void parseLifecycleDraftUsesOuterNameAndVersionWithoutCompatibilityId()
         throws NacosApiException {
-        McpLifecycleDraftForm form = lifecycleDraftForm(
+        McpServerDraftForm form = lifecycleDraftForm(
             "{\"protocol\":\"stdio\",\"description\":\"draft\",\"enabled\":true}");
         form.setToolSpecification(MCP_TOOL_SPEC);
         form.setResourceSpecification(MCP_RESOURCE_SPEC);
@@ -256,35 +256,35 @@ class McpRequestUtilTest {
     
     @Test
     void parseLifecycleDraftRejectsNestedIdAndIdentityConflicts() {
-        McpLifecycleDraftForm idForm = lifecycleDraftForm(
+        McpServerDraftForm idForm = lifecycleDraftForm(
             "{\"protocol\":\"stdio\",\"id\":\"legacy-id\"}");
         assertThrows(NacosApiException.class,
             () -> McpRequestUtil.parseMcpServerBasicInfo(idForm));
         
-        McpLifecycleDraftForm nameForm = lifecycleDraftForm(
+        McpServerDraftForm nameForm = lifecycleDraftForm(
             "{\"protocol\":\"stdio\",\"name\":\"another\"}");
         assertThrows(NacosApiException.class,
             () -> McpRequestUtil.parseMcpServerBasicInfo(nameForm));
         
-        McpLifecycleDraftForm versionForm = lifecycleDraftForm(
+        McpServerDraftForm versionForm = lifecycleDraftForm(
             "{\"protocol\":\"stdio\",\"versionDetail\":{\"version\":\"2.0.0\"}}");
         assertThrows(NacosApiException.class,
             () -> McpRequestUtil.parseMcpServerBasicInfo(versionForm));
         
-        McpLifecycleDraftForm topLevelVersionForm = lifecycleDraftForm(
+        McpServerDraftForm topLevelVersionForm = lifecycleDraftForm(
             "{\"protocol\":\"stdio\",\"version\":\"2.0.0\","
                 + "\"versionDetail\":{\"version\":\"1.0.0\"}}");
         assertThrows(NacosApiException.class,
             () -> McpRequestUtil.parseMcpServerBasicInfo(topLevelVersionForm));
         
-        McpLifecycleDraftForm nullForm = lifecycleDraftForm("null");
+        McpServerDraftForm nullForm = lifecycleDraftForm("null");
         assertThrows(NacosApiException.class,
             () -> McpRequestUtil.parseMcpServerBasicInfo(nullForm));
     }
     
     @Test
     void parseLifecycleDraftValidatesRemoteEndpointAndOptionalContent() throws NacosApiException {
-        McpLifecycleDraftForm form = lifecycleDraftForm(
+        McpServerDraftForm form = lifecycleDraftForm(
             "{\"protocol\":\"sse\",\"name\":\"nacos-mcp-server\","
                 + "\"versionDetail\":{\"version\":\"1.0.0\"}}");
         McpServerBasicInfo server = McpRequestUtil.parseMcpServerBasicInfo(form);
@@ -303,20 +303,20 @@ class McpRequestUtilTest {
     }
     
     @Test
-    void parseLifecycleLabelsTreatsBlankAsClearAndRejectsInvalidJson()
+    void parseMcpServerLabelsTreatsBlankAsClearAndRejectsInvalidJson()
         throws NacosApiException {
-        assertTrue(McpRequestUtil.parseLifecycleLabels(null).isEmpty());
-        assertTrue(McpRequestUtil.parseLifecycleLabels(" ").isEmpty());
+        assertTrue(McpRequestUtil.parseMcpServerLabels(null).isEmpty());
+        assertTrue(McpRequestUtil.parseMcpServerLabels(" ").isEmpty());
         assertEquals("1.0.0",
-            McpRequestUtil.parseLifecycleLabels("{\"stable\":\"1.0.0\"}").get("stable"));
+            McpRequestUtil.parseMcpServerLabels("{\"stable\":\"1.0.0\"}").get("stable"));
         assertThrows(NacosApiException.class,
-            () -> McpRequestUtil.parseLifecycleLabels("{"));
+            () -> McpRequestUtil.parseMcpServerLabels("{"));
         assertThrows(NacosApiException.class,
-            () -> McpRequestUtil.parseLifecycleLabels("null"));
+            () -> McpRequestUtil.parseMcpServerLabels("null"));
     }
     
-    private McpLifecycleDraftForm lifecycleDraftForm(String serverSpecification) {
-        McpLifecycleDraftForm result = new McpLifecycleDraftForm();
+    private McpServerDraftForm lifecycleDraftForm(String serverSpecification) {
+        McpServerDraftForm result = new McpServerDraftForm();
         result.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         result.setMcpName("nacos-mcp-server");
         result.setVersion("1.0.0");

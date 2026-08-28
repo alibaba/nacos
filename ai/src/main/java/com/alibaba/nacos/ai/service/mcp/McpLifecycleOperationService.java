@@ -43,8 +43,8 @@ import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -180,13 +180,13 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @return lifecycle Version summaries
      * @throws NacosException when the Resource is absent, unreadable, or inconsistent
      */
-    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+    public Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
         String mcpName, String status, int pageNo, int pageSize) throws NacosException {
         LifecycleResource lifecycle = requireReadableLifecycleResource(namespaceId, mcpName);
         Page<AiResourceVersion> source = resourceManager.listVersions(
             lifecycle.resource.getNamespaceId(), lifecycle.resource.getName(), RESOURCE_TYPE,
             status, pageNo, pageSize);
-        List<McpLifecycleVersionSummary> items = new ArrayList<>();
+        List<McpServerVersionSummary> items = new ArrayList<>();
         if (source != null && source.getPageItems() != null) {
             for (AiResourceVersion row : source.getPageItems()) {
                 validateVersionRow(lifecycle.resource, row);
@@ -205,7 +205,7 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @return exact lifecycle content and metadata
      * @throws NacosException when the Resource, Version, or content is unavailable
      */
-    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireReadableLifecycleResource(namespaceId, mcpName);
         return toLifecycleDetail(lifecycle, requireVersion(lifecycle, version));
@@ -222,7 +222,7 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @return persisted draft detail
      * @throws NacosException when the draft slot is occupied or persistence fails
      */
-    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail createMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
@@ -276,7 +276,7 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @return updated draft detail
      * @throws NacosException when the Version is absent, immutable, or not the current draft
      */
-    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+    public McpServerVersionDetail updateMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
@@ -314,7 +314,7 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @param version exact draft Version
      * @throws NacosException when the Version is not the current draft or cleanup fails
      */
-    public void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+    public void deleteMcpServerDraft(String namespaceId, String mcpName, String version)
         throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         AiResourceVersion row = resourceManager.findVersion(lifecycle.resource.getNamespaceId(),
@@ -344,7 +344,7 @@ public class McpLifecycleOperationService implements McpOperationService {
      * @return reviewing summary when a Pipeline starts, otherwise the directly published summary
      * @throws NacosException when the state transition or serving convergence fails
      */
-    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary submitMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         AiResourceVersion row = resourceManager.prepareSubmitVersion(
@@ -394,7 +394,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Publish one exact reviewed MCP Version.
      */
-    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary publishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         AiResourceVersion row = requireVersionStatuses(lifecycle, version, "publish",
@@ -413,7 +413,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Force-publish one exact MCP draft, reviewing, or reviewed Version.
      */
-    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+    public McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
         String mcpName, String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         AiResourceVersion row = requireVersionStatuses(lifecycle, version, "force-publish",
@@ -433,7 +433,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Move one exact reviewed MCP Version back to draft.
      */
-    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary redraftMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         resourceManager.doRedraft(lifecycle.resource.getNamespaceId(),
@@ -446,7 +446,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Bring one exact offline MCP Version online and make it latest.
      */
-    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         requireVersionStatuses(lifecycle, version, "online",
@@ -461,7 +461,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Take one exact online MCP Version offline and repair latest when necessary.
      */
-    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+    public McpServerVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         requireVersionStatuses(lifecycle, version, "offline",
@@ -476,7 +476,7 @@ public class McpLifecycleOperationService implements McpOperationService {
     /**
      * Replace custom labels while preserving the server-managed latest label.
      */
-    public Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+    public Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException {
         LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
         Map<String, String> result = resourceManager.validateAndUpdateLabels(
@@ -1176,9 +1176,9 @@ public class McpLifecycleOperationService implements McpOperationService {
         return result;
     }
     
-    private McpLifecycleVersionSummary toLifecycleSummary(AiResource resource,
+    private McpServerVersionSummary toLifecycleSummary(AiResource resource,
         AiResourceVersion row) {
-        McpLifecycleVersionSummary result = new McpLifecycleVersionSummary();
+        McpServerVersionSummary result = new McpServerVersionSummary();
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
         result.setAuthor(row.getAuthor());
@@ -1191,11 +1191,11 @@ public class McpLifecycleOperationService implements McpOperationService {
         return result;
     }
     
-    private McpLifecycleVersionDetail toLifecycleDetail(LifecycleResource lifecycle,
+    private McpServerVersionDetail toLifecycleDetail(LifecycleResource lifecycle,
         AiResourceVersion row) throws NacosException {
         LoadedVersion loaded = loadVersion(lifecycle, row);
-        McpLifecycleVersionDetail result = new McpLifecycleVersionDetail();
-        McpLifecycleVersionSummary summary = toLifecycleSummary(lifecycle.resource, row);
+        McpServerVersionDetail result = new McpServerVersionDetail();
+        McpServerVersionSummary summary = toLifecycleSummary(lifecycle.resource, row);
         result.setVersion(summary.getVersion());
         result.setStatus(summary.getStatus());
         result.setAuthor(summary.getAuthor());
@@ -1216,7 +1216,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         return result;
     }
     
-    private McpLifecycleVersionSummary requireLifecycleSummary(String namespaceId, String name,
+    private McpServerVersionSummary requireLifecycleSummary(String namespaceId, String name,
         String version) throws NacosException {
         LifecycleResource lifecycle = requireLifecycleResource(
             resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE));

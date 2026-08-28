@@ -33,7 +33,7 @@ import java.util.Set;
  *
  * @author Nacos
  */
-public class McpLifecycleVersionListForm extends McpLifecycleForm {
+public class McpServerVersionListForm extends McpNameForm {
     
     @Serial
     private static final long serialVersionUID = 1L;

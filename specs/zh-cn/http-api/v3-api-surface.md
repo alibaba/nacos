@@ -259,8 +259,8 @@ Admin 使用 `/v3/admin/ai/mcp`；Console 使用 `/v3/console/ai/mcp`，作为�
 Version 必须一致，并拒绝 `serverSpecification.id`。`/labels` 接受 JSON String Map；空输入
 表示清空自定义 Label，同时保留服务端管理的 Label。
 
-Version 列表返回 `Page<McpLifecycleVersionSummary>`。精确读取和 Draft 写入返回
-`McpLifecycleVersionDetail`，其中包含生命周期 Metadata 和 Server/Tools/Resources 内容，但不包含
+Version 列表返回 `Page<McpServerVersionSummary>`。精确读取和 Draft 写入返回
+`McpServerVersionDetail`，其中包含生命周期 Metadata 和 Server/Tools/Resources 内容，但不包含
 内部 MCP ID。生命周期命令返回转换后的 Summary，删除 Draft 返回空 Success Result，替换 Label
 返回最终生效的 Label Map。
 

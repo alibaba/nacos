@@ -17,8 +17,8 @@
 package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -115,21 +115,21 @@ public interface McpHandler {
         throws NacosException;
     
     /**
-     * Page standard lifecycle Version summaries.
+     * Page MCP Server Version summaries.
      */
-    Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId, String mcpName,
+    Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId, String mcpName,
         String status, int pageNo, int pageSize) throws NacosException;
     
     /**
-     * Read one exact standard lifecycle Version.
+     * Read one exact MCP Server Version.
      */
-    McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Create one standard MCP draft.
      */
-    McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+    McpServerVersionDetail createMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException;
@@ -137,7 +137,7 @@ public interface McpHandler {
     /**
      * Replace one exact standard MCP draft.
      */
-    McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+    McpServerVersionDetail updateMcpServerDraft(String namespaceId,
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException;
@@ -145,49 +145,49 @@ public interface McpHandler {
     /**
      * Delete one exact standard MCP draft.
      */
-    void deleteLifecycleDraft(String namespaceId, String mcpName, String version)
+    void deleteMcpServerDraft(String namespaceId, String mcpName, String version)
         throws NacosException;
     
     /**
      * Submit one standard MCP Version.
      */
-    McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary submitMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Publish one standard MCP Version.
      */
-    McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary publishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Force-publish one standard MCP Version.
      */
-    McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Return one reviewed standard MCP Version to draft.
      */
-    McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary redraftMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Bring one standard MCP Version online.
      */
-    McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary onlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Take one standard MCP Version offline.
      */
-    McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionSummary offlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
      * Replace custom MCP labels.
      */
-    Map<String, String> updateLifecycleLabels(String namespaceId, String mcpName,
+    Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException;
     
     /**

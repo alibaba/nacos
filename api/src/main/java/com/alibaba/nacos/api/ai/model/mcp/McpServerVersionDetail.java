@@ -16,20 +16,19 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /**
- * Exact MCP Version content and lifecycle metadata for management reads.
+ * Canonical content and management metadata for one exact MCP Server Version.
  *
- * <p>The nested Server specification deliberately suppresses the historical internal
- * {@code id} coordinate. New lifecycle APIs identify MCP resources only by namespace, name, and
- * exact Version.</p>
+ * <p>Canonical APIs identify MCP resources only by namespace, name, and exact Version. Response
+ * assembly clears the historical internal {@code id} coordinate from the nested Server
+ * specification. This model is distinct from {@link McpServerDetailInfo}, which is the legacy
+ * serving projection.</p>
  *
  * @author Nacos
+ * @see McpServerVersionSummary
+ * @see McpServerDetailInfo
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class McpLifecycleVersionDetail extends McpLifecycleVersionSummary {
+public class McpServerVersionDetail extends McpServerVersionSummary {
     
     private static final long serialVersionUID = 1L;
     
@@ -37,7 +36,6 @@ public class McpLifecycleVersionDetail extends McpLifecycleVersionSummary {
     
     private String mcpName;
     
-    @JsonIgnoreProperties(value = "id", allowSetters = true)
     private McpServerBasicInfo serverSpecification;
     
     private McpToolSpecification toolSpecification;

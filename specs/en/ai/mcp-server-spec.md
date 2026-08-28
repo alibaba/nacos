@@ -304,14 +304,20 @@ operations under `/v3/console/ai/mcp`. Exact routes are listed in the
 These standard routes are enabled only after management authority reaches
 `LIFECYCLE_MANAGED`. Embedded and standalone Console use the same application
 service directly. A Console-only remote deployment must use the typed
-Maintainer lifecycle transport and must not fall back to a legacy write. The
+Maintainer Version-management transport and must not fall back to a legacy
+write. The
 transport maps typed request objects onto the same form/query Admin routes; it
 does not introduce a second JSON-body HTTP contract.
 
-`McpMaintainerService` exposes explicit-namespace lifecycle methods plus
-default-namespace overloads. Draft content uses `McpLifecycleDraftRequest`,
-exact Version transitions use `McpLifecycleVersionCommand`, and label
-replacement uses `McpLifecycleLabelsUpdateRequest`. These models do not carry
+`McpMaintainerService` exposes Version-management methods with
+explicit-namespace and default-namespace overloads. New draft creation and
+replacement reuse the established `createMcpServer` and `updateMcpServer`
+names through `McpServerDraftRequest` overloads. Exact reads use
+`listMcpServerVersions` and `getMcpServerVersion`; exact Version transitions
+use `McpServerVersionCommand`, and label replacement uses
+`McpServerLabelsUpdateRequest`. Public method and model names describe the user
+operation and must not expose the internal Lifecycle hosting mechanism. These
+models do not carry
 top-level `namespaceId` or `mcpId` selectors; the namespace is a separate
 method argument and the canonical resource identity is `mcpName`. Historical
 `id` or `namespaceId` fields inside the reused `McpServerBasicInfo` payload are
@@ -320,7 +326,7 @@ and applies the internal coordinates resolved from the lifecycle target.
 
 The legacy Maintainer detail and direct-online create/update methods are
 deprecated since 3.3.0 and planned for removal in 4.0.0. Their Javadoc must
-identify the exact typed lifecycle read or draft-submit-publish replacement.
+identify the exact typed Version read or draft-submit-publish replacement.
 Cross-resource list/search and published-Version or full-Resource delete remain
 outside this deprecation until equivalent lifecycle operations are defined.
 

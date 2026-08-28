@@ -28,7 +28,7 @@ import java.io.Serial;
  *
  * @author Nacos
  */
-public class McpLifecycleDraftForm extends McpLifecycleVersionForm {
+public class McpServerDraftForm extends McpServerVersionForm {
     
     @Serial
     private static final long serialVersionUID = 1L;

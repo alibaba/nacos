@@ -14,27 +14,36 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp.admin;
+package com.alibaba.nacos.api.ai.model.mcp;
 
-import java.io.Serial;
+import java.io.Serializable;
 
 /**
- * Custom label replacement form for MCP lifecycle management.
+ * Command identifying one exact MCP Server Version management target.
  *
  * @author Nacos
  */
-public class McpLifecycleLabelsForm extends McpLifecycleForm {
+public class McpServerVersionCommand implements Serializable {
     
-    @Serial
     private static final long serialVersionUID = 1L;
     
-    private String labels;
+    private String mcpName;
     
-    public String getLabels() {
-        return labels;
+    private String version;
+    
+    public String getMcpName() {
+        return mcpName;
     }
     
-    public void setLabels(String labels) {
-        this.labels = labels;
+    public void setMcpName(String mcpName) {
+        this.mcpName = mcpName;
+    }
+    
+    public String getVersion() {
+        return version;
+    }
+    
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

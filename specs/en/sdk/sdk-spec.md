@@ -141,18 +141,23 @@ not add Runtime Version ranges or multiple-transport fields. Such endpoint
 model changes require a later compatibility design.
 
 The Maintainer SDK retains its current MCP methods as compatibility facades and
-adds typed methods matching the Admin MCP Version, draft, submit, publish,
-force-publish, redraft, online, offline, and label operations. Legacy detail
+adds typed Version-management methods matching the Admin MCP Version, draft,
+submit, publish, force-publish, redraft, online, offline, and label operations. Legacy detail
 and direct-online create/update methods are deprecated since 3.3.0 and planned
-for removal in 4.0.0. Callers should use exact lifecycle Version reads and the
+for removal in 4.0.0. Callers should use exact Version reads and the
 draft-submit-publish flow. Cross-resource list/search and published-Version or
 full-Resource delete remain available until semantics-equivalent typed methods
 are designed. Every new management call identifies its namespace and uses
 `mcpName + version` with the same lifecycle application service as Admin and
 Console APIs.
 
-The typed request objects are `McpLifecycleDraftRequest`,
-`McpLifecycleVersionCommand`, and `McpLifecycleLabelsUpdateRequest`. They do
+Draft create/update methods reuse the established `createMcpServer` and
+`updateMcpServer` names through request-object overloads. Other method and model
+names describe Versions and user operations and do not expose the internal
+Lifecycle hosting mechanism.
+
+The typed request objects are `McpServerDraftRequest`,
+`McpServerVersionCommand`, and `McpServerLabelsUpdateRequest`. They do
 not add top-level namespace or `mcpId` selectors; explicit overloads accept
 namespace separately and convenience overloads use the default namespace.
 Historical identity fields inside the reused `McpServerBasicInfo` content are

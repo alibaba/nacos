@@ -19,11 +19,11 @@ package com.alibaba.nacos.maintainer.client.ai;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
@@ -144,8 +144,8 @@ public interface McpMaintainerService {
      * @param mcpName the mcp server name
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
-     * @deprecated Since 3.3.0, use {@link #listLifecycleVersions(String, String, int, int)}
-     *     to select an exact Version and then {@link #getLifecycleVersion(String, String)}.
+     * @deprecated Since 3.3.0, use {@link #listMcpServerVersions(String, String, int, int)}
+     *     to select an exact Version and then {@link #getMcpServerVersion(String, String)}.
      *     Planned for removal in Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -161,7 +161,7 @@ public interface McpMaintainerService {
      * @param version the mcp server version
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
-     * @deprecated Since 3.3.0, use {@link #getLifecycleVersion(String, String)}. Planned for
+     * @deprecated Since 3.3.0, use {@link #getMcpServerVersion(String, String)}. Planned for
      *     removal in Nacos 4.0.0.
      */
     @Since("3.0.1")
@@ -179,7 +179,7 @@ public interface McpMaintainerService {
      * @param version     the version
      * @return the mcp server detail
      * @throws NacosException the nacos exception
-     * @deprecated Since 3.3.0, use {@link #getLifecycleVersion(String, String, String)}. Planned
+     * @deprecated Since 3.3.0, use {@link #getMcpServerVersion(String, String, String)}. Planned
      *     for removal in Nacos 4.0.0.
      */
     @Since("3.0.1")
@@ -198,7 +198,7 @@ public interface McpMaintainerService {
      * @param version the mcp server version
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
-     * @deprecated Since 3.3.0, use {@link #getLifecycleVersion(String, String, String)} with the
+     * @deprecated Since 3.3.0, use {@link #getMcpServerVersion(String, String, String)} with the
      *     canonical MCP name. Planned for removal in Nacos 4.0.0.
      */
     @Since("3.0.2")
@@ -214,10 +214,10 @@ public interface McpMaintainerService {
      * @param version version of the new mcp server
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -234,10 +234,10 @@ public interface McpMaintainerService {
      * @param description description of the new mcp server
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -256,10 +256,10 @@ public interface McpMaintainerService {
      * @param toolSpec    mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -279,10 +279,10 @@ public interface McpMaintainerService {
      * @param toolSpec          mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -310,10 +310,10 @@ public interface McpMaintainerService {
      * @param toolSpec   mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -342,10 +342,10 @@ public interface McpMaintainerService {
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -366,10 +366,10 @@ public interface McpMaintainerService {
      * @param endpointSpec        mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -392,10 +392,10 @@ public interface McpMaintainerService {
      * @param endpointSpec        mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -420,10 +420,10 @@ public interface McpMaintainerService {
      * @param toolSpec            mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -453,10 +453,10 @@ public interface McpMaintainerService {
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -477,10 +477,10 @@ public interface McpMaintainerService {
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -513,10 +513,10 @@ public interface McpMaintainerService {
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(McpLifecycleVersionCommand)}. If review is enabled,
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(McpServerVersionCommand)}. If review is enabled,
      *     publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}. Planned for removal in
+     *     {@link #publishMcpServerVersion(McpServerVersionCommand)}. Planned for removal in
      *     Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -540,10 +540,10 @@ public interface McpMaintainerService {
      * @return mcp server id of the new mcp server
      * @throws NacosException if fail to create mcp server.
      * @deprecated Since 3.3.0, use
-     *     {@link #createLifecycleDraft(String, McpLifecycleDraftRequest)} and
-     *     {@link #submitLifecycleVersion(String, McpLifecycleVersionCommand)}. If review is
+     *     {@link #createMcpServer(String, McpServerDraftRequest)} and
+     *     {@link #submitMcpServerVersion(String, McpServerVersionCommand)}. If review is
      *     enabled, publish the reviewed Version with
-     *     {@link #publishLifecycleVersion(String, McpLifecycleVersionCommand)}. Planned for
+     *     {@link #publishMcpServerVersion(String, McpServerVersionCommand)}. Planned for
      *     removal in Nacos 4.0.0.
      */
     @Since("3.0.1")
@@ -551,6 +551,31 @@ public interface McpMaintainerService {
     String createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec,
         McpToolSpecification toolSpec,
         McpEndpointSpec endpointSpec) throws NacosException;
+    
+    /**
+     * Create one new MCP draft Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete draft content
+     * @return persisted draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpServerVersionDetail createMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException;
+    
+    /**
+     * Create one new MCP draft Version in the default namespace.
+     *
+     * @param request complete draft content
+     * @return persisted draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpServerVersionDetail createMcpServer(McpServerDraftRequest request)
+        throws NacosException {
+        return createMcpServer(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
     
     /**
      * Update existed mcp server to Nacos Default namespace.
@@ -566,10 +591,10 @@ public interface McpMaintainerService {
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} for a
-     *     new Version or {@link #updateLifecycleDraft(McpLifecycleDraftRequest)} for an existing
-     *     draft, then use {@link #submitLifecycleVersion(McpLifecycleVersionCommand)} and, when
-     *     review is enabled, {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}.
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} for a
+     *     new Version or {@link #updateMcpServer(McpServerDraftRequest)} for an existing
+     *     draft, then use {@link #submitMcpServerVersion(McpServerVersionCommand)} and, when
+     *     review is enabled, {@link #publishMcpServerVersion(McpServerVersionCommand)}.
      *     Planned for removal in Nacos 4.0.0.
      */
     @Since("3.0.0")
@@ -595,10 +620,10 @@ public interface McpMaintainerService {
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
-     * @deprecated Since 3.3.0, use {@link #createLifecycleDraft(McpLifecycleDraftRequest)} for a
-     *     new Version or {@link #updateLifecycleDraft(McpLifecycleDraftRequest)} for an existing
-     *     draft, then use {@link #submitLifecycleVersion(McpLifecycleVersionCommand)} and, when
-     *     review is enabled, {@link #publishLifecycleVersion(McpLifecycleVersionCommand)}.
+     * @deprecated Since 3.3.0, use {@link #createMcpServer(McpServerDraftRequest)} for a
+     *     new Version or {@link #updateMcpServer(McpServerDraftRequest)} for an existing
+     *     draft, then use {@link #submitMcpServerVersion(McpServerVersionCommand)} and, when
+     *     review is enabled, {@link #publishMcpServerVersion(McpServerVersionCommand)}.
      *     Planned for removal in Nacos 4.0.0.
      */
     @Since("3.0.1")
@@ -627,11 +652,11 @@ public interface McpMaintainerService {
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      * @deprecated Since 3.3.0, use
-     *     {@link #createLifecycleDraft(String, McpLifecycleDraftRequest)} for a new Version or
-     *     {@link #updateLifecycleDraft(String, McpLifecycleDraftRequest)} for an existing draft,
-     *     then use {@link #submitLifecycleVersion(String, McpLifecycleVersionCommand)} and, when
+     *     {@link #createMcpServer(String, McpServerDraftRequest)} for a new Version or
+     *     {@link #updateMcpServer(String, McpServerDraftRequest)} for an existing draft,
+     *     then use {@link #submitMcpServerVersion(String, McpServerVersionCommand)} and, when
      *     review is enabled,
-     *     {@link #publishLifecycleVersion(String, McpLifecycleVersionCommand)}. Planned for
+     *     {@link #publishMcpServerVersion(String, McpServerVersionCommand)}. Planned for
      *     removal in Nacos 4.0.0.
      */
     @Since("3.0.1")
@@ -661,11 +686,11 @@ public interface McpMaintainerService {
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      * @deprecated Since 3.3.0, use
-     *     {@link #createLifecycleDraft(String, McpLifecycleDraftRequest)} for a new Version or
-     *     {@link #updateLifecycleDraft(String, McpLifecycleDraftRequest)} for an existing draft,
-     *     then use {@link #submitLifecycleVersion(String, McpLifecycleVersionCommand)} and, when
+     *     {@link #createMcpServer(String, McpServerDraftRequest)} for a new Version or
+     *     {@link #updateMcpServer(String, McpServerDraftRequest)} for an existing draft,
+     *     then use {@link #submitMcpServerVersion(String, McpServerVersionCommand)} and, when
      *     review is enabled,
-     *     {@link #publishLifecycleVersion(String, McpLifecycleVersionCommand)}. Planned for
+     *     {@link #publishMcpServerVersion(String, McpServerVersionCommand)}. Planned for
      *     removal in Nacos 4.0.0.
      */
     @Since("3.1.1")
@@ -673,6 +698,31 @@ public interface McpMaintainerService {
     boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
         McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
         McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException;
+    
+    /**
+     * Replace one exact current MCP draft.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete replacement content
+     * @return updated draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpServerVersionDetail updateMcpServer(String namespaceId,
+        McpServerDraftRequest request) throws NacosException;
+    
+    /**
+     * Replace one exact current MCP draft in the default namespace.
+     *
+     * @param request complete replacement content
+     * @return updated draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpServerVersionDetail updateMcpServer(McpServerDraftRequest request)
+        throws NacosException {
+        return updateMcpServer(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
     
     /**
      * Delete existed mcp server from Nacos.
@@ -701,112 +751,62 @@ public interface McpMaintainerService {
         throws NacosException;
     
     /**
-     * List lifecycle metadata for one MCP resource's Versions.
+     * List management summaries for one MCP Server's Versions.
      *
      * @param namespaceId namespace identifier
      * @param mcpName canonical MCP name
-     * @param status optional lifecycle status
+     * @param status optional Version status
      * @param pageNo page number
      * @param pageSize page size
-     * @return lifecycle Version page
+     * @return MCP Server Version page
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId, String mcpName,
+    Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId, String mcpName,
         String status, int pageNo, int pageSize) throws NacosException;
     
     /**
-     * List lifecycle metadata in the default namespace.
+     * List MCP Server Version summaries in the default namespace.
      *
      * @param mcpName canonical MCP name
-     * @param status optional lifecycle status
+     * @param status optional Version status
      * @param pageNo page number
      * @param pageSize page size
-     * @return lifecycle Version page
+     * @return MCP Server Version page
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default Page<McpLifecycleVersionSummary> listLifecycleVersions(String mcpName, String status,
+    default Page<McpServerVersionSummary> listMcpServerVersions(String mcpName, String status,
         int pageNo, int pageSize) throws NacosException {
-        return listLifecycleVersions(Constants.DEFAULT_NAMESPACE_ID, mcpName, status, pageNo,
+        return listMcpServerVersions(Constants.DEFAULT_NAMESPACE_ID, mcpName, status, pageNo,
             pageSize);
     }
     
     /**
-     * Get one exact lifecycle Version.
+     * Get one exact MCP Server Version.
      *
      * @param namespaceId namespace identifier
      * @param mcpName canonical MCP name
      * @param version exact Version
-     * @return lifecycle Version detail
+     * @return MCP Server Version detail
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+    McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException;
     
     /**
-     * Get one exact lifecycle Version in the default namespace.
+     * Get one exact MCP Server Version in the default namespace.
      *
      * @param mcpName canonical MCP name
      * @param version exact Version
-     * @return lifecycle Version detail
+     * @return MCP Server Version detail
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionDetail getLifecycleVersion(String mcpName, String version)
+    default McpServerVersionDetail getMcpServerVersion(String mcpName, String version)
         throws NacosException {
-        return getLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, mcpName, version);
-    }
-    
-    /**
-     * Create one new MCP draft Version.
-     *
-     * @param namespaceId namespace identifier
-     * @param request complete draft content
-     * @return persisted draft detail
-     * @throws NacosException when the request fails
-     */
-    @Since("3.3.0")
-    McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
-        McpLifecycleDraftRequest request) throws NacosException;
-    
-    /**
-     * Create one new MCP draft Version in the default namespace.
-     *
-     * @param request complete draft content
-     * @return persisted draft detail
-     * @throws NacosException when the request fails
-     */
-    @Since("3.3.0")
-    default McpLifecycleVersionDetail createLifecycleDraft(McpLifecycleDraftRequest request)
-        throws NacosException {
-        return createLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, request);
-    }
-    
-    /**
-     * Replace one exact current MCP draft.
-     *
-     * @param namespaceId namespace identifier
-     * @param request complete replacement content
-     * @return updated draft detail
-     * @throws NacosException when the request fails
-     */
-    @Since("3.3.0")
-    McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
-        McpLifecycleDraftRequest request) throws NacosException;
-    
-    /**
-     * Replace one exact current MCP draft in the default namespace.
-     *
-     * @param request complete replacement content
-     * @return updated draft detail
-     * @throws NacosException when the request fails
-     */
-    @Since("3.3.0")
-    default McpLifecycleVersionDetail updateLifecycleDraft(McpLifecycleDraftRequest request)
-        throws NacosException {
-        return updateLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, request);
+        return getMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, mcpName, version);
     }
     
     /**
@@ -817,7 +817,7 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    void deleteLifecycleDraft(String namespaceId, McpLifecycleVersionCommand command)
+    void deleteMcpServerDraft(String namespaceId, McpServerVersionCommand command)
         throws NacosException;
     
     /**
@@ -827,8 +827,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default void deleteLifecycleDraft(McpLifecycleVersionCommand command) throws NacosException {
-        deleteLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, command);
+    default void deleteMcpServerDraft(McpServerVersionCommand command) throws NacosException {
+        deleteMcpServerDraft(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -840,8 +840,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary submitMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Submit one exact MCP working Version in the default namespace.
@@ -851,9 +851,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary submitLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return submitLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary submitMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return submitMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -865,8 +865,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary publishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Publish one exact reviewed MCP Version in the default namespace.
@@ -876,9 +876,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary publishLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return publishLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary publishMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return publishMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -890,8 +890,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Force-publish one exact MCP working Version in the default namespace.
@@ -901,9 +901,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary forcePublishLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return forcePublishLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary forcePublishMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return forcePublishMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -915,8 +915,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary redraftMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Move one exact reviewed MCP Version back to draft in the default namespace.
@@ -926,9 +926,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary redraftLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return redraftLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary redraftMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return redraftMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -940,8 +940,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary onlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Bring one exact offline MCP Version online in the default namespace.
@@ -951,9 +951,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary onlineLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return onlineLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary onlineMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return onlineMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -965,8 +965,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId,
-        McpLifecycleVersionCommand command) throws NacosException;
+    McpServerVersionSummary offlineMcpServerVersion(String namespaceId,
+        McpServerVersionCommand command) throws NacosException;
     
     /**
      * Take one exact online MCP Version offline in the default namespace.
@@ -976,9 +976,9 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default McpLifecycleVersionSummary offlineLifecycleVersion(
-        McpLifecycleVersionCommand command) throws NacosException {
-        return offlineLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    default McpServerVersionSummary offlineMcpServerVersion(
+        McpServerVersionCommand command) throws NacosException {
+        return offlineMcpServerVersion(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
     /**
@@ -990,8 +990,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    Map<String, String> updateLifecycleLabels(String namespaceId,
-        McpLifecycleLabelsUpdateRequest request) throws NacosException;
+    Map<String, String> updateMcpServerLabels(String namespaceId,
+        McpServerLabelsUpdateRequest request) throws NacosException;
     
     /**
      * Replace custom MCP labels in the default namespace.
@@ -1001,8 +1001,8 @@ public interface McpMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default Map<String, String> updateLifecycleLabels(McpLifecycleLabelsUpdateRequest request)
+    default Map<String, String> updateMcpServerLabels(McpServerLabelsUpdateRequest request)
         throws NacosException {
-        return updateLifecycleLabels(Constants.DEFAULT_NAMESPACE_ID, request);
+        return updateMcpServerLabels(Constants.DEFAULT_NAMESPACE_ID, request);
     }
 }

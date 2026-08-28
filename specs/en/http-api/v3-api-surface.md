@@ -285,8 +285,8 @@ accepts optional `status` plus bounded `pageNo` and `pageSize`.
 rejected. `/labels` accepts a JSON string map; blank input clears custom labels
 while preserving server-managed labels.
 
-Version list results use `Page<McpLifecycleVersionSummary>`. Exact reads and
-draft writes return `McpLifecycleVersionDetail`, including lifecycle metadata
+Version list results use `Page<McpServerVersionSummary>`. Exact reads and
+draft writes return `McpServerVersionDetail`, including lifecycle metadata
 and Server/Tools/Resources content without the internal MCP ID. Lifecycle
 commands return the resulting summary, draft deletion returns an empty success
 result, and label replacement returns the effective label map.

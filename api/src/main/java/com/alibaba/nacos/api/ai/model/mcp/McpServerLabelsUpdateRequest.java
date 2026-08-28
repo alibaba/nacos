@@ -20,11 +20,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Complete replacement request for one MCP resource's custom Version labels.
+ * Complete replacement request for one MCP Server's custom Version labels.
  *
  * @author Nacos
  */
-public class McpLifecycleLabelsUpdateRequest implements Serializable {
+public class McpServerLabelsUpdateRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpLifecycleDraftForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerDraftForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -81,7 +81,7 @@ public class McpRequestUtil {
      * @return normalized Server specification
      * @throws NacosApiException when JSON or repeated identity is invalid
      */
-    public static McpServerBasicInfo parseMcpServerBasicInfo(McpLifecycleDraftForm form)
+    public static McpServerBasicInfo parseMcpServerBasicInfo(McpServerDraftForm form)
         throws NacosApiException {
         McpServerBasicInfo result = deserializeSpec(form.getServerSpecification(),
             new TypeReference<>() {
@@ -136,7 +136,7 @@ public class McpRequestUtil {
      * @return parsed Tools content or {@code null}
      * @throws NacosApiException when JSON is invalid
      */
-    public static McpToolSpecification parseMcpTools(McpLifecycleDraftForm form)
+    public static McpToolSpecification parseMcpTools(McpServerDraftForm form)
         throws NacosApiException {
         if (StringUtils.isBlank(form.getToolSpecification())) {
             return null;
@@ -169,7 +169,7 @@ public class McpRequestUtil {
      * @return parsed Resources content or {@code null}
      * @throws NacosApiException when JSON is invalid
      */
-    public static McpResourceSpecification parseMcpResources(McpLifecycleDraftForm form)
+    public static McpResourceSpecification parseMcpResources(McpServerDraftForm form)
         throws NacosApiException {
         if (StringUtils.isBlank(form.getResourceSpecification())) {
             return null;
@@ -211,7 +211,7 @@ public class McpRequestUtil {
      * @throws NacosApiException when a required endpoint is absent or invalid
      */
     public static McpEndpointSpec parseMcpEndpointSpec(McpServerBasicInfo basicInfo,
-        McpLifecycleDraftForm form) throws NacosApiException {
+        McpServerDraftForm form) throws NacosApiException {
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(basicInfo.getProtocol())) {
             return null;
         }
@@ -239,7 +239,7 @@ public class McpRequestUtil {
      * @return parsed labels, never {@code null}
      * @throws NacosApiException when JSON is invalid
      */
-    public static Map<String, String> parseLifecycleLabels(String labels)
+    public static Map<String, String> parseMcpServerLabels(String labels)
         throws NacosApiException {
         if (StringUtils.isBlank(labels)) {
             return new LinkedHashMap<>(4);

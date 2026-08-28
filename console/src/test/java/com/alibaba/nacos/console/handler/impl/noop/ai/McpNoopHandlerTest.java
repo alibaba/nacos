@@ -72,29 +72,29 @@ class McpNoopHandlerTest {
     @Test
     void standardLifecycleMethodsThrowDisabled() {
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.listLifecycleVersions("ns", "name", null, 1, 10));
+            () -> mcpNoopHandler.listMcpServerVersions("ns", "name", null, 1, 10));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.getLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.getMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.createLifecycleDraft("ns", null, null, null, null));
+            () -> mcpNoopHandler.createMcpServerDraft("ns", null, null, null, null));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.updateLifecycleDraft("ns", null, null, null, null));
+            () -> mcpNoopHandler.updateMcpServerDraft("ns", null, null, null, null));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.deleteLifecycleDraft("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.deleteMcpServerDraft("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.submitMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.publishMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.forcePublishMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.redraftMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.onlineMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
+            () -> mcpNoopHandler.offlineMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
-            () -> mcpNoopHandler.updateLifecycleLabels("ns", "name", null));
+            () -> mcpNoopHandler.updateMcpServerLabels("ns", "name", null));
     }
     
     @Test
