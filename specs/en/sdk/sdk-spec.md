@@ -140,12 +140,16 @@ metadata, endpoint request, reconnect snapshot, or ability negotiation. It does
 not add Runtime Version ranges or multiple-transport fields. Such endpoint
 model changes require a later compatibility design.
 
-The Maintainer SDK retains its current MCP create/update/delete/query methods as
-direct-online compatibility facades and adds typed methods matching the Admin
-MCP Version, draft, submit, publish, force-publish, redraft, online, offline,
-and label operations. Every new management call identifies its namespace and
-uses `mcpName + version` with the same lifecycle application service as Admin
-and Console APIs.
+The Maintainer SDK retains its current MCP methods as compatibility facades and
+adds typed methods matching the Admin MCP Version, draft, submit, publish,
+force-publish, redraft, online, offline, and label operations. Legacy detail
+and direct-online create/update methods are deprecated since 3.3.0 and planned
+for removal in 4.0.0. Callers should use exact lifecycle Version reads and the
+draft-submit-publish flow. Cross-resource list/search and published-Version or
+full-Resource delete remain available until semantics-equivalent typed methods
+are designed. Every new management call identifies its namespace and uses
+`mcpName + version` with the same lifecycle application service as Admin and
+Console APIs.
 
 The typed request objects are `McpLifecycleDraftRequest`,
 `McpLifecycleVersionCommand`, and `McpLifecycleLabelsUpdateRequest`. They do

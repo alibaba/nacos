@@ -88,7 +88,14 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
     }
     
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use {@link #getLifecycleVersion(String, String, String)}. Planned
+     *     for removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId,
         String version)
@@ -96,7 +103,17 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
     }
     
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use
+     *     {@link #createLifecycleDraft(String, McpLifecycleDraftRequest)} and
+     *     {@link #submitLifecycleVersion(String, McpLifecycleVersionCommand)}. If review is
+     *     enabled, use {@link #publishLifecycleVersion(String, McpLifecycleVersionCommand)}.
+     *     Planned for removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default String createMcpServer(String namespaceId, String mcpName,
         McpServerBasicInfo serverSpec,
@@ -104,7 +121,19 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().createMcpServer(namespaceId, mcpName, serverSpec, toolSpec, endpointSpec);
     }
     
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Since 3.3.0, use
+     *     {@link #createLifecycleDraft(String, McpLifecycleDraftRequest)} for a new Version or
+     *     {@link #updateLifecycleDraft(String, McpLifecycleDraftRequest)} for an existing draft,
+     *     then use {@link #submitLifecycleVersion(String, McpLifecycleVersionCommand)} and, when
+     *     review is enabled,
+     *     {@link #publishLifecycleVersion(String, McpLifecycleVersionCommand)}. Planned for
+     *     removal in Nacos 4.0.0.
+     */
     @Since("3.2.0")
+    @Deprecated
     @Override
     default boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
         McpServerBasicInfo serverSpec, McpToolSpecification toolSpec, McpEndpointSpec endpointSpec,

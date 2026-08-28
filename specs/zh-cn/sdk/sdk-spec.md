@@ -109,10 +109,13 @@ MCP Metadata 和 Version 迁移到通用 AI Resource 生命周期期间，现有
 Reconnect Snapshot 或能力协商，也不增加 Runtime Version Range 或多 Transport 字段。
 此类 Endpoint 模型变更需要后续独立兼容设计。
 
-Maintainer SDK 保留现有 MCP Create/Update/Delete/Query 方法，作为 Direct-Online 兼容
-Facade，并增加与 Admin MCP Version、Draft、Submit、Publish、Force Publish、Redraft、
-Online、Offline 和 Label 操作一一对应的类型化方法。每个新管理调用都显式标识 Namespace，
-使用 `mcpName + version`，并与 Admin/Console API 共用同一个 Lifecycle Application Service。
+Maintainer SDK 保留现有 MCP 方法作为兼容 Facade，并增加与 Admin MCP Version、Draft、
+Submit、Publish、Force Publish、Redraft、Online、Offline 和 Label 操作一一对应的类型化方法。
+旧 Detail 和 Direct-online Create/Update 方法自 3.3.0 起废弃，计划在 4.0.0 删除；调用方应迁移到
+精确 Lifecycle Version 读取和 Draft-Submit-Publish 流程。跨 Resource List/Search，以及
+Published Version 或完整 Resource Delete 在提供语义等价的类型化方法之前继续保留。每个新管理
+调用都显式标识 Namespace，使用 `mcpName + version`，并与 Admin/Console API 共用同一个
+Lifecycle Application Service。
 
 类型化 Request Object 为 `McpLifecycleDraftRequest`、`McpLifecycleVersionCommand` 和
 `McpLifecycleLabelsUpdateRequest`。它们不新增顶层 Namespace 或 `mcpId` 选择器；显式重载

@@ -195,6 +195,21 @@ nacos.core.api.compatibility.enabled=true
 制定独立迁移；首期生命周期托管不定义移除版本。精确行为由
 [MCP Server 规范](../ai/mcp-server-spec.md)定义。
 
+### 12.1 旧 MCP Maintainer 方法
+
+`McpMaintainerService` 的旧 Detail 和 Direct-online Create/Update 方法自 Nacos 3.3.0
+起废弃，计划在 Nacos 4.0.0 删除。在兼容窗口内，其运行时行为继续保持兼容。调用方应按下表迁移：
+
+| 已废弃操作 | 标准替代方式 |
+| --- | --- |
+| Serving 投影详情 | 先通过 `listLifecycleVersions` 选择精确 Version，再使用 `getLifecycleVersion`。 |
+| Local、Remote 或通用 Direct-online Create | 使用 `createLifecycleDraft`，随后调用 `submitLifecycleVersion`；启用审核时，在审核通过后显式调用 `publishLifecycleVersion`。 |
+| Direct-online Update | 新 Version 使用 `createLifecycleDraft`，已有 Draft 使用 `updateLifecycleDraft`，随后 Submit，并在需要时 Publish。 |
+
+旧的跨 Resource List/Search，以及 Published Version 或完整 Resource Delete 方法不在本次废弃
+范围内，因为 Typed Lifecycle 接口尚未提供语义等价的替代方法。它们必须在补齐独立 API 设计并完成
+废弃评审后，才能设定删除版本。
+
 ## 13. 相关规范
 
 - [HTTP API 规范](../http-api/api-spec.md)

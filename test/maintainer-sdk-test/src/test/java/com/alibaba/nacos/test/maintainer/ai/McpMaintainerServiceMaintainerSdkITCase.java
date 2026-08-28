@@ -72,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("deprecation")
 class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     
     private static final String INITIAL_VERSION = "1.0.0";

@@ -318,6 +318,12 @@ method argument and the canonical resource identity is `mcpName`. Historical
 compatibility content only: the server ignores them for identity resolution
 and applies the internal coordinates resolved from the lifecycle target.
 
+The legacy Maintainer detail and direct-online create/update methods are
+deprecated since 3.3.0 and planned for removal in 4.0.0. Their Javadoc must
+identify the exact typed lifecycle read or draft-submit-publish replacement.
+Cross-resource list/search and published-Version or full-Resource delete remain
+outside this deprecation until equivalent lifecycle operations are defined.
+
 Submit builds a `ResourceFilesPipelineContext` with resource type `MCP` and
 the preserved Server, optional Tools, and optional Resources payloads. If no
 enabled Pipeline node supports MCP, submit follows the common direct-publish

@@ -65,6 +65,7 @@ import static org.mockito.Mockito.when;
  *
  * @author nacos
  */
+@SuppressWarnings("deprecation")
 @ExtendWith(MockitoExtension.class)
 public class NacosAiMaintainerServiceImplTest {
     

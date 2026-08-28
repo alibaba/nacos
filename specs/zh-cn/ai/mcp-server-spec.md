@@ -269,6 +269,11 @@ Resource 身份只使用 `mcpName`。复用 `McpServerBasicInfo` Payload 内的�
 `namespaceId` 字段只属于兼容内容：服务端不使用它们解析身份，而是写入 Lifecycle Target
 解析出的内部坐标。
 
+旧 Maintainer Detail 和 Direct-online Create/Update 方法自 3.3.0 起废弃，计划在 4.0.0 删除；
+其 Javadoc 必须明确精确类型化 Lifecycle Read 或 Draft-Submit-Publish 替代流程。跨 Resource
+List/Search，以及 Published Version 或完整 Resource Delete 在定义等价 Lifecycle 操作前不进入
+本次废弃范围。
+
 Submit 使用资源类型 `MCP` 构造 `ResourceFilesPipelineContext`，包含保持原样的 Server、
 可选 Tools 和可选 Resources Payload。没有 Enable 且支持 MCP 的 Pipeline Node 时，Submit
 遵循通用 Direct-publish 路径；否则 Version 进入 `reviewing`，Approved 或 Rejected 回调都将其

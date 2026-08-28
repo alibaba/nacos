@@ -246,6 +246,24 @@ wire responses; no removal version is defined by the first lifecycle-hosting
 migration. Exact behavior belongs to the
 [MCP Server Spec](../ai/mcp-server-spec.md).
 
+### 12.1 Legacy MCP Maintainer Methods
+
+The legacy `McpMaintainerService` detail and direct-online create/update
+methods are deprecated since Nacos 3.3.0 and planned for removal in Nacos
+4.0.0. Their runtime behavior remains compatible during this window. Callers
+should migrate as follows:
+
+| Deprecated operation | Canonical replacement |
+| --- | --- |
+| Serving-projection detail | Select an exact Version with `listLifecycleVersions`, then use `getLifecycleVersion`. |
+| Local, remote, or generic direct-online create | Use `createLifecycleDraft`, then `submitLifecycleVersion`; when review applies, explicitly use `publishLifecycleVersion` after approval. |
+| Direct-online update | Use `createLifecycleDraft` for a new Version or `updateLifecycleDraft` for an existing draft, then submit and, when required, publish it. |
+
+Legacy cross-resource list/search and published-Version or full-Resource
+delete methods are not deprecated by this decision because the typed lifecycle
+surface does not yet provide semantics-equivalent replacements. They require a
+separate API design and deprecation review before any removal version is set.
+
 ## 13. Related Specs
 
 - [HTTP API Spec](../http-api/api-spec.md)

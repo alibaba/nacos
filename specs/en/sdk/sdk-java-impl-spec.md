@@ -374,10 +374,15 @@ drafts reuse that metadata. `a2a()` remains available for its compatibility
 window.
 
 The MCP management delegate is `mcp()`, which returns `McpMaintainerService`.
-Its historical list, search, detail, direct-online create/update, and delete
-methods remain available. Typed lifecycle additions map one-to-one to the MCP
-Admin form/query routes: list/get Version, create/update/delete draft, submit,
-publish, force-publish, redraft, online, offline, and label replacement.
+Its historical methods remain binary-compatible. Detail and direct-online
+create/update methods are deprecated since 3.3.0 and planned for removal in
+4.0.0; their Javadoc points to exact Version reads and the typed
+draft-submit-publish flow. Historical cross-resource list/search and
+published-Version or full-Resource delete methods remain non-deprecated until
+semantics-equivalent typed replacements exist. Typed lifecycle additions map
+one-to-one to the MCP Admin form/query routes: list/get Version,
+create/update/delete draft, submit, publish, force-publish, redraft, online,
+offline, and label replacement.
 Explicit methods accept `namespaceId` separately; convenience overloads use
 the default namespace. `McpLifecycleDraftRequest`,
 `McpLifecycleVersionCommand`, and `McpLifecycleLabelsUpdateRequest` add no

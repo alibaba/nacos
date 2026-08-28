@@ -318,11 +318,13 @@ namespace `public` 的便利重载。Agent Request 和 Command 对象不包含 `
 在 metadata 不存在时创建 Agent，后续 draft 复用已有 metadata。`a2a()` 在兼容窗口内
 继续保留。
 
-MCP 管理委托为 `mcp()`，返回 `McpMaintainerService`。历史列表、搜索、详情、
-Direct-online 创建/更新和删除方法继续保留。新增类型化 Lifecycle 方法与 MCP Admin
-Form/Query Route 一一映射：Version 列表/详情、Draft 创建/更新/删除、Submit、Publish、
-Force-publish、Redraft、Online、Offline 和 Label 替换。显式方法独立接收 `namespaceId`，
-便利重载使用默认 Namespace。`McpLifecycleDraftRequest`、
+MCP 管理委托为 `mcp()`，返回 `McpMaintainerService`。历史方法保持二进制兼容；旧 Detail 和
+Direct-online Create/Update 方法自 3.3.0 起废弃，计划在 4.0.0 删除，其 Javadoc 指向精确
+Version 读取和类型化 Draft-Submit-Publish 流程。历史跨 Resource List/Search，以及 Published
+Version 或完整 Resource Delete 在提供语义等价的类型化替代前暂不废弃。新增类型化 Lifecycle
+方法与 MCP Admin Form/Query Route 一一映射：Version 列表/详情、Draft 创建/更新/删除、Submit、
+Publish、Force-publish、Redraft、Online、Offline 和 Label 替换。显式方法独立接收
+`namespaceId`，便利重载使用默认 Namespace。`McpLifecycleDraftRequest`、
 `McpLifecycleVersionCommand` 和 `McpLifecycleLabelsUpdateRequest` 不新增顶层 Namespace、
 兼容 `mcpId` 选择器，也不暴露 JSON Library 类型。复用 `McpServerBasicInfo` 内容内的历史
 身份字段不参与 Lifecycle Target 解析。

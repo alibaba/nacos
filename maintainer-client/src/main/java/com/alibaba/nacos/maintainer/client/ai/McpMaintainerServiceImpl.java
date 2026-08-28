@@ -68,6 +68,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return queryServerPage(namespaceId, mcpName, pageNo, pageSize, SEARCH_BLUR);
     }
     
+    @Deprecated
     @Override
     public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId,
         String version)
@@ -89,6 +90,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return result.getData();
     }
     
+    @Deprecated
     @Override
     public String createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec,
         McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) throws NacosException {
@@ -106,6 +108,7 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return result.getData();
     }
     
+    @Deprecated
     @Override
     public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest,
         McpServerBasicInfo serverSpec,
