@@ -22,7 +22,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchChunk;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -88,7 +88,7 @@ class AiResourceIndexServiceImplTest {
     private AiResourceIndexContentLoader contentLoader;
     
     @Mock
-    private McpCompatibilityOperationService mcpServerOperationService;
+    private McpLifecycleOperationService mcpServerOperationService;
     
     @Test
     void rebuildAiResourceShouldPersistEntryChunksAndVectors() throws Exception {

@@ -25,11 +25,14 @@ import com.alibaba.nacos.ai.index.McpCacheIndex;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.index.MemoryMcpCacheIndex;
 import com.alibaba.nacos.ai.index.PlainMcpServerIndex;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityModeResolver;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -94,12 +97,14 @@ public class McpServerIndexConfiguration {
     public McpServerIndex cachedMcpServerIndex(ConfigDetailService configDetailService,
         NamespaceOperationService namespaceOperationService,
         ConfigQueryChainService configQueryChainService,
-        McpCacheIndex mcpCacheIndex, ScheduledExecutorService mcpCacheScheduledExecutor) {
+        McpCacheIndex mcpCacheIndex, ScheduledExecutorService mcpCacheScheduledExecutor,
+        ObjectProvider<McpCompatibilityModeResolver> modeResolverProvider) {
         LOGGER.info("Creating CachedMcpServerIndex bean with cache enabled");
         return new CachedMcpServerIndex(configDetailService, namespaceOperationService,
             configQueryChainService,
             mcpCacheIndex, mcpCacheScheduledExecutor, cacheProperties.isEnabled(),
-            cacheProperties.getSyncIntervalSeconds());
+            cacheProperties.getSyncIntervalSeconds(),
+            () -> isHistoricalIndexRequired(modeResolverProvider));
     }
     
     /**
@@ -114,5 +119,12 @@ public class McpServerIndexConfiguration {
         LOGGER.info("Creating PlainMcpServerIndex bean as cache is disabled");
         return new PlainMcpServerIndex(namespaceOperationService, configDetailService,
             configQueryChainService);
+    }
+    
+    private boolean isHistoricalIndexRequired(
+        ObjectProvider<McpCompatibilityModeResolver> modeResolverProvider) {
+        McpCompatibilityModeResolver resolver = modeResolverProvider.getIfAvailable();
+        return resolver == null
+            || McpCompatibilityMode.LIFECYCLE_MANAGED != resolver.resolve();
     }
 }

@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -44,9 +44,10 @@ import java.util.Map;
 /**
  * Search type handler for canonical MCP server resources.
  *
- * <p>The canonical document identity is always the MCP name. Projection follows the complete
- * compatibility router so SYNCING reads the full historical view and managed mode reads lifecycle
- * rows; partially reconciled rows therefore never become a Search authority.</p>
+ * <p>The canonical document identity is always the MCP name. Projection reads only canonical
+ * lifecycle rows and MCP Version Storage, even while historical reconciliation is still running.
+ * Serving Manifest, the compatibility router, and the historical MCP index are never Search
+ * authorities.</p>
  *
  * @author nacos
  */
@@ -56,7 +57,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     
     private static final int DEFAULT_MAX_MCP_CONTENT_CHARS = 12000;
     
-    private final McpOperationService mcpOperationService;
+    private final McpLifecycleOperationService mcpOperationService;
     
     private final AiResourceSearchDocumentBuilder documentBuilder =
         new AiResourceSearchDocumentBuilder();
@@ -64,7 +65,7 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     private final AiResourceIndexProjectionBuilder projectionBuilder =
         new AiResourceIndexProjectionBuilder();
     
-    public McpAiResourceSearchTypeHandler(McpOperationService mcpOperationService) {
+    public McpAiResourceSearchTypeHandler(McpLifecycleOperationService mcpOperationService) {
         this.mcpOperationService = mcpOperationService;
     }
     

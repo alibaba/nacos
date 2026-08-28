@@ -17,9 +17,11 @@
 package com.alibaba.nacos.ai.index;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
@@ -58,6 +60,8 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     
     private final long syncInterval;
     
+    private final BooleanSupplier historicalIndexRequired;
+    
     /**
      * Constructor.
      */
@@ -66,13 +70,27 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
         ConfigQueryChainService configQueryChainService,
         McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor, boolean cacheEnabled,
         long syncInterval) {
+        this(configDetailService, namespaceOperationService, configQueryChainService, cacheIndex,
+            scheduledExecutor, cacheEnabled, syncInterval, () -> true);
+    }
+    
+    /**
+     * Constructor with a lifecycle-aware historical index guard.
+     */
+    public CachedMcpServerIndex(ConfigDetailService configDetailService,
+        NamespaceOperationService namespaceOperationService,
+        ConfigQueryChainService configQueryChainService,
+        McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor, boolean cacheEnabled,
+        long syncInterval, BooleanSupplier historicalIndexRequired) {
         super(namespaceOperationService, configDetailService);
         this.configQueryChainService = configQueryChainService;
         this.cacheIndex = cacheIndex;
         this.scheduledExecutor = scheduledExecutor;
         this.cacheEnabled = cacheEnabled;
         this.syncInterval = syncInterval;
-        if (cacheEnabled) {
+        this.historicalIndexRequired = Objects.requireNonNull(historicalIndexRequired,
+            "historicalIndexRequired");
+        if (cacheEnabled && isHistoricalIndexRequired()) {
             startSyncTask();
         }
         LOGGER.info("CachedMcpServerIndex initialized with cacheEnabled={}, syncInterval={}s",
@@ -201,6 +219,12 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     private void startSyncTask() {
         syncTask = scheduledExecutor.scheduleWithFixedDelay(() -> {
             try {
+                if (!isHistoricalIndexRequired()) {
+                    LOGGER.info("Stopping legacy MCP cache synchronization after lifecycle "
+                        + "managed cutover");
+                    syncTask.cancel(false);
+                    return;
+                }
                 LOGGER.debug("Starting cache sync task");
                 syncCacheFromDatabase();
                 LOGGER.debug("Cache sync task completed");
@@ -266,11 +290,21 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
      * Manually trigger cache synchronization.
      */
     public void triggerCacheSync() {
-        if (cacheEnabled) {
+        if (cacheEnabled && isHistoricalIndexRequired()) {
             LOGGER.info("Manual cache sync triggered");
             syncCacheFromDatabase();
         } else {
-            LOGGER.warn("Cache is disabled, manual sync ignored");
+            LOGGER.warn("Legacy MCP cache sync is disabled or no longer required");
+        }
+    }
+    
+    private boolean isHistoricalIndexRequired() {
+        try {
+            return historicalIndexRequired.getAsBoolean();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to resolve MCP lifecycle management mode; retaining legacy "
+                + "cache synchronization", e);
+            return true;
         }
     }
     

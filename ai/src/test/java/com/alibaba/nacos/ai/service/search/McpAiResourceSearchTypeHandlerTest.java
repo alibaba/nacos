@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.search;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
 class McpAiResourceSearchTypeHandlerTest {
     
     @Mock
-    private McpOperationService mcpServerOperationService;
+    private McpLifecycleOperationService mcpServerOperationService;
     
     @Test
     void projectShouldBuildMcpDocumentChunksAndFacets() throws Exception {

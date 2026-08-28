@@ -20,10 +20,17 @@ import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.api.model.Page;
 
 /**
- * Server info index interface. We should know the relation between the mcp server id and namespaceId + mcpServerName.
+ * Historical MCP server identity index.
+ *
+ * <p>This index is retained only for the complete legacy operation strategy while lifecycle
+ * reconciliation is in {@code SYNCING}. Lifecycle-managed CRUD, identity resolution, Import,
+ * and Search must use canonical AI Resource rows instead.</p>
  *
  * @author xinluo
+ * @deprecated compatibility-only during MCP lifecycle reconciliation; planned for removal in
+ *     Nacos 4.0.0
  */
+@Deprecated
 public interface McpServerIndex {
     
     /**

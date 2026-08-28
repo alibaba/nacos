@@ -30,11 +30,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * MCP Server cache invalidation service.
+ * Historical MCP Server cache invalidation service.
  * 
  * <p>This service listens to ConfigDataChangeEvent and invalidates MCP server cache
  * when MCP-related configurations are deleted or modified. The implementation follows
- * the same pattern as AsyncNotifyService for configuration synchronization.</p>
+ * the same pattern as AsyncNotifyService for configuration synchronization. It supports only
+ * the complete legacy operation strategy while lifecycle reconciliation is in {@code SYNCING};
+ * lifecycle-managed operations never depend on this cache.</p>
  *
  * @author xinluo
  */
