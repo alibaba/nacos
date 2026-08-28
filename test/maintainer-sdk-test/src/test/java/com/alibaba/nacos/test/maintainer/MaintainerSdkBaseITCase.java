@@ -105,7 +105,12 @@ public abstract class MaintainerSdkBaseITCase {
     }
     
     protected void waitUntil(String reason, CheckedCondition condition) throws Exception {
-        long deadline = System.currentTimeMillis() + 10000;
+        waitUntil(reason, 10000L, condition);
+    }
+    
+    protected void waitUntil(String reason, long timeoutMillis, CheckedCondition condition)
+            throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
         Throwable lastFailure = null;
         while (System.currentTimeMillis() < deadline) {
             try {

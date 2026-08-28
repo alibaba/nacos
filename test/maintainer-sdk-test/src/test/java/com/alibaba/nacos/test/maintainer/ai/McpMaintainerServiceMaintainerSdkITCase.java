@@ -61,6 +61,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Compatibility: STDIO content and a Direct remote endpoint remain readable through the
  *     historical MCP detail API after lifecycle publication, while lifecycle reads do not expose
  *     the internal MCP ID.</li>
+ *     <li>Startup convergence: the test waits through the controlled conflict returned while the
+ *     asynchronous historical reconciliation completes managed cutover.</li>
  *     <li>Boundary/error handling: absent Versions and invalid publish state map to controlled
  *     SDK exceptions.</li>
  *     <li>Known standalone limitation: reviewed-state publish/redraft success requires an MCP
@@ -82,10 +84,13 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     
     private static final String STATUS_OFFLINE = "offline";
     
+    private static final long LIFECYCLE_CUTOVER_TIMEOUT_MILLIS = 180000L;
+    
     @Test
     void shouldManageStdioLifecycleInDefaultNamespace() throws Exception {
         McpMaintainerService mcpService = createAiMaintainerService().mcp();
-        String mcpName = randomMaintainerName("mcp-lifecycle-default");
+        waitForLifecycleManaged(mcpService);
+        String mcpName = randomMaintainerName("mcp-lc-default");
         
         NacosException missing = assertThrows(NacosException.class,
             () -> mcpService.getLifecycleVersion(mcpName, INITIAL_VERSION));
@@ -158,8 +163,9 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     @Test
     void shouldPublishDirectEndpointInExplicitNamespace() throws Exception {
         McpMaintainerService mcpService = createAiMaintainerService().mcp();
-        String namespaceId = randomMaintainerName("mcp-namespace");
-        String mcpName = randomMaintainerName("mcp-lifecycle-direct");
+        waitForLifecycleManaged(mcpService);
+        String namespaceId = randomMaintainerName("mcp-ns");
+        String mcpName = randomMaintainerName("mcp-lc-direct");
         McpLifecycleDraftRequest request = draftRequest(mcpName, INITIAL_VERSION,
             AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, "Direct lifecycle draft");
         McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
@@ -204,6 +210,25 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         McpLifecycleDraftRequest result = new McpLifecycleDraftRequest();
         result.setServerSpecification(server);
         return result;
+    }
+    
+    private void waitForLifecycleManaged(McpMaintainerService mcpService) throws Exception {
+        String probeName = randomMaintainerName("mcp-lifecycle-readiness");
+        waitUntil("MCP lifecycle management should complete asynchronous cutover",
+            LIFECYCLE_CUTOVER_TIMEOUT_MILLIS, () -> {
+                try {
+                    mcpService.getLifecycleVersion(probeName, INITIAL_VERSION);
+                    return true;
+                } catch (NacosException exception) {
+                    if (NacosException.NOT_FOUND == exception.getErrCode()) {
+                        return true;
+                    }
+                    if (NacosException.CONFLICT == exception.getErrCode()) {
+                        return false;
+                    }
+                    throw exception;
+                }
+            });
     }
     
     private McpToolSpecification toolSpecification(String mcpName) {

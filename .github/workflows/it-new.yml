@@ -51,6 +51,10 @@ jobs:
           sed 's|nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.publication.max-publications-per-client=.*|nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          # Keep the real two-pass Search readiness and MCP cutover flow while avoiding the
+          # production five-minute reconciliation interval in standalone integration tests.
+          echo "nacos.ai.resource.search.index.reconcile.interval-seconds=30" >> "$PROP_FILE"
+          echo "nacos.ai.mcp.resource.reconciliation.interval-seconds=30" >> "$PROP_FILE"
 
           echo "RAD capacity configuration:"
           grep -Fx "nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}" "$PROP_FILE"
