@@ -355,7 +355,7 @@ maintenance belong to the Maintainer SDK.
 
 `AiMaintainerService` exposes typed delegates:
 
-- `mcp()` for MCP Server list, search, detail, create, update, and delete;
+- `mcp()` for MCP Server compatibility operations and typed Version lifecycle management;
 - `a2a()` for AgentCard register, query, update, delete, version, search, and
   list operations;
 - `prompt()` for Prompt management;
@@ -372,6 +372,18 @@ take it as a separate method argument. Agent definition creation uses
 `createDraft`: the first draft creates missing Agent metadata, while later
 drafts reuse that metadata. `a2a()` remains available for its compatibility
 window.
+
+The MCP management delegate is `mcp()`, which returns `McpMaintainerService`.
+Its historical list, search, detail, direct-online create/update, and delete
+methods remain available. Typed lifecycle additions map one-to-one to the MCP
+Admin form/query routes: list/get Version, create/update/delete draft, submit,
+publish, force-publish, redraft, online, offline, and label replacement.
+Explicit methods accept `namespaceId` separately; convenience overloads use
+the default namespace. `McpLifecycleDraftRequest`,
+`McpLifecycleVersionCommand`, and `McpLifecycleLabelsUpdateRequest` add no
+top-level namespace or compatibility `mcpId` selector, and they do not expose
+JSON-library types. Historical identity fields inside the reused
+`McpServerBasicInfo` content do not participate in lifecycle target resolution.
 
 Runtime AI registration and subscription can remain in `AiService`; broad AI
 resource management belongs to `AiMaintainerService`.

@@ -64,6 +64,11 @@ effective config 并调用 `applyConfig`，节点才能参与执行。service �
 该插件以 `ai-pipeline` 类型暴露给核心插件管理器。
 原 `PublishPipelineServiceBuilder` SPI 及其任意 `Properties` 构造链路不再属于本规范。
 
+`PublishPipelineResourceType` 包含 `MCP`。MCP Submit 提供
+`ResourceFilesPipelineContext`，其中包含逻辑文件 `mcp-server.json`，以及可选的
+`mcp-tools.json` 和 `mcp-resources.json`，同时保持标准 Namespace、Name 和精确
+Version 字段。
+
 ## 执行
 
 Pipeline 执行器会：

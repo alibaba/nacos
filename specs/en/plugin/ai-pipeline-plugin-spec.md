@@ -72,6 +72,11 @@ The plugin is exposed to the core plugin manager as type `ai-pipeline`.
 The former `PublishPipelineServiceBuilder` SPI and its arbitrary
 `Properties` construction path are not part of this contract.
 
+`PublishPipelineResourceType` includes `MCP`. MCP submission supplies a
+`ResourceFilesPipelineContext` containing logical `mcp-server.json` and the
+optional `mcp-tools.json` and `mcp-resources.json` files while preserving the
+canonical namespace, name, and exact Version fields.
+
 ## Execution
 
 The pipeline executor:

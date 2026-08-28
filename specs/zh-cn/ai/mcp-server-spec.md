@@ -258,7 +258,22 @@ Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像�
 
 这些标准路由只在管理权威达到 `LIFECYCLE_MANAGED` 后启用。Embedded 和 Standalone Console
 直接使用相同的 Application Service。Console-only Remote 部署必须使用 Typed Maintainer Lifecycle
-Transport；该 Transport 可用前，Remote Handler 返回能力未启用，且不得回退到 Legacy Write。
+Transport，且不得回退到 Legacy Write。该 Transport 把类型化 Request Object 映射到同一组
+Form/Query Admin Route，不引入第二套 JSON Body HTTP 契约。
+
+`McpMaintainerService` 提供显式 Namespace Lifecycle 方法和默认 Namespace 便利重载。
+Draft 内容使用 `McpLifecycleDraftRequest`，精确 Version 状态转换使用
+`McpLifecycleVersionCommand`，Label 替换使用 `McpLifecycleLabelsUpdateRequest`。
+这些模型不新增顶层 `namespaceId` 或 `mcpId` 选择器；Namespace 作为独立方法参数，标准
+Resource 身份只使用 `mcpName`。复用 `McpServerBasicInfo` Payload 内的历史 `id` 或
+`namespaceId` 字段只属于兼容内容：服务端不使用它们解析身份，而是写入 Lifecycle Target
+解析出的内部坐标。
+
+Submit 使用资源类型 `MCP` 构造 `ResourceFilesPipelineContext`，包含保持原样的 Server、
+可选 Tools 和可选 Resources Payload。没有 Enable 且支持 MCP 的 Pipeline Node 时，Submit
+遵循通用 Direct-publish 路径；否则 Version 进入 `reviewing`，Approved 或 Rejected 回调都将其
+转换为 `reviewed`，只有后续显式且已批准的 Publish 才更新 Online Lifecycle State 和兼容
+Manifest。Force-publish 继续作为需要审计的 Pipeline Bypass。
 
 ### 6.2 历史 Direct-Online Facade
 

@@ -19,6 +19,11 @@ package com.alibaba.nacos.maintainer.client.ai;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
@@ -574,4 +579,310 @@ public interface McpMaintainerService {
     @Since("3.0.2")
     boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
         throws NacosException;
+    
+    /**
+     * List lifecycle metadata for one MCP resource's Versions.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param status optional lifecycle status
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return lifecycle Version page
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId, String mcpName,
+        String status, int pageNo, int pageSize) throws NacosException;
+    
+    /**
+     * List lifecycle metadata in the default namespace.
+     *
+     * @param mcpName canonical MCP name
+     * @param status optional lifecycle status
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return lifecycle Version page
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default Page<McpLifecycleVersionSummary> listLifecycleVersions(String mcpName, String status,
+        int pageNo, int pageSize) throws NacosException {
+        return listLifecycleVersions(Constants.DEFAULT_NAMESPACE_ID, mcpName, status, pageNo,
+            pageSize);
+    }
+    
+    /**
+     * Get one exact lifecycle Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param version exact Version
+     * @return lifecycle Version detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException;
+    
+    /**
+     * Get one exact lifecycle Version in the default namespace.
+     *
+     * @param mcpName canonical MCP name
+     * @param version exact Version
+     * @return lifecycle Version detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionDetail getLifecycleVersion(String mcpName, String version)
+        throws NacosException {
+        return getLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, mcpName, version);
+    }
+    
+    /**
+     * Create one new MCP draft Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete draft content
+     * @return persisted draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpLifecycleDraftRequest request) throws NacosException;
+    
+    /**
+     * Create one new MCP draft Version in the default namespace.
+     *
+     * @param request complete draft content
+     * @return persisted draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionDetail createLifecycleDraft(McpLifecycleDraftRequest request)
+        throws NacosException {
+        return createLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
+    
+    /**
+     * Replace one exact current MCP draft.
+     *
+     * @param namespaceId namespace identifier
+     * @param request complete replacement content
+     * @return updated draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpLifecycleDraftRequest request) throws NacosException;
+    
+    /**
+     * Replace one exact current MCP draft in the default namespace.
+     *
+     * @param request complete replacement content
+     * @return updated draft detail
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionDetail updateLifecycleDraft(McpLifecycleDraftRequest request)
+        throws NacosException {
+        return updateLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
+    
+    /**
+     * Delete one exact current MCP draft.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    void deleteLifecycleDraft(String namespaceId, McpLifecycleVersionCommand command)
+        throws NacosException;
+    
+    /**
+     * Delete one exact current MCP draft in the default namespace.
+     *
+     * @param command exact Version command
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default void deleteLifecycleDraft(McpLifecycleVersionCommand command) throws NacosException {
+        deleteLifecycleDraft(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Submit one exact MCP working Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return resulting Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Submit one exact MCP working Version in the default namespace.
+     *
+     * @param command exact Version command
+     * @return resulting Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary submitLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return submitLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Publish one exact reviewed MCP Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Publish one exact reviewed MCP Version in the default namespace.
+     *
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary publishLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return publishLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Force-publish one exact MCP working Version.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Force-publish one exact MCP working Version in the default namespace.
+     *
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary forcePublishLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return forcePublishLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Move one exact reviewed MCP Version back to draft.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return draft Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Move one exact reviewed MCP Version back to draft in the default namespace.
+     *
+     * @param command exact Version command
+     * @return draft Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary redraftLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return redraftLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Bring one exact offline MCP Version online.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Bring one exact offline MCP Version online in the default namespace.
+     *
+     * @param command exact Version command
+     * @return online Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary onlineLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return onlineLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Take one exact online MCP Version offline.
+     *
+     * @param namespaceId namespace identifier
+     * @param command exact Version command
+     * @return offline Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException;
+    
+    /**
+     * Take one exact online MCP Version offline in the default namespace.
+     *
+     * @param command exact Version command
+     * @return offline Version summary
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default McpLifecycleVersionSummary offlineLifecycleVersion(
+        McpLifecycleVersionCommand command) throws NacosException {
+        return offlineLifecycleVersion(Constants.DEFAULT_NAMESPACE_ID, command);
+    }
+    
+    /**
+     * Replace custom MCP labels.
+     *
+     * @param namespaceId namespace identifier
+     * @param request labels update request
+     * @return complete label map after replacement
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    Map<String, String> updateLifecycleLabels(String namespaceId,
+        McpLifecycleLabelsUpdateRequest request) throws NacosException;
+    
+    /**
+     * Replace custom MCP labels in the default namespace.
+     *
+     * @param request labels update request
+     * @return complete label map after replacement
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default Map<String, String> updateLifecycleLabels(McpLifecycleLabelsUpdateRequest request)
+        throws NacosException {
+        return updateLifecycleLabels(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
 }

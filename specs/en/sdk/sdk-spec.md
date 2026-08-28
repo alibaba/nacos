@@ -147,6 +147,15 @@ and label operations. Every new management call identifies its namespace and
 uses `mcpName + version` with the same lifecycle application service as Admin
 and Console APIs.
 
+The typed request objects are `McpLifecycleDraftRequest`,
+`McpLifecycleVersionCommand`, and `McpLifecycleLabelsUpdateRequest`. They do
+not add top-level namespace or `mcpId` selectors; explicit overloads accept
+namespace separately and convenience overloads use the default namespace.
+Historical identity fields inside the reused `McpServerBasicInfo` content are
+ignored for lifecycle target resolution. The implementation maps these models
+to the existing Admin form/query contract rather than adding JSON-body HTTP
+routes.
+
 Existing Maintainer overloads that accept only `mcpId` remain deprecated
 compatibility inputs. The server resolves the alias from MCP AI Resource rows
 and then applies the same name-based authorization and operation. The Java

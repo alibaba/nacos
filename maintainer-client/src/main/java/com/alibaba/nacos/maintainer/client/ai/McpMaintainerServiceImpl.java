@@ -18,6 +18,11 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -41,6 +46,8 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     private static final String SEARCH_BLUR = "blur";
     
     private static final String SEARCH_ACCURATE = "accurate";
+    
+    private static final String ROOT_PATH = Constants.AdminApiPath.AI_MCP_ADMIN_PATH;
     
     McpMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
@@ -139,6 +146,110 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
+    @Override
+    public Page<McpLifecycleVersionSummary> listLifecycleVersions(String namespaceId,
+        String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
+        putIfNotBlank(params, "status", status);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.GET,
+            ROOT_PATH + "/versions", namespaceId, mcpName, params);
+        Result<Page<McpLifecycleVersionSummary>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Page<McpLifecycleVersionSummary>>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail getLifecycleVersion(String namespaceId, String mcpName,
+        String version) throws NacosException {
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleVersionParams(namespaceId, mcpName, version);
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.GET,
+            ROOT_PATH + "/version", namespaceId, mcpName, params);
+        Result<McpLifecycleVersionDetail> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpLifecycleVersionDetail>>() {
+            });
+        return result.getData();
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail createLifecycleDraft(String namespaceId,
+        McpLifecycleDraftRequest request) throws NacosException {
+        return executeDraftRequest(HttpMethod.POST, namespaceId, request);
+    }
+    
+    @Override
+    public McpLifecycleVersionDetail updateLifecycleDraft(String namespaceId,
+        McpLifecycleDraftRequest request) throws NacosException {
+        return executeDraftRequest(HttpMethod.PUT, namespaceId, request);
+    }
+    
+    @Override
+    public void deleteLifecycleDraft(String namespaceId, McpLifecycleVersionCommand command)
+        throws NacosException {
+        command = requireRequest(command);
+        namespaceId = resolveMcpNamespace(namespaceId);
+        executeLifecycleRequest(HttpMethod.DELETE, ROOT_PATH + "/draft", namespaceId,
+            command.getMcpName(), lifecycleVersionParams(namespaceId, command.getMcpName(),
+                command.getVersion()));
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/submit");
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary publishLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/publish");
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary forcePublishLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/force-publish");
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary redraftLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/redraft");
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary onlineLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/online");
+    }
+    
+    @Override
+    public McpLifecycleVersionSummary offlineLifecycleVersion(String namespaceId,
+        McpLifecycleVersionCommand command) throws NacosException {
+        return executeVersionCommand(namespaceId, command, "/offline");
+    }
+    
+    @Override
+    public Map<String, String> updateLifecycleLabels(String namespaceId,
+        McpLifecycleLabelsUpdateRequest request) throws NacosException {
+        request = requireRequest(request);
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, request.getMcpName());
+        if (request.getLabels() != null) {
+            params.put("labels", JsonUtils.toJson(request.getLabels()));
+        }
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.PUT,
+            ROOT_PATH + "/labels", namespaceId, request.getMcpName(), params);
+        Result<Map<String, String>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Map<String, String>>>() {
+            });
+        return result.getData();
+    }
+    
     private Page<McpServerBasicInfo> queryServerPage(String namespaceId, String mcpName, int pageNo,
         int pageSize,
         String search) throws NacosException {
@@ -159,6 +270,76 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             new NacosTypeReference<Result<Page<McpServerBasicInfo>>>() {
             });
         return result.getData();
+    }
+    
+    private McpLifecycleVersionDetail executeDraftRequest(String method, String namespaceId,
+        McpLifecycleDraftRequest request) throws NacosException {
+        request = requireRequest(request);
+        McpServerBasicInfo serverSpecification = request.getServerSpecification();
+        if (serverSpecification == null) {
+            throw new IllegalArgumentException("MCP server specification must not be null");
+        }
+        namespaceId = resolveMcpNamespace(namespaceId);
+        String mcpName = serverSpecification.getName();
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
+        params.put("serverSpecification", JsonUtils.toJson(serverSpecification));
+        putJsonIfNotNull(params, "toolSpecification", request.getToolSpecification());
+        putJsonIfNotNull(params, "resourceSpecification", request.getResourceSpecification());
+        putJsonIfNotNull(params, "endpointSpecification", request.getEndpointSpecification());
+        HttpRestResult<String> restResult = executeLifecycleRequest(method, ROOT_PATH + "/draft",
+            namespaceId, mcpName, params);
+        Result<McpLifecycleVersionDetail> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpLifecycleVersionDetail>>() {
+            });
+        return result.getData();
+    }
+    
+    private McpLifecycleVersionSummary executeVersionCommand(String namespaceId,
+        McpLifecycleVersionCommand command, String path) throws NacosException {
+        command = requireRequest(command);
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleVersionParams(namespaceId, command.getMcpName(),
+            command.getVersion());
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.POST,
+            ROOT_PATH + path, namespaceId, command.getMcpName(), params);
+        Result<McpLifecycleVersionSummary> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<McpLifecycleVersionSummary>>() {
+            });
+        return result.getData();
+    }
+    
+    private HttpRestResult<String> executeLifecycleRequest(String method, String path,
+        String namespaceId, String mcpName, Map<String, String> params) throws NacosException {
+        HttpRequest request = buildHttpRequestBuilder(buildRequestResource(namespaceId, mcpName))
+            .setHttpMethod(method).setPath(path).setParamValue(params).build();
+        return executeSyncHttpRequest(request);
+    }
+    
+    private Map<String, String> lifecycleIdentityParams(String namespaceId, String mcpName) {
+        Map<String, String> result = new HashMap<>(6);
+        result.put("namespaceId", namespaceId);
+        result.put("mcpName", mcpName);
+        return result;
+    }
+    
+    private Map<String, String> lifecycleVersionParams(String namespaceId, String mcpName,
+        String version) {
+        Map<String, String> result = lifecycleIdentityParams(namespaceId, mcpName);
+        result.put("version", version);
+        return result;
+    }
+    
+    private void putJsonIfNotNull(Map<String, String> params, String key, Object value) {
+        if (value != null) {
+            params.put(key, JsonUtils.toJson(value));
+        }
+    }
+    
+    private <T> T requireRequest(T request) {
+        if (request == null) {
+            throw new IllegalArgumentException("MCP lifecycle request must not be null");
+        }
+        return request;
     }
     
     private Map<String, String> buildFullParameters(McpServerBasicInfo serverSpec,

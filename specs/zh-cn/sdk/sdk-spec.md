@@ -114,6 +114,12 @@ Facade，并增加与 Admin MCP Version、Draft、Submit、Publish、Force Publi
 Online、Offline 和 Label 操作一一对应的类型化方法。每个新管理调用都显式标识 Namespace，
 使用 `mcpName + version`，并与 Admin/Console API 共用同一个 Lifecycle Application Service。
 
+类型化 Request Object 为 `McpLifecycleDraftRequest`、`McpLifecycleVersionCommand` 和
+`McpLifecycleLabelsUpdateRequest`。它们不新增顶层 Namespace 或 `mcpId` 选择器；显式重载
+独立接收 Namespace，便利重载使用默认 Namespace。复用 `McpServerBasicInfo` 内容内的历史
+身份字段不参与 Lifecycle Target 解析。实现把这些对象映射到现有 Admin Form/Query 契约，
+不增加 JSON Body HTTP Route。
+
 现有只接收 `mcpId` 的 Maintainer Overload 继续作为已废弃兼容输入。服务端从 MCP AI Resource
 Row 解析别名，再执行相同的 Name-Based 鉴权和操作。Java Client 不开始填充 Dormant 顶层
 gRPC `mcpId`；当前 Model、Event 和 Release Response ID 字段保持 Wire-Compatible。

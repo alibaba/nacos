@@ -19,6 +19,12 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleDraftRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionCommand;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.McpLifecycleVersionSummary;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -30,6 +36,10 @@ import com.alibaba.nacos.console.handler.impl.remote.AbstractRemoteHandlerTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -125,31 +135,77 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     }
     
     @Test
-    void standardLifecycleMethodsRequireTypedMaintainerTransport() {
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.listLifecycleVersions("ns", "name", null, 1, 10));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.getLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.createLifecycleDraft("ns", null, null, null, null));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.updateLifecycleDraft("ns", null, null, null, null));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.deleteLifecycleDraft("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
-        assertThrows(NacosApiException.class,
-            () -> mcpRemoteHandler.updateLifecycleLabels("ns", "name", null));
+    void standardLifecycleMethodsUseTypedMaintainerTransport() throws NacosException {
+        Page<McpLifecycleVersionSummary> page = new Page<>();
+        McpLifecycleVersionDetail detail = new McpLifecycleVersionDetail();
+        McpLifecycleVersionSummary summary = new McpLifecycleVersionSummary();
+        Map<String, String> labels = Collections.singletonMap("stable", "1.0.0");
+        when(mcpMaintainerService.listLifecycleVersions("ns", "name", null, 1, 10))
+            .thenReturn(page);
+        when(mcpMaintainerService.getLifecycleVersion("ns", "name", "1.0.0"))
+            .thenReturn(detail);
+        when(mcpMaintainerService.createLifecycleDraft(eq("ns"), any()))
+            .thenReturn(detail);
+        when(mcpMaintainerService.updateLifecycleDraft(eq("ns"), any()))
+            .thenReturn(detail);
+        when(mcpMaintainerService.submitLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.publishLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.forcePublishLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.redraftLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.onlineLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.offlineLifecycleVersion(eq("ns"), any()))
+            .thenReturn(summary);
+        when(mcpMaintainerService.updateLifecycleLabels(eq("ns"), any()))
+            .thenReturn(labels);
+        McpServerBasicInfo server = new McpServerBasicInfo();
+        server.setName("name");
+        McpToolSpecification tools = new McpToolSpecification();
+        McpResourceSpecification resources = new McpResourceSpecification();
+        McpEndpointSpec endpoint = new McpEndpointSpec();
+        
+        assertEquals(page,
+            mcpRemoteHandler.listLifecycleVersions("ns", "name", null, 1, 10));
+        assertEquals(detail,
+            mcpRemoteHandler.getLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(detail,
+            mcpRemoteHandler.createLifecycleDraft("ns", server, tools, resources, endpoint));
+        assertEquals(detail,
+            mcpRemoteHandler.updateLifecycleDraft("ns", server, tools, resources, endpoint));
+        mcpRemoteHandler.deleteLifecycleDraft("ns", "name", "1.0.0");
+        assertEquals(summary,
+            mcpRemoteHandler.submitLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(summary,
+            mcpRemoteHandler.publishLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(summary,
+            mcpRemoteHandler.forcePublishLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(summary,
+            mcpRemoteHandler.redraftLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(summary,
+            mcpRemoteHandler.onlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(summary,
+            mcpRemoteHandler.offlineLifecycleVersion("ns", "name", "1.0.0"));
+        assertEquals(labels,
+            mcpRemoteHandler.updateLifecycleLabels("ns", "name", labels));
+        
+        ArgumentCaptor<McpLifecycleDraftRequest> draftCaptor =
+            ArgumentCaptor.forClass(McpLifecycleDraftRequest.class);
+        verify(mcpMaintainerService).createLifecycleDraft(eq("ns"), draftCaptor.capture());
+        assertEquals(server, draftCaptor.getValue().getServerSpecification());
+        assertEquals(resources, draftCaptor.getValue().getResourceSpecification());
+        ArgumentCaptor<McpLifecycleVersionCommand> commandCaptor =
+            ArgumentCaptor.forClass(McpLifecycleVersionCommand.class);
+        verify(mcpMaintainerService).deleteLifecycleDraft(eq("ns"), commandCaptor.capture());
+        assertEquals("name", commandCaptor.getValue().getMcpName());
+        assertEquals("1.0.0", commandCaptor.getValue().getVersion());
+        ArgumentCaptor<McpLifecycleLabelsUpdateRequest> labelsCaptor =
+            ArgumentCaptor.forClass(McpLifecycleLabelsUpdateRequest.class);
+        verify(mcpMaintainerService).updateLifecycleLabels(eq("ns"), labelsCaptor.capture());
+        assertEquals(labels, labelsCaptor.getValue().getLabels());
     }
     
     @Test

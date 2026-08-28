@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.mcp.McpResourceExt;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.model.mcp.McpVersionStorageDescriptor;
+import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.mcp.storage.McpResourceExtSerializer;
@@ -52,6 +53,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -63,6 +65,9 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,6 +112,12 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private static final int VERSION_PAGE_SIZE = 100;
     
+    private static final String PIPELINE_SERVER_FILE = "mcp-server.json";
+    
+    private static final String PIPELINE_TOOLS_FILE = "mcp-tools.json";
+    
+    private static final String PIPELINE_RESOURCES_FILE = "mcp-resources.json";
+    
     private static final DateTimeFormatter RELEASE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern(Constants.RELEASE_DATE_FORMAT);
     
@@ -126,6 +137,8 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private final McpCanonicalAuthorizationService canonicalAuthorizationService;
     
+    private final PublishPipelineExecutor publishPipelineExecutor;
+    
     private AiResourceIndexMaintenanceService indexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
     
@@ -135,7 +148,8 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpVersionStorageService versionStorageService,
         McpServingManifestStorage manifestStorage,
         McpEndpointOperationService endpointOperationService,
-        McpCanonicalAuthorizationService canonicalAuthorizationService) {
+        McpCanonicalAuthorizationService canonicalAuthorizationService,
+        PublishPipelineExecutor publishPipelineExecutor) {
         this.resourceLocator = resourceLocator;
         this.resourceManager = resourceManager;
         this.resourcePersistService = resourcePersistService;
@@ -144,6 +158,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         this.manifestStorage = manifestStorage;
         this.endpointOperationService = endpointOperationService;
         this.canonicalAuthorizationService = canonicalAuthorizationService;
+        this.publishPipelineExecutor = publishPipelineExecutor;
     }
     
     @Autowired(required = false)
@@ -320,13 +335,13 @@ public class McpLifecycleOperationService implements McpOperationService {
     }
     
     /**
-     * Submit one MCP working Version. Until MCP Pipeline governance is enabled, submission uses
-     * the common no-Pipeline behavior and publishes the Version directly.
+     * Submit one MCP working Version to Pipeline, or publish it directly when no MCP Pipeline
+     * exists.
      *
      * @param namespaceId namespace identifier
      * @param mcpName canonical MCP name
      * @param version exact working Version
-     * @return online Version summary
+     * @return reviewing summary when a Pipeline starts, otherwise the directly published summary
      * @throws NacosException when the state transition or serving convergence fails
      */
     public McpLifecycleVersionSummary submitLifecycleVersion(String namespaceId, String mcpName,
@@ -337,6 +352,34 @@ public class McpLifecycleOperationService implements McpOperationService {
             version);
         requireWorkingPointer(lifecycle.resource, version, row.getStatus());
         LoadedVersion loaded = ensureReleaseMetadata(lifecycle, row);
+        ResourceFilesPipelineContext context = buildPipelineContext(lifecycle, version, loaded);
+        if (publishPipelineExecutor.isPipelineAvailable(PublishPipelineResourceType.MCP)) {
+            if (AiResourceManager.isReviewingVersion(row)) {
+                return requireLifecycleSummary(lifecycle.resource.getNamespaceId(),
+                    lifecycle.resource.getName(), version);
+            }
+            ResourceVersionInfo info = AiResourceManager.requireVersionInfo(lifecycle.resource);
+            resourceManager.moveToReviewing(lifecycle.resource.getNamespaceId(),
+                lifecycle.resource.getName(), RESOURCE_TYPE, version, lifecycle.resource, info);
+            String namespaceIdForCallback = lifecycle.resource.getNamespaceId();
+            String mcpNameForCallback = lifecycle.resource.getName();
+            boolean running = resourceManager.runPipelineExecution(
+                lifecycle.resource.getNamespaceId(), lifecycle.resource.getName(), RESOURCE_TYPE,
+                version, context, publishPipelineExecutor,
+                result -> onPipelineComplete(namespaceIdForCallback, mcpNameForCallback, version,
+                    result));
+            if (running) {
+                scheduleIndex(lifecycle.resource.getNamespaceId(), lifecycle.resource.getName());
+                return requireLifecycleSummary(lifecycle.resource.getNamespaceId(),
+                    lifecycle.resource.getName(), version);
+            }
+            lifecycle = requireLifecycleResource(resourceManager.requireMeta(
+                lifecycle.resource.getNamespaceId(), lifecycle.resource.getName(), RESOURCE_TYPE));
+        }
+        if (StringUtils.isNotBlank(row.getPublishPipelineInfo())) {
+            resourceManager.clearPipelineInfo(lifecycle.resource.getNamespaceId(),
+                lifecycle.resource.getName(), RESOURCE_TYPE, version);
+        }
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(lifecycle.resource);
         resourceManager.directPublishVersion(lifecycle.resource.getNamespaceId(),
             lifecycle.resource, info, version, true);
@@ -771,6 +814,34 @@ public class McpLifecycleOperationService implements McpOperationService {
                     lifecycle.resource.getName() + "::" + version.getVersion());
                 versionStorageService.delete(descriptor(version));
             });
+    }
+    
+    private ResourceFilesPipelineContext buildPipelineContext(LifecycleResource lifecycle,
+        String version, LoadedVersion loaded) {
+        ResourceFilesPipelineContext result = new ResourceFilesPipelineContext();
+        result.setResourceType(PublishPipelineResourceType.MCP);
+        result.setNamespaceId(lifecycle.resource.getNamespaceId());
+        result.setResourceName(lifecycle.resource.getName());
+        result.setVersion(version);
+        List<ResourceFileContent> files = new ArrayList<>(3);
+        files.add(new ResourceFileContent(PIPELINE_SERVER_FILE,
+            new String(loaded.contents.getServerContent(), StandardCharsets.UTF_8)));
+        if (loaded.contents.getToolContent() != null) {
+            files.add(new ResourceFileContent(PIPELINE_TOOLS_FILE,
+                new String(loaded.contents.getToolContent(), StandardCharsets.UTF_8)));
+        }
+        if (loaded.contents.getResourceContent() != null) {
+            files.add(new ResourceFileContent(PIPELINE_RESOURCES_FILE,
+                new String(loaded.contents.getResourceContent(), StandardCharsets.UTF_8)));
+        }
+        result.setFiles(files);
+        return result;
+    }
+    
+    private void onPipelineComplete(String namespaceId, String mcpName, String version,
+        PipelineExecutionResult result) {
+        resourceManager.onPipelineComplete(namespaceId, mcpName, RESOURCE_TYPE, version, result);
+        scheduleIndex(namespaceId, mcpName);
     }
     
     private PreparedVersion prepareVersion(String namespaceId, String mcpId,

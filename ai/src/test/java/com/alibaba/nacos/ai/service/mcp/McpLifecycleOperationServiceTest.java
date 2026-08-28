@@ -23,6 +23,8 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.mcp.McpResourceExt;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.model.mcp.McpVersionStorageDescriptor;
+import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
@@ -46,11 +48,16 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
+import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -136,6 +143,9 @@ class McpLifecycleOperationServiceTest {
     @Mock
     private McpCanonicalAuthorizationService canonicalAuthorizationService;
     
+    @Mock
+    private PublishPipelineExecutor publishPipelineExecutor;
+    
     private final AtomicReference<AiResource> resource = new AtomicReference<>();
     
     private final Map<String, AiResourceVersion> versions = new LinkedHashMap<>();
@@ -164,7 +174,7 @@ class McpLifecycleOperationServiceTest {
         McpResourceLocator resourceLocator = new McpResourceLocator(resourcePersistService);
         service = new McpLifecycleOperationService(resourceLocator, resourceManager,
             resourcePersistService, versionPersistService, versionStorageService, manifestStorage,
-            endpointOperationService, canonicalAuthorizationService);
+            endpointOperationService, canonicalAuthorizationService, publishPipelineExecutor);
         service.setIndexMaintenanceService(indexMaintenanceService);
         setUpResourceRepository();
         setUpVersionRepository();
@@ -732,7 +742,7 @@ class McpLifecycleOperationServiceTest {
         McpLifecycleOperationService emptyService = new McpLifecycleOperationService(
             new McpResourceLocator(resourcePersistService), emptyManager, resourcePersistService,
             versionPersistService, versionStorageService, manifestStorage,
-            endpointOperationService, canonicalAuthorizationService);
+            endpointOperationService, canonicalAuthorizationService, publishPipelineExecutor);
         
         Page<McpServerBasicInfo> result = emptyService.listMcpServerWithPage(NAMESPACE_ID, null,
             Constants.MCP_LIST_SEARCH_ACCURATE, 3, 10);
@@ -992,6 +1002,121 @@ class McpLifecycleOperationServiceTest {
     }
     
     @Test
+    void testStandardSubmitUsesMcpPipelineAndPublishesApprovedReview() throws Exception {
+        AtomicReference<PipelineCallback> callback = new AtomicReference<>();
+        AtomicReference<ResourceFilesPipelineContext> context = new AtomicReference<>();
+        AtomicReference<String> executionId = new AtomicReference<>();
+        when(publishPipelineExecutor.isPipelineAvailable(PublishPipelineResourceType.MCP))
+            .thenReturn(true);
+        when(publishPipelineExecutor.execute(any(ResourceFilesPipelineContext.class),
+            any(PipelineCallback.class), anyString())).thenAnswer(invocation -> {
+                context.set(invocation.getArgument(0));
+                callback.set(invocation.getArgument(1));
+                executionId.set(invocation.getArgument(2));
+                return executionId.get();
+            });
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"),
+            new McpToolSpecification(), resourceSpecification(), null);
+        
+        McpLifecycleVersionSummary reviewing = service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_REVIEWING, reviewing.getStatus());
+        assertEquals(VERSION_ONE, versionInfo(resource.get()).getReviewingVersion());
+        assertNull(versionInfo(resource.get()).getEditingVersion());
+        assertNull(manifest.get());
+        assertEquals(PublishPipelineResourceType.MCP, context.get().getResourceType());
+        assertEquals(3, context.get().getFiles().size());
+        assertEquals("mcp-server.json", context.get().getFiles().get(0).getFilePath());
+        assertTrue(context.get().getFiles().get(0).getContent().contains(MCP_NAME));
+        service.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        verify(publishPipelineExecutor, times(1)).execute(
+            any(ResourceFilesPipelineContext.class), any(PipelineCallback.class), anyString());
+        
+        PipelineExecutionResult result = new PipelineExecutionResult();
+        result.setExecutionId(executionId.get());
+        result.setStatus(PipelineExecutionStatus.APPROVED);
+        result.setPipeline(Collections.emptyList());
+        callback.get().onComplete(result);
+        assertEquals(AiResourceConstants.VERSION_STATUS_REVIEWED,
+            versions.get(VERSION_ONE).getStatus());
+        PipelineExecution execution = new PipelineExecution();
+        execution.setStatus(PipelineExecutionStatus.APPROVED);
+        when(pipelineExecutionRepository.findById(executionId.get())).thenReturn(execution);
+        
+        McpLifecycleVersionSummary published = service.publishLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, published.getStatus());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+    }
+    
+    @Test
+    void testStandardPipelineRejectionRequiresRedraft() throws Exception {
+        AtomicReference<PipelineCallback> callback = new AtomicReference<>();
+        AtomicReference<String> executionId = new AtomicReference<>();
+        when(publishPipelineExecutor.isPipelineAvailable(PublishPipelineResourceType.MCP))
+            .thenReturn(true);
+        when(publishPipelineExecutor.execute(any(ResourceFilesPipelineContext.class),
+            any(PipelineCallback.class), anyString())).thenAnswer(invocation -> {
+                callback.set(invocation.getArgument(1));
+                executionId.set(invocation.getArgument(2));
+                return executionId.get();
+            });
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        service.submitLifecycleVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        PipelineExecutionResult result = new PipelineExecutionResult();
+        result.setExecutionId(executionId.get());
+        result.setStatus(PipelineExecutionStatus.REJECTED);
+        result.setPipeline(Collections.emptyList());
+        callback.get().onComplete(result);
+        PipelineExecution execution = new PipelineExecution();
+        execution.setStatus(PipelineExecutionStatus.REJECTED);
+        when(pipelineExecutionRepository.findById(executionId.get())).thenReturn(execution);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_REVIEWED,
+            versions.get(VERSION_ONE).getStatus());
+        assertThrows(NacosException.class, () -> service.publishLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE));
+        McpLifecycleVersionSummary redrafted = service.redraftLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        assertEquals(AiResourceConstants.VERSION_STATUS_DRAFT, redrafted.getStatus());
+        assertNull(manifest.get());
+    }
+    
+    @Test
+    void testStandardSubmitFallsThroughWhenPipelineDisappears() throws Exception {
+        when(publishPipelineExecutor.isPipelineAvailable(PublishPipelineResourceType.MCP))
+            .thenReturn(true);
+        when(publishPipelineExecutor.execute(any(ResourceFilesPipelineContext.class),
+            any(PipelineCallback.class), anyString())).thenReturn(null);
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        
+        McpLifecycleVersionSummary summary = service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, summary.getStatus());
+        assertNull(versions.get(VERSION_ONE).getPublishPipelineInfo());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+    }
+    
+    @Test
+    void testStandardSubmitClearsStalePipelineInfoWithoutPipeline() throws Exception {
+        service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
+            null);
+        versions.get(VERSION_ONE).setPublishPipelineInfo("{}");
+        
+        McpLifecycleVersionSummary summary = service.submitLifecycleVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, summary.getStatus());
+        assertNull(versions.get(VERSION_ONE).getPublishPipelineInfo());
+        assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
+    }
+    
+    @Test
     void testStandardPublishRetryConvergesManifestWithoutDoubleCounting() throws Exception {
         service.createLifecycleDraft(NAMESPACE_ID, server(VERSION_ONE, "draft"), null, null,
             null);
@@ -1218,6 +1343,15 @@ class McpLifecycleOperationServiceTest {
                     return 0;
                 }
                 row.setStatus(invocation.getArgument(4));
+                return 1;
+            });
+        when(versionPersistService.updatePublishPipelineInfo(anyString(), anyString(), anyString(),
+            anyString(), any())).thenAnswer(invocation -> {
+                AiResourceVersion row = versions.get(invocation.getArgument(3));
+                if (row == null) {
+                    return 0;
+                }
+                row.setPublishPipelineInfo(invocation.getArgument(4));
                 return 1;
             });
         when(versionPersistService.list(anyString(), anyString(), anyString(), any(), anyInt(),

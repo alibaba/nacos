@@ -304,9 +304,27 @@ operations under `/v3/console/ai/mcp`. Exact routes are listed in the
 These standard routes are enabled only after management authority reaches
 `LIFECYCLE_MANAGED`. Embedded and standalone Console use the same application
 service directly. A Console-only remote deployment must use the typed
-Maintainer lifecycle transport; until that transport is available, the remote
-handler reports the capability as disabled and must not fall back to a legacy
-write.
+Maintainer lifecycle transport and must not fall back to a legacy write. The
+transport maps typed request objects onto the same form/query Admin routes; it
+does not introduce a second JSON-body HTTP contract.
+
+`McpMaintainerService` exposes explicit-namespace lifecycle methods plus
+default-namespace overloads. Draft content uses `McpLifecycleDraftRequest`,
+exact Version transitions use `McpLifecycleVersionCommand`, and label
+replacement uses `McpLifecycleLabelsUpdateRequest`. These models do not carry
+top-level `namespaceId` or `mcpId` selectors; the namespace is a separate
+method argument and the canonical resource identity is `mcpName`. Historical
+`id` or `namespaceId` fields inside the reused `McpServerBasicInfo` payload are
+compatibility content only: the server ignores them for identity resolution
+and applies the internal coordinates resolved from the lifecycle target.
+
+Submit builds a `ResourceFilesPipelineContext` with resource type `MCP` and
+the preserved Server, optional Tools, and optional Resources payloads. If no
+enabled Pipeline node supports MCP, submit follows the common direct-publish
+path. Otherwise the Version enters `reviewing`; an approved or rejected
+callback moves it to `reviewed`, and only an explicit approved publish updates
+the online lifecycle state and compatibility Manifest. Force-publish remains
+the audited Pipeline bypass.
 
 ### 6.2 Historical Direct-Online Facades
 
