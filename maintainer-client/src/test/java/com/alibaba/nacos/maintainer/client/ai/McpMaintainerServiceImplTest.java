@@ -194,6 +194,31 @@ class McpMaintainerServiceImplTest {
     }
     
     @Test
+    void testOptionalLifecycleParametersMayBeOmitted() throws NacosException {
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(response(Collections.emptyMap()), response(detail()));
+        McpLifecycleLabelsUpdateRequest labelsRequest = new McpLifecycleLabelsUpdateRequest();
+        labelsRequest.setMcpName(MCP_NAME);
+        McpLifecycleDraftRequest draftRequest = draftRequest();
+        draftRequest.setToolSpecification(null);
+        draftRequest.setResourceSpecification(null);
+        draftRequest.setEndpointSpecification(null);
+        
+        assertEquals(Collections.emptyMap(), service.updateLifecycleLabels("", labelsRequest));
+        service.createLifecycleDraft("", draftRequest);
+        
+        List<HttpRequest> requests = captureRequests(2);
+        assertFalse(requests.get(0).getParamValues().containsKey("labels"));
+        assertFalse(requests.get(1).getParamValues().containsKey("toolSpecification"));
+        assertFalse(requests.get(1).getParamValues().containsKey("resourceSpecification"));
+        assertFalse(requests.get(1).getParamValues().containsKey("endpointSpecification"));
+        for (HttpRequest request : requests) {
+            assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
+                request.getParamValues().get("namespaceId"));
+        }
+    }
+    
+    @Test
     void testAllDefaultNamespaceOverloads() throws NacosException {
         Page<McpLifecycleVersionSummary> page = new Page<>();
         page.setPageItems(Collections.singletonList(summary()));
