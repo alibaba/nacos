@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class SecuredMetadataTest {
     
@@ -36,6 +37,30 @@ class SecuredMetadataTest {
         assertConsoleSignType("smartReload");
         assertConsoleSignType("reloadSingle");
         assertConsoleSignType("loaderMetrics");
+    }
+    
+    @Test
+    void testServerStateRequiresAdminAuth() {
+        Method method = Arrays.stream(ServerStateController.class.getDeclaredMethods())
+            .filter(candidate -> "serverState".equals(candidate.getName()))
+            .findFirst()
+            .orElseThrow();
+        Secured secured = method.getAnnotation(Secured.class);
+        assertNotNull(secured);
+        assertEquals("/v3/admin/core/state", secured.resource());
+        assertEquals(SignType.CONSOLE, secured.signType());
+        assertEquals(ApiType.ADMIN_API, secured.apiType());
+    }
+    
+    @Test
+    void testLivenessAndReadinessStayAnonymous() {
+        for (String methodName : new String[] {"liveness", "readiness"}) {
+            Method method = Arrays.stream(ServerStateController.class.getDeclaredMethods())
+                .filter(candidate -> methodName.equals(candidate.getName()))
+                .findFirst()
+                .orElseThrow();
+            assertNull(method.getAnnotation(Secured.class));
+        }
     }
     
     private void assertConsoleSignType(String methodName) {

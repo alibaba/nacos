@@ -18,11 +18,15 @@ package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
 import com.alibaba.nacos.core.service.NacosServerStateService;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,6 +57,8 @@ public class ServerStateController {
      * @return state key-value map.
      */
     @Since("3.0.0")
+    @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
+        + "/state", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     @GetMapping()
     public Result<Map<String, String>> serverState() {
         return Result.success(stateService.getServerState());
