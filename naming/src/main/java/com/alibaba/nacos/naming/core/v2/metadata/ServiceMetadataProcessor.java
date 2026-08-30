@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.constants.Constants;
@@ -75,7 +76,26 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections
-            .singletonList(new ServiceMetadataSnapshotOperation(namingMetadataManager, lock));
+            .singletonList(new ServiceMetadataSnapshotOperation(namingMetadataManager, lock) {
+                
+                @Override
+                public boolean onSnapshotLoad(Reader reader) {
+                    boolean result = super.onSnapshotLoad(reader);
+                    if (result) {
+                        snapshotLoaded = true;
+                    }
+                    return result;
+                }
+            });
+    }
+    
+    /**
+     * Check whether the local service metadata snapshot has been loaded.
+     *
+     * @return {@code true} if the snapshot load completed successfully
+     */
+    public boolean isSnapshotLoaded() {
+        return snapshotLoaded;
     }
     
     @Override

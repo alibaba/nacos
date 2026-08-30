@@ -95,6 +95,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
+    private volatile boolean snapshotLoaded;
+    
     private static final int INITIAL_CAPACITY = 128;
     
     public PersistentClientOperationServiceImpl(final PersistentIpPortClientManager clientManager) {
@@ -282,6 +284,15 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP
         return Collections.singletonList(new PersistentInstanceSnapshotOperation(lock));
     }
     
+    /**
+     * Check whether the local persistent client snapshot has been loaded.
+     *
+     * @return {@code true} if the snapshot load completed successfully
+     */
+    public boolean isSnapshotLoaded() {
+        return snapshotLoaded;
+    }
+    
     @Override
     public String group() {
         return Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2;
@@ -333,6 +344,15 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP
         
         public PersistentInstanceSnapshotOperation(ReentrantReadWriteLock lock) {
             super(lock);
+        }
+        
+        @Override
+        public boolean onSnapshotLoad(Reader reader) {
+            boolean result = super.onSnapshotLoad(reader);
+            if (result) {
+                snapshotLoaded = true;
+            }
+            return result;
         }
         
         @Override

@@ -85,9 +85,12 @@ checker types may be registered through the health checker registry.
 Active health checks should only change health state when the responsible
 server performs the check and the service health check switch allows it.
 
-Persistent instance recovery may schedule health-check tasks before the local
-service metadata CP group has completed recovery. Those tasks must be deferred
-until that group is ready. Temporarily unavailable cluster metadata must not be
+Persistent instance recovery may schedule health-check tasks before local
+persistent-client and service-metadata CP snapshots have both completed
+successfully. Those tasks must be deferred until both snapshots are loaded.
+If no local snapshot exists, application startup completion may release the
+gate as a fail-open fallback. Once released, the gate must remain open for the
+process lifetime. Temporarily unavailable cluster metadata must not be
 interpreted as the default TCP checker or change instance health state.
 
 The instance address used by an active health check must be a plain host. The

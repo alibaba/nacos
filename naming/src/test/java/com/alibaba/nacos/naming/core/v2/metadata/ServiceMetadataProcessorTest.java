@@ -24,6 +24,8 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+import com.alibaba.nacos.consistency.snapshot.Reader;
+import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -35,14 +37,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,6 +113,32 @@ class ServiceMetadataProcessorTest {
         
         assertNotNull(snapshotOperations);
         assertEquals(1, snapshotOperations.size());
+    }
+    
+    @Test
+    void testSnapshotLoadMarksProcessorReady(@TempDir Path snapshotDir) {
+        Mockito.when(namingMetadataManager.getServiceMetadataSnapshot())
+            .thenReturn(new ConcurrentHashMap<>());
+        SnapshotOperation snapshotOperation =
+            serviceMetadataProcessor.loadSnapshotOperate().iterator().next();
+        Writer writer = new Writer(snapshotDir.toString());
+        Boolean snapshotSaved =
+            ReflectionTestUtils.invokeMethod(snapshotOperation, "writeSnapshot", writer);
+        assertTrue(snapshotSaved);
+        
+        assertTrue(snapshotOperation
+            .onSnapshotLoad(new Reader(snapshotDir.toString(), writer.listFiles())));
+        assertTrue(serviceMetadataProcessor.isSnapshotLoaded());
+    }
+    
+    @Test
+    void testSnapshotLoadFailureDoesNotMarkProcessorReady(@TempDir Path snapshotDir) {
+        SnapshotOperation snapshotOperation =
+            serviceMetadataProcessor.loadSnapshotOperate().iterator().next();
+        
+        assertFalse(snapshotOperation.onSnapshotLoad(
+            new Reader(snapshotDir.toString(), Collections.emptyMap())));
+        assertFalse(serviceMetadataProcessor.isSnapshotLoaded());
     }
     
     @Test

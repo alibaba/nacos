@@ -16,35 +16,59 @@
 
 package com.alibaba.nacos.naming.healthcheck.interceptor;
 
-import com.alibaba.nacos.consistency.ProtocolMetaData;
-import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadataProcessor;
+import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 /**
- * Intercept persistent instance health checks until service metadata is ready.
+ * Intercept persistent instance health checks until local snapshots are ready.
  *
  * @author Zhengcy05
  */
 public class ServiceMetadataReadyInterceptor extends AbstractHealthCheckInterceptor {
     
+    private volatile boolean healthCheckReleased;
+    
     @Override
     public boolean intercept(NacosHealthCheckTask object) {
+        if (healthCheckReleased) {
+            return false;
+        }
+        boolean applicationStarted = ApplicationUtils.isStarted();
+        if (applicationStarted) {
+            healthCheckReleased = true;
+            return false;
+        }
         try {
-            ProtocolMetaData protocolMetaData = ApplicationUtils.getBean(ProtocolManager.class)
-                .getCpProtocol().protocolMetaData();
-            Object leaderMetadata = protocolMetaData.get(Constants.SERVICE_METADATA,
-                MetadataKey.LEADER_META_DATA);
-            if (!(leaderMetadata instanceof ProtocolMetaData.ValueItem)) {
-                return true;
+            PersistentClientOperationServiceImpl persistentClientProcessor =
+                ApplicationUtils.getBean(PersistentClientOperationServiceImpl.class);
+            ServiceMetadataProcessor serviceMetadataProcessor =
+                ApplicationUtils.getBean(ServiceMetadataProcessor.class);
+            boolean persistentClientSnapshotLoaded = persistentClientProcessor.isSnapshotLoaded();
+            boolean serviceMetadataSnapshotLoaded = serviceMetadataProcessor.isSnapshotLoaded();
+            if (persistentClientSnapshotLoaded && serviceMetadataSnapshotLoaded) {
+                healthCheckReleased = true;
+                return false;
             }
-            return null == ((ProtocolMetaData.ValueItem) leaderMetadata).getData();
+            logSkippedTask(object, persistentClientSnapshotLoaded, serviceMetadataSnapshotLoaded,
+                applicationStarted);
+            return true;
         } catch (Exception e) {
+            logSkippedTask(object, false, false, applicationStarted);
             return true;
         }
+    }
+    
+    private void logSkippedTask(NacosHealthCheckTask task, boolean persistentClientSnapshotLoaded,
+        boolean serviceMetadataSnapshotLoaded, boolean applicationStarted) {
+        Loggers.EVT_LOG.info(
+            "[HEALTH-CHECK] skip task {} because snapshots are not ready, persistentClientSnapshotLoaded={}, "
+                + "serviceMetadataSnapshotLoaded={}, applicationStarted={}",
+            task.getTaskId(), persistentClientSnapshotLoaded, serviceMetadataSnapshotLoaded,
+            applicationStarted);
     }
     
     @Override

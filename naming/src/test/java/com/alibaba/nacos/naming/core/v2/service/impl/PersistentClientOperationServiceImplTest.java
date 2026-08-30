@@ -428,6 +428,7 @@ class PersistentClientOperationServiceImplTest {
         boolean readResult = snapshotOperation.onSnapshotLoad(reader);
         
         assertTrue(readResult);
+        assertTrue(persistentClientOperationServiceImpl.isSnapshotLoaded());
         verify(clientManager).showClients();
         verify(clientManager).removeAndRelease("dead-client");
         verify(clientManager, times(0)).removeAndRelease("missing-client");
@@ -438,6 +439,17 @@ class PersistentClientOperationServiceImplTest {
         verify(aliveClient)
             .removeServiceInstance(argThat(service -> "removed".equals(service.getName())));
         verify(aliveClient).getAllPublishedService();
+    }
+    
+    @Test
+    void testPersistentInstanceSnapshotLoadFailureDoesNotSetSnapshotLoaded(
+        @TempDir Path snapshotDir) {
+        SnapshotOperation snapshotOperation =
+            persistentClientOperationServiceImpl.loadSnapshotOperate().iterator().next();
+        Reader reader = new Reader(snapshotDir.toString(), Collections.emptyMap());
+        
+        assertFalse(snapshotOperation.onSnapshotLoad(reader));
+        assertFalse(persistentClientOperationServiceImpl.isSnapshotLoaded());
     }
     
     @Test

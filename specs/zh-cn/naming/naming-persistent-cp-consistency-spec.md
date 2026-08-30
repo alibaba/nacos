@@ -87,8 +87,9 @@ Metadata groups 也必须提供 snapshot。加载 metadata snapshot 时，必须
 service identity 与 metadata 的连接。
 
 持久 client snapshot 恢复可能在独立 metadata group 仍在恢复时初始化并调度健康检查任务。主动健康
-检查必须等待本地 service metadata CP group 就绪，避免因 metadata 暂时缺失而选择 fallback checker
-并持久化错误的健康状态。
+检查必须等待本地 persistent-client 和 service metadata snapshot 都成功加载，避免因 metadata 暂时缺失而
+选择 fallback checker 并持久化错误的健康状态。若不存在本地 snapshot，应用启动完成仅是 fail-open
+兜底，并不保证任一 Raft group 已追平其 leader。
 
 ## 6. 可见性
 

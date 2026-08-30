@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.naming.healthcheck.interceptor;
 
-import com.alibaba.nacos.consistency.ProtocolMetaData;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadataProcessor;
+import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
@@ -33,9 +30,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -47,55 +41,63 @@ class ServiceMetadataReadyInterceptorTest {
     private ConfigurableApplicationContext applicationContext;
     
     @Mock
-    private ProtocolManager protocolManager;
+    private PersistentClientOperationServiceImpl persistentClientProcessor;
     
     @Mock
-    private CPProtocol cpProtocol;
+    private ServiceMetadataProcessor serviceMetadataProcessor;
     
     @Mock
     private NacosHealthCheckTask healthCheckTask;
     
     private ServiceMetadataReadyInterceptor interceptor;
     
-    private ProtocolMetaData protocolMetaData;
-    
     @BeforeEach
     void setUp() {
         ApplicationUtils.injectContext(applicationContext);
+        ApplicationUtils.setStarted(false);
         interceptor = new ServiceMetadataReadyInterceptor();
-        protocolMetaData = new ProtocolMetaData();
     }
     
     @AfterEach
     void tearDown() {
+        ApplicationUtils.setStarted(false);
         ApplicationUtils.injectContext(null);
     }
     
     @Test
-    void testInterceptBeforeServiceMetadataGroupIsReady() {
-        prepareProtocolMetadata();
+    void testInterceptBeforeSnapshotsAreLoaded() {
+        prepareProcessors();
+        when(healthCheckTask.getTaskId()).thenReturn("persistent-client-task");
+        when(persistentClientProcessor.isSnapshotLoaded()).thenReturn(false);
+        when(serviceMetadataProcessor.isSnapshotLoaded()).thenReturn(true);
         
         assertTrue(interceptor.intercept(healthCheckTask));
     }
     
     @Test
-    void testPassAfterServiceMetadataGroupIsReady() {
-        prepareProtocolMetadata();
-        Map<String, Object> groupMetadata = new HashMap<>();
-        groupMetadata.put(MetadataKey.LEADER_META_DATA, "127.0.0.1:7848");
-        Map<String, Map<String, Object>> metadata = new HashMap<>();
-        metadata.put(Constants.SERVICE_METADATA, groupMetadata);
-        protocolMetaData.load(metadata);
+    void testPassAfterBothSnapshotsAreLoaded() {
+        prepareProcessors();
+        when(persistentClientProcessor.isSnapshotLoaded()).thenReturn(true);
+        when(serviceMetadataProcessor.isSnapshotLoaded()).thenReturn(true);
         
         assertFalse(interceptor.intercept(healthCheckTask));
     }
     
     @Test
-    void testInterceptWhenReadinessCheckFails() {
-        when(applicationContext.getBean(ProtocolManager.class))
-            .thenThrow(new IllegalStateException("protocol unavailable"));
+    void testPassAfterApplicationStartedWithoutSnapshots() {
+        ApplicationUtils.setStarted(true);
         
-        assertTrue(interceptor.intercept(healthCheckTask));
+        assertFalse(interceptor.intercept(healthCheckTask));
+    }
+    
+    @Test
+    void testReleaseRemainsOpenAfterSnapshotsAreUnavailable() {
+        prepareProcessors();
+        when(persistentClientProcessor.isSnapshotLoaded()).thenReturn(true, false);
+        when(serviceMetadataProcessor.isSnapshotLoaded()).thenReturn(true, false);
+        
+        assertFalse(interceptor.intercept(healthCheckTask));
+        assertFalse(interceptor.intercept(healthCheckTask));
     }
     
     @Test
@@ -104,9 +106,11 @@ class ServiceMetadataReadyInterceptorTest {
         assertFalse(interceptor.isInterceptType(ClientBeatCheckTaskV2.class));
     }
     
-    private void prepareProtocolMetadata() {
-        when(applicationContext.getBean(ProtocolManager.class)).thenReturn(protocolManager);
-        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        when(cpProtocol.protocolMetaData()).thenReturn(protocolMetaData);
+    private void prepareProcessors() {
+        when(applicationContext.getBean(PersistentClientOperationServiceImpl.class))
+            .thenReturn(persistentClientProcessor);
+        when(applicationContext.getBean(ServiceMetadataProcessor.class))
+            .thenReturn(serviceMetadataProcessor);
     }
+    
 }
