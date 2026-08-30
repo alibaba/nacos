@@ -60,6 +60,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     private final ReentrantReadWriteLock.ReadLock readLock;
     
+    private volatile boolean snapshotLoaded;
+    
     @SuppressWarnings("unchecked")
     public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager,
         ProtocolManager protocolManager,
