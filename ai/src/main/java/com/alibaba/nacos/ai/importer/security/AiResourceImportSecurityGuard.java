@@ -19,9 +19,15 @@ package com.alibaba.nacos.ai.importer.security;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.importer.model.AiResourceImportArtifact;
 import org.springframework.stereotype.Service;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.Locale;
 
 /**
  * Central guard for import artifacts crossing the plugin boundary.
@@ -31,6 +37,14 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AiResourceImportSecurityGuard {
+    
+    private static final String HTTPS_SCHEME = "https";
+    
+    private static final String HTTP_SCHEME = "http";
+    
+    private static final String LOCALHOST = "localhost";
+    
+    private static final String LOCALHOST_SUFFIX = ".localhost";
     
     /**
      * Check artifact type and size before validation or import.
@@ -58,6 +72,68 @@ public class AiResourceImportSecurityGuard {
         if (maxArtifactSize > 0 && payloadSize > maxArtifactSize) {
             throw invalid("AI resource import artifact size exceeds plugin limit.");
         }
+    }
+    
+    /**
+     * Check a user provided URL before the server fetches it, e.g. through the
+     * legacy MCP import path.
+     *
+     * <p>The legacy path has no operator configured source to hold per-source
+     * network policies, so hosts resolving to private or local targets are
+     * always rejected; internal registries should be imported through
+     * configured import sources instead.
+     *
+     * @param endpoint user provided URL
+     * @throws NacosException if the endpoint violates the import boundary
+     */
+    public void checkUserEndpoint(String endpoint) throws NacosException {
+        if (StringUtils.isBlank(endpoint)) {
+            return;
+        }
+        URI parsed;
+        try {
+            parsed = URI.create(endpoint.trim());
+        } catch (IllegalArgumentException e) {
+            throw invalid("AI resource import request URL is invalid.");
+        }
+        String scheme = parsed.getScheme() == null ? null
+            : parsed.getScheme().toLowerCase(Locale.ENGLISH);
+        if (!HTTPS_SCHEME.equals(scheme) && !HTTP_SCHEME.equals(scheme)) {
+            throw invalid("AI resource import request URL must use http or https.");
+        }
+        if (StringUtils.isBlank(parsed.getHost())) {
+            throw invalid("AI resource import request URL host must not be empty.");
+        }
+        if (isUnsafeHost(parsed.getHost())) {
+            throw invalid(
+                "AI resource import request URL resolves to a private or local target.");
+        }
+    }
+    
+    private boolean isUnsafeHost(String host) throws NacosException {
+        String normalized = InternetAddressUtil.removeBrackets(host).toLowerCase(Locale.ENGLISH);
+        if (LOCALHOST.equals(normalized) || normalized.endsWith(LOCALHOST_SUFFIX)) {
+            return true;
+        }
+        InetAddress[] addresses;
+        try {
+            addresses = InetAddress.getAllByName(normalized);
+        } catch (UnknownHostException e) {
+            throw invalid("AI resource import request URL host can not be resolved.");
+        }
+        for (InetAddress each : addresses) {
+            if (each.isAnyLocalAddress() || each.isLoopbackAddress()
+                || each.isLinkLocalAddress() || each.isSiteLocalAddress()
+                || each.isMulticastAddress() || isUniqueLocalIpv6Address(each)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isUniqueLocalIpv6Address(InetAddress address) {
+        byte[] bytes = address.getAddress();
+        return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
     }
     
     private NacosException invalid(String message) {

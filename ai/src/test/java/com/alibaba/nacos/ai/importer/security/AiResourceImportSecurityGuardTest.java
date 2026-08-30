@@ -52,6 +52,40 @@ class AiResourceImportSecurityGuardTest {
         assertThrows(NacosException.class, () -> guard.checkArtifact(1, "mcp", json));
     }
     
+    @Test
+    void testUserEndpointRejectsLocalAndPrivateTargets() {
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://127.0.0.1:8848/nacos"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://localhost:8848/nacos"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://sub.localhost/registry"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://10.0.0.5/registry"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://192.168.1.10/registry"));
+        assertThrows(NacosException.class,
+            () -> guard.checkUserEndpoint("http://169.254.169.254/latest/meta-data"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://[::1]/registry"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://[fc00::5]/registry"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http://224.0.0.1/registry"));
+    }
+    
+    @Test
+    void testUserEndpointAcceptsPublicTargets() {
+        assertDoesNotThrow(() -> guard.checkUserEndpoint("https://8.8.8.8/v0/servers"));
+        assertDoesNotThrow(() -> guard.checkUserEndpoint("http://100.64.0.1/v0/servers"));
+        assertDoesNotThrow(() -> guard.checkUserEndpoint("https://192.0.2.10:8443/v0/servers"));
+    }
+    
+    @Test
+    void testUserEndpointRejectsNonHttpSchemeAndBlankHost() {
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("file:///etc/passwd"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("ftp://192.0.2.10/registry"));
+        assertThrows(NacosException.class, () -> guard.checkUserEndpoint("http:///no-host/path"));
+    }
+    
+    @Test
+    void testUserEndpointIgnoresBlankValue() {
+        assertDoesNotThrow(() -> guard.checkUserEndpoint(""));
+        assertDoesNotThrow(() -> guard.checkUserEndpoint(null));
+    }
+    
     private AiResourceImportArtifact artifact(String resourceType) {
         AiResourceImportArtifact result = new AiResourceImportArtifact();
         result.setResourceType(resourceType);

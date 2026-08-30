@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.enums.ExternalDataTypeEnum;
+import com.alibaba.nacos.ai.importer.security.AiResourceImportSecurityGuard;
 import com.alibaba.nacos.ai.model.mcp.UrlPageResult;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
@@ -68,6 +69,8 @@ import java.util.stream.Collectors;
 @Deprecated
 @Service
 public class McpExternalDataAdaptor {
+    
+    private final AiResourceImportSecurityGuard securityGuard = new AiResourceImportSecurityGuard();
     
     private HttpClient httpClient;
     
@@ -172,6 +175,7 @@ public class McpExternalDataAdaptor {
     
     private UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit, String search)
         throws Exception {
+        securityGuard.checkUserEndpoint(urlData);
         String base = urlData.trim();
         HttpClient client = getHttpClient();
         String pageUrl = buildPageUrl(base, cursor, limit, search);
@@ -485,7 +489,7 @@ public class McpExternalDataAdaptor {
     private HttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NORMAL)
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
                 .build();
         }
