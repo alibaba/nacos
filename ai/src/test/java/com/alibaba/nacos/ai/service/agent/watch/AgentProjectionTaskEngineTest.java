@@ -48,6 +48,9 @@ class AgentProjectionTaskEngineTest {
     
     @Test
     void testDelayWindowCoalescesAtoBtoAIntoCurrentFact() throws Exception {
+        double coalescedBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_COALESCE,
+            AgentWatchMetrics.Result.SUCCESS);
         AgentProjectionKey key = AgentProjectionTestFixtures.key("coalesced");
         AtomicReference<String> current = new AtomicReference<String>("A");
         AtomicInteger executions = new AtomicInteger();
@@ -76,6 +79,9 @@ class AgentProjectionTaskEngineTest {
             assertEquals(EnumSet.of(AgentProjectionChangeReason.INITIAL,
                 AgentProjectionChangeReason.DEFINITION,
                 AgentProjectionChangeReason.RUNTIME), observedReasons.get());
+            assertEquals(coalescedBefore + 2D, AgentWatchMetrics.eventCount(
+                AgentWatchMetrics.Event.PROJECTION_COALESCE,
+                AgentWatchMetrics.Result.SUCCESS));
         } finally {
             engine.shutdown();
         }
@@ -148,6 +154,9 @@ class AgentProjectionTaskEngineTest {
     
     @Test
     void testExecutionExceptionRetriesFromCurrentFact() throws Exception {
+        double retriesBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_RETRY,
+            AgentWatchMetrics.Result.SCHEDULED);
         AgentProjectionKey key = AgentProjectionTestFixtures.key("retry");
         AtomicInteger attempts = new AtomicInteger();
         AtomicReference<Set<AgentProjectionChangeReason>> retryReasons =
@@ -168,6 +177,9 @@ class AgentProjectionTaskEngineTest {
             assertEquals(2, attempts.get());
             assertEquals(Collections.singleton(AgentProjectionChangeReason.RETRY),
                 retryReasons.get());
+            assertEquals(retriesBefore + 1D, AgentWatchMetrics.eventCount(
+                AgentWatchMetrics.Event.PROJECTION_RETRY,
+                AgentWatchMetrics.Result.SCHEDULED));
         } finally {
             engine.shutdown();
         }

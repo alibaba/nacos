@@ -104,6 +104,7 @@ final class AgentHttpWatchRegistry {
         ownerIndex.clear();
         projectionIndex.clear();
         activeBytes = 0L;
+        updateMetrics();
         return result;
     }
     
@@ -127,6 +128,7 @@ final class AgentHttpWatchRegistry {
             }
             ids.add(waiter.getWaiterId());
         }
+        updateMetrics();
     }
     
     private void removeInternal(AgentHttpWatchWaiter waiter) {
@@ -145,11 +147,18 @@ final class AgentHttpWatchRegistry {
                 projectionIndex.remove(key);
             }
         }
+        updateMetrics();
     }
     
     private NacosApiException capacity(String message) {
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchMetrics.Result.REJECTED);
         return new NacosApiException(NacosException.OVER_THRESHOLD,
             ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, message);
+    }
+    
+    private void updateMetrics() {
+        AgentWatchMetrics.setActiveHttpWaiters(waiters.size(), activeBytes);
     }
     
     static final class Registration {

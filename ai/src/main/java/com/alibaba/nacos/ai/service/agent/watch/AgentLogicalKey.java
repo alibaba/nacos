@@ -34,6 +34,14 @@ final class AgentLogicalKey {
         this.agentName = agentName;
     }
     
+    String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    String getAgentName() {
+        return agentName;
+    }
+    
     @Override
     public boolean equals(Object other) {
         if (this == other) {

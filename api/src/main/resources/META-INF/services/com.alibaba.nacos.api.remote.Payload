@@ -108,3 +108,5 @@ com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest
 com.alibaba.nacos.api.ai.remote.response.AgentUnsubscribeRpcResponse
 com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest
 com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryNotifyResponse
+com.alibaba.nacos.api.ai.remote.request.cluster.AgentProjectionChangeClusterRequest
+com.alibaba.nacos.api.ai.remote.response.cluster.AgentProjectionChangeClusterResponse

@@ -56,12 +56,15 @@ class AgentGrpcWatchRegistryTest {
         assertEquals(1, registry.findByProjection(firstKey).size());
         assertEquals(1, registry.size());
         assertEquals(1, registry.connectionSize("connection"));
+        assertEquals(1, AgentWatchMetrics.activeGrpcWatches());
         
         NacosApiException conflict = assertThrows(NacosApiException.class,
             () -> registry.register("connection", "watch-1",
                 AgentProjectionTestFixtures.key("different"), owner, 2));
         assertEquals(NacosException.CONFLICT, conflict.getErrCode());
         assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), conflict.getDetailErrCode());
+        registry.clear();
+        assertEquals(0, AgentWatchMetrics.activeGrpcWatches());
     }
     
     @Test
@@ -69,10 +72,13 @@ class AgentGrpcWatchRegistryTest {
         AgentGrpcWatchRegistry registry = new AgentGrpcWatchRegistry();
         AgentGrpcWatch first = registry.register("connection", "watch-1",
             AgentProjectionTestFixtures.key("first"), owner, 2).getWatch();
-        AgentGrpcWatch second = registry.register("connection", "watch-2",
-            AgentProjectionTestFixtures.key("second"), owner, 2).getWatch();
+        registry.register("connection", "watch-2",
+            AgentProjectionTestFixtures.key("second"), owner, 2);
         registry.register("other", "watch-3", AgentProjectionTestFixtures.key("third"), owner,
             2);
+        assertEquals(3, AgentWatchMetrics.activeGrpcWatches());
+        double rejectedBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.CAPACITY_REJECTION, AgentWatchMetrics.Result.REJECTED);
         
         NacosApiException overLimit = assertThrows(NacosApiException.class,
             () -> registry.register("connection", "watch-4",
@@ -80,6 +86,9 @@ class AgentGrpcWatchRegistryTest {
         assertEquals(NacosException.OVER_THRESHOLD, overLimit.getErrCode());
         assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
             overLimit.getDetailErrCode());
+        assertEquals(rejectedBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchMetrics.Result.REJECTED));
         
         assertNull(registry.removeOwned("other", first.getWatchKey()));
         assertSame(first, registry.removeOwned("connection", first.getWatchKey()));
@@ -88,6 +97,7 @@ class AgentGrpcWatchRegistryTest {
         assertTrue(registry.findByProjection(first.getProjectionKey()).isEmpty());
         assertNull(registry.remove(first.getWatchKey()));
         
+        AgentGrpcWatch second = registry.findByClientWatchId("connection", "watch-2");
         List<AgentGrpcWatch> connectionRemoved = registry.removeConnection("connection");
         assertEquals(1, connectionRemoved.size());
         assertSame(second, connectionRemoved.get(0));
@@ -95,6 +105,9 @@ class AgentGrpcWatchRegistryTest {
         assertTrue(registry.removeConnection("missing").isEmpty());
         assertEquals(1, registry.size());
         assertEquals(0, registry.connectionSize("connection"));
+        assertEquals(1, AgentWatchMetrics.activeGrpcWatches());
+        registry.clear();
+        assertEquals(0, AgentWatchMetrics.activeGrpcWatches());
     }
     
     @Test
@@ -112,6 +125,7 @@ class AgentGrpcWatchRegistryTest {
         assertTrue(first.isClosed());
         assertTrue(second.isClosed());
         assertEquals(0, registry.size());
+        assertEquals(0, AgentWatchMetrics.activeGrpcWatches());
         assertTrue(registry.findByProjection(first.getProjectionKey()).isEmpty());
         assertNull(registry.findByClientWatchId("connection-1", "watch-1"));
         assertTrue(registry.clear().isEmpty());

@@ -49,16 +49,25 @@ class AgentHttpWatchRegistryTest {
         assertSame(below, replacement.getReplaced());
         assertEquals(1, registry.size());
         assertEquals(40L, registry.activeBytes());
+        assertEquals(1, AgentWatchMetrics.activeHttpWaiters());
+        assertEquals(40L, AgentWatchMetrics.httpActiveBytes());
+        double rejectedBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.CAPACITY_REJECTION, AgentWatchMetrics.Result.REJECTED);
         
         NacosApiException rejected = assertThrows(NacosApiException.class,
             () -> registry.register(waiter(owner, 3L, 5, 50), 3, 10, 1000L));
         assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
             rejected.getDetailErrCode());
+        assertEquals(rejectedBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchMetrics.Result.REJECTED));
         AgentHttpWatchWaiter equal = waiter(owner, 3L, 4, 30);
         assertSame(crosses, registry.register(equal, 3, 10, 1000L).getReplaced());
         assertSame(equal, registry.remove(equal.getWaiterId()));
         assertEquals(0, registry.size());
         assertEquals(0L, registry.activeBytes());
+        assertEquals(0, AgentWatchMetrics.activeHttpWaiters());
+        assertEquals(0L, AgentWatchMetrics.httpActiveBytes());
     }
     
     @Test
@@ -74,6 +83,8 @@ class AgentHttpWatchRegistryTest {
         assertEquals(1, registry.size());
         assertSame(current,
             registry.findByProjection(current.getProjectionKeys().iterator().next()).get(0));
+        assertEquals(1, AgentWatchMetrics.activeHttpWaiters());
+        registry.clear();
     }
     
     @Test
@@ -90,6 +101,8 @@ class AgentHttpWatchRegistryTest {
         assertSame(first, registry.clear().get(0));
         assertEquals(0, registry.size());
         assertEquals(0L, registry.activeBytes());
+        assertEquals(0, AgentWatchMetrics.activeHttpWaiters());
+        assertEquals(0L, AgentWatchMetrics.httpActiveBytes());
         assertTrue(registry.findByProjection(
             first.getProjectionKeys().iterator().next()).isEmpty());
         assertNull(registry.remove("missing"));

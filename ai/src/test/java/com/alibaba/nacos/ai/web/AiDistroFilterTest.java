@@ -161,6 +161,32 @@ class AiDistroFilterTest {
     }
     
     @Test
+    void testConsumedFormBodyIsRebuiltForProxyRequest() throws Exception {
+        MockHttpServletRequest request = statefulRequest("POST");
+        request.setContentType("application/x-www-form-urlencoded");
+        request.addParameter("agentName", "agent");
+        request.addParameter("protocol", "a2a");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(distroMapper.mapSrv(INTERNAL_CLIENT_ID)).thenReturn("2.2.2.2:8848");
+        AtomicReference<String> body = new AtomicReference<>();
+        
+        try (MockedStatic<HttpClient> httpClient = mockStatic(HttpClient.class)) {
+            httpClient.when(() -> HttpClient.request(anyString(), anyList(), anyMap(),
+                anyString(), anyInt(), anyInt(), anyString(), eq("POST")))
+                .thenAnswer(invocation -> {
+                    body.set(invocation.getArgument(3));
+                    return new RestResult<>(200, "ok", "proxied");
+                });
+            
+            filter.doFilter(request, response, mock(FilterChain.class));
+        }
+        
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertTrue(body.get().contains("agentName=agent"), body.get());
+        assertTrue(body.get().contains("protocol=a2a"), body.get());
+    }
+    
+    @Test
     void testFailedProxyResponseUsesMessage() throws Exception {
         MockHttpServletRequest request = statefulRequest("GET");
         MockHttpServletResponse response = new MockHttpServletResponse();

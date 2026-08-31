@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.agent.watch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import jakarta.annotation.PreDestroy;
@@ -49,6 +50,8 @@ public class AgentProjectionService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentProjectionService.class);
     
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
+    
     private static final long DEFAULT_CHANGE_DELAY_MILLIS = 100L;
     
     private static final long DEFAULT_RETRY_DELAY_MILLIS = 1000L;
@@ -70,9 +73,13 @@ public class AgentProjectionService {
     
     private final int reconciliationBatchSize;
     
+    private final long reconciliationIntervalMillis;
+    
     private final AtomicBoolean closed = new AtomicBoolean();
     
     private int reconciliationCursor;
+    
+    private volatile long lastReconciliationMillis;
     
     @Autowired
     public AgentProjectionService(AgentProjectionProjector projector) {
@@ -88,9 +95,11 @@ public class AgentProjectionService {
         this.projector = projector;
         this.registry = registry;
         this.reconciliationBatchSize = reconciliationBatchSize;
+        this.reconciliationIntervalMillis = reconciliationIntervalMillis;
         this.taskEngine = new AgentProjectionTaskEngine(changeDelayMillis, retryDelayMillis,
             workerCount, this::executeProjection);
         if (reconciliationIntervalMillis > 0) {
+            lastReconciliationMillis = System.currentTimeMillis();
             reconciliationExecutor = ExecutorFactory.newSingleScheduledExecutorService(
                 new NameThreadFactory("AgentProjectionReconciliation"));
             reconciliationExecutor.scheduleWithFixedDelay(this::reconcileBatch,
@@ -206,6 +215,7 @@ public class AgentProjectionService {
         if (closed.get()) {
             return;
         }
+        updateReconciliationLag();
         List<AgentProjectionKey> keys = registry.activeKeys();
         if (keys.isEmpty()) {
             reconciliationCursor = 0;
@@ -218,6 +228,17 @@ public class AgentProjectionService {
             taskEngine.markDirty(key, AgentProjectionChangeReason.RECONCILIATION);
         }
         reconciliationCursor = (start + count) % keys.size();
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.RECONCILIATION,
+            AgentWatchMetrics.Result.SCHEDULED, count);
+    }
+    
+    private void updateReconciliationLag() {
+        long now = System.currentTimeMillis();
+        if (reconciliationIntervalMillis > 0L && lastReconciliationMillis > 0L) {
+            AgentWatchMetrics.setReconciliationLagMillis(
+                now - lastReconciliationMillis - reconciliationIntervalMillis);
+        }
+        lastReconciliationMillis = now;
     }
     
     int pendingTaskCount() {
@@ -239,6 +260,7 @@ public class AgentProjectionService {
         }
         taskEngine.shutdown();
         updateListeners.clear();
+        AgentWatchMetrics.setReconciliationLagMillis(0L);
     }
     
     private boolean executeProjection(AgentProjectionKey key,
@@ -246,14 +268,23 @@ public class AgentProjectionService {
         if (!registry.isActive(key)) {
             return true;
         }
-        AgentProjectionState computed = projector.project(key);
+        AgentProjectionState computed;
+        try {
+            computed = projector.project(key);
+        } catch (RuntimeException e) {
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+                AgentWatchMetrics.Result.FAILED);
+            throw e;
+        }
         Optional<AgentProjectionUpdate> applied = registry.apply(key, computed, reasons);
         if (!applied.isPresent()) {
             return true;
         }
-        LOGGER.debug("Agent Projection refreshed: key={}, reasons={}, status={}, fingerprint={}",
-            key, reasons, applied.get().getCurrent().getStatus(),
+        LOGGER.debug("Agent Projection refreshed: reasons={}, status={}, fingerprint={}",
+            reasons, applied.get().getCurrent().getStatus(),
             applied.get().getCurrent().getFingerprint());
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+            projectionResult(applied.get().getCurrent().getStatus()));
         notifyUpdate(applied.get());
         return !applied.get().getCurrent().requiresRetry();
     }
@@ -263,7 +294,10 @@ public class AgentProjectionService {
             try {
                 listener.onProjectionUpdate(update);
             } catch (RuntimeException e) {
-                LOGGER.warn("Agent Projection listener failed for {}", update.getKey(), e);
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("Agent Projection listener failed: {}",
+                        e.getClass().getSimpleName());
+                }
             }
         }
     }
@@ -279,5 +313,15 @@ public class AgentProjectionService {
         if (closed.get()) {
             throw new IllegalStateException("Agent Projection service is closed");
         }
+    }
+    
+    private AgentWatchMetrics.Result projectionResult(AgentProjectionStatus status) {
+        if (status == AgentProjectionStatus.AVAILABLE) {
+            return AgentWatchMetrics.Result.SUCCESS;
+        }
+        if (status == AgentProjectionStatus.NOT_FOUND) {
+            return AgentWatchMetrics.Result.NOT_FOUND;
+        }
+        return AgentWatchMetrics.Result.RETRY;
     }
 }

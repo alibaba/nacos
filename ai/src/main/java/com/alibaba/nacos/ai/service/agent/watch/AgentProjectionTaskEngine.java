@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,8 @@ final class AgentProjectionTaskEngine {
     
     private static final Logger LOGGER =
         LoggerFactory.getLogger(AgentProjectionTaskEngine.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private static final int INITIAL_CAPACITY = 128;
     
@@ -83,9 +86,15 @@ final class AgentProjectionTaskEngine {
             return;
         }
         delayEngine.addTask(key, new ProjectionDelayTask(key, reason, delayMillis));
+        AgentWatchMetrics.setPendingProjectionTasks(delayEngine.size());
     }
     
     void retry(AgentProjectionKey key, AgentProjectionChangeReason reason) {
+        if (closed.get()) {
+            return;
+        }
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.PROJECTION_RETRY,
+            AgentWatchMetrics.Result.SCHEDULED);
         markDirty(key, reason, retryDelayMillis);
     }
     
@@ -99,6 +108,7 @@ final class AgentProjectionTaskEngine {
         }
         delayEngine.shutdown();
         executeEngine.shutdown();
+        AgentWatchMetrics.setPendingProjectionTasks(0);
     }
     
     interface ProjectionExecutor {
@@ -119,8 +129,10 @@ final class AgentProjectionTaskEngine {
         @Override
         public boolean process(NacosTask task) {
             ProjectionDelayTask delayTask = (ProjectionDelayTask) task;
-            return executeEngine.tryAddTask(delayTask.getKey(),
+            boolean accepted = executeEngine.tryAddTask(delayTask.getKey(),
                 new ProjectionExecuteTask(delayTask));
+            AgentWatchMetrics.setPendingProjectionTasks(delayEngine.size());
+            return accepted;
         }
     }
     
@@ -141,12 +153,15 @@ final class AgentProjectionTaskEngine {
             try {
                 completed = projectionExecutor.execute(source.getKey(), source.getReasons());
             } catch (Throwable e) {
-                LOGGER.warn("Agent Projection current-fact execution failed for {}",
-                    source.getKey(), e);
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("Agent Projection current-fact execution failed: {}",
+                        e.getClass().getSimpleName());
+                }
             }
             if (!completed) {
                 retry(source.getKey(), AgentProjectionChangeReason.RETRY);
             }
+            AgentWatchMetrics.setPendingProjectionTasks(delayEngine.size());
         }
     }
     
@@ -182,6 +197,8 @@ final class AgentProjectionTaskEngine {
             reasons.addAll(previous.reasons);
             setLastProcessTime(Math.min(getLastProcessTime(), previous.getLastProcessTime()));
             setTaskInterval(Math.min(getTaskInterval(), previous.getTaskInterval()));
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.PROJECTION_COALESCE,
+                AgentWatchMetrics.Result.SUCCESS);
         }
     }
 }

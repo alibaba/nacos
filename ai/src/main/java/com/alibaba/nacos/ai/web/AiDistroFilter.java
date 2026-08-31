@@ -107,8 +107,7 @@ public class AiDistroFilter implements Filter {
         try {
             String targetServer = distroMapper.mapSrv(internalClientId);
             List<String> headers = getHeaders(request);
-            String body =
-                IoUtils.toString(request.getInputStream(), StandardCharsets.UTF_8.name());
+            String body = getRequestBody(request);
             RestResult<String> result = HttpClient.request(buildTargetUrl(targetServer, request),
                 headers, Collections.emptyMap(), body, PROXY_CONNECT_TIMEOUT,
                 PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), request.getMethod());
@@ -133,6 +132,21 @@ public class AiDistroFilter implements Filter {
             result.add(request.getHeader(name));
         }
         return result;
+    }
+    
+    private String getRequestBody(ReuseHttpServletRequest request) throws Exception {
+        String result =
+            IoUtils.toString(request.getInputStream(), StandardCharsets.UTF_8.name());
+        if (StringUtils.isNotBlank(result) || !supportsRequestBody(request.getMethod())) {
+            return result;
+        }
+        Object reusableBody = request.getBody();
+        return reusableBody instanceof String ? (String) reusableBody : result;
+    }
+    
+    private boolean supportsRequestBody(String method) {
+        return "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
+            || "PATCH".equalsIgnoreCase(method);
     }
     
     private String buildTargetUrl(String targetServer, HttpServletRequest request) {

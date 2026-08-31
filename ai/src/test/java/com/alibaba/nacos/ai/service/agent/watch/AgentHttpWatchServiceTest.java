@@ -25,12 +25,14 @@ import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.api.model.v2.Result;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.util.unit.DataSize;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.Arrays;
@@ -91,6 +93,9 @@ class AgentHttpWatchServiceTest {
     
     @Test
     void testUnchangedWaitsThenProjectionUpdateReturnsChangedId() throws Exception {
+        double bytesBefore = AgentWatchMetrics.byteCount(AgentWatchMetrics.Transport.HTTP);
+        double acceptedBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.ACCEPTED);
         AgentWatchBatchRequest request = request(1L, item("watch", "agent", "fingerprint-a"));
         AgentProjectionKey key = key(request, 0);
         states.put(key, available("fingerprint-a"));
@@ -101,6 +106,10 @@ class AgentHttpWatchServiceTest {
         assertFalse(deferred.hasResult());
         assertEquals(1, service.size());
         assertEquals(100L, service.activeBytes());
+        assertEquals(bytesBefore + 100D,
+            AgentWatchMetrics.byteCount(AgentWatchMetrics.Transport.HTTP));
+        assertEquals(acceptedBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.ACCEPTED));
         verify(lifecycleService).renewForWatch("client", "AI", "public");
         
         AgentProjectionState changed = available("fingerprint-b");
@@ -240,10 +249,16 @@ class AgentHttpWatchServiceTest {
     
     @Test
     void testPublicConstructorAndInvalidRequestGuard() {
-        AgentHttpWatchService configured = new AgentHttpWatchService(projectionService,
-            lifecycleService, DataSize.ofKilobytes(2));
-        configured.start();
-        configured.shutdown();
+        org.springframework.core.env.ConfigurableEnvironment previous = EnvUtil.getEnvironment();
+        try {
+            EnvUtil.setEnvironment(new MockEnvironment());
+            AgentHttpWatchService configured = new AgentHttpWatchService(projectionService,
+                lifecycleService, DataSize.ofKilobytes(2));
+            configured.start();
+            configured.shutdown();
+        } finally {
+            EnvUtil.setEnvironment(previous);
+        }
         
         assertThrows(IllegalArgumentException.class,
             () -> service.watch("client", "AI", null, 1));

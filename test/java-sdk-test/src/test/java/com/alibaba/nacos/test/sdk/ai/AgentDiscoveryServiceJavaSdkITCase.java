@@ -137,6 +137,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String RECONNECT_CONTROL_DIR_PROPERTY =
         "nacos.agent.reconnect.control.dir";
 
+    private static final String CLUSTER_ROLLING_ENABLED_PROPERTY =
+        "nacos.agent.cluster.rolling.enabled";
+
+    private static final String CLUSTER_ROLLING_CONTROL_DIR_PROPERTY =
+        "nacos.agent.cluster.rolling.control.dir";
+
     private static final String SERVER_PUBLICATION_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
 
@@ -1396,6 +1402,90 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
         grpcService.deregisterAgentEndpoint(agentName, legacyVersionTwo);
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 0);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = CLUSTER_ROLLING_ENABLED_PROPERTY, matches = "true")
+    void shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart() throws Exception {
+        Path controlDirectory =
+            Paths.get(System.getProperty(CLUSTER_ROLLING_CONTROL_DIR_PROPERTY));
+        Files.createDirectories(controlDirectory);
+        Path ready = controlDirectory.resolve("client-ready");
+        Path nodeStopped = controlDirectory.resolve("node-stopped");
+        Path stopConverged = controlDirectory.resolve("client-converged-while-stopped");
+        Path nodeRestarted = controlDirectory.resolve("node-restarted");
+        Files.deleteIfExists(ready);
+        Files.deleteIfExists(nodeStopped);
+        Files.deleteIfExists(stopConverged);
+        Files.deleteIfExists(nodeRestarted);
+
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService grpcService = createAiService();
+        AiService httpService =
+            createAiService(Constants.DEFAULT_NAMESPACE_ID, AiConstants.AI_TRANSPORT_MODE_HTTP);
+        String agentName = randomServiceName("agent-cluster-rolling");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("cluster-rolling"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+
+        RecordingAgentListener grpcListener = new RecordingAgentListener();
+        RecordingAgentListener httpListener = new RecordingAgentListener();
+        AgentReference latestReference = reference(agentName, null, null);
+        assertEquals(VERSION,
+            grpcService.subscribeAgent(latestReference, grpcListener).getVersion());
+        assertEquals(VERSION,
+            httpService.subscribeAgent(latestReference, httpListener).getVersion());
+        writeMarker(ready, agentName);
+
+        waitForMarker(nodeStopped, "external harness stops one cluster node");
+        createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
+        Endpoint grpcVersionTwo =
+            endpoint(randomPort(), "/cluster-grpc-v2", "cluster-grpc-v2");
+        Endpoint httpVersionTwo =
+            endpoint(randomPort(), "/cluster-http-v2", "cluster-http-v2");
+        grpcService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+            Collections.singletonList(grpcVersionTwo)));
+        httpService.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+            Collections.singletonList(httpVersionTwo)));
+        Predicate<AgentDiscoveryResult> versionTwoConverged = result ->
+            VERSION_2.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
+                && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri());
+        awaitEvent(grpcListener, "gRPC Watch converges while one cluster node is stopped",
+            versionTwoConverged);
+        awaitEvent(httpListener, "HTTP Watch converges while one cluster node is stopped",
+            versionTwoConverged);
+        writeMarker(stopConverged, agentName);
+
+        waitForMarker(nodeRestarted, "external harness restarts the stopped cluster node");
+        createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
+        Endpoint httpVersionThree =
+            endpoint(randomPort(), "/cluster-http-v3", "cluster-http-v3");
+        httpService.registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
+            Collections.singletonList(httpVersionThree)));
+        Predicate<AgentDiscoveryResult> versionThreeConverged = result ->
+            VERSION_3.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, httpVersionThree.getUri());
+        awaitEvent(grpcListener, "gRPC Watch converges after the cluster node restarts",
+            versionThreeConverged);
+        awaitEvent(httpListener, "HTTP Watch converges after the cluster node restarts",
+            versionThreeConverged);
+        AgentDiscoveryResult defaultResult = grpcService.discoverAgent(latestReference);
+        assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, grpcVersionTwo.getUri()));
+        assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, httpVersionThree.getUri()));
+        assertEquals(1, sourceEndpoints(grpcService.discoverAgent(
+            reference(agentName, VERSION_2, null)), PROTOCOL_A2A, EndpointSource.RUNTIME).size());
+        assertEquals(1, sourceEndpoints(httpService.discoverAgent(
+            reference(agentName, VERSION_3, null)), PROTOCOL_A2A, EndpointSource.RUNTIME).size());
+
+        grpcService.unsubscribeAgent(latestReference, grpcListener);
+        httpService.unsubscribeAgent(latestReference, httpListener);
+        grpcService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(grpcVersionTwo))));
+        httpService.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Arrays.asList(deregistrationEndpoint(httpVersionTwo),
+                deregistrationEndpoint(httpVersionThree))));
+        waitForEndpointCount(grpcService, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
     }
     
     @Test

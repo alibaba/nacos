@@ -60,6 +60,7 @@ public class AgentProjectionRegistry {
         }
         entries.put(key, new Entry());
         addIndex(logicalIndex, logicalKey(key), key);
+        AgentWatchMetrics.setActiveProjections(entries.size());
         return true;
     }
     
@@ -79,6 +80,7 @@ public class AgentProjectionRegistry {
             return false;
         }
         entries.remove(key);
+        AgentWatchMetrics.setActiveProjections(entries.size());
         removeIndex(logicalIndex, logicalKey(key), key);
         if (entry.state != null) {
             for (Service dependency : entry.state.getPhysicalDependencies()) {

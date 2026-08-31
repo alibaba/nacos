@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.annotation.PostConstruct;
@@ -60,6 +61,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AgentHttpWatchService implements AgentProjectionUpdateListener {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentHttpWatchService.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private final AgentProjectionService projectionService;
     
@@ -163,6 +166,9 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
                 waiter.timeout();
                 return waiter.getDeferredResult();
             }
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
+                AgentWatchMetrics.Result.ACCEPTED);
+            AgentWatchMetrics.recordBytes(AgentWatchMetrics.Transport.HTTP, payloadBytes);
             if (registration.getReplaced() != null) {
                 registration.getReplaced().timeout();
             }
@@ -187,8 +193,10 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
             try {
                 notificationExecutor.execute(notification);
             } catch (RejectedExecutionException e) {
-                LOGGER.warn("Agent HTTP Watch notification executor rejected waiter {}",
-                    waiter.getWaiterId());
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("Agent HTTP Watch notification executor rejected a waiter; "
+                        + "completing inline.");
+                }
                 notification.run();
             }
         }
@@ -289,6 +297,8 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
     }
     
     private NacosApiException capacity(String message) {
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchMetrics.Result.REJECTED);
         return new NacosApiException(NacosException.OVER_THRESHOLD,
             ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, message);
     }

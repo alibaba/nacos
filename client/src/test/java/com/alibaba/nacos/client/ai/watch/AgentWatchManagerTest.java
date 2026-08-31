@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -114,6 +115,63 @@ class AgentWatchManagerTest {
         transport = new FakeTransport();
         manager = new AgentWatchManager("public", clientProxy, refreshExecutor,
             callbackExecutor, 300, transport, new FixedRetryPolicy());
+    }
+    
+    @AfterEach
+    void tearDown() {
+        manager.shutdown();
+    }
+    
+    @Test
+    void metricsTrackActivePendingDirtyRefreshAndCallbackLifecycle() throws Exception {
+        double intents = AgentWatchClientMetrics.intentCount();
+        double pending = AgentWatchClientMetrics.pendingCount();
+        double dirty = AgentWatchClientMetrics.dirtyCount();
+        double mismatches = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.FINGERPRINT_MISMATCH,
+            AgentWatchClientMetrics.Result.MISMATCH);
+        double refreshes = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.SUCCESS);
+        double callbacksBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+            AgentWatchClientMetrics.Result.SUCCESS);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        TestListener listener = new TestListener(null);
+        AgentReference reference = reference("agent-a");
+        
+        manager.subscribe(reference, null, listener);
+        assertEquals(intents + 1D, AgentWatchClientMetrics.intentCount());
+        assertEquals(pending, AgentWatchClientMetrics.pendingCount());
+        String clientWatchId = transport.onlyRegistration().getClientWatchId();
+        assertTrue(manager.markDirty(clientWatchId, "different", false));
+        assertEquals(dirty + 1D, AgentWatchClientMetrics.dirtyCount());
+        assertEquals(mismatches + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.FINGERPRINT_MISMATCH,
+            AgentWatchClientMetrics.Result.MISMATCH));
+        scheduled.remove(0).run();
+        assertEquals(dirty, AgentWatchClientMetrics.dirtyCount());
+        assertEquals(refreshes + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.SUCCESS));
+        callbacks.remove(0).run();
+        assertEquals(callbacksBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+            AgentWatchClientMetrics.Result.SUCCESS));
+        manager.unsubscribe(reference, null, listener);
+        assertEquals(intents, AgentWatchClientMetrics.intentCount());
+        
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "missing"));
+        AgentReference pendingReference = reference("agent-pending-metrics");
+        TestListener pendingListener = new TestListener(null);
+        assertNull(manager.subscribe(pendingReference, null, pendingListener));
+        assertEquals(intents + 1D, AgentWatchClientMetrics.intentCount());
+        assertEquals(pending + 1D, AgentWatchClientMetrics.pendingCount());
+        manager.unsubscribe(pendingReference, null, pendingListener);
+        assertEquals(intents, AgentWatchClientMetrics.intentCount());
+        assertEquals(pending, AgentWatchClientMetrics.pendingCount());
     }
     
     @Test
@@ -546,6 +604,9 @@ class AgentWatchManagerTest {
     
     @Test
     void dirtyHintsMergeAndCanonicalFingerprintSuppressesDuplicateCallback() throws Exception {
+        final double unchangedBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.UNCHANGED);
         AgentDiscoveryResult initial = result("1.0.0", DIGEST_A);
         AgentDiscoveryResult changed = result("2.0.0", DIGEST_B);
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
@@ -569,6 +630,9 @@ class AgentWatchManagerTest {
         assertTrue(signal.invalidate(latestFingerprint, true));
         runScheduled(1);
         assertEquals(1, listener.events.size());
+        assertEquals(unchangedBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.UNCHANGED));
         verify(clientProxy, times(3)).discoverAgent(any(AgentDiscoveryRequest.class));
     }
     
@@ -594,6 +658,12 @@ class AgentWatchManagerTest {
     
     @Test
     void transientFailureRetainsSnapshotAndDirtyUntilBoundedRetry() throws Exception {
+        double failedRefreshesBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.FAILED);
+        double retriesBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.RETRY,
+            AgentWatchClientMetrics.Result.SCHEDULED);
         AgentDiscoveryResult initial = result("1.0.0", DIGEST_A);
         AgentDiscoveryResult changed = result("2.0.0", DIGEST_B);
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
@@ -606,6 +676,12 @@ class AgentWatchManagerTest {
         runScheduled(0);
         
         assertEquals(Arrays.asList(0L, 25L), delays);
+        assertEquals(failedRefreshesBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+            AgentWatchClientMetrics.Result.FAILED));
+        assertEquals(retriesBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.RETRY,
+            AgentWatchClientMetrics.Result.SCHEDULED));
         AgentDiscoveryResult retained =
             manager.subscribe(reference("agent-a"), null, listener);
         assertEquals("1.0.0", retained.getVersion());
@@ -674,6 +750,9 @@ class AgentWatchManagerTest {
     
     @Test
     void listenerExecutorsFailuresAndQueuedShutdownAreIsolated() throws Exception {
+        final double failedCallbacksBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+            AgentWatchClientMetrics.Result.FAILED);
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(result("1.0.0", DIGEST_A))
             .thenReturn(result("2.0.0", DIGEST_B));
@@ -700,6 +779,9 @@ class AgentWatchManagerTest {
         assertEquals(1, normal.events.size());
         slowExecutor.runHeld();
         assertEquals(1, slow.events.size());
+        assertEquals(failedCallbacksBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+            AgentWatchClientMetrics.Result.FAILED));
         
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(result("3.0.0", DIGEST_A));
@@ -764,6 +846,9 @@ class AgentWatchManagerTest {
     
     @Test
     void capacityIsIdempotentAtomicAndReusable() throws Exception {
+        double rejectionsBefore = AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchClientMetrics.Result.REJECTED);
         manager = new AgentWatchManager("public", clientProxy, refreshExecutor,
             callbackExecutor, 2, transport, new FixedRetryPolicy());
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
@@ -781,6 +866,9 @@ class AgentWatchManagerTest {
         assertEquals(NacosException.CLIENT_OVER_THRESHOLD, rejected.getErrCode());
         assertEquals(ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT.getCode(),
             rejected.getDetailErrCode());
+        assertEquals(rejectionsBefore + 1D, AgentWatchClientMetrics.eventCount(
+            AgentWatchClientMetrics.Event.CAPACITY_REJECTION,
+            AgentWatchClientMetrics.Result.REJECTED));
         verify(clientProxy).discoverAgent(any(AgentDiscoveryRequest.class));
         assertEquals(2, manager.subscriptionCount());
         

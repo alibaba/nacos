@@ -87,6 +87,9 @@ class AgentProjectionEventSubscriberTest {
     void testNotifierPublishesDefinitionEvent() {
         NotifyCenterAgentProjectionChangeNotifier notifier =
             new NotifyCenterAgentProjectionChangeNotifier();
+        AgentProjectionClusterChangePublisher clusterChangePublisher =
+            mock(AgentProjectionClusterChangePublisher.class);
+        notifier.setClusterChangePublisher(clusterChangePublisher);
         try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
             ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
             notifier.notifyDefinitionChanged("tenant", "AgentA");
@@ -96,6 +99,20 @@ class AgentProjectionEventSubscriberTest {
                 (AgentDefinitionChangedEvent) eventCaptor.getValue();
             assertEquals("tenant", event.getNamespaceId());
             assertEquals("AgentA", event.getAgentName());
+            verify(clusterChangePublisher).publish("tenant", "AgentA");
+        }
+    }
+    
+    @Test
+    void testNotifierIgnoresNullOptionalClusterPublisher() {
+        NotifyCenterAgentProjectionChangeNotifier notifier =
+            new NotifyCenterAgentProjectionChangeNotifier();
+        notifier.setClusterChangePublisher(null);
+        try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
+            ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            notifier.notifyDefinitionChanged("tenant", "AgentA");
+            notifyCenter.verify(() -> NotifyCenter.publishEvent(eventCaptor.capture()));
+            assertTrue(eventCaptor.getValue() instanceof AgentDefinitionChangedEvent);
         }
     }
     

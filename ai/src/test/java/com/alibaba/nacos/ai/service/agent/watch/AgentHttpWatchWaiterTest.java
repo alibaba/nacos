@@ -48,6 +48,8 @@ class AgentHttpWatchWaiterTest {
             AgentProjectionState.available("fingerprint-a", Collections.emptySet(), 1L));
         states.put(AgentProjectionKey.of(second.getDiscoveryRequest()),
             AgentProjectionState.available("fingerprint-c", Collections.emptySet(), 1L));
+        double changedBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.CHANGED);
         
         assertTrue(waiter.completeIfChanged(states));
         AgentWatchBatchResponse response = result(waiter);
@@ -58,6 +60,8 @@ class AgentHttpWatchWaiterTest {
         assertFalse(waiter.timeout());
         assertFalse(waiter.cancel());
         assertEquals(1, cleanups.get());
+        assertEquals(changedBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.CHANGED));
     }
     
     @Test
@@ -68,6 +72,8 @@ class AgentHttpWatchWaiterTest {
         Map<AgentProjectionKey, AgentProjectionState> states = Collections.singletonMap(
             AgentProjectionKey.of(item.getDiscoveryRequest()),
             AgentProjectionState.available("same", Collections.emptySet(), 1L));
+        double timeoutBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.TIMEOUT);
         
         assertFalse(waiter.completeIfChanged(states));
         assertFalse(waiter.getDeferredResult().hasResult());
@@ -76,6 +82,8 @@ class AgentHttpWatchWaiterTest {
         assertFalse(response.isChanged());
         assertNull(response.getChangedClientWatchIds());
         assertEquals(1, cleanups.get());
+        assertEquals(timeoutBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.TIMEOUT));
     }
     
     @Test
@@ -104,10 +112,14 @@ class AgentHttpWatchWaiterTest {
         AtomicInteger cleanups = new AtomicInteger();
         AgentHttpWatchWaiter waiter = waiter(
             Collections.singletonList(item("watch", "agent", "same")), cleanups);
+        double canceledBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.CANCELED);
         assertTrue(waiter.cancel());
         assertFalse(waiter.cancel());
         assertFalse(waiter.getDeferredResult().hasResult());
         assertEquals(1, cleanups.get());
+        assertEquals(canceledBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.HTTP_LONG_POLL, AgentWatchMetrics.Result.CANCELED));
     }
     
     @Test

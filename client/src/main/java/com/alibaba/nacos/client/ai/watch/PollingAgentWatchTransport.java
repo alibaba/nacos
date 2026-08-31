@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.watch;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -35,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 final class PollingAgentWatchTransport implements AgentWatchTransport {
     
     private static final Logger LOGGER = LogUtils.logger(PollingAgentWatchTransport.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private final ScheduledExecutorService executor;
     
@@ -101,7 +104,10 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
             return ScheduleResult.SCHEDULED;
         } catch (RejectedExecutionException e) {
             tasks.remove(task.clientWatchId);
-            LOGGER.warn("Agent Watch polling scheduling was rejected.", e);
+            if (WARN_LOG_LIMITER.tryAcquire()) {
+                LOGGER.warn("Agent Watch polling scheduling was rejected: {}",
+                    e.getClass().getSimpleName());
+            }
             return ScheduleResult.REJECTED;
         }
     }

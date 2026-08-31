@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import com.alibaba.nacos.client.utils.LogUtils;
 import org.slf4j.Logger;
 
@@ -66,6 +67,8 @@ import java.util.concurrent.TimeUnit;
 public class AgentWatchManager implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(AgentWatchManager.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private static final long MAXIMUM_RETRY_DELAY_MILLIS = 60000L;
     
@@ -223,6 +226,7 @@ public class AgentWatchManager implements Closeable {
                 intent.beginActivation();
                 intentsByKey.put(requestKey, intent);
                 intentsById.put(intent.clientWatchId, intent);
+                AgentWatchClientMetrics.intentAdded();
                 subscriptionCount++;
                 initialization = intent;
             }
@@ -269,7 +273,7 @@ public class AgentWatchManager implements Closeable {
                 || intent.state != WatchState.ACTIVATING) {
                 return null;
             }
-            intent.state = WatchState.LOCAL_PENDING;
+            setState(intent, WatchState.LOCAL_PENDING);
             intent.unavailableNotified = true;
             intent.pendingFailureCount = 1;
             if (!schedulePending(intent)) {
@@ -365,7 +369,12 @@ public class AgentWatchManager implements Closeable {
             && observedFingerprint.equals(intent.fingerprint)) {
             return true;
         }
-        intent.dirty = true;
+        if (observedFingerprint != null && intent.fingerprint != null
+            && !observedFingerprint.equals(intent.fingerprint)) {
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.FINGERPRINT_MISMATCH,
+                AgentWatchClientMetrics.Result.MISMATCH);
+        }
+        setDirty(intent, true);
         if (intent.state == WatchState.ACTIVATING || intent.refreshing
             || intent.refreshFuture != null) {
             return true;
@@ -439,7 +448,7 @@ public class AgentWatchManager implements Closeable {
                 watchTransport.stop(intent.clientWatchId);
                 return true;
             }
-            intent.state = WatchState.ACTIVE;
+            setState(intent, WatchState.ACTIVE);
             intent.transportActive = true;
             intent.completeActivation(null);
             if (intent.dirty) {
@@ -498,7 +507,7 @@ public class AgentWatchManager implements Closeable {
                 watchTransport.stop(clientWatchId);
                 return;
             }
-            intent.state = WatchState.ACTIVE;
+            setState(intent, WatchState.ACTIVE);
             intent.transportActive = true;
             intent.completeActivation(null);
             notifications.addAll(snapshotNotifications(intent));
@@ -553,7 +562,7 @@ public class AgentWatchManager implements Closeable {
                 intent.transportActive = false;
                 intent.current = null;
                 intent.fingerprint = null;
-                intent.state = WatchState.LOCAL_PENDING;
+                setState(intent, WatchState.LOCAL_PENDING);
                 intent.pendingFailureCount++;
                 if (isNotFound(exception) && !intent.unavailableNotified) {
                     intent.unavailableNotified = true;
@@ -579,7 +588,7 @@ public class AgentWatchManager implements Closeable {
             }
             intent.refreshFuture = null;
             intent.refreshing = true;
-            intent.dirty = false;
+            setDirty(intent, false);
             request = intent.request;
         }
         DiscoveryAttempt attempt = discover(request);
@@ -601,6 +610,9 @@ public class AgentWatchManager implements Closeable {
             String latestFingerprint = fingerprint(latest);
             boolean changed = intent.current == null
                 || !latestFingerprint.equals(intent.fingerprint);
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+                changed ? AgentWatchClientMetrics.Result.SUCCESS
+                    : AgentWatchClientMetrics.Result.UNCHANGED);
             intent.current = latest;
             intent.fingerprint = latestFingerprint;
             intent.refreshFailureCount = 0;
@@ -608,7 +620,7 @@ public class AgentWatchManager implements Closeable {
             try {
                 watchTransport.update(registration(intent));
             } catch (RuntimeException e) {
-                LOGGER.warn("Agent Watch transport state update failed.", e);
+                warn("Agent Watch transport state update failed: {}", e);
             }
             if (changed) {
                 notifications.addAll(snapshotNotifications(intent));
@@ -628,13 +640,15 @@ public class AgentWatchManager implements Closeable {
                 return;
             }
             intent.refreshing = false;
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.DISCOVER_REFRESH,
+                AgentWatchClientMetrics.Result.FAILED);
             if (isNotFound(exception)) {
                 notifications.addAll(enterPending(intent, exception));
             } else if (isTerminal(exception)) {
                 notifications.addAll(terminalNotifications(intent, exception));
                 removeIntent(intent);
             } else {
-                intent.dirty = true;
+                setDirty(intent, true);
                 intent.refreshFailureCount++;
                 long delay = retryPolicy.nextDelayMillis(intent.refreshFailureCount,
                     intent.requestKey);
@@ -642,7 +656,7 @@ public class AgentWatchManager implements Closeable {
                     notifications.addAll(terminalNotifications(intent, schedulingRejected()));
                     removeIntent(intent);
                 } else {
-                    LOGGER.warn("Agent Watch Discover refresh failed; retaining dirty state.",
+                    warn("Agent Watch Discover refresh failed; retaining dirty state: {}",
                         exception);
                 }
             }
@@ -656,10 +670,10 @@ public class AgentWatchManager implements Closeable {
             watchTransport.stop(intent.clientWatchId);
             intent.transportActive = false;
         }
-        intent.state = WatchState.LOCAL_PENDING;
+        setState(intent, WatchState.LOCAL_PENDING);
         intent.current = null;
         intent.fingerprint = null;
-        intent.dirty = false;
+        setDirty(intent, false);
         intent.refreshFailureCount = 0;
         intent.pendingFailureCount = 1;
         cancel(intent.refreshFuture);
@@ -693,9 +707,11 @@ public class AgentWatchManager implements Closeable {
                     executePending(intent.clientWatchId);
                 }
             }, delay, TimeUnit.MILLISECONDS);
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.RETRY,
+                AgentWatchClientMetrics.Result.SCHEDULED);
             return true;
         } catch (RejectedExecutionException e) {
-            LOGGER.warn("Agent Watch pending scheduling was rejected.", e);
+            warn("Agent Watch pending scheduling was rejected: {}", e);
             return false;
         }
     }
@@ -709,9 +725,13 @@ public class AgentWatchManager implements Closeable {
                     executeRefresh(intent.clientWatchId);
                 }
             }, delayMillis, TimeUnit.MILLISECONDS);
+            if (delayMillis > 0L) {
+                AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.RETRY,
+                    AgentWatchClientMetrics.Result.SCHEDULED);
+            }
             return true;
         } catch (RejectedExecutionException e) {
-            LOGGER.warn("Agent Watch refresh scheduling was rejected.", e);
+            warn("Agent Watch refresh scheduling was rejected: {}", e);
             return false;
         }
     }
@@ -750,7 +770,7 @@ public class AgentWatchManager implements Closeable {
         try {
             notification.listener.enqueue(notification);
         } catch (RuntimeException e) {
-            LOGGER.warn("Agent Watch listener dispatch failed.", e);
+            warn("Agent Watch listener dispatch failed: {}", e);
         }
     }
     
@@ -767,18 +787,25 @@ public class AgentWatchManager implements Closeable {
         }
         try {
             notification.listener.listener.onEvent(notification.event);
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+                AgentWatchClientMetrics.Result.SUCCESS);
         } catch (Throwable throwable) {
-            LOGGER.warn("Agent Watch listener failed.", throwable);
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.LISTENER_CALLBACK,
+                AgentWatchClientMetrics.Result.FAILED);
+            warn("Agent Watch listener failed: {}", throwable);
         }
     }
     
     private synchronized void removeIntent(WatchIntent intent) {
         intent.completeActivation(new NacosException(NacosException.CLIENT_DISCONNECT,
             "Agent Watch was closed before activation completed."));
-        intentsById.remove(intent.clientWatchId);
+        boolean tracked = intentsById.remove(intent.clientWatchId) == intent;
         intentsByKey.remove(intent.requestKey);
-        intent.state = WatchState.CLOSED;
-        intent.dirty = false;
+        setState(intent, WatchState.CLOSED);
+        setDirty(intent, false);
+        if (tracked) {
+            AgentWatchClientMetrics.intentRemoved();
+        }
         cancel(intent.pendingFuture);
         cancel(intent.refreshFuture);
         intent.pendingFuture = null;
@@ -856,6 +883,8 @@ public class AgentWatchManager implements Closeable {
     
     private void ensureCapacity(int additions) throws NacosApiException {
         if (subscriptionCount >= maxSubscriptions && additions > 0) {
+            AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.CAPACITY_REJECTION,
+                AgentWatchClientMetrics.Result.REJECTED);
             throw new NacosApiException(NacosException.CLIENT_OVER_THRESHOLD,
                 ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
                 "Agent discovery subscription limit of " + maxSubscriptions
@@ -875,9 +904,44 @@ public class AgentWatchManager implements Closeable {
             "Agent Watch refresh scheduling was rejected.");
     }
     
+    private void setState(WatchIntent intent, WatchState state) {
+        if (intent.state == state) {
+            return;
+        }
+        if (intent.state == WatchState.LOCAL_PENDING) {
+            AgentWatchClientMetrics.pendingRemoved();
+        }
+        intent.state = state;
+        if (state == WatchState.LOCAL_PENDING) {
+            AgentWatchClientMetrics.pendingAdded();
+        }
+    }
+    
+    private void setDirty(WatchIntent intent, boolean dirty) {
+        if (intent.dirty == dirty) {
+            return;
+        }
+        intent.dirty = dirty;
+        if (dirty) {
+            AgentWatchClientMetrics.dirtyAdded();
+        } else {
+            AgentWatchClientMetrics.dirtyRemoved();
+        }
+    }
+    
     private static void cancel(ScheduledFuture<?> future) {
         if (future != null) {
             future.cancel(false);
+        }
+    }
+    
+    private static String errorType(Throwable throwable) {
+        return throwable.getClass().getSimpleName();
+    }
+    
+    private static void warn(String message, Throwable throwable) {
+        if (WARN_LOG_LIMITER.tryAcquire()) {
+            LOGGER.warn(message, errorType(throwable));
         }
     }
     
@@ -976,7 +1040,7 @@ public class AgentWatchManager implements Closeable {
         }
         
         private void beginActivation() {
-            state = WatchState.ACTIVATING;
+            setState(this, WatchState.ACTIVATING);
             activationBarrier = new ActivationBarrier();
         }
         
@@ -1052,7 +1116,7 @@ public class AgentWatchManager implements Closeable {
                 if (propagateFailure) {
                     throw e;
                 }
-                LOGGER.warn("Agent Watch listener dispatch failed.", e);
+                warn("Agent Watch listener dispatch failed: {}", e);
             }
         }
         
@@ -1083,7 +1147,7 @@ public class AgentWatchManager implements Closeable {
                     }
                 });
             } catch (RuntimeException e) {
-                LOGGER.warn("Agent Watch listener executor rejected dispatch.", e);
+                warn("Agent Watch listener executor rejected dispatch: {}", e);
                 completeDelivery(notification);
             }
         }

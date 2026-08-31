@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
@@ -60,6 +61,12 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
     implements AgentProjectionUpdateListener {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentGrpcWatchService.class);
+    
+    private static final LogRateLimiter DELIVERY_WARN_LOG_LIMITER =
+        new LogRateLimiter(60000L);
+    
+    private static final LogRateLimiter REVALIDATE_WARN_LOG_LIMITER =
+        new LogRateLimiter(60000L);
     
     private static final long DEFAULT_PUSH_TIMEOUT_MILLIS = 3000L;
     
@@ -186,8 +193,7 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
                 if (watch.activate(initialFingerprint)) {
                     taskEngine.schedule(watch.getWatchKey());
                 }
-                LOGGER.debug("Agent gRPC Watch admitted: connectionId={}, watchKey={}, key={}",
-                    connectionId, watch.getWatchKey(), projectionKey);
+                LOGGER.debug("Agent gRPC Watch admitted.");
                 return response(watch, request.getMaterializedFingerprint());
             } catch (RuntimeException e) {
                 registry.remove(watch.getWatchKey());
@@ -216,8 +222,8 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
     @Override
     public void onProjectionUpdate(AgentProjectionUpdate update) {
         List<AgentGrpcWatch> watches = registry.findByProjection(update.getKey());
-        LOGGER.debug("Agent Projection update invalidates {} gRPC Watches: key={}, reasons={}",
-            watches.size(), update.getKey(), update.getReasons());
+        LOGGER.debug("Agent Projection update invalidates {} gRPC Watches: reasons={}",
+            watches.size(), update.getReasons());
         for (AgentGrpcWatch watch : watches) {
             if (watch.markDirty()) {
                 taskEngine.schedule(watch.getWatchKey());
@@ -280,14 +286,20 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
                 scheduleAfterCompletion(watch, null, true, false);
                 return;
             }
-            LOGGER.debug("Deliver Agent gRPC Watch hint: watchKey={}, eventType={}, fingerprint={}",
-                watch.getWatchKey(), notifyRequest.getEventType(),
-                notifyRequest.getObservedFingerprint());
+            LOGGER.debug("Deliver Agent gRPC Watch hint: eventType={}, fingerprint={}",
+                notifyRequest.getEventType(), notifyRequest.getObservedFingerprint());
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.GRPC_PUSH,
+                AgentWatchMetrics.Result.SCHEDULED);
+            AgentWatchMetrics.recordJsonBytes(AgentWatchMetrics.Transport.GRPC, notifyRequest);
             rpcPushService.pushWithCallback(watch.getConnectionId(), notifyRequest,
                 new WatchPushCallback(watch, notifyRequest), callbackExecutor);
         } catch (RuntimeException e) {
-            LOGGER.warn("Agent gRPC Watch delivery failed before callback registration for {}",
-                watchKey, e);
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.GRPC_PUSH,
+                AgentWatchMetrics.Result.FAILED);
+            if (DELIVERY_WARN_LOG_LIMITER.tryAcquire()) {
+                LOGGER.warn("Agent gRPC Watch delivery failed before callback registration: {}",
+                    e.getClass().getSimpleName());
+            }
             retry(watch, null);
         }
     }
@@ -404,8 +416,10 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
         try {
             projectionService.revalidate(watch.getProjectionKey());
         } catch (RuntimeException e) {
-            LOGGER.warn("Failed to request current RAD projection for Watch {}",
-                watch.getWatchKey(), e);
+            if (REVALIDATE_WARN_LOG_LIMITER.tryAcquire()) {
+                LOGGER.warn("Failed to request current RAD projection for a Watch: {}",
+                    e.getClass().getSimpleName());
+            }
         } finally {
             scheduleAfterCompletion(watch, delivered, false, true);
         }
@@ -466,8 +480,10 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
         
         @Override
         public void onSuccess() {
-            LOGGER.debug("Agent gRPC Watch hint acknowledged: watchKey={}, eventType={}",
-                watch.getWatchKey(), request.getEventType());
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.GRPC_ACK,
+                AgentWatchMetrics.Result.SUCCESS);
+            LOGGER.debug("Agent gRPC Watch hint acknowledged: eventType={}",
+                request.getEventType());
             if (request.getEventType() == AgentWatchEventType.TERMINATED) {
                 removeWatch(watch.getWatchKey());
             } else {
@@ -477,8 +493,10 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
         
         @Override
         public void onFail(Throwable e) {
-            LOGGER.debug("Agent gRPC Watch hint failed: watchKey={}, eventType={}",
-                watch.getWatchKey(), request.getEventType(), e);
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.GRPC_ACK,
+                AgentWatchMetrics.Result.FAILED);
+            LOGGER.debug("Agent gRPC Watch hint failed: eventType={}",
+                request.getEventType(), e);
             if (!connectionManager.checkValid(watch.getConnectionId())) {
                 removeConnection(watch.getConnectionId());
                 return;

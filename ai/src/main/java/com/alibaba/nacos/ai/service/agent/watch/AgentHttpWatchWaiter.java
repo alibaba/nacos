@@ -93,7 +93,12 @@ final class AgentHttpWatchWaiter {
         AgentWatchBatchResponse response = new AgentWatchBatchResponse();
         response.setGeneration(generation);
         response.setChanged(false);
-        return complete(response);
+        boolean result = complete(response);
+        if (result) {
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
+                AgentWatchMetrics.Result.TIMEOUT);
+        }
+        return result;
     }
     
     boolean cancel() {
@@ -101,6 +106,8 @@ final class AgentHttpWatchWaiter {
             return false;
         }
         cleanup.accept(this);
+        AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
+            AgentWatchMetrics.Result.CANCELED);
         return true;
     }
     
@@ -113,7 +120,12 @@ final class AgentHttpWatchWaiter {
         response.setChanged(true);
         response.setChangedClientWatchIds(
             Collections.unmodifiableList(new ArrayList<String>(changedIds)));
-        return complete(response);
+        boolean result = complete(response);
+        if (result) {
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
+                AgentWatchMetrics.Result.CHANGED);
+        }
+        return result;
     }
     
     private boolean complete(AgentWatchBatchResponse response) {

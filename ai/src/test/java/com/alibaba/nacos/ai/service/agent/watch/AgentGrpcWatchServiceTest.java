@@ -232,6 +232,11 @@ class AgentGrpcWatchServiceTest {
     
     @Test
     void testConflictingClientWatchIdAndSubscribeRaceUseCurrentProjection() throws Exception {
+        double bytesBefore = AgentWatchMetrics.byteCount(AgentWatchMetrics.Transport.GRPC);
+        double pushesBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_PUSH, AgentWatchMetrics.Result.SCHEDULED);
+        double acknowledgementsBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_ACK, AgentWatchMetrics.Result.SUCCESS);
         AgentDiscoveryResult initial = AgentProjectionTestFixtures.snapshot("agent", "a2a");
         String initialFingerprint = AgentDiscoveryCanonicalizer.fingerprint(initial);
         String currentFingerprint = AgentDiscoveryCanonicalizer.fingerprint(
@@ -247,7 +252,12 @@ class AgentGrpcWatchServiceTest {
         assertTrue(response.isRefreshRequired());
         PushRecord raceHint = awaitPush();
         assertInvalidation(raceHint.request, currentFingerprint);
+        assertTrue(AgentWatchMetrics.byteCount(AgentWatchMetrics.Transport.GRPC) > bytesBefore);
+        assertEquals(pushesBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_PUSH, AgentWatchMetrics.Result.SCHEDULED));
         raceHint.callback.onSuccess();
+        assertEquals(acknowledgementsBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_ACK, AgentWatchMetrics.Result.SUCCESS));
         
         NacosApiException conflict = assertThrows(NacosApiException.class,
             () -> service.subscribe(CONNECTION_ID, request("watch", "other", null)));
@@ -346,6 +356,8 @@ class AgentGrpcWatchServiceTest {
     @Test
     void testRejectedOrFailedAckRetriesCurrentFactAndMissingStateRevalidates()
         throws Exception {
+        double failedAcknowledgementsBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_ACK, AgentWatchMetrics.Result.FAILED);
         subscribeWithInitialState("agent", "watch");
         String nextFingerprint = AgentDiscoveryCanonicalizer.fingerprint(
             AgentProjectionTestFixtures.snapshot("agent", "a2a", "mcp"));
@@ -354,6 +366,8 @@ class AgentGrpcWatchServiceTest {
         fireUpdate("agent");
         PushRecord first = awaitPush();
         first.callback.onFail(new NacosException(NacosException.SERVER_ERROR, "rejected"));
+        assertEquals(failedAcknowledgementsBefore + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.GRPC_ACK, AgentWatchMetrics.Result.FAILED));
         
         PushRecord retried = awaitPush();
         assertInvalidation(retried.request, nextFingerprint);

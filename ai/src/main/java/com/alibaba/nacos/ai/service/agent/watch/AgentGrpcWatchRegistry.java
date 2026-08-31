@@ -65,6 +65,8 @@ final class AgentGrpcWatchRegistry {
         int current = connectionIndex.containsKey(connectionId)
             ? connectionIndex.get(connectionId).size() : 0;
         if (current >= maxPerConnection) {
+            AgentWatchMetrics.record(AgentWatchMetrics.Event.CAPACITY_REJECTION,
+                AgentWatchMetrics.Result.REJECTED);
             throw new NacosApiException(NacosException.OVER_THRESHOLD,
                 ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
                 "Agent discovery Watch limit of " + maxPerConnection
@@ -81,6 +83,7 @@ final class AgentGrpcWatchRegistry {
         clientWatches.put(clientWatchId, watchKey);
         addIndex(connectionIndex, connectionId, watchKey);
         addIndex(projectionIndex, projectionKey, watchKey);
+        AgentWatchMetrics.setActiveGrpcWatches(watches.size());
         return new Registration(watch, true);
     }
     
@@ -129,6 +132,7 @@ final class AgentGrpcWatchRegistry {
         removeClientWatchIndex(watch);
         removeIndex(connectionIndex, watch.getConnectionId(), watchKey);
         removeIndex(projectionIndex, watch.getProjectionKey(), watchKey);
+        AgentWatchMetrics.setActiveGrpcWatches(watches.size());
         return watch;
     }
     
@@ -156,6 +160,7 @@ final class AgentGrpcWatchRegistry {
         clientWatchIndex.clear();
         connectionIndex.clear();
         projectionIndex.clear();
+        AgentWatchMetrics.setActiveGrpcWatches(0);
         return result;
     }
     

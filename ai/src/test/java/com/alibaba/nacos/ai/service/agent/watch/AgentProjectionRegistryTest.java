@@ -43,8 +43,10 @@ class AgentProjectionRegistryTest {
         AgentProjectionKey alpha = AgentProjectionTestFixtures.key("alpha");
         
         assertTrue(registry.retain(beta));
+        assertEquals(1, AgentWatchMetrics.activeProjections());
         assertFalse(registry.retain(beta));
         assertTrue(registry.retain(alpha));
+        assertEquals(2, AgentWatchMetrics.activeProjections());
         assertEquals(2, registry.getReferenceCount(beta));
         assertEquals(Collections.singleton(beta), registry.findByAgent("public", "beta"));
         assertEquals(2, registry.size());
@@ -53,10 +55,13 @@ class AgentProjectionRegistryTest {
         assertFalse(registry.release(beta));
         assertEquals(1, registry.getReferenceCount(beta));
         assertTrue(registry.release(beta));
+        assertEquals(1, AgentWatchMetrics.activeProjections());
         assertFalse(registry.release(beta));
         assertFalse(registry.isActive(beta));
         assertTrue(registry.findByAgent("public", "beta").isEmpty());
         assertEquals(0, registry.getReferenceCount(beta));
+        assertTrue(registry.release(alpha));
+        assertEquals(0, AgentWatchMetrics.activeProjections());
     }
     
     @Test
@@ -124,6 +129,7 @@ class AgentProjectionRegistryTest {
         assertTrue(update.getReasons().isEmpty());
         assertThrows(UnsupportedOperationException.class,
             () -> update.getCurrent().getPhysicalDependencies().add(a2a));
+        assertTrue(registry.release(key));
     }
     
     @Test

@@ -75,7 +75,7 @@ public class AgentProjectionEventSubscriber extends SmartSubscriber {
         }
         Service service = ((ServiceEvent.ServiceChangedEvent) event).getService();
         if (Constants.Agent.AGENT_ENDPOINT_GROUP.equals(service.getGroup())) {
-            LOGGER.debug("Runtime service change invalidates Agent projections: {}", service);
+            LOGGER.debug("Runtime service change invalidates Agent projections.");
             projectionService.onRuntimeServiceChanged(service);
         }
     }

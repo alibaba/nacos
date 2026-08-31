@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -55,6 +56,8 @@ final class GrpcAgentWatchTransport
     implements AgentWatchTransport, ConnectionEventListener, ServerRequestHandler {
     
     private static final Logger LOGGER = LogUtils.logger(GrpcAgentWatchTransport.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private final AiGrpcClient client;
     
@@ -298,7 +301,10 @@ final class GrpcAgentWatchTransport
                 }
             });
         } catch (RejectedExecutionException e) {
-            LOGGER.warn("Agent Watch reconnect scheduling was rejected.", e);
+            if (WARN_LOG_LIMITER.tryAcquire()) {
+                LOGGER.warn("Agent Watch reconnect scheduling was rejected: {}",
+                    e.getClass().getSimpleName());
+            }
             for (WireWatch watch : watches) {
                 notifyWireUnavailable(watch, new NacosException(NacosException.CLIENT_ERROR,
                     "Agent Watch reconnect scheduling was rejected.", e));
@@ -370,13 +376,12 @@ final class GrpcAgentWatchTransport
                             client.unsubscribeAgentWatch(watchKey);
                         }
                     } catch (NacosException e) {
-                        LOGGER.debug("Best-effort Agent Watch unsubscribe failed for {}.",
-                            watchKey, e);
+                        LOGGER.debug("Best-effort Agent Watch unsubscribe failed.", e);
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
-            LOGGER.debug("Best-effort Agent Watch unsubscribe was skipped for {}.", watchKey, e);
+            LOGGER.debug("Best-effort Agent Watch unsubscribe was skipped.", e);
         }
     }
     

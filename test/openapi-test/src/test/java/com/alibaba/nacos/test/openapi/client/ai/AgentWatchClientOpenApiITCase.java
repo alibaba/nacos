@@ -383,8 +383,9 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
             awaitActiveGeneration(watchClientId, 10L, watch);
             addCleanup(() -> deleteEndpointAt(peerBaseUrl, publisherClientId,
                     endpointIdentity(DEFAULT_NAMESPACE, agentName)));
-            assertEquals(200, postEndpointAt(peerBaseUrl, publisherClientId,
-                    endpointRegistration(DEFAULT_NAMESPACE, agentName)).code());
+            HttpResponse endpointResponse = postEndpointAt(peerBaseUrl, publisherClientId,
+                    endpointRegistration(DEFAULT_NAMESPACE, agentName));
+            assertEquals(200, endpointResponse.code(), endpointResponse.body());
 
             JsonNode generationTenData = assertWatchEnvelope(
                     generationTen.get(5L, TimeUnit.SECONDS), 10L);

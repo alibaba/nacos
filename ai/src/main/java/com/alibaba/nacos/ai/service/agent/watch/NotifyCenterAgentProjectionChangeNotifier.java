@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.agent.watch;
 
 import com.alibaba.nacos.ai.event.AgentDefinitionChangedEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,8 +30,20 @@ import org.springframework.stereotype.Component;
 public class NotifyCenterAgentProjectionChangeNotifier
     implements AgentProjectionChangeNotifier {
     
+    private AgentProjectionClusterChangePublisher clusterChangePublisher =
+        AgentProjectionClusterChangePublisher.NOOP;
+    
+    @Autowired(required = false)
+    public void setClusterChangePublisher(
+        AgentProjectionClusterChangePublisher clusterChangePublisher) {
+        if (clusterChangePublisher != null) {
+            this.clusterChangePublisher = clusterChangePublisher;
+        }
+    }
+    
     @Override
     public void notifyDefinitionChanged(String namespaceId, String agentName) {
         NotifyCenter.publishEvent(new AgentDefinitionChangedEvent(namespaceId, agentName));
+        clusterChangePublisher.publish(namespaceId, agentName);
     }
 }

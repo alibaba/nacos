@@ -67,17 +67,21 @@ transport-neutral.
 | `shouldSurfaceServerWatchCapacityAndReuseSlot` | Workflow-configured authoritative gRPC Watch soft watermark, whole-operation crossing from below, remote over-limit exception mapping, rejected Watch cleanup, and capacity reuse after unsubscribe. |
 | `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
+| `shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart` | Opt-in three-node rolling-cluster workflow: independent gRPC and HTTP subscriptions observe a Version published through another node while one node is stopped, retain omitted-selector rollout-safe Endpoint aggregation and exact-selector isolation, then converge again after the stopped node restarts and a later Version is published. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
 The same twenty-three stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
-regression. The opt-in
-`shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart` workflow also passed
-against a real standalone process stopped and restarted by an external harness.
-It retains independent gRPC and HTTP publishers, a negotiated gRPC Watch, and an
-HTTP Batch Long Poll subscription so the restarted server must recover gRPC Watch
-resubscription and publication redo together with HTTP `HTTP_CLIENT_NOT_FOUND`
-re-registration and HTTP Watch recovery.
+regression. Two opt-in directed workflows passed against real externally controlled
+servers. `shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart` retains
+independent gRPC and HTTP publishers, a negotiated gRPC Watch, and an HTTP Batch Long
+Poll subscription while one standalone process is stopped and restarted, so the
+restarted server must recover gRPC Watch resubscription and publication redo together
+with HTTP `HTTP_CLIENT_NOT_FOUND` re-registration and HTTP Watch recovery.
+`shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart` uses three server nodes,
+stops one node while another accepts a new Version, verifies both Watch transports
+converge while that node remains down, restarts it, and verifies both transports converge
+again after a later Version without duplicate or regressive callbacks.
 Scheduler, listener-failure, transport-error, ability, heartbeat/50404, rollback,
 and redo races remain deterministic UT responsibilities; the shared-server CI run
 is never stopped.
@@ -288,6 +292,7 @@ failed targeted run rather than a sleeping normal CI test.
 | Version 1 online + Version 2 Endpoint pre-registration + Version 2 publish | Search, latest/exact/label Discover, and subscriptions agree at every transition. | IT |
 | Version 1 online + Version 2 publish before Endpoint registration + independent Version 2 publisher | Omitted selection preserves the rollout pool across the transition, explicit latest observes only Version 2, and both subscriptions converge without duplicate callbacks. | IT |
 | Real standalone restart with active gRPC/HTTP publications and both Watch transports | The same live SDK process restores both transport-owned complete Batches, resubscribes the gRPC Watch, resumes HTTP Batch Long Poll, then observes a later Version and both Endpoints without duplicate callbacks. | Directed IT |
+| Three-node rolling restart with active gRPC/HTTP Watches | While one node is stopped, another node accepts Version 2 and both transports converge to it; after restart, Version 3 converges through both transports. Omitted selection retains every compatible online-Version Endpoint and exact selectors remain isolated throughout. | Directed IT |
 
 ## Deferred In This Phase
 

@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class AgentGrpcWatchTaskEngine {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentGrpcWatchTaskEngine.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private static final int INITIAL_CAPACITY = 128;
     
@@ -131,7 +134,10 @@ final class AgentGrpcWatchTaskEngine {
             try {
                 deliveryExecutor.execute(watchKey);
             } catch (Throwable e) {
-                LOGGER.warn("Agent gRPC Watch delivery failed for {}", watchKey, e);
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("Agent gRPC Watch delivery task failed: {}",
+                        e.getClass().getSimpleName());
+                }
                 retry(watchKey);
             }
         }

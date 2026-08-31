@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,6 +128,38 @@ class AgentProjectionServiceTest {
     }
     
     @Test
+    void testProjectionFailureAndNotFoundRecordCurrentFactOutcomes() throws Exception {
+        double failures = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+            AgentWatchMetrics.Result.FAILED);
+        AgentProjectionProjector failing = key -> {
+            throw new IllegalStateException("projection failure");
+        };
+        service = newService(failing, 10000L, 10L, 0L, 10, 1);
+        AgentProjectionKey failedKey = service.retain(
+            AgentProjectionTestFixtures.request("failed"));
+        assertThrows(IllegalStateException.class, () -> service.refreshNow(failedKey));
+        assertEquals(failures + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+            AgentWatchMetrics.Result.FAILED));
+        service.shutdown();
+        
+        double notFound = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+            AgentWatchMetrics.Result.NOT_FOUND);
+        service = newService(key -> AgentProjectionState.failure(
+            AgentProjectionStatus.NOT_FOUND, NacosException.NOT_FOUND, "missing", 1L),
+            10000L, 10L, 0L, 10, 1);
+        AgentProjectionKey missingKey = service.retain(
+            AgentProjectionTestFixtures.request("missing"));
+        AgentProjectionState result = service.refreshNow(missingKey);
+        assertEquals(AgentProjectionStatus.NOT_FOUND, result.getStatus());
+        assertEquals(notFound + 1D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
+            AgentWatchMetrics.Result.NOT_FOUND));
+    }
+    
+    @Test
     void testExplicitRevalidationOnlySchedulesActiveProjection() throws Exception {
         AtomicInteger projects = new AtomicInteger();
         service = newService(key -> AgentProjectionTestFixtures.available(
@@ -173,6 +206,9 @@ class AgentProjectionServiceTest {
     @Test
     void testReconciliationIsBoundedAndDoesNotScanWithoutActiveProjection()
         throws Exception {
+        final double reconciledBefore = AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.RECONCILIATION,
+            AgentWatchMetrics.Result.SCHEDULED);
         List<String> projected = Collections.synchronizedList(new ArrayList<String>());
         AgentProjectionProjector projector = key -> {
             projected.add(key.getAgentName());
@@ -193,6 +229,24 @@ class AgentProjectionServiceTest {
         service.reconcileBatch();
         waitUntil(() -> projected.size() == 2);
         assertFalse(first.equals(projected.get(1)));
+        assertEquals(reconciledBefore + 2D, AgentWatchMetrics.eventCount(
+            AgentWatchMetrics.Event.RECONCILIATION,
+            AgentWatchMetrics.Result.SCHEDULED));
+    }
+    
+    @Test
+    void testReconciliationLagTracksSchedulerDelayAndClearsOnShutdown() throws Exception {
+        long intervalMillis = 5000L;
+        service = newService(key -> AgentProjectionTestFixtures.available("fp", 1L),
+            5L, 10L, intervalMillis, 1, 1);
+        ReflectionTestUtils.setField(service, "lastReconciliationMillis",
+            System.currentTimeMillis() - intervalMillis - 100L);
+        
+        service.reconcileBatch();
+        
+        assertTrue(AgentWatchMetrics.reconciliationLagMillis() >= 50L);
+        service.shutdown();
+        assertEquals(0L, AgentWatchMetrics.reconciliationLagMillis());
     }
     
     @Test
