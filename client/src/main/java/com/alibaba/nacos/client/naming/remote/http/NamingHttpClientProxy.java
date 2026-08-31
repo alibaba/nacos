@@ -463,10 +463,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             
             if (enableClientMetrics) {
                 try {
-                    MetricsMonitor
-                        .getNamingRequestMonitor(method, url,
-                            String.valueOf(restResult.getCode()))
-                        .observe(end - start);
+                    MetricsMonitor.observeNamingRequest(method, url,
+                        String.valueOf(restResult.getCode()),
+                        end - start);
                 } catch (Throwable t) {
                     NAMING_LOGGER.error(
                         "Failed to record metrics. Method: {}, URL: {}, HTTP Status Code: {}",

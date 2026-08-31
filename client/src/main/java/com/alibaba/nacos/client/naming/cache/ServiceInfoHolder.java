@@ -150,7 +150,7 @@ public class ServiceInfoHolder implements Closeable {
         
         if (enableClientMetrics) {
             try {
-                MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+                MetricsMonitor.recordServiceInfoMapSize(serviceInfoMap.size());
             } catch (Throwable t) {
                 NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
             }

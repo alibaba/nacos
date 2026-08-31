@@ -16,51 +16,68 @@
 
 package com.alibaba.nacos.client.monitor;
 
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
-import io.prometheus.client.Histogram;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+
+import java.util.Collection;
 
 /**
  * Metrics Monitor.
+ *
+ * <p>Delegates all metrics recording to a {@link NacosClientMetricsProvider} loaded via SPI. Without a provider
+ * artifact on the classpath the default {@link NoopClientMetricsProvider} is used, so the client records nothing
+ * and carries no metrics library dependency.
  *
  * @author Nacos
  */
 public class MetricsMonitor {
     
-    private static final Gauge NACOS_MONITOR_GAUGE =
-        Gauge.build().name("nacos_monitor").labelNames("module", "name")
-            .help("nacos_monitor").register();
+    private static final String MODULE_NAMING = "naming";
     
-    private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM = Histogram.build()
-        .labelNames("module", "method", "url", "code").name("nacos_client_request")
-        .help("nacos_client_request")
-        .register();
+    private static final String MODULE_CONFIG = "config";
     
-    private static final Counter NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL = Counter.build()
-        .name("nacos_client_naming_request_failed_total")
-        .help("nacos_client_naming_request_failed_total")
-        .labelNames("module", "req_class", "res_status", "res_code", "err_class").register();
+    private static final String GAUGE_SERVICE_INFO_MAP_SIZE = "serviceInfoMapSize";
     
-    public static Gauge.Child getServiceInfoMapSizeMonitor() {
-        return NACOS_MONITOR_GAUGE.labels("naming", "serviceInfoMapSize");
+    private static final String GAUGE_LISTEN_CONFIG_COUNT = "listenConfigCount";
+    
+    private static final NacosClientMetricsProvider METRICS_PROVIDER = loadMetricsProvider();
+    
+    private static NacosClientMetricsProvider loadMetricsProvider() {
+        Collection<NacosClientMetricsProvider> providers =
+            NacosServiceLoader.load(NacosClientMetricsProvider.class);
+        return providers.isEmpty() ? new NoopClientMetricsProvider() : providers.iterator().next();
     }
     
-    public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR_GAUGE.labels("config", "listenConfigCount");
+    public static void recordServiceInfoMapSize(int size) {
+        METRICS_PROVIDER.recordGauge(MODULE_NAMING, GAUGE_SERVICE_INFO_MAP_SIZE, size);
     }
     
-    public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code);
+    public static void recordListenConfigCount(int count) {
+        METRICS_PROVIDER.recordGauge(MODULE_CONFIG, GAUGE_LISTEN_CONFIG_COUNT, count);
     }
     
-    public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
+    public static void observeConfigRequest(String method, String url, String code,
+        long elapsedMillis) {
+        METRICS_PROVIDER.observeRequest(MODULE_CONFIG, method, url, code, elapsedMillis);
     }
     
-    public static Counter.Child getNamingRequestFailedMonitor(String reqClass, String resStatus,
-        String resCode,
-        String errClass) {
-        return NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL.labels("naming", reqClass, resStatus,
-            resCode, errClass);
+    public static void observeNamingRequest(String method, String url, String code,
+        long elapsedMillis) {
+        METRICS_PROVIDER.observeRequest(MODULE_NAMING, method, url, code, elapsedMillis);
+    }
+    
+    public static void recordNamingRequestFailed(String requestClass, String responseStatus,
+        String responseCode,
+        String exceptionClass) {
+        METRICS_PROVIDER.incrementNamingRequestFailed(requestClass, responseStatus, responseCode,
+            exceptionClass);
+    }
+    
+    /**
+     * Get the effective metrics provider, mainly for test and diagnostics.
+     *
+     * @return current {@link NacosClientMetricsProvider}
+     */
+    public static NacosClientMetricsProvider getMetricsProvider() {
+        return METRICS_PROVIDER;
     }
 }
