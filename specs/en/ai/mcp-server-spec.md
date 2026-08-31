@@ -318,6 +318,16 @@ label, and Visibility actions for the selected exact Version. Before
 `LIFECYCLE_MANAGED`, the next UI may retain historical reads for diagnosis but
 must disable lifecycle mutations and must not fall back to a historical write.
 
+The selected Version detail in `console-ui-next` presents copyable MCP Client
+configuration instead of copying the internal Server/Tools/Resources
+definition. For a remote Server, it uses the same frontend-first endpoint
+selection as the compatibility UI so gateway frontend and actual backend
+addresses are not confused. For a stdio Server, it wraps the local or Package
+launch configuration in the standard `mcpServers` object. Auto-derived
+capability values remain available as Resource metadata and Search filters;
+the detail page may omit their summary when the concrete Tool and Resource
+sections already present the same information.
+
 `McpMaintainerService` exposes Version-management methods with
 explicit-namespace and default-namespace overloads. New draft creation and
 replacement reuse the established `createMcpServer` and `updateMcpServer`

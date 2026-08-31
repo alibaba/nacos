@@ -6,7 +6,7 @@ import {
   isManagedDirectEndpointRef,
   resolveMcpEndpointUrl,
   shouldUseExistingService,
-} from '../endpoint-utils';
+} from '@/lib/mcp-endpoint-utils';
 
 describe('newMcpServer endpoint utils', () => {
   it('rebuilds MCP endpoint URL from the generated direct backend endpoint', () => {

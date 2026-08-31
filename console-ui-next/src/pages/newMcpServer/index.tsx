@@ -49,7 +49,7 @@ import {
   buildUrlExportPath,
   resolveMcpEndpointUrl,
   shouldUseExistingService,
-} from './endpoint-utils';
+} from '@/lib/mcp-endpoint-utils';
 import { loadServiceOptions } from './service-options';
 import { nextMcpVersion } from './version-utils';
 

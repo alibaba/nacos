@@ -42,6 +42,9 @@ describe('MCP Console lifecycle source contract', () => {
     expect(editor).toContain("mode === 'draft-edit'");
     expect(editor).toContain("mode === 'draft-create'");
     expect(management).toContain('handleDetail(name)');
+    expect(detail).toContain('<McpClientConfigCard configurations={clientConfigurations} />');
+    expect(detail).not.toContain("t('mcp.capabilities')");
+    expect(detail).not.toContain("t('mcp.copyConfig')");
   });
 
   it('leaves the legacy UI on its direct-online create and update contract', () => {

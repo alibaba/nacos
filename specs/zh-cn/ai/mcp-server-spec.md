@@ -267,6 +267,12 @@ Direct-online Create/Update Route。`console-ui-next` 只通过标准生命周�
 Draft Delete、Label 和 Visibility 操作。在达到 `LIFECYCLE_MANAGED` 前，新 UI 可以保留历史读取
 用于诊断，但必须禁用生命周期 Mutation，且不得回退到历史 Write。
 
+`console-ui-next` 的选中 Version Detail 展示可复制的 MCP Client 配置，不复制内部
+Server/Tools/Resources Definition。远程 Server 使用与兼容 UI 相同的 Frontend-first Endpoint
+选择规则，避免混淆网关 Frontend 与实际 Backend 地址。stdio Server 将本地或 Package 启动配置
+包装在标准 `mcpServers` Object 中。自动推导的 Capability Value 继续作为 Resource Metadata 和
+Search Filter 使用；当具体 Tool 和 Resource 区域已经展示相同信息时，Detail Page 可以省略该摘要。
+
 `McpMaintainerService` 提供显式 Namespace 与默认 Namespace 便利重载的 Version 管理方法。
 Draft 创建与替换通过 `McpServerDraftRequest` 参数重载复用既有 `createMcpServer` 和
 `updateMcpServer` 名称。精确读取使用 `listMcpServerVersions` 和 `getMcpServerVersion`；

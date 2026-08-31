@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import {
   ArrowLeft,
   Pencil,
-  Copy,
   Plus,
   Cpu,
   Globe,
@@ -17,9 +16,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Wrench,
-  MessageSquare,
-  Database,
   Server,
   GitBranch,
   Hash,
@@ -90,6 +86,8 @@ import type {
   McpServerVersionSummary,
 } from '@/types/mcp';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
+import { McpClientConfigCard } from './McpClientConfigCard';
+import { buildMcpClientConfigurations } from './mcp-client-config';
 import {
   getMcpVersionActions,
   isMcpLifecycleUnavailable,
@@ -102,27 +100,6 @@ const PROTOCOL_STYLES: Record<string, { bg: string; text: string; dot: string }>
   'mcp-streamable': { bg: 'bg-cyan-50 dark:bg-cyan-950/40', text: 'text-cyan-700 dark:text-cyan-300', dot: 'bg-cyan-500' },
   http: { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
   dubbo: { bg: 'bg-green-50 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-};
-
-const CAPABILITY_CONFIG: Record<string, { icon: typeof Wrench; color: string; bg: string; border: string }> = {
-  TOOL: {
-    icon: Wrench,
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    border: 'border-amber-200 dark:border-amber-800/50',
-  },
-  PROMPT: {
-    icon: MessageSquare,
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  RESOURCE: {
-    icon: Database,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    border: 'border-emerald-200 dark:border-emerald-800/50',
-  },
 };
 
 function LifecycleActionIcon({ action }: { action: McpVersionAction }) {
@@ -247,27 +224,6 @@ export default function McpServerDetailPage() {
       await fetchMcpDetail(namespaceId, mcpName, version);
     }
     setVersionSheetOpen(false);
-  };
-
-  const handleCopyConfig = async () => {
-    if (!currentMcp) return;
-    const { toolSpec, backendEndpoints, frontendEndpoints } = currentMcp;
-    const basicInfo = { ...currentMcp } as Partial<typeof currentMcp>;
-    delete basicInfo.toolSpec;
-    delete basicInfo.backendEndpoints;
-    delete basicInfo.frontendEndpoints;
-    delete basicInfo.allVersions;
-    const config = {
-      serverSpecification: basicInfo,
-      toolSpecification: toolSpec || undefined,
-      endpoints: backendEndpoints || frontendEndpoints || undefined,
-    };
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
-      toast.success(t('mcp.copySuccess'));
-    } catch {
-      toast.error('Failed to copy');
-    }
   };
 
   const handleEdit = () => {
@@ -429,7 +385,7 @@ export default function McpServerDetailPage() {
         status: 'online' as const,
         latest: item.is_latest,
       }));
-  const capabilities = mcp.capabilities || [];
+  const clientConfigurations = buildMcpClientConfigurations(mcp);
   const protocolStyle = PROTOCOL_STYLES[protocolLabel];
   const currentStatus = lifecycleDetail?.status;
   const currentPipelineInfo = parsePipelineInfo(lifecycleDetail?.publishPipelineInfo);
@@ -524,10 +480,6 @@ export default function McpServerDetailPage() {
 
               <Separator orientation="vertical" className="h-5" />
 
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyConfig}>
-                <Copy className="mr-1 h-3 w-3" />
-                {t('mcp.copyConfig')}
-              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -815,56 +767,7 @@ export default function McpServerDetailPage() {
 
         {/* Right column - 1/3 */}
         <div className="space-y-5">
-          {/* Capabilities */}
-          <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                {t('mcp.capabilities')}
-              </h2>
-            </div>
-            <CardContent className="p-4">
-              {capabilities.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {t('mcp.noCapabilities')}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {capabilities.map((cap) => {
-                    const config = CAPABILITY_CONFIG[cap] || {
-                      icon: Zap,
-                      color: 'text-gray-600 dark:text-gray-400',
-                      bg: 'bg-gray-50 dark:bg-gray-900/30',
-                      border: 'border-gray-200 dark:border-gray-700',
-                    };
-                    const Icon = config.icon;
-                    return (
-                      <div
-                        key={cap}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg border px-3.5 py-2.5',
-                          config.bg,
-                          config.border
-                        )}
-                      >
-                        <div className={cn('flex items-center justify-center h-8 w-8 rounded-md', config.bg)}>
-                          <Icon className={cn('h-4 w-4', config.color)} />
-                        </div>
-                        <div>
-                          <p className={cn('text-sm font-semibold', config.color)}>{cap}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {cap === 'TOOL' && t('mcp.capabilityToolDesc', { defaultValue: 'Provides callable tools' })}
-                            {cap === 'PROMPT' && t('mcp.capabilityPromptDesc', { defaultValue: 'Provides prompt templates' })}
-                            {cap === 'RESOURCE' && t('mcp.capabilityResourceDesc', { defaultValue: 'Provides accessible resources' })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <McpClientConfigCard configurations={clientConfigurations} />
 
           {/* Packages - stdio only */}
           {isStdio && (
