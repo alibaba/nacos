@@ -556,6 +556,40 @@ export default function McpServerDetailPage() {
                   {mcp.description}
                 </p>
               )}
+
+              {/* Version lifecycle action buttons */}
+              {lifecycleAvailable && lifecycleActions.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {lifecycleActions.map((action) => {
+                      const primaryAction = action === 'submit' || action === 'publish'
+                        || action === 'online';
+                      const destructiveAction = action === 'forcePublish'
+                        || action === 'deleteDraft';
+                      return (
+                        <Button
+                          key={action}
+                          size="sm"
+                          variant={primaryAction ? 'default' : 'outline'}
+                          className={cn(
+                            'h-7 gap-1.5 text-xs',
+                            destructiveAction
+                              && 'text-destructive hover:text-destructive hover:bg-destructive/10',
+                            action === 'forcePublish' && 'border-destructive/40',
+                          )}
+                          disabled={actionLoading}
+                          onClick={() => handleLifecycleAction(action)}
+                        >
+                          {actionLoading
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <LifecycleActionIcon action={action} />}
+                          {actionLabel(action)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -573,35 +607,6 @@ export default function McpServerDetailPage() {
             <p className="text-sm">{lifecycleMessage}</p>
           </div>
         </div>
-      )}
-
-      {lifecycleAvailable && lifecycleActions.length > 0 && (
-        <Card className="py-0 gap-0 overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
-            <div>
-              <p className="text-sm font-semibold">{t('mcp.lifecycleOperations')}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('mcp.lifecycleOperationsTip', { version: selectedVersion })}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {lifecycleActions.map((action) => (
-                <Button
-                  key={action}
-                  size="sm"
-                  variant={action === 'deleteDraft' ? 'destructive' : 'outline'}
-                  className="h-8 gap-1.5 text-xs"
-                  disabled={actionLoading}
-                  onClick={() => handleLifecycleAction(action)}
-                >
-                  {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    : <LifecycleActionIcon action={action} />}
-                  {actionLabel(action)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Card>
       )}
 
       {/* ===== Content Grid ===== */}

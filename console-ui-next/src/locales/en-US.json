@@ -462,8 +462,6 @@
       "offline": "Take Offline",
       "deleteDraft": "Delete Draft"
     },
-    "lifecycleOperations": "Version Operations",
-    "lifecycleOperationsTip": "Manage review and publication state for version {{version}}",
     "lifecycleActionSuccess": "Version state updated",
     "lifecycleConfirm": "Are you sure you want to {{action}} version {{version}}?",
     "lifecycleSyncingTitle": "Lifecycle Migration in Progress",

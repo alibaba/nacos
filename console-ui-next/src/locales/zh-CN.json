@@ -462,8 +462,6 @@
       "offline": "下线",
       "deleteDraft": "删除草稿"
     },
-    "lifecycleOperations": "版本操作",
-    "lifecycleOperationsTip": "管理版本 {{version}} 的审核与发布状态",
     "lifecycleActionSuccess": "版本状态更新成功",
     "lifecycleConfirm": "确定要对版本 {{version}} 执行“{{action}}”吗？",
     "lifecycleSyncingTitle": "生命周期迁移进行中",
