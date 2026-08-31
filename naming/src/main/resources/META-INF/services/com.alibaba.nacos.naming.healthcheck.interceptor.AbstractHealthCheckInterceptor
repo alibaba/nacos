@@ -16,3 +16,4 @@
 
 com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckEnableInterceptor
 com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckResponsibleInterceptor
+com.alibaba.nacos.naming.healthcheck.interceptor.ServiceMetadataReadyInterceptor

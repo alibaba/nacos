@@ -100,6 +100,14 @@ Loading a persistent instance snapshot must:
 Metadata groups must also provide snapshots. Loading metadata snapshots must
 rebuild in-memory metadata maps and keep service identity attached to metadata.
 
+Persistent client snapshot recovery may initialize scheduled health-check
+tasks while the independent metadata group is still recovering. Active health
+checks must remain gated until both local persistent-client and service-metadata
+snapshots load successfully, so temporarily missing metadata cannot select a
+fallback checker and persist an incorrect health state. When no local snapshot
+exists, application startup completion is a fail-open fallback only; it does
+not guarantee that either Raft group has caught up with its leader.
+
 ## 6. Visibility
 
 A successful CP write means the operation was accepted by the corresponding

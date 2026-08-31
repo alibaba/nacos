@@ -72,6 +72,11 @@ gRPC 连接层之后。Naming 应依赖
 
 主动健康检查只能在负责节点执行检查且 service health check switch 允许时改变健康状态。
 
+持久实例恢复可能在本地 persistent-client 和 service metadata CP snapshot 都成功完成恢复前调度健康检查
+任务。这些任务必须延迟到两个 snapshot 都已加载后执行。若不存在本地 snapshot，应用启动完成可以作为
+fail-open 兜底放行条件；一旦放行，gate 在进程生命周期内必须保持开启。暂时不可用的 cluster metadata
+不得被解释为默认 TCP checker，也不得改变实例健康状态。
+
 主动健康检查使用的实例地址必须是纯 host，不能在实例 IP 字段中携带用户信息、端口、路径、查询参数
 或 fragment。processor 在发起网络请求前必须进行运行时校验；地址解析失败或包含额外 URL 组成部分时，
 本次检查必须按失败处理且不得向该地址发起网络请求。IPv6 地址中的语法分隔符不属于额外 URL 组成部分。

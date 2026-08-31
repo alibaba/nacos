@@ -37,7 +37,7 @@ public class ApplicationUtils
     
     private static ApplicationContext applicationContext;
     
-    private static boolean started = false;
+    private static volatile boolean started = false;
     
     public static boolean isStarted() {
         return started;
