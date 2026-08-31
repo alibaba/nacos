@@ -220,6 +220,7 @@ export interface McpPage<T> {
 export interface McpServerVersionSummary {
   version: string;
   status: McpVersionStatus;
+  publishPipelineInfo?: string;
   author?: string;
   description?: string;
   latest?: boolean;

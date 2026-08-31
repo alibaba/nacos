@@ -85,6 +85,12 @@ API layer and resource/version descriptors remain available for retry.
 
 ## AI Registry And Copilot
 
+MCP Version summaries and exact details expose optional `publishPipelineInfo`
+so the Console can distinguish approved and rejected reviews. The standalone
+profile has no MCP review Pipeline plugin, so the existing MCP row covers the
+no-Pipeline response while focused component tests cover both terminal
+Pipeline payloads and force-publish visibility.
+
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | `A2aConsoleApiOpenApiITCase` | `GET,PUT,POST,DELETE /v3/console/ai/a2a`<br>`GET /v3/console/ai/a2a/list`<br>`GET /v3/console/ai/a2a/version/list` | Covered | Registers legacy and v1 AgentCards, verifies normalized fields and latest/version queries, updates a new version, lists by accurate/blur search, deletes resources, and validates missing names, bad search, invalid registration type, malformed JSON, incomplete endpoint definitions, and absent agents. Cross-contract scenarios verify legacy Console create through canonical Console Overview/Version reads, legacy Admin create through canonical Console reads across the 8848/8080 boundary, and canonical Console draft/force-publish through both legacy Console and Admin reads. |

@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { Fragment, useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -75,14 +75,21 @@ import {
 } from '@/components/ui/dialog';
 import { McpToolList } from '@/components/ai/mcp/McpToolList';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
+import {
+  VersionLifecycleActionBar,
+  VersionLifecycleActionDivider,
+} from '@/components/ai/VersionLifecycleActionBar';
 import { useMcpStore } from '@/stores/mcp-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
 import { mcpApi } from '@/api/mcp';
+import { parsePipelineInfo } from '@/types/pipeline';
 import type {
   McpServerVersionDetail,
   McpServerVersionSummary,
 } from '@/types/mcp';
+import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import {
   getMcpVersionActions,
   isMcpLifecycleUnavailable,
@@ -143,6 +150,7 @@ export default function McpServerDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
+  const { globalAdmin } = useAuthStore();
 
   const mcpName = searchParams.get('mcpName') || '';
   const namespaceId = searchParams.get('namespaceId') || currentNamespace || 'public';
@@ -424,8 +432,44 @@ export default function McpServerDetailPage() {
   const capabilities = mcp.capabilities || [];
   const protocolStyle = PROTOCOL_STYLES[protocolLabel];
   const currentStatus = lifecycleDetail?.status;
-  const lifecycleActions = currentStatus ? getMcpVersionActions(currentStatus) : [];
-  const actionLabel = (action: McpVersionAction) => t(`mcp.lifecycleAction.${action}`);
+  const currentPipelineInfo = parsePipelineInfo(lifecycleDetail?.publishPipelineInfo);
+  const lifecycleActions = currentStatus
+    ? getMcpVersionActions(currentStatus, currentPipelineInfo, globalAdmin)
+    : [];
+  const actionLabel = (action: McpVersionAction) => {
+    if (action === 'submit'
+      && (currentStatus === 'reviewed' || currentPipelineInfo?.status === 'REJECTED')) {
+      return t('mcp.lifecycleAction.resubmit');
+    }
+    return t(`mcp.lifecycleAction.${action}`);
+  };
+  const renderLifecycleAction = (action: McpVersionAction) => {
+    const primaryAction = action === 'submit' || action === 'publish' || action === 'online';
+    const destructiveAction = action === 'forcePublish' || action === 'deleteDraft';
+    const publishBlocked = action === 'publish'
+      && !!currentPipelineInfo
+      && currentPipelineInfo.status !== 'APPROVED';
+    return (
+      <Button
+        key={action}
+        size="sm"
+        variant={primaryAction ? 'default' : 'outline'}
+        className={cn(
+          'h-7 gap-1.5 text-xs',
+          destructiveAction
+            && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+          action === 'forcePublish' && 'border-destructive/40',
+        )}
+        disabled={actionLoading || publishBlocked}
+        onClick={() => handleLifecycleAction(action)}
+      >
+        {actionLoading
+          ? <Loader2 className="h-3 w-3 animate-spin" />
+          : <LifecycleActionIcon action={action} />}
+        {actionLabel(action)}
+      </Button>
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -559,36 +603,33 @@ export default function McpServerDetailPage() {
 
               {/* Version lifecycle action buttons */}
               {lifecycleAvailable && lifecycleActions.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {lifecycleActions.map((action) => {
-                      const primaryAction = action === 'submit' || action === 'publish'
-                        || action === 'online';
-                      const destructiveAction = action === 'forcePublish'
-                        || action === 'deleteDraft';
-                      return (
-                        <Button
-                          key={action}
-                          size="sm"
-                          variant={primaryAction ? 'default' : 'outline'}
-                          className={cn(
-                            'h-7 gap-1.5 text-xs',
-                            destructiveAction
-                              && 'text-destructive hover:text-destructive hover:bg-destructive/10',
-                            action === 'forcePublish' && 'border-destructive/40',
-                          )}
-                          disabled={actionLoading}
-                          onClick={() => handleLifecycleAction(action)}
-                        >
-                          {actionLoading
-                            ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : <LifecycleActionIcon action={action} />}
-                          {actionLabel(action)}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <VersionLifecycleActionBar>
+                  {lifecycleActions.filter((action) => action !== 'forcePublish').map((action) => (
+                    <Fragment key={action}>
+                      {currentStatus === 'draft' && action === 'submit' && (
+                        <VersionLifecycleActionDivider />
+                      )}
+                      {renderLifecycleAction(action)}
+                    </Fragment>
+                  ))}
+                  {currentPipelineInfo?.status === 'APPROVED'
+                    && (currentStatus === 'reviewing' || currentStatus === 'reviewed') && (
+                    <PipelineStatusDisplay
+                      pipelineInfo={currentPipelineInfo}
+                      compact
+                    />
+                  )}
+                  {currentPipelineInfo?.status === 'REJECTED'
+                    && (currentStatus === 'draft'
+                      || lifecycleActions.includes('forcePublish')) && (
+                    <PipelineStatusDisplay
+                      pipelineInfo={currentPipelineInfo}
+                      compact
+                    />
+                  )}
+                  {lifecycleActions.includes('forcePublish')
+                    && renderLifecycleAction('forcePublish')}
+                </VersionLifecycleActionBar>
               )}
             </div>
           </div>

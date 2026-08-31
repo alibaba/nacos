@@ -35,6 +35,7 @@ class McpServerVersionDetailTest {
         detail.setMcpName("weather");
         detail.setVersion("1.0.0");
         detail.setStatus("draft");
+        detail.setPublishPipelineInfo("{\"status\":\"REJECTED\"}");
         detail.setAuthor("nacos");
         detail.setDescription("weather server");
         detail.setLatest(false);
@@ -55,6 +56,7 @@ class McpServerVersionDetailTest {
         assertEquals("weather", detail.getMcpName());
         assertEquals("1.0.0", detail.getVersion());
         assertEquals("draft", detail.getStatus());
+        assertEquals("{\"status\":\"REJECTED\"}", detail.getPublishPipelineInfo());
         assertEquals("nacos", detail.getAuthor());
         assertEquals("weather server", detail.getDescription());
         assertFalse(detail.getLatest());

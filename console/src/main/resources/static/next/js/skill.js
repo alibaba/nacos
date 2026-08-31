@@ -1,1 +1,1 @@
-function e(e){if(!e)return null;try{let t=JSON.parse(e);return t&&typeof t.executionId==`string`&&typeof t.status==`string`?t:null}catch{return null}}function t(e){if(!e)return[];try{let t=JSON.parse(e);return Array.isArray(t)?t.filter(e=>typeof e==`string`):[]}catch{return[]}}export{e as n,t};
+function e(e){if(!e)return[];try{let t=JSON.parse(e);return Array.isArray(t)?t.filter(e=>typeof e==`string`):[]}catch{return[]}}export{e as t};

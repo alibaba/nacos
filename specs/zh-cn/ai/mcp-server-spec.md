@@ -288,6 +288,12 @@ Submit 使用资源类型 `MCP` 构造 `ResourceFilesPipelineContext`，包含�
 转换为 `reviewed`，只有后续显式且已批准的 Publish 才更新 Online Lifecycle State 和兼容
 Manifest。Force-publish 继续作为需要审计的 Pipeline Bypass。
 
+Version Summary 和精确 Version Detail 暴露 Version Row 中可选的 `publishPipelineInfo`。
+管理端使用它区分审核通过与审核拒绝；由于两种结果的 Version Status 都是 `reviewed`，仅凭状态
+无法作出该判断。`console-ui-next` 只在当前 Pipeline 结果为 `REJECTED` 时向全局管理员展示
+Force-publish，不把它作为普通 Draft 的默认操作。Redraft 后标记为 `historical` 的拒绝结果不能
+再授权该 Draft 的 Force-publish。
+
 ### 6.2 历史 Direct-Online Facade
 
 现有 Admin、Console、Maintainer SDK、Java Client SDK 和 gRPC wire shape 保持兼容，

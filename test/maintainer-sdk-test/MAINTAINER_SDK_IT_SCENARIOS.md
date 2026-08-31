@@ -36,6 +36,11 @@ remain, and `Pending` means no IT verifies that surface yet.
 
 ## Coverage Summary
 
+The typed MCP lifecycle response also carries optional `publishPipelineInfo`.
+Standalone Maintainer SDK IT covers the no-Pipeline response; focused component
+tests cover approved and rejected mappings because no MCP review Pipeline
+plugin is installed in this profile.
+
 Current in-scope maintained surfaces: 11.
 
 - Strict coverage: 9 / 11 = 81.8%

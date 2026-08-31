@@ -455,6 +455,7 @@
     "lifecycleAction": {
       "editDraft": "Edit Draft",
       "submit": "Submit for Review",
+      "resubmit": "Resubmit for Review",
       "publish": "Publish",
       "forcePublish": "Force Publish",
       "redraft": "Return to Draft",

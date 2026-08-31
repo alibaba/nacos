@@ -3,20 +3,42 @@ import { getMcpVersionActions, isMcpLifecycleUnavailable } from '../mcp-lifecycl
 
 describe('MCP lifecycle actions', () => {
   it('maps every version state to only valid UI actions', () => {
-    expect(getMcpVersionActions('draft')).toEqual([
+    expect(getMcpVersionActions('draft', null, true)).toEqual([
       'editDraft',
       'submit',
-      'forcePublish',
       'deleteDraft',
     ]);
-    expect(getMcpVersionActions('reviewing')).toEqual(['forcePublish']);
-    expect(getMcpVersionActions('reviewed')).toEqual([
+    expect(getMcpVersionActions('reviewing', { executionId: '1', status: 'IN_PROGRESS', pipeline: [] }, true))
+      .toEqual(['publish']);
+    expect(getMcpVersionActions('reviewed', { executionId: '1', status: 'APPROVED', pipeline: [] }, true)).toEqual([
+      'submit',
       'publish',
-      'forcePublish',
       'redraft',
     ]);
-    expect(getMcpVersionActions('online')).toEqual(['offline']);
-    expect(getMcpVersionActions('offline')).toEqual(['online']);
+    expect(getMcpVersionActions('online', null, true)).toEqual(['offline']);
+    expect(getMcpVersionActions('offline', null, true)).toEqual(['online']);
+  });
+
+  it('offers force publish only to an administrator after rejection', () => {
+    const rejected = { executionId: '1', status: 'REJECTED' as const, pipeline: [] };
+    expect(getMcpVersionActions('draft', rejected, true)).toEqual([
+      'editDraft',
+      'submit',
+      'deleteDraft',
+      'forcePublish',
+    ]);
+    expect(getMcpVersionActions('reviewed', rejected, true)).toEqual([
+      'submit',
+      'publish',
+      'redraft',
+      'forcePublish',
+    ]);
+    expect(getMcpVersionActions('reviewing', rejected, true)).toEqual([
+      'submit',
+      'publish',
+      'forcePublish',
+    ]);
+    expect(getMcpVersionActions('reviewed', rejected, false)).not.toContain('forcePublish');
   });
 
   it('recognizes only the managed-cutover conflict as lifecycle unavailable', () => {

@@ -3,6 +3,20 @@ type PipelineInfo = {
   historical?: boolean;
 };
 
+export function canForcePublish(
+  versionStatus: string | null | undefined,
+  pipelineInfo: PipelineInfo | null | undefined,
+  globalAdmin: boolean,
+): boolean {
+  if (!globalAdmin || pipelineInfo?.status !== 'REJECTED') {
+    return false;
+  }
+  if (versionStatus === 'draft') {
+    return !pipelineInfo.historical;
+  }
+  return versionStatus === 'reviewing' || versionStatus === 'reviewed';
+}
+
 export function canResubmitReview(
   versionStatus: string | null | undefined,
   pipelineInfo: PipelineInfo | null | undefined,

@@ -175,6 +175,12 @@ by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and
 Nacos 3.4.0; the managed `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
 
+MCP lifecycle Version summaries and exact details now expose optional
+`publishPipelineInfo`. Admin and Console standalone scenarios cover the
+no-Pipeline shape; focused component tests cover approved/rejected payload
+mapping because the standalone profile does not install an MCP review Pipeline
+plugin.
+
 `McpToolsImportConsoleApiOpenApiITCase` verifies that
 `GET /v3/console/ai/mcp/importToolsFromMcp` rejects private or local targets by
 default with an explicit private-allowlist message, without opening a network

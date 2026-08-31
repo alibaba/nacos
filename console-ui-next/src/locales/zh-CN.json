@@ -455,6 +455,7 @@
     "lifecycleAction": {
       "editDraft": "编辑草稿",
       "submit": "提交审核",
+      "resubmit": "重新提交审核",
       "publish": "发布",
       "forcePublish": "强制发布",
       "redraft": "退回草稿",

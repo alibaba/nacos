@@ -1087,6 +1087,13 @@ class McpLifecycleOperationServiceTest {
         
         assertEquals(AiResourceConstants.VERSION_STATUS_REVIEWED,
             versions.get(VERSION_ONE).getStatus());
+        assertTrue(versions.get(VERSION_ONE).getPublishPipelineInfo()
+            .contains("\"status\":\"REJECTED\""));
+        assertTrue(service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE)
+            .getPublishPipelineInfo().contains("\"status\":\"REJECTED\""));
+        assertTrue(service.listMcpServerVersions(NAMESPACE_ID, MCP_NAME, null, 1, 10)
+            .getPageItems().get(0).getPublishPipelineInfo()
+            .contains("\"status\":\"REJECTED\""));
         assertThrows(NacosException.class, () -> service.publishMcpServerVersion(NAMESPACE_ID,
             MCP_NAME, VERSION_ONE));
         McpServerVersionSummary redrafted = service.redraftMcpServerVersion(NAMESPACE_ID,

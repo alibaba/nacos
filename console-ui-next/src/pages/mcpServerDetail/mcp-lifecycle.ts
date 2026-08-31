@@ -1,4 +1,7 @@
 import type { McpVersionStatus } from '@/types/mcp';
+import type { PublishPipelineInfo } from '@/types/pipeline';
+
+import { canForcePublish, canResubmitReview } from '@/components/ai/version-lifecycle';
 
 export type McpVersionAction =
   | 'editDraft'
@@ -10,14 +13,22 @@ export type McpVersionAction =
   | 'offline'
   | 'deleteDraft';
 
-export function getMcpVersionActions(status: McpVersionStatus): McpVersionAction[] {
+export function getMcpVersionActions(
+  status: McpVersionStatus,
+  pipelineInfo: PublishPipelineInfo | null,
+  globalAdmin: boolean,
+): McpVersionAction[] {
+  const forcePublish = canForcePublish(status, pipelineInfo, globalAdmin)
+    ? ['forcePublish' as const]
+    : [];
+  const resubmit = canResubmitReview(status, pipelineInfo) ? ['submit' as const] : [];
   switch (status) {
     case 'draft':
-      return ['editDraft', 'submit', 'forcePublish', 'deleteDraft'];
+      return ['editDraft', 'submit', 'deleteDraft', ...forcePublish];
     case 'reviewing':
-      return ['forcePublish'];
+      return [...resubmit, 'publish', ...forcePublish];
     case 'reviewed':
-      return ['publish', 'forcePublish', 'redraft'];
+      return [...resubmit, 'publish', 'redraft', ...forcePublish];
     case 'online':
       return ['offline'];
     case 'offline':

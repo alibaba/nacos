@@ -1181,6 +1181,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpServerVersionSummary result = new McpServerVersionSummary();
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
+        result.setPublishPipelineInfo(row.getPublishPipelineInfo());
         result.setAuthor(row.getAuthor());
         result.setDescription(row.getDesc());
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
@@ -1197,6 +1198,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpServerVersionSummary summary = toLifecycleSummary(lifecycle.resource, row);
         result.setVersion(summary.getVersion());
         result.setStatus(summary.getStatus());
+        result.setPublishPipelineInfo(summary.getPublishPipelineInfo());
         result.setAuthor(summary.getAuthor());
         result.setDescription(summary.getDescription());
         result.setLatest(summary.getLatest());

@@ -347,6 +347,14 @@ callback moves it to `reviewed`, and only an explicit approved publish updates
 the online lifecycle state and compatibility Manifest. Force-publish remains
 the audited Pipeline bypass.
 
+Version summaries and exact Version details expose the Version row's optional
+`publishPipelineInfo`. Management clients use this state to distinguish an
+approved review from a rejected review; Version status alone is insufficient
+because both outcomes are `reviewed`. `console-ui-next` presents force-publish
+only to a global administrator after the current Pipeline result is
+`REJECTED`, and never as an ordinary draft action. A rejection marked
+`historical` after redraft cannot authorize force-publishing that draft.
+
 ### 6.2 Historical Direct-Online Facades
 
 Existing Admin, Console, Maintainer SDK, Java Client SDK, and gRPC wire shapes
