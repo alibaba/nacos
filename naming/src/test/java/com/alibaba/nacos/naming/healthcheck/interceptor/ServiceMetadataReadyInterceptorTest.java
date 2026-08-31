@@ -32,6 +32,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -98,6 +99,19 @@ class ServiceMetadataReadyInterceptorTest {
         
         assertFalse(interceptor.intercept(healthCheckTask));
         assertFalse(interceptor.intercept(healthCheckTask));
+    }
+    
+    @Test
+    void testCacheProcessorsAfterFirstLookup() {
+        prepareProcessors();
+        when(persistentClientProcessor.isSnapshotLoaded()).thenReturn(false);
+        when(serviceMetadataProcessor.isSnapshotLoaded()).thenReturn(true);
+        
+        assertTrue(interceptor.intercept(healthCheckTask));
+        assertTrue(interceptor.intercept(healthCheckTask));
+        
+        verify(applicationContext).getBean(PersistentClientOperationServiceImpl.class);
+        verify(applicationContext).getBean(ServiceMetadataProcessor.class);
     }
     
     @Test

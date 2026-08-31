@@ -32,6 +32,10 @@ public class ServiceMetadataReadyInterceptor extends AbstractHealthCheckIntercep
     
     private volatile boolean healthCheckReleased;
     
+    private volatile PersistentClientOperationServiceImpl persistentClientProcessor;
+    
+    private volatile ServiceMetadataProcessor serviceMetadataProcessor;
+    
     @Override
     public boolean intercept(NacosHealthCheckTask object) {
         if (healthCheckReleased) {
@@ -43,10 +47,7 @@ public class ServiceMetadataReadyInterceptor extends AbstractHealthCheckIntercep
             return false;
         }
         try {
-            PersistentClientOperationServiceImpl persistentClientProcessor =
-                ApplicationUtils.getBean(PersistentClientOperationServiceImpl.class);
-            ServiceMetadataProcessor serviceMetadataProcessor =
-                ApplicationUtils.getBean(ServiceMetadataProcessor.class);
+            initProcessorsIfNecessary();
             boolean persistentClientSnapshotLoaded = persistentClientProcessor.isSnapshotLoaded();
             boolean serviceMetadataSnapshotLoaded = serviceMetadataProcessor.isSnapshotLoaded();
             if (persistentClientSnapshotLoaded && serviceMetadataSnapshotLoaded) {
@@ -59,6 +60,21 @@ public class ServiceMetadataReadyInterceptor extends AbstractHealthCheckIntercep
         } catch (Exception e) {
             logSkippedTask(object, false, false, applicationStarted);
             return true;
+        }
+    }
+    
+    private void initProcessorsIfNecessary() {
+        if (persistentClientProcessor != null && serviceMetadataProcessor != null) {
+            return;
+        }
+        synchronized (this) {
+            if (persistentClientProcessor == null) {
+                persistentClientProcessor =
+                    ApplicationUtils.getBean(PersistentClientOperationServiceImpl.class);
+            }
+            if (serviceMetadataProcessor == null) {
+                serviceMetadataProcessor = ApplicationUtils.getBean(ServiceMetadataProcessor.class);
+            }
         }
     }
     
