@@ -45,6 +45,7 @@ describe('MCP Console lifecycle source contract', () => {
     expect(detail).toContain('<McpClientConfigCard configurations={clientConfigurations} />');
     expect(detail).not.toContain("t('mcp.capabilities')");
     expect(detail).not.toContain("t('mcp.copyConfig')");
+    expect(detail).not.toContain('mcp.remoteServerConfig.frontEndpointConfigList.map');
   });
 
   it('leaves the legacy UI on its direct-online create and update contract', () => {

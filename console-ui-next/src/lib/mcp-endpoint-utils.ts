@@ -69,7 +69,6 @@ export function resolveMcpEndpointUrl(data: McpServerDetailInfo) {
     || data.backendEndpoints?.[0]?.protocol
     || DEFAULT_ENDPOINT_PROTOCOL;
   const endpoint = data.frontendEndpoints?.[0]
-    || data.remoteServerConfig?.frontEndpointConfigList?.[0]
     || data.backendEndpoints?.[0];
   return buildEndpointUrl(endpoint, fallbackProtocol, data.remoteServerConfig?.exportPath);
 }

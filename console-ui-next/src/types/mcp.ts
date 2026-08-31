@@ -31,10 +31,19 @@ export interface McpServiceRef {
 export interface McpRemoteServerConfig {
   serviceRef?: McpServiceRef;
   exportPath?: string;
-  frontEndpointConfigList?: McpEndpointInfo[];
+  frontEndpointConfigList?: McpFrontEndpointConfig[];
 }
 
 // ===== Endpoint =====
+
+export interface McpFrontEndpointConfig {
+  type?: string;
+  protocol?: string;
+  endpointType?: 'REF' | 'DIRECT' | 'BACKEND';
+  endpointData?: string | McpServiceRef | null;
+  path?: string;
+  headers?: McpEndpointHeader[];
+}
 
 export interface McpEndpointHeader {
   name: string;

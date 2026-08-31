@@ -912,24 +912,6 @@ export default function McpServerDetailPage() {
             </Card>
           )}
 
-          {/* Frontend endpoints from remote config */}
-          {!isStdio && mcp.remoteServerConfig?.frontEndpointConfigList && mcp.remoteServerConfig.frontEndpointConfigList.length > 0 && (
-            <Card className="overflow-hidden py-0 gap-0">
-              <div className="px-5 py-3.5 border-b bg-muted/30">
-                <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  {t('mcp.frontendEndpoints')}
-                </h2>
-              </div>
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  {mcp.remoteServerConfig.frontEndpointConfigList.map((ep, i) => (
-                    <EndpointItem key={i} endpoint={ep} t={t} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
