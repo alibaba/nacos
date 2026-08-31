@@ -1209,8 +1209,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         result.setScope(AiResourceManager.resolveScope(lifecycle.resource));
         ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(
             lifecycle.resource);
-        result.setLabels(versionInfo.getLabels() == null ? new LinkedHashMap<>()
-            : new LinkedHashMap<>(versionInfo.getLabels()));
+        result.setLabels(new LinkedHashMap<>(versionInfo.getLabels()));
         result.setEditingVersion(versionInfo.getEditingVersion());
         result.setReviewingVersion(versionInfo.getReviewingVersion());
         result.setOnlineCount(versionInfo.getOnlineCnt());
