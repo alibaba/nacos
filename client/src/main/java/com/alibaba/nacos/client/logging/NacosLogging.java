@@ -42,6 +42,8 @@ public class NacosLogging {
     
     private NacosLoggingProperties loggingProperties;
     
+    private String lastLoadedConfigLocation;
+    
     private NacosLogging() {
         initLoggingAdapter();
     }
@@ -91,7 +93,7 @@ public class NacosLogging {
                 new NameThreadFactory("com.alibaba.nacos.client.logging"));
         reloadContextService.scheduleAtFixedRate(() -> {
             if (loggingAdapter.isNeedReloadConfiguration()) {
-                loggingAdapter.loadConfiguration(loggingProperties);
+                loadConfiguration();
             }
         }, 0, loggingProperties.getReloadInternal(), TimeUnit.SECONDS);
     }
@@ -112,11 +114,21 @@ public class NacosLogging {
         try {
             if (null != loggingAdapter) {
                 loggingAdapter.loadConfiguration(loggingProperties);
+                logLoadedConfigLocation();
             }
         } catch (Throwable t) {
             LOGGER.warn("Load {} Configuration of Nacos fail, message: {}",
                 LOGGER.getClass().getName(),
                 t.getMessage());
         }
+    }
+    
+    private void logLoadedConfigLocation() {
+        String configLocation = loggingProperties.getLocation();
+        if (null == configLocation || configLocation.equals(lastLoadedConfigLocation)) {
+            return;
+        }
+        lastLoadedConfigLocation = configLocation;
+        LOGGER.info("Nacos client logging configuration loaded from: {}", configLocation);
     }
 }

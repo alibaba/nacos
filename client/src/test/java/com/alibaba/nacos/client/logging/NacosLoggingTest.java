@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -154,4 +155,88 @@ class NacosLoggingTest {
             assertNull(adapterField.get(fresh));
         }
     }
+    
+    @Test
+    void testLoadConfigurationRecordsLoadedConfigLocation() throws Exception {
+        resetLastLoadedConfigLocation();
+        instance = NacosLogging.getInstance();
+        Properties properties = new Properties();
+        properties.setProperty("nacos.logging.config", "/tmp/nacos-logback.xml");
+        loggingProperties = new NacosLoggingProperties("default.xml", properties);
+        Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
+        loggingPropertiesField.setAccessible(true);
+        loggingPropertiesField.set(instance, loggingProperties);
+        Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        adapterField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) adapterField.get(instance);
+        try {
+            adapterField.set(instance, loggingAdapter);
+            instance.loadConfiguration();
+            Field lastLocationField =
+                NacosLogging.class.getDeclaredField("lastLoadedConfigLocation");
+            lastLocationField.setAccessible(true);
+            assertEquals("/tmp/nacos-logback.xml", lastLocationField.get(instance));
+        } finally {
+            adapterField.set(instance, cachedLogging);
+        }
+    }
+    
+    @Test
+    void testLoadConfigurationSkipsRecordingWhenLocationNull() throws Exception {
+        resetLastLoadedConfigLocation();
+        instance = NacosLogging.getInstance();
+        Properties properties = new Properties();
+        properties.setProperty("nacos.logging.default.config.enabled", "false");
+        loggingProperties = new NacosLoggingProperties(null, properties);
+        Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
+        loggingPropertiesField.setAccessible(true);
+        loggingPropertiesField.set(instance, loggingProperties);
+        Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        adapterField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) adapterField.get(instance);
+        try {
+            adapterField.set(instance, loggingAdapter);
+            instance.loadConfiguration();
+            Field lastLocationField =
+                NacosLogging.class.getDeclaredField("lastLoadedConfigLocation");
+            lastLocationField.setAccessible(true);
+            assertNull(lastLocationField.get(instance));
+        } finally {
+            adapterField.set(instance, cachedLogging);
+        }
+    }
+    
+    @Test
+    void testLoadConfigurationKeepsFirstLocationWhenUnchanged() throws Exception {
+        resetLastLoadedConfigLocation();
+        instance = NacosLogging.getInstance();
+        Properties properties = new Properties();
+        properties.setProperty("nacos.logging.config", "/tmp/nacos-logback.xml");
+        loggingProperties = new NacosLoggingProperties("default.xml", properties);
+        Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
+        loggingPropertiesField.setAccessible(true);
+        loggingPropertiesField.set(instance, loggingProperties);
+        Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        adapterField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) adapterField.get(instance);
+        try {
+            adapterField.set(instance, loggingAdapter);
+            instance.loadConfiguration();
+            instance.loadConfiguration();
+            Mockito.verify(loggingAdapter, Mockito.times(2)).loadConfiguration(loggingProperties);
+            Field lastLocationField =
+                NacosLogging.class.getDeclaredField("lastLoadedConfigLocation");
+            lastLocationField.setAccessible(true);
+            assertEquals("/tmp/nacos-logback.xml", lastLocationField.get(instance));
+        } finally {
+            adapterField.set(instance, cachedLogging);
+        }
+    }
+    
+    private void resetLastLoadedConfigLocation() throws Exception {
+        Field lastLocationField = NacosLogging.class.getDeclaredField("lastLoadedConfigLocation");
+        lastLocationField.setAccessible(true);
+        lastLocationField.set(NacosLogging.getInstance(), null);
+    }
+    
 }
