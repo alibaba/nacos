@@ -35,6 +35,7 @@ transport-neutral.
 | --- | --- |
 | IT | Runs through the public Java SDK against a standalone server. |
 | Directed IT | Runs through public SDK clients while an external harness restarts the real standalone server. It is opt-in because ordinary shared-server IT must not stop the server. |
+| Directed Cluster IT | Runs through public SDK clients pinned to explicit node-A/node-B addresses in an externally started cluster. It is opt-in because the default standalone profile has no second node. |
 | UT | Uses deterministic transport, scheduler, reconnect, or failure injection. |
 | IT + UT | The public workflow runs in IT and local invariants are verified by unit tests. |
 | Deferred | Outside this phase; the reason is recorded and no production code is added. |
@@ -68,11 +69,13 @@ transport-neutral.
 | `shouldEnforceConfiguredLocalPublicationCapacityAndReuseSlot` | Workflow-configured SDK Publication soft watermark, whole-batch crossing from below, above-watermark idempotent replacement and new-identity rejection, and slot reuse after deregistration. |
 | `shouldSurfaceServerPublicationCapacityAndStopRejectedRedo` | Workflow-configured authoritative Server Publication soft watermark, whole-batch crossing from below, remote over-limit exception mapping, rejected redo cleanup, and capacity reuse after deregistration. |
 | `shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart` | Opt-in three-node rolling-cluster workflow: independent gRPC and HTTP subscriptions observe a Version published through another node while one node is stopped, retain omitted-selector rollout-safe Endpoint aggregation and exact-selector isolation, then converge again after the stopped node restarts and a later Version is published. |
+| `shouldConvergePinnedNodeDefinitionAndRuntimeChanges` | Opt-in two-node workflow with gRPC and HTTP subscribers pinned to node A. It publishes definition and Runtime changes first through A (A-A) and then through B (A-B), covers storage-changing Version publication and metadata-only online/offline transitions, and cross-checks every callback fingerprint against authoritative Discover on both nodes. |
+| `shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart` | Opt-in two-node peer-restart workflow. It establishes gRPC and HTTP subscriptions on node A, mutates through node B, stops and restarts B, then verifies that the existing A-side Watches receive later definition and Runtime changes without resubscription. The test treats the expected loss of CP quorum while one of two nodes is down as topology unavailability rather than a Watch failure. |
 | `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, namespace mismatch, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
 The same twenty-three stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
-regression. Two opt-in directed workflows passed against real externally controlled
+regression. Four opt-in directed workflows passed against real externally controlled
 servers. `shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart` retains
 independent gRPC and HTTP publishers, a negotiated gRPC Watch, and an HTTP Batch Long
 Poll subscription while one standalone process is stopped and restarted, so the
@@ -82,6 +85,17 @@ with HTTP `HTTP_CLIENT_NOT_FOUND` re-registration and HTTP Watch recovery.
 stops one node while another accepts a new Version, verifies both Watch transports
 converge while that node remains down, restarts it, and verifies both transports converge
 again after a later Version without duplicate or regressive callbacks.
+`shouldConvergePinnedNodeDefinitionAndRuntimeChanges` uses two explicit node addresses,
+never a load-balanced address, so the subscriber remains on A while the mutation owner is
+known. The same run covers A-A and A-B definition plus Runtime paths and treats equality
+between callback, node-A Discover, and node-B Discover fingerprints as the completion
+condition; an early or partial local Storage view therefore cannot make the test pass.
+`shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart` additionally stops B after
+both A-side transports have consumed a B-owned mutation. A two-node cluster cannot retain
+the Config CP majority during that outage, so reads are allowed to report temporary
+consistency unavailability. Once B rejoins and both nodes are readable, a later B-owned
+definition and Runtime mutation must reach the original A-side listeners without a new
+subscribe call.
 Scheduler, listener-failure, transport-error, ability, heartbeat/50404, rollback,
 and redo races remain deterministic UT responsibilities; the shared-server CI run
 is never stopped.

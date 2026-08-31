@@ -17,12 +17,19 @@
 package com.alibaba.nacos.ai.service.agent.watch;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.event.AgentDefinitionChangedEvent;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
+import com.alibaba.nacos.ai.event.AiResourceChangedEvent;
+import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
+import com.alibaba.nacos.ai.service.resource.AiResourceClusterChangePublisher;
+import com.alibaba.nacos.ai.service.resource.NotifyCenterAiResourceChangeNotifier;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageChangeEvent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
@@ -40,10 +47,15 @@ import static org.mockito.Mockito.verify;
 
 class AgentProjectionEventSubscriberTest {
     
+    @AfterEach
+    void tearDown() {
+        AiResourceStorageRouter.reset();
+    }
+    
     @Test
     void testNoopNotifierAcceptsDefinitionChange() {
-        assertDoesNotThrow(() -> AgentProjectionChangeNotifier.NOOP
-            .notifyDefinitionChanged("tenant", "AgentA"));
+        assertDoesNotThrow(() -> AiResourceChangeNotifier.NOOP.notifyChanged("tenant", "agent",
+            "AgentA", AiResourceChangeOperation.UPDATE, false));
     }
     
     @Test
@@ -51,23 +63,33 @@ class AgentProjectionEventSubscriberTest {
         AgentProjectionService projectionService = mock(AgentProjectionService.class);
         AgentProjectionEventSubscriber subscriber =
             new AgentProjectionEventSubscriber(projectionService);
-        AgentDefinitionChangedEvent definition =
-            new AgentDefinitionChangedEvent("tenant", "AgentA");
+        AiResourceChangedEvent definition = new AiResourceChangedEvent("tenant", "agent",
+            "AgentA", AiResourceChangeOperation.UPDATE, false);
+        AiResourceChangedEvent skill = new AiResourceChangedEvent("tenant", "skill", "SkillA",
+            AiResourceChangeOperation.UPDATE, true);
         Service runtime = Service.newService("tenant", Constants.Agent.AGENT_ENDPOINT_GROUP,
             "rad-AgentA-a2a");
         Service ordinary = Service.newService("tenant", "DEFAULT_GROUP", "ordinary");
         
-        assertEquals(Arrays.asList(AgentDefinitionChangedEvent.class,
+        assertEquals(Arrays.asList(AiResourceChangedEvent.class,
             ServiceEvent.ServiceChangedEvent.class), subscriber.subscribeTypes());
         assertEquals("tenant", definition.getNamespaceId());
-        assertEquals("AgentA", definition.getAgentName());
+        assertEquals("AgentA", definition.getResourceName());
         subscriber.onEvent(definition);
+        subscriber.onEvent(skill);
         subscriber.onEvent(new ServiceEvent.ServiceChangedEvent(runtime, "instances"));
         subscriber.onEvent(new ServiceEvent.ServiceChangedEvent(ordinary, "instances"));
+        subscriber.onStorageChanged(
+            new AiResourceStorageChangeEvent("nacos_config", "agent", "agent-key"));
+        subscriber.onStorageChanged(
+            new AiResourceStorageChangeEvent("nacos_config", "skill", "skill-key"));
+        subscriber.onStorageChanged(null);
         
         verify(projectionService).onAgentChanged("tenant", "AgentA");
+        verify(projectionService).onAgentStorageChanged();
         verify(projectionService).onRuntimeServiceChanged(runtime);
         verify(projectionService, never()).onRuntimeServiceChanged(ordinary);
+        verify(projectionService, never()).onAgentChanged("tenant", "SkillA");
     }
     
     @Test
@@ -85,34 +107,36 @@ class AgentProjectionEventSubscriberTest {
     
     @Test
     void testNotifierPublishesDefinitionEvent() {
-        NotifyCenterAgentProjectionChangeNotifier notifier =
-            new NotifyCenterAgentProjectionChangeNotifier();
-        AgentProjectionClusterChangePublisher clusterChangePublisher =
-            mock(AgentProjectionClusterChangePublisher.class);
+        NotifyCenterAiResourceChangeNotifier notifier =
+            new NotifyCenterAiResourceChangeNotifier();
+        AiResourceClusterChangePublisher clusterChangePublisher =
+            mock(AiResourceClusterChangePublisher.class);
         notifier.setClusterChangePublisher(clusterChangePublisher);
         try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
             ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-            notifier.notifyDefinitionChanged("tenant", "AgentA");
+            notifier.notifyChanged("tenant", "agent", "AgentA",
+                AiResourceChangeOperation.UPDATE, true);
             notifyCenter.verify(() -> NotifyCenter.publishEvent(eventCaptor.capture()));
-            assertTrue(eventCaptor.getValue() instanceof AgentDefinitionChangedEvent);
-            AgentDefinitionChangedEvent event =
-                (AgentDefinitionChangedEvent) eventCaptor.getValue();
+            assertTrue(eventCaptor.getValue() instanceof AiResourceChangedEvent);
+            AiResourceChangedEvent event = (AiResourceChangedEvent) eventCaptor.getValue();
             assertEquals("tenant", event.getNamespaceId());
-            assertEquals("AgentA", event.getAgentName());
-            verify(clusterChangePublisher).publish("tenant", "AgentA");
+            assertEquals("AgentA", event.getResourceName());
+            assertTrue(event.isStorageChanged());
+            verify(clusterChangePublisher).publish(event);
         }
     }
     
     @Test
     void testNotifierIgnoresNullOptionalClusterPublisher() {
-        NotifyCenterAgentProjectionChangeNotifier notifier =
-            new NotifyCenterAgentProjectionChangeNotifier();
+        NotifyCenterAiResourceChangeNotifier notifier =
+            new NotifyCenterAiResourceChangeNotifier();
         notifier.setClusterChangePublisher(null);
         try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
             ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-            notifier.notifyDefinitionChanged("tenant", "AgentA");
+            notifier.notifyChanged("tenant", "agent", "AgentA",
+                AiResourceChangeOperation.CREATE, false);
             notifyCenter.verify(() -> NotifyCenter.publishEvent(eventCaptor.capture()));
-            assertTrue(eventCaptor.getValue() instanceof AgentDefinitionChangedEvent);
+            assertTrue(eventCaptor.getValue() instanceof AiResourceChangedEvent);
         }
     }
     
@@ -125,8 +149,8 @@ class AgentProjectionEventSubscriberTest {
             "rad-AgentA-a2a");
         subscriber.register();
         try {
-            new NotifyCenterAgentProjectionChangeNotifier()
-                .notifyDefinitionChanged("tenant", "AgentA");
+            new NotifyCenterAiResourceChangeNotifier().notifyChanged("tenant", "agent",
+                "AgentA", AiResourceChangeOperation.UPDATE, false);
             NotifyCenter.publishEvent(
                 new ServiceEvent.ServiceChangedEvent(runtime, "instances"));
             

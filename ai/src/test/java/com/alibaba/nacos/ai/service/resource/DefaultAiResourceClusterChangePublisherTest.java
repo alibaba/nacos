@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.api.ai.remote.request.cluster.AgentProjectionChangeClusterRequest;
-import com.alibaba.nacos.api.ai.remote.response.cluster.AgentProjectionChangeClusterResponse;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
+import com.alibaba.nacos.ai.event.AiResourceChangedEvent;
+import com.alibaba.nacos.api.ai.remote.request.cluster.AiResourceChangeClusterRequest;
+import com.alibaba.nacos.api.ai.remote.response.cluster.AiResourceChangeClusterResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -43,11 +47,26 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DefaultAgentProjectionClusterChangePublisherTest {
+class DefaultAiResourceClusterChangePublisherTest {
     
-    @AfterEach
-    void tearDown() {
-        AgentWatchMetrics.resetGaugesForTest();
+    @Test
+    void testNullEventAndResourceKeyEqualityBoundaries() {
+        ExecutorService executor = mock(ExecutorService.class);
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(mock(ServerMemberManager.class),
+                mock(ClusterRpcClientProxy.class), executor);
+        publisher.publish(null);
+        verify(executor, never()).execute(any(Runnable.class));
+        
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
+        @SuppressWarnings("unchecked")
+        Map<Object, AiResourceChangedEvent> pending =
+            (Map<Object, AiResourceChangedEvent>) org.springframework.test.util.ReflectionTestUtils
+                .getField(publisher, "pending");
+        Object key = pending.keySet().iterator().next();
+        assertTrue(key.equals(key));
+        assertFalse(key.equals("not-a-resource-key"));
+        publisher.shutdown();
     }
     
     @Test
@@ -59,31 +78,29 @@ class DefaultAgentProjectionClusterChangePublisherTest {
         Member second = mock(Member.class);
         when(memberManager.allMembersWithoutSelf()).thenReturn(Arrays.asList(first, second));
         when(clientProxy.sendRequest(any(Member.class),
-            any(AgentProjectionChangeClusterRequest.class)))
-            .thenReturn(new AgentProjectionChangeClusterResponse());
+            any(AiResourceChangeClusterRequest.class)))
+            .thenReturn(new AiResourceChangeClusterResponse());
         ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager, clientProxy, executor);
-        double successBefore = AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.SUCCESS);
-        
-        publisher.publish("tenant", "agent");
-        publisher.publish("tenant", "agent");
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager, clientProxy, executor);
+        publisher.publish(event(AiResourceChangeOperation.CREATE, true));
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
         assertEquals(1, publisher.pendingCount());
         verify(executor).execute(task.capture());
         task.getValue().run();
         
-        ArgumentCaptor<AgentProjectionChangeClusterRequest> request =
-            ArgumentCaptor.forClass(AgentProjectionChangeClusterRequest.class);
+        ArgumentCaptor<AiResourceChangeClusterRequest> request =
+            ArgumentCaptor.forClass(AiResourceChangeClusterRequest.class);
         verify(clientProxy, times(2)).sendRequest(any(Member.class), request.capture());
         assertEquals("tenant", request.getValue().getNamespaceId());
-        assertEquals("agent", request.getValue().getAgentName());
+        assertEquals("agent", request.getValue().getResourceType());
+        assertEquals("agent-name", request.getValue().getResourceName());
+        assertEquals(AiResourceChangeOperation.UPDATE.name(), request.getValue().getOperation());
+        assertTrue(request.getValue().isStorageChanged());
         assertEquals(0, publisher.pendingCount());
-        assertEquals(successBefore + 2D, AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.SUCCESS));
         publisher.shutdown();
         publisher.shutdown();
-        publisher.publish("tenant", "ignored");
+        publisher.publish(event(AiResourceChangeOperation.DELETE, true));
         verify(executor).shutdownNow();
     }
     
@@ -96,29 +113,18 @@ class DefaultAgentProjectionClusterChangePublisherTest {
         Member second = mock(Member.class);
         when(memberManager.allMembersWithoutSelf()).thenReturn(Arrays.asList(first, second));
         doThrow(new NacosException()).when(clientProxy).sendRequest(eq(first),
-            any(AgentProjectionChangeClusterRequest.class));
-        when(clientProxy.sendRequest(eq(second),
-            any(AgentProjectionChangeClusterRequest.class)))
-            .thenReturn(new AgentProjectionChangeClusterResponse());
+            any(AiResourceChangeClusterRequest.class));
+        when(clientProxy.sendRequest(eq(second), any(AiResourceChangeClusterRequest.class)))
+            .thenReturn(new AiResourceChangeClusterResponse());
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();
             return null;
         }).when(executor).execute(any(Runnable.class));
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager, clientProxy, executor);
-        double failedBefore = AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.FAILED);
-        double successBefore = AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.SUCCESS);
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager, clientProxy, executor);
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
         
-        publisher.publish("tenant", "agent");
-        
-        verify(clientProxy).sendRequest(eq(second),
-            any(AgentProjectionChangeClusterRequest.class));
-        assertEquals(failedBefore + 1D, AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.FAILED));
-        assertEquals(successBefore + 1D, AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.SUCCESS));
+        verify(clientProxy).sendRequest(eq(second), any(AiResourceChangeClusterRequest.class));
         publisher.shutdown();
     }
     
@@ -128,16 +134,12 @@ class DefaultAgentProjectionClusterChangePublisherTest {
         ClusterRpcClientProxy clientProxy = mock(ClusterRpcClientProxy.class);
         ExecutorService executor = mock(ExecutorService.class);
         doThrow(new RejectedExecutionException()).when(executor).execute(any(Runnable.class));
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager, clientProxy, executor);
-        double failedBefore = AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.FAILED);
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager, clientProxy, executor);
         
-        publisher.publish("tenant", "agent");
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
         
         assertEquals(1, publisher.pendingCount());
-        assertEquals(failedBefore + 1D, AgentWatchMetrics.eventCount(
-            AgentWatchMetrics.Event.CLUSTER_HINT, AgentWatchMetrics.Result.FAILED));
         publisher.shutdown();
         assertEquals(0, publisher.pendingCount());
     }
@@ -152,14 +154,14 @@ class DefaultAgentProjectionClusterChangePublisherTest {
             ((Runnable) invocation.getArgument(0)).run();
             return null;
         }).when(executor).execute(any(Runnable.class));
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager, clientProxy, executor);
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager, clientProxy, executor);
         
-        publisher.publish("tenant", "agent");
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
         
         assertEquals(0, publisher.pendingCount());
         verify(clientProxy, never()).sendRequest(any(Member.class),
-            any(AgentProjectionChangeClusterRequest.class));
+            any(AiResourceChangeClusterRequest.class));
         publisher.shutdown();
     }
     
@@ -168,9 +170,9 @@ class DefaultAgentProjectionClusterChangePublisherTest {
         ServerMemberManager memberManager = mock(ServerMemberManager.class);
         ClusterRpcClientProxy clientProxy = mock(ClusterRpcClientProxy.class);
         ExecutorService executor = mock(ExecutorService.class);
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager, clientProxy, executor);
-        publisher.publish("tenant", "agent");
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager, clientProxy, executor);
+        publisher.publish(event(AiResourceChangeOperation.UPDATE, false));
         
         publisher.completeDrain();
         
@@ -180,14 +182,16 @@ class DefaultAgentProjectionClusterChangePublisherTest {
     }
     
     @Test
-    void testProductionExecutorAndNoopPublisherCanShutdown() {
+    void testProductionExecutorNoopAndNonAgentMetricIsolation() {
         ServerMemberManager memberManager = mock(ServerMemberManager.class);
         when(memberManager.allMembersWithoutSelf()).thenReturn(Collections.emptyList());
-        DefaultAgentProjectionClusterChangePublisher publisher =
-            new DefaultAgentProjectionClusterChangePublisher(memberManager,
+        DefaultAiResourceClusterChangePublisher publisher =
+            new DefaultAiResourceClusterChangePublisher(memberManager,
                 mock(ClusterRpcClientProxy.class));
-        AgentProjectionClusterChangePublisher.NOOP.publish("tenant", "agent");
-        publisher.publish("tenant", "agent");
+        AiResourceClusterChangePublisher.NOOP.publish(event(AiResourceChangeOperation.UPDATE,
+            false));
+        publisher.publish(new AiResourceChangedEvent("tenant", "skill", "skill-name",
+            AiResourceChangeOperation.UPDATE, true));
         publisher.shutdown();
         assertEquals(0, publisher.pendingCount());
     }
@@ -200,10 +204,16 @@ class DefaultAgentProjectionClusterChangePublisherTest {
                 mock(ServerMemberManager.class));
             context.getBeanFactory().registerSingleton("clusterRpcClientProxyMock",
                 mock(ClusterRpcClientProxy.class));
-            context.register(DefaultAgentProjectionClusterChangePublisher.class);
+            context.register(DefaultAiResourceClusterChangePublisher.class);
             context.refresh();
-            assertEquals(DefaultAgentProjectionClusterChangePublisher.class,
-                context.getBean(AgentProjectionClusterChangePublisher.class).getClass());
+            assertEquals(DefaultAiResourceClusterChangePublisher.class,
+                context.getBean(AiResourceClusterChangePublisher.class).getClass());
         }
+    }
+    
+    private AiResourceChangedEvent event(AiResourceChangeOperation operation,
+        boolean storageChanged) {
+        return new AiResourceChangedEvent("tenant", "agent", "agent-name", operation,
+            storageChanged);
     }
 }

@@ -475,6 +475,25 @@ Watch 使用与 Discover 相同的公开请求和完整结果，但它的 Wire B
 - 重连时重新注册完整的当前 Watch Intent。丢失、重复、过期或跨节点通知是安全的，
   因为每个被接受的 Hint 后都会执行 Current-fact Discover 和 Fingerprint 比较。
 
+Nacos 将逻辑 AI Resource 失效与物理 Storage 可见性分开处理。已提交的 Agent 操作会
+产生一个不含 Payload 的 Resource Hint，其中只包含 namespace、资源类型、逻辑名称、
+`CREATE`/`UPDATE`/`DELETE` 操作以及是否同时修改了 Storage。该 Hint 在本节点发布并尽力
+发送给当前集群 Peer；它不携带资源内容或鉴权结果，也不改变已提交操作的结果。
+
+`AiResourceStorage` Provider 声明 `STRONG`、`EVENTUAL_WITH_NOTIFICATION` 或
+`EVENTUAL_WITHOUT_NOTIFICATION` 之一。为保持源码兼容，未实现新增方法的 Provider 默认
+为 `EVENTUAL_WITHOUT_NOTIFICATION`，Listener 注册方法默认为空实现。支持通知的最终一致
+Storage 只报告匹配资源类型的内容已经在本节点可见；该回调不是业务事件，也不要求解析
+逻辑资源身份。内置 Nacos Config Provider 将本地 Config 可见通知映射为该回调。
+
+对于 Agent Watch，逻辑 Resource Hint 和 Storage 可见回调都会进入同一个节点内存中的
+延迟合并 Projection Refresh。该 Refresh 只能存在于内存，不得写入 `ai_resource_task`
+或其他持久任务表。因此 Storage 回调先到、Resource Hint 先到、重复到达或跨越多个合并
+窗口都安全：过早的 Refresh 可能仍读取旧的 Current Fact，后续信号会再次刷新；相同
+Fingerprint 会抑制应用回调。周期性的 Active Projection Reconciliation 会修复丢失的
+集群 Hint，或没有 Storage 通知的 Provider 所留下的缺口。Runtime Endpoint 失效仍复用
+Naming 收敛后的 Service Change Event。
+
 Canonical Watch Key 包含生效 `namespaceId`、规范化 `AgentReference`、规范化 Filter
 以及调用方所有的订阅身份。Visibility 是鉴权决策，不进入 Projection Key 或 Fingerprint。
 

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -181,6 +182,14 @@ public class AgentProjectionService {
     }
     
     /**
+     * Revalidate active Agent Projections after an eventually consistent storage provider
+     * reports that AI Agent content may now be visible locally.
+     */
+    public void onAgentStorageChanged() {
+        markDirty(registry.activeKeys(), AgentProjectionChangeReason.STORAGE);
+    }
+    
+    /**
      * Mark every active Projection depending on one physical Naming Service dirty.
      *
      * @param service physical Naming Service
@@ -302,7 +311,7 @@ public class AgentProjectionService {
         }
     }
     
-    private void markDirty(Set<AgentProjectionKey> keys,
+    private void markDirty(Collection<AgentProjectionKey> keys,
         AgentProjectionChangeReason reason) {
         for (AgentProjectionKey key : keys) {
             taskEngine.markDirty(key, reason);

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.remote.request.cluster.AgentProjectionChangeClusterRequest;
-import com.alibaba.nacos.api.ai.remote.response.cluster.AgentProjectionChangeClusterResponse;
+import com.alibaba.nacos.api.ai.remote.request.cluster.AiResourceChangeClusterRequest;
+import com.alibaba.nacos.api.ai.remote.response.cluster.AiResourceChangeClusterResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.Payload;
 import org.junit.jupiter.api.Test;
@@ -27,20 +27,24 @@ import java.util.ServiceLoader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentProjectionChangeClusterRequestTest {
+class AiResourceChangeClusterRequestTest {
     
     @Test
     void testClusterBinding() {
-        AgentProjectionChangeClusterRequest request =
-            new AgentProjectionChangeClusterRequest();
+        AiResourceChangeClusterRequest request = new AiResourceChangeClusterRequest();
         request.setNamespaceId("tenant");
-        request.setAgentName("agent");
-        AgentProjectionChangeClusterResponse response =
-            new AgentProjectionChangeClusterResponse();
+        request.setResourceType("agent");
+        request.setResourceName("agent-name");
+        request.setOperation("UPDATE");
+        request.setStorageChanged(true);
+        AiResourceChangeClusterResponse response = new AiResourceChangeClusterResponse();
         
         assertEquals(Constants.AI.AI_MODULE, request.getModule());
         assertEquals("tenant", request.getNamespaceId());
-        assertEquals("agent", request.getAgentName());
+        assertEquals("agent", request.getResourceType());
+        assertEquals("agent-name", request.getResourceName());
+        assertEquals("UPDATE", request.getOperation());
+        assertTrue(request.isStorageChanged());
         assertTrue(response.isSuccess());
     }
     
@@ -49,8 +53,8 @@ class AgentProjectionChangeClusterRequestTest {
         boolean requestRegistered = false;
         boolean responseRegistered = false;
         for (Payload payload : ServiceLoader.load(Payload.class)) {
-            requestRegistered |= payload instanceof AgentProjectionChangeClusterRequest;
-            responseRegistered |= payload instanceof AgentProjectionChangeClusterResponse;
+            requestRegistered |= payload instanceof AiResourceChangeClusterRequest;
+            responseRegistered |= payload instanceof AiResourceChangeClusterResponse;
         }
         assertTrue(requestRegistered);
         assertTrue(responseRegistered);

@@ -545,6 +545,33 @@ wire Binding is an invalidation protocol rather than a business-data stream.
   stale, or cross-node notifications are safe because every accepted hint is
   followed by current-fact Discover and fingerprint comparison.
 
+Nacos separates logical AI-resource invalidation from physical Storage
+visibility. A committed Agent operation emits one payload-free resource hint
+containing the namespace, resource type, logical name, `CREATE`/`UPDATE`/`DELETE`
+operation, and whether Storage also changed. The hint is published locally and
+best-effort to current cluster peers; it never carries resource bytes or an
+authorization result and never changes the outcome of the committed operation.
+
+An `AiResourceStorage` provider declares one of `STRONG`,
+`EVENTUAL_WITH_NOTIFICATION`, or `EVENTUAL_WITHOUT_NOTIFICATION`. For source
+compatibility, a provider that does not implement the added methods defaults to
+`EVENTUAL_WITHOUT_NOTIFICATION`, and listener registration methods are no-op.
+An eventually consistent provider with notification reports only that matching
+resource-type content is locally visible; the callback is not a business event
+and need not decode the logical resource identity. The built-in Nacos Config
+provider maps its local Config visibility notification to this callback.
+
+For Agent Watch, both the logical resource hint and the Storage visibility
+callback enqueue the same node-local, delayed, coalescing Projection refresh.
+That refresh is memory-only: it MUST NOT create an `ai_resource_task` row or any
+other durable task. Callback-before-hint, hint-before-callback, duplicates, and
+separated delivery windows are therefore safe. A premature refresh may still
+read the old current fact, while the later signal refreshes it again; equal
+fingerprints suppress an application callback. Periodic active-Projection
+reconciliation repairs a missed cluster hint or a provider without Storage
+notification. Runtime Endpoint invalidation continues to follow Naming's
+converged Service-change events.
+
 The canonical Watch key contains the effective `namespaceId`, normalized
 `AgentReference`, normalized filter, and caller-owned subscription identity.
 Visibility is an authorization decision and is not part of the projection key

@@ -14,27 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.api.ai.remote.response.cluster;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Publishes committed logical Agent changes to the Projection Core.
+ * Response for one best-effort AI resource cluster change hint.
  *
  * @author Nacos
  */
-public interface AgentProjectionChangeNotifier {
-    
-    AgentProjectionChangeNotifier NOOP = new AgentProjectionChangeNotifier() {
-        
-        @Override
-        public void notifyDefinitionChanged(String namespaceId, String agentName) {
-        }
-    };
-    
-    /**
-     * Notify one committed Agent logical-key change.
-     *
-     * @param namespaceId namespace identifier
-     * @param agentName Agent name
-     */
-    void notifyDefinitionChanged(String namespaceId, String agentName);
+public class AiResourceChangeClusterResponse extends Response {
 }

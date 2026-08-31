@@ -40,6 +40,7 @@ only own content bytes for an opaque storage key.
 | Opaque key | Provider-specific key that upper layers should not parse. |
 | Content | Binary or text payload associated with an AI resource version. |
 | Metadata | AI resource record stored by the AI persistence layer. |
+| Local visibility callback | Best-effort hint emitted after a provider observes a content change in its local read path. |
 
 ## SPI
 
@@ -58,6 +59,24 @@ The storage service implements:
 | `save(storageKey, content)` | Store content for the key. |
 | `get(storageKey)` | Read content for the key, or return null when absent. |
 | `delete(storageKey)` | Delete content for the key. |
+| `consistencyMode()` | Declare the provider's read-after-write and local-notification model. The compatibility default is `EVENTUAL_WITHOUT_NOTIFICATION`. |
+| `addChangeListener(listener)` | Register a local-visibility listener. The compatibility default is a no-op. |
+| `removeChangeListener(listener)` | Remove a local-visibility listener. The compatibility default is a no-op. |
+
+The consistency modes are:
+
+| Mode | Contract |
+|------|----------|
+| `STRONG` | A committed operation is visible through the provider's read path before it returns. A callback is not required for correctness. |
+| `EVENTUAL_WITH_NOTIFICATION` | A committed operation may become visible later on another node. The provider emits a best-effort local-visibility callback when its local read path may observe new content. |
+| `EVENTUAL_WITHOUT_NOTIFICATION` | A committed operation may become visible later and the provider offers no local callback contract. This is the default for existing third-party implementations. |
+
+A storage callback is an invalidation hint, not content, an authorization grant,
+or proof that every related metadata row is visible. It may be duplicated,
+coarse-grained, delayed, or delivered before the corresponding AI resource
+change hint. Its provider-specific notification key remains opaque. A provider
+may include a resource-type hint when it can infer one without reversing an
+opaque or hashed key; consumers must tolerate an absent hint.
 
 The plugin is exposed to the core plugin manager as type `ai-storage`.
 
@@ -74,6 +93,9 @@ and must not receive content operations.
 
 The default provider is `nacos_config`, which stores AI resource content through
 Nacos config storage.
+It declares `EVENTUAL_WITH_NOTIFICATION` and adapts local Config cache-change
+events for AI-owned coordinates into storage local-visibility callbacks. It
+must not emit callbacks for ordinary user Config coordinates.
 When the `nacos_config` provider maps an opaque key to a Nacos config coordinate,
 it must use stable physical mappings for the logical `dataId` and canonical
 resource group:
@@ -195,6 +217,14 @@ Storage plugins must preserve byte content exactly. They must not change
 resource metadata, version state, [visibility](../auth/visibility-plugin-spec.md),
 or authorization. Missing storage providers must fail explicitly. Publish-time
 review remains owned by the [AI pipeline](ai-pipeline-plugin-spec.md).
+
+The AI resource layer owns cross-node resource-change notification. Storage
+callbacks and resource-change hints may both enqueue the same node-local,
+delay-merged projection refresh. Such refresh work is transient process state:
+it must not be persisted to `ai_resource_task` or another durable task table.
+Durable search-index and lifecycle tasks remain independent from Watch
+projection refresh. Providers must not publish resource bytes through the
+callback contract.
 
 Implementations must document:
 

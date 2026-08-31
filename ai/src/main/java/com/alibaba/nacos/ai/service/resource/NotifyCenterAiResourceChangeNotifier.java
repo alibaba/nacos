@@ -14,36 +14,38 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.ai.service.resource;
 
-import com.alibaba.nacos.ai.event.AgentDefinitionChangedEvent;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
+import com.alibaba.nacos.ai.event.AiResourceChangedEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * NotifyCenter-backed Agent Projection change publisher.
+ * NotifyCenter-backed AI resource change publisher.
  *
  * @author Nacos
  */
 @Component
-public class NotifyCenterAgentProjectionChangeNotifier
-    implements AgentProjectionChangeNotifier {
+public class NotifyCenterAiResourceChangeNotifier implements AiResourceChangeNotifier {
     
-    private AgentProjectionClusterChangePublisher clusterChangePublisher =
-        AgentProjectionClusterChangePublisher.NOOP;
+    private AiResourceClusterChangePublisher clusterChangePublisher =
+        AiResourceClusterChangePublisher.NOOP;
     
     @Autowired(required = false)
-    public void setClusterChangePublisher(
-        AgentProjectionClusterChangePublisher clusterChangePublisher) {
+    public void setClusterChangePublisher(AiResourceClusterChangePublisher clusterChangePublisher) {
         if (clusterChangePublisher != null) {
             this.clusterChangePublisher = clusterChangePublisher;
         }
     }
     
     @Override
-    public void notifyDefinitionChanged(String namespaceId, String agentName) {
-        NotifyCenter.publishEvent(new AgentDefinitionChangedEvent(namespaceId, agentName));
-        clusterChangePublisher.publish(namespaceId, agentName);
+    public void notifyChanged(String namespaceId, String resourceType, String resourceName,
+        AiResourceChangeOperation operation, boolean storageChanged) {
+        AiResourceChangedEvent event = new AiResourceChangedEvent(namespaceId, resourceType,
+            resourceName, operation, storageChanged);
+        NotifyCenter.publishEvent(event);
+        clusterChangePublisher.publish(event);
     }
 }

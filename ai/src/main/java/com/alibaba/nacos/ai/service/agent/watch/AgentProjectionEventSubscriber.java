@@ -17,13 +17,16 @@
 package com.alibaba.nacos.ai.service.agent.watch;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.event.AgentDefinitionChangedEvent;
+import com.alibaba.nacos.ai.event.AiResourceChangedEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageChangeEvent;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorageChangeListener;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -39,7 +42,8 @@ import java.util.List;
  * @author Nacos
  */
 @Component
-public class AgentProjectionEventSubscriber extends SmartSubscriber {
+public class AgentProjectionEventSubscriber extends SmartSubscriber
+    implements AiResourceStorageChangeListener {
     
     private static final Logger LOGGER =
         LoggerFactory.getLogger(AgentProjectionEventSubscriber.class);
@@ -53,30 +57,43 @@ public class AgentProjectionEventSubscriber extends SmartSubscriber {
     @PostConstruct
     public void register() {
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
+        AiResourceStorageRouter.getInstance().addChangeListener(this);
     }
     
     @PreDestroy
     public void deregister() {
+        AiResourceStorageRouter.getInstance().removeChangeListener(this);
         NotifyCenter.deregisterSubscriber(this);
     }
     
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
-        return Arrays.<Class<? extends Event>>asList(AgentDefinitionChangedEvent.class,
+        return Arrays.<Class<? extends Event>>asList(AiResourceChangedEvent.class,
             ServiceEvent.ServiceChangedEvent.class);
     }
     
     @Override
     public void onEvent(Event event) {
-        if (event instanceof AgentDefinitionChangedEvent) {
-            AgentDefinitionChangedEvent changed = (AgentDefinitionChangedEvent) event;
-            projectionService.onAgentChanged(changed.getNamespaceId(), changed.getAgentName());
+        if (event instanceof AiResourceChangedEvent) {
+            AiResourceChangedEvent changed = (AiResourceChangedEvent) event;
+            if (Constants.Agent.RESOURCE_TYPE_AGENT.equals(changed.getResourceType())) {
+                projectionService.onAgentChanged(changed.getNamespaceId(),
+                    changed.getResourceName());
+            }
             return;
         }
         Service service = ((ServiceEvent.ServiceChangedEvent) event).getService();
         if (Constants.Agent.AGENT_ENDPOINT_GROUP.equals(service.getGroup())) {
             LOGGER.debug("Runtime service change invalidates Agent projections.");
             projectionService.onRuntimeServiceChanged(service);
+        }
+    }
+    
+    @Override
+    public void onStorageChanged(AiResourceStorageChangeEvent event) {
+        if (event != null
+            && Constants.Agent.RESOURCE_TYPE_AGENT.equals(event.getResourceType())) {
+            projectionService.onAgentStorageChanged();
         }
     }
 }

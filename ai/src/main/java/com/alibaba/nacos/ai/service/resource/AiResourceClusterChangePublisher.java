@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.ai.service.resource;
+
+import com.alibaba.nacos.ai.event.AiResourceChangedEvent;
 
 /**
- * Source that dirtied an Agent Projection.
+ * Publishes a best-effort logical AI resource change hint to peer server nodes.
  *
  * @author Nacos
  */
-public enum AgentProjectionChangeReason {
+public interface AiResourceClusterChangePublisher {
     
-    INITIAL,
+    AiResourceClusterChangePublisher NOOP = new AiResourceClusterChangePublisher() {
+        
+        @Override
+        public void publish(AiResourceChangedEvent event) {
+        }
+    };
     
-    DEFINITION,
-    
-    STORAGE,
-    
-    RUNTIME,
-    
-    RECONCILIATION,
-    
-    RETRY
+    /**
+     * Publish one hint without changing the owning business operation outcome.
+     *
+     * @param event logical resource change
+     */
+    void publish(AiResourceChangedEvent event);
 }

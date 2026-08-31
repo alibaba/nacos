@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.plugin.ai.storage.spi;
+
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageChangeEvent;
 
 /**
- * Source that dirtied an Agent Projection.
+ * Listener for best-effort local AI storage visibility changes.
  *
  * @author Nacos
  */
-public enum AgentProjectionChangeReason {
+@FunctionalInterface
+public interface AiResourceStorageChangeListener {
     
-    INITIAL,
-    
-    DEFINITION,
-    
-    STORAGE,
-    
-    RUNTIME,
-    
-    RECONCILIATION,
-    
-    RETRY
+    /**
+     * Handle one local visibility hint without reading content in the callback thread.
+     *
+     * @param event storage visibility event
+     */
+    void onStorageChanged(AiResourceStorageChangeEvent event);
 }

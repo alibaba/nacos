@@ -20,15 +20,21 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 
 /**
- * Best-effort cluster hint that one logical Agent definition may have changed.
+ * Best-effort cluster hint that one logical AI resource may have changed.
  *
  * @author Nacos
  */
-public class AgentProjectionChangeClusterRequest extends Request {
+public class AiResourceChangeClusterRequest extends Request {
     
     private String namespaceId;
     
-    private String agentName;
+    private String resourceType;
+    
+    private String resourceName;
+    
+    private String operation;
+    
+    private boolean storageChanged;
     
     @Override
     public String getModule() {
@@ -43,11 +49,35 @@ public class AgentProjectionChangeClusterRequest extends Request {
         this.namespaceId = namespaceId;
     }
     
-    public String getAgentName() {
-        return agentName;
+    public String getResourceType() {
+        return resourceType;
     }
     
-    public void setAgentName(String agentName) {
-        this.agentName = agentName;
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+    
+    public String getResourceName() {
+        return resourceName;
+    }
+    
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+    
+    public String getOperation() {
+        return operation;
+    }
+    
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+    
+    public boolean isStorageChanged() {
+        return storageChanged;
+    }
+    
+    public void setStorageChanged(boolean storageChanged) {
+        this.storageChanged = storageChanged;
     }
 }

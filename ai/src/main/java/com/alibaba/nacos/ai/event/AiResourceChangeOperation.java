@@ -14,27 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.agent.watch;
+package com.alibaba.nacos.ai.event;
 
 /**
- * Publishes a best-effort logical Agent change hint to peer server nodes.
+ * Logical AI resource mutation represented by a current-fact invalidation hint.
  *
  * @author Nacos
  */
-public interface AgentProjectionClusterChangePublisher {
+public enum AiResourceChangeOperation {
     
-    AgentProjectionClusterChangePublisher NOOP = new AgentProjectionClusterChangePublisher() {
-        
-        @Override
-        public void publish(String namespaceId, String agentName) {
-        }
-    };
+    CREATE,
     
-    /**
-     * Publish one hint without changing the outcome of the owning business operation.
-     *
-     * @param namespaceId namespace identifier
-     * @param agentName logical Agent name
-     */
-    void publish(String namespaceId, String agentName);
+    UPDATE,
+    
+    DELETE
 }

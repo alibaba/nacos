@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.DoubleAdder;
  *
  * @author Nacos
  */
-final class AgentWatchMetrics {
+public final class AgentWatchMetrics {
     
     static final String ACTIVE_METRIC = "nacos_ai_agent_watch_active";
     
@@ -81,6 +81,18 @@ final class AgentWatchMetrics {
     }
     
     private AgentWatchMetrics() {
+    }
+    
+    /**
+     * Record delivery of one Agent resource cluster change hint.
+     *
+     * <p>This narrow facade lets the protocol-neutral AI resource notifier preserve the Agent
+     * Watch metric without exposing the remaining Agent Watch metric model.</p>
+     *
+     * @param success whether delivery succeeded
+     */
+    public static void recordClusterHint(boolean success) {
+        record(Event.CLUSTER_HINT, success ? Result.SUCCESS : Result.FAILED);
     }
     
     static void setActiveProjections(int count) {

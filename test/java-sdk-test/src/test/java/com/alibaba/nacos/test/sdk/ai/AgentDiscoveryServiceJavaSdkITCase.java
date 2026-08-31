@@ -143,6 +143,21 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String CLUSTER_ROLLING_CONTROL_DIR_PROPERTY =
         "nacos.agent.cluster.rolling.control.dir";
 
+    private static final String CLUSTER_CHANGE_ENABLED_PROPERTY =
+        "nacos.agent.cluster.change.enabled";
+
+    private static final String CLUSTER_CHANGE_RESTART_ENABLED_PROPERTY =
+        "nacos.agent.cluster.change.restart.enabled";
+
+    private static final String CLUSTER_CHANGE_RESTART_CONTROL_DIR_PROPERTY =
+        "nacos.agent.cluster.change.restart.control.dir";
+
+    private static final String CLUSTER_NODE_A_ADDRESS_PROPERTY =
+        "nacos.agent.cluster.node-a.address";
+
+    private static final String CLUSTER_NODE_B_ADDRESS_PROPERTY =
+        "nacos.agent.cluster.node-b.address";
+
     private static final String SERVER_PUBLICATION_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
 
@@ -1487,6 +1502,185 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 deregistrationEndpoint(httpVersionThree))));
         waitForEndpointCount(grpcService, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
     }
+
+    @Test
+    @EnabledIfSystemProperty(named = CLUSTER_CHANGE_ENABLED_PROPERTY, matches = "true")
+    void shouldConvergePinnedNodeDefinitionAndRuntimeChanges() throws Exception {
+        String nodeAAddress = requiredDistinctClusterAddress(CLUSTER_NODE_A_ADDRESS_PROPERTY,
+            null);
+        String nodeBAddress = requiredDistinctClusterAddress(CLUSTER_NODE_B_ADDRESS_PROPERTY,
+            nodeAAddress);
+        AgentMaintainerService maintainerA = createAgentMaintainerService(nodeAAddress);
+        AgentMaintainerService maintainerB = createAgentMaintainerService(nodeBAddress);
+        String agentName = randomServiceName("agent-cluster-change");
+        createPublishedAgent(maintainerA, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("cluster-change"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+
+        AiService grpcReaderA =
+            createAiServiceAt(nodeAAddress, AgentTransportMode.GRPC.getValue());
+        AiService httpReaderA =
+            createAiServiceAt(nodeAAddress, AgentTransportMode.HTTP.getValue());
+        AiService httpReaderB =
+            createAiServiceAt(nodeBAddress, AgentTransportMode.HTTP.getValue());
+        AiService publisherA =
+            createAiServiceAt(nodeAAddress, AgentTransportMode.HTTP.getValue());
+        AiService publisherB =
+            createAiServiceAt(nodeBAddress, AgentTransportMode.HTTP.getValue());
+        AgentReference reference = reference(agentName, null, null);
+        waitUntilLong("initial Agent definition must become visible on both cluster nodes", () ->
+            VERSION.equals(grpcReaderA.discoverAgent(reference).getVersion())
+                && VERSION.equals(httpReaderA.discoverAgent(reference).getVersion())
+                && VERSION.equals(httpReaderB.discoverAgent(reference).getVersion()));
+        RecordingAgentListener grpcListener = new RecordingAgentListener();
+        RecordingAgentListener httpListener = new RecordingAgentListener();
+        assertEquals(VERSION, grpcReaderA.subscribeAgent(reference, grpcListener).getVersion());
+        assertEquals(VERSION, httpReaderA.subscribeAgent(reference, httpListener).getVersion());
+        addCleanup(() -> grpcReaderA.unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> httpReaderA.unsubscribeAgent(reference, httpListener));
+
+        createPublishedVersion(maintainerA, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
+        assertPinnedClusterCallbacks("A-A Version publication", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_2.equals(result.getVersion()));
+
+        Endpoint endpointA = endpoint(randomPort(), "/cluster-a", "cluster-a");
+        publisherA.registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+            Collections.singletonList(endpointA)));
+        addCleanup(() -> publisherA.deregisterAgentEndpoints(
+            deregistration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointA)))));
+        assertPinnedClusterCallbacks("A-A Runtime registration", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_2.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri()));
+
+        createPublishedVersion(maintainerB, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
+        assertPinnedClusterCallbacks("A-B Version publication", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_3.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri()));
+
+        Endpoint endpointB = endpoint(randomPort(), "/cluster-b", "cluster-b");
+        publisherB.registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
+            Collections.singletonList(endpointB)));
+        addCleanup(() -> publisherB.deregisterAgentEndpoints(
+            deregistration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointB)))));
+        assertPinnedClusterCallbacks("A-B Runtime registration", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_3.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
+
+        maintainerB.offline(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentName, VERSION_2));
+        assertPinnedClusterCallbacks("A-B metadata-only offline", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_3.equals(result.getVersion())
+                && !containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
+
+        maintainerA.online(Constants.DEFAULT_NAMESPACE_ID,
+            versionCommand(agentName, VERSION_2));
+        assertPinnedClusterCallbacks("A-A metadata-only online", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_2.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
+
+        publisherA.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpointA))));
+        assertPinnedClusterCallbacks("A-A Runtime deregistration", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> !containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
+        publisherB.deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpointB))));
+        assertPinnedClusterCallbacks("A-B Runtime deregistration", grpcReaderA, httpReaderA,
+            httpReaderB, reference, grpcListener, httpListener,
+            result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = CLUSTER_CHANGE_RESTART_ENABLED_PROPERTY, matches = "true")
+    void shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart() throws Exception {
+        Path controlDirectory =
+            Paths.get(System.getProperty(CLUSTER_CHANGE_RESTART_CONTROL_DIR_PROPERTY));
+        Files.createDirectories(controlDirectory);
+        Path ready = controlDirectory.resolve("client-ready");
+        Path nodeStopped = controlDirectory.resolve("node-b-stopped");
+        Path downObserved = controlDirectory.resolve("client-observed-peer-down");
+        Path nodeRestarted = controlDirectory.resolve("node-b-restarted");
+        Files.deleteIfExists(ready);
+        Files.deleteIfExists(nodeStopped);
+        Files.deleteIfExists(downObserved);
+        Files.deleteIfExists(nodeRestarted);
+
+        String nodeAAddress = requiredDistinctClusterAddress(CLUSTER_NODE_A_ADDRESS_PROPERTY,
+            null);
+        String nodeBAddress = requiredDistinctClusterAddress(CLUSTER_NODE_B_ADDRESS_PROPERTY,
+            nodeAAddress);
+        AgentMaintainerService maintainerA = createAgentMaintainerService(nodeAAddress);
+        AgentMaintainerService maintainerB = createAgentMaintainerService(nodeBAddress);
+        String agentName = randomServiceName("agent-cluster-peer-restart");
+        createPublishedAgent(maintainerA, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("cluster-peer-restart"),
+            Collections.singletonList(PROTOCOL_A2A), false);
+
+        AiService grpcReaderA =
+            createAiServiceAt(nodeAAddress, AgentTransportMode.GRPC.getValue());
+        AiService httpReaderA =
+            createAiServiceAt(nodeAAddress, AgentTransportMode.HTTP.getValue());
+        AiService httpReaderB =
+            createAiServiceAt(nodeBAddress, AgentTransportMode.HTTP.getValue());
+        AiService publisherB =
+            createAiServiceAt(nodeBAddress, AgentTransportMode.HTTP.getValue());
+        AgentReference reference = reference(agentName, null, null);
+        waitUntilLong("initial Agent definition must become visible on both cluster nodes", () ->
+            VERSION.equals(grpcReaderA.discoverAgent(reference).getVersion())
+                && VERSION.equals(httpReaderA.discoverAgent(reference).getVersion())
+                && VERSION.equals(httpReaderB.discoverAgent(reference).getVersion()));
+        RecordingAgentListener grpcListener = new RecordingAgentListener();
+        RecordingAgentListener httpListener = new RecordingAgentListener();
+        assertEquals(VERSION, grpcReaderA.subscribeAgent(reference, grpcListener).getVersion());
+        assertEquals(VERSION, httpReaderA.subscribeAgent(reference, httpListener).getVersion());
+        addCleanup(() -> grpcReaderA.unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> httpReaderA.unsubscribeAgent(reference, httpListener));
+
+        createPublishedVersion(maintainerB, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
+        assertPinnedClusterCallbacks("A-B Version publication before peer restart", grpcReaderA,
+            httpReaderA, httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_2.equals(result.getVersion()));
+        writeMarker(ready, agentName);
+
+        waitForMarker(nodeStopped, "external harness stops cluster node B");
+        waitUntilLong("the SDK pinned to node B must observe the stopped peer", () ->
+            searchUnavailable(httpReaderB, agentName));
+        writeMarker(downObserved, agentName);
+
+        waitForMarker(nodeRestarted, "external harness restarts cluster node B");
+        waitUntilLong("both nodes must become readable after the peer restart", () ->
+            VERSION_2.equals(grpcReaderA.discoverAgent(reference).getVersion())
+                && VERSION_2.equals(httpReaderA.discoverAgent(reference).getVersion())
+                && VERSION_2.equals(httpReaderB.discoverAgent(reference).getVersion()));
+        createPublishedVersion(maintainerB, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
+        assertPinnedClusterCallbacks("A-B Version publication after peer restart", grpcReaderA,
+            httpReaderA, httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_3.equals(result.getVersion()));
+
+        Endpoint endpointAfterRestart =
+            endpoint(randomPort(), "/cluster-peer-restarted", "cluster-peer-restarted");
+        publisherB.registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
+            Collections.singletonList(endpointAfterRestart)));
+        addCleanup(() -> publisherB.deregisterAgentEndpoints(
+            deregistration(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointAfterRestart)))));
+        assertPinnedClusterCallbacks("A-B Runtime registration after peer restart", grpcReaderA,
+            httpReaderA, httpReaderB, reference, grpcListener, httpListener,
+            result -> VERSION_3.equals(result.getVersion())
+                && containsEndpoint(result, PROTOCOL_A2A, endpointAfterRestart.getUri()));
+    }
     
     @Test
     void shouldDeregisterActiveHttpPublicationDuringIdempotentShutdown() throws Exception {
@@ -1899,6 +2093,13 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return AiMaintainerFactory.createAiMaintainerService(properties).agent();
     }
 
+    private AgentMaintainerService createAgentMaintainerService(String serverAddress)
+        throws NacosException {
+        Properties properties = sdkProperties(serverAddress);
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).agent();
+    }
+
     @Override
     protected AiService createAiService() throws Exception {
         AiService result = super.createAiService();
@@ -1918,6 +2119,20 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             properties.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
         }
         return createAiService(properties);
+    }
+
+    private AiService createAiServiceAt(String serverAddress, String transport)
+        throws Exception {
+        Properties properties = sdkProperties(serverAddress);
+        properties.setProperty(PropertyKeyConst.NAMESPACE, Constants.DEFAULT_NAMESPACE_ID);
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
+        return createAiService(properties);
+    }
+
+    private Properties sdkProperties(String serverAddress) {
+        Properties result = new Properties();
+        result.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddress);
+        return result;
     }
     
     private void createPublishedAgent(AgentMaintainerService maintainer, String namespaceId,
@@ -2326,6 +2541,49 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         }
         fail(reason);
         return null;
+    }
+
+    private void assertPinnedClusterCallbacks(String phase, AiService grpcReaderA,
+        AiService httpReaderA, AiService readerB, AgentReference reference,
+        RecordingAgentListener grpcListener, RecordingAgentListener httpListener,
+        Predicate<AgentDiscoveryResult> predicate) throws Exception {
+        String expectedFingerprint = assertPinnedNodeCallbacks(phase, grpcReaderA, httpReaderA,
+            reference, grpcListener, httpListener, predicate);
+        waitUntilLong(phase + " must converge on authoritative Discover from node B", () ->
+            expectedFingerprint.equals(AgentDiscoveryCanonicalizer.fingerprint(
+                readerB.discoverAgent(reference))));
+    }
+
+    private String assertPinnedNodeCallbacks(String phase, AiService grpcReaderA,
+        AiService httpReaderA, AgentReference reference,
+        RecordingAgentListener grpcListener, RecordingAgentListener httpListener,
+        Predicate<AgentDiscoveryResult> predicate) throws Exception {
+        AgentDiscoveryResult grpcResult = awaitEvent(grpcListener,
+            phase + " must notify the gRPC subscriber pinned to node A", predicate);
+        AgentDiscoveryResult httpResult = awaitEvent(httpListener,
+            phase + " must notify the HTTP subscriber pinned to node A", predicate);
+        String expectedFingerprint = AgentDiscoveryCanonicalizer.fingerprint(grpcResult);
+        assertEquals(expectedFingerprint,
+            AgentDiscoveryCanonicalizer.fingerprint(httpResult),
+            phase + " must deliver the same complete Snapshot to both transports");
+        waitUntilLong(phase + " must converge on authoritative Discover from node A", () ->
+            expectedFingerprint.equals(AgentDiscoveryCanonicalizer.fingerprint(
+                grpcReaderA.discoverAgent(reference)))
+                && expectedFingerprint.equals(AgentDiscoveryCanonicalizer.fingerprint(
+                    httpReaderA.discoverAgent(reference))));
+        return expectedFingerprint;
+    }
+
+    private String requiredDistinctClusterAddress(String property, String otherAddress) {
+        String value = System.getProperty(property);
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalStateException("Missing required cluster IT property: " + property);
+        }
+        if (value.equals(otherAddress)) {
+            throw new IllegalStateException("Cluster IT node addresses must be different: "
+                + value);
+        }
+        return value;
     }
 
     private NacosAgentDiscoveryEvent awaitDiscoveryEvent(RecordingAgentEventListener listener,

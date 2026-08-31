@@ -14,14 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.remote.response.cluster;
-
-import com.alibaba.nacos.api.remote.response.Response;
+package com.alibaba.nacos.plugin.ai.storage.model;
 
 /**
- * Response for one best-effort Agent Projection cluster hint.
+ * Local read visibility and change-notification contract of an AI resource storage provider.
  *
  * @author Nacos
  */
-public class AgentProjectionChangeClusterResponse extends Response {
+public enum AiResourceStorageConsistencyMode {
+    
+    /**
+     * A committed operation is visible through the provider read path before it returns.
+     */
+    STRONG,
+    
+    /**
+     * Content converges asynchronously and the provider reports local visibility changes.
+     */
+    EVENTUAL_WITH_NOTIFICATION,
+    
+    /**
+     * Content converges asynchronously without a local visibility callback contract.
+     */
+    EVENTUAL_WITHOUT_NOTIFICATION
 }

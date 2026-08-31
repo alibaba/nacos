@@ -110,6 +110,23 @@ class AgentProjectionServiceTest {
     }
     
     @Test
+    void testStorageVisibilityChangeRefreshesEveryActiveProjection() throws Exception {
+        AtomicInteger projects = new AtomicInteger();
+        service = newService(key -> AgentProjectionTestFixtures.available(
+            key.getAgentName() + '-' + projects.incrementAndGet(), projects.get()),
+            5L, 10L, 0L, 10, 2);
+        AgentProjectionKey alpha = service.retain(AgentProjectionTestFixtures.request("alpha"));
+        AgentProjectionKey beta = service.retain(AgentProjectionTestFixtures.request("beta"));
+        waitUntil(() -> projects.get() == 2);
+        
+        service.onAgentStorageChanged();
+        waitUntil(() -> projects.get() == 4);
+        
+        assertTrue(service.getState(alpha).isPresent());
+        assertTrue(service.getState(beta).isPresent());
+    }
+    
+    @Test
     void testTransientSynchronousRefreshSchedulesCurrentFactRetry() throws Exception {
         AgentProjectionProjector projector = mock(AgentProjectionProjector.class);
         AgentProjectionState transientFailure = AgentProjectionState.failure(
