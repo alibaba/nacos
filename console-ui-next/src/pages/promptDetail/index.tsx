@@ -78,7 +78,11 @@ import { parsePipelineInfo } from '@/types/skill';
 import { PromptVersionTimeline } from '@/pages/promptManagement/components/PromptVersionTimeline';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
-import { canResubmitReview } from '@/components/ai/version-lifecycle';
+import {
+  VersionLifecycleActionBar,
+  VersionLifecycleActionDivider,
+} from '@/components/ai/VersionLifecycleActionBar';
+import { canForcePublish, canResubmitReview } from '@/components/ai/version-lifecycle';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
@@ -199,6 +203,11 @@ export default function PromptDetailPage() {
   const currentPipelineInfoRaw = currentVersionSummary?.publishPipelineInfo;
   const currentPipelineInfo = parsePipelineInfo(currentPipelineInfoRaw);
   const showResubmitReview = canResubmitReview(currentVersionStatus, currentPipelineInfo);
+  const showForcePublish = canForcePublish(
+    currentVersionStatus,
+    currentPipelineInfo,
+    globalAdmin,
+  );
 
   // Labels bound to the currently selected version
   const currentVersionLabels = Object.entries(labelsMap).filter(
@@ -817,8 +826,7 @@ export default function PromptDetailPage() {
 
               {/* Version lifecycle action buttons */}
               {selectedVersion && currentVersionStatus && (
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  <div className="flex items-center gap-2 flex-wrap">
+                <VersionLifecycleActionBar>
                     {/* Draft actions */}
                     {currentVersionStatus === 'draft' && (
                       <>
@@ -839,7 +847,7 @@ export default function PromptDetailPage() {
                               <Pencil className="h-3 w-3" />
                               {t('prompt.editDraft')}
                             </Button>
-                            <div className="h-4 w-px bg-border mx-0.5" />
+                            <VersionLifecycleActionDivider />
                             <Button size="sm" className="h-7 text-xs gap-1.5" disabled={actionLoading} onClick={() => handleSubmit(selectedVersion)}>
                               <Send className="h-3 w-3" />
                               {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED'
@@ -853,7 +861,7 @@ export default function PromptDetailPage() {
                             {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
                               <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                             )}
-                            {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.historical && (
+                            {showForcePublish && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -923,7 +931,7 @@ export default function PromptDetailPage() {
                         {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                         )}
-                        {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                        {showForcePublish && (
                           <>
                             <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                             <Button
@@ -977,8 +985,7 @@ export default function PromptDetailPage() {
                         </Tooltip>
                       ) : btn;
                     })()}
-                  </div>
-                </div>
+                </VersionLifecycleActionBar>
               )}
             </div>
           </div>

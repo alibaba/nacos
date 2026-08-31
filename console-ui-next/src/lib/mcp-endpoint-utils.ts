@@ -23,9 +23,9 @@ function normalizeEndpointPath(path?: string) {
 function normalizeEndpointPort(protocol: string, port?: string | number) {
   const rawPort = port === undefined || port === null ? '' : String(port).trim();
   if (
-    !rawPort ||
-    (protocol === 'https' && rawPort === '443') ||
-    (protocol === 'http' && rawPort === '80')
+    !rawPort
+    || (protocol === 'https' && rawPort === '443')
+    || (protocol === 'http' && rawPort === '80')
   ) {
     return '';
   }
@@ -48,7 +48,7 @@ export function shouldUseExistingService(data: McpServerDetailInfo) {
 export function buildEndpointUrl(
   endpoint?: EndpointLike,
   fallbackProtocol = DEFAULT_ENDPOINT_PROTOCOL,
-  fallbackPath?: string
+  fallbackPath?: string,
 ) {
   if (!endpoint) {
     return '';
@@ -65,11 +65,10 @@ export function buildEndpointUrl(
 
 export function resolveMcpEndpointUrl(data: McpServerDetailInfo) {
   const serviceRef = data.remoteServerConfig?.serviceRef;
-  const fallbackProtocol =
-    serviceRef?.transportProtocol || data.backendEndpoints?.[0]?.protocol || DEFAULT_ENDPOINT_PROTOCOL;
-  const endpoint =
-    data.frontendEndpoints?.[0] ||
-    data.remoteServerConfig?.frontEndpointConfigList?.[0] ||
-    data.backendEndpoints?.[0];
+  const fallbackProtocol = serviceRef?.transportProtocol
+    || data.backendEndpoints?.[0]?.protocol
+    || DEFAULT_ENDPOINT_PROTOCOL;
+  const endpoint = data.frontendEndpoints?.[0]
+    || data.backendEndpoints?.[0];
   return buildEndpointUrl(endpoint, fallbackProtocol, data.remoteServerConfig?.exportPath);
 }

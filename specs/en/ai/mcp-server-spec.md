@@ -309,6 +309,25 @@ write. The
 transport maps typed request objects onto the same form/query Admin routes; it
 does not introduce a second JSON-body HTTP contract.
 
+The two bundled Console frontends intentionally have different compatibility
+roles during this release window. The legacy `console-ui` remains on the
+historical direct-online create and update routes. `console-ui-next` creates or
+replaces drafts only through the standard lifecycle routes and exposes the
+valid submit, publish, force-publish, redraft, online, offline, draft-delete,
+label, and Visibility actions for the selected exact Version. Before
+`LIFECYCLE_MANAGED`, the next UI may retain historical reads for diagnosis but
+must disable lifecycle mutations and must not fall back to a historical write.
+
+The selected Version detail in `console-ui-next` presents copyable MCP Client
+configuration instead of copying the internal Server/Tools/Resources
+definition. For a remote Server, it uses the same frontend-first endpoint
+selection as the compatibility UI so gateway frontend and actual backend
+addresses are not confused. For a stdio Server, it wraps the local or Package
+launch configuration in the standard `mcpServers` object. Auto-derived
+capability values remain available as Resource metadata and Search filters;
+the detail page may omit their summary when the concrete Tool and Resource
+sections already present the same information.
+
 `McpMaintainerService` exposes Version-management methods with
 explicit-namespace and default-namespace overloads. New draft creation and
 replacement reuse the established `createMcpServer` and `updateMcpServer`
@@ -337,6 +356,14 @@ path. Otherwise the Version enters `reviewing`; an approved or rejected
 callback moves it to `reviewed`, and only an explicit approved publish updates
 the online lifecycle state and compatibility Manifest. Force-publish remains
 the audited Pipeline bypass.
+
+Version summaries and exact Version details expose the Version row's optional
+`publishPipelineInfo`. Management clients use this state to distinguish an
+approved review from a rejected review; Version status alone is insufficient
+because both outcomes are `reviewed`. `console-ui-next` presents force-publish
+only to a global administrator after the current Pipeline result is
+`REJECTED`, and never as an ordinary draft action. A rejection marked
+`historical` after redraft cannot authorize force-publishing that draft.
 
 ### 6.2 Historical Direct-Online Facades
 
@@ -657,8 +684,9 @@ management lifecycle operations:
   typed name/Version lifecycle methods may be added with the standard Admin
   semantics.
 - Import converges on the lifecycle service and MCP Storage.
-- Console UI moves to the lifecycle view only after the corresponding APIs are
-  available.
+- The legacy Console UI retains its direct-online compatibility flow; the next
+  Console UI uses lifecycle-only mutations after the corresponding APIs are
+  available and remains read-only while authority is still `SYNCING`.
 
 The first migration does not change:
 

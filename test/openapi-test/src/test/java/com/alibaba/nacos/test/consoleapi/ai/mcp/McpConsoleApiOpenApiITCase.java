@@ -42,8 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     return HTTP 410 by default, remain available behind the shared compatibility switch through Nacos 3.3.x, and
  *     are planned for removal in 3.4.0. MCP runtime tool import has a separate scenario class because its
  *     outbound-network policy is independent from MCP resource CRUD.
- *     Console currently accepts {@code resourceSpecification} but does not persist it because the controller does
- *     not parse resources.
+ *     Console persists the optional {@code resourceSpecification} through the lifecycle draft storage path.
  *     </li>
  *     <li>Exception/error handling: duplicate create returns conflict, absent server returns the MCP not-found result
  *     envelope, and malformed JSON is rejected as a controlled validation error.</li>

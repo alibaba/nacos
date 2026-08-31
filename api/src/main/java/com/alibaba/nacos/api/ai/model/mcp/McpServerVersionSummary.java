@@ -37,6 +37,8 @@ public class McpServerVersionSummary implements Serializable {
     
     private String status;
     
+    private String publishPipelineInfo;
+    
     private String author;
     
     private String description;
@@ -61,6 +63,14 @@ public class McpServerVersionSummary implements Serializable {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public String getPublishPipelineInfo() {
+        return publishPipelineInfo;
+    }
+    
+    public void setPublishPipelineInfo(String publishPipelineInfo) {
+        this.publishPipelineInfo = publishPipelineInfo;
     }
     
     public String getAuthor() {

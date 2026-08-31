@@ -287,7 +287,9 @@ while preserving server-managed labels.
 
 Version list results use `Page<McpServerVersionSummary>`. Exact reads and
 draft writes return `McpServerVersionDetail`, including lifecycle metadata
-and Server/Tools/Resources content without the internal MCP ID. Lifecycle
+and Server/Tools/Resources content without the internal MCP ID. The detail also
+projects the resource status, owner, scope, labels, editing/reviewing pointers,
+and online Version count needed by lifecycle-aware management clients. Lifecycle
 commands return the resulting summary, draft deletion returns an empty success
 result, and label replacement returns the effective label map.
 

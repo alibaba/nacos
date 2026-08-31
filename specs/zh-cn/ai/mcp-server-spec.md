@@ -261,6 +261,18 @@ Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像�
 Version 管理 Transport，且不得回退到 Legacy Write。该 Transport 把类型化 Request Object 映射到同一组
 Form/Query Admin Route，不引入第二套 JSON Body HTTP 契约。
 
+发布兼容窗口内，两套内置 Console 前端承担不同角色。旧 `console-ui` 继续使用历史
+Direct-online Create/Update Route。`console-ui-next` 只通过标准生命周期 Route 创建或替换 Draft，
+并针对选中的精确 Version 暴露合法的 Submit、Publish、Force-publish、Redraft、Online、Offline、
+Draft Delete、Label 和 Visibility 操作。在达到 `LIFECYCLE_MANAGED` 前，新 UI 可以保留历史读取
+用于诊断，但必须禁用生命周期 Mutation，且不得回退到历史 Write。
+
+`console-ui-next` 的选中 Version Detail 展示可复制的 MCP Client 配置，不复制内部
+Server/Tools/Resources Definition。远程 Server 使用与兼容 UI 相同的 Frontend-first Endpoint
+选择规则，避免混淆网关 Frontend 与实际 Backend 地址。stdio Server 将本地或 Package 启动配置
+包装在标准 `mcpServers` Object 中。自动推导的 Capability Value 继续作为 Resource Metadata 和
+Search Filter 使用；当具体 Tool 和 Resource 区域已经展示相同信息时，Detail Page 可以省略该摘要。
+
 `McpMaintainerService` 提供显式 Namespace 与默认 Namespace 便利重载的 Version 管理方法。
 Draft 创建与替换通过 `McpServerDraftRequest` 参数重载复用既有 `createMcpServer` 和
 `updateMcpServer` 名称。精确读取使用 `listMcpServerVersions` 和 `getMcpServerVersion`；
@@ -281,6 +293,12 @@ Submit 使用资源类型 `MCP` 构造 `ResourceFilesPipelineContext`，包含�
 遵循通用 Direct-publish 路径；否则 Version 进入 `reviewing`，Approved 或 Rejected 回调都将其
 转换为 `reviewed`，只有后续显式且已批准的 Publish 才更新 Online Lifecycle State 和兼容
 Manifest。Force-publish 继续作为需要审计的 Pipeline Bypass。
+
+Version Summary 和精确 Version Detail 暴露 Version Row 中可选的 `publishPipelineInfo`。
+管理端使用它区分审核通过与审核拒绝；由于两种结果的 Version Status 都是 `reviewed`，仅凭状态
+无法作出该判断。`console-ui-next` 只在当前 Pipeline 结果为 `REJECTED` 时向全局管理员展示
+Force-publish，不把它作为普通 Draft 的默认操作。Redraft 后标记为 `historical` 的拒绝结果不能
+再授权该 Draft 的 Force-publish。
 
 ### 6.2 历史 Direct-Online Facade
 
@@ -526,7 +544,8 @@ Console 专用 `GET /v3/console/ai/mcp/importToolsFromMcp` Helper 保持现有�
 - Maintainer SDK 二进制签名和历史 Overload 保持兼容；可以增加与标准 Admin 语义一致的
   Name/Version Typed Lifecycle 方法。
 - Import 收敛到 Lifecycle Service 和 MCP Storage。
-- Console UI 只在对应 API 可用后切换到 Lifecycle View。
+- 旧 Console UI 保留 Direct-online 兼容流程；新 Console UI 在对应 API 可用后只使用生命周期
+  Mutation，并在管理权威仍为 `SYNCING` 时保持只读。
 
 首期迁移不修改：
 

@@ -4,6 +4,9 @@ export type McpProtocol = 'stdio' | 'mcp-sse' | 'mcp-streamable' | 'http' | 'dub
 export type McpStatus = 'ACTIVE' | 'DEPRECATED' | 'DELETED';
 export type McpSearchMode = 'accurate' | 'blur';
 export type McpEndpointType = 'REF' | 'DIRECT';
+export type McpVersionStatus = 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
+export type McpResourceStatus = 'enable' | 'disable';
+export type McpResourceScope = 'PUBLIC' | 'PRIVATE';
 
 // ===== Version =====
 
@@ -28,10 +31,19 @@ export interface McpServiceRef {
 export interface McpRemoteServerConfig {
   serviceRef?: McpServiceRef;
   exportPath?: string;
-  frontEndpointConfigList?: McpEndpointInfo[];
+  frontEndpointConfigList?: McpFrontEndpointConfig[];
 }
 
 // ===== Endpoint =====
+
+export interface McpFrontEndpointConfig {
+  type?: string;
+  protocol?: string;
+  endpointType?: 'REF' | 'DIRECT' | 'BACKEND';
+  endpointData?: string | McpServiceRef | null;
+  path?: string;
+  headers?: McpEndpointHeader[];
+}
 
 export interface McpEndpointHeader {
   name: string;
@@ -178,6 +190,7 @@ export interface McpServerDetailInfo extends McpServerBasicInfo {
   backendEndpoints?: McpEndpointInfo[];
   frontendEndpoints?: McpEndpointInfo[];
   toolSpec?: McpToolSpecification;
+  resourceSpec?: Record<string, unknown>;
   allVersions?: McpVersionDetail[];
 }
 
@@ -204,6 +217,51 @@ export interface McpListResponse {
   pageItems: McpServerBasicInfo[];
 }
 
+export interface McpPage<T> {
+  totalCount: number;
+  pageNumber: number;
+  pagesAvailable: number;
+  pageItems: T[];
+}
+
+// ===== Lifecycle Version Management =====
+
+export interface McpServerVersionSummary {
+  version: string;
+  status: McpVersionStatus;
+  publishPipelineInfo?: string;
+  author?: string;
+  description?: string;
+  latest?: boolean;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export interface McpServerVersionDetail extends McpServerVersionSummary {
+  namespaceId: string;
+  mcpName: string;
+  serverSpecification: McpServerBasicInfo;
+  toolSpecification?: McpToolSpecification;
+  resourceSpecification?: Record<string, unknown>;
+  resourceStatus?: McpResourceStatus;
+  owner?: string;
+  scope?: McpResourceScope;
+  labels?: Record<string, string>;
+  editingVersion?: string;
+  reviewingVersion?: string;
+  onlineCount?: number;
+}
+
+export interface McpVersionIdentity {
+  namespaceId?: string;
+  mcpName: string;
+  version: string;
+}
+
+export type McpDraftData = Omit<McpCreateData, 'mcpName' | 'namespaceId'>
+  & McpVersionIdentity
+  & { resourceSpecification?: string };
+
 // ===== Create/Update =====
 
 export interface McpCreateData {
@@ -212,9 +270,4 @@ export interface McpCreateData {
   serverSpecification: string;
   toolSpecification?: string;
   endpointSpecification?: string;
-}
-
-export interface McpUpdateData extends McpCreateData {
-  latest?: boolean;
-  overrideExisting?: boolean;
 }

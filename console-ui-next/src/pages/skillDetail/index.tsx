@@ -88,7 +88,11 @@ import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
-import { canResubmitReview } from '@/components/ai/version-lifecycle';
+import {
+  VersionLifecycleActionBar,
+  VersionLifecycleActionDivider,
+} from '@/components/ai/VersionLifecycleActionBar';
+import { canForcePublish, canResubmitReview } from '@/components/ai/version-lifecycle';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
@@ -747,6 +751,11 @@ export default function SkillDetailPage() {
   // Pipeline info for current version
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
   const showResubmitReview = canResubmitReview(currentVersionStatus, currentPipelineInfo);
+  const showForcePublish = canForcePublish(
+    currentVersionStatus,
+    currentPipelineInfo,
+    globalAdmin,
+  );
 
   // Parse resources from version document
   const resources = versionDoc?.resource ?? {};
@@ -945,14 +954,13 @@ export default function SkillDetailPage() {
 
               {/* Version lifecycle action buttons */}
               {canWriteResource && selectedVersion && currentVersionStatus && (
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  {!detail.enable && (
+                <VersionLifecycleActionBar warning={!detail.enable ? (
                     <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mb-2">
                       <AlertTriangle className="h-3 w-3 shrink-0" />
                       {t('skill.skillDisabledWarning')}
                     </p>
-                  )}
-                  <div className="flex items-center gap-2">
+                  ) : undefined}
+                >
                   {/* Draft actions */}
                   {currentVersionStatus === 'draft' && (
                     <>
@@ -1000,7 +1008,7 @@ export default function SkillDetailPage() {
                               {t('skill.aiOptimize')}
                             </Button>
                           )}
-                          <div className="h-4 w-px bg-border mx-0.5" />
+                          <VersionLifecycleActionDivider />
                           <Button
                             size="sm"
                             className="h-7 text-xs gap-1.5"
@@ -1026,7 +1034,7 @@ export default function SkillDetailPage() {
                             <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                           )}
                           {/* Admin-only force-publish when pipeline rejected */}
-                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && !currentPipelineInfo.historical && (
+                          {showForcePublish && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -1097,7 +1105,7 @@ export default function SkillDetailPage() {
                         <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                       )}
                       {/* Admin-only force-publish when pipeline rejected during reviewing */}
-                      {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                      {showForcePublish && (
                         <>
                           <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                           <Button
@@ -1171,8 +1179,7 @@ export default function SkillDetailPage() {
                       </Tooltip>
                     ) : btn;
                   })()}
-                  </div>
-                </div>
+                </VersionLifecycleActionBar>
               )}
 
               {/* Empty state: no versions, show create draft button or editing actions */}

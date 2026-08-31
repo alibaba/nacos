@@ -1181,6 +1181,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpServerVersionSummary result = new McpServerVersionSummary();
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
+        result.setPublishPipelineInfo(row.getPublishPipelineInfo());
         result.setAuthor(row.getAuthor());
         result.setDescription(row.getDesc());
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
@@ -1193,11 +1194,11 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private McpServerVersionDetail toLifecycleDetail(LifecycleResource lifecycle,
         AiResourceVersion row) throws NacosException {
-        LoadedVersion loaded = loadVersion(lifecycle, row);
         McpServerVersionDetail result = new McpServerVersionDetail();
         McpServerVersionSummary summary = toLifecycleSummary(lifecycle.resource, row);
         result.setVersion(summary.getVersion());
         result.setStatus(summary.getStatus());
+        result.setPublishPipelineInfo(summary.getPublishPipelineInfo());
         result.setAuthor(summary.getAuthor());
         result.setDescription(summary.getDescription());
         result.setLatest(summary.getLatest());
@@ -1205,6 +1206,16 @@ public class McpLifecycleOperationService implements McpOperationService {
         result.setUpdateTime(summary.getUpdateTime());
         result.setNamespaceId(lifecycle.resource.getNamespaceId());
         result.setMcpName(lifecycle.resource.getName());
+        result.setResourceStatus(lifecycle.resource.getStatus());
+        result.setOwner(lifecycle.resource.getOwner());
+        result.setScope(AiResourceManager.resolveScope(lifecycle.resource));
+        ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(
+            lifecycle.resource);
+        result.setLabels(new LinkedHashMap<>(versionInfo.getLabels()));
+        result.setEditingVersion(versionInfo.getEditingVersion());
+        result.setReviewingVersion(versionInfo.getReviewingVersion());
+        result.setOnlineCount(versionInfo.getOnlineCnt());
+        LoadedVersion loaded = loadVersion(lifecycle, row);
         McpServerBasicInfo server = new McpServerBasicInfo();
         BeanUtils.copyProperties(loaded.server, server);
         server.setId(null);

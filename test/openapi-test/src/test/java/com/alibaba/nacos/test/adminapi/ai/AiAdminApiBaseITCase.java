@@ -209,6 +209,15 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
                 created.toString());
         assertEquals(version, created.path("data").path("version").asText(),
                 created.toString());
+        JsonNode detail = created.path("data");
+        assertTrue(detail.hasNonNull("resourceStatus"), created.toString());
+        assertTrue(detail.hasNonNull("owner"), created.toString());
+        assertTrue(detail.hasNonNull("scope"), created.toString());
+        assertTrue(detail.path("labels").isObject(), created.toString());
+        assertEquals(version, detail.path("editingVersion").asText(), created.toString());
+        assertTrue(detail.path("reviewingVersion").isMissingNode()
+                || detail.path("reviewingVersion").isNull(), created.toString());
+        assertEquals(0, detail.path("onlineCount").asInt(), created.toString());
         addCleanup(() -> deleteQuietly(basePath, mcpIdentityQuery(mcpName, null, null)));
         JsonNode deleted = JacksonUtils.toObj(deleteRaw(basePath + "/draft",
                 mcpLifecycleVersionQuery(mcpName, version)).body());

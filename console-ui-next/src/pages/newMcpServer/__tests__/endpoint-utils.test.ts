@@ -6,7 +6,7 @@ import {
   isManagedDirectEndpointRef,
   resolveMcpEndpointUrl,
   shouldUseExistingService,
-} from '../endpoint-utils';
+} from '@/lib/mcp-endpoint-utils';
 
 describe('newMcpServer endpoint utils', () => {
   it('rebuilds MCP endpoint URL from the generated direct backend endpoint', () => {
@@ -50,6 +50,37 @@ describe('newMcpServer endpoint utils', () => {
 
     expect(isManagedDirectEndpointRef(detail.remoteServerConfig?.serviceRef)).toBe(false);
     expect(shouldUseExistingService(detail)).toBe(true);
+  });
+
+  it('uses resolved endpoints instead of treating raw frontend configuration as an endpoint', () => {
+    const detail: McpServerDetailInfo = {
+      name: 'ad.inside/inside-ads',
+      protocol: 'mcp-streamable',
+      frontProtocol: 'mcp-streamable',
+      enabled: true,
+      remoteServerConfig: {
+        exportPath: '/api/mcp',
+        serviceRef: {
+          namespaceId: 'public',
+          groupName: 'mcp-endpoints',
+          serviceName: 'ad.inside/inside-ads::1.0.0',
+          transportProtocol: 'https',
+        },
+        frontEndpointConfigList: [{
+          type: 'streamable-http',
+          protocol: 'https',
+          endpointType: 'BACKEND',
+          endpointData: 'app.inside.ad:443',
+          path: '/api/mcp',
+        }],
+      },
+      backendEndpoints: [{
+        protocol: 'https', address: 'app.inside.ad', port: '443', path: '/api/mcp',
+      }],
+    };
+
+    expect(resolveMcpEndpointUrl(detail)).toBe('https://app.inside.ad/api/mcp');
+    expect(resolveMcpEndpointUrl(detail)).not.toContain('undefined');
   });
 
   it('normalizes endpoint URLs for editable inputs', () => {

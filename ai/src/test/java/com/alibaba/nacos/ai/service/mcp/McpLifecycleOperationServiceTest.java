@@ -859,6 +859,13 @@ class McpLifecycleOperationServiceTest {
         assertNull(created.getServerSpecification().getId());
         assertNotNull(created.getToolSpecification());
         assertNotNull(created.getResourceSpecification());
+        assertEquals(resource.get().getStatus(), created.getResourceStatus());
+        assertEquals(resource.get().getOwner(), created.getOwner());
+        assertEquals(AiResourceManager.resolveScope(resource.get()), created.getScope());
+        assertEquals(Collections.emptyMap(), created.getLabels());
+        assertEquals(VERSION_ONE, created.getEditingVersion());
+        assertNull(created.getReviewingVersion());
+        assertEquals(0, created.getOnlineCount());
         assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
         assertNull(manifest.get());
         
@@ -881,6 +888,9 @@ class McpLifecycleOperationServiceTest {
             Map.of("candidate", VERSION_TWO));
         assertEquals(VERSION_TWO, labels.get("candidate"));
         assertNull(labels.get(AiResourceConstants.LABEL_LATEST));
+        McpServerVersionDetail labeled = service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME,
+            VERSION_ONE);
+        assertEquals(VERSION_TWO, labeled.getLabels().get("candidate"));
         verify(indexMaintenanceService, times(3)).schedule(NAMESPACE_ID,
             AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
     }
@@ -1077,6 +1087,13 @@ class McpLifecycleOperationServiceTest {
         
         assertEquals(AiResourceConstants.VERSION_STATUS_REVIEWED,
             versions.get(VERSION_ONE).getStatus());
+        assertTrue(versions.get(VERSION_ONE).getPublishPipelineInfo()
+            .contains("\"status\":\"REJECTED\""));
+        assertTrue(service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE)
+            .getPublishPipelineInfo().contains("\"status\":\"REJECTED\""));
+        assertTrue(service.listMcpServerVersions(NAMESPACE_ID, MCP_NAME, null, 1, 10)
+            .getPageItems().get(0).getPublishPipelineInfo()
+            .contains("\"status\":\"REJECTED\""));
         assertThrows(NacosException.class, () -> service.publishMcpServerVersion(NAMESPACE_ID,
             MCP_NAME, VERSION_ONE));
         McpServerVersionSummary redrafted = service.redraftMcpServerVersion(NAMESPACE_ID,
