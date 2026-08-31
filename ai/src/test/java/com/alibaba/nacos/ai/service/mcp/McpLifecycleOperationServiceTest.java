@@ -859,6 +859,13 @@ class McpLifecycleOperationServiceTest {
         assertNull(created.getServerSpecification().getId());
         assertNotNull(created.getToolSpecification());
         assertNotNull(created.getResourceSpecification());
+        assertEquals(resource.get().getStatus(), created.getResourceStatus());
+        assertEquals(resource.get().getOwner(), created.getOwner());
+        assertEquals(AiResourceManager.resolveScope(resource.get()), created.getScope());
+        assertEquals(Collections.emptyMap(), created.getLabels());
+        assertEquals(VERSION_ONE, created.getEditingVersion());
+        assertNull(created.getReviewingVersion());
+        assertEquals(0, created.getOnlineCount());
         assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
         assertNull(manifest.get());
         
@@ -881,6 +888,9 @@ class McpLifecycleOperationServiceTest {
             Map.of("candidate", VERSION_TWO));
         assertEquals(VERSION_TWO, labels.get("candidate"));
         assertNull(labels.get(AiResourceConstants.LABEL_LATEST));
+        McpServerVersionDetail labeled = service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME,
+            VERSION_ONE);
+        assertEquals(VERSION_TWO, labeled.getLabels().get("candidate"));
         verify(indexMaintenanceService, times(3)).schedule(NAMESPACE_ID,
             AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
     }

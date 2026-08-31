@@ -261,7 +261,8 @@ Version 必须一致，并拒绝 `serverSpecification.id`。`/labels` 接受 JSO
 
 Version 列表返回 `Page<McpServerVersionSummary>`。精确读取和 Draft 写入返回
 `McpServerVersionDetail`，其中包含生命周期 Metadata 和 Server/Tools/Resources 内容，但不包含
-内部 MCP ID。生命周期命令返回转换后的 Summary，删除 Draft 返回空 Success Result，替换 Label
+内部 MCP ID。Detail 还会投影生命周期管理客户端所需的 Resource Status、Owner、Scope、Labels、
+Editing/Reviewing 指针和 Online Version 数量。生命周期命令返回转换后的 Summary，删除 Draft 返回空 Success Result，替换 Label
 返回最终生效的 Label Map。
 
 现有 MCP create/update/delete 路径和参数形态作为兼容专用的 direct-online Facade 保留，

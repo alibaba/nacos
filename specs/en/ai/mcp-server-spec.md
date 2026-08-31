@@ -309,6 +309,15 @@ write. The
 transport maps typed request objects onto the same form/query Admin routes; it
 does not introduce a second JSON-body HTTP contract.
 
+The two bundled Console frontends intentionally have different compatibility
+roles during this release window. The legacy `console-ui` remains on the
+historical direct-online create and update routes. `console-ui-next` creates or
+replaces drafts only through the standard lifecycle routes and exposes the
+valid submit, publish, force-publish, redraft, online, offline, draft-delete,
+label, and Visibility actions for the selected exact Version. Before
+`LIFECYCLE_MANAGED`, the next UI may retain historical reads for diagnosis but
+must disable lifecycle mutations and must not fall back to a historical write.
+
 `McpMaintainerService` exposes Version-management methods with
 explicit-namespace and default-namespace overloads. New draft creation and
 replacement reuse the established `createMcpServer` and `updateMcpServer`
@@ -657,8 +666,9 @@ management lifecycle operations:
   typed name/Version lifecycle methods may be added with the standard Admin
   semantics.
 - Import converges on the lifecycle service and MCP Storage.
-- Console UI moves to the lifecycle view only after the corresponding APIs are
-  available.
+- The legacy Console UI retains its direct-online compatibility flow; the next
+  Console UI uses lifecycle-only mutations after the corresponding APIs are
+  available and remains read-only while authority is still `SYNCING`.
 
 The first migration does not change:
 

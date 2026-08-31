@@ -261,6 +261,12 @@ Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像�
 Version 管理 Transport，且不得回退到 Legacy Write。该 Transport 把类型化 Request Object 映射到同一组
 Form/Query Admin Route，不引入第二套 JSON Body HTTP 契约。
 
+发布兼容窗口内，两套内置 Console 前端承担不同角色。旧 `console-ui` 继续使用历史
+Direct-online Create/Update Route。`console-ui-next` 只通过标准生命周期 Route 创建或替换 Draft，
+并针对选中的精确 Version 暴露合法的 Submit、Publish、Force-publish、Redraft、Online、Offline、
+Draft Delete、Label 和 Visibility 操作。在达到 `LIFECYCLE_MANAGED` 前，新 UI 可以保留历史读取
+用于诊断，但必须禁用生命周期 Mutation，且不得回退到历史 Write。
+
 `McpMaintainerService` 提供显式 Namespace 与默认 Namespace 便利重载的 Version 管理方法。
 Draft 创建与替换通过 `McpServerDraftRequest` 参数重载复用既有 `createMcpServer` 和
 `updateMcpServer` 名称。精确读取使用 `listMcpServerVersions` 和 `getMcpServerVersion`；
@@ -526,7 +532,8 @@ Console 专用 `GET /v3/console/ai/mcp/importToolsFromMcp` Helper 保持现有�
 - Maintainer SDK 二进制签名和历史 Overload 保持兼容；可以增加与标准 Admin 语义一致的
   Name/Version Typed Lifecycle 方法。
 - Import 收敛到 Lifecycle Service 和 MCP Storage。
-- Console UI 只在对应 API 可用后切换到 Lifecycle View。
+- 旧 Console UI 保留 Direct-online 兼容流程；新 Console UI 在对应 API 可用后只使用生命周期
+  Mutation，并在管理权威仍为 `SYNCING` 时保持只读。
 
 首期迁移不修改：
 

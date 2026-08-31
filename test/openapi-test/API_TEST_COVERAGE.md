@@ -198,7 +198,9 @@ boundary: name-only identity and exact-Version validation, nested legacy ID
 rejection, case-insensitive status input, and the controlled pre-cutover
 conflict envelope. If background reconciliation has already completed the
 one-way cutover, the same scenario accepts only controlled absent-resource
-responses and verifies one real draft create/delete pair. The test does not
+responses and verifies one real draft create/delete pair, including the
+resource status, owner, scope, labels, working pointers, and online count
+returned in the lifecycle detail. The test does not
 publish the `LIFECYCLE_MANAGED` marker into the shared standalone process.
 Focused component tests instead cover the
 zero-difference, all-member capability, and Search-projection gates; permanent
@@ -206,8 +208,8 @@ marker retry/observation; per-request authority pinning; lifecycle
 create/read/update/delete and state-transition success paths; storage-first
 draft deletion/retry; and canonical re-authorization of deprecated ID-only
 requests. Embedded and standalone Console use this local lifecycle facade;
-remote Console remains disabled until the typed Maintainer SDK transport is
-introduced, so it does not fall back to the legacy Config-writing path.
+remote Console forwards the same typed contract through the Maintainer SDK
+transport and does not fall back to the legacy Config-writing path.
 
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. The Search scenario is reusable

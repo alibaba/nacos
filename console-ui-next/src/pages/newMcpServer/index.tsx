@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -32,14 +32,6 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useMcpStore } from '@/stores/mcp-store';
 import { mcpApi } from '@/api/mcp';
@@ -48,8 +40,8 @@ import type {
   McpProtocol,
   McpSecurityScheme,
   McpServerDetailInfo,
+  McpServerVersionDetail,
   McpToolSpecification,
-  McpVersionDetail,
 } from '@/types/mcp';
 import { cn } from '@/lib/utils';
 import ToolManager from './tool-manager';
@@ -59,6 +51,7 @@ import {
   shouldUseExistingService,
 } from './endpoint-utils';
 import { loadServiceOptions } from './service-options';
+import { nextMcpVersion } from './version-utils';
 
 const PROTOCOL_CARD_CONFIG: Record<string, { icon: typeof Terminal; label: string; color: string; bg: string; dot: string; ring: string }> = {
   stdio: {
@@ -87,7 +80,7 @@ const PROTOCOL_CARD_CONFIG: Record<string, { icon: typeof Terminal; label: strin
   },
 };
 
-type FormMode = 'create' | 'edit' | 'version';
+type FormMode = 'create' | 'draft-create' | 'draft-edit';
 
 interface SecurityExtensions {
   'server.defaultDownstreamSecurity'?: {
@@ -108,12 +101,16 @@ export default function NewMcpServerPage() {
   const { currentNamespace } = useNamespaceStore();
   const { currentMcp: cachedMcp } = useMcpStore();
 
-  const mode = (searchParams.get('mode') as FormMode) || 'create';
+  const requestedMode = searchParams.get('mode');
+  const mode: FormMode = requestedMode === 'edit' ? 'draft-edit'
+    : requestedMode === 'version' ? 'draft-create'
+      : (requestedMode as FormMode) || 'create';
   const editMcpName = searchParams.get('mcpName') || '';
   const namespaceId = searchParams.get('namespaceId') || currentNamespace || 'public';
+  const sourceVersion = searchParams.get('version') || '';
 
-  const isEdit = mode === 'edit';
-  const isVersion = mode === 'version';
+  const isEdit = mode === 'draft-edit';
+  const isVersion = mode === 'draft-create';
 
   // Check if store already has the data we need (e.g. navigating from detail page)
   const hasCachedData = (isEdit || isVersion) && cachedMcp?.name === editMcpName;
@@ -146,89 +143,118 @@ export default function NewMcpServerPage() {
 
   // Tool specification
   const [toolSpec, setToolSpec] = useState<McpToolSpecification>({});
-
-  // All versions (for strategy availability computation)
-  const [allVersions, setAllVersions] = useState<McpVersionDetail[]>([]);
-
-  // Update flags
-  const [publishStrategy, setPublishStrategy] = useState<'new-version' | 'set-latest' | 'edit-current'>(
-    isVersion ? 'new-version' : 'edit-current'
-  );
+  const [resourceSpec, setResourceSpec] = useState<Record<string, unknown> | undefined>();
 
   // UI state
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState((isEdit || isVersion) && !hasCachedData);
-  const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
-
-  // Original detail data for edit
-  const originalMcp = useRef<McpServerDetailInfo | null>(null);
 
   const isStdio = frontProtocol === 'stdio';
 
-  // Publish strategy availability based on version number
-  const strategyAvailability = useMemo(() => {
-    const trimmed = version.trim();
-    const existing = allVersions.find((v) => v.version === trimmed);
-    const isNew = !existing;
-    const isLatest = existing?.is_latest === true;
+  const populateForm = useCallback((
+    data: McpServerDetailInfo,
+    lifecycle?: McpServerVersionDetail,
+  ) => {
+    setServerName(data.name);
+    setFrontProtocol(data.frontProtocol || 'stdio');
+    setDescription(data.description || '');
+    setVersion(data.versionDetail?.version || data.version || '1.0.0');
+    setEnabled(data.enabled);
+    setResourceSpec(lifecycle?.resourceSpecification || data.resourceSpec);
 
-    return {
-      'new-version': {
-        available: isNew,
-        reason: isNew ? undefined : t('mcp.strategyReasonVersionExists', { defaultValue: '版本已存在' }),
-      },
-      'set-latest': {
-        available: !isNew && !isLatest,
-        reason: isNew
-          ? t('mcp.strategyReasonVersionNotExists', { defaultValue: '版本不存在' })
-          : isLatest
-            ? t('mcp.strategyReasonAlreadyLatest', { defaultValue: '已是最新版本' })
-            : undefined,
-      },
-      'edit-current': {
-        available: !isNew,
-        reason: isNew ? t('mcp.strategyReasonVersionNotExists', { defaultValue: '版本不存在' }) : undefined,
-      },
-    };
-  }, [version, allVersions, t]);
+    const resolvedFrontProtocol = data.frontProtocol || 'stdio';
+    if (resolvedFrontProtocol !== 'stdio') {
+      const isRestToMcp = data.protocol === 'http' || data.protocol === 'https';
+      setRestToMcpSwitch(isRestToMcp);
+      setSelectedService('');
+      setMcpEndpointUrl('');
+      setAddress('');
+      setPort('');
+      setExportPath(data.remoteServerConfig?.exportPath || '');
 
-  // Auto-switch strategy when current becomes unavailable
-  useEffect(() => {
-    if (!isEdit && !isVersion) return;
-    if (!strategyAvailability[publishStrategy].available) {
-      const order = ['new-version', 'set-latest', 'edit-current'] as const;
-      const first = order.find((s) => strategyAvailability[s].available);
-      if (first) setPublishStrategy(first);
+      const useExistingService = isRestToMcp && shouldUseExistingService(data);
+      setUseExistService(useExistingService);
+
+      if (useExistingService) {
+        const ref = data.remoteServerConfig!.serviceRef!;
+        setSelectedService(`${ref.groupName || 'DEFAULT_GROUP'}@@${ref.serviceName}`);
+        setTransportProtocol(ref.transportProtocol || 'http');
+        setExportPath(data.remoteServerConfig!.exportPath || '');
+      } else if (isRestToMcp && (data.backendEndpoints?.length ?? 0) > 0) {
+        const endpoint = data.backendEndpoints![0];
+        setAddress(endpoint.address || '');
+        setPort(String(endpoint.port || ''));
+        setTransportProtocol(
+          endpoint.protocol || data.remoteServerConfig?.serviceRef?.transportProtocol || 'http',
+        );
+      } else {
+        setMcpEndpointUrl(resolveMcpEndpointUrl(data));
+      }
+    } else if (data.localServerConfig) {
+      setLocalServerConfig(JSON.stringify(data.localServerConfig, null, 2));
     }
-  }, [strategyAvailability, publishStrategy, isEdit, isVersion]);
+
+    if (data.toolSpec?.securitySchemes) {
+      setSecuritySchemes(data.toolSpec.securitySchemes);
+    }
+    if (data.toolSpec?.extensions) {
+      const extensions: SecurityExtensions = {};
+      for (const [key, value] of Object.entries(data.toolSpec.extensions)) {
+        if (key === 'server.defaultDownstreamSecurity') {
+          extensions[key] = value as SecurityExtensions['server.defaultDownstreamSecurity'];
+        } else if (key === 'server.defaultUpstreamSecurity') {
+          extensions[key] = value as SecurityExtensions['server.defaultUpstreamSecurity'];
+        } else {
+          extensions[key] = value;
+        }
+      }
+      setSecurityExtensions(extensions);
+    }
+    if (data.toolSpec) {
+      setToolSpec(data.toolSpec);
+    }
+
+    if (isVersion) {
+      const oldVersion = data.versionDetail?.version || data.version || '1.0.0';
+      setVersion(nextMcpVersion(oldVersion));
+    }
+  }, [isVersion]);
 
   // Load existing data for edit/version modes
   useEffect(() => {
     if ((isEdit || isVersion) && editMcpName) {
       // If store already has matching data (e.g. from detail page), use it directly
-      if (cachedMcp && cachedMcp.name === editMcpName) {
-        originalMcp.current = cachedMcp;
+      const cachedVersion = cachedMcp?.versionDetail?.version || cachedMcp?.version;
+      if (cachedMcp && cachedMcp.name === editMcpName
+        && (!sourceVersion || cachedVersion === sourceVersion)) {
         populateForm(cachedMcp);
-        setInitLoading(false);
-        return;
       }
-      // Otherwise fetch from API
       setInitLoading(true);
-      mcpApi
-        .getMcpServer({ mcpName: editMcpName, namespaceId })
-        .then((response) => {
-          const data = (response as unknown as { data: McpServerDetailInfo }).data;
-          originalMcp.current = data;
-          populateForm(data);
+      const legacyRequest = mcpApi.getMcpServer({
+        mcpName: editMcpName,
+        namespaceId,
+        version: sourceVersion || undefined,
+      });
+      const lifecycleRequest = sourceVersion
+        ? mcpApi.getVersion({ namespaceId, mcpName: editMcpName, version: sourceVersion })
+        : Promise.resolve(null);
+      Promise.all([legacyRequest, lifecycleRequest])
+        .then(([legacyResponse, lifecycleResponse]) => {
+          const data = legacyResponse.data;
+          const lifecycle = lifecycleResponse?.data;
+          if (isEdit && lifecycle?.status !== 'draft') {
+            throw new Error(t('mcp.onlyDraftEditable'));
+          }
+          populateForm(data, lifecycle);
         })
-        .catch(() => {
-          toast.error(t('mcp.loadFailed'));
+        .catch((error) => {
+          toast.error(error instanceof Error ? error.message : t('mcp.loadFailed'));
         })
         .finally(() => {
           setInitLoading(false);
         });
     }
-  }, [editMcpName, namespaceId, isEdit, isVersion]);
+  }, [cachedMcp, editMcpName, namespaceId, isEdit, isVersion, populateForm, sourceVersion, t]);
 
   // Fetch service list for "use existing service" mode
   useEffect(() => {
@@ -249,88 +275,12 @@ export default function NewMcpServerPage() {
     };
   }, [namespaceId, serviceSearch]);
 
-  const populateForm = (data: McpServerDetailInfo) => {
-    setServerName(data.name);
-    setFrontProtocol(data.frontProtocol || 'stdio');
-    setDescription(data.description || '');
-    setVersion(data.versionDetail?.version || data.version || '1.0.0');
-    setAllVersions(data.allVersions || []);
-    setEnabled(data.enabled);
-
-    const resolvedFrontProtocol = data.frontProtocol || 'stdio';
-    if (resolvedFrontProtocol !== 'stdio') {
-      // Determine restToMcpSwitch based on backend protocol field (consistent with original)
-      const isRestToMcp = data.protocol === 'http' || data.protocol === 'https';
-      setRestToMcpSwitch(isRestToMcp);
-      setSelectedService('');
-      setMcpEndpointUrl('');
-      setAddress('');
-      setPort('');
-      setExportPath(data.remoteServerConfig?.exportPath || '');
-
-      const useExistingService = isRestToMcp && shouldUseExistingService(data);
-      setUseExistService(useExistingService);
-
-      if (useExistingService) {
-        const ref = data.remoteServerConfig!.serviceRef!;
-        setSelectedService(`${ref.groupName || 'DEFAULT_GROUP'}@@${ref.serviceName}`);
-        setTransportProtocol(ref.transportProtocol || 'http');
-        setExportPath(data.remoteServerConfig!.exportPath || '');
-      } else if (isRestToMcp && (data.backendEndpoints?.length ?? 0) > 0) {
-        const ep = data.backendEndpoints![0];
-        setAddress(ep.address || '');
-        setPort(String(ep.port || ''));
-        setTransportProtocol(
-          ep.protocol || data.remoteServerConfig?.serviceRef?.transportProtocol || 'http'
-        );
-      } else {
-        // Non-restToMcp: reconstruct endpoint URL from frontend endpoints or generated backend endpoint.
-        setMcpEndpointUrl(resolveMcpEndpointUrl(data));
-      }
-    } else {
-      // Stdio: local server config
-      if (data.localServerConfig) {
-        setLocalServerConfig(JSON.stringify(data.localServerConfig, null, 2));
-      }
-    }
-
-    // Security schemes
-    if (data.toolSpec?.securitySchemes) {
-      setSecuritySchemes(data.toolSpec.securitySchemes);
-    }
-    if (data.toolSpec?.extensions) {
-      const ext: SecurityExtensions = {};
-      // Preserve all extensions (including non-security ones)
-      for (const [key, value] of Object.entries(data.toolSpec.extensions)) {
-        if (key === 'server.defaultDownstreamSecurity') {
-          ext[key] = value as SecurityExtensions['server.defaultDownstreamSecurity'];
-        } else if (key === 'server.defaultUpstreamSecurity') {
-          ext[key] = value as SecurityExtensions['server.defaultUpstreamSecurity'];
-        } else {
-          ext[key] = value;
-        }
-      }
-      setSecurityExtensions(ext);
-    }
-
-    // Tool specification (tools, toolsMeta, etc.)
-    if (data.toolSpec) {
-      setToolSpec(data.toolSpec);
-    }
-
-    if (isVersion) {
-      // For new version, bump version
-      const oldVer = data.versionDetail?.version || data.version || '1.0.0';
-      const parts = oldVer.split('.');
-      if (parts.length === 3) {
-        parts[2] = String(Number(parts[2]) + 1);
-        setVersion(parts.join('.'));
-      }
-    }
-  };
-
   // Validation
   const validate = (): boolean => {
+    if (isEdit && !sourceVersion) {
+      toast.error(t('mcp.versionRequired'));
+      return false;
+    }
     if (!serverName.trim()) {
       toast.error(t('mcp.serverNameRequired'));
       return false;
@@ -472,20 +422,16 @@ export default function NewMcpServerPage() {
     return {
       mcpName: serverName.trim(),
       namespaceId,
+      version: version.trim(),
       serverSpecification: JSON.stringify(serverSpec),
       toolSpecification: toolSpecStr,
+      resourceSpecification: resourceSpec ? JSON.stringify(resourceSpec) : undefined,
       endpointSpecification: endpointSpec,
     };
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    // For edit/version mode, open strategy dialog first
-    if (isEdit || isVersion) {
-      setStrategyDialogOpen(true);
-      return;
-    }
-    // Create mode: submit directly
     await doSubmit();
   };
 
@@ -493,35 +439,19 @@ export default function NewMcpServerPage() {
     setLoading(true);
     try {
       const data = buildSubmitData();
-      if (isEdit || isVersion) {
-        let latest: boolean;
-        let overrideExisting: boolean;
-        if (publishStrategy === 'new-version') {
-          latest = false;
-          overrideExisting = false;
-        } else if (publishStrategy === 'set-latest') {
-          latest = true;
-          overrideExisting = true;
-        } else {
-          // edit-current: maintain latest flag if already latest
-          overrideExisting = true;
-          const currentVersionInfo = allVersions.find(
-            (v) => v.version === version.trim()
-          );
-          latest = currentVersionInfo?.is_latest ?? false;
-        }
-        await mcpApi.updateMcpServer({
-          ...data,
-          latest,
-          overrideExisting,
-        });
-        toast.success(t('mcp.updateSuccess'));
+      if (isEdit) {
+        await mcpApi.updateDraft(data);
+        toast.success(t('mcp.draftUpdateSuccess'));
       } else {
-        await mcpApi.createMcpServer(data);
-        toast.success(t('mcp.createSuccess'));
+        await mcpApi.createDraft(data);
+        toast.success(t('mcp.draftCreateSuccess'));
       }
-      setStrategyDialogOpen(false);
-      navigate('/mcpServerManagement');
+      const params = new URLSearchParams({
+        mcpName: serverName.trim(),
+        namespaceId,
+        version: version.trim(),
+      });
+      navigate(`/mcpServerDetail?${params.toString()}`);
     } catch {
       // handled by interceptor
     } finally {
@@ -672,7 +602,7 @@ export default function NewMcpServerPage() {
                   ? t('mcp.editServerDesc', { defaultValue: '修改 MCP Server 的配置信息' })
                   : isVersion
                     ? t('mcp.newVersionDesc', { defaultValue: '基于当前版本创建新版本' })
-                    : t('mcp.createServerDesc', { defaultValue: '配置并发布一个新的 MCP Server' })}
+                    : t('mcp.createServerDesc', { defaultValue: '配置一个新的 MCP Server 草稿' })}
               </p>
             </div>
           </div>
@@ -712,6 +642,7 @@ export default function NewMcpServerPage() {
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder={t('mcp.versionPlaceholder')}
+                disabled={isEdit}
               />
             </div>
           </div>
@@ -765,7 +696,8 @@ export default function NewMcpServerPage() {
               </RadioGroup>
             </div>
             <div className="flex items-center gap-3 h-9">
-              <Switch checked={enabled} onCheckedChange={setEnabled} />
+              <Switch checked={enabled} onCheckedChange={setEnabled}
+                disabled={isEdit || isVersion} />
               <Label>{enabled ? t('mcp.enabled') : t('mcp.disabled')}</Label>
             </div>
           </div>
@@ -1227,90 +1159,12 @@ export default function NewMcpServerPage() {
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? t('mcp.saving') : t('mcp.publish', { defaultValue: '发布' })}
+              {loading ? t('mcp.saving') : t('mcp.saveDraft')}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Publishing Strategy Dialog (edit/version mode) */}
-      <Dialog open={strategyDialogOpen} onOpenChange={setStrategyDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{t('mcp.publishStrategy', { defaultValue: '发布策略' })}</DialogTitle>
-            <DialogDescription>
-              {t('mcp.publishStrategyDesc', { defaultValue: '选择如何处理此次修改。版本号' })}: <span className="font-mono font-semibold text-foreground">{version}</span>
-            </DialogDescription>
-          </DialogHeader>
-
-          <RadioGroup
-            value={publishStrategy}
-            onValueChange={(val) => setPublishStrategy(val as typeof publishStrategy)}
-            className="grid grid-cols-1 gap-2.5 py-1"
-          >
-            {([
-              {
-                key: 'new-version' as const,
-                label: t('mcp.strategyNewVersion', { defaultValue: '发布新版本' }),
-                desc: t('mcp.strategyNewVersionDesc', { defaultValue: '以新版本号发布，但不设为默认版本' }),
-                accent: 'border-emerald-500/70 bg-emerald-50/60 dark:bg-emerald-950/25',
-                dot: 'text-emerald-600 dark:text-emerald-400',
-                ring: 'ring-emerald-500/20',
-              },
-              {
-                key: 'set-latest' as const,
-                label: t('mcp.strategySetLatest', { defaultValue: '设为最新版本' }),
-                desc: t('mcp.strategySetLatestDesc', { defaultValue: '设为默认版本，客户端未指定版本时自动使用' }),
-                accent: 'border-blue-500/70 bg-blue-50/60 dark:bg-blue-950/25',
-                dot: 'text-blue-600 dark:text-blue-400',
-                ring: 'ring-blue-500/20',
-              },
-              {
-                key: 'edit-current' as const,
-                label: t('mcp.strategyEditCurrent', { defaultValue: '更新当前版本' }),
-                desc: t('mcp.strategyEditCurrentDesc', { defaultValue: '覆盖当前版本配置，版本号和最新标记不变' }),
-                accent: 'border-orange-500/70 bg-orange-50/60 dark:bg-orange-950/25',
-                dot: 'text-orange-600 dark:text-orange-400',
-                ring: 'ring-orange-500/20',
-              },
-            ] as const).map(({ key, label, desc, accent, dot, ring }) => {
-              const { available, reason } = strategyAvailability[key];
-              const isSelected = publishStrategy === key && available;
-              return (
-                <label
-                  key={key}
-                  className={cn(
-                    'relative flex items-start gap-3 rounded-lg border px-4 py-3 transition-all',
-                    available
-                      ? 'cursor-pointer hover:bg-muted/40'
-                      : 'opacity-40 cursor-not-allowed',
-                    isSelected ? cn(accent, 'ring-2', ring) : 'border-border'
-                  )}
-                >
-                  <RadioGroupItem value={key} disabled={!available} className="mt-0.5" />
-                  <div className="flex-1 space-y-0.5">
-                    <span className={cn('text-sm font-medium', isSelected && dot)}>
-                      {label}
-                    </span>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {!available && reason ? reason : desc}
-                    </p>
-                  </div>
-                </label>
-              );
-            })}
-          </RadioGroup>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setStrategyDialogOpen(false)} disabled={loading}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={doSubmit} disabled={loading || !strategyAvailability[publishStrategy].available}>
-              {loading ? t('mcp.saving') : t('mcp.confirmPublish', { defaultValue: '确认发布' })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
