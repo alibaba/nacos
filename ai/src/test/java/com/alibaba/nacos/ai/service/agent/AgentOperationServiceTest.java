@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
@@ -103,6 +105,9 @@ class AgentOperationServiceTest {
     @Mock
     private AiResourceIndexMaintenanceService indexMaintenanceService;
     
+    @Mock
+    private AiResourceChangeNotifier resourceChangeNotifier;
+    
     private AgentOperationService service;
     
     private MockedStatic<VisibilityHelper> visibilityHelper;
@@ -115,6 +120,7 @@ class AgentOperationServiceTest {
             new AgentOperationService(persistenceService, resourceManager,
                 publishPipelineExecutor);
         service.setAiResourceIndexMaintenanceService(indexMaintenanceService);
+        service.setAiResourceChangeNotifier(resourceChangeNotifier);
         visibilityHelper = org.mockito.Mockito.mockStatic(VisibilityHelper.class);
         visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("alice");
         visibilityHelper.when(VisibilityHelper::resolveClientIp).thenReturn("127.0.0.1");
@@ -187,6 +193,9 @@ class AgentOperationServiceTest {
             Constants.Agent.RESOURCE_TYPE_AGENT);
         verify(indexMaintenanceService).schedule(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.CREATE,
+            true);
     }
     
     @Test
@@ -233,6 +242,9 @@ class AgentOperationServiceTest {
         visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
         verify(indexMaintenanceService).schedule(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.CREATE,
+            true);
         verify(persistenceService).createInitialDraft(any(Agent.class),
             any(AgentVersionDetail.class));
         verify(persistenceService, never()).createDraft(eq(NAMESPACE_ID), eq(AGENT_NAME),
@@ -295,6 +307,30 @@ class AgentOperationServiceTest {
         service.setAiResourceIndexMaintenanceService(null);
         
         assertSame(updated, service.updateAgent(replacement));
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.UPDATE,
+            false);
+    }
+    
+    @Test
+    void testProjectionNotificationFailureDoesNotRollbackCommittedAgentUpdate()
+        throws NacosException {
+        AiResource meta = meta(null, null);
+        Agent replacement = new Agent();
+        replacement.setNamespaceId(NAMESPACE_ID);
+        replacement.setAgentName(AGENT_NAME);
+        Agent updated = new Agent();
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        when(persistenceService.tryUpdateAgent(replacement, meta)).thenReturn(updated);
+        doThrow(new IllegalStateException("projection unavailable")).when(resourceChangeNotifier)
+            .notifyChanged(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME,
+                AiResourceChangeOperation.UPDATE, false);
+        service.setAiResourceChangeNotifier(null);
+        
+        assertSame(updated, service.updateAgent(replacement));
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
     }
     
     @Test
@@ -898,6 +934,9 @@ class AgentOperationServiceTest {
             null, null);
         verify(indexMaintenanceService, org.mockito.Mockito.times(2)).schedule(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier, org.mockito.Mockito.times(2)).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.UPDATE,
+            false);
     }
     
     @Test
@@ -912,6 +951,9 @@ class AgentOperationServiceTest {
         assertSame(updated, service.updateLabels(NAMESPACE_ID, AGENT_NAME, labels));
         verify(indexMaintenanceService).schedule(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.UPDATE,
+            false);
     }
     
     @Test

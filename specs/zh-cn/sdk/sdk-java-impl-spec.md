@@ -193,6 +193,26 @@ Request、注入 SDK namespace，并按 `autoSubmit` 创建 draft 或执行普�
 | 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationBatch`，并保留为 redo 意图。 |
 | 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `AgentEndpointDeregistrationBatch`。 |
 
+Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进制兼容。
+`NacosAgentDiscoveryEvent` 增加 Event Type 与 Unavailable Error Getter，现有 Result
+构造器继续创建 `SNAPSHOT`。官方实现可以通过 Factory 或附加构造器创建 `UNAVAILABLE`，
+但不能改变 Listener 方法签名。
+
+实现分层为：
+
+```text
+AgentDiscoveryService Feature Facade
+  -> Agent Watch Manager（Identity、Capacity、Cache、Fingerprint、Listener）
+    -> Wire Watch Transport（gRPC、HTTP Batch Long Poll 或轮询回退）
+      -> AgentClientProxy Discover 执行权威刷新
+```
+
+Transport Code 只拥有 Wire Lifecycle 和 Signal，不复制 Feature Cache 或 Listener State。
+Canonicalization 与 Fingerprinting 位于 Client/Server 共用的 Java 8 兼容 Agent Utility。
+Listener Callback 在 Connection/HTTP I/O 外执行；有 Listener Executor 时优先使用，否则
+使用有界共享 Executor，并隔离异常。该 Agent-only 分层不改变 Prompt、Skill、MCP、
+AgentSpec 或旧 A2A 的 Transport Ownership。
+
 这些公开方法不接受 `namespaceId`。Proxy 复制调用方的 Request 或 Batch，把 SDK
 namespace 注入传输对象，并且不修改调用方对象。如果共享输入模型已经携带与 SDK namespace
 不同的非空值，Proxy 在本地拒绝。目标 Watch、Cache 和 Redo 行为遵循

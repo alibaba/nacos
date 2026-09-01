@@ -89,6 +89,28 @@ public class AgentHttpClientLifecycleService {
     }
     
     /**
+     * Validate the mandatory HTTP Watch headers and renew an existing bound client.
+     *
+     * <p>A Watch does not create a Naming HTTP client or publisher. When the same external id
+     * already owns publications, its initial identity and namespace binding still apply.</p>
+     *
+     * @param externalClientId external HTTP Client id
+     * @param requestModule Request-Module header
+     * @param namespaceId effective Watch namespace
+     * @throws NacosApiException when the headers or an existing binding are invalid
+     */
+    public void renewForWatch(String externalClientId, String requestModule, String namespaceId)
+        throws NacosApiException {
+        validateStatefulHeaders(externalClientId, requestModule);
+        HttpConnectionBasedClient client = getClient(externalClientId);
+        if (client == null) {
+            return;
+        }
+        validateExistingBinding(client, namespaceId);
+        clientManager.renewClient(client.getClientId());
+    }
+    
+    /**
      * Replace one HTTP Publisher's complete Agent Endpoint batch.
      *
      * @param externalClientId external HTTP Client id

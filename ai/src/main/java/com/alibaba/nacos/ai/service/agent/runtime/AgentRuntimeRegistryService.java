@@ -195,9 +195,34 @@ public class AgentRuntimeRegistryService {
      */
     public EndpointSet getRuntimeEndpointSet(String namespaceId, String agentName,
         String protocol, List<String> versions) throws NacosException {
+        return buildRuntimeEndpointSet(namespaceId, agentName, protocol, versions, false);
+    }
+    
+    /**
+     * Return Runtime Endpoints from current Naming publisher facts for server-side Watch
+     * projection.
+     *
+     * <p>Naming refreshes its reusable {@code ServiceInfo} cache from a delayed push task. A Watch
+     * projection triggered by the same service-change event must not read that older cache before
+     * the Naming task refreshes it, otherwise the change can be missed until reconciliation.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName Agent name
+     * @param protocol Agent protocol
+     * @param versions non-empty compatibility target Versions
+     * @return Runtime Endpoint set built from current Naming publisher state
+     * @throws NacosException when Naming state cannot be represented by the Agent contract
+     */
+    public EndpointSet getCurrentRuntimeEndpointSet(String namespaceId, String agentName,
+        String protocol, List<String> versions) throws NacosException {
+        return buildRuntimeEndpointSet(namespaceId, agentName, protocol, versions, true);
+    }
+    
+    private EndpointSet buildRuntimeEndpointSet(String namespaceId, String agentName,
+        String protocol, List<String> versions, boolean currentFacts) throws NacosException {
         validateDiscoveryVersions(namespaceId, agentName, protocol, versions);
         List<AgentDiscoveryEndpoint> endpoints =
-            loadRuntimeEndpoints(namespaceId, agentName, protocol, versions);
+            loadRuntimeEndpoints(namespaceId, agentName, protocol, versions, currentFacts);
         sortRuntimeEndpoints(namespaceId, agentName, protocol, endpoints);
         EndpointSet result = new EndpointSet();
         result.setSource(EndpointSource.RUNTIME);
@@ -241,8 +266,9 @@ public class AgentRuntimeRegistryService {
     }
     
     private List<AgentDiscoveryEndpoint> loadRuntimeEndpoints(String namespaceId,
-        String agentName, String protocol, List<String> versions) throws NacosException {
-        ServiceInfo serviceInfo = getServiceInfo(namespaceId, agentName, protocol);
+        String agentName, String protocol, List<String> versions, boolean currentFacts)
+        throws NacosException {
+        ServiceInfo serviceInfo = getServiceInfo(namespaceId, agentName, protocol, currentFacts);
         Map<EndpointNaturalKey, Endpoint> payloads =
             new TreeMap<EndpointNaturalKey, Endpoint>();
         Map<EndpointNaturalKey, AgentDiscoveryEndpoint> result =
@@ -281,8 +307,14 @@ public class AgentRuntimeRegistryService {
     }
     
     private ServiceInfo getServiceInfo(String namespaceId, String agentName, String protocol) {
-        ServiceInfo result =
-            serviceStorage.getData(composeService(namespaceId, agentName, protocol));
+        return getServiceInfo(namespaceId, agentName, protocol, false);
+    }
+    
+    private ServiceInfo getServiceInfo(String namespaceId, String agentName, String protocol,
+        boolean currentFacts) {
+        Service service = composeService(namespaceId, agentName, protocol);
+        ServiceInfo result = currentFacts ? serviceStorage.getPushData(service)
+            : serviceStorage.getData(service);
         if (result == null) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR,
                 "Naming ServiceStorage returned no Runtime Endpoint data");

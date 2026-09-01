@@ -41,12 +41,29 @@ public class MetricsMonitor {
         .help("nacos_client_naming_request_failed_total")
         .labelNames("module", "req_class", "res_status", "res_code", "err_class").register();
     
+    private static final Counter NACOS_CLIENT_AI_WATCH_EVENT_TOTAL = Counter.build()
+        .name("nacos_client_ai_watch_events_total")
+        .help("nacos_client_ai_watch_events_total")
+        .labelNames("event", "result").register();
+    
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR_GAUGE.labels("naming", "serviceInfoMapSize");
     }
     
     public static Gauge.Child getListenConfigCountMonitor() {
         return NACOS_MONITOR_GAUGE.labels("config", "listenConfigCount");
+    }
+    
+    public static Gauge.Child getAgentWatchIntentCountMonitor() {
+        return NACOS_MONITOR_GAUGE.labels("ai", "agentWatchIntentCount");
+    }
+    
+    public static Gauge.Child getAgentWatchPendingCountMonitor() {
+        return NACOS_MONITOR_GAUGE.labels("ai", "agentWatchPendingCount");
+    }
+    
+    public static Gauge.Child getAgentWatchDirtyCountMonitor() {
+        return NACOS_MONITOR_GAUGE.labels("ai", "agentWatchDirtyCount");
     }
     
     public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
@@ -62,5 +79,9 @@ public class MetricsMonitor {
         String errClass) {
         return NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL.labels("naming", reqClass, resStatus,
             resCode, errClass);
+    }
+    
+    public static Counter.Child getAgentWatchEventMonitor(String event, String result) {
+        return NACOS_CLIENT_AI_WATCH_EVENT_TOTAL.labels(event, result);
     }
 }

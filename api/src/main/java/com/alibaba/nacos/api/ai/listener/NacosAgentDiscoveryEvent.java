@@ -25,7 +25,13 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
  */
 public class NacosAgentDiscoveryEvent implements NacosAiEvent {
     
+    private final NacosAgentDiscoveryEventType type;
+    
     private final AgentDiscoveryResult agentDiscoveryResult;
+    
+    private final Integer errorCode;
+    
+    private final String errorMessage;
     
     /**
      * Create one complete replacement event.
@@ -33,7 +39,37 @@ public class NacosAgentDiscoveryEvent implements NacosAiEvent {
      * @param agentDiscoveryResult complete discovery snapshot
      */
     public NacosAgentDiscoveryEvent(AgentDiscoveryResult agentDiscoveryResult) {
+        this.type = NacosAgentDiscoveryEventType.SNAPSHOT;
         this.agentDiscoveryResult = agentDiscoveryResult;
+        this.errorCode = null;
+        this.errorMessage = null;
+    }
+    
+    private NacosAgentDiscoveryEvent(int errorCode, String errorMessage) {
+        this.type = NacosAgentDiscoveryEventType.UNAVAILABLE;
+        this.agentDiscoveryResult = null;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+    }
+    
+    /**
+     * Create an unavailable transition without exposing a stale discovery result.
+     *
+     * @param errorCode Nacos error code
+     * @param errorMessage error description
+     * @return unavailable event
+     */
+    public static NacosAgentDiscoveryEvent unavailable(int errorCode, String errorMessage) {
+        return new NacosAgentDiscoveryEvent(errorCode, errorMessage);
+    }
+    
+    /**
+     * Get the event type.
+     *
+     * @return event type
+     */
+    public NacosAgentDiscoveryEventType getType() {
+        return type;
     }
     
     /**
@@ -43,5 +79,23 @@ public class NacosAgentDiscoveryEvent implements NacosAiEvent {
      */
     public AgentDiscoveryResult getAgentDiscoveryResult() {
         return agentDiscoveryResult;
+    }
+    
+    /**
+     * Get the Nacos error code for an unavailable event.
+     *
+     * @return error code, or {@code null} for a snapshot
+     */
+    public Integer getErrorCode() {
+        return errorCode;
+    }
+    
+    /**
+     * Get the error description for an unavailable event.
+     *
+     * @return error description, or {@code null} for a snapshot
+     */
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

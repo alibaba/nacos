@@ -81,7 +81,8 @@ being accepted accidentally where another was expected.
 
 | Schema | Version | Status | Purpose |
 | --- | --- | --- | --- |
-| `ai/rad/0.1.0/rad-protocol.schema.json` | `0.1.0` | Experimental | RAD Search, Discover, Watch snapshot, and Runtime Endpoint publication objects. |
+| `ai/rad/0.1.0/rad-protocol.schema.json` | `0.1.0` | Experimental | RAD Search, Discover, logical Watch snapshot, and Runtime Endpoint publication objects. |
+| `ai/rad/watch/0.1.0/rad-watch-binding.schema.json` | `0.1.0` | Experimental | Nacos-specific gRPC fingerprint hints and HTTP batch-long-poll Watch binding objects. |
 | `ai/agent/0.1.0/agent-management.schema.json` | `0.1.0` | Experimental | Public Agent management resources and bounded read views. |
 | `ai/agent/0.2.0/agent-artifact.schema.json` | `0.2.0` | Experimental | Version-pinned protocol-neutral Agent artifact for ARD and other registry adaptors. |
 | `ai/agent/internal/v1/agent-storage.schema.json` | `1` | Internal experimental | Agent resource extension, version content and storage pointer, Naming projection, codecs, composers, and digest contracts. |

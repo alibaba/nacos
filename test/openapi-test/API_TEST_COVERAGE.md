@@ -55,11 +55,11 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 11 | 10 | 1 | 0 | 90.91% | 95.45% |
+| Client OpenAPI | 12 | 11 | 1 | 0 | 91.67% | 95.83% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 29 | 24 | 5 | 0 | 82.76% | 91.38% |
 | Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
-| Total | 82 | 65 | 15 | 2 | 79.27% | 88.41% |
+| Total | 83 | 66 | 15 | 2 | 79.52% | 88.55% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate

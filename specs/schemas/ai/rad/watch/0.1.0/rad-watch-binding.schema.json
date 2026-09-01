@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nacos.io/schemas/ai/rad/watch/0.1.0/rad-watch-binding.schema.json",
+  "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
+  "title": "Nacos RAD Watch Binding 0.1.0",
+  "description": "Definition bundle for the Nacos gRPC hint and HTTP batch-long-poll bindings. Wire notifications never contain AgentDiscoveryResult. Select an explicit x-entrypoints reference for validation.",
+  "x-status": "experimental",
+  "x-binding-version": "0.1.0",
+  "x-entrypoints": {
+    "AgentSubscribeRpcRequest": "#/$defs/AgentSubscribeRpcRequest",
+    "AgentSubscribeRpcResponse": "#/$defs/AgentSubscribeRpcResponse",
+    "AgentUnsubscribeRpcRequest": "#/$defs/AgentUnsubscribeRpcRequest",
+    "AgentUnsubscribeRpcResponse": "#/$defs/AgentUnsubscribeRpcResponse",
+    "AgentDiscoveryNotifyRequest": "#/$defs/AgentDiscoveryNotifyRequest",
+    "AgentDiscoveryNotifyResponse": "#/$defs/AgentDiscoveryNotifyResponse",
+    "AgentWatchBatchRequest": "#/$defs/AgentWatchBatchRequest",
+    "AgentWatchBatchResponse": "#/$defs/AgentWatchBatchResponse"
+  },
+  "$defs": {
+    "ClientWatchId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$",
+      "description": "Opaque client-generated id stable for one local canonical Wire Intent."
+    },
+    "WatchKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._:-]+$",
+      "description": "Opaque server-generated id scoped to one current gRPC connection."
+    },
+    "Fingerprint": {
+      "type": "string",
+      "pattern": "^sha256-canonical-json-v1:[0-9a-f]{64}$",
+      "description": "Equality-only digest of the complete canonical AgentDiscoveryResult."
+    },
+    "AgentDiscoveryRequest": {
+      "$ref": "../../0.1.0/rad-protocol.schema.json#/$defs/AgentDiscoveryRequest"
+    },
+    "AgentSubscribeRpcRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clientWatchId",
+        "discoveryRequest"
+      ],
+      "properties": {
+        "clientWatchId": {
+          "$ref": "#/$defs/ClientWatchId"
+        },
+        "discoveryRequest": {
+          "$ref": "#/$defs/AgentDiscoveryRequest"
+        },
+        "materializedFingerprint": {
+          "$ref": "#/$defs/Fingerprint"
+        }
+      }
+    },
+    "AgentSubscribeRpcResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "watchKey",
+        "refreshRequired"
+      ],
+      "properties": {
+        "watchKey": {
+          "$ref": "#/$defs/WatchKey"
+        },
+        "observedFingerprint": {
+          "$ref": "#/$defs/Fingerprint"
+        },
+        "refreshRequired": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AgentUnsubscribeRpcRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "watchKey"
+      ],
+      "properties": {
+        "watchKey": {
+          "$ref": "#/$defs/WatchKey"
+        }
+      }
+    },
+    "AgentUnsubscribeRpcResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "maxProperties": 0
+    },
+    "AgentDiscoveryNotifyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "watchKey",
+        "eventType"
+      ],
+      "properties": {
+        "watchKey": {
+          "$ref": "#/$defs/WatchKey"
+        },
+        "eventType": {
+          "type": "string",
+          "enum": [
+            "INVALIDATE",
+            "REVALIDATE",
+            "TERMINATED"
+          ]
+        },
+        "observedFingerprint": {
+          "$ref": "#/$defs/Fingerprint"
+        },
+        "errorCode": {
+          "type": "integer"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "INVALIDATE"
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "not": {
+              "required": [
+                "observedFingerprint"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "TERMINATED"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "errorCode"
+            ]
+          }
+        }
+      ]
+    },
+    "AgentDiscoveryNotifyResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "watchKey",
+        "accepted"
+      ],
+      "properties": {
+        "watchKey": {
+          "$ref": "#/$defs/WatchKey"
+        },
+        "accepted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AgentWatchBatchItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clientWatchId",
+        "discoveryRequest",
+        "materializedFingerprint"
+      ],
+      "properties": {
+        "clientWatchId": {
+          "$ref": "#/$defs/ClientWatchId"
+        },
+        "discoveryRequest": {
+          "$ref": "#/$defs/AgentDiscoveryRequest"
+        },
+        "materializedFingerprint": {
+          "$ref": "#/$defs/Fingerprint"
+        }
+      }
+    },
+    "AgentWatchBatchRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "timeoutMillis",
+        "watches"
+      ],
+      "properties": {
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeoutMillis": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "watches": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/AgentWatchBatchItem"
+          }
+        }
+      }
+    },
+    "AgentWatchBatchResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "changed"
+      ],
+      "properties": {
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "changedClientWatchIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/ClientWatchId"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "changed": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "changedClientWatchIds"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "changedClientWatchIds"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

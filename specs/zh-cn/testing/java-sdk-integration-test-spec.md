@@ -149,7 +149,30 @@ gRPC 连接就绪状态或可选服务端能力的 SDK 测试。
 涉及 ARD Artifact 的协议一致性继续由 OpenAPI/适配器 IT 覆盖；Java SDK IT 只通过公开 SDK
 合同验证其可观察目录与 Discover 行为。
 
-## 9. MCP 兼容与 Runtime Endpoint 场景
+## 9. Agent Watch 与 Push 场景
+
+Agent Watch、Listener Event 或 Transport Routing 发生变化时，Java SDK IT 使用真实外部
+Client 和单机 Server，至少覆盖：
+
+- 分别使用 `GRPC` 和 `HTTP`：初始存在与初始缺失目标，Definition/Metadata/Latest/Label
+  变化，Runtime Register/Replace/Deregister/Health/Expiry，Filter 空结果，Duplicate 与
+  A-B-A 合并，Unsubscribe/Resubscribe，多 Listener 和 Shutdown；
+- Listener 投递完整替换 `SNAPSHOT`、Fingerprint 相同抑制、缺失周期一次 Unavailable
+  Transition、恢复 Snapshot、Listener Executor 选择、Slow/Throwing Listener 与隔离；
+- 参数校验、鉴权、冲突、本地/Server 容量、超大 Watch、Discover 瞬时失败、Push/Long-poll
+  Timeout、Executor Reject 和拒绝状态清理，且不无限重试；
+- gRPC Disconnect/Reconnect、Server Restart、新 Connection Wire Key、Hint 丢失或重复、
+  旧 Key 迟到通知、Subscribe/ACK Failure、Ability 缺失和有界轮询回退；
+- HTTP 完整 List Generation 变化、多 Agent 只使用一个 Long Poll、迟到旧 Generation
+  Response、重复 Timeout、Server Switch 或 LB Node 变化和 Restart Recovery；
+- `AUTO` 初始 gRPC 成功、从未连接的 gRPC 稳定回退 HTTP、gRPC Watch Ability 缺失、
+  Connection-class Migration，且业务错误不触发 Fallback；
+- 所有 Agent Transport Mode 下 Prompt、Skill、MCP、AgentSpec 和旧 A2A 操作保持隔离。
+
+所有异步断言使用明确的有界 Deadline 和可观察 SDK/API 状态。固定 Sleep 可以控制 Retry
+节奏，但不能作为成功条件。
+
+## 10. MCP 兼容与 Runtime Endpoint 场景
 
 MCP Storage 路由或生命周期托管发生变化时，Java SDK IT 至少覆盖：
 

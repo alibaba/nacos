@@ -80,6 +80,7 @@ import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.AgentHttpTransport;
 import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
+import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
@@ -101,8 +102,8 @@ import java.util.function.Consumer;
  *
  * <p>The facade owns public validation and feature state. Protocol-neutral Agent calls flow
  * through {@link AgentTransportRouter}; the router owns no cache and delegates connection
- * lifecycle to the concrete Agent transports. Polling subscriptions and Endpoint publication
- * intent remain in their dedicated holders and depend only on that Agent transport surface.
+ * lifecycle to the concrete Agent transports. Agent Watch and Endpoint publication intent
+ * remain in their dedicated managers and depend only on that Agent transport surface.
  * Legacy AI resource holders retain their existing proxy contract.</p>
  *
  * @author xiweng.yy
@@ -175,7 +176,9 @@ public class NacosAiService implements AiService {
             new NacosAgentDiscoveryCacheHolder(namespaceId, this.agentTransportRouter,
                 resolvePositiveCapacity(clientProperties,
                     AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
-                    AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS));
+                    AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
+                new AgentWatchTransportRouter(transportMode, grpcClient, httpProxy,
+                    AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
         this.agentEndpointPublicationManager =
             new AgentEndpointPublicationManager(this.agentTransportRouter,
                 resolvePositiveCapacity(clientProperties,

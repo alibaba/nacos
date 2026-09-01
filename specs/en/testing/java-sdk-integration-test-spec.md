@@ -176,7 +176,38 @@ Protocol conformance for ARD artifacts remains covered by OpenAPI/adaptor IT.
 Java SDK IT validates only observable catalog and Discover behavior through
 public SDK contracts.
 
-## 9. MCP Compatibility And Runtime Endpoint Scenarios
+## 9. Agent Watch And Push Scenarios
+
+When Agent Watch, listener events, or transport routing changes, Java SDK IT
+uses real external clients and a standalone server to cover at least:
+
+- `GRPC` and `HTTP` separately: initial existing and initially missing targets,
+  definition/metadata/latest/label changes, runtime register/replace/
+  deregister/health/expiry, filtered empty results, duplicate and A-B-A
+  coalescing, unsubscribe/resubscribe, multiple listeners, and shutdown;
+- listener delivery as complete replacement `SNAPSHOT`, fingerprint-equal
+  suppression, one unavailable transition for absence, recovery snapshot,
+  listener executor selection, slow/throwing listeners, and callback isolation;
+- validation, authorization, conflict, local/server capacity, oversized Watch,
+  Discover transient failure, push/long-poll timeout, executor rejection, and
+  rejected-state cleanup without infinite retry;
+- gRPC disconnect/reconnect, server restart, new connection wire keys, lost or
+  duplicate Hint tolerance, late old-key notification, Subscribe/ACK failure,
+  ability absence, and bounded polling fallback;
+- HTTP complete-list generation changes, one long poll for many Agents, late
+  old-generation response, repeated timeout, server switch or load-balancer
+  node change, and restart recovery;
+- `AUTO` initial gRPC success, never-connected gRPC settling on HTTP, gRPC Watch
+  ability absence, connection-class migration, and no fallback on business
+  errors; and
+- non-Agent Prompt, Skill, MCP, AgentSpec, and legacy A2A operations remaining
+  behaviorally isolated in every Agent transport mode.
+
+Every asynchronous assertion uses an explicit bounded deadline and observable
+SDK/API state. Fixed sleeps may pace retries but never constitute the success
+condition.
+
+## 10. MCP Compatibility And Runtime Endpoint Scenarios
 
 When MCP Storage routing or lifecycle hosting changes, Java SDK IT must cover at
 least:

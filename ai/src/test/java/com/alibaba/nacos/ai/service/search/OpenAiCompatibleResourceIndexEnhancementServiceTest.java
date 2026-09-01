@@ -17,9 +17,13 @@
 package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -41,13 +45,23 @@ import static org.mockito.Mockito.when;
  */
 class OpenAiCompatibleResourceIndexEnhancementServiceTest {
     
+    private ConfigurableEnvironment previousEnvironment;
+    
+    @BeforeEach
+    void setUp() {
+        previousEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new StandardEnvironment());
+    }
+    
     @AfterEach
     void tearDown() {
         System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENABLED);
         System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_ENDPOINT);
         System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_API_KEY);
         System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MODEL);
+        System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_TIMEOUT_MS);
         System.clearProperty(OpenAiCompatibleResourceIndexEnhancementService.KEY_MAX_ITEMS);
+        EnvUtil.setEnvironment(previousEnvironment);
     }
     
     @Test

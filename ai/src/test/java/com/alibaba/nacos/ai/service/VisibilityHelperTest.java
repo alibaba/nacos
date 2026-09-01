@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +33,11 @@ import java.lang.reflect.Field;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -91,6 +97,32 @@ class VisibilityHelperTest {
             .thenReturn(Optional.of(visibilityService));
         String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
         assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
+    }
+    
+    @Test
+    void canReadResourceWithCapturedOwnerShouldAllowWhenPluginAbsent() {
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.empty());
+        
+        assertTrue(VisibilityHelper.canReadResource(mock(VisibilityResource.class)));
+        assertTrue(VisibilityHelper.canReadResource("identity", "open-api",
+            mock(VisibilityResource.class)));
+    }
+    
+    @Test
+    void canReadResourceWithCapturedOwnerShouldDelegateExactContext() {
+        VisibilityService visibilityService = mock(VisibilityService.class);
+        VisibilityResource resource = mock(VisibilityResource.class);
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(visibilityService));
+        when(visibilityService.validateVisibility("identity", VisibilityConstants.ACTION_READ,
+            "open-api", resource)).thenReturn(ValidationResult.deny("private"));
+        
+        assertFalse(VisibilityHelper.canReadResource("identity", "open-api", resource));
+        verify(visibilityService).validateVisibility("identity",
+            VisibilityConstants.ACTION_READ, "open-api", resource);
+        verify(visibilityService).validateVisibility(anyString(), anyString(), anyString(),
+            any(VisibilityResource.class));
     }
     
     private static void resetCachedVisibilityServiceName() throws Exception {

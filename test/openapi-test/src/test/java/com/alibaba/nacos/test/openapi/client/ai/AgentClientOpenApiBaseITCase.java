@@ -46,6 +46,8 @@ public abstract class AgentClientOpenApiBaseITCase extends AiAdminApiBaseITCase 
     protected static final String AGENT_CLIENT_PATH = nacosPath(Constants.Agent.CLIENT_PATH);
     
     protected static final String AGENT_SEARCH_PATH = AGENT_CLIENT_PATH + "/search";
+
+    protected static final String AGENT_WATCH_PATH = AGENT_CLIENT_PATH + "/watch";
     
     protected static final String AGENT_ENDPOINT_PATH = AGENT_CLIENT_PATH + "/endpoints";
     
@@ -98,6 +100,20 @@ public abstract class AgentClientOpenApiBaseITCase extends AiAdminApiBaseITCase 
         addStatefulHeaders(request, clientId, requestModule);
         HttpUtils.initRequestFromEntity(request, form, StandardCharsets.UTF_8.name());
         return executeRaw(request);
+    }
+
+    protected HttpResponse postWatchForm(String clientId, String requestModule,
+            Map<String, String> form) throws Exception {
+        return executeRaw(watchRequest(requestUrl(AGENT_WATCH_PATH), clientId,
+                requestModule, form));
+    }
+
+    protected HttpPost watchRequest(String url, String clientId, String requestModule,
+            Map<String, String> form) throws Exception {
+        HttpPost request = new HttpPost(url);
+        addStatefulHeaders(request, clientId, requestModule);
+        HttpUtils.initRequestFromEntity(request, form, StandardCharsets.UTF_8.name());
+        return request;
     }
     
     protected HttpResponse deleteEndpointForm(String clientId, String requestModule, Query form)

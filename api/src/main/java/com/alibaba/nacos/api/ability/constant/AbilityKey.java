@@ -80,6 +80,12 @@ public enum AbilityKey {
         AbilityMode.SERVER),
     
     /**
+     * Server support the RAD Watch hint binding.
+     */
+    SERVER_RAD_WATCH_V1("radWatchV1", "Server whether support RAD Watch hint push",
+        AbilityMode.SERVER),
+    
+    /**
      * For fuzzy watch naming or config.
      */
     SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config",
@@ -103,6 +109,12 @@ public enum AbilityKey {
      */
     SDK_AGENT_REGISTRY("agent",
         "Client whether support release agent server and register endpoint for agent server",
+        AbilityMode.SDK_CLIENT),
+    
+    /**
+     * SDK client support the RAD Watch hint binding.
+     */
+    SDK_RAD_WATCH_V1("radWatchV1", "Client whether support RAD Watch hint push",
         AbilityMode.SDK_CLIENT),
     
     /**

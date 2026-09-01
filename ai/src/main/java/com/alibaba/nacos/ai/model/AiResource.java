@@ -28,6 +28,8 @@ import java.sql.Timestamp;
  */
 public class AiResource extends VisibilityResource {
     
+    private static final long serialVersionUID = 1L;
+    
     private Long id;
     
     private Timestamp gmtCreate;

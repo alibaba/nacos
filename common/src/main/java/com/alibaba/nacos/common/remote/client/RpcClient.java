@@ -1195,4 +1195,14 @@ public abstract class RpcClient implements Closeable {
         // return null if connection is not ready
         return null;
     }
+    
+    /**
+     * Return the current connection identifier.
+     *
+     * @return current connection identifier, or {@code null} before connection establishment
+     */
+    public String getCurrentConnectionId() {
+        Connection connection = currentConnection;
+        return connection == null ? null : connection.getConnectionId();
+    }
 }

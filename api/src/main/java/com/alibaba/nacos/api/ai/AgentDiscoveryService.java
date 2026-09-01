@@ -81,7 +81,7 @@ public interface AgentDiscoveryService {
     }
     
     /**
-     * Subscribe to one Agent by periodically performing the same Discover operation.
+     * Subscribe to one Agent through transport-neutral Watch.
      *
      * @param reference Agent reference
      * @param listener discovery listener
@@ -95,7 +95,7 @@ public interface AgentDiscoveryService {
     }
     
     /**
-     * Subscribe to one filtered Agent view by periodically performing Discover.
+     * Subscribe to one filtered Agent view through transport-neutral Watch.
      *
      * @param reference Agent reference
      * @param filter optional discovery filter
@@ -112,7 +112,7 @@ public interface AgentDiscoveryService {
     }
     
     /**
-     * Cancel one local polling subscription.
+     * Cancel one local Watch subscription.
      *
      * @param reference Agent reference used to subscribe
      * @param listener listener instance used to subscribe
@@ -125,7 +125,7 @@ public interface AgentDiscoveryService {
     }
     
     /**
-     * Cancel one local filtered polling subscription.
+     * Cancel one local filtered Watch subscription.
      *
      * @param reference Agent reference used to subscribe
      * @param filter discovery filter used to subscribe

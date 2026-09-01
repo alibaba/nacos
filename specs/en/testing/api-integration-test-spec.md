@@ -190,7 +190,30 @@ Tests of asynchronous indexing use only bounded polling of public API results;
 they do not depend on a fixed sleep, internal database rows, or task execution
 order.
 
-## 10. MCP Migration And Lifecycle Scenarios
+## 10. Agent HTTP Watch Scenarios
+
+When the Agent HTTP batch-long-poll Watch binding changes, OpenAPI IT covers at
+least:
+
+- one request carrying multiple Agent Watch items and returning only the
+  changed caller item ids after definition, latest/label, runtime Endpoint,
+  liveness, and visibility changes;
+- timeout returning `changed=false`, followed by immediate reuse with the next
+  generation and complete list;
+- add/remove generation changes, a late prior response, duplicate item ids,
+  mixed namespaces, empty/oversized batches, malformed fingerprints, timeout
+  bounds, form-size bounds, and the configured soft Watch capacity;
+- missing or invalid `X-Nacos-Client-Id` and `Request-Module`, request-level AI
+  read denial, and no descriptor/Endpoint/per-item authorization data in a
+  successful response;
+- changed ids being re-readable only through ordinary authorized Discover,
+  including invisible and missing resources returning the standard controlled
+  result; and
+- server restart and repeated long polls converging through bounded public API
+  polling without depending on socket-cancel timing, one fixed server node, or
+  internal waiter state.
+
+## 11. MCP Migration And Lifecycle Scenarios
 
 When MCP lifecycle hosting is implemented, the OpenAPI IT matrix must cover at
 least:

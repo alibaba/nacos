@@ -36,6 +36,7 @@ AI 存储插件抽象 AI 资源的二进制或文本内容存储。元数据仍�
 | Opaque key | provider 专属 key，上层不应解析。 |
 | Content | 与 AI 资源版本关联的二进制或文本载荷。 |
 | Metadata | AI 持久化层存储的 AI 资源记录。 |
+| 本地可见回调 | provider 的本地读路径感知到内容变化后发出的 best-effort hint。 |
 
 ## SPI
 
@@ -54,6 +55,22 @@ AI 存储插件抽象 AI 资源的二进制或文本内容存储。元数据仍�
 | `save(storageKey, content)` | 为该 key 存储内容。 |
 | `get(storageKey)` | 读取该 key 的内容，不存在时返回 null。 |
 | `delete(storageKey)` | 删除该 key 的内容。 |
+| `consistencyMode()` | 声明 provider 的写后读和本地通知模型；兼容默认值为 `EVENTUAL_WITHOUT_NOTIFICATION`。 |
+| `addChangeListener(listener)` | 注册本地可见回调；兼容默认为空实现。 |
+| `removeChangeListener(listener)` | 移除本地可见回调；兼容默认为空实现。 |
+
+一致性模式如下：
+
+| 模式 | 契约 |
+|------|------|
+| `STRONG` | 已提交操作返回前，provider 的读路径已可见；正确性不依赖回调。 |
+| `EVENTUAL_WITH_NOTIFICATION` | 已提交操作可能稍后才在另一节点可见；provider 在本地读路径可能读到新内容时发出 best-effort 本地可见回调。 |
+| `EVENTUAL_WITHOUT_NOTIFICATION` | 已提交操作可能稍后才可见，且 provider 不提供本地回调契约；这是既有第三方实现的默认值。 |
+
+Storage 回调只是失效 hint，不是内容、鉴权授权或所有相关元数据已可见的
+证明。它可能重复、粗粒度、延迟，或早于对应的 AI 资源变化 hint 到达。Provider
+专属 notification key 仍是不透明的。Provider 只有在不需逆解不透明或哈希 key 时才可附带
+资源类型 hint，消费者必须容忍该 hint 缺失。
 
 该插件以 `ai-storage` 类型暴露给核心插件管理器。
 
@@ -67,6 +84,8 @@ Nacos 资源身份。
 被禁用时路由必须显式失败，且不得调用其内容读写操作。
 
 默认 provider 为 `nacos_config`，它通过 Nacos 配置存储保存 AI 资源内容。
+`nacos_config` 声明 `EVENTUAL_WITH_NOTIFICATION`，并将 AI 自有坐标的本地
+Config cache 变化事件适配为 Storage 本地可见回调；普通用户 Config 坐标不得产生该回调。
 `nacos_config` provider 将不透明 key 映射为 Nacos 配置坐标时，必须对逻辑 `dataId` 和
 规范资源 group 使用稳定的物理映射：
 
@@ -161,6 +180,11 @@ service 实例，不属于 builder 或领域路由 key。
 存储插件必须精确保留字节内容，不得改变资源元数据、版本状态、
 [可见性](../auth/visibility-plugin-spec.md)或鉴权。存储 provider 缺失时必须显式失败。
 发布前审核仍由 [AI Pipeline](ai-pipeline-plugin-spec.md) 负责。
+
+AI 资源层拥有跨节点资源变化通知。Storage 回调和资源变化 hint 都可以投递到
+同一个节点内、带延迟合并的 Projection Refresh。该刷新是短暂进程状态，不得持久化到
+`ai_resource_task` 或其他持久任务表。持久 Search Index/生命周期任务与 Watch Projection
+刷新仍互相独立。Provider 不得通过回调契约发送资源内容。
 
 实现必须记录：
 

@@ -306,6 +306,13 @@ class HttpUtilsTest {
     }
     
     @Test
+    void testBuildUriAppendsToExistingQuery() throws URISyntaxException {
+        Query query = Query.newInstance().addParam("encoding", "UTF-8");
+        URI actual = HttpUtils.buildUri("www.aliyun.com?agentName=test", query);
+        assertEquals("www.aliyun.com?agentName=test&" + query.toQueryUrl(), actual.toString());
+    }
+    
+    @Test
     void testIsTimeoutException() {
         assertFalse(HttpUtils.isTimeoutException(new NacosRuntimeException(0)));
         assertTrue(HttpUtils.isTimeoutException(new TimeoutException()));

@@ -97,6 +97,20 @@ class AiDistroFilterTest {
     }
     
     @Test
+    void testWatchRequestAlwaysStaysOnSelectedNode() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST",
+            "/nacos/v3/client/ai/agents/watch");
+        request.addHeader(ClientConstants.HTTP_CLIENT_ID_HEADER, "client");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        
+        filter.doFilter(request, response, chain);
+        
+        verify(chain).doFilter(any(ReuseHttpServletRequest.class), same(response));
+        verify(distroMapper, never()).responsible(anyString());
+    }
+    
+    @Test
     void testPeerRedirectIsRejected() throws Exception {
         MockHttpServletRequest request = statefulRequest("GET");
         request.addHeader(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v3");
@@ -144,6 +158,32 @@ class AiDistroFilterTest {
         assertTrue(headers.get().contains("X-Test"));
         assertTrue(headers.get().contains("value"));
         assertTrue(parameters.get().isEmpty());
+    }
+    
+    @Test
+    void testConsumedFormBodyIsRebuiltForProxyRequest() throws Exception {
+        MockHttpServletRequest request = statefulRequest("POST");
+        request.setContentType("application/x-www-form-urlencoded");
+        request.addParameter("agentName", "agent");
+        request.addParameter("protocol", "a2a");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(distroMapper.mapSrv(INTERNAL_CLIENT_ID)).thenReturn("2.2.2.2:8848");
+        AtomicReference<String> body = new AtomicReference<>();
+        
+        try (MockedStatic<HttpClient> httpClient = mockStatic(HttpClient.class)) {
+            httpClient.when(() -> HttpClient.request(anyString(), anyList(), anyMap(),
+                anyString(), anyInt(), anyInt(), anyString(), eq("POST")))
+                .thenAnswer(invocation -> {
+                    body.set(invocation.getArgument(3));
+                    return new RestResult<>(200, "ok", "proxied");
+                });
+            
+            filter.doFilter(request, response, mock(FilterChain.class));
+        }
+        
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertTrue(body.get().contains("agentName=agent"), body.get());
+        assertTrue(body.get().contains("protocol=a2a"), body.get());
     }
     
     @Test

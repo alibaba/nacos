@@ -32,7 +32,7 @@ new binding is implemented and negotiated.
 
 | Surface | Transport | Primary caller | Responsibility |
 |---|---|---|---|
-| Client | HTTP and gRPC | Agent consumers and runtime publishers | Search, Discover, register, and deregister; a later SDK provides local subscription by polling Discover |
+| Client | HTTP and gRPC | Agent consumers and runtime publishers | Search, Discover, server-aware Watch, register, and deregister |
 | Admin | HTTP | Maintainer SDK and management integrations | Agent CRUD, Version lifecycle, and runtime inspection |
 | Console | HTTP | Nacos Console UI | UI-oriented facade over Admin semantics |
 
@@ -111,42 +111,63 @@ AiService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentCatalogEntry>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Polling subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
-| Cancel polling subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
+| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
+| Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
 | Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
 | Code-first publish | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
-`subscribeAgent` is a local SDK convenience rather than a server Watch or Push
-operation. The SDK periodically executes Discover with the same Reference and
-Filter. If the target is initially absent, it returns `null` but retains the
-polling task. A later `NOT_FOUND` poll neither terminates the subscription nor
-delivers an empty snapshot. When the target appears, or the resolved Version,
-`contentDigest`, or any `sourceRevision` changes, the Listener receives a new
-complete replacement result. `getAll`, `selectOneHealthy`, protocol choice,
-priority/weight selection, and actual Agent calling are local SDK helpers, not
-additional remote operations.
+`subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
+and both peers advertise Watch, the SDK installs server-aware Wire Intent;
+otherwise it preserves compatibility through bounded local Discover polling.
+The initial successful Discover result is returned synchronously. If the target
+is absent, the call returns `null` and retains a bounded pending intent. A
+later Watch hint or fallback poll invokes the same authorized Discover. The
+Listener receives only a new complete replacement result whose canonical
+fingerprint differs from the cached result; it never receives a Wire hint.
+`getAll`, `selectOneHealthy`, protocol choice, priority/weight selection, and
+actual Agent calling are local SDK helpers, not additional remote operations.
 
-One SDK instance keeps at most 300 distinct local polling-subscription records
+`NacosAgentDiscoveryEvent` has event types `SNAPSHOT` and `UNAVAILABLE`. Its
+existing `NacosAgentDiscoveryEvent(AgentDiscoveryResult)` constructor remains
+the `SNAPSHOT` constructor. A `SNAPSHOT` exposes the complete result and no
+error. `UNAVAILABLE` exposes a Nacos error code and message and no result.
+Initial validation, authorization, and local or server Watch-capacity failures
+are thrown synchronously and the rejected intent is removed from all local
+Watch state. A later terminal authorization or capacity failure emits one
+`UNAVAILABLE` event and removes the intent. A transient transport failure does
+not delete intent; reconnect or fallback re-establishes it. `NOT_FOUND` emits
+at most one unavailable transition for the current absent period, retains a
+bounded pending intent, and emits a new `SNAPSHOT` when the target recovers.
+
+One SDK instance keeps at most 300 distinct local Watch records
 by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
 limit. Repeating the same canonical Reference, Filter, and Listener identity is
 idempotent and consumes no new slot. A new subscription over the limit fails
 synchronously with `CLIENT_OVER_THRESHOLD` and
 `AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT`; it is not cached or scheduled.
-Unsubscribe and shutdown release the slot. The later server Watch binding MUST
+Unsubscribe and shutdown release the slot. A server Watch binding MUST
 independently enforce the same default of 300 active Wire Watches per owner
-connection. The current SDK installs one subscription per public call. A later
-batched Wire Watch operation MUST apply the same soft pre-operation watermark:
+connection or HTTP Client. The current SDK installs one subscription per
+public call. A batched Wire Watch operation MUST apply the same soft
+pre-operation watermark:
 when current usage is below the watermark it admits the whole normalized batch
 even if the final count crosses it; at or above the watermark it rejects growth
 atomically and never partially caches a batch.
+
+The authoritative server default is configured in `application.properties` by
+`nacos.ai.rad.capacity.watch.max-per-client=300`. It counts active gRPC
+Wire Watches per connection and active HTTP batch items per HTTP Client. The
+binding's independent hard item and request-byte bounds still apply. Server and
+SDK limits are intentionally separate; a direct caller cannot rely on the SDK
+limit as server admission.
 
 An `AgentReference` with neither `version` nor `label` is the rollout-safe
 default: it returns latest definition metadata and Runtime Endpoints compatible
 with any current online Version. Explicit `label=latest` requests a strict
 latest-only Runtime pool. Exact versions and custom labels remain exact after
-resolution. Polling subscriptions preserve the same distinction because they
-repeat the unchanged Discover request.
+resolution. Watch re-fetch and polling fallback preserve the same distinction
+because they repeat the unchanged Discover request.
 
 One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
@@ -199,18 +220,19 @@ compensate by deleting the created draft.
 |---|:---:|:---:|
 | Search | Yes | Yes |
 | Discover | Yes | Yes |
-| Server Watch and push | No | No |
-| Local SDK polling subscription | Reuses Discover | Reuses Discover |
+| Server Watch hint | Batch long poll | Connection push |
+| Watch business-data refresh | Reuses Discover | Reuses Discover |
+| Compatibility fallback | Local Discover polling | Local Discover polling |
 | Register and Deregister | Yes | Yes |
 | Code-first definition publish | Yes | Yes |
 | Publisher heartbeat | Yes | Uses the gRPC connection lifecycle |
 
-Polling subscriptions use the SDK-selected Discover transport and add no HTTP
-path, gRPC payload, ability key, or Publisher renewal. Ordinary Discover and
-subscription polls renew only an HTTP Client, never its Publisher. After a
-write timeout, an SDK may change transport only when it knows the server did
-not process the request. An unknown gRPC write result must not be blindly
-repeated through HTTP.
+Watch hints never carry business data. The SDK always reuses the selected
+Discover transport to materialize a changed snapshot. Ordinary Discover,
+Watch re-fetch, and fallback polls renew only an HTTP Client, never its
+Publisher. After a write timeout, an SDK may change transport only when it
+knows the server did not process the request. An unknown gRPC write result must
+not be blindly repeated through HTTP.
 
 #### 2.2.1 Java SDK Agent Transport Modes
 
@@ -254,12 +276,26 @@ to one transport. Endpoint Publication selects an owner transport on its first
 send and keeps that owner for replacement, deregistration, heartbeat, and redo
 throughout the Publication lifetime.
 
+Local Watch Intent is transport-neutral and is the sole listener/cache source
+of truth. A Wire Watch has at most one active owner transport and generation.
+Explicit `grpc` waits for gRPC reconnect and never creates an HTTP long poll;
+explicit `http` uses only the HTTP batch long poll. In `auto`, gRPC Watch is
+chosen only when the connection is `RUNNING` and both Watch abilities are
+negotiated; otherwise HTTP Watch is used when its endpoint succeeds. A
+connection-class failure may migrate only the Wire owner, never duplicate the
+local listener record. Installing the new generation before retiring or
+ignoring the old generation is safe because late and duplicate hints only
+cause current-fact Discover and fingerprint comparison. When neither server
+Watch binding is available, the SDK uses bounded local polling with the normal
+Discover routing rules.
+
 ### 2.3 Client HTTP Paths
 
 | Method | Path | Input | Result |
 |---|---|---|---|
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
+| POST | `/v3/client/ai/agents/watch` | Form: `generation + timeoutMillis + watches`, where `watches` is a JSON array string | `Result<AgentWatchBatchResponse>` |
 | POST | `/v3/client/ai/agents` | Form: `AgentPublishRequest`; complex fields are JSON strings | `Result<AgentVersionDetail>` |
 | POST | `/v3/client/ai/agents/endpoints` | Form: complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form: `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
@@ -268,6 +304,36 @@ throughout the Publication lifetime.
 Search query names equal RAD field names. Repeated `tagsAll` values use AND;
 repeated `protocolsAny` values use OR. `agentNameContains` is a literal,
 case-sensitive substring.
+
+The Watch path is one request-scoped batch long poll, not one HTTP request per
+Agent and not three subscribe/listen/cancel APIs. It requires
+`X-Nacos-Client-Id` and `Request-Module: AI`. One request contains a monotonically
+increasing local `generation`, a timeout from 1000 through 60000 milliseconds,
+and the caller's complete current normalized Watch set for one effective
+namespace. Each item contains a client-generated `clientWatchId`, its complete
+`AgentDiscoveryRequest`, and the last materialized fingerprint. The server
+returns the same generation, `changed=false` on timeout, or `changed=true` plus
+only changed client Watch ids. It returns no descriptor, Endpoint, fingerprint,
+or per-item authorization result. The client ignores ids removed after the
+request began, fetches changed current items through Discover, and immediately
+starts the next long poll. Adding or removing local intent interrupts or
+supersedes the prior client request; server-side disconnect detection is an
+optimization, not a correctness requirement.
+
+One batch is limited by the configured Watch soft watermark and an independent
+hard binding bound of 1000 items. Request size also follows the shared HTTP
+form limit. Duplicate client Watch ids, mixed effective namespaces, malformed
+fingerprints, and an empty Watch list are invalid. The first binding performs
+request-level AI read authorization only; mandatory Discover re-fetch remains
+the fine-grained visibility and content authorization boundary.
+
+The HTTP binding additionally enforces per-node active-request and active-byte
+limits plus a per-request byte limit through
+`nacos.ai.rad.capacity.watch.http.max-active-requests-per-node`,
+`nacos.ai.rad.capacity.watch.http.max-active-bytes-per-node`, and
+`nacos.ai.rad.capacity.watch.http.max-request-bytes`. The 1000-item and
+128-character client Watch id bounds also place a fixed upper bound on the
+changed-id response. Capacity rejection is atomic and returns no partial set.
 
 Agent Search is a resource-specific facade over shared Search Core with
 `resourceType=agent` fixed. It maintains no second index and performs no
@@ -391,15 +457,17 @@ path for an upgrading cluster in which that API is not yet available.
 |---|---|---|
 | `AgentSearchRpcRequest` | `AgentSearchResponse` | Search and return a page of catalog entries |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | One Discover |
+| `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | Install one authorized connection-owned Watch intent |
+| `AgentUnsubscribeRpcRequest` | `AgentUnsubscribeRpcResponse` | Remove one connection-owned Watch intent |
+| `AgentDiscoveryNotifyRequest` | `AgentDiscoveryNotifyResponse` | Push one invalidation, revalidation, or terminal hint; never a discovery result |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit` |
 | `AgentEndpointRegisterRpcRequest` | `AgentEndpointOperationResponse` | Replace one complete RAD batch for the connection, Agent, and protocol |
 | `AgentEndpointDeregisterRpcRequest` | `AgentEndpointOperationResponse` | Remove the connection's whole publication for one Agent and protocol |
 
-All requests report module `ai`. gRPC endpoint contributions belong to
+All requests report module `ai`. gRPC endpoint contributions and Watches belong to
 `RequestMeta.connectionId`; no client id or heartbeat payload is added.
 Disconnect removes that connection's contributions. Reconnect obtains a new
-connection id and redoes endpoints. Local polling subscriptions are not
-connection-scoped server state.
+connection id and redoes endpoints and the complete current Watch intent.
 
 The `RpcRequest` suffix distinguishes Nacos Payload wrappers from the
 transport-neutral RAD root messages. Search and Discover wrappers carry their
@@ -424,24 +492,42 @@ singular runtime Version and Version-range metadata, retain ranges matching the
 requested Version, and aggregate the resulting `bindings[]` and health by
 public Endpoint natural key.
 
-This version defines no `AgentSubscribeRequest`,
-`AgentDiscoveryNotifyRequest`, `watchKey`, Push acknowledgement, or
-connection-scoped Watch redo state. Poll scheduling, complete-result caching,
-and change deduplication are local Java SDK behavior and do not extend the six
-RAD root messages.
+Subscribe carries a stable client-generated `clientWatchId`, the complete
+`AgentDiscoveryRequest`, and an optional last materialized fingerprint. The
+server returns a connection-scoped opaque `watchKey`, its optional observed
+fingerprint, and `refreshRequired`. Unsubscribe accepts only that `watchKey`.
+Notify carries `watchKey`, event type `INVALIDATE`, `REVALIDATE`, or
+`TERMINATED`, an optional observed fingerprint only for invalidation, and a
+required error code for termination. The client acknowledges `watchKey` and
+whether the hint was accepted after marking the matching local intent dirty;
+ACK does not mean Discover or listener execution completed. Unknown or stale
+keys are rejected without mutating another connection's state.
+
+The server push queue is latest-projection-oriented. Dirty tasks for the same
+Watch may coalesce before execution. Once one Notify execution starts, it runs
+to completion; a later dirty mark creates or merges into a subsequent task.
+The server keeps no prior business snapshot and no per-Watch sequence. The
+client handles loss, duplication, stale observed fingerprints, and A-B-A
+coalescing by executing current-fact Discover and comparing the canonical
+complete-result fingerprint. gRPC has no periodic full-data synchronization;
+reconnect resubscription is the low-frequency state reconciliation.
 
 The target ability keys are:
 
 | Constant | Wire key | Meaning |
 |---|---|---|
 | `SERVER_RAD_V1` | `radV1` | Server accepts the complete Nacos 3.3 RAD v1 contract |
+| `SERVER_RAD_WATCH_V1` | `radWatchV1` | Server accepts the Nacos RAD Watch hint binding |
+| `SDK_RAD_WATCH_V1` | `radWatchV1` | SDK accepts Nacos RAD Watch hint push requests |
 
 This ability is a compatibility and release unit rather than a per-handler
 inventory. It covers Agent definition publication, Search and Discover, and
 Runtime Endpoint publication because Nacos 3.3 implements, advertises, and
-tests them as one RAD v1 capability set. A future contract that can be deployed
-or enabled independently, such as server Watch/Push, must use a separate
-ability key.
+tests them as one RAD v1 capability set. Watch/Push is independently deployable
+and therefore uses one separate server ability and one separate SDK push
+ability. A gRPC Watch is selected only when both are negotiated; base
+`SERVER_RAD_V1` alone never authorizes Watch payloads. HTTP Watch availability
+is discovered by its HTTP result and does not use gRPC ability negotiation.
 
 Legacy `SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and
 `SDK_AGENT_REGISTRY` gate only the old A2A contract. Absence of a new ability
@@ -462,13 +548,19 @@ does not authorize sending a RAD payload through a legacy fallback.
 | HTTP timeout | Retry with the same client id and identical payload using backoff |
 | `HTTP_CLIENT_NOT_FOUND` | Mark local endpoint intent unregistered and redo each complete service batch |
 | Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
-| gRPC reconnect | Redo complete endpoint batches under the new connection id; local polling subscriptions require no server redo |
+| gRPC reconnect | Redo complete endpoint batches and active Watch intents under the new connection id; perform Discover when the Subscribe response requires refresh |
+| Lost, duplicate, or stale Watch hint | Mark current local intent dirty once and use current-fact Discover plus fingerprint comparison |
+| Terminal Watch authorization or capacity error | Emit one unavailable event, remove local Wire Intent, and do not retry indefinitely |
+| Transient Watch transport failure | Retain local intent and re-establish it through reconnect, AUTO routing, or polling fallback |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
 Parameter, authorization, and capacity errors do not enter infinite redo.
+Unsubscribe and shutdown remove Wire Intent before releasing the local slot;
+late notifications are acknowledged as stale and cannot invoke a removed
+listener.
 
 ## 3. Admin API And Maintainer SDK
 
@@ -611,13 +703,14 @@ RAD ability:
 
 1. API models, validation, error mapping, authorization, and audit;
 2. gRPC payload registration and ability negotiation;
-3. HTTP publisher Distro state, liveness, idempotency, and redo;
-4. Java SDK namespace binding, cache, Discover polling subscriptions,
-   reconnect, and endpoint redo;
+3. HTTP publisher Distro state, liveness, batch Watch long poll, idempotency,
+   and redo;
+4. Java SDK namespace binding, canonical cache, server-aware Watch, bounded
+   polling fallback, reconnect, and endpoint redo;
 5. Admin/Maintainer and Console contracts;
 6. old A2A facade conversion; and
 7. OpenAPI, Java SDK, and Maintainer SDK integration-test scenario matrices and
-   coverage registries.
+   coverage registries, including dual-transport Watch failure and recovery.
 
 Legacy Console A2A APIs are supported through the Nacos 3.4 line. Legacy Admin
 and Maintainer A2A APIs remain through the Nacos 4.0 compatibility boundary.

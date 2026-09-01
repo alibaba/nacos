@@ -31,5 +31,6 @@ class SdkClientAbilitiesTest {
         assertTrue(
             SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_CLIENT_DISTRIBUTED_LOCK));
         assertTrue(SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_MCP_REGISTRY));
+        assertTrue(SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_RAD_WATCH_V1));
     }
 }

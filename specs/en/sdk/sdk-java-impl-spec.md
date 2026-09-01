@@ -224,6 +224,30 @@ transport lifecycle, AUTO probe, and operation fallback rules.
 | Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationBatch` and retain it as redo intent. |
 | Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `AgentEndpointDeregistrationBatch` owned by this SDK publisher. |
 
+Watch does not add another public subscribe method. Existing source and binary
+compatibility are preserved. `NacosAgentDiscoveryEvent` adds an event type and
+unavailable error accessors while its existing result constructor continues to
+create a `SNAPSHOT`. The official implementation may create `UNAVAILABLE`
+events through a factory or additional constructor without changing listener
+method signatures.
+
+The implementation layers are:
+
+```text
+AgentDiscoveryService feature facade
+  -> Agent Watch manager (identity, capacity, cache, fingerprint, listener)
+    -> Wire Watch transport (gRPC, HTTP batch long poll, or polling fallback)
+      -> AgentClientProxy Discover for authoritative refresh
+```
+
+Transport code owns only Wire lifecycle and signals; it does not duplicate
+feature cache or listener state. Canonicalization and fingerprinting live in a
+Java 8-compatible shared Agent utility used by both client and server. Listener
+callbacks run outside connection/HTTP I/O, prefer the listener executor when
+supplied, isolate exceptions, and use a bounded shared executor otherwise.
+This Agent-only layering does not alter Prompt, Skill, MCP, AgentSpec, or legacy
+A2A transport ownership.
+
 These public methods do not accept `namespaceId`. The proxy copies the caller's
 request or Batch, injects the SDK namespace into the transport object, and does
 not mutate the caller's object. If a shared input model already carries a

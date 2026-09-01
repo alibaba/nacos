@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.model;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -24,7 +25,9 @@ import java.sql.Timestamp;
  * @author nacos
  * @since 3.2.0
  */
-public class AiResourceVersion {
+public class AiResourceVersion implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     private Long id;
     

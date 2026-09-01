@@ -41,8 +41,9 @@ class ClientAbilityControlManagerTest {
             clientAbilityControlManager.initCurrentNodeAbilities();
         assertEquals(1, actual.size());
         assertTrue(actual.containsKey(AbilityMode.SDK_CLIENT));
-        // Current not define sdk ability.
-        assertEquals(4, actual.get(AbilityMode.SDK_CLIENT).size());
+        assertEquals(5, actual.get(AbilityMode.SDK_CLIENT).size());
+        assertEquals(Boolean.TRUE,
+            actual.get(AbilityMode.SDK_CLIENT).get(AbilityKey.SDK_RAD_WATCH_V1));
     }
     
     @Test

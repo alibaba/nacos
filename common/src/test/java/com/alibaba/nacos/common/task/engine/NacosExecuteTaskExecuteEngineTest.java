@@ -29,9 +29,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NacosExecuteTaskExecuteEngineTest {
@@ -76,6 +78,22 @@ class NacosExecuteTaskExecuteEngineTest {
         verify(taskProcessor).process(task);
         assertTrue(executeTaskExecuteEngine.isEmpty());
         assertEquals(0, executeTaskExecuteEngine.size());
+    }
+    
+    @Test
+    void testTryAddTaskUsesProcessorResult() {
+        executeTaskExecuteEngine.addProcessor("test", taskProcessor);
+        when(taskProcessor.process(task)).thenReturn(true, false);
+        assertTrue(executeTaskExecuteEngine.tryAddTask("test", task));
+        assertFalse(executeTaskExecuteEngine.tryAddTask("test", task));
+        verify(taskProcessor, org.mockito.Mockito.times(2)).process(task);
+    }
+    
+    @Test
+    void testTryAddTaskUsesWorkerQueue() throws InterruptedException {
+        assertTrue(executeTaskExecuteEngine.tryAddTask("test", task));
+        TimeUnit.SECONDS.sleep(1);
+        verify(task).run();
     }
     
     @Test

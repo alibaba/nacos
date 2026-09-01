@@ -257,7 +257,7 @@ public final class HttpUtils {
      */
     public static URI buildUri(String url, Query query) throws URISyntaxException {
         if (query != null && !query.isEmpty()) {
-            url = url + "?" + query.toQueryUrl();
+            url = url + (url.indexOf('?') < 0 ? "?" : "&") + query.toQueryUrl();
         }
         return new URI(url);
     }

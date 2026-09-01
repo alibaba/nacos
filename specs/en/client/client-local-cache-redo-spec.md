@@ -210,38 +210,48 @@ manager and gRPC redo cache, and HTTP maintenance must not heartbeat or retry
 it. Other transient 5xx transport failures retain the existing rollback and
 redo behavior.
 
-### 8.3 Local Polling Subscription Identity
+### 8.3 Local Watch Manager And Wire Intent
 
-The first SDK does not create a server Watch or store a connection-scoped
-`watchKey`. Its canonical local polling-subscription key contains:
+The canonical local Watch key contains:
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
-Reference canonicalization preserves the distinction between an exact
-version, a label, and latest. Filter collection and map contents participate
-in value equality. Listener identity is the same listener instance used to
-cancel the subscription. The SDK periodically performs the same Discover;
-gRPC reconnect does not add subscription redo because the next poll naturally
-uses the new connection. A missing target retains the poll without delivering
-an empty snapshot. A changed resolved version, `contentDigest`, or any
-`sourceRevision` atomically replaces the cache and delivers a complete result.
+Reference canonicalization preserves exact Version, Label, explicit latest,
+and unspecified-version semantics. Filter collections and maps participate in
+canonical value equality. Listener identity is the same instance used to
+cancel. One record owns the defensive request copy, listener, last complete
+result, canonical fingerprint, availability state, selected Wire transport,
+Wire generation/key, dirty/refresh state, and bounded retry state. Transport
+adapters never own another listener or result cache.
 
-The local polling cache retains at most 300 distinct canonical subscription
+The local Watch manager retains at most 300 distinct canonical subscription
 keys by default, configurable with
 `nacosAiAgentDiscoveryMaxSubscriptions`. An over-limit subscribe fails before
-the initial Discover, cache insertion, or scheduler submission. Duplicate
-subscribe is idempotent, and unsubscribe or shutdown releases capacity. The
-current API installs one key per call. Any later batched Watch cache mutation
-must use a soft pre-operation watermark and either retain the whole normalized
-batch from below the watermark or reject growth without partial insertion.
+the initial Discover, cache insertion, or Wire scheduling. Duplicate subscribe
+is idempotent, and unsubscribe or shutdown releases capacity. A rejected local
+or server capacity registration is rolled back completely and does not enter
+retry. Any batch mutation uses the soft pre-operation watermark and either
+retains the whole normalized batch from below the watermark or rejects growth
+without partial insertion.
 
-The server Watch/Push design in the
-[Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md) is a separate
-future contract. Agent API, abilities, and transport payloads must be updated
-before that contract is implemented; wire Watch state cannot be inferred from
-the local polling identity.
+Wire Intent is derived from, and never replaces, local intent:
+
+- gRPC state stores the current connection-scoped `watchKey`; disconnect clears
+  that key and marks the record for resubscription under the new connection;
+- HTTP state contributes the request and fingerprint to the next complete-list
+  batch generation; it stores no durable server key;
+- polling fallback schedules bounded periodic Discover without changing the
+  canonical identity;
+- an accepted Hint only marks refresh dirty. One serialized current-fact
+  Discover computes the complete fingerprint, atomically updates cache, and
+  dispatches a listener event outside transport I/O;
+- unsubscribe removes the listener and local intent before best-effort Wire
+  cleanup, so late gRPC hints and HTTP responses cannot invoke it.
+
+The [Runtime Push And Reconnect Spec](runtime-push-reconnect-spec.md) defines
+the corresponding transport recovery and latest-projection push discipline.
 
 ### 8.4 Legacy A2A Compatibility Recovery
 
@@ -266,6 +276,10 @@ SDK shutdown must clear in-memory redo state, stop background retry tasks, close
 transport clients, and stop local cache/failover refresh tasks. Shutdown should
 not delete user-maintained failover files or server-derived snapshots unless the
 user explicitly calls a cache cleanup operation.
+
+Agent shutdown additionally cancels the HTTP batch long poll, best-effort
+unsubscribes current gRPC wire keys, rejects late generations, stops fallback
+polling, and shuts down listener execution after preventing new callbacks.
 
 ## 10. Pending Issues
 

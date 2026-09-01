@@ -30,6 +30,8 @@ import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSearchRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentUnsubscribeRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
@@ -117,6 +119,12 @@ class AiGrpcResourceParserTest {
             Arguments.of(agentEndpointDeregisterRpcRequest("deregister-ns", "deregister-agent"),
                 "deregister-ns", "deregister-agent"),
             Arguments.of(new AgentEndpointDeregisterRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""),
+            Arguments.of(agentSubscribeRpcRequest("watch-ns", "watch-agent"),
+                "watch-ns", "watch-agent"),
+            Arguments.of(new AgentSubscribeRpcRequest(),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""),
+            Arguments.of(new AgentUnsubscribeRpcRequest(),
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, ""));
     }
     
@@ -242,6 +250,14 @@ class AiGrpcResourceParserTest {
         AgentEndpointDeregisterRpcRequest result = new AgentEndpointDeregisterRpcRequest();
         result.setNamespaceId(namespaceId);
         result.setAgentName(agentName);
+        return result;
+    }
+    
+    private static AgentSubscribeRpcRequest agentSubscribeRpcRequest(String namespaceId,
+        String agentName) {
+        AgentSubscribeRpcRequest result = new AgentSubscribeRpcRequest();
+        result.setDiscoveryRequest(
+            agentDiscoveryRpcRequest(namespaceId, agentName).getDiscoveryRequest());
         return result;
     }
     

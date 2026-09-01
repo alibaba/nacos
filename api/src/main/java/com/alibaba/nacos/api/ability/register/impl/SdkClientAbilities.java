@@ -49,6 +49,7 @@ public class SdkClientAbilities extends AbstractAbilityRegistry {
         supportedAbilities.put(AbilityKey.SDK_CLIENT_DISTRIBUTED_LOCK, true);
         supportedAbilities.put(AbilityKey.SDK_MCP_REGISTRY, true);
         supportedAbilities.put(AbilityKey.SDK_AGENT_REGISTRY, true);
+        supportedAbilities.put(AbilityKey.SDK_RAD_WATCH_V1, true);
     }
     
     /**.
