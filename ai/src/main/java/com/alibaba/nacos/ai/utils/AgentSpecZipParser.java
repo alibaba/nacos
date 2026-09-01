@@ -93,7 +93,7 @@ public class AgentSpecZipParser {
     
     static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 2048;
     
-    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 64L * 1024L * 1024L;
+    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 50L * 1024L * 1024L;
     
     /**
      * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes
