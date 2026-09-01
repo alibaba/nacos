@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
 import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
@@ -381,7 +382,7 @@ public class McpLifecycleReconciliationTask
         try {
             ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
                 RECONCILIATION_LEASE_DATA_ID, INTERNAL_GROUP,
-                com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID);
+                Constants.MCP_LIFECYCLE_STATE_NAMESPACE);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response == null
                 || response
@@ -445,7 +446,7 @@ public class McpLifecycleReconciliationTask
     
     private ConfigForm internalForm(String dataId, String content) {
         ConfigForm result = new ConfigForm();
-        result.setNamespaceId(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID);
+        result.setNamespaceId(Constants.MCP_LIFECYCLE_STATE_NAMESPACE);
         result.setGroup(INTERNAL_GROUP);
         result.setDataId(dataId);
         result.setContent(content);

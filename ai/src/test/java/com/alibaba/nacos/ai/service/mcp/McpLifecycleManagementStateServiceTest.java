@@ -186,6 +186,11 @@ class McpLifecycleManagementStateServiceTest {
         assertTrue(status.isMembersReady());
         assertTrue(status.isSearchReady());
         assertEquals(McpCompatibilityMode.LIFECYCLE_MANAGED, service.resolveMode());
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(queryCaptor.capture());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE,
+            queryCaptor.getValue().getTenant());
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         ArgumentCaptor<ConfigRequestInfo> requestCaptor =
             ArgumentCaptor.forClass(ConfigRequestInfo.class);
@@ -194,6 +199,7 @@ class McpLifecycleManagementStateServiceTest {
         ConfigForm form = formCaptor.getValue();
         assertEquals(McpLifecycleManagementStateService.MIGRATION_MARKER_DATA_ID,
             form.getDataId());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE, form.getNamespaceId());
         assertEquals("nacos_internal", form.getGroup());
         assertEquals("json", form.getType());
         assertFalse(requestCaptor.getValue().getUpdateForExist());

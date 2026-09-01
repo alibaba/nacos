@@ -210,7 +210,7 @@ public class McpLifecycleManagementStateService {
             ConfigQueryChainRequest request =
                 ConfigQueryChainRequest.buildConfigQueryChainRequest(
                     MIGRATION_MARKER_DATA_ID, INTERNAL_GROUP,
-                    com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID);
+                    Constants.MCP_LIFECYCLE_STATE_NAMESPACE);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response == null || response
                 .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
@@ -241,7 +241,7 @@ public class McpLifecycleManagementStateService {
         marker.setState(LIFECYCLE_MANAGED_STATE);
         marker.setCompletedAt(System.currentTimeMillis());
         ConfigForm form = new ConfigForm();
-        form.setNamespaceId(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID);
+        form.setNamespaceId(Constants.MCP_LIFECYCLE_STATE_NAMESPACE);
         form.setGroup(INTERNAL_GROUP);
         form.setDataId(MIGRATION_MARKER_DATA_ID);
         form.setContent(JacksonUtils.toJson(marker));
