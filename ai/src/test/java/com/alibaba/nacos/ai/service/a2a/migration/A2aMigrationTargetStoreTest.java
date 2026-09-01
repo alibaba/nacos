@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
@@ -29,6 +31,8 @@ import com.alibaba.nacos.ai.service.agent.storage.PreparedAgentVersionWrite;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
+import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -63,7 +67,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,6 +97,12 @@ class A2aMigrationTargetStoreTest {
     
     @Mock
     private A2aMigrationStorageVerifier storageVerifier;
+    
+    @Mock
+    private AiResourceIndexMaintenanceService indexMaintenanceService;
+    
+    @Mock
+    private AiResourceChangeNotifier resourceChangeNotifier;
     
     private A2aMigrationTargetStore targetStore;
     
@@ -123,6 +137,8 @@ class A2aMigrationTargetStoreTest {
         }).when(storageService).delete(any());
         targetStore = new A2aMigrationTargetStore(resourcePersistService, versionPersistService,
             storageService, storageVerifier);
+        targetStore.setAiResourceIndexMaintenanceService(indexMaintenanceService);
+        targetStore.setAiResourceChangeNotifier(resourceChangeNotifier);
     }
     
     @Test
@@ -148,11 +164,21 @@ class A2aMigrationTargetStoreTest {
         assertEquals("2.0.0", ((Map<?, ?>) versionInfo.get("labels"))
             .get(AiResourceConstants.LABEL_LATEST));
         assertEquals(2, versionPersistService.rows.size());
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.CREATE,
+            true);
         
         events.clear();
         assertEquals(A2aMigrationTargetStore.Result.EQUIVALENT,
             targetStore.reconcile(definition, () -> true));
         assertTrue(events.isEmpty());
+        verify(indexMaintenanceService, times(1)).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier, times(1)).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.CREATE,
+            true);
     }
     
     @Test
@@ -200,6 +226,11 @@ class A2aMigrationTargetStoreTest {
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE,
             versionPersistService.rows.get("1.0.0").getStatus());
         assertFalse(versionPersistService.rows.containsKey("2.0.0"));
+        verify(indexMaintenanceService, times(2)).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.UPDATE,
+            true);
     }
     
     @Test
@@ -278,12 +309,38 @@ class A2aMigrationTargetStoreTest {
         assertEquals(Arrays.asList("resource-delete", "version-delete:1.0.0",
             "storage-delete:1.0.0"), events);
         assertTrue(storage.isEmpty());
+        verify(indexMaintenanceService, times(2)).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.DELETE,
+            true);
         
         targetStore.reconcile(definition("1.0.0", "1.0.0"), () -> true);
         resourcePersistService.deleteResult = 0;
         assertThrows(NacosException.class,
             () -> targetStore.deleteConfirmedOrphan(NAMESPACE_ID, AGENT_NAME));
         assertEquals(1, versionPersistService.rows.size());
+    }
+    
+    @Test
+    void projectionMaintenanceFailureShouldNotChangeCommittedMigrationResult()
+        throws NacosException {
+        doThrow(new IllegalStateException("index unavailable")).when(indexMaintenanceService)
+            .schedule(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        doThrow(new IllegalStateException("notifier unavailable")).when(resourceChangeNotifier)
+            .notifyChanged(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME,
+                AiResourceChangeOperation.CREATE, true);
+        
+        assertEquals(A2aMigrationTargetStore.Result.CREATED,
+            targetStore.reconcile(definition("1.0.0", "1.0.0"), () -> true));
+        assertTrue(resourcePersistService.current() != null);
+        assertEquals(1, versionPersistService.rows.size());
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME,
+            AiResourceChangeOperation.CREATE, true);
+        verifyNoMoreInteractions(indexMaintenanceService, resourceChangeNotifier);
     }
     
     @Test

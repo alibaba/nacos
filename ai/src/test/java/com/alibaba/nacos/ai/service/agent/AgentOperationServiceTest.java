@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationAgentMutationGuard;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -108,6 +109,9 @@ class AgentOperationServiceTest {
     @Mock
     private AiResourceChangeNotifier resourceChangeNotifier;
     
+    @Mock
+    private A2aMigrationAgentMutationGuard migrationMutationGuard;
+    
     private AgentOperationService service;
     
     private MockedStatic<VisibilityHelper> visibilityHelper;
@@ -121,6 +125,7 @@ class AgentOperationServiceTest {
                 publishPipelineExecutor);
         service.setAiResourceIndexMaintenanceService(indexMaintenanceService);
         service.setAiResourceChangeNotifier(resourceChangeNotifier);
+        service.setA2aMigrationAgentMutationGuard(migrationMutationGuard);
         visibilityHelper = org.mockito.Mockito.mockStatic(VisibilityHelper.class);
         visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("alice");
         visibilityHelper.when(VisibilityHelper::resolveClientIp).thenReturn("127.0.0.1");
@@ -196,6 +201,27 @@ class AgentOperationServiceTest {
         verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.CREATE,
             true);
+    }
+    
+    @Test
+    void testMigrationGuardBlocksGenericWriteBeforePersistence() throws NacosException {
+        AgentDraftCreateRequest request = draftRequest();
+        request.setDisplayName(null);
+        request.setDescription(null);
+        request.setIconUrl(null);
+        request.setTags(null);
+        request.setExtensions(null);
+        AiResource meta = meta(VERSION, null);
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        NacosApiException blocked = new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "migration");
+        doThrow(blocked).when(migrationMutationGuard).checkMutable(meta);
+        
+        NacosApiException actual = assertThrows(NacosApiException.class,
+            () -> service.createDraft(NAMESPACE_ID, request));
+        assertSame(blocked, actual);
+        verifyNoInteractions(persistenceService);
     }
     
     @Test

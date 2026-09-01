@@ -21,11 +21,11 @@ This registry records which Nacos HTTP APIs are covered by
 each API surface. It is meant for maintainers and agents to quickly locate
 coverage before adding or debugging an IT.
 
-The planned historical A2A upgrade matrix is tracked separately in
+The historical A2A upgrade matrix is tracked separately in
 [`A2A_MIGRATION_API_TEST_SCENARIOS.md`](A2A_MIGRATION_API_TEST_SCENARIOS.md).
-Its `Planned` rows do not change the current API-surface totals; each row enters
-the applicable surface registry only after an executable IT is implemented and
-verified.
+Its rows strengthen the existing A2A, Agent, Search, Console, and RAD surface
+coverage rather than creating new HTTP operations, so their status does not
+change the API-surface totals below.
 
 ## Maintenance Rules
 
@@ -175,6 +175,17 @@ Console create to legacy Console and Admin reads. These scenarios deliberately
 do not read or write the removed parallel
 Config definition layout; legacy SERVICE Runtime lookup remains a separate
 exact-Version Naming concern.
+
+Historical A2A upgrade coverage now includes a dedicated AUTO/SYNCING restart
+of the standalone server. `A2aMigrationAdminApiOpenApiITCase` verifies
+historical Admin create/delete and Console update/latest mutation, bounded
+canonical Agent convergence, migration-owned Agent write protection with
+detail code `50105`, namespace and URL/SERVICE isolation, malformed summary,
+missing Version, invalid identity/Version/latest, independent canonical
+conflict preservation, orphan cleanup, and cross-reads through Agent/generic
+Search, Console, ARD, and RAD. Internal persistence-boundary crash injection,
+Watch across permanent cutover, and Runtime dual materialization remain in the
+later migration commits identified by the migration scenario registry.
 
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and

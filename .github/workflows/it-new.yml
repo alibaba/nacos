@@ -137,3 +137,35 @@ jobs:
 
       - name: Run Maintainer SDK IT Tests With Jackson 3
         run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests=false
+
+      - name: Restart Server In Historical A2A Migration Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Canonical-mode server did not stop"
+            exit 1
+          fi
+
+          # Run migration scenarios on a dedicated restart so the regular compatibility
+          # matrix above keeps exercising the default CANONICAL behavior.
+          echo "nacos.ai.a2a.compatibility.mode=AUTO" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.reconciliation.interval-seconds=1" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.reconciliation.page-size=2" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "AUTO migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart"
+            exit 1
+          fi
+
+      - name: Run Historical A2A Migration OpenAPI IT
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase

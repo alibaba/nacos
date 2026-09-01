@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCanonicalDefinitionConverter;
+import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -68,6 +69,9 @@ class A2aHistoricalDefinitionScannerTest {
     @Mock
     private ConfigQueryChainService configQueryChainService;
     
+    @Mock
+    private AgentIdCodecHolder agentIdCodecHolder;
+    
     private final Map<String, ConfigQueryChainResponse> source =
         new LinkedHashMap<String, ConfigQueryChainResponse>();
     
@@ -81,7 +85,8 @@ class A2aHistoricalDefinitionScannerTest {
     @BeforeEach
     void setUp() {
         scanner = new A2aHistoricalDefinitionScanner(configDetailService,
-            configQueryChainService, new A2aCanonicalDefinitionConverter());
+            configQueryChainService, new A2aCanonicalDefinitionConverter(), agentIdCodecHolder);
+        lenient().when(agentIdCodecHolder.encode(AGENT_NAME)).thenReturn(SUMMARY_DATA_ID);
         summaryConfig = summaryConfig(summary("1.0.0", "1.0.0", "2.0.0"));
         page(summaryConfig, 201, 0);
         source.put(key(Constants.A2A.AGENT_GROUP, SUMMARY_DATA_ID),
@@ -126,6 +131,31 @@ class A2aHistoricalDefinitionScannerTest {
     void shouldPreserveReportedPageCount() {
         page(summaryConfig, 2, 2);
         assertEquals(2, scanner.scanPage(NAMESPACE_ID, 1, 100).getPagesAvailable());
+    }
+    
+    @Test
+    void shouldScanOneFromKnownPublicIdentityAndHandleDelete() {
+        A2aHistoricalDefinitionSnapshot snapshot = scanner.scanOne(NAMESPACE_ID, AGENT_NAME)
+            .orElseThrow(AssertionError::new);
+        assertEquals(AGENT_NAME, snapshot.getSummary().getName());
+        assertEquals(SUMMARY_DATA_ID, snapshot.getSummaryDataId());
+        
+        source.put(key(Constants.A2A.AGENT_GROUP, SUMMARY_DATA_ID), missing());
+        assertFalse(scanner.scanOne(NAMESPACE_ID, AGENT_NAME).isPresent());
+    }
+    
+    @Test
+    void shouldRejectScanOneWhenStoredPublicIdentityDiffers() {
+        AgentCardVersionInfo mismatched = summary("1.0.0", "1.0.0");
+        mismatched.setName("other-agent");
+        source.put(key(Constants.A2A.AGENT_GROUP, SUMMARY_DATA_ID),
+            found(JacksonUtils.toJson(mismatched), "summary-md5-mismatch"));
+        AgentCardDetailInfo mismatchedVersion = card("1.0.0", "URL");
+        mismatchedVersion.setName("other-agent");
+        source.put(key(Constants.A2A.AGENT_VERSION_GROUP, SUMMARY_DATA_ID + "-1.0.0"),
+            found(JacksonUtils.toJson(mismatchedVersion), "version-md5-mismatch"));
+        assertThrows(IllegalStateException.class,
+            () -> scanner.scanOne(NAMESPACE_ID, AGENT_NAME));
     }
     
     @Test
@@ -262,8 +292,8 @@ class A2aHistoricalDefinitionScannerTest {
             : Collections.singletonList(configInfo));
         page.setTotalCount(total);
         page.setPagesAvailable(pages);
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
-            anyString(), anyString(), any())).thenReturn(page);
+        lenient().when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(),
+            anyString(), anyString(), anyString(), any())).thenReturn(page);
     }
     
     private ConfigInfo summaryConfig(AgentCardVersionInfo summary) {

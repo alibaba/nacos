@@ -213,7 +213,8 @@ class AgentDiscoveryApplicationServiceTest {
         QueryCondition condition = new QueryCondition();
         AgentSearchRequest request = searchRequest();
         AgentSummary summary = summary("plain-agent", true, "1.0.0",
-            Collections.singletonList(catalog("1.0.0", null, "a2a")), null);
+            Collections.singletonList(catalog("1.0.0", null, "a2a")),
+            Collections.emptyList());
         when(resourceManager.buildQueryCondition(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, null, null,
             VisibilityConstants.ACTION_READ)).thenReturn(condition);
@@ -271,7 +272,7 @@ class AgentDiscoveryApplicationServiceTest {
         Map<String, Object> metadata = new LinkedHashMap<String, Object>();
         metadata.put("iconUrl", "https://example.com/icon.png");
         metadata.put("provider", provider);
-        metadata.put("tags", null);
+        metadata.put("tags", Collections.emptyList());
         metadata.put("versionCatalog", versionCatalog);
         AiResourceSearchResult indexed = indexedResult("beta-Agent", metadata);
         when(searchService.numberedList(any(Query.class))).thenReturn(

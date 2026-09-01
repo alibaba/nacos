@@ -378,7 +378,8 @@ public class AgentDiscoveryApplicationService {
         result.setDescription(summary.getDescription());
         result.setIconUrl(summary.getIconUrl());
         result.setProvider(summary.getProvider());
-        result.setTags(copy(summary.getTags()));
+        result.setTags(summary.getTags() == null || summary.getTags().isEmpty() ? null
+            : copy(summary.getTags()));
         result.setLatestVersion(summary.getVersionCatalog().getLatestVersion());
         
         List<AgentCatalogVersion> versions = new ArrayList<AgentCatalogVersion>();

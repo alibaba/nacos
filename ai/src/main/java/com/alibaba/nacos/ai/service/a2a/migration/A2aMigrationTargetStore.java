@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentResourceExt;
@@ -33,6 +34,8 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
+import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
+import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Agent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -45,6 +48,9 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.springframework.dao.DuplicateKeyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -68,6 +74,8 @@ import java.util.function.BooleanSupplier;
 @Component
 public class A2aMigrationTargetStore {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(A2aMigrationTargetStore.class);
+    
     public static final String MIGRATION_RESOURCE_SOURCE = "legacy-a2a-migration-v1";
     
     private static final int VERSION_PAGE_SIZE = 100;
@@ -82,6 +90,11 @@ public class A2aMigrationTargetStore {
     
     private final A2aMigrationStorageVerifier storageVerifier;
     
+    private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
+        AiResourceIndexMaintenanceService.NOOP;
+    
+    private AiResourceChangeNotifier resourceChangeNotifier = AiResourceChangeNotifier.NOOP;
+    
     public A2aMigrationTargetStore(AiResourcePersistService resourcePersistService,
         AiResourceVersionPersistService versionPersistService,
         AgentVersionStorageService storageService,
@@ -90,6 +103,21 @@ public class A2aMigrationTargetStore {
         this.versionPersistService = versionPersistService;
         this.storageService = storageService;
         this.storageVerifier = storageVerifier;
+    }
+    
+    @Autowired(required = false)
+    public void setAiResourceIndexMaintenanceService(
+        AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
+        if (resourceIndexMaintenanceService != null) {
+            this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
+        }
+    }
+    
+    @Autowired(required = false)
+    public void setAiResourceChangeNotifier(AiResourceChangeNotifier resourceChangeNotifier) {
+        if (resourceChangeNotifier != null) {
+            this.resourceChangeNotifier = resourceChangeNotifier;
+        }
     }
     
     /**
@@ -119,15 +147,21 @@ public class A2aMigrationTargetStore {
         if (existingResource == null) {
             preflightUnownedVersionRows(existingVersions, target);
         }
-        int changes = writeVersions(existingResource, existingVersions, target);
+        int versionChanges = writeVersions(existingResource, existingVersions, target);
         requireCurrentSource(sourceCurrent);
-        changes += publishResource(existingResource, target);
+        int resourceChanges = publishResource(existingResource, target);
         requireCurrentSource(sourceCurrent);
-        changes += deleteExtraOwnedVersions(existingResource, existingVersions, target);
+        int deletedVersions = deleteExtraOwnedVersions(existingResource, existingVersions, target);
+        int changes = versionChanges + resourceChanges + deletedVersions;
         if (changes == 0) {
             return Result.EQUIVALENT;
         }
-        return existingResource == null ? Result.CREATED : Result.REPAIRED;
+        Result result = existingResource == null ? Result.CREATED : Result.REPAIRED;
+        scheduleProjectionMaintenance(target.namespaceId, target.agentName,
+            existingResource == null ? AiResourceChangeOperation.CREATE
+                : AiResourceChangeOperation.UPDATE,
+            versionChanges > 0 || deletedVersions > 0);
+        return result;
     }
     
     /**
@@ -187,7 +221,31 @@ public class A2aMigrationTargetStore {
                 deleteStorage(version);
             }
         }
+        scheduleProjectionMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.DELETE, true);
         return true;
+    }
+    
+    private void scheduleProjectionMaintenance(String namespaceId, String agentName,
+        AiResourceChangeOperation operation, boolean storageChanged) {
+        try {
+            resourceIndexMaintenanceService.schedule(namespaceId,
+                Constants.Agent.RESOURCE_TYPE_AGENT, agentName);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to schedule migrated Agent search-index maintenance: "
+                + "namespaceHash={}, agentHash={}", hash(namespaceId), hash(agentName), e);
+        }
+        try {
+            resourceChangeNotifier.notifyChanged(namespaceId,
+                Constants.Agent.RESOURCE_TYPE_AGENT, agentName, operation, storageChanged);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to notify migrated Agent projection change: namespaceHash={}, "
+                + "agentHash={}", hash(namespaceId), hash(agentName), e);
+        }
+    }
+    
+    private static String hash(String value) {
+        return Integer.toHexString(value.hashCode());
     }
     
     private PreparedTarget prepare(A2aMigrationDefinition definition) {

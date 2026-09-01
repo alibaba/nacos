@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCanonicalDefinitionConverter;
+import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -42,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -60,12 +62,16 @@ public class A2aHistoricalDefinitionScanner {
     
     private final A2aCanonicalDefinitionConverter definitionConverter;
     
+    private final AgentIdCodecHolder agentIdCodecHolder;
+    
     public A2aHistoricalDefinitionScanner(ConfigDetailService configDetailService,
         ConfigQueryChainService configQueryChainService,
-        A2aCanonicalDefinitionConverter definitionConverter) {
+        A2aCanonicalDefinitionConverter definitionConverter,
+        AgentIdCodecHolder agentIdCodecHolder) {
         this.configDetailService = configDetailService;
         this.configQueryChainService = configQueryChainService;
         this.definitionConverter = definitionConverter;
+        this.agentIdCodecHolder = agentIdCodecHolder;
     }
     
     /**
@@ -100,6 +106,34 @@ public class A2aHistoricalDefinitionScanner {
         result.setPagesAvailable(resolvePages(source, pageSize));
         result.setPageItems(snapshots);
         return result;
+    }
+    
+    /**
+     * Load one historical Agent from its known public identity for write-after reconciliation.
+     *
+     * <p>The public identity comes from the successful historical mutation. The encoded Config
+     * data id is used only as a storage coordinate and is never decoded into business identity.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName known public Agent name
+     * @return complete source snapshot, or empty after a historical delete
+     */
+    public Optional<A2aHistoricalDefinitionSnapshot> scanOne(String namespaceId,
+        String agentName) {
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        AgentValidationUtils.validateAgentName(agentName);
+        String dataId = agentIdCodecHolder.encode(agentName);
+        SourceValue source = query(namespaceId, dataId, Constants.A2A.AGENT_GROUP);
+        if (source == null) {
+            return Optional.empty();
+        }
+        A2aHistoricalDefinitionSnapshot snapshot = load(namespaceId,
+            toConfigInfo(dataId, source));
+        if (!agentName.equals(snapshot.getSummary().getName())) {
+            throw new IllegalStateException(
+                "Historical A2A summary public identity does not match write hint");
+        }
+        return Optional.of(snapshot);
     }
     
     /**

@@ -268,6 +268,13 @@ public enum ErrorCode {
         "Agent discovery subscription capacity reached"),
     
     /**
+     * Agent definition is temporarily protected by the historical A2A migration.
+     *
+     * <p>TODO(remove in 4.0): remove with the Nacos 3.0-3.2 A2A migration window.</p>
+     */
+    AGENT_MIGRATION_IN_PROGRESS(50105, "Agent migration is in progress"),
+    
+    /**
      * HTTP connection-based client does not exist or no longer owns a publication.
      */
     HTTP_CLIENT_NOT_FOUND(50404, "HTTP client not found"),
