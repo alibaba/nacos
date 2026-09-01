@@ -91,11 +91,20 @@ public class NacosLogging {
         ScheduledExecutorService reloadContextService = ExecutorFactory.Managed
             .newSingleScheduledExecutorService("Nacos-Client",
                 new NameThreadFactory("com.alibaba.nacos.client.logging"));
-        reloadContextService.scheduleAtFixedRate(() -> {
-            if (loggingAdapter.isNeedReloadConfiguration()) {
-                loadConfiguration();
-            }
-        }, 0, loggingProperties.getReloadInternal(), TimeUnit.SECONDS);
+        reloadContextService.scheduleAtFixedRate(this::reloadConfigurationIfNeeded, 0,
+            loggingProperties.getReloadInternal(), TimeUnit.SECONDS);
+    }
+    
+    /**
+     * Reload the logging configuration when the adapter reports the config has changed.
+     *
+     * <p>All failures are handled inside {@link #loadConfiguration()}, so this task never throws and a faulty
+     * adapter can not cancel the periodic reload.
+     */
+    void reloadConfigurationIfNeeded() {
+        if (loggingAdapter.isNeedReloadConfiguration()) {
+            loadConfiguration();
+        }
     }
     
     private static class NacosLoggingInstance {

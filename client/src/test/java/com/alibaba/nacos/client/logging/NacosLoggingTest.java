@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -228,6 +229,42 @@ class NacosLoggingTest {
                 NacosLogging.class.getDeclaredField("lastLoadedConfigLocation");
             lastLocationField.setAccessible(true);
             assertEquals("/tmp/nacos-logback.xml", lastLocationField.get(instance));
+        } finally {
+            adapterField.set(instance, cachedLogging);
+        }
+    }
+    
+    @Test
+    void testReloadConfigurationIfNeededSkipsWhenAdapterReportsNoChange() throws Exception {
+        instance = NacosLogging.getInstance();
+        Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        adapterField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) adapterField.get(instance);
+        try {
+            when(loggingAdapter.isNeedReloadConfiguration()).thenReturn(false);
+            adapterField.set(instance, loggingAdapter);
+            instance.reloadConfigurationIfNeeded();
+            Mockito.verify(loggingAdapter, Mockito.never()).loadConfiguration(any());
+        } finally {
+            adapterField.set(instance, cachedLogging);
+        }
+    }
+    
+    @Test
+    void testReloadConfigurationIfNeededSurvivesAdapterException() throws Exception {
+        instance = NacosLogging.getInstance();
+        Field adapterField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        adapterField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) adapterField.get(instance);
+        try {
+            when(loggingAdapter.isNeedReloadConfiguration()).thenReturn(true);
+            doThrow(new RuntimeException("reload failed")).when(loggingAdapter)
+                .loadConfiguration(loggingProperties);
+            adapterField.set(instance, loggingAdapter);
+            // the scheduled task must never throw, otherwise scheduleAtFixedRate cancels further reloads
+            assertDoesNotThrow(() -> instance.reloadConfigurationIfNeeded());
+            assertDoesNotThrow(() -> instance.reloadConfigurationIfNeeded());
+            Mockito.verify(loggingAdapter, Mockito.times(2)).loadConfiguration(loggingProperties);
         } finally {
             adapterField.set(instance, cachedLogging);
         }
