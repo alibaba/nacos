@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentSpecSeedArchiveReaderTest {
+class AgentSpecZipParserSeedArchiveTest {
     
     @Test
     void shouldBuildStandaloneAgentSpecZipWithNestedLayout() throws Exception {
@@ -48,8 +48,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("vendor/demo-agent/manifest.json", manifest),
             new ArchiveEntry("vendor/demo-agent/config/SOUL.md", "# soul\n"));
         
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("演示坐席", actual.get(0).getAgentSpecName());
@@ -70,8 +70,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("source-a/demo/manifest.json", manifest),
             new ArchiveEntry("source-b/demo/manifest.json", manifest));
         
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("同名坐席", actual.get(0).getAgentSpecName());
@@ -83,8 +83,8 @@ class AgentSpecSeedArchiveReaderTest {
             "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"find-agentspec\"}}";
         byte[] archive = buildArchive(
             new ArchiveEntry("github.com/nacos/find-agentspec/manifest.json", manifest));
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
     }
@@ -99,7 +99,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("limited-agent/config/SOUL.md", "# soul\n"));
         
         IOException exception = assertThrows(IOException.class,
-            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 2,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 2,
                 1024 * 1024));
         
         assertTrue(exception.getMessage().contains("too many entries"));
@@ -115,7 +116,8 @@ class AgentSpecSeedArchiveReaderTest {
         long maxBytes = manifest.getBytes(StandardCharsets.UTF_8).length + 5L;
         
         IOException exception = assertThrows(IOException.class,
-            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 10,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 10,
                 maxBytes));
         
         assertTrue(exception.getMessage().contains("decompressed size exceeds limit"));
@@ -130,7 +132,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("./duplicate-agent/manifest.json", manifest));
         
         IOException exception = assertThrows(IOException.class,
-            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 10,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 10,
                 1024 * 1024));
         
         assertTrue(exception.getMessage().contains("duplicate entry path"));
@@ -142,12 +145,12 @@ class AgentSpecSeedArchiveReaderTest {
         Assumptions.assumeTrue(resource.exists(),
             "bootstrap/agentspec-data.zip is not bundled in this test runtime");
         try (InputStream inputStream = resource.getInputStream()) {
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-                AgentSpecSeedArchiveReader.read(inputStream);
+            List<AgentSpecZipParser.AgentSpecPackage> actual =
+                AgentSpecZipParser.parseAgentSpecPackagesFromZip(inputStream);
             
             assertTrue(actual.size() > 100);
             Set<String> names = new HashSet<>();
-            for (AgentSpecSeedArchiveReader.AgentSpecPackage each : actual) {
+            for (AgentSpecZipParser.AgentSpecPackage each : actual) {
                 names.add(each.getAgentSpecName());
                 AgentSpec spec =
                     AgentSpecZipParser.parseAgentSpecFromZip(each.getZipBytes(), "public");

@@ -19,7 +19,6 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
-import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
@@ -135,7 +134,7 @@ public class AgentSpecDataBootstrapInitializer
                 return;
             }
             
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages = readAgentSpecPackages();
+            List<AgentSpecZipParser.AgentSpecPackage> packages = readAgentSpecPackages();
             if (packages.isEmpty()) {
                 LOGGER.info("No built-in agentspecs found in archive `{}`",
                     bundledAgentSpecArchive);
@@ -170,7 +169,7 @@ public class AgentSpecDataBootstrapInitializer
                 bootstrapPlan.getExistingBuiltInCount(), BOOTSTRAP_IMPORT_CONCURRENCY);
             List<Future<ImportTaskResult>> futures =
                 new ArrayList<>(bootstrapPlan.getMissingPackages().size());
-            for (AgentSpecSeedArchiveReader.AgentSpecPackage pkg : bootstrapPlan
+            for (AgentSpecZipParser.AgentSpecPackage pkg : bootstrapPlan
                 .getMissingPackages()) {
                 futures.add(bootstrapImportExecutor.submit(() -> importBuiltInAgentSpec(pkg)));
             }
@@ -199,11 +198,11 @@ public class AgentSpecDataBootstrapInitializer
         }
     }
     
-    private List<AgentSpecSeedArchiveReader.AgentSpecPackage> readAgentSpecPackages()
+    private List<AgentSpecZipParser.AgentSpecPackage> readAgentSpecPackages()
         throws IOException {
         Resource bundledAgentSpecArchive = resolveBundledAgentSpecArchive();
         try (InputStream inputStream = bundledAgentSpecArchive.getInputStream()) {
-            return AgentSpecSeedArchiveReader.read(inputStream);
+            return AgentSpecZipParser.parseAgentSpecPackagesFromZip(inputStream);
         }
     }
     
@@ -213,7 +212,7 @@ public class AgentSpecDataBootstrapInitializer
     }
     
     private ImportTaskResult importBuiltInAgentSpec(
-        AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
+        AgentSpecZipParser.AgentSpecPackage pkg) {
         try {
             LOGGER.info("Import built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(),
                 pkg.getSourcePath());
@@ -236,12 +235,12 @@ public class AgentSpecDataBootstrapInitializer
     }
     
     private BootstrapPlan buildBootstrapPlan(
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages) {
+        List<AgentSpecZipParser.AgentSpecPackage> packages) {
         boolean existingAiData = hasExistingAiData();
         int existingBuiltInCount = 0;
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> missing =
+        List<AgentSpecZipParser.AgentSpecPackage> missing =
             new ArrayList<>(packages.size());
-        for (AgentSpecSeedArchiveReader.AgentSpecPackage pkg : packages) {
+        for (AgentSpecZipParser.AgentSpecPackage pkg : packages) {
             if (aiResourcePersistService.find(Constants.DEFAULT_NAMESPACE_ID,
                 pkg.getAgentSpecName(),
                 RESOURCE_TYPE_AGENTSPEC) != null) {
@@ -269,7 +268,7 @@ public class AgentSpecDataBootstrapInitializer
         return BootstrapPlan.bootstrap(missing, existingBuiltInCount);
     }
     
-    private boolean needsBuiltInRepair(AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
+    private boolean needsBuiltInRepair(AgentSpecZipParser.AgentSpecPackage pkg) {
         try {
             AgentSpec bundled = AgentSpecZipParser.parseAgentSpecFromZip(pkg.getZipBytes(),
                 Constants.DEFAULT_NAMESPACE_ID);
@@ -392,12 +391,12 @@ public class AgentSpecDataBootstrapInitializer
         
         private final String skipReason;
         
-        private final List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages;
+        private final List<AgentSpecZipParser.AgentSpecPackage> missingPackages;
         
         private final int existingBuiltInCount;
         
         private BootstrapPlan(boolean shouldBootstrap, String skipReason,
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages,
+            List<AgentSpecZipParser.AgentSpecPackage> missingPackages,
             int existingBuiltInCount) {
             this.shouldBootstrap = shouldBootstrap;
             this.skipReason = skipReason;
@@ -406,7 +405,7 @@ public class AgentSpecDataBootstrapInitializer
         }
         
         private static BootstrapPlan bootstrap(
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> missingPackages,
+            List<AgentSpecZipParser.AgentSpecPackage> missingPackages,
             int existingBuiltInCount) {
             return new BootstrapPlan(true, null, missingPackages, existingBuiltInCount);
         }
@@ -423,7 +422,7 @@ public class AgentSpecDataBootstrapInitializer
             return skipReason;
         }
         
-        private List<AgentSpecSeedArchiveReader.AgentSpecPackage> getMissingPackages() {
+        private List<AgentSpecZipParser.AgentSpecPackage> getMissingPackages() {
             return missingPackages;
         }
         

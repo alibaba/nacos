@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
-import com.alibaba.nacos.ai.utils.SkillSeedArchiveReader;
+import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
@@ -103,7 +103,7 @@ class SkillDataBootstrapInitializerTest {
         writeZip(dataDir.resolve("skills-data.zip"), "team/skill-a/SKILL.md",
             "---\nname: skill-a\n---\nbody");
         
-        List<SkillSeedArchiveReader.SkillPackage> packages =
+        List<SkillZipParser.SkillPackage> packages =
             ReflectionTestUtils.invokeMethod(initializer, "readSkillPackages");
         
         assertEquals(1, packages.size());
@@ -214,8 +214,8 @@ class SkillDataBootstrapInitializerTest {
             "nacos_internal", "public", null, null, "nacos", null);
     }
     
-    private static SkillSeedArchiveReader.SkillPackage skillPackage(String name) {
-        return new SkillSeedArchiveReader.SkillPackage(name, "team", "team/" + name,
+    private static SkillZipParser.SkillPackage skillPackage(String name) {
+        return new SkillZipParser.SkillPackage(name, "team", "team/" + name,
             new byte[] {1, 2, 3});
     }
     

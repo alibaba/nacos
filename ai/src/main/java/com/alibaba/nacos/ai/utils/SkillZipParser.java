@@ -32,15 +32,21 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
@@ -101,6 +107,10 @@ public class SkillZipParser {
      */
     static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
     
+    static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 10000;
+    
+    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
+    
     /**
      * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes
      * and applies to the raw compressed skill ZIP before parsing. Non-positive values are ignored.
@@ -121,6 +131,12 @@ public class SkillZipParser {
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
         "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
+    
+    private static final Pattern SEED_FRONT_MATTER =
+        Pattern.compile("^---\\s*\\n(.*?)\\n---\\s*\\n", Pattern.DOTALL);
+    
+    private static final Pattern SEED_NAME = Pattern.compile(
+        "(?m)^name:\\s*(?:\"([^\"]+)\"|'([^']+)'|([^\\n#]+))\\s*$");
     
     /**
      * Parse YAML front matter map from full SKILL.md content.
@@ -405,6 +421,185 @@ public class SkillZipParser {
                 ErrorCode.PARSING_DATA_FAILED,
                 "Failed to parse zip file: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Parse the bundled seed archive into standalone Skill ZIP packages.
+     *
+     * @param inputStream bundled archive input stream
+     * @return standalone Skill packages
+     * @throws IOException if the archive cannot be read or violates a security limit
+     */
+    public static List<SkillPackage> parseSkillPackagesFromZip(InputStream inputStream)
+        throws IOException {
+        int maxEntries = Math.max(DEFAULT_MAX_SEED_ARCHIVE_ENTRIES, resolveMaxZipEntries());
+        long maxUncompressedBytes = Math.max(DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES,
+            resolveMaxUncompressedBytes());
+        return parseSkillPackagesFromZip(inputStream, maxEntries, maxUncompressedBytes);
+    }
+    
+    static List<SkillPackage> parseSkillPackagesFromZip(InputStream inputStream, int maxEntries,
+        long maxUncompressedBytes) throws IOException {
+        Map<String, byte[]> entries =
+            readSeedArchiveEntries(inputStream, maxEntries, maxUncompressedBytes);
+        if (entries.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        Set<String> roots = detectSkillRoots(entries.keySet());
+        if (roots.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        Set<String> seenSkillNames = new HashSet<>();
+        List<SkillPackage> result = new ArrayList<>(roots.size());
+        for (String root : roots) {
+            String skillMdPath = buildRootPath(root, SKILL_MD_FILE);
+            byte[] skillMdBytes = entries.get(skillMdPath);
+            if (skillMdBytes == null) {
+                continue;
+            }
+            String skillName = extractSeedSkillName(skillMdBytes);
+            if (StringUtils.isBlank(skillName)) {
+                throw new IOException("Missing skill name in " + skillMdPath);
+            }
+            if (!seenSkillNames.add(skillName)) {
+                LOGGER.warn("Skip duplicate built-in skill name `{}` from archive path `{}`",
+                    skillName, root);
+                continue;
+            }
+            result.add(new SkillPackage(skillName, extractSeedFrom(root), root,
+                buildStandaloneSkillZip(entries, root, skillName)));
+        }
+        return result;
+    }
+    
+    private static Map<String, byte[]> readSeedArchiveEntries(InputStream inputStream,
+        int maxEntries, long maxUncompressedBytes) throws IOException {
+        Map<String, byte[]> result = new LinkedHashMap<>();
+        Set<String> seenEntryNames = new HashSet<>();
+        int entryCount = 0;
+        long totalSize = 0;
+        try (ZipArchiveInputStream zis =
+            new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true, true)) {
+            ZipArchiveEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = zis.getNextEntry()) != null) {
+                entryCount++;
+                if (entryCount > maxEntries) {
+                    throw new IOException(
+                        "ZIP file contains too many entries (max " + maxEntries + ")");
+                }
+                String entryName = normalizeEntryName(entry.getName());
+                if (StringUtils.isNotBlank(entryName)) {
+                    SkillUtils.validatePathSafety(entryName);
+                    if (!seenEntryNames.add(entryName)) {
+                        throw new IOException(
+                            "ZIP file contains duplicate entry path: " + entryName);
+                    }
+                }
+                boolean shouldStore = !entry.isDirectory() && StringUtils.isNotBlank(entryName);
+                ByteArrayOutputStream out = shouldStore ? new ByteArrayOutputStream() : null;
+                int bytesRead;
+                while ((bytesRead = zis.read(buffer)) != -1) {
+                    totalSize += bytesRead;
+                    if (totalSize > maxUncompressedBytes) {
+                        throw new IOException("ZIP decompressed size exceeds limit ("
+                            + (maxUncompressedBytes / 1024 / 1024) + "MB)");
+                    }
+                    if (out != null) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                }
+                if (out != null) {
+                    result.put(entryName, out.toByteArray());
+                }
+            }
+        }
+        return result;
+    }
+    
+    private static Set<String> detectSkillRoots(Set<String> entryNames) {
+        Set<String> result = new TreeSet<>();
+        for (String entryName : entryNames) {
+            if (SKILL_MD_FILE.equals(entryName)) {
+                result.add("");
+                continue;
+            }
+            if (entryName.endsWith(SLASH + SKILL_MD_FILE)) {
+                result.add(entryName.substring(0, entryName.length() - SKILL_MD_FILE.length() - 1));
+            }
+        }
+        return result;
+    }
+    
+    private static String extractSeedSkillName(byte[] skillMdBytes) {
+        String content = new String(skillMdBytes, StandardCharsets.UTF_8);
+        Matcher frontMatterMatcher = SEED_FRONT_MATTER.matcher(content);
+        if (!frontMatterMatcher.find()) {
+            return null;
+        }
+        Matcher nameMatcher = SEED_NAME.matcher(frontMatterMatcher.group(1));
+        if (!nameMatcher.find()) {
+            return null;
+        }
+        for (int i = 1; i <= nameMatcher.groupCount(); i++) {
+            String candidate = nameMatcher.group(i);
+            if (StringUtils.isNotBlank(candidate)) {
+                return candidate.trim();
+            }
+        }
+        return null;
+    }
+    
+    private static byte[] buildStandaloneSkillZip(Map<String, byte[]> entries, String root,
+        String skillName) throws IOException {
+        List<String> paths = new ArrayList<>();
+        for (String entryName : entries.keySet()) {
+            if (isInSeedRoot(entryName, root)) {
+                paths.add(entryName);
+            }
+        }
+        Collections.sort(paths);
+        
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
+            for (String path : paths) {
+                String relativePath = root.isEmpty() ? path : path.substring(root.length() + 1);
+                if (StringUtils.isBlank(relativePath)) {
+                    continue;
+                }
+                ZipEntry zipEntry = new ZipEntry(skillName + SLASH + relativePath);
+                zos.putNextEntry(zipEntry);
+                zos.write(entries.get(path));
+                zos.closeEntry();
+            }
+        }
+        return out.toByteArray();
+    }
+    
+    private static boolean isInSeedRoot(String entryName, String root) {
+        return root.isEmpty() || entryName.startsWith(root + SLASH);
+    }
+    
+    private static String buildRootPath(String root, String fileName) {
+        return root.isEmpty() ? fileName : root + SLASH + fileName;
+    }
+    
+    private static String extractSeedFrom(String sourcePath) {
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        String normalized = sourcePath;
+        while (normalized.endsWith(SLASH)) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        int idx = normalized.lastIndexOf('/');
+        if (idx <= 0) {
+            return null;
+        }
+        String from = normalized.substring(0, idx).trim();
+        return StringUtils.isBlank(from) ? null : from;
     }
     
     /**
@@ -737,6 +932,43 @@ public class SkillZipParser {
      */
     public static boolean isBinaryResource(String fileName) {
         return ResourceContentEncoder.isBinary(fileName);
+    }
+    
+    /**
+     * Standalone Skill package built from a bundled seed archive.
+     */
+    public static final class SkillPackage {
+        
+        private final String skillName;
+        
+        private final String from;
+        
+        private final String sourcePath;
+        
+        private final byte[] zipBytes;
+        
+        public SkillPackage(String skillName, String from, String sourcePath, byte[] zipBytes) {
+            this.skillName = skillName;
+            this.from = from;
+            this.sourcePath = sourcePath;
+            this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
+        }
+        
+        public String getSkillName() {
+            return skillName;
+        }
+        
+        public String getFrom() {
+            return from;
+        }
+        
+        public String getSourcePath() {
+            return sourcePath;
+        }
+        
+        public byte[] getZipBytes() {
+            return zipBytes;
+        }
     }
     
     private static final class ZipEntryData {
