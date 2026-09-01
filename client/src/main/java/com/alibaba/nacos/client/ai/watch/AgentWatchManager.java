@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -198,6 +199,8 @@ public class AgentWatchManager implements Closeable {
                 "AbstractNacosAgentDiscoveryListener must not be null.");
         }
         AgentDiscoveryRequest request = canonicalRequest(reference, filter);
+        LOGGER.info("[RAD-WATCH] Client subscribe requested: {}",
+            AgentWatchLogUtils.describeRequest(request));
         String requestKey = AgentDiscoveryCanonicalizer.canonicalRequestKey(request);
         WatchIntent initialization = null;
         WatchIntent waitingActivation = null;
@@ -252,7 +255,14 @@ public class AgentWatchManager implements Closeable {
             intent.current = initial.result;
             intent.fingerprint = fingerprint(initial.result);
         }
-        return activateSynchronously(intent) ? copy(initial.result) : null;
+        boolean activated = activateSynchronously(intent);
+        if (activated) {
+            LOGGER.info("[RAD-WATCH] Client Watch active: clientWatchId={}, fingerprint={}, {}",
+                AgentWatchLogUtils.token(intent.clientWatchId),
+                AgentWatchLogUtils.fingerprint(intent.fingerprint),
+                AgentWatchLogUtils.describeResult(initial.result));
+        }
+        return activated ? copy(initial.result) : null;
     }
     
     private AgentDiscoveryResult initializePending(WatchIntent intent, NacosException exception)
@@ -290,6 +300,9 @@ public class AgentWatchManager implements Closeable {
             throw schedulingFailure;
         }
         dispatch(notifications);
+        LOGGER.info("[RAD-WATCH] Client Watch pending: clientWatchId={}, errorCode={}, {}",
+            AgentWatchLogUtils.token(intent.clientWatchId), exception.getErrCode(),
+            AgentWatchLogUtils.describeRequest(intent.request));
         return null;
     }
     
@@ -341,6 +354,8 @@ public class AgentWatchManager implements Closeable {
         if (listener == null) {
             return;
         }
+        LOGGER.info("[RAD-WATCH] Client unsubscribe requested: {}",
+            AgentWatchLogUtils.describeRequest(request));
         String requestKey = AgentDiscoveryCanonicalizer.canonicalRequestKey(request);
         synchronized (this) {
             WatchIntent intent = intentsByKey.get(requestKey);
@@ -365,6 +380,11 @@ public class AgentWatchManager implements Closeable {
         if (closed || intent == null || intent.state == WatchState.CLOSED) {
             return false;
         }
+        LOGGER.info("[RAD-WATCH] Client invalidation received: clientWatchId={}, "
+            + "observedFingerprint={}, forceRefresh={}, {}",
+            AgentWatchLogUtils.token(clientWatchId),
+            AgentWatchLogUtils.fingerprint(observedFingerprint), forceRefresh,
+            AgentWatchLogUtils.describeRequest(intent.request));
         if (!forceRefresh && observedFingerprint != null && intent.fingerprint != null
             && observedFingerprint.equals(intent.fingerprint)) {
             return true;
@@ -402,6 +422,9 @@ public class AgentWatchManager implements Closeable {
                 return;
             }
             NacosException exception = new NacosException(errorCode, errorMessage);
+            LOGGER.warn("[RAD-WATCH] Client Watch unavailable: clientWatchId={}, errorCode={}, "
+                + "terminal={}, {}", AgentWatchLogUtils.token(clientWatchId), errorCode,
+                terminal, AgentWatchLogUtils.describeRequest(intent.request));
             if (terminal) {
                 intent.completeActivation(exception);
                 notifications.addAll(terminalNotifications(intent, exception));
@@ -623,7 +646,18 @@ public class AgentWatchManager implements Closeable {
                 warn("Agent Watch transport state update failed: {}", e);
             }
             if (changed) {
+                LOGGER.info("[RAD-WATCH] Client Discover refresh completed: clientWatchId={}, "
+                    + "changed=true, fingerprint={}, listenerCount={}, {}",
+                    AgentWatchLogUtils.token(intent.clientWatchId),
+                    AgentWatchLogUtils.fingerprint(latestFingerprint), intent.listeners.size(),
+                    AgentWatchLogUtils.describeResult(latest));
                 notifications.addAll(snapshotNotifications(intent));
+            } else {
+                LOGGER.debug("[RAD-WATCH] Client Discover refresh completed: clientWatchId={}, "
+                    + "changed=false, fingerprint={}, {}",
+                    AgentWatchLogUtils.token(intent.clientWatchId),
+                    AgentWatchLogUtils.fingerprint(latestFingerprint),
+                    AgentWatchLogUtils.describeRequest(intent.request));
             }
             if (intent.dirty) {
                 scheduleRefresh(intent, 0L);
@@ -656,8 +690,11 @@ public class AgentWatchManager implements Closeable {
                     notifications.addAll(terminalNotifications(intent, schedulingRejected()));
                     removeIntent(intent);
                 } else {
-                    warn("Agent Watch Discover refresh failed; retaining dirty state: {}",
-                        exception);
+                    warn("[RAD-WATCH] Client Discover refresh failed; clientWatchId="
+                        + AgentWatchLogUtils.token(intent.clientWatchId) + ", errorCode="
+                        + exception.getErrCode() + ", retryDelayMillis=" + delay + ", "
+                        + AgentWatchLogUtils.describeRequest(intent.request)
+                        + ", errorType={}", exception);
                 }
             }
         }
@@ -817,6 +854,9 @@ public class AgentWatchManager implements Closeable {
             listener.active = false;
         }
         intent.listeners.clear();
+        LOGGER.info("[RAD-WATCH] Client Watch removed: clientWatchId={}, {}",
+            AgentWatchLogUtils.token(intent.clientWatchId),
+            AgentWatchLogUtils.describeRequest(intent.request));
     }
     
     private AgentDiscoveryRequest canonicalRequest(AgentReference reference,
@@ -885,6 +925,9 @@ public class AgentWatchManager implements Closeable {
         if (subscriptionCount >= maxSubscriptions && additions > 0) {
             AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.CAPACITY_REJECTION,
                 AgentWatchClientMetrics.Result.REJECTED);
+            LOGGER.warn("[RAD-WATCH] Client subscribe rejected: reason=CAPACITY, current={}, "
+                + "limit={}, namespace={}", subscriptionCount, maxSubscriptions,
+                namespaceId);
             throw new NacosApiException(NacosException.CLIENT_OVER_THRESHOLD,
                 ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
                 "Agent discovery subscription limit of " + maxSubscriptions

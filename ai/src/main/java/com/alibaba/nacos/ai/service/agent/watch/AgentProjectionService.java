@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -289,9 +290,10 @@ public class AgentProjectionService {
         if (!applied.isPresent()) {
             return true;
         }
-        LOGGER.debug("Agent Projection refreshed: reasons={}, status={}, fingerprint={}",
-            reasons, applied.get().getCurrent().getStatus(),
-            applied.get().getCurrent().getFingerprint());
+        LOGGER.debug("[RAD-WATCH] Server projection refreshed: projection={}, reasons={}, "
+            + "status={}, fingerprint={}", AgentWatchLogUtils.token(key.getValue()), reasons,
+            applied.get().getCurrent().getStatus(),
+            AgentWatchLogUtils.fingerprint(applied.get().getCurrent().getFingerprint()));
         AgentWatchMetrics.record(AgentWatchMetrics.Event.PROJECTION_RECOMPUTE,
             projectionResult(applied.get().getCurrent().getStatus()));
         notifyUpdate(applied.get());

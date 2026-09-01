@@ -18,7 +18,10 @@ package com.alibaba.nacos.ai.service.agent.watch;
 
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.model.v2.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.ArrayList;
@@ -38,6 +41,8 @@ import java.util.function.Consumer;
  */
 final class AgentHttpWatchWaiter {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentHttpWatchWaiter.class);
+    
     private final String waiterId = UUID.randomUUID().toString();
     
     private final AgentHttpWatchOwnerKey ownerKey;
@@ -56,6 +61,8 @@ final class AgentHttpWatchWaiter {
     
     private final AtomicBoolean completed = new AtomicBoolean();
     
+    private final long startedNanos = System.nanoTime();
+    
     AgentHttpWatchWaiter(AgentHttpWatchOwnerKey ownerKey, long generation, long timeoutMillis,
         List<AgentWatchBatchItem> items, int payloadBytes,
         Consumer<AgentHttpWatchWaiter> cleanup) {
@@ -72,21 +79,31 @@ final class AgentHttpWatchWaiter {
     }
     
     boolean completeIfChanged(AgentProjectionKey key, AgentProjectionState state) {
+        return completeIfChanged(key, state, "CHANGE_FANOUT");
+    }
+    
+    boolean completeIfChanged(AgentProjectionKey key, AgentProjectionState state,
+        String trigger) {
         List<Observation> candidates = observations.get(key);
         if (candidates == null) {
             return false;
         }
         List<String> changedIds = new ArrayList<String>(candidates.size());
         addChangedIds(candidates, state, changedIds);
-        return completeChanged(changedIds);
+        return completeChanged(changedIds, trigger);
     }
     
     boolean completeIfChanged(Map<AgentProjectionKey, AgentProjectionState> states) {
+        return completeIfChanged(states, "INITIAL_SUBSCRIBE");
+    }
+    
+    boolean completeIfChanged(Map<AgentProjectionKey, AgentProjectionState> states,
+        String trigger) {
         List<String> changedIds = new ArrayList<String>(itemCount);
         for (Map.Entry<AgentProjectionKey, List<Observation>> entry : observations.entrySet()) {
             addChangedIds(entry.getValue(), states.get(entry.getKey()), changedIds);
         }
-        return completeChanged(changedIds);
+        return completeChanged(changedIds, trigger);
     }
     
     boolean timeout() {
@@ -97,6 +114,10 @@ final class AgentHttpWatchWaiter {
         if (result) {
             AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
                 AgentWatchMetrics.Result.TIMEOUT);
+            LOGGER.debug("[RAD-WATCH] Server HTTP long poll completed: clientId={}, namespace={}, "
+                + "generation={}, result=TIMEOUT, durationMillis={}",
+                ownerKey.getClientId(), ownerKey.getNamespaceId(), generation,
+                elapsedMillis());
         }
         return result;
     }
@@ -108,10 +129,13 @@ final class AgentHttpWatchWaiter {
         cleanup.accept(this);
         AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
             AgentWatchMetrics.Result.CANCELED);
+        LOGGER.debug("[RAD-WATCH] Server HTTP long poll canceled: clientId={}, namespace={}, "
+            + "generation={}, durationMillis={}", ownerKey.getClientId(),
+            ownerKey.getNamespaceId(), generation, elapsedMillis());
         return true;
     }
     
-    private boolean completeChanged(List<String> changedIds) {
+    private boolean completeChanged(List<String> changedIds, String trigger) {
         if (changedIds.isEmpty()) {
             return false;
         }
@@ -124,6 +148,10 @@ final class AgentHttpWatchWaiter {
         if (result) {
             AgentWatchMetrics.record(AgentWatchMetrics.Event.HTTP_LONG_POLL,
                 AgentWatchMetrics.Result.CHANGED);
+            LOGGER.info("[RAD-WATCH] Server HTTP long poll completed: clientId={}, namespace={}, "
+                + "generation={}, result=CHANGED, trigger={}, changedWatchIds={}, "
+                + "durationMillis={}", ownerKey.getClientId(), ownerKey.getNamespaceId(),
+                generation, trigger, AgentWatchLogUtils.tokens(changedIds), elapsedMillis());
         }
         return result;
     }
@@ -193,6 +221,11 @@ final class AgentHttpWatchWaiter {
     
     boolean isCompleted() {
         return completed.get();
+    }
+    
+    private long elapsedMillis() {
+        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(
+            System.nanoTime() - startedNanos);
     }
     
     private static final class Observation {

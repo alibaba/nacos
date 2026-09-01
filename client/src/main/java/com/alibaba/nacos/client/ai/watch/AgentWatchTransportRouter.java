@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.watch;
 
 import com.alibaba.nacos.api.ai.AgentTransportMode;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AgentHttpWatchClient;
@@ -174,6 +175,14 @@ public final class AgentWatchTransportRouter
                 route.owner = owner;
             }
         }
+        if (retained) {
+            LOGGER.info("[RAD-WATCH] Client Watch transport selected: clientWatchId={}, mode={}, "
+                + "owner={}, {}",
+                AgentWatchLogUtils.token(
+                    registration.getClientWatchId()),
+                mode, ownerName(owner),
+                AgentWatchLogUtils.describeRequest(registration.getDiscoveryRequest()));
+        }
         if (!retained) {
             owner.stop(registration.getClientWatchId());
         }
@@ -258,6 +267,10 @@ public final class AgentWatchTransportRouter
             synchronized (this) {
                 if (!closed && routes.get(clientWatchId) == route && route.owner == null) {
                     route.owner = fallback;
+                    LOGGER.warn("[RAD-WATCH] Client Watch transport fallback: clientWatchId={}, "
+                        + "from=GRPC, to={}, errorCode={}",
+                        AgentWatchLogUtils.token(clientWatchId), ownerName(fallback),
+                        exception.getErrCode());
                     return;
                 }
             }
@@ -405,6 +418,9 @@ public final class AgentWatchTransportRouter
                     && route.owner == null;
                 if (retained) {
                     route.owner = pollingTransport;
+                    LOGGER.warn("[RAD-WATCH] Client Watch transport fallback: clientWatchId={}, "
+                        + "from=HTTP, to=POLLING",
+                        AgentWatchLogUtils.token(route.registration.getClientWatchId()));
                 }
             }
             httpTransport.stop(route.registration.getClientWatchId());
@@ -425,6 +441,16 @@ public final class AgentWatchTransportRouter
             || code == NacosException.CLIENT_OVER_THRESHOLD
             || code == NacosException.INVALID_PARAM
             || code == NacosException.CLIENT_INVALID_PARAM || code == NacosException.CONFLICT;
+    }
+    
+    private String ownerName(AgentWatchTransport owner) {
+        if (owner == grpcTransport) {
+            return "GRPC";
+        }
+        if (owner == httpTransport) {
+            return "HTTP";
+        }
+        return "POLLING";
     }
     
     private synchronized void removeRoute(Route route) {

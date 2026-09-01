@@ -54,6 +54,8 @@ final class AgentGrpcWatch {
     
     private boolean delivering;
     
+    private String deliveryTrigger = "INITIAL_SUBSCRIBE";
+    
     AgentGrpcWatch(String watchKey, String connectionId, String clientWatchId,
         AgentProjectionKey projectionKey, AgentWatchOwnerContext owner) {
         this.watchKey = watchKey;
@@ -93,10 +95,15 @@ final class AgentGrpcWatch {
     }
     
     synchronized boolean markDirty() {
+        return markDirty("CHANGE_FANOUT");
+    }
+    
+    synchronized boolean markDirty(String trigger) {
         if (state == State.CLOSED) {
             return false;
         }
         dirty = true;
+        deliveryTrigger = trigger;
         return scheduleIfNeeded();
     }
     
@@ -126,8 +133,13 @@ final class AgentGrpcWatch {
         }
         if (!success) {
             dirty = true;
+            deliveryTrigger = "DIRTY_RETRY";
         }
         return scheduleIfNeeded();
+    }
+    
+    synchronized String getDeliveryTrigger() {
+        return deliveryTrigger;
     }
     
     synchronized void close() {

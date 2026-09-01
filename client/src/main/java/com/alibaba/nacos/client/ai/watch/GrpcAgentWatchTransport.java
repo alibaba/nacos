@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryNotifyResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -145,6 +146,8 @@ final class GrpcAgentWatchTransport
             removeWireKey(removed);
         }
         if (watchKey != null) {
+            LOGGER.info("[RAD-WATCH] Client gRPC Watch stopping: clientWatchId={}, watchKey={}",
+                AgentWatchLogUtils.token(clientWatchId), AgentWatchLogUtils.token(watchKey));
             executeBestEffortUnsubscribe(watchKey);
         }
     }
@@ -206,6 +209,10 @@ final class GrpcAgentWatchTransport
             if (!isCurrent(watch, connection) || notifyRequest.getEventType() == null
                 || terminated && notifyRequest.getErrorCode() == null) {
                 response.setAccepted(false);
+                LOGGER.warn("[RAD-WATCH] Client gRPC hint rejected: connectionId={}, watchKey={}, "
+                    + "eventType={}, reason=STALE_OR_INVALID", connectionId(connection),
+                    AgentWatchLogUtils.token(notifyRequest.getWatchKey()),
+                    notifyRequest.getEventType());
                 return response;
             }
             if (terminated) {
@@ -232,6 +239,14 @@ final class GrpcAgentWatchTransport
                 // No other event type is defined by this client version.
         }
         response.setAccepted(accepted);
+        LOGGER.info("[RAD-WATCH] Client gRPC hint received: connectionId={}, clientWatchId={}, "
+            + "watchKey={}, eventType={}, observedFingerprint={}, errorCode={}, accepted={}, "
+            + "{}", connectionId(connection),
+            AgentWatchLogUtils.token(watch.registration.getClientWatchId()),
+            AgentWatchLogUtils.token(notifyRequest.getWatchKey()), notifyRequest.getEventType(),
+            AgentWatchLogUtils.fingerprint(notifyRequest.getObservedFingerprint()),
+            notifyRequest.getErrorCode(), accepted,
+            AgentWatchLogUtils.describeRequest(watch.registration.getDiscoveryRequest()));
         return response;
     }
     
@@ -288,6 +303,12 @@ final class GrpcAgentWatchTransport
             throw new NacosException(NacosException.CLIENT_ERROR,
                 "Agent Watch refresh could not be scheduled after subscription.");
         }
+        LOGGER.info("[RAD-WATCH] Client gRPC Watch subscribed: connectionId={}, clientWatchId={}, "
+            + "watchKey={}, refreshRequired={}, observedFingerprint={}, {}",
+            responseConnectionId, AgentWatchLogUtils.token(registration.getClientWatchId()),
+            AgentWatchLogUtils.token(response.getWatchKey()), response.isRefreshRequired(),
+            AgentWatchLogUtils.fingerprint(response.getObservedFingerprint()),
+            AgentWatchLogUtils.describeRequest(registration.getDiscoveryRequest()));
     }
     
     private void executeReconnect(final String connectedId, final List<WireWatch> watches,
@@ -314,6 +335,9 @@ final class GrpcAgentWatchTransport
     
     private void reconnect(String connectedId, List<WireWatch> watches,
         boolean watchAvailable) {
+        LOGGER.info("[RAD-WATCH] Client gRPC Watch reconnect started: connectionId={}, "
+            + "watchAvailable={}, watchCount={}", connectedId, watchAvailable,
+            watches.size());
         if (!watchAvailable) {
             for (WireWatch watch : watches) {
                 removeWatch(watch);
@@ -342,6 +366,9 @@ final class GrpcAgentWatchTransport
                     "Agent Watch resubscription failed.", e));
             }
         }
+        LOGGER.info("[RAD-WATCH] Client gRPC Watch reconnect completed: connectionId={}, "
+            + "watchAvailable={}, attemptedWatchCount={}", connectedId, watchAvailable,
+            watches.size());
         notifyWireAvailable();
     }
     
@@ -429,6 +456,10 @@ final class GrpcAgentWatchTransport
             && watch.connectionId.equals(connectionId)
             && watch.connectionId.equals(client.getCurrentConnectionId())
             && watchesByClientId.get(watch.registration.getClientWatchId()) == watch;
+    }
+    
+    private String connectionId(Connection connection) {
+        return connection == null ? "-" : connection.getConnectionId();
     }
     
     private void ensureAvailable() throws NacosException {

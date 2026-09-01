@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -137,12 +138,21 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
             throw new IllegalArgumentException("AgentWatchBatchRequest must not be empty");
         }
         if (payloadBytes < 0 || payloadBytes > maxRequestBytes) {
+            LOGGER.warn(
+                "[RAD-WATCH] Server HTTP Watch rejected: clientId={}, reason=REQUEST_BYTES, "
+                    + "payloadBytes={}, limit={}",
+                externalClientId, payloadBytes,
+                maxRequestBytes);
             throw capacity("Agent HTTP Watch request exceeds the configured request-byte limit.");
         }
         String namespaceId = request.getWatches().get(0).getDiscoveryRequest().getNamespaceId();
         clientLifecycleService.renewForWatch(externalClientId, requestModule, namespaceId);
         AgentHttpWatchOwnerKey ownerKey = new AgentHttpWatchOwnerKey(externalClientId,
             VisibilityHelper.resolveCurrentIdentity(), namespaceId);
+        LOGGER.info("[RAD-WATCH] Server HTTP Watch received: clientId={}, clientIp={}, "
+            + "generation={}, itemCount={}, payloadBytes={}, watches={}", externalClientId,
+            VisibilityHelper.resolveClientIp(), request.getGeneration(),
+            request.getWatches().size(), payloadBytes, describeWatches(request));
         Map<AgentProjectionKey, AgentDiscoveryRequest> projections = projections(request);
         retain(projections);
         Map<AgentProjectionKey, AgentProjectionState> states;
@@ -159,8 +169,17 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
             AgentHttpWatchRegistry.Registration registration;
             synchronized (lifecycleLock) {
                 ensureOpen();
-                registration = registry.register(waiter, maxItemsPerClient, maxWaitersPerNode,
-                    maxActiveBytesPerNode);
+                try {
+                    registration = registry.register(waiter, maxItemsPerClient, maxWaitersPerNode,
+                        maxActiveBytesPerNode);
+                } catch (NacosApiException e) {
+                    LOGGER.warn("[RAD-WATCH] Server HTTP Watch rejected: clientId={}, "
+                        + "namespace={}, generation={}, itemCount={}, reason={}, "
+                        + "activeWaiters={}, activeBytes={}", externalClientId, namespaceId,
+                        request.getGeneration(), request.getWatches().size(), e.getErrMsg(),
+                        registry.size(), registry.activeBytes());
+                    throw e;
+                }
             }
             if (registration.isStale()) {
                 waiter.timeout();
@@ -173,7 +192,7 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
                 registration.getReplaced().timeout();
             }
             states = currentStates(projections, states);
-            waiter.completeIfChanged(states);
+            waiter.completeIfChanged(states, "INITIAL_SUBSCRIBE");
             return waiter.getDeferredResult();
         } catch (NacosException | RuntimeException e) {
             waiter.cancel();
@@ -187,9 +206,16 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
             return;
         }
         List<AgentHttpWatchWaiter> waiters = registry.findByProjection(update.getKey());
+        if (!waiters.isEmpty()) {
+            LOGGER.info("[RAD-WATCH] Server HTTP change fanout triggered: projection={}, "
+                + "reasons={}, waiterCount={}",
+                AgentWatchLogUtils.token(update.getKey().getValue()), update.getReasons(),
+                waiters.size());
+        }
         for (AgentHttpWatchWaiter waiter : waiters) {
             Runnable notification =
-                () -> waiter.completeIfChanged(update.getKey(), update.getCurrent());
+                () -> waiter.completeIfChanged(update.getKey(), update.getCurrent(),
+                    "CHANGE_FANOUT:" + update.getReasons());
             try {
                 notificationExecutor.execute(notification);
             } catch (RejectedExecutionException e) {
@@ -301,6 +327,17 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
             AgentWatchMetrics.Result.REJECTED);
         return new NacosApiException(NacosException.OVER_THRESHOLD,
             ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, message);
+    }
+    
+    private String describeWatches(AgentWatchBatchRequest request) {
+        List<String> result = new ArrayList<String>(request.getWatches().size());
+        for (AgentWatchBatchItem each : request.getWatches()) {
+            result.add(AgentWatchLogUtils.token(each.getClientWatchId()) + '{'
+                + AgentWatchLogUtils.describeRequest(each.getDiscoveryRequest())
+                + ", materializedFingerprint="
+                + AgentWatchLogUtils.fingerprint(each.getMaterializedFingerprint()) + '}');
+        }
+        return result.toString();
     }
     
     private static int resolveMaxItemsPerClient() {

@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -155,6 +156,9 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
                 existing.registration = registration;
             }
             awaitingRefresh.remove(registration.getClientWatchId());
+            LOGGER.info("[RAD-WATCH] Client HTTP Watch registered: clientWatchId={}, {}",
+                AgentWatchLogUtils.token(registration.getClientWatchId()),
+                AgentWatchLogUtils.describeRequest(registration.getDiscoveryRequest()));
             advanceGenerationAndDispatch();
         }
     }
@@ -177,6 +181,8 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         }
         awaitingRefresh.remove(clientWatchId);
         pendingAdditions.remove(clientWatchId);
+        LOGGER.info("[RAD-WATCH] Client HTTP Watch stopped: clientWatchId={}",
+            AgentWatchLogUtils.token(clientWatchId));
         advanceGenerationAndDispatch();
     }
     
@@ -220,6 +226,9 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             return;
         }
         try {
+            LOGGER.debug("[RAD-WATCH] Client HTTP long poll started: generation={}, "
+                + "watchCount={}, watchIds={}", expectedGeneration,
+                request.getWatches().size(), watchIds(request));
             currentRequest = requestExecutor.submit(new Runnable() {
                 
                 @Override
@@ -253,9 +262,10 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     }
     
     private void execute(AgentWatchBatchRequest request) {
+        long startedNanos = System.nanoTime();
         try {
             AgentWatchBatchResponse response = watchClient.watchAgents(request);
-            handleResponse(request.getGeneration(), response);
+            handleResponse(request.getGeneration(), response, elapsedMillis(startedNanos));
         } catch (NacosException e) {
             handleFailure(request.getGeneration(), e);
         } catch (RuntimeException e) {
@@ -264,7 +274,8 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         }
     }
     
-    private void handleResponse(long requestGeneration, AgentWatchBatchResponse response) {
+    private void handleResponse(long requestGeneration, AgentWatchBatchResponse response,
+        long durationMillis) {
         List<WireWatch> changed = new ArrayList<WireWatch>();
         NacosException invalidResponse = null;
         synchronized (this) {
@@ -292,6 +303,14 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         if (invalidResponse != null) {
             handleFailure(requestGeneration, invalidResponse);
             return;
+        }
+        if (response.isChanged()) {
+            LOGGER.info("[RAD-WATCH] Client HTTP invalidation received: generation={}, "
+                + "changedWatchIds={}, durationMillis={}", requestGeneration,
+                AgentWatchLogUtils.tokens(response.getChangedClientWatchIds()), durationMillis);
+        } else {
+            LOGGER.debug("[RAD-WATCH] Client HTTP long poll completed: generation={}, "
+                + "result=TIMEOUT, durationMillis={}", requestGeneration, durationMillis);
         }
         for (WireWatch watch : changed) {
             boolean accepted = watch.callback.invalidate(null, true);
@@ -332,6 +351,10 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
                 scheduleRetry(requestGeneration, exception);
             }
         }
+        LOGGER.warn("[RAD-WATCH] Client HTTP long poll failed: generation={}, errorCode={}, "
+            + "errorType={}, consecutiveFailures={}, fallback={}", requestGeneration,
+            exception.getErrCode(), exception.getClass().getSimpleName(), consecutiveFailures,
+            listener != null);
         if (rejectedAddition != null) {
             rejectedAddition.callback.unavailable(exception.getErrCode(),
                 exception.getErrMsg(), true);
@@ -399,6 +422,18 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             result = each;
         }
         return result;
+    }
+    
+    private String watchIds(AgentWatchBatchRequest request) {
+        List<String> ids = new ArrayList<String>(request.getWatches().size());
+        for (AgentWatchBatchItem each : request.getWatches()) {
+            ids.add(each.getClientWatchId());
+        }
+        return AgentWatchLogUtils.tokens(ids);
+    }
+    
+    private long elapsedMillis(long startedNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
     }
     
     private void cancelRequest(Future<?> future) {

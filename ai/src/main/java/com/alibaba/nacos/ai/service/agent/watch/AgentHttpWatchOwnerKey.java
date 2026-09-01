@@ -37,6 +37,14 @@ final class AgentHttpWatchOwnerKey {
         this.namespaceId = namespaceId;
     }
     
+    String getClientId() {
+        return clientId;
+    }
+    
+    String getNamespaceId() {
+        return namespaceId;
+    }
+    
     @Override
     public boolean equals(Object other) {
         if (this == other) {

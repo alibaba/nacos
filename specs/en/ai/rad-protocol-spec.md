@@ -577,6 +577,22 @@ The canonical Watch key contains the effective `namespaceId`, normalized
 Visibility is an authorization decision and is not part of the projection key
 or fingerprint input.
 
+Watch implementations MUST provide a correlatable operational log chain. The
+Consumer records subscription creation and removal, the selected Binding,
+received hints, Discover refresh outcome, and unavailable transitions. The
+Server records admission or rejection, the authorized request shape, change
+fanout or initial-subscription trigger, delivery result, duration, and available
+subscriber identity such as client ID and remote address. A gRPC delivery result
+distinguishes ACK success, ACK failure, and timeout; an HTTP long-poll result
+distinguishes changed response, timeout, and cancellation because HTTP has no
+separate Watch ACK. Implementations use a stable digested correlation token for
+Watch identities and abbreviate fingerprints. Logs MUST NOT contain descriptors,
+Endpoint contents, credentials, raw metadata selector values, or other business
+payload. Request admission, lifecycle, and successful changed delivery use info;
+routine unchanged completion details and successful timeouts SHOULD remain at
+debug level, while capacity, transport, timeout, and delivery failures use
+warning.
+
 The Nacos Watch binding uses fingerprint format
 `sha256-canonical-json-v1:<64-lowercase-hex>`. The digest input is the complete
 public `AgentDiscoveryResult` after effective defaults are materialized and

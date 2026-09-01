@@ -497,6 +497,16 @@ Naming 收敛后的 Service Change Event。
 Canonical Watch Key 包含生效 `namespaceId`、规范化 `AgentReference`、规范化 Filter
 以及调用方所有的订阅身份。Visibility 是鉴权决策，不进入 Projection Key 或 Fingerprint。
 
+Watch 实现必须提供可关联的运维日志链路。Consumer 记录订阅创建与移除、选中的 Binding、
+收到的 Hint、Discover 刷新结果和 Unavailable 状态转换；Server 记录准入或拒绝、已鉴权的
+请求形态、变化 Fanout 或首次订阅触发原因、投递结果、耗时，以及 Client ID、Remote Address
+等可获取的订阅者身份。gRPC 投递结果需要区分 ACK 成功、ACK 失败和超时；HTTP Long Poll
+没有独立 Watch ACK，因此需要区分变化响应、超时和取消。实现使用稳定的摘要关联 Token
+表示 Watch 身份，并缩短 Fingerprint。日志不得包含 Descriptor、Endpoint 内容、凭据、
+原始 Metadata Selector Value 或其他业务 Payload。请求准入、生命周期和成功的变化投递使用
+Info；常规无变化完成细节和成功超时应保留在 Debug 级别，容量、Transport、超时和投递失败
+使用 Warning。
+
 Nacos Watch Binding 的 Fingerprint 格式为
 `sha256-canonical-json-v1:<64-lowercase-hex>`。摘要输入是生效默认值已物化并经过
 Canonical JSON 编码的完整公开 `AgentDiscoveryResult`。保留本规范定义的公开数组顺序，
