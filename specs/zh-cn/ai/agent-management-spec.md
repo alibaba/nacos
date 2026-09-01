@@ -379,8 +379,14 @@ A2A 发布能力，它们可以使用有审计的内部直接 online 转换，�
 
 Runtime A2A 发布和注销投影由 [Agent 存储规范](agent-storage-spec.md)定义。
 
-历史 Config row、历史 Naming layout、混合版本集群双读或双写、事实源切换、回滚和异常历史
-身份属于独立的滚动升级与数据迁移契约。本目标模型不因此放宽规则。
+历史 Config Row、历史 Naming Layout、混合 Member 运行、事实源切换、回滚和异常历史身份遵循
+[历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)。`AUTO` 同步期间，已经完整对账的 Agent
+可以通过标准读取可见，但终态切流前，普通 Agent Mutation 不得修改
+`legacy-a2a-migration-v1` 事实。独立创建且冲突的标准 Agent 永远不被覆盖。这些迁移限制不放宽
+本目标模型的身份、生命周期、校验、存储、Search 或 Visibility 规则。
+
+临时迁移实现计划在 Nacos 4.0 删除；已经标准化的 Agent 事实和纯 AgentCard Adapter 在删除后
+继续有效。
 
 Agent 和 AgentSpec 可以通过通用资源关系互相引用，但不互相拥有生命周期。本版本不增加
 Agent 专用 `sourceRef`、`defaultInterfaceId`、`interfaceId`、`descriptorDigest` 或随机

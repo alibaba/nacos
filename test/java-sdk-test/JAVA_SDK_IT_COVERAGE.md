@@ -25,6 +25,12 @@ The detailed scenario matrix lives in
 the current IT has representative coverage but must not be treated as complete
 SDK API scenario coverage.
 
+The planned historical A2A upgrade, Runtime dual-materialization, restart, and
+three-member rollout matrix is tracked in
+[`A2A_MIGRATION_SDK_IT_SCENARIOS.md`](A2A_MIGRATION_SDK_IT_SCENARIOS.md).
+Its rows remain outside current coverage claims until their executable tests
+have run successfully.
+
 Java SDK ITs run only with the dedicated Maven profile
 `java-sdk-integration-test`. The generic `integration-test` profile belongs to
 HTTP API IT CI and should build this module without executing SDK IT cases.

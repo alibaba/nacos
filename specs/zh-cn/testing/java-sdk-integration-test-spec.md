@@ -192,3 +192,27 @@ MCP Storage 路由或生命周期托管发生变化时，Java SDK IT 至少覆�
 
 无 Version Runtime Service、显式 Transport List、MCP Version Range、Client HTTP 对齐和
 心跳续约在独立设计批准前不属于该矩阵。
+
+## 11. 历史 A2A 升级与集群场景
+
+历史 A2A 迁移变化时，Java SDK IT 使用真实 `A2aService`、`AiService`、Naming、gRPC/HTTP RAD、
+Watch、Reconnect 和 Redo Client 补充 OpenAPI `M-ST-01..10` 矩阵。特别是 `M-ST-06`、
+`M-ST-09` 和 `M-ST-10` 必须验证可观察客户端行为，不能只断言内部 Publisher。
+
+定向三 Member 测试覆盖以下集群矩阵：
+
+| ID | 必须验证的集群行为 |
+| --- | --- |
+| `M-CL-01` | 0/3、1/3、2/3、3/3 Member 具备能力时，在全部 Ability 和门禁满足前始终保持历史权威。 |
+| `M-CL-02` | A 上的历史写由 Lease Owner B 对账，C 能读取标准内容。 |
+| `M-CL-03` | 分别重启 Lease Owner、非 Owner、Config Leader 或 Naming Responsibility Member，保持进度和可用性。 |
+| `M-CL-04` | Quiescing 期间 Member 加入/离开、ACK 丢失和 Marker 延迟时，安全回到 Syncing 或在无事实分裂下收敛。 |
+| `M-CL-05` | A 修改历史 Config、B 对账、A/B/C 读取历史/标准视图后最终一致。 |
+| `M-CL-06` | Endpoint 在 A 发布、Naming Responsibility 在 B 时，历史与标准 Service 均收敛。 |
+| `M-CL-07` | 终态 Marker 传播期间通过 LB 轮询 A/B/C，定义和 Runtime Snapshot 等价。 |
+| `M-CL-08` | Shadow 关闭和开启的两套完整滚动升级分别满足文档化 Gateway 行为。 |
+| `M-CL-09` | 切流前可以回到历史权威；切流后只接受理解标准数据的二进制回退。 |
+| `M-CL-10` | 普通 Agent、Skill、Prompt、AgentSpec、MCP 和 Naming 注册/订阅完全隔离。 |
+
+每个测试使用明确有界 Deadline 和公开或稳定 Wire 行为，不假设 LB Sticky、固定 Config Leader、
+固定 Naming Responsibility Member 或固定 Task 执行顺序。

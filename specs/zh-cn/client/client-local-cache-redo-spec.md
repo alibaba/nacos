@@ -219,6 +219,17 @@ namespace-bound `A2aService` 的旧 Version-specific Endpoint Publication 使用
 保存 Endpoint 集合及其 URI、transport、metadata 等字段的防御性快照，调用方后续修改原始
 `AgentEndpoint` 或 Collection 不得改变重连意图。
 
+临时历史 A2A `AUTO` 迁移期间，Client 仍只持有一条逻辑 Redo Record，并只发送一次旧
+Publication 请求。Server 可以按照
+[历史 A2A 升级迁移规范](../ai/a2a-upgrade-migration-spec.md)把该请求物化为历史主写/标准镜像，
+或标准主写/可选历史 Shadow。Client 不缓存物理 Child Publisher Id、不重复计算本地容量，也不独立
+重试某一 Layout。Reconnect 只在新 Connection 下重放一次完整逻辑 Record，Server 根据当前迁移
+Marker 重建所需 Layout。
+
+主写成功时，即使必需 Mirror 或可选 Shadow 进入有界服务端重试，Client 操作仍然成功；主写失败
+继续表现为普通受控 SDK 失败。迁移完成且固化 Shadow 策略关闭时，Server 可以删除历史 Child，
+但不改变 Client 的 Redo Identity 或期望 Batch。
+
 旧 AgentCard 订阅的 exact Version 和 latest 是不同本地身份。服务端返回的 Version 当前是否为
 latest 不能替代调用方订阅身份；一次变化必须通知所有受影响的 exact/latest key。当 latest 指向已
 缓存的精确 Version 时仍需产生 latest 变化。取消后使用已有 Cache 重新订阅必须重新启动轮询任务。

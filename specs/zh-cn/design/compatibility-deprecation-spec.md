@@ -174,7 +174,11 @@ nacos.core.api.compatibility.enabled=true
 - Console `/v3/console/ai/a2a` 兼容到 3.4.x 窗口，内置 UI 完成迁移后可以移除。
 
 不得只向这些 facade 增加新能力。新增开发以 Agent Management 和 RAD 契约为目标。
-历史数据与混合 Server 滚动升级使用独立迁移方案，本身不延长 API 兼容窗口。
+历史数据与混合 Server 滚动升级遵循
+[历史 A2A 升级迁移规范](../ai/a2a-upgrade-migration-spec.md)，本身不延长 API 兼容窗口。其对账状态、
+控制对象、迁移来源写保护、过渡期 Runtime 双物化、可选历史 Naming Shadow 和迁移专用配置只用于
+Nacos 3.0～3.2 升级，计划在 Nacos 4.0 删除。删除这些临时实现后，标准 Agent/RAD 事实和仍处于
+自身兼容窗口内的公开 A2A Facade 继续保留。
 
 ## 12. 旧 MCP 标识符
 

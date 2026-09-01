@@ -262,6 +262,23 @@ snapshot of the Endpoint collection and fields such as URI, transport, and
 metadata. Later caller mutation of an original `AgentEndpoint` or collection
 must not change reconnect intent.
 
+During the temporary historical A2A `AUTO` migration, the client still owns
+exactly one logical redo record and sends exactly one legacy publication
+request. The server may materialize that request into a historical primary and
+canonical mirror, or a canonical primary and optional historical shadow, as
+defined by the
+[Historical A2A Upgrade Migration Spec](../ai/a2a-upgrade-migration-spec.md).
+The client does not cache physical child-publisher ids, double its local
+capacity, or independently retry one layout. Reconnect replays the complete
+logical record once under the new connection, and the server rebuilds the
+layouts required by its current migration marker.
+
+A successful primary response remains a successful client operation when a
+required mirror or optional shadow enters bounded server-side retry. A primary
+failure remains a normal controlled SDK failure. Migration completion may
+remove a historical child when the frozen shadow policy is disabled without
+changing the client's redo identity or desired batch.
+
 Exact-Version and latest legacy AgentCard subscriptions are distinct local
 identities. Whether a returned Version is currently latest cannot replace the
 caller's subscription identity; one change notifies every affected exact and

@@ -253,3 +253,29 @@ Migration tests assert only public behavior and durable restart outcomes. They
 may seed documented legacy fixtures through test setup, but must not use direct
 database-row assertions as the success contract. Every asynchronous condition
 uses bounded polling rather than a fixed sleep.
+
+## 12. Historical A2A Upgrade Migration Scenarios
+
+When the historical A2A upgrade state machine, reconciliation, or Runtime
+dual-materialization behavior changes, OpenAPI IT freezes and records these
+standalone scenarios from the
+[Historical A2A Upgrade Migration Spec](../ai/a2a-upgrade-migration-spec.md):
+
+| ID | Public scenario |
+| --- | --- |
+| `M-ST-01` | Multiple Namespaces, Agents, Versions, and URL/SERVICE definitions migrate completely and retain identity, latest, descriptor, declared Endpoints, and enabled state. |
+| `M-ST-02` | Historical create, update, set-latest, and delete during `SYNCING` converge without changing the already returned historical result. |
+| `M-ST-03` | Malformed JSON, missing Version, invalid name/Version, and a conflicting independent canonical Agent block cutover while historical reads remain available. |
+| `M-ST-04` | Restart after Storage, Version-row, and Resource-row boundaries recovers idempotently and never exposes a partial Agent. |
+| `M-ST-05` | Historical A2A, Admin, Console, ARD/Search, RAD Discover, and Watch agree before and after cutover. |
+| `M-ST-06` | Historical gRPC single/batch Endpoint publication is visible in both historical and canonical Runtime layouts during migration. |
+| `M-ST-07` | With shadow disabled, canonical RAD remains available after cutover and the old Gateway is no longer promised visibility. |
+| `M-ST-08` | With shadow enabled, canonical exact-Version RAD and the old Gateway expose equivalent normalized Runtime snapshots after cutover. |
+| `M-ST-09` | Mirror failure/retry, client disconnect/reconnect/redo, and server restart converge without duplicate logical capacity or lost retained publication. |
+| `M-ST-10` | Quiescing returns the retryable migration error for definition mutations while queries, Discover, Watch, and Endpoint operations continue. |
+
+`test/openapi-test/A2A_MIGRATION_API_TEST_SCENARIOS.md` assigns the executable
+HTTP portions and records scenarios that require the Java SDK or a directed
+cluster fixture. Tests may seed documented historical Config through setup, but
+success is asserted through public APIs, durable restart behavior, and bounded
+polling rather than direct row inspection or fixed sleep.

@@ -21,6 +21,12 @@ This registry records which Nacos HTTP APIs are covered by
 each API surface. It is meant for maintainers and agents to quickly locate
 coverage before adding or debugging an IT.
 
+The planned historical A2A upgrade matrix is tracked separately in
+[`A2A_MIGRATION_API_TEST_SCENARIOS.md`](A2A_MIGRATION_API_TEST_SCENARIOS.md).
+Its `Planned` rows do not change the current API-surface totals; each row enters
+the applicable surface registry only after an executable IT is implemented and
+verified.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI
