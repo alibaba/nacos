@@ -24,6 +24,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SkillSeedArchiveReaderTest {
@@ -80,6 +82,48 @@ class SkillSeedArchiveReaderTest {
             SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingEntryLimit() throws Exception {
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", buildSkillMarkdown("demo-skill")),
+            new ArchiveEntry("vendor/demo-skill/assets/", ""),
+            new ArchiveEntry("vendor/demo-skill/assets/demo.txt", "demo"));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillSeedArchiveReader.read(new ByteArrayInputStream(archive), 2,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("too many entries"));
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingUncompressedSizeLimit() throws Exception {
+        String skillMarkdown = buildSkillMarkdown("demo-skill");
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", skillMarkdown),
+            new ArchiveEntry("vendor/demo-skill/assets/demo.txt", "0123456789"));
+        long maxBytes = skillMarkdown.getBytes(StandardCharsets.UTF_8).length + 5L;
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillSeedArchiveReader.read(new ByteArrayInputStream(archive), 10, maxBytes));
+        
+        assertTrue(exception.getMessage().contains("decompressed size exceeds limit"));
+    }
+    
+    @Test
+    void shouldRejectDuplicateNormalizedEntryPaths() throws Exception {
+        String skillMarkdown = buildSkillMarkdown("demo-skill");
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", skillMarkdown),
+            new ArchiveEntry("./vendor/demo-skill/SKILL.md", skillMarkdown));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillSeedArchiveReader.read(new ByteArrayInputStream(archive), 10,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("duplicate entry path"));
     }
     
     @Test

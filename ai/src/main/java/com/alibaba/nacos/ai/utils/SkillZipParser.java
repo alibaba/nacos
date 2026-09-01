@@ -498,6 +498,8 @@ public class SkillZipParser {
         final int maxEntries = resolveMaxZipEntries();
         final long maxUncompressedBytes = resolveMaxUncompressedBytes();
         List<ZipEntryData> result = new ArrayList<>();
+        Set<String> seenEntryNames = new HashSet<>();
+        int entryCount = 0;
         long totalSize = 0;
         try (ZipArchiveInputStream zis =
             new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
@@ -505,20 +507,22 @@ public class SkillZipParser {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) {
-                    continue;
-                }
-                String name = entry.getName();
-                // Security: reject path traversal and absolute paths
-                SkillUtils.validatePathSafety(name);
-                if (isIgnoredZipMetadataEntry(name)) {
-                    continue;
-                }
-                if (result.size() >= maxEntries) {
+                entryCount++;
+                if (entryCount > maxEntries) {
                     throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                         "ZIP file contains too many entries (max " + maxEntries + ")");
                 }
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String name = entry.getName();
+                String normalizedName = normalizeEntryName(name);
+                SkillUtils.validatePathSafety(normalizedName);
+                if (StringUtils.isNotBlank(normalizedName)
+                    && !seenEntryNames.add(normalizedName)) {
+                    throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+                        "ZIP file contains duplicate entry path: " + normalizedName);
+                }
+                boolean shouldStore = !entry.isDirectory()
+                    && StringUtils.isNotBlank(name) && !isIgnoredZipMetadataEntry(name);
+                ByteArrayOutputStream out = shouldStore ? new ByteArrayOutputStream() : null;
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
@@ -528,10 +532,25 @@ public class SkillZipParser {
                             "ZIP decompressed size exceeds limit ("
                                 + (maxUncompressedBytes / 1024 / 1024) + "MB)");
                     }
-                    out.write(buffer, 0, n);
+                    if (out != null) {
+                        out.write(buffer, 0, n);
+                    }
                 }
-                result.add(new ZipEntryData(name, out.toByteArray()));
+                if (out != null) {
+                    result.add(new ZipEntryData(name, out.toByteArray()));
+                }
             }
+        }
+        return result;
+    }
+    
+    private static String normalizeEntryName(String entryName) {
+        if (entryName == null) {
+            return null;
+        }
+        String result = entryName.replace('\\', '/');
+        while (result.startsWith("./")) {
+            result = result.substring(2);
         }
         return result;
     }

@@ -51,6 +51,10 @@ public final class SkillSeedArchiveReader {
     
     private static final String SKILL_MD_FILE = "SKILL.md";
     
+    static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 10000;
+    
+    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
+    
     private static final Pattern FRONT_MATTER_PATTERN =
         Pattern.compile("^---\\s*\\n(.*?)\\n---\\s*\\n", Pattern.DOTALL);
     
@@ -68,7 +72,17 @@ public final class SkillSeedArchiveReader {
      * @throws IOException if reading failed
      */
     public static List<SkillPackage> read(InputStream inputStream) throws IOException {
-        Map<String, byte[]> entries = readArchiveEntries(inputStream);
+        int maxEntries =
+            Math.max(DEFAULT_MAX_SEED_ARCHIVE_ENTRIES, SkillZipParser.resolveMaxZipEntries());
+        long maxUncompressedBytes = Math.max(DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES,
+            SkillZipParser.resolveMaxUncompressedBytes());
+        return read(inputStream, maxEntries, maxUncompressedBytes);
+    }
+    
+    static List<SkillPackage> read(InputStream inputStream, int maxEntries,
+        long maxUncompressedBytes) throws IOException {
+        Map<String, byte[]> entries =
+            readArchiveEntries(inputStream, maxEntries, maxUncompressedBytes);
         if (entries.isEmpty()) {
             return Collections.emptyList();
         }
@@ -101,28 +115,46 @@ public final class SkillSeedArchiveReader {
         return result;
     }
     
-    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream)
-        throws IOException {
+    private static Map<String, byte[]> readArchiveEntries(InputStream inputStream, int maxEntries,
+        long maxUncompressedBytes) throws IOException {
         Map<String, byte[]> result = new LinkedHashMap<>();
+        Set<String> seenEntryNames = new HashSet<>();
+        int entryCount = 0;
+        long totalSize = 0;
         try (ZipArchiveInputStream zis =
             new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) {
-                    continue;
+                entryCount++;
+                if (entryCount > maxEntries) {
+                    throw new IOException(
+                        "ZIP file contains too many entries (max " + maxEntries + ")");
                 }
                 String entryName = normalizeEntryName(entry.getName());
-                if (StringUtils.isBlank(entryName)) {
-                    continue;
+                if (StringUtils.isNotBlank(entryName)) {
+                    SkillUtils.validatePathSafety(entryName);
+                    if (!seenEntryNames.add(entryName)) {
+                        throw new IOException(
+                            "ZIP file contains duplicate entry path: " + entryName);
+                    }
                 }
-                SkillUtils.validatePathSafety(entryName);
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                boolean shouldStore = !entry.isDirectory() && StringUtils.isNotBlank(entryName);
+                ByteArrayOutputStream out = shouldStore ? new ByteArrayOutputStream() : null;
                 int bytesRead;
                 while ((bytesRead = zis.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
+                    totalSize += bytesRead;
+                    if (totalSize > maxUncompressedBytes) {
+                        throw new IOException("ZIP decompressed size exceeds limit ("
+                            + (maxUncompressedBytes / 1024 / 1024) + "MB)");
+                    }
+                    if (out != null) {
+                        out.write(buffer, 0, bytesRead);
+                    }
                 }
-                result.put(entryName, out.toByteArray());
+                if (out != null) {
+                    result.put(entryName, out.toByteArray());
+                }
             }
         }
         return result;

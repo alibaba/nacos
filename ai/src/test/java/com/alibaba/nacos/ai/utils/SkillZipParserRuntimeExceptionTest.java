@@ -142,6 +142,39 @@ class SkillZipParserRuntimeExceptionTest {
         }
     }
     
+    @Test
+    void testParseSkillFromZipRejectsWindowsDrivePath() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "SKILL.md", VALID_SKILL_MD.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "C:/windows/system.ini", "malicious".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        try {
+            SkillZipParser.parseSkillFromZip(baos.toByteArray(), NAMESPACE_ID);
+            fail("Expected the Windows-drive-path zip to be rejected, but parsing succeeded");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("Absolute path"));
+        }
+    }
+    
+    @Test
+    void testParseSkillFromZipRejectsDuplicateNormalizedEntryPath() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "SKILL.md", VALID_SKILL_MD.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "assets/file.txt", "first".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "./assets/file.txt", "second".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        try {
+            SkillZipParser.parseSkillFromZip(baos.toByteArray(), NAMESPACE_ID);
+            fail("Expected duplicate normalized entry paths to be rejected, but parsing succeeded");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("duplicate entry path"));
+        }
+    }
+    
     // -------- Helpers --------
     
     /**
