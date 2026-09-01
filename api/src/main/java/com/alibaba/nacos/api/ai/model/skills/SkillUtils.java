@@ -169,10 +169,21 @@ public class SkillUtils {
         if (path == null) {
             return;
         }
+        if (path.indexOf('\0') >= 0) {
+            throw new SecurityException("Null byte not allowed in path: " + path);
+        }
         if (path.contains(PATH_TRAVERSAL_SEQUENCE)) {
             throw new SecurityException("Path traversal detected: " + path);
         }
-        if (path.startsWith("/") || path.startsWith("\\")) {
+        String normalizedPath = path.replace('\\', '/');
+        while (normalizedPath.startsWith("./")) {
+            normalizedPath = normalizedPath.substring(2);
+        }
+        boolean hasWindowsDrivePrefix = normalizedPath.length() >= 2
+            && ((normalizedPath.charAt(0) >= 'A' && normalizedPath.charAt(0) <= 'Z')
+                || (normalizedPath.charAt(0) >= 'a' && normalizedPath.charAt(0) <= 'z'))
+            && normalizedPath.charAt(1) == ':';
+        if (normalizedPath.startsWith("/") || hasWindowsDrivePrefix) {
             throw new SecurityException("Absolute path not allowed: " + path);
         }
     }
