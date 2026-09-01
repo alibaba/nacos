@@ -159,23 +159,23 @@ class MetricsMonitorTest {
     
     @Test
     void testAgentWatchGaugesSupportIncrementAndReadBackWithoutRegistry() {
-        double intents = MetricsMonitor.getAgentWatchIntentCount();
-        double pending = MetricsMonitor.getAgentWatchPendingCount();
-        double dirty = MetricsMonitor.getAgentWatchDirtyCount();
+        double intents = MetricsMonitor.agentWatchIntentCount().get();
+        double pending = MetricsMonitor.agentWatchPendingCount().get();
+        double dirty = MetricsMonitor.agentWatchDirtyCount().get();
         
-        MetricsMonitor.incrementAgentWatchIntentCount();
-        MetricsMonitor.incrementAgentWatchPendingCount();
-        MetricsMonitor.incrementAgentWatchDirtyCount();
-        assertEquals(intents + 1D, MetricsMonitor.getAgentWatchIntentCount());
-        assertEquals(pending + 1D, MetricsMonitor.getAgentWatchPendingCount());
-        assertEquals(dirty + 1D, MetricsMonitor.getAgentWatchDirtyCount());
+        MetricsMonitor.agentWatchIntentCount().increment();
+        MetricsMonitor.agentWatchPendingCount().increment();
+        MetricsMonitor.agentWatchDirtyCount().increment();
+        assertEquals(intents + 1D, MetricsMonitor.agentWatchIntentCount().get());
+        assertEquals(pending + 1D, MetricsMonitor.agentWatchPendingCount().get());
+        assertEquals(dirty + 1D, MetricsMonitor.agentWatchDirtyCount().get());
         
-        MetricsMonitor.decrementAgentWatchIntentCount();
-        MetricsMonitor.decrementAgentWatchPendingCount();
-        MetricsMonitor.decrementAgentWatchDirtyCount();
-        assertEquals(intents, MetricsMonitor.getAgentWatchIntentCount());
-        assertEquals(pending, MetricsMonitor.getAgentWatchPendingCount());
-        assertEquals(dirty, MetricsMonitor.getAgentWatchDirtyCount());
+        MetricsMonitor.agentWatchIntentCount().decrement();
+        MetricsMonitor.agentWatchPendingCount().decrement();
+        MetricsMonitor.agentWatchDirtyCount().decrement();
+        assertEquals(intents, MetricsMonitor.agentWatchIntentCount().get());
+        assertEquals(pending, MetricsMonitor.agentWatchPendingCount().get());
+        assertEquals(dirty, MetricsMonitor.agentWatchDirtyCount().get());
     }
     
     @Test

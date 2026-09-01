@@ -42,8 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code nacos_client_request}, counters {@code nacos_client_naming_request_failed_total} and
  * {@code nacos_client_ai_watch_events_total}.
  *
- * <p>Gauge and AI watch event values are held in process so that they can be read back without a registry, and any
- * failure of the metrics system is swallowed, so it can never affect client requests.
+ * <p>Any failure of the metrics system is swallowed, so it can never affect client requests.
  *
  * @author Nacos
  */
@@ -56,16 +55,6 @@ public class MetricsMonitor {
     private static final String MODULE_CONFIG = "config";
     
     private static final String MODULE_AI = "ai";
-    
-    private static final String GAUGE_SERVICE_INFO_MAP_SIZE = "serviceInfoMapSize";
-    
-    private static final String GAUGE_LISTEN_CONFIG_COUNT = "listenConfigCount";
-    
-    private static final String GAUGE_AGENT_WATCH_INTENT_COUNT = "agentWatchIntentCount";
-    
-    private static final String GAUGE_AGENT_WATCH_PENDING_COUNT = "agentWatchPendingCount";
-    
-    private static final String GAUGE_AGENT_WATCH_DIRTY_COUNT = "agentWatchDirtyCount";
     
     private static final String NACOS_MONITOR = "nacos_monitor";
     
@@ -98,71 +87,60 @@ public class MetricsMonitor {
     
     private static final String TAG_RESULT = "result";
     
-    private static final String KEY_SEPARATOR = "|";
-    
     /**
      * Timer bucket boundaries aligned with the Prometheus Java client defaults, so dashboards built on the previous
      * {@code nacos_client_request} histogram keep comparable buckets.
      */
     private static final Duration[] REQUEST_DURATION_BUCKETS = {Duration.ofMillis(5),
-        Duration.ofMillis(10),
-        Duration.ofMillis(25), Duration.ofMillis(50), Duration.ofMillis(75), Duration.ofMillis(100),
-        Duration.ofMillis(250), Duration.ofMillis(500), Duration.ofMillis(750),
-        Duration.ofSeconds(1),
-        Duration.ofMillis(2500), Duration.ofSeconds(5), Duration.ofMillis(7500),
-        Duration.ofSeconds(10)};
-    
-    private static final Map<String, AtomicLong> GAUGE_VALUES = new ConcurrentHashMap<>();
-    
-    private static final Map<String, AtomicLong> AI_WATCH_EVENT_COUNTS = new ConcurrentHashMap<>();
+        Duration.ofMillis(10), Duration.ofMillis(25), Duration.ofMillis(50), Duration.ofMillis(75),
+        Duration.ofMillis(100), Duration.ofMillis(250), Duration.ofMillis(500),
+        Duration.ofMillis(750), Duration.ofSeconds(1), Duration.ofMillis(2500),
+        Duration.ofSeconds(5), Duration.ofMillis(7500), Duration.ofSeconds(10)};
     
     private static final AtomicBoolean METRICS_FAILURE_LOGGED = new AtomicBoolean(false);
+    
+    private static final ClientGauge SERVICE_INFO_MAP_SIZE =
+        registerGauge(MODULE_NAMING, "serviceInfoMapSize");
+    
+    private static final ClientGauge LISTEN_CONFIG_COUNT =
+        registerGauge(MODULE_CONFIG, "listenConfigCount");
+    
+    private static final ClientGauge AGENT_WATCH_INTENT_COUNT =
+        registerGauge(MODULE_AI, "agentWatchIntentCount");
+    
+    private static final ClientGauge AGENT_WATCH_PENDING_COUNT =
+        registerGauge(MODULE_AI, "agentWatchPendingCount");
+    
+    private static final ClientGauge AGENT_WATCH_DIRTY_COUNT =
+        registerGauge(MODULE_AI, "agentWatchDirtyCount");
+    
+    /**
+     * Event counts are kept in process so that they can be read back without a registry. Only the AI watch counter
+     * needs this, and its labels are closed enums, so the map stays small.
+     */
+    private static final Map<String, AtomicLong> AI_WATCH_EVENT_COUNTS = new ConcurrentHashMap<>();
     
     private MetricsMonitor() {
     }
     
     public static void recordServiceInfoMapSize(int size) {
-        gaugeValue(MODULE_NAMING, GAUGE_SERVICE_INFO_MAP_SIZE).set(size);
+        SERVICE_INFO_MAP_SIZE.set(size);
     }
     
     public static void recordListenConfigCount(int count) {
-        gaugeValue(MODULE_CONFIG, GAUGE_LISTEN_CONFIG_COUNT).set(count);
+        LISTEN_CONFIG_COUNT.set(count);
     }
     
-    public static void incrementAgentWatchIntentCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_INTENT_COUNT).incrementAndGet();
+    public static ClientGauge agentWatchIntentCount() {
+        return AGENT_WATCH_INTENT_COUNT;
     }
     
-    public static void decrementAgentWatchIntentCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_INTENT_COUNT).decrementAndGet();
+    public static ClientGauge agentWatchPendingCount() {
+        return AGENT_WATCH_PENDING_COUNT;
     }
     
-    public static double getAgentWatchIntentCount() {
-        return gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_INTENT_COUNT).get();
-    }
-    
-    public static void incrementAgentWatchPendingCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_PENDING_COUNT).incrementAndGet();
-    }
-    
-    public static void decrementAgentWatchPendingCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_PENDING_COUNT).decrementAndGet();
-    }
-    
-    public static double getAgentWatchPendingCount() {
-        return gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_PENDING_COUNT).get();
-    }
-    
-    public static void incrementAgentWatchDirtyCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_DIRTY_COUNT).incrementAndGet();
-    }
-    
-    public static void decrementAgentWatchDirtyCount() {
-        gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_DIRTY_COUNT).decrementAndGet();
-    }
-    
-    public static double getAgentWatchDirtyCount() {
-        return gaugeValue(MODULE_AI, GAUGE_AGENT_WATCH_DIRTY_COUNT).get();
+    public static ClientGauge agentWatchDirtyCount() {
+        return AGENT_WATCH_DIRTY_COUNT;
     }
     
     public static void observeConfigRequest(String method, String url, String code,
@@ -184,8 +162,7 @@ public class MetricsMonitor {
      * @param exceptionClass simple class name of the thrown exception, {@code NONE} when no exception was thrown
      */
     public static void recordNamingRequestFailed(String requestClass, String responseStatus,
-        String responseCode,
-        String exceptionClass) {
+        String responseCode, String exceptionClass) {
         try {
             Counter.builder(NACOS_CLIENT_NAMING_REQUEST_FAILED).tag(TAG_MODULE, MODULE_NAMING)
                 .tag(TAG_REQUEST_CLASS, requestClass).tag(TAG_RESPONSE_STATUS, responseStatus)
@@ -206,8 +183,7 @@ public class MetricsMonitor {
         aiWatchEventCount(event, result).incrementAndGet();
         try {
             Counter.builder(NACOS_CLIENT_AI_WATCH_EVENTS).tag(TAG_EVENT, event)
-                .tag(TAG_RESULT, result)
-                .register(Metrics.globalRegistry).increment();
+                .tag(TAG_RESULT, result).register(Metrics.globalRegistry).increment();
         } catch (Throwable t) {
             logMetricsFailure("increment ai watch event counter", t);
         }
@@ -221,55 +197,34 @@ public class MetricsMonitor {
         long elapsedMillis) {
         try {
             Timer.builder(NACOS_CLIENT_REQUEST).tag(TAG_MODULE, module).tag(TAG_METHOD, method)
-                .tag(TAG_URL, url)
-                .tag(TAG_CODE, code).serviceLevelObjectives(REQUEST_DURATION_BUCKETS)
-                .register(Metrics.globalRegistry).record(elapsedMillis, TimeUnit.MILLISECONDS);
+                .tag(TAG_URL, url).tag(TAG_CODE, code)
+                .serviceLevelObjectives(REQUEST_DURATION_BUCKETS).register(Metrics.globalRegistry)
+                .record(elapsedMillis, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
             logMetricsFailure("observe request elapsed time", t);
         }
     }
     
-    /**
-     * Get the in process holder of a gauge value, registering the gauge on the global registry on first use.
-     *
-     * <p>The holder is kept by this class so that the current value can be read back and updated incrementally even
-     * when no registry has been added by the application.
-     */
-    private static AtomicLong gaugeValue(String module, String name) {
-        String key = module + KEY_SEPARATOR + name;
-        AtomicLong existing = GAUGE_VALUES.get(key);
-        if (null != existing) {
-            return existing;
-        }
-        AtomicLong created = new AtomicLong();
-        AtomicLong previous = GAUGE_VALUES.putIfAbsent(key, created);
-        if (null != previous) {
-            return previous;
-        }
-        registerGauge(module, name, created);
-        return created;
-    }
-    
-    private static void registerGauge(String module, String name, AtomicLong holder) {
+    private static ClientGauge registerGauge(String module, String name) {
+        ClientGauge clientGauge = new ClientGauge();
         try {
-            Gauge.builder(NACOS_MONITOR, holder, AtomicLong::get).tag(TAG_MODULE, module)
-                .tag(TAG_NAME, name)
-                .register(Metrics.globalRegistry);
+            Gauge.builder(NACOS_MONITOR, clientGauge, ClientGauge::get).tag(TAG_MODULE, module)
+                .tag(TAG_NAME, name).register(Metrics.globalRegistry);
         } catch (Throwable t) {
             logMetricsFailure("register gauge " + name, t);
         }
+        return clientGauge;
     }
     
     private static AtomicLong aiWatchEventCount(String event, String result) {
-        return AI_WATCH_EVENT_COUNTS.computeIfAbsent(event + KEY_SEPARATOR + result,
+        return AI_WATCH_EVENT_COUNTS.computeIfAbsent(event + "|" + result,
             key -> new AtomicLong());
     }
     
     private static void logMetricsFailure(String action, Throwable throwable) {
         if (METRICS_FAILURE_LOGGED.compareAndSet(false, true)) {
             LOGGER.warn("Fail to {} for nacos client metrics, further failures will be suppressed.",
-                action,
-                throwable);
+                action, throwable);
         }
     }
 }

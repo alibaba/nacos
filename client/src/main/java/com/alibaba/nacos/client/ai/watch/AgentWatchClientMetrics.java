@@ -34,27 +34,27 @@ final class AgentWatchClientMetrics {
     }
     
     static void intentAdded() {
-        MetricsMonitor.incrementAgentWatchIntentCount();
+        MetricsMonitor.agentWatchIntentCount().increment();
     }
     
     static void intentRemoved() {
-        MetricsMonitor.decrementAgentWatchIntentCount();
+        MetricsMonitor.agentWatchIntentCount().decrement();
     }
     
     static void pendingAdded() {
-        MetricsMonitor.incrementAgentWatchPendingCount();
+        MetricsMonitor.agentWatchPendingCount().increment();
     }
     
     static void pendingRemoved() {
-        MetricsMonitor.decrementAgentWatchPendingCount();
+        MetricsMonitor.agentWatchPendingCount().decrement();
     }
     
     static void dirtyAdded() {
-        MetricsMonitor.incrementAgentWatchDirtyCount();
+        MetricsMonitor.agentWatchDirtyCount().increment();
     }
     
     static void dirtyRemoved() {
-        MetricsMonitor.decrementAgentWatchDirtyCount();
+        MetricsMonitor.agentWatchDirtyCount().decrement();
     }
     
     static void record(Event event, Result result) {
@@ -62,15 +62,15 @@ final class AgentWatchClientMetrics {
     }
     
     static double intentCount() {
-        return MetricsMonitor.getAgentWatchIntentCount();
+        return MetricsMonitor.agentWatchIntentCount().get();
     }
     
     static double pendingCount() {
-        return MetricsMonitor.getAgentWatchPendingCount();
+        return MetricsMonitor.agentWatchPendingCount().get();
     }
     
     static double dirtyCount() {
-        return MetricsMonitor.getAgentWatchDirtyCount();
+        return MetricsMonitor.agentWatchDirtyCount().get();
     }
     
     static double eventCount(Event event, Result result) {
