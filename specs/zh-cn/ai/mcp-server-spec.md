@@ -467,10 +467,17 @@ Deprecated Option，但生命周期迁移不依赖该版本发布。
 不存在由运维选择的 Storage Mode。单向管理完成 Marker 是内部 Config 对象：
 
 ```text
+namespace = _nacos_internal_
 group  = nacos_internal
 dataId = nacos.ai.mcp.resource.migration.v1
 content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMillis>}
 ```
+
+`_nacos_internal_` 是专用于实现的 Namespace 坐标，不注册到用户 Namespace 目录。首尾下划线
+与 `internal` 名称共同表达由实现持有的内部状态，并用于降低与普通用户 Namespace 意外冲突的
+概率。该约定不增加特殊的访问控制行为：运维人员不得创建这个 Namespace ID，也不得读取、发布、
+导入、导出、克隆或删除其中的 Config 内容。下述 Lease 与 Progress 对象使用相同的 Namespace
+和 Group。
 
 该永久 Marker 表示管理 row 已完整托管，不授权删除或修改 Serving Config/Naming 数据。
 可续约集群 Lease 使用 `nacos.ai.mcp.resource.reconciliation.lease.v1`。系统仍在同步时，
@@ -610,8 +617,8 @@ Implementation PR 至少覆盖：
 - Offline 保留内容和 Direct Service；
 - Version 与完整 Resource 删除、物理清理失败时通用 Row 保留、Manifest 删除后按 Deprecated ID
   重试，以及不删除普通 REF 或 Client Runtime 状态；
-- 异步对账幂等、Lease 接管、混合节点门禁、零差异完成、重启和
-  `LIFECYCLE_MANAGED` 持久化；
+- 异步对账幂等、Lease 接管、混合节点门禁、`_nacos_internal_` 专用状态
+  Namespace 坐标、零差异完成、重启和 `LIFECYCLE_MANAGED` 持久化；
 - 标准名称异步 Search、失败重试、Backfill 和历史 ID-Keyed Orphan 清理；
 - Admin、Console、Maintainer、Client、Import、Search 和 Adaptor 兼容投影等价；
 - 现有 MCP Java Client 行为涉及的默认 JSON 和 Jackson 3 Adapter。

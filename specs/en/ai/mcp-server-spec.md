@@ -577,10 +577,20 @@ There is no operator-selected storage mode. The one-way management completion
 marker is an internal Config object:
 
 ```text
+namespace = _nacos_internal_
 group  = nacos_internal
 dataId = nacos.ai.mcp.resource.migration.v1
 content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMillis>}
 ```
+
+`_nacos_internal_` is a dedicated implementation Namespace coordinate and is
+not registered in the user Namespace catalog. The leading and trailing
+underscores, together with the `internal` name, identify implementation-owned
+state and reduce accidental collision with normal user Namespaces. This
+convention does not add special access-control behavior: operators must not
+create that Namespace ID or read, publish, import, export, clone, or delete
+Config content under it. The lease and progress objects below use the same
+Namespace and group.
 
 The permanent marker means management rows are completely hosted. It does not
 authorize deletion or mutation of serving Config or Naming data. A renewable
@@ -767,7 +777,8 @@ Implementation PRs must cover at least:
   cleanup failure, retry by deprecated ID after Manifest removal, and no delete
   of ordinary REF or client Runtime state;
 - idempotent asynchronous reconciliation, lease takeover, mixed-member gating,
-  zero-difference completion, restart, and `LIFECYCLE_MANAGED` persistence;
+  the dedicated `_nacos_internal_` state Namespace, zero-difference completion,
+  restart, and `LIFECYCLE_MANAGED` persistence;
 - canonical name-keyed asynchronous Search, failure retry, backfill, and
   historical ID-keyed orphan cleanup;
 - equivalent Admin, Console, Maintainer, Client, Import, Search, and adaptor

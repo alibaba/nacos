@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.config;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.mcp.McpCompatibilityMode;
 import com.alibaba.nacos.ai.service.mcp.McpHistoricalResourceReconciler;
@@ -163,10 +164,16 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(3, forms.size());
         assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_LEASE_DATA_ID,
             forms.get(0).getDataId());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE,
+            forms.get(0).getNamespaceId());
         assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_PROGRESS_DATA_ID,
             forms.get(1).getDataId());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE,
+            forms.get(1).getNamespaceId());
         assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_LEASE_DATA_ID,
             forms.get(2).getDataId());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE,
+            forms.get(2).getNamespaceId());
         assertTrue(forms.get(2).getContent().endsWith("|0"));
         Map<?, ?> progress = JacksonUtils.toObj(forms.get(1).getContent(), Map.class);
         assertEquals("SYNCING", progress.get("state"));
@@ -177,6 +184,13 @@ class McpLifecycleReconciliationTaskTest {
         assertEquals(false, progress.get("managedCutoverReady"));
         assertFalse(forms.stream()
             .anyMatch(form -> "nacos.ai.mcp.resource.migration.v1".equals(form.getDataId())));
+        ArgumentCaptor<ConfigQueryChainRequest> queryCaptor =
+            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(queryCaptor.capture());
+        assertEquals(McpLifecycleReconciliationTask.RECONCILIATION_LEASE_DATA_ID,
+            queryCaptor.getValue().getDataId());
+        assertEquals(Constants.MCP_LIFECYCLE_STATE_NAMESPACE,
+            queryCaptor.getValue().getTenant());
         verify(managementStateService).tryCompleteCutover(false);
         ArgumentCaptor<ConfigRequestInfo> requestCaptor =
             ArgumentCaptor.forClass(ConfigRequestInfo.class);
