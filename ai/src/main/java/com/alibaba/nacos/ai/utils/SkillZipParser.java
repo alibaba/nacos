@@ -107,9 +107,9 @@ public class SkillZipParser {
      */
     static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
     
-    static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 10000;
+    static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 2048;
     
-    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
+    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 64L * 1024L * 1024L;
     
     /**
      * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes

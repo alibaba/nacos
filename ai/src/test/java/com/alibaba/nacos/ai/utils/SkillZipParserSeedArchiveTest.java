@@ -42,6 +42,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SkillZipParserSeedArchiveTest {
     
     @Test
+    void shouldUseTightSeedArchiveDefaults() {
+        assertEquals(2048, SkillZipParser.DEFAULT_MAX_SEED_ARCHIVE_ENTRIES);
+        assertEquals(64L * 1024L * 1024L,
+            SkillZipParser.DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES);
+    }
+    
+    @Test
     void shouldBuildStandaloneSkillZipWithTopLevelResources() throws Exception {
         byte[] archive = buildArchive(
             new ArchiveEntry("vendor/demo-skill/SKILL.md", buildSkillMarkdown("demo-skill")),

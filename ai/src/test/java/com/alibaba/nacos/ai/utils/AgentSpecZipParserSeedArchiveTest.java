@@ -41,6 +41,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AgentSpecZipParserSeedArchiveTest {
     
     @Test
+    void shouldUseTightSeedArchiveDefaults() {
+        assertEquals(2048, AgentSpecZipParser.DEFAULT_MAX_SEED_ARCHIVE_ENTRIES);
+        assertEquals(64L * 1024L * 1024L,
+            AgentSpecZipParser.DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES);
+    }
+    
+    @Test
     void shouldBuildStandaloneAgentSpecZipWithNestedLayout() throws Exception {
         String manifest = "{\"version\":\"1.0\",\"tags\":[\"vendor\"],"
             + "\"worker\":{\"suggested_name\":\"演示坐席\"}}";
