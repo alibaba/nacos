@@ -31,6 +31,10 @@ import java.util.Map;
  */
 public class ParamUtils {
     
+    private static final String CURRENT_DIRECTORY = ".";
+    
+    private static final String PARENT_DIRECTORY = "..";
+    
     private static char[] validChars = new char[] {'_', '-', '.', ':'};
     
     private static final int TAG_MAX_LEN = 16;
@@ -53,10 +57,10 @@ public class ParamUtils {
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
-     * cannot be empty.
+     * cannot be directory control segments.
      */
     public static boolean isValid(String param) {
-        if (param == null) {
+        if (param == null || CURRENT_DIRECTORY.equals(param) || PARENT_DIRECTORY.equals(param)) {
             return false;
         }
         int length = param.length();

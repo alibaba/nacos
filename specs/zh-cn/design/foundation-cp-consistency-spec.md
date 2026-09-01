@@ -179,6 +179,8 @@ Snapshot 规则：
 - 具有可恢复状态的 group 应提供 `SnapshotOperation`；
 - snapshot 格式和兼容性由领域 processor 拥有；
 - snapshot save/load 必须保留重启后重建服务状态所需的数据；
+- snapshot 恢复使用的归档条目必须解析在 snapshot reader 目标目录内；创建目录或写入文件前，
+  必须拒绝绝对路径、目录控制路径和逃逸路径；
 - 没有 snapshot operation 的 group 依赖日志 replay 或独立持久化；
 - 领域规范必须定义 snapshot 恢复如何与本地 cache 和派生索引交互。
 

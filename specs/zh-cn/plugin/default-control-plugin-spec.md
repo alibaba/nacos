@@ -59,6 +59,9 @@ ${expectedDir}/data/connection/limitRule
 ${expectedDir}/data/tps/{pointName}
 ```
 
+`pointName` 必须解析为 `data/tps` 下的单个直接子文件。本地存储会拒绝目录控制名称、路径
+分隔符、绝对路径，以及规范化后逃逸该目录的路径。
+
 连接规则示例：
 
 ```json

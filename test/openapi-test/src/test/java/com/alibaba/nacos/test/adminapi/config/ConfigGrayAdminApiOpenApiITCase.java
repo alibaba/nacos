@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: publish gray creates a queryable gray config with content, md5, gray name, and serialized
  *     tagv2 rule information.</li>
  *     <li>Boundary/validation: omitted namespace uses public, tagv2 version {@code 1.0.0} is accepted, and
- *     {@code grayName}, {@code grayRuleExp}, {@code grayVersion}, {@code dataId}, and {@code groupName} are
- *     validated.</li>
+ *     {@code grayName}, {@code grayRuleExp}, {@code grayVersion}, {@code dataId}, and {@code groupName} are validated;
+ *     directory control segments are rejected as gray names.</li>
  *     <li>Exception/error handling: absent gray configs and required-parameter failures return controlled v3
  *     {@code Result} errors. Successful delete is intentionally not asserted here because the current standalone
  *     endpoint removes the row but reports a server error after persistence; cleanup tolerates that branch.</li>
@@ -80,6 +80,11 @@ public class ConfigGrayAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         assertError(postRaw(ADMIN_CONFIG_GRAY_PATH, Query.newInstance().addParam("dataId", dataId)
                 .addParam("groupName", groupName).addParam("content", "content")
                 .addParam("grayName", "invalid name").addParam("grayRuleExp", "region=hz")
+                .addParam("grayVersion", "1.0.0")), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "grayName");
+        assertError(postRaw(ADMIN_CONFIG_GRAY_PATH, Query.newInstance().addParam("dataId", dataId)
+                .addParam("groupName", groupName).addParam("content", "content")
+                .addParam("grayName", "..").addParam("grayRuleExp", "region=hz")
                 .addParam("grayVersion", "1.0.0")), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "grayName");
         assertError(getRaw(ADMIN_CONFIG_GRAY_PATH, configQuery(dataId, groupName, "")

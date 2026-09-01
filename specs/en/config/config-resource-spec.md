@@ -109,6 +109,11 @@ selected metadata fields. Public Config names should contain only letters, digit
 `-`, `.`, and `:` unless a future domain spec explicitly extends the character
 set.
 
+A dot may appear as part of a Config name, but no identity field may equal the
+directory control segment `.` or `..`. Local dump implementations must also
+resolve each identity field as one direct child of the selected dump hierarchy
+and reject any normalized path that does not preserve that hierarchy.
+
 Current field limits include:
 
 | Field | Limit |

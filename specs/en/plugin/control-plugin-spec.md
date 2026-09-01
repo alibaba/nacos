@@ -184,6 +184,11 @@ The local rule storage base directory is selected by:
 nacos.plugin.control.rule.local.basedir=${expectedDir}
 ```
 
+When local TPS rules are stored on disk, `pointName` is one direct child file
+name below the TPS rule directory. Directory-control names (`.` and `..`), path
+separators, absolute paths, and any normalized path outside that directory must
+be rejected before reading, writing, or deleting a rule file.
+
 Custom control plugins may support non-JSON rule text by overriding the rule
 parser methods. Custom TPS plugins may support sliding windows or other counter
 algorithms by overriding the barrier creator.

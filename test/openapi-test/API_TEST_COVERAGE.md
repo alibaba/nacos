@@ -96,7 +96,9 @@ by auth/core unit tests.
 
 Config scenario rows cover the current 3.3 Config model. Blank or omitted
 namespace inputs are expected to use `public`, and beta/tag gray behavior is
-verified through the current gray model. Batch delete and export-by-id scenarios
+verified through the current gray model. Config publish scenarios preserve dots
+inside names while rejecting exact `.` and `..` identity segments, and gray
+validation rejects directory control names. Batch delete and export-by-id scenarios
 verify that storage IDs remain scoped by the requested namespace, and clone
 scenarios verify that storage IDs are resolved only within the requested source
 namespace before writing to the target namespace. Config, history, and capacity

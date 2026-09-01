@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,9 +83,25 @@ class ConfigRawDiskServiceTest {
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
         assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("..\\aaa", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile(".", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", ".", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "testG", "."));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("..", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "..", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "testG", ".."));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile(" dataId", "testG", "testNS"));
     }
     
     @Test
@@ -98,6 +115,45 @@ class ConfigRawDiskServiceTest {
                 () -> method.invoke(null, "dataId", "group", "tenant", "../gray"));
         
         assertTrue(exception.getCause() instanceof NacosRuntimeException);
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", ".");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", "..");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", " gray");
+    }
+    
+    private void assertInvalidTargetGrayFile(Method method, String dataId, String group,
+        String tenant, String grayName) {
+        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+            () -> method.invoke(null, dataId, group, tenant, grayName));
+        assertTrue(exception.getCause() instanceof NacosRuntimeException);
+    }
+    
+    @Test
+    void testTargetFileWithUnsafeEncodedParam() {
+        PathEncoderManager pathEncoderManager = Mockito.mock(PathEncoderManager.class);
+        Mockito.when(pathEncoderManager.encode(Mockito.anyString()))
+            .thenAnswer(invocation -> "group".equals(invocation.getArgument(0)) ? ".."
+                : invocation.getArgument(0));
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<PathEncoderManager> pathEncoderMock =
+                Mockito.mockStatic(PathEncoderManager.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            pathEncoderMock.when(PathEncoderManager::getInstance).thenReturn(pathEncoderManager);
+            assertThrows(NacosRuntimeException.class,
+                () -> ConfigRawDiskService.targetFile("dataId", "group", "tenant"));
+        }
+    }
+    
+    @Test
+    void testRemoveConfigInfoRejectsParentDirectoryTraversal() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            File marker = new File(tempDir, "marker");
+            FileUtils.writeStringToFile(marker, "marker", "UTF-8");
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            assertThrows(NacosRuntimeException.class,
+                () -> service.removeConfigInfo("..", "..", ""));
+            assertTrue(marker.isFile());
+        }
     }
     
     @Test
@@ -231,8 +287,10 @@ class ConfigRawDiskServiceTest {
         try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
             envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
             ConfigRawDiskService service = new ConfigRawDiskService();
-            service.saveToDisk("d", "g", "myTenant", "tenant content");
-            assertEquals("tenant content", service.getContent("d", "g", "myTenant"));
+            service.saveToDisk("application.properties", "group.v1", "myTenant.v1",
+                "tenant content");
+            assertEquals("tenant content",
+                service.getContent("application.properties", "group.v1", "myTenant.v1"));
         }
     }
     

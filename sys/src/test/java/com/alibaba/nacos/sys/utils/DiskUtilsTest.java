@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -617,6 +618,10 @@ class DiskUtilsTest {
             zos.putNextEntry(illegal);
             zos.write("evil".getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
+            ZipEntry windowsAbsolute = new ZipEntry("C:/windows-absolute.txt");
+            zos.putNextEntry(windowsAbsolute);
+            zos.write("evil".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
             ZipEntry safe = new ZipEntry("safe.txt");
             zos.putNextEntry(safe);
             zos.write("ok".getBytes(StandardCharsets.UTF_8));
@@ -627,6 +632,10 @@ class DiskUtilsTest {
         DiskUtils.decompress(zipFile.getAbsolutePath(), outDir.getAbsolutePath(), new Adler32());
         assertFalse(new File(outDir.getParentFile(), "illegal.txt").exists());
         assertTrue(new File(outDir, "safe.txt").exists());
+        try (Stream<Path> paths = Files.walk(outDir.toPath())) {
+            assertFalse(paths.anyMatch(
+                path -> "windows-absolute.txt".equals(path.getFileName().toString())));
+        }
     }
     
     @Test

@@ -30,8 +30,9 @@ import org.junit.jupiter.api.Test;
  *     <li>Expected capability: publish creates a config, republish updates content, query returns the console detail
  *     model, and delete removes the config.</li>
  *     <li>Boundary/validation: omitted namespaceId is stored as public, invalid config type is normalized to text,
- *     {@code dataId}, {@code groupName}, and {@code content} are required, and legacy {@code group} does not replace
- *     {@code groupName} for the v3 console API.</li>
+ *     {@code dataId}, {@code groupName}, and {@code content} are required, embedded dots remain valid in Config names,
+ *     directory control segments are rejected, and legacy {@code group} does not replace {@code groupName} for the v3
+ *     console API.</li>
  *     <li>Exception/error handling: absent console config queries return HTTP 200 with success and {@code data=null},
  *     while invalid namespace values return HTTP 400 rather than HTTP 500.</li>
  * </ul>
@@ -42,8 +43,8 @@ public class ConfigConsoleApiOpenApiITCase extends ConfigConsoleApiBaseITCase {
 
     @Test
     public void testPublishQueryRepublishAndDeleteConfig() throws Exception {
-        String dataId = randomDataId("crud");
-        String groupName = randomGroupName("crud");
+        String dataId = randomDataId("crud") + ".properties";
+        String groupName = randomGroupName("crud") + ".v1";
         String initialContent = "{\"name\":\"initial\"}";
         String description = "console config description";
         String tags = "console-tag-a,console-tag-b";
@@ -77,6 +78,25 @@ public class ConfigConsoleApiOpenApiITCase extends ConfigConsoleApiBaseITCase {
         assertError(postRaw(CONSOLE_CONFIG_PATH, Query.newInstance().addParam("dataId", dataId)
                 .addParam("group", groupName).addParam("content", "content")), 400,
                 ErrorCode.PARAMETER_MISSING, "groupName");
+    }
+
+    @Test
+    public void testPublishConfigRejectsDirectoryControlIdentitySegments() throws Exception {
+        String dataId = randomDataId("path-segment");
+        String groupName = randomGroupName("path-segment");
+        assertInvalidPublishIdentity(".", groupName, "", "dataId");
+        assertInvalidPublishIdentity("..", groupName, "", "dataId");
+        assertInvalidPublishIdentity(dataId, ".", "", "group");
+        assertInvalidPublishIdentity(dataId, "..", "", "group");
+        assertInvalidPublishIdentity(dataId, groupName, ".", "namespaceId");
+        assertInvalidPublishIdentity(dataId, groupName, "..", "namespaceId");
+    }
+
+    private void assertInvalidPublishIdentity(String dataId, String groupName, String namespaceId,
+            String expectedField) throws Exception {
+        Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
+                .addParam("namespaceId", namespaceId).addParam("content", "content");
+        assertError(postRaw(CONSOLE_CONFIG_PATH, query), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, expectedField);
     }
 
     @Test
