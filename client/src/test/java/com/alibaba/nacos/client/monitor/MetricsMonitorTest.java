@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,122 +16,187 @@
 
 package com.alibaba.nacos.client.monitor;
 
-import org.junit.jupiter.api.BeforeEach;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
+import io.micrometer.core.instrument.distribution.pause.PauseDetector;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests for {@link MetricsMonitor} on top of the Micrometer global registry.
+ *
+ * @author Nacos
+ */
 class MetricsMonitorTest {
     
-    @BeforeEach
-    void setUp() {
-        RecordingMetricsProvider.reset();
+    private final List<MeterRegistry> addedRegistries = new ArrayList<>();
+    
+    @AfterEach
+    void tearDown() {
+        for (MeterRegistry registry : addedRegistries) {
+            Metrics.globalRegistry.remove(registry);
+        }
+        addedRegistries.clear();
+    }
+    
+    private <T extends MeterRegistry> T addRegistry(T registry) {
+        Metrics.globalRegistry.add(registry);
+        addedRegistries.add(registry);
+        return registry;
     }
     
     @Test
-    void testConstructor() {
-        assertNotNull(new MetricsMonitor());
-    }
-    
-    @Test
-    void testProviderLoadedViaSpi() {
-        assertInstanceOf(RecordingMetricsProvider.class, MetricsMonitor.getMetricsProvider());
-    }
-    
-    @Test
-    void testRecordServiceInfoMapSizeDelegates() {
-        MetricsMonitor.recordServiceInfoMapSize(3);
-        
-        assertEquals(1, RecordingMetricsProvider.GAUGES.size());
-        assertEquals("naming|serviceInfoMapSize|3.0", RecordingMetricsProvider.GAUGES.get(0));
-    }
-    
-    @Test
-    void testRecordListenConfigCountDelegates() {
-        MetricsMonitor.recordListenConfigCount(5);
-        
-        assertEquals(1, RecordingMetricsProvider.GAUGES.size());
-        assertEquals("config|listenConfigCount|5.0", RecordingMetricsProvider.GAUGES.get(0));
-    }
-    
-    @Test
-    void testObserveConfigRequestDelegates() {
-        MetricsMonitor.observeConfigRequest("GET", "/cs/configs", "200", 12L);
-        
-        assertEquals(1, RecordingMetricsProvider.REQUESTS.size());
-        assertEquals("config|GET|/cs/configs|200|12", RecordingMetricsProvider.REQUESTS.get(0));
-    }
-    
-    @Test
-    void testObserveNamingRequestDelegates() {
-        MetricsMonitor.observeNamingRequest("POST", "/ns/instance", "NA", 7L);
-        
-        assertEquals(1, RecordingMetricsProvider.REQUESTS.size());
-        assertEquals("naming|POST|/ns/instance|NA|7", RecordingMetricsProvider.REQUESTS.get(0));
-    }
-    
-    @Test
-    void testRecordNamingRequestFailedDelegates() {
-        MetricsMonitor.recordNamingRequestFailed("InstanceRequest", "500", "10001", "NONE");
-        
-        assertEquals(1, RecordingMetricsProvider.FAILED_REQUESTS.size());
-        assertEquals("InstanceRequest|500|10001|NONE",
-            RecordingMetricsProvider.FAILED_REQUESTS.get(0));
-    }
-    
-    @Test
-    void testNoopProviderAcceptsAllCalls() {
-        NoopClientMetricsProvider noopProvider = new NoopClientMetricsProvider();
-        
+    void testNoRegistryConfiguredDoesNotAffectClientBehavior() {
         assertDoesNotThrow(() -> {
-            noopProvider.recordGauge("naming", "serviceInfoMapSize", 1);
-            noopProvider.observeRequest("config", "GET", "/cs/configs", "200", 10L);
-            noopProvider.incrementNamingRequestFailed("InstanceRequest", "NONE", "NONE",
+            MetricsMonitor.recordServiceInfoMapSize(3);
+            MetricsMonitor.recordListenConfigCount(7);
+            MetricsMonitor.observeConfigRequest("GET", "/cs/configs/no-registry", "200", 12);
+            MetricsMonitor.observeNamingRequest("GET", "/ns/instance/list/no-registry", "200", 12);
+            MetricsMonitor.recordNamingRequestFailed("InstanceRequest", "500", "10001",
                 "NacosException");
         });
     }
     
+    @Test
+    void testRegistryAddedAfterMetersCreationCollectsSubsequentValues() {
+        MetricsMonitor.recordServiceInfoMapSize(5);
+        MetricsMonitor.observeConfigRequest("GET", "/cs/configs/late-registry", "200", 20);
+        
+        SimpleMeterRegistry lateRegistry = addRegistry(new SimpleMeterRegistry());
+        
+        Gauge gauge = lateRegistry.find("nacos_monitor")
+            .tags("module", "naming", "name", "serviceInfoMapSize")
+            .gauge();
+        assertNotNull(gauge);
+        assertEquals(5.0, gauge.value());
+        
+        MetricsMonitor.observeConfigRequest("GET", "/cs/configs/late-registry", "200", 20);
+        Timer timer = lateRegistry.find("nacos_client_request")
+            .tags("module", "config", "method", "GET", "url", "/cs/configs/late-registry", "code",
+                "200")
+            .timer();
+        assertNotNull(timer);
+        assertTrue(timer.count() >= 1);
+        
+        MetricsMonitor.recordNamingRequestFailed("InstanceRequest", "NONE", "NONE",
+            "NacosException");
+        Counter counter = lateRegistry.find("nacos_client_naming_request_failed_total")
+            .tags("module", "naming", "req_class", "InstanceRequest", "res_status", "NONE",
+                "res_code", "NONE",
+                "err_class", "NacosException")
+            .counter();
+        assertNotNull(counter);
+        assertTrue(counter.count() >= 1.0);
+    }
+    
+    @Test
+    void testPrometheusScrapeContainsExpectedMetrics() {
+        PrometheusMeterRegistry prometheusRegistry =
+            addRegistry(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+        
+        MetricsMonitor.recordServiceInfoMapSize(3);
+        MetricsMonitor.recordListenConfigCount(7);
+        MetricsMonitor.observeConfigRequest("GET", "/cs/configs/scrape", "200", 12);
+        MetricsMonitor.recordNamingRequestFailed("InstanceRequest", "500", "10001",
+            "NacosException");
+        
+        String scrape = prometheusRegistry.scrape();
+        assertTrue(scrape.contains("nacos_monitor{"));
+        assertTrue(scrape.contains("nacos_client_request_seconds_bucket"));
+        assertTrue(scrape.contains("nacos_client_request_seconds_count"));
+        assertTrue(scrape.contains("nacos_client_request_seconds_sum"));
+        assertTrue(scrape.contains("le=\"0.005\""));
+        assertTrue(scrape.contains("le=\"10.0\""));
+        assertTrue(scrape.contains("le=\"+Inf\""));
+        assertTrue(scrape.contains("url=\"/cs/configs/scrape\""));
+        assertTrue(scrape.contains("nacos_client_naming_request_failed_total{"));
+        assertFalse(scrape.contains("nacos_client_naming_request_failed_total_total"));
+        assertTrue(scrape.contains("req_class=\"InstanceRequest\""));
+        
+        assertEquals(3.0, prometheusRegistry.find("nacos_monitor")
+            .tags("module", "naming", "name", "serviceInfoMapSize").gauge().value());
+        assertEquals(7.0, prometheusRegistry.find("nacos_monitor")
+            .tags("module", "config", "name", "listenConfigCount").gauge().value());
+        Timer timer = prometheusRegistry.find("nacos_client_request")
+            .tags("module", "config", "method", "GET", "url", "/cs/configs/scrape", "code", "200")
+            .timer();
+        assertNotNull(timer);
+        assertEquals(12.0, timer.totalTime(TimeUnit.MILLISECONDS));
+    }
+    
+    @Test
+    void testRegistryFailuresDoNotAffectBusinessRequests() {
+        addRegistry(new ThrowingMeterRegistry());
+        
+        assertDoesNotThrow(() -> {
+            MetricsMonitor.recordServiceInfoMapSize(1);
+            MetricsMonitor.recordListenConfigCount(2);
+            MetricsMonitor.observeNamingRequest("GET", "/ns/instance/list/failure", "200", 10);
+            MetricsMonitor.recordNamingRequestFailed("FailureRequest", "NONE", "NONE",
+                "NacosException");
+        });
+        
+        String businessResult = simulateConfigRequestWithMetricsInFinally();
+        assertEquals("business-ok", businessResult);
+    }
+    
     /**
-     * Recording provider registered via {@code META-INF/services} in test resources, standing in for a real metrics
-     * adapter such as a Prometheus exporter.
+     * Mirrors {@code MetricsHttpAgent}: metrics are recorded in a {@code finally} block, so a registry failure must
+     * neither mask the original exception nor replace a successful result.
      */
-    public static class RecordingMetricsProvider implements NacosClientMetricsProvider {
+    private String simulateConfigRequestWithMetricsInFinally() {
+        String result;
+        try {
+            result = "business-ok";
+        } finally {
+            MetricsMonitor.observeConfigRequest("GET", "/cs/configs/failure", "200", 10);
+        }
+        return result;
+    }
+    
+    /**
+     * Fails on the meters created by the recording calls under test. Gauges are registered once during class
+     * initialization, so a gauge failure cannot be reproduced here and is not simulated.
+     */
+    private static class ThrowingMeterRegistry extends SimpleMeterRegistry {
         
-        static final List<String> GAUGES = new ArrayList<>();
-        
-        static final List<String> REQUESTS = new ArrayList<>();
-        
-        static final List<String> FAILED_REQUESTS = new ArrayList<>();
-        
-        static void reset() {
-            GAUGES.clear();
-            REQUESTS.clear();
-            FAILED_REQUESTS.clear();
+        @Override
+        protected Timer newTimer(Timer.Id id,
+            DistributionStatisticConfig distributionStatisticConfig,
+            PauseDetector pauseDetector) {
+            if (isFailureProbe(id.getTag("url"))) {
+                throw new IllegalStateException("simulated registry failure");
+            }
+            return super.newTimer(id, distributionStatisticConfig, pauseDetector);
         }
         
         @Override
-        public void recordGauge(String module, String name, double value) {
-            GAUGES.add(module + "|" + name + "|" + value);
+        protected Counter newCounter(Counter.Id id) {
+            if ("FailureRequest".equals(id.getTag("req_class"))) {
+                throw new IllegalStateException("simulated registry failure");
+            }
+            return super.newCounter(id);
         }
         
-        @Override
-        public void observeRequest(String module, String method, String url, String code,
-            long elapsedMillis) {
-            REQUESTS.add(module + "|" + method + "|" + url + "|" + code + "|" + elapsedMillis);
-        }
-        
-        @Override
-        public void incrementNamingRequestFailed(String requestClass, String responseStatus,
-            String responseCode,
-            String exceptionClass) {
-            FAILED_REQUESTS.add(
-                requestClass + "|" + responseStatus + "|" + responseCode + "|" + exceptionClass);
+        private boolean isFailureProbe(String tagValue) {
+            return tagValue != null && tagValue.contains("failure");
         }
     }
 }
