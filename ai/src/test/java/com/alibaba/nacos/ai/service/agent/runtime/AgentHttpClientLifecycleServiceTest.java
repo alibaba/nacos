@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.runtime.AiHttpClientLifecycleService;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -54,6 +57,8 @@ class AgentHttpClientLifecycleServiceTest {
     
     private AgentRuntimeRegistryService runtimeRegistryService;
     
+    private AiHttpClientLifecycleService sharedService;
+    
     private AgentHttpClientLifecycleService service;
     
     private MockedStatic<VisibilityHelper> visibilityHelper;
@@ -62,7 +67,8 @@ class AgentHttpClientLifecycleServiceTest {
     void setUp() {
         clientManager = mock(HttpConnectionBasedClientManager.class);
         runtimeRegistryService = mock(AgentRuntimeRegistryService.class);
-        service = new AgentHttpClientLifecycleService(clientManager, runtimeRegistryService);
+        sharedService = new AiHttpClientLifecycleService(clientManager);
+        service = new AgentHttpClientLifecycleService(sharedService, runtimeRegistryService);
         visibilityHelper = mockStatic(VisibilityHelper.class);
         visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("alice");
     }
@@ -105,6 +111,23 @@ class AgentHttpClientLifecycleServiceTest {
     }
     
     @Test
+    void testWatchValidatesHeadersAndRenewsExistingClient() throws Exception {
+        when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(null);
+        service.renewForWatch(EXTERNAL_CLIENT_ID, "ai", "team");
+        verify(clientManager, never()).renewClient(any());
+        
+        when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(client("alice", "team"));
+        service.renewForWatch(EXTERNAL_CLIENT_ID, "AI", "team");
+        verify(clientManager).renewClient(INTERNAL_CLIENT_ID);
+        
+        assertInvalidWatchHeader(null, "AI", "team");
+        assertInvalidWatchHeader(EXTERNAL_CLIENT_ID, "naming", "team");
+        assertDetailCode(ErrorCode.ACCESS_DENIED,
+            assertThrows(NacosApiException.class,
+                () -> service.renewForWatch(EXTERNAL_CLIENT_ID, "AI", "other")));
+    }
+    
+    @Test
     void testRegisterCreatesAndBindsHttpClient() throws Exception {
         HttpConnectionBasedClient client = client("alice", "team");
         when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(null, client);
@@ -123,9 +146,26 @@ class AgentHttpClientLifecycleServiceTest {
             ClientAttributes.class);
         verify(clientManager).clientConnected(eq(INTERNAL_CLIENT_ID), attributes.capture());
         assertEquals("alice", attributes.getValue().getClientAttribute(
-            AgentHttpClientLifecycleService.IDENTITY_ATTRIBUTE));
+            "httpClientIdentity"));
         assertEquals("team", attributes.getValue().getClientAttribute(
-            AgentHttpClientLifecycleService.NAMESPACE_ATTRIBUTE));
+            "httpClientNamespace"));
+    }
+    
+    @Test
+    void testAgentAndMcpReuseSameBoundHttpClient() throws Exception {
+        HttpConnectionBasedClient client = client("alice", "team");
+        when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(null, client, client);
+        when(clientManager.clientConnected(eq(INTERNAL_CLIENT_ID), any(ClientAttributes.class)))
+            .thenReturn(true);
+        when(clientManager.renewPublisher(INTERNAL_CLIENT_ID)).thenReturn(true);
+        AtomicReference<String> mcpPublisher = new AtomicReference<>();
+        
+        service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"));
+        sharedService.register(EXTERNAL_CLIENT_ID, "AI", "team", mcpPublisher::set);
+        
+        assertEquals(INTERNAL_CLIENT_ID, mcpPublisher.get());
+        verify(clientManager).clientConnected(eq(INTERNAL_CLIENT_ID), any(ClientAttributes.class));
+        verify(clientManager, org.mockito.Mockito.times(2)).renewPublisher(INTERNAL_CLIENT_ID);
     }
     
     @Test
@@ -138,9 +178,9 @@ class AgentHttpClientLifecycleServiceTest {
         service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"));
         
         assertEquals("alice", client.getClientAttributes().getClientAttribute(
-            AgentHttpClientLifecycleService.IDENTITY_ATTRIBUTE));
+            "httpClientIdentity"));
         assertEquals("team", client.getClientAttributes().getClientAttribute(
-            AgentHttpClientLifecycleService.NAMESPACE_ATTRIBUTE));
+            "httpClientNamespace"));
     }
     
     @Test
@@ -237,6 +277,12 @@ class AgentHttpClientLifecycleServiceTest {
                 () -> service.heartbeat(clientId, module)));
     }
     
+    private void assertInvalidWatchHeader(String clientId, String module, String namespaceId) {
+        assertDetailCode(ErrorCode.PARAMETER_VALIDATE_ERROR,
+            assertThrows(NacosApiException.class,
+                () -> service.renewForWatch(clientId, module, namespaceId)));
+    }
+    
     private void assertDetailCode(ErrorCode errorCode, NacosApiException actual) {
         assertEquals(errorCode.getCode(), actual.getDetailErrCode());
     }
@@ -248,9 +294,9 @@ class AgentHttpClientLifecycleServiceTest {
     
     private HttpConnectionBasedClient client(String identity, String namespaceId) {
         ClientAttributes attributes = new ClientAttributes();
-        attributes.addClientAttribute(AgentHttpClientLifecycleService.IDENTITY_ATTRIBUTE,
+        attributes.addClientAttribute("httpClientIdentity",
             identity);
-        attributes.addClientAttribute(AgentHttpClientLifecycleService.NAMESPACE_ATTRIBUTE,
+        attributes.addClientAttribute("httpClientNamespace",
             namespaceId);
         return new HttpConnectionBasedClient(INTERNAL_CLIENT_ID, attributes);
     }

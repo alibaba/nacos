@@ -48,8 +48,8 @@ Push message 通知运行时客户端：服务端视图可能已经变化。Push
   resubscription 刷新。
 - AI push 行为由各 AI resource spec 版本化定义，并必须保持与对应 query API 相同的身份规则。
 
-目标 RAD Watch 携带完整 Discovery Snapshot，而不是只携带变化身份。该 Snapshot 是替换本地
-RAD Discovery Cache 的权威值；Registry 仍是资源权威，Discover Re-query 可以刷新 Snapshot。
+RAD Watch 只携带失效 Hint。Client 必须执行普通的鉴权 Discover，并比较完整结果的
+Canonical Fingerprint，之后才能替换本地 Cache 或调用 Listener。
 
 ## 3. 服务端 Connection 状态
 
@@ -96,66 +96,76 @@ Reconnect 后，客户端必须恢复运行时意图：
 客户端恢复细节由[客户端本地缓存与 Redo 规范](client-local-cache-redo-spec.md)定义。连接选择和
 存活由[客户端连接与故障切换规范](client-connection-failover-spec.md)定义。
 
-## 6. Agent 与 RAD 目标 Watch 契约
+## 6. Agent 与 RAD Watch 契约
 
-本节定义 Agent/RAD 的目标 gRPC Watch 契约，不表示当前已经实现该能力。在
-[Agent API 规范](../ai/agent-api-spec.md)中的 Agent/RAD 能力完成实现并经过协商前，
-实现不得暴露或声明支持该行为。首版 Nacos HTTP Binding 支持 Discover，但不支持 Watch。
+本节定义 Nacos Agent/RAD Server-aware Watch。只有
+[Agent API 规范](../ai/agent-api-spec.md)中的独立能力已实现并完成协商后才能声明支持。
 
-### 6.1 身份与初始结果
+### 6.1 身份、Projection 与 Fingerprint
 
-规范化 SDK Watch Key 为：
+规范化本地 Watch Identity 为：
 
 ```text
 (namespaceId, canonicalAgentReference, canonicalFilter, listenerIdentity)
 ```
 
-规范化 Reference 保留调用方选择的是精确 Version、Label 还是 Latest。规范化 Filter
-应用缺省值，并对集合字段排序和去重。Listener identity 是取消时传入的同一 Listener
-实例。实现可以复用 Wire Subscription，但必须保留该公开身份并隔离 Callback。
+Canonical Reference 保留 Exact Version、Label、显式 Latest 和面向发布安全的未指定
+Version 形式。Filter 物化默认值，并对 Set-valued Field 排序去重。Listener Identity 是
+取消时传入的同一实例。Server Projection Key 不包含 Listener Identity 和鉴权/可见性
+Scope；鉴权决定调用方能否安装或刷新 Watch，绝不编码为资源身份。
 
-Server 在创建 Watch 前执行 Discover。`NOT_FOUND` 不创建服务端或客户端 Watch State。
-订阅成功的 `AgentSubscribeResponse` 返回 Connection 维度的不透明 `watchKey` 和当前
-完整 `AgentDiscoveryResult`。SDK 将该 Key 映射到规范化本地 Watch Key，不解析其内容。
+Client 与 Server 共用 Request 规范化和完整结果 Fingerprint 逻辑。Fingerprint 格式为
+`sha256-canonical-json-v1:<64-lowercase-hex>`，它只表示相等，不是 Sequence、Version、
+鉴权证明或 Replay Cursor。最终 Fingerprint 相同时允许合并 A-B-A Task，且无需再次回调。
 
-RAD 本身仍然只有六个根消息，不定义协议层 Event Envelope。Nacos gRPC Binding 使用
-`AgentDiscoveryNotifyRequest(watchKey, eventType, result?, errorCode?)` 在共享 Payload
-Connection 上复用 Watch 事件；该 Request 是 Binding 对象，不是新的 RAD 根消息。
+### 6.2 Server Projection 与 Push 执行
 
-### 6.2 完整替换与 Listener 投递
+Definition、Version/Label、Visibility、Runtime Endpoint、Liveness 和 Connection Cleanup
+事件把受影响 Projection 标记为 Dirty。可复用 Push Pipeline 遵循 Naming 面向最新 Snapshot
+的任务纪律：Producer 按 Projection 新增或合并 Delay Task；未开始执行的 Task 可以合并；
+一旦开始就执行完成；并发的后续变化创建或合并到下一 Task。Agent 提供 Projection Matching
+和 Fingerprint 构建，共享 Runtime Code 提供 Task Merge、Target Fan-out、Connection Lookup、
+异步 Push、Retry 和 Metrics。
 
-当 `eventType=SNAPSHOT` 时，`AgentDiscoveryNotifyRequest` 必须携带一个完整
-`AgentDiscoveryResult` 且不携带错误。Client 收到后，按标识的 Watch 原子替换上一个
-Snapshot，再通过 `AgentDiscoveryNotifyResponse` 发送 ACK。不得合并不同 Snapshot 中的
-Calling Interface、EndpointSet 或 Endpoint。解析出的 Version、`contentDigest` 或
-`sourceRevision` 变化表示可能存在新 Snapshot；这些 Token 只用于相等比较和去重，
-不能用于排序。
+Server 不保存此前业务 Snapshot 或每 Watch Sequence。gRPC Notify 只包含 `watchKey`、
+Event Type、可选的已观测 Fingerprint 和终止错误码。Client 校验 Key 并将本地 Intent 标记
+Dirty 后立即 ACK；ACK 不等待 Discover 或 Listener。Retry 有界且属于 Connection；耗尽时
+可以强制重连，由重新订阅恢复 Intent。
 
-过滤后为空是合法的完整结果，并会替换上一个 Snapshot。Naming Push-empty Protection
-不适用于 RAD。Listener 异常必须与 Connection 处理和其他 Listener 隔离；它不会把已经
-接受的 Snapshot 变成未确认事件。
+### 6.3 Current-fact 刷新与 Listener 投递
 
-### 6.3 目标消失
+每个已接受 Hint、Reconnect Refresh Requirement、HTTP Changed Item 或轮询回退 Tick 都
+执行普通鉴权 Discover。Client 对完整结果进行 Canonicalize 并比较 Fingerprint；只有不同
+结果才原子替换 Cache 并投递完整 `SNAPSHOT`，不得合并结果片段。过滤后的空 Shape 是合法
+Snapshot。Listener 工作与 Connection/Long-poll I/O 隔离；慢、抛异常或 Executor Reject
+都不能改变 Hint ACK 状态或阻塞其他 Watch。
 
-之前可发现的目标变为不存在、不可见、Disabled，或不再存在可发现的 Online 目标 Version
-时，Server 发送 `eventType=TERMINATED`、不携带 Result 且
-`errorCode=NOT_FOUND` 的 `AgentDiscoveryNotifyRequest`。该事件只关闭标识的
-`watchKey`；共享 Payload Connection 和其他 Watch 保持有效。Client 投递终止状态，
-只删除对应本地 Watch Key 和缓存 Snapshot，发送 ACK，并且后续 Reconnect 不再 Redo
-该 Watch。Agent 仍存在但 Filter 当前不匹配任何 Interface 或 Endpoint 时，仍返回成功的
-空 `SNAPSHOT`，不属于终止状态。
+`NOT_FOUND` 进入有界本地 Pending State，同一缺失周期最多投递一次 `UNAVAILABLE`；恢复
+后投递新 Snapshot。终止性鉴权或容量错误投递一次 Unavailable Event 并删除被拒绝 Intent。
+瞬时传输或 Discover 失败保留 Intent 并有界退避，不得把陈旧数据作为新 Snapshot 投递。
 
-### 6.4 Missed Push 与 Reconnect
+### 6.4 gRPC 重连
 
-Connection 丢失、通知被拒绝或 Binding 特定的 Gap Detection 表明可能遗漏 Push 时，
-Client 必须使用相同 Namespace、规范化 Reference 和规范化 Filter 重新执行 Discover，
-然后原子替换缓存 Snapshot。不得通过应用本地推导出的 Delta 重建遗漏状态。
+gRPC Watch State 属于单个 Connection。Disconnect 删除 Server State，并使旧 `watchKey`
+全部失效。SDK 保留 Canonical Local Intent，在新 Connection 下重新订阅完整 Active Set，
+并在 `refreshRequired=true` 时执行 Discover。不进行周期性 Full-data Sync；重新订阅加
+Current-fact Discover 就是对账机制。旧 Key 的迟到通知被拒绝，不能到达 Listener。
 
-gRPC Disconnect 时，Server 移除 Connection 维度 Watch State，SDK 将对应本地 Watch
-record 标记为未注册。Reconnect 后，SDK 使用新的 connection id 恢复相同的规范化本地
-Watch Key，并丢弃各旧 Wire `watchKey`；每次成功重新订阅都返回新的不透明 `watchKey`
-和初始完整结果，后者在后续 Push 前成为新的完整 Snapshot。恢复期间收到终止结果时，
-按第 6.3 节处理，不继续保留在 Redo State 中。
+### 6.5 HTTP Batch Long Poll
+
+HTTP 对当前完整 Watch Set 使用一个 Request-scoped Batch Long Poll，而不是每 Agent 一个
+请求。请求包含 Local Generation、Timeout，以及每个 Item 的 Client Watch ID、Discovery
+Request 和最后物化 Fingerprint。Response 只包含 Timeout 或变化的 Client ID，不携带业务
+数据或逐 Item 鉴权详情。
+
+每轮 Long Poll 可以到达不同 Cluster Node。正确性不依赖节点本地 Generation 连续：接收
+节点将提交的 Fingerprint 与当前 Serving Projection 比较，返回的 ID 再通过 Discover 获取。
+本地 List 变化时推进 Generation 并取代上一请求；迟到的旧 Generation Response 被忽略。
+Server 感知 Socket Cancel 只是优化；Timeout 和下一轮完整 List 请求清理 Request-scoped
+Wait State。
+
+首版 HTTP Binding 只执行单 Namespace 的请求级 AI Read 鉴权，明确不实现逐 Item 的多资源
+精细化鉴权。Discover 仍是强制的内容与可见性鉴权边界。
 
 ## 7. 顺序
 

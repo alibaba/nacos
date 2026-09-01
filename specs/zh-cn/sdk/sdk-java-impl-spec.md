@@ -193,6 +193,26 @@ Request、注入 SDK namespace，并按 `autoSubmit` 创建 draft 或执行普�
 | 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationBatch`，并保留为 redo 意图。 |
 | 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `AgentEndpointDeregistrationBatch`。 |
 
+Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进制兼容。
+`NacosAgentDiscoveryEvent` 增加 Event Type 与 Unavailable Error Getter，现有 Result
+构造器继续创建 `SNAPSHOT`。官方实现可以通过 Factory 或附加构造器创建 `UNAVAILABLE`，
+但不能改变 Listener 方法签名。
+
+实现分层为：
+
+```text
+AgentDiscoveryService Feature Facade
+  -> Agent Watch Manager（Identity、Capacity、Cache、Fingerprint、Listener）
+    -> Wire Watch Transport（gRPC、HTTP Batch Long Poll 或轮询回退）
+      -> AgentClientProxy Discover 执行权威刷新
+```
+
+Transport Code 只拥有 Wire Lifecycle 和 Signal，不复制 Feature Cache 或 Listener State。
+Canonicalization 与 Fingerprinting 位于 Client/Server 共用的 Java 8 兼容 Agent Utility。
+Listener Callback 在 Connection/HTTP I/O 外执行；有 Listener Executor 时优先使用，否则
+使用有界共享 Executor，并隔离异常。该 Agent-only 分层不改变 Prompt、Skill、MCP、
+AgentSpec 或旧 A2A 的 Transport Ownership。
+
 这些公开方法不接受 `namespaceId`。Proxy 复制调用方的 Request 或 Batch，把 SDK
 namespace 注入传输对象，并且不修改调用方对象。如果共享输入模型已经携带与 SDK namespace
 不同的非空值，Proxy 在本地拒绝。目标 Watch、Cache 和 Redo 行为遵循
@@ -214,7 +234,7 @@ Agent 定义发布，且不得隐式创建定义。
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
 | MCP 查询 | `getMcpServer` | 按名称和可选版本查询 MCP Server 详情。 |
-| MCP 发布 | `releaseMcpServer` | 创建 MCP Server 或发布新版本。同版本已存在时保持幂等。 |
+| MCP 发布 | `releaseMcpServer` | 创建 MCP Server 或发布新版本。现有 Overload 保持 Direct-online；`createDraft=true` 只创建生命周期 Draft。 |
 | MCP endpoint | `registerMcpServerEndpoint`, `deregisterMcpServerEndpoint` | 注册或移除当前客户端拥有的 endpoint。 |
 | MCP 订阅 | `subscribeMcpServer`, `unsubscribeMcpServer` | 订阅 MCP 详情变化。 |
 | A2A AgentCard 查询 | `getAgentCard` | 按名称、可选版本和 registration type 查询 AgentCard。 |
@@ -227,6 +247,17 @@ Agent 定义发布，且不得隐式创建定义。
 
 当前 Java 实现在 interface 背后可以混合使用 gRPC、HTTP 和 config 组装。公开
 interface 契约应独立于具体传输方式保持稳定。
+
+MCP 与 Agent 的协议无关操作使用同一个 `grpc`、`http` 或 `auto` Transport 配置。MCP Read
+只有在选中的 gRPC 出现 Connection-class Failure 时才能 Fallback。持久 Release 一旦发送就不得
+跨 Transport。Runtime Endpoint Publication 选择 Sticky Owner Transport，并在替换、注销、
+Heartbeat 和 Redo 中保持该 Owner。MCP 轮询 Cache 依赖协议无关 Query Router，不再直接依赖
+gRPC Client。
+
+HTTP 实现为每个 `NacosAiService` 维护一个稳定 Client Id 和一个共享 Publication Coordinator。
+Agent 与 MCP Publication Manager 作为独立 Desired-state Participant。Coordinator 只发送一个
+Heartbeat；收到 `HTTP_CLIENT_NOT_FOUND` 后，必须先标记所有 Participant，再逐个重放。该顺序
+避免一个领域先重建共享 Client 后掩盖另一个领域已经丢失的 Publication。
 
 ### 5.4 LockService
 

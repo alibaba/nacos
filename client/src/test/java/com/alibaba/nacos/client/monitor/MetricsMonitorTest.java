@@ -157,6 +157,43 @@ class MetricsMonitorTest {
         assertEquals("business-ok", businessResult);
     }
     
+    @Test
+    void testAgentWatchGaugesSupportIncrementAndReadBackWithoutRegistry() {
+        double intents = MetricsMonitor.getAgentWatchIntentCount();
+        double pending = MetricsMonitor.getAgentWatchPendingCount();
+        double dirty = MetricsMonitor.getAgentWatchDirtyCount();
+        
+        MetricsMonitor.incrementAgentWatchIntentCount();
+        MetricsMonitor.incrementAgentWatchPendingCount();
+        MetricsMonitor.incrementAgentWatchDirtyCount();
+        assertEquals(intents + 1D, MetricsMonitor.getAgentWatchIntentCount());
+        assertEquals(pending + 1D, MetricsMonitor.getAgentWatchPendingCount());
+        assertEquals(dirty + 1D, MetricsMonitor.getAgentWatchDirtyCount());
+        
+        MetricsMonitor.decrementAgentWatchIntentCount();
+        MetricsMonitor.decrementAgentWatchPendingCount();
+        MetricsMonitor.decrementAgentWatchDirtyCount();
+        assertEquals(intents, MetricsMonitor.getAgentWatchIntentCount());
+        assertEquals(pending, MetricsMonitor.getAgentWatchPendingCount());
+        assertEquals(dirty, MetricsMonitor.getAgentWatchDirtyCount());
+    }
+    
+    @Test
+    void testAgentWatchEventCounterIsExportedAndReadableByLabels() {
+        double before = MetricsMonitor.getAgentWatchEventCount("listener_callback", "success");
+        SimpleMeterRegistry meterRegistry = addRegistry(new SimpleMeterRegistry());
+        
+        MetricsMonitor.recordAgentWatchEvent("listener_callback", "success");
+        
+        assertEquals(before + 1D,
+            MetricsMonitor.getAgentWatchEventCount("listener_callback", "success"));
+        Counter counter = meterRegistry.find("nacos_client_ai_watch_events_total")
+            .tags("event", "listener_callback", "result", "success").counter();
+        assertNotNull(counter);
+        assertEquals(1.0, counter.count());
+        assertEquals(0.0, MetricsMonitor.getAgentWatchEventCount("listener_callback", "failed"));
+    }
+    
     /**
      * Mirrors {@code MetricsHttpAgent}: metrics are recorded in a {@code finally} block, so a registry failure must
      * neither mask the original exception nor replace a successful result.

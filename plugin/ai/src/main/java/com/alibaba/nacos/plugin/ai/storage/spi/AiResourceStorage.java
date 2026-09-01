@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.ai.storage.spi;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageConsistencyMode;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 
 /**
@@ -39,6 +40,36 @@ public interface AiResourceStorage extends PluginConfigSpec {
      * @return storage provider type, e.g. "nacos_config", "oss"
      */
     String type();
+    
+    /**
+     * Declare the local read visibility and notification model.
+     *
+     * <p>The default preserves source and binary compatibility for existing providers. Callers
+     * must not assume that an eventually consistent provider emits a visibility callback unless
+     * it explicitly returns {@link AiResourceStorageConsistencyMode#EVENTUAL_WITH_NOTIFICATION}.
+     * </p>
+     *
+     * @return provider consistency mode
+     */
+    default AiResourceStorageConsistencyMode consistencyMode() {
+        return AiResourceStorageConsistencyMode.EVENTUAL_WITHOUT_NOTIFICATION;
+    }
+    
+    /**
+     * Register a best-effort local visibility listener.
+     *
+     * @param listener listener to register
+     */
+    default void addChangeListener(AiResourceStorageChangeListener listener) {
+    }
+    
+    /**
+     * Remove a previously registered local visibility listener.
+     *
+     * @param listener listener to remove
+     */
+    default void removeChangeListener(AiResourceStorageChangeListener listener) {
+    }
     
     /**
      * Save content to storage.

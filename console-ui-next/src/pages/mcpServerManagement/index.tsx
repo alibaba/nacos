@@ -84,8 +84,7 @@ export default function McpServerManagementPage() {
   };
 
   const handleEdit = (name: string) => {
-    const params = new URLSearchParams({ mode: 'edit', mcpName: name, namespaceId });
-    navigate(`/newMcpServer?${params}`);
+    handleDetail(name);
   };
 
   const handleDelete = async () => {

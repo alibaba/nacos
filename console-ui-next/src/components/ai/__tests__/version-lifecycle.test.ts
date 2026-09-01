@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { canResubmitReview } from '../version-lifecycle';
+import { canForcePublish, canResubmitReview } from '../version-lifecycle';
+
+describe('canForcePublish', () => {
+  const rejected = { status: 'REJECTED' };
+
+  it('allows only administrators to bypass a current rejected review', () => {
+    expect(canForcePublish('draft', rejected, true)).toBe(true);
+    expect(canForcePublish('reviewing', rejected, true)).toBe(true);
+    expect(canForcePublish('reviewed', rejected, true)).toBe(true);
+    expect(canForcePublish('reviewed', rejected, false)).toBe(false);
+  });
+
+  it('does not offer force publish before rejection or for serving versions', () => {
+    expect(canForcePublish('draft', null, true)).toBe(false);
+    expect(canForcePublish('reviewing', { status: 'IN_PROGRESS' }, true)).toBe(false);
+    expect(canForcePublish('reviewed', { status: 'APPROVED' }, true)).toBe(false);
+    expect(canForcePublish('online', rejected, true)).toBe(false);
+    expect(canForcePublish('offline', rejected, true)).toBe(false);
+  });
+
+  it('does not reuse a historical rejection for a redrafted version', () => {
+    expect(canForcePublish('draft', { status: 'REJECTED', historical: true }, true)).toBe(false);
+  });
+});
 
 describe('canResubmitReview', () => {
   it('allows reviewed versions to start another review', () => {

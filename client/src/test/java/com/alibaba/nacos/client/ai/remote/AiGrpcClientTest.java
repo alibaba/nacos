@@ -274,6 +274,53 @@ class AiGrpcClientTest {
         when(rpcClient.request(any(ReleaseMcpServerRequest.class))).thenReturn(response);
         assertEquals(id,
             aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification(), null));
+        ArgumentCaptor<ReleaseMcpServerRequest> request =
+            ArgumentCaptor.forClass(ReleaseMcpServerRequest.class);
+        verify(rpcClient).request(request.capture());
+        assertFalse(request.getValue().isCreateDraft());
+    }
+    
+    @Test
+    void releaseMcpServerAsDraftRequiresAbilityAndSetsWireFlag() throws Exception {
+        injectMock();
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
+            .thenReturn(AbilityStatus.SUPPORTED);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_DRAFT_RELEASE))
+            .thenReturn(AbilityStatus.SUPPORTED);
+        ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
+        response.setMcpId("mcp-id");
+        when(rpcClient.request(any(ReleaseMcpServerRequest.class))).thenReturn(response);
+        McpServerBasicInfo serverSpec = new McpServerBasicInfo();
+        serverSpec.setName("test");
+        serverSpec.setVersionDetail(new ServerVersionDetail());
+        serverSpec.getVersionDetail().setVersion("1.0.0");
+        
+        assertEquals("mcp-id",
+            aiGrpcClient.releaseMcpServer(serverSpec, null, null, null, true));
+        ArgumentCaptor<ReleaseMcpServerRequest> request =
+            ArgumentCaptor.forClass(ReleaseMcpServerRequest.class);
+        verify(rpcClient).request(request.capture());
+        assertTrue(request.getValue().isCreateDraft());
+    }
+    
+    @Test
+    void releaseMcpServerAsDraftFailsBeforeWireCallWithoutAbility() throws Exception {
+        injectMock();
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY))
+            .thenReturn(AbilityStatus.SUPPORTED);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_DRAFT_RELEASE))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        McpServerBasicInfo serverSpec = new McpServerBasicInfo();
+        serverSpec.setName("test");
+        serverSpec.setVersionDetail(new ServerVersionDetail());
+        serverSpec.getVersionDetail().setVersion("1.0.0");
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> aiGrpcClient.releaseMcpServer(serverSpec, null, null, null, true));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+        verify(rpcClient, never()).request(any(ReleaseMcpServerRequest.class));
     }
     
     @Test

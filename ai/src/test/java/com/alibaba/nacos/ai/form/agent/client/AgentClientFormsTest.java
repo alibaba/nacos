@@ -22,12 +22,16 @@ import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -223,6 +227,96 @@ class AgentClientFormsTest {
     }
     
     @Test
+    void testWatchBatchFormCanonicalizesOneNamespace() throws NacosApiException {
+        AgentWatchBatchForm form = new AgentWatchBatchForm();
+        form.setGeneration(3L);
+        form.setTimeoutMillis(1000L);
+        form.setWatches(JsonUtils.toJson(Arrays.asList(watchItem("watch-b", null, "beta"),
+            watchItem("watch-a", "public", "alpha"))));
+        
+        AgentWatchBatchRequest request = form.toRequest();
+        assertEquals(3L, request.getGeneration());
+        assertEquals(1000L, request.getTimeoutMillis());
+        assertEquals(2, request.getWatches().size());
+        assertEquals("public",
+            request.getWatches().get(0).getDiscoveryRequest().getNamespaceId());
+        assertEquals("public", AgentWatchBatchForm.extractNamespaceId(form.getWatches()));
+        assertTrue(form.getWatchPayloadBytes() > 0);
+        assertEquals(Long.valueOf(3L), form.getGeneration());
+        assertEquals(Long.valueOf(1000L), form.getTimeoutMillis());
+        form.validate();
+    }
+    
+    @Test
+    void testWatchBatchFormRejectsBindingViolations() {
+        AgentWatchBatchForm form = new AgentWatchBatchForm();
+        form.setTimeoutMillis(1000L);
+        form.setWatches(JsonUtils.toJson(
+            Collections.singletonList(watchItem("watch", null, "agent"))));
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setGeneration(-1L);
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setGeneration(0L);
+        form.setTimeoutMillis(999L);
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setTimeoutMillis(60001L);
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setTimeoutMillis(1000L);
+        form.setWatches(" ");
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setWatches("{");
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setWatches("[null]");
+        assertThrows(NacosApiException.class, form::toRequest);
+        
+        AgentWatchBatchItem invalidId = watchItem("bad/id", null, "agent");
+        form.setWatches(JsonUtils.toJson(Collections.singletonList(invalidId)));
+        assertThrows(NacosApiException.class, form::toRequest);
+        invalidId.setClientWatchId("watch");
+        invalidId.setDiscoveryRequest(null);
+        form.setWatches(JsonUtils.toJson(Collections.singletonList(invalidId)));
+        assertThrows(NacosApiException.class, form::toRequest);
+    }
+    
+    @Test
+    void testWatchBatchFormRejectsDuplicateMixedAndMalformedItems() {
+        AgentWatchBatchForm form = new AgentWatchBatchForm();
+        form.setGeneration(1L);
+        form.setTimeoutMillis(60000L);
+        form.setWatches(JsonUtils.toJson(Arrays.asList(watchItem("same", "public", "a"),
+            watchItem("same", "public", "b"))));
+        assertThrows(NacosApiException.class, form::toRequest);
+        form.setWatches(JsonUtils.toJson(Arrays.asList(watchItem("one", "public", "a"),
+            watchItem("two", "team", "b"))));
+        assertThrows(NacosApiException.class, form::toRequest);
+        AgentWatchBatchItem malformed = watchItem("one", "public", "a");
+        malformed.setMaterializedFingerprint("bad");
+        form.setWatches(JsonUtils.toJson(Collections.singletonList(malformed)));
+        assertThrows(NacosApiException.class, form::toRequest);
+        malformed.setMaterializedFingerprint(null);
+        form.setWatches(JsonUtils.toJson(Collections.singletonList(malformed)));
+        assertThrows(NacosApiException.class, form::toRequest);
+        assertEquals(0, new AgentWatchBatchForm().getWatchPayloadBytes());
+    }
+    
+    @Test
+    void testWatchBatchFormRejectsHardItemLimitAndInvalidDiscovery() {
+        AgentWatchBatchForm form = new AgentWatchBatchForm();
+        form.setGeneration(1L);
+        form.setTimeoutMillis(1000L);
+        java.util.List<AgentWatchBatchItem> tooMany = new ArrayList<>();
+        for (int i = 0; i <= AgentWatchBatchForm.MAX_WATCH_ITEMS; i++) {
+            tooMany.add(watchItem("watch-" + i, "public", "agent-" + i));
+        }
+        form.setWatches(JsonUtils.toJson(tooMany));
+        assertThrows(NacosApiException.class, form::toRequest);
+        
+        AgentWatchBatchItem invalid = watchItem("watch", "public", "");
+        form.setWatches(JsonUtils.toJson(Collections.singletonList(invalid)));
+        assertThrows(NacosApiException.class, form::toRequest);
+    }
+    
+    @Test
     void testJsonParserAndPrivateConstructor() throws Exception {
         NacosTypeReference<Map<String, String>> type =
             new NacosTypeReference<Map<String, String>>() {
@@ -241,6 +335,22 @@ class AgentClientFormsTest {
         Endpoint result = new Endpoint();
         result.setUri("http://127.0.0.1:8080/agent");
         result.setTransport("HTTP");
+        return result;
+    }
+    
+    private AgentWatchBatchItem watchItem(String clientWatchId, String namespaceId,
+        String agentName) {
+        com.alibaba.nacos.api.ai.model.rad.AgentReference reference =
+            new com.alibaba.nacos.api.ai.model.rad.AgentReference();
+        reference.setAgentName(agentName);
+        AgentDiscoveryRequest discoveryRequest = new AgentDiscoveryRequest();
+        discoveryRequest.setNamespaceId(namespaceId);
+        discoveryRequest.setReference(reference);
+        AgentWatchBatchItem result = new AgentWatchBatchItem();
+        result.setClientWatchId(clientWatchId);
+        result.setDiscoveryRequest(discoveryRequest);
+        result.setMaterializedFingerprint(AgentDiscoveryCanonicalizer.ALGORITHM_ID + ":"
+            + "a".repeat(64));
         return result;
     }
 }

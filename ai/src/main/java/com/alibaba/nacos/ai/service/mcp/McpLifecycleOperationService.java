@@ -516,6 +516,34 @@ public class McpLifecycleOperationService implements McpOperationService {
             "MCP server not found: " + resource.getName());
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         AiResourceVersion selected = resolveVersion(lifecycle, version);
+        return buildMcpServerDetail(lifecycle, selected);
+    }
+    
+    /**
+     * Read one exact or latest online MCP Version for the Client serving API.
+     *
+     * <p>This intentionally does not use the compatibility-detail fallback to the highest stored
+     * Version. A Resource with only draft or offline Versions has no serving projection.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpServerName canonical MCP name
+     * @param version optional exact online Version
+     * @return serving MCP detail
+     * @throws NacosException when the Resource or serving Version is unavailable
+     */
+    public McpServerDetailInfo getServingMcpServerDetail(String namespaceId,
+        String mcpServerName, String version) throws NacosException {
+        AiResource resource = resourceLocator.locate(namespaceId, mcpServerName, null);
+        resourceManager.ensureReadableOrNotFound(resource,
+            "MCP server not found: " + resource.getName());
+        LifecycleResource lifecycle = requireLifecycleResource(resource);
+        AiResourceVersion selected = resolveServingVersion(lifecycle, version);
+        return buildMcpServerDetail(lifecycle, selected);
+    }
+    
+    private McpServerDetailInfo buildMcpServerDetail(LifecycleResource lifecycle,
+        AiResourceVersion selected) throws NacosException {
+        AiResource resource = lifecycle.resource;
         LoadedVersion loaded = loadVersion(lifecycle, selected);
         McpServerDetailInfo result = new McpServerDetailInfo();
         BeanUtils.copyProperties(loaded.server, result);
@@ -1181,6 +1209,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         McpServerVersionSummary result = new McpServerVersionSummary();
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
+        result.setPublishPipelineInfo(row.getPublishPipelineInfo());
         result.setAuthor(row.getAuthor());
         result.setDescription(row.getDesc());
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
@@ -1193,11 +1222,11 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private McpServerVersionDetail toLifecycleDetail(LifecycleResource lifecycle,
         AiResourceVersion row) throws NacosException {
-        LoadedVersion loaded = loadVersion(lifecycle, row);
         McpServerVersionDetail result = new McpServerVersionDetail();
         McpServerVersionSummary summary = toLifecycleSummary(lifecycle.resource, row);
         result.setVersion(summary.getVersion());
         result.setStatus(summary.getStatus());
+        result.setPublishPipelineInfo(summary.getPublishPipelineInfo());
         result.setAuthor(summary.getAuthor());
         result.setDescription(summary.getDescription());
         result.setLatest(summary.getLatest());
@@ -1205,6 +1234,16 @@ public class McpLifecycleOperationService implements McpOperationService {
         result.setUpdateTime(summary.getUpdateTime());
         result.setNamespaceId(lifecycle.resource.getNamespaceId());
         result.setMcpName(lifecycle.resource.getName());
+        result.setResourceStatus(lifecycle.resource.getStatus());
+        result.setOwner(lifecycle.resource.getOwner());
+        result.setScope(AiResourceManager.resolveScope(lifecycle.resource));
+        ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(
+            lifecycle.resource);
+        result.setLabels(new LinkedHashMap<>(versionInfo.getLabels()));
+        result.setEditingVersion(versionInfo.getEditingVersion());
+        result.setReviewingVersion(versionInfo.getReviewingVersion());
+        result.setOnlineCount(versionInfo.getOnlineCnt());
+        LoadedVersion loaded = loadVersion(lifecycle, row);
         McpServerBasicInfo server = new McpServerBasicInfo();
         BeanUtils.copyProperties(loaded.server, server);
         server.setId(null);
@@ -1327,6 +1366,17 @@ public class McpLifecycleOperationService implements McpOperationService {
         }
         AiResourceVersion result = findVersion(lifecycle.versions, selected);
         if (result == null) {
+            throw versionNotFound(lifecycle.mcpId, selected);
+        }
+        return result;
+    }
+    
+    private AiResourceVersion resolveServingVersion(LifecycleResource lifecycle, String version)
+        throws NacosException {
+        String selected = StringUtils.isBlank(version) ? lifecycle.latestVersion : version;
+        AiResourceVersion result = findVersion(lifecycle.versions, selected);
+        if (result == null || !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(
+            result.getStatus())) {
             throw versionNotFound(lifecycle.mcpId, selected);
         }
         return result;

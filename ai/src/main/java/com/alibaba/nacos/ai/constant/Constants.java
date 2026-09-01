@@ -65,6 +65,14 @@ public class Constants {
     
     public static final String MCP_SERVER_RESOURCE_GROUP = "mcp-resources";
     
+    /**
+     * Dedicated Config namespace for MCP lifecycle reconciliation state.
+     *
+     * <p>The namespace is intentionally not registered in the user Namespace catalog. Operators
+     * should avoid creating a Namespace or managing Config content with this identifier.</p>
+     */
+    public static final String MCP_LIFECYCLE_STATE_NAMESPACE = "_nacos_internal_";
+    
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     
     public static final String MCP_SERVER_VERSION_DATA_ID_SUFFIX = "-mcp-versions.json";
@@ -152,6 +160,39 @@ public class Constants {
             "nacos.ai.rad.capacity.publication.max-publications-per-client";
         
         public static final int DEFAULT_MAX_PUBLICATIONS_PER_CLIENT = 100;
+        
+        /**
+         * Soft watermark for gRPC Watches or HTTP Batch items owned by one client.
+         */
+        public static final String MAX_WATCHES_PER_CLIENT_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.max-per-client";
+        
+        public static final int DEFAULT_MAX_WATCHES_PER_CLIENT = 300;
+        
+        /**
+         * Hard limit for request-scoped HTTP Watch waiters retained by one server node.
+         */
+        public static final String MAX_HTTP_WATCH_WAITERS_PER_NODE_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-active-requests-per-node";
+        
+        public static final int DEFAULT_MAX_HTTP_WATCH_WAITERS_PER_NODE = 10000;
+        
+        /**
+         * Hard aggregate byte limit for active HTTP Watch JSON fields on one server node.
+         */
+        public static final String MAX_HTTP_WATCH_ACTIVE_BYTES_PER_NODE_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-active-bytes-per-node";
+        
+        public static final long DEFAULT_MAX_HTTP_WATCH_ACTIVE_BYTES_PER_NODE =
+            64L * 1024L * 1024L;
+        
+        /**
+         * Hard byte limit for one HTTP Watch JSON-valued form field.
+         */
+        public static final String MAX_HTTP_WATCH_REQUEST_BYTES_CONFIG_KEY =
+            "nacos.ai.rad.capacity.watch.http.max-request-bytes";
+        
+        public static final long DEFAULT_MAX_HTTP_WATCH_REQUEST_BYTES = 1024L * 1024L;
         
         /**
          * Resource type stored in {@code ai_resource} and {@code ai_resource_version}.

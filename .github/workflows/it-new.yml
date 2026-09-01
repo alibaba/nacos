@@ -16,6 +16,8 @@ concurrency:
 
 env:
   RAD_SERVER_PUBLICATION_CAPACITY: '3'
+  RAD_SERVER_WATCH_CAPACITY: '3'
+  RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY: '3'
   RAD_CLIENT_PUBLICATION_CAPACITY: '3'
   RAD_CLIENT_SUBSCRIPTION_CAPACITY: '3'
 
@@ -55,9 +57,13 @@ jobs:
           # production five-minute reconciliation interval in standalone integration tests.
           echo "nacos.ai.resource.search.index.reconcile.interval-seconds=30" >> "$PROP_FILE"
           echo "nacos.ai.mcp.resource.reconciliation.interval-seconds=30" >> "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.watch.max-per-client=.*|nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=.*|nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
 
           echo "RAD capacity configuration:"
           grep -Fx "nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}" "$PROP_FILE"
+          grep -Fx "nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}" "$PROP_FILE"
+          grep -Fx "nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}" "$PROP_FILE"
 
           echo "Starting server..."
           bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
@@ -103,13 +109,16 @@ jobs:
         run: |
           cd test
           mvn -B clean verify -Pintegration-test \
-            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}"
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
+            -Dnacos.agent.it.server.http.watch.waiter.capacity="${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}"
 
       - name: Run Java SDK IT Tests
         run: |
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
             -DskipTests=false \
             -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
             -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
             -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
 
@@ -122,6 +131,7 @@ jobs:
             -Pjava-sdk-integration-test,jackson3-sdk-test \
             -DskipTests=false \
             -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
             -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
             -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
 

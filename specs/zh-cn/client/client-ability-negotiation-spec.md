@@ -51,6 +51,7 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 | `SERVER_FUZZY_WATCH` | 支持 Config 或 Naming fuzzy watch。 |
 | `SERVER_DISTRIBUTED_LOCK` | 支持分布式锁。 |
 | `SERVER_MCP_REGISTRY` | 支持 MCP registry 操作。 |
+| `SERVER_MCP_DRAFT_RELEASE` | MCP Release 能理解 `createDraft` 字段。 |
 | `SERVER_AGENT_REGISTRY` | 支持旧 A2A Agent 和 AgentCard registry 操作。 |
 | `SERVER_AGENT_CARD_V1` | 支持 A2A AgentCard 1.0 协议字段。 |
 
@@ -63,12 +64,26 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 
 | Mode | 常量 | Wire key | 含义 |
 |---|---|---|---|
-| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server 接受 Nacos 3.3 完整 RAD v1 契约。 |
+| `SERVER` | `SERVER_RAD_V1` | `radV1` | Server 接受 Nacos 3.3 完整 RAD v1 基础契约。 |
+| `SERVER` | `SERVER_RAD_WATCH_V1` | `radWatchV1` | Server 接受 Subscribe、Unsubscribe 与 Fingerprint Hint Binding Payload。 |
+| `SDK_CLIENT` | `SDK_RAD_WATCH_V1` | `radWatchV1` | Client 接受并确认 Fingerprint Hint Push Payload。 |
 
-首版 `subscribeAgent` 只在 SDK 本地轮询 Discover，不定义 SDK Client ability。
-未来服务端 Watch/Push 必须独立评审 Client ability、Payload 和 ACK 契约。旧
-`SERVER_AGENT_REGISTRY`、`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY`
-继续只控制旧 A2A 契约，不作为任何 RAD 操作的 fallback。
+基础 RAD 与 Watch 是独立部署单元。当前 Connection 只有同时声明两项 Watch Ability 时
+才启用 gRPC Server-aware Watch；任一缺失或 Unknown 时不得发送 Watch Payload，使用有
+文档说明的 HTTP Watch 或本地 Discover 轮询回退。旧 `SERVER_AGENT_REGISTRY`、
+`SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 继续只控制旧 A2A 契约，不作为
+任何 RAD 操作的 fallback。
+
+### 2.2 MCP Draft Release 能力
+
+| Mode | 常量 | Wire key | 含义 |
+|---|---|---|---|
+| `SERVER` | `SERVER_MCP_DRAFT_RELEASE` | `mcpDraftRelease` | 选中的 Server 能理解 `ReleaseMcpServerRequest.createDraft`，不会把它重解释为历史 Direct-online Release。 |
+
+该 Ability 不表示集群迁移已经达到 `LIFECYCLE_MANAGED`；后者仍是服务端动态前置条件。
+Client 发送 `createDraft=true` 时必须严格要求 `SUPPORTED`。`NOT_SUPPORTED` 和 `UNKNOWN`
+都在发送前返回 `SERVER_NOT_IMPLEMENTED`，不得 Fallback 或 Replay。字段缺失或为 `false` 的
+历史 Release 继续只要求 `SERVER_MCP_REGISTRY`。
 
 ## 3. gRPC 协商流程
 
@@ -108,16 +123,20 @@ Unknown 不是成功。新功能应优先返回 fail-fast unsupported error，�
 - Config 和 Naming fuzzy watch 必须要求 `SERVER_FUZZY_WATCH`。
 - 分布式锁必须要求 `SERVER_DISTRIBUTED_LOCK`，因为该功能实验性且不保证所有服务端可用。
 - AI MCP registry 操作必须要求 `SERVER_MCP_REGISTRY`。
+- MCP Draft Release 还必须要求 `SERVER_MCP_DRAFT_RELEASE`。
 - 旧 A2A Agent 和 AgentCard 操作必须要求 `SERVER_AGENT_REGISTRY`。
 - A2A AgentCard 1.0 字段应要求 `SERVER_AGENT_CARD_V1`，或使用显式文档化的兼容转换。
 - RAD Definition Publication、Search/Discover 和 Runtime Endpoint Publication 必须要求
-  `SERVER_RAD_V1`；本地轮询订阅复用同一 Discover 路径，因此使用同一能力位。
+  `SERVER_RAD_V1`。
+- gRPC RAD Watch 必须同时要求 `SERVER_RAD_WATCH_V1` 与 `SDK_RAD_WATCH_V1`；本地
+  轮询回退只要求基础 Discover Ability。
 
 功能代码不应把 positive ability result 缓存在当前 connection 生命周期之外。执行操作前应查询
 运行时 connection ability，或确认缓存值属于当前 connection。
 
-Reconnect 后，Client 必须重新协商能力，再恢复 Endpoint Publication。SDK 本地轮询
-订阅不保存 Connection 维度 Watch state，下一次 Discover 直接使用新 Connection。
+Reconnect 后，Client 必须重新协商能力，再恢复 Endpoint Publication 或 gRPC Wire Watch。
+Canonical Local Watch Intent 跨 Connection 保留，但全部旧 Wire Key 都要丢弃。重连后不再
+协商到 Watch 时，按照有文档说明的 Transport 或轮询路径回退。
 
 ## 6. 兼容规则
 

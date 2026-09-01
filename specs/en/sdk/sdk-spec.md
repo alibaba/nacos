@@ -171,11 +171,24 @@ and then applies the same name-based authorization and operation. The Java
 Client does not start populating the dormant top-level gRPC `mcpId`; current
 model, event, and release-response ID fields remain wire-compatible.
 
-Client HTTP parity with gRPC is deferred until MCP lifecycle hosting is
-complete. A later design should preserve the public SDK interface where
-possible, keep HTTP and gRPC semantics identical, and reuse Agent HTTP
-publisher heartbeat/renewal rather than creating a second liveness model. This
-spec does not yet define those HTTP paths, payloads, or heartbeat intervals.
+The Java Client exposes MCP query, release, Runtime Endpoint publication, and
+polling subscription through `grpc`, `http`, and `auto` using the existing
+`nacosAiTransportMode` property. Existing overloads remain direct-online and
+are equivalent to `createDraft=false`. Two source- and binary-compatible
+default overloads add `createDraft`; `true` creates only a lifecycle draft.
+Third-party `AiService` implementations that have not implemented the new
+operation must reject `true` with `SERVER_NOT_IMPLEMENTED` rather than silently
+delegate to direct-online release.
+
+One `AiService` instance shares one stable HTTP client id and one heartbeat
+coordinator across Agent and MCP Runtime publications. Each domain retains its
+own complete desired payload, while `HTTP_CLIENT_NOT_FOUND` marks and replays
+all HTTP-owned Agent and MCP publication intent. MCP subscription remains local
+polling but executes each query through the selected transport router.
+
+MCP Client HTTP inputs use canonical `mcpName`; no new top-level `mcpId` input
+is added. Query and release return the existing `McpServerDetailInfo` and String
+ID shapes, and Endpoint liveness reuses `ClientLivenessInfo`.
 
 ## 6. Security Rules
 

@@ -40,7 +40,6 @@ interface McpActions {
   fetchMcpDetail: (namespaceId: string, mcpName: string, version?: string) => Promise<void>;
   deleteMcpServer: (namespaceId: string, mcpName: string) => Promise<boolean>;
   batchDelete: (namespaceId: string, names: string[]) => Promise<boolean>;
-  toggleEnabled: (namespaceId: string, mcp: McpServerDetailInfo) => Promise<boolean>;
   setSearchParams: (params: { searchName?: string; searchMode?: McpSearchMode }) => void;
   setPage: (pageNo: number, pageSize?: number) => void;
   resetSearch: () => void;
@@ -161,33 +160,6 @@ export const useMcpStore = create<McpStore>((set, get) => ({
     }
     set({ selectedNames: new Set() });
     return allSuccess;
-  },
-
-  toggleEnabled: async (namespaceId: string, mcp: McpServerDetailInfo) => {
-    try {
-      const toggled = { ...mcp, enabled: !mcp.enabled };
-      const serverSpec = { ...toggled };
-      // Remove detail-only fields before serializing as serverSpecification
-      const { toolSpec, backendEndpoints, frontendEndpoints, allVersions, ...basicInfo } = serverSpec;
-      await mcpApi.updateMcpServer({
-        mcpName: mcp.name,
-        namespaceId,
-        serverSpecification: JSON.stringify(basicInfo),
-        toolSpecification: toolSpec ? JSON.stringify(toolSpec) : undefined,
-        endpointSpecification: backendEndpoints
-          ? JSON.stringify({
-              type: mcp.remoteServerConfig?.serviceRef ? 'REF' : 'DIRECT',
-              data: mcp.remoteServerConfig?.serviceRef || (backendEndpoints[0] ?? {}),
-            })
-          : undefined,
-        latest: true,
-      });
-      return true;
-    } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      set({ error: axiosError.response?.data?.message || 'Failed to toggle MCP server' });
-      return false;
-    }
   },
 
   setSearchParams: (params) => {

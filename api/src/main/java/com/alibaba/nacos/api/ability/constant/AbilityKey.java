@@ -57,6 +57,13 @@ public enum AbilityKey {
         AbilityMode.SERVER),
     
     /**
+     * For creating an MCP lifecycle draft through the Client release request.
+     */
+    SERVER_MCP_DRAFT_RELEASE("mcpDraftRelease",
+        "Server whether support creating an MCP lifecycle draft through Client release",
+        AbilityMode.SERVER),
+    
+    /**
      * For AI module Agent & Agent Card registry.
      */
     SERVER_AGENT_REGISTRY("agent",
@@ -77,6 +84,12 @@ public enum AbilityKey {
      * require their own ability key.</p>
      */
     SERVER_RAD_V1("radV1", "Server whether support the complete RAD v1 contract",
+        AbilityMode.SERVER),
+    
+    /**
+     * Server support the RAD Watch hint binding.
+     */
+    SERVER_RAD_WATCH_V1("radWatchV1", "Server whether support RAD Watch hint push",
         AbilityMode.SERVER),
     
     /**
@@ -103,6 +116,12 @@ public enum AbilityKey {
      */
     SDK_AGENT_REGISTRY("agent",
         "Client whether support release agent server and register endpoint for agent server",
+        AbilityMode.SDK_CLIENT),
+    
+    /**
+     * SDK client support the RAD Watch hint binding.
+     */
+    SDK_RAD_WATCH_V1("radWatchV1", "Client whether support RAD Watch hint push",
         AbilityMode.SDK_CLIENT),
     
     /**

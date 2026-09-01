@@ -34,6 +34,8 @@ public class AiDistroConfiguration {
     
     private static final String AGENT_CLIENT_URL_PATTERN = "/v3/client/ai/agents/*";
     
+    private static final String MCP_CLIENT_URL_PATTERN = "/v3/client/ai/mcp/*";
+    
     @Bean
     public AiDistroFilter aiDistroFilter(DistroMapper distroMapper) {
         return new AiDistroFilter(distroMapper);
@@ -44,7 +46,7 @@ public class AiDistroConfiguration {
         AiDistroFilter filter) {
         FilterRegistrationBean<AiDistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(filter);
-        registration.addUrlPatterns(AGENT_CLIENT_URL_PATTERN);
+        registration.addUrlPatterns(AGENT_CLIENT_URL_PATTERN, MCP_CLIENT_URL_PATTERN);
         registration.setName("aiDistroFilter");
         registration.setOrder(7);
         return registration;

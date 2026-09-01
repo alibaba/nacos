@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NacosAgentDiscoveryEventTest {
     
@@ -28,6 +30,20 @@ class NacosAgentDiscoveryEventTest {
         AgentDiscoveryResult result = new AgentDiscoveryResult();
         NacosAgentDiscoveryEvent event = new NacosAgentDiscoveryEvent(result);
         
+        assertEquals(NacosAgentDiscoveryEventType.SNAPSHOT, event.getType());
         assertSame(result, event.getAgentDiscoveryResult());
+        assertNull(event.getErrorCode());
+        assertNull(event.getErrorMessage());
+    }
+    
+    @Test
+    void exposeUnavailableWithoutSnapshot() {
+        NacosAgentDiscoveryEvent event =
+            NacosAgentDiscoveryEvent.unavailable(404, "Agent is absent");
+        
+        assertEquals(NacosAgentDiscoveryEventType.UNAVAILABLE, event.getType());
+        assertNull(event.getAgentDiscoveryResult());
+        assertEquals(404, event.getErrorCode());
+        assertEquals("Agent is absent", event.getErrorMessage());
     }
 }

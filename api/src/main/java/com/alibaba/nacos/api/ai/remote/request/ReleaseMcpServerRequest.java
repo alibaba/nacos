@@ -42,6 +42,8 @@ public class ReleaseMcpServerRequest extends AbstractMcpRequest {
     
     private McpEndpointSpec endpointSpecification;
     
+    private boolean createDraft;
+    
     public McpServerBasicInfo getServerSpecification() {
         return serverSpecification;
     }
@@ -72,5 +74,13 @@ public class ReleaseMcpServerRequest extends AbstractMcpRequest {
     
     public void setEndpointSpecification(McpEndpointSpec endpointSpecification) {
         this.endpointSpecification = endpointSpecification;
+    }
+    
+    public boolean isCreateDraft() {
+        return createDraft;
+    }
+    
+    public void setCreateDraft(boolean createDraft) {
+        this.createDraft = createDraft;
     }
 }

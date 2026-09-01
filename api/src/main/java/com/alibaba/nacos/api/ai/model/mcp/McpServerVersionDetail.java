@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.Map;
+
 /**
  * Canonical content and management metadata for one exact MCP Server Version.
  *
@@ -41,6 +43,20 @@ public class McpServerVersionDetail extends McpServerVersionSummary {
     private McpToolSpecification toolSpecification;
     
     private McpResourceSpecification resourceSpecification;
+    
+    private String resourceStatus;
+    
+    private String owner;
+    
+    private String scope;
+    
+    private Map<String, String> labels;
+    
+    private String editingVersion;
+    
+    private String reviewingVersion;
+    
+    private Integer onlineCount;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -80,5 +96,61 @@ public class McpServerVersionDetail extends McpServerVersionSummary {
     
     public void setResourceSpecification(McpResourceSpecification resourceSpecification) {
         this.resourceSpecification = resourceSpecification;
+    }
+    
+    public String getResourceStatus() {
+        return resourceStatus;
+    }
+    
+    public void setResourceStatus(String resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
+    
+    public String getOwner() {
+        return owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    public String getScope() {
+        return scope;
+    }
+    
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+    
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
+    
+    public String getEditingVersion() {
+        return editingVersion;
+    }
+    
+    public void setEditingVersion(String editingVersion) {
+        this.editingVersion = editingVersion;
+    }
+    
+    public String getReviewingVersion() {
+        return reviewingVersion;
+    }
+    
+    public void setReviewingVersion(String reviewingVersion) {
+        this.reviewingVersion = reviewingVersion;
+    }
+    
+    public Integer getOnlineCount() {
+        return onlineCount;
+    }
+    
+    public void setOnlineCount(Integer onlineCount) {
+        this.onlineCount = onlineCount;
     }
 }

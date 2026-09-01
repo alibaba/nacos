@@ -51,6 +51,7 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -578,6 +579,51 @@ class AgentDiscoveryApplicationServiceTest {
         NacosApiException catalogError = assertThrows(NacosApiException.class,
             () -> service.discover(discoveryRequest(null, null, null)));
         assertEquals(NacosException.NOT_FOUND, catalogError.getErrCode());
+    }
+    
+    @Test
+    void testInternalProjectionUsesPersistenceAfterAdmissionAndMatchesDiscover()
+        throws NacosException {
+        Agent agent = enabledAgent();
+        AgentDiscoveryRequest request = discoveryRequest(VERSION, null, null);
+        when(operationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
+        when(persistenceService.requireVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(onlineVersion(DIGEST));
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(detail(DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
+                Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), null))));
+        EndpointSet runtime = endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
+            Collections.<AgentDiscoveryEndpoint>emptyList());
+        when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION))).thenReturn(runtime);
+        when(runtimeRegistryService.getCurrentRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION))).thenReturn(runtime);
+        
+        AgentDiscoveryResult authorized = service.discover(request);
+        AgentDiscoveryResult internal = service.projectCurrentFact(request);
+        
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(authorized),
+            AgentDiscoveryCanonicalizer.fingerprint(internal));
+        verify(operationService).getAgent(NAMESPACE_ID, AGENT_NAME);
+        verify(persistenceService).getAgent(NAMESPACE_ID, AGENT_NAME);
+        verify(runtimeRegistryService).getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
+            Collections.singletonList(VERSION));
+        verify(runtimeRegistryService).getCurrentRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
+            "a2a", Collections.singletonList(VERSION));
+    }
+    
+    @Test
+    void testInternalProjectionStillAppliesAvailabilityRules() throws NacosException {
+        Agent disabled = enabledAgent();
+        disabled.setStatus(AiConstants.Agent.RESOURCE_STATUS_DISABLE);
+        when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(disabled);
+        
+        NacosApiException error = assertThrows(NacosApiException.class,
+            () -> service.projectCurrentFact(discoveryRequest(null, null, null)));
+        
+        assertEquals(NacosException.NOT_FOUND, error.getErrCode());
+        verifyNoInteractions(operationService);
     }
     
     @Test

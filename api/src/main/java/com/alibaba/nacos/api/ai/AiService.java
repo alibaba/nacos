@@ -101,6 +101,24 @@ public interface AiService extends AgentDiscoveryService, A2aService {
     }
     
     /**
+     * Release one MCP Version with an explicit lifecycle-draft choice.
+     *
+     * <p>{@code createDraft=false} preserves the historical direct-online behavior.
+     * {@code createDraft=true} creates only a standard lifecycle draft.</p>
+     *
+     * @param serverSpecification MCP Server specification
+     * @param toolSpecification optional Tool specification
+     * @param createDraft whether to create a lifecycle draft instead of direct-online release
+     * @return internal MCP id
+     * @throws NacosException when validation or release fails
+     */
+    @Since("3.3.0")
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification, boolean createDraft) throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, null, null, createDraft);
+    }
+    
+    /**
      * Release new mcp server or release new version of exist mcp server request.
      *
      * @param serverSpecification mcp server specification
@@ -152,6 +170,34 @@ public interface AiService extends AgentDiscoveryService, A2aService {
         McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
         throws NacosException;
+    
+    /**
+     * Release one MCP Version with complete optional content and lifecycle-draft choice.
+     *
+     * <p>The default preserves compatibility for third-party implementations when
+     * {@code createDraft=false}. Implementations that support draft release override this method;
+     * an unknown implementation must not silently direct-publish when {@code createDraft=true}.</p>
+     *
+     * @param serverSpecification MCP Server specification
+     * @param toolSpecification optional Tool specification
+     * @param resourceSpecification optional Resource specification
+     * @param endpointSpecification optional Endpoint specification
+     * @param createDraft whether to create a lifecycle draft instead of direct-online release
+     * @return internal MCP id
+     * @throws NacosException when validation or release fails
+     */
+    @Since("3.3.0")
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
+        boolean createDraft) throws NacosException {
+        if (createDraft) {
+            throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "MCP lifecycle draft release is not implemented by this AiService.");
+        }
+        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+            endpointSpecification);
+    }
     
     /**
      * Register an endpoint into target mcp server for all version.

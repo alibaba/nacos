@@ -55,11 +55,11 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 11 | 10 | 1 | 0 | 90.91% | 95.45% |
+| Client OpenAPI | 14 | 13 | 1 | 0 | 92.86% | 96.43% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 29 | 24 | 5 | 0 | 82.76% | 91.38% |
 | Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
-| Total | 82 | 65 | 15 | 2 | 79.27% | 88.41% |
+| Total | 85 | 68 | 15 | 2 | 80.00% | 88.82% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -175,6 +175,12 @@ by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and
 Nacos 3.4.0; the managed `/v3/console/ai/import/*` flow is covered separately by
 `AiResourceImportConsoleApiOpenApiITCase`.
 
+MCP lifecycle Version summaries and exact details now expose optional
+`publishPipelineInfo`. Admin and Console standalone scenarios cover the
+no-Pipeline shape; focused component tests cover approved/rejected payload
+mapping because the standalone profile does not install an MCP review Pipeline
+plugin.
+
 `McpToolsImportConsoleApiOpenApiITCase` verifies that
 `GET /v3/console/ai/mcp/importToolsFromMcp` rejects private or local targets by
 default with an explicit private-allowlist message, without opening a network
@@ -198,7 +204,9 @@ boundary: name-only identity and exact-Version validation, nested legacy ID
 rejection, case-insensitive status input, and the controlled pre-cutover
 conflict envelope. If background reconciliation has already completed the
 one-way cutover, the same scenario accepts only controlled absent-resource
-responses and verifies one real draft create/delete pair. The test does not
+responses and verifies one real draft create/delete pair, including the
+resource status, owner, scope, labels, working pointers, and online count
+returned in the lifecycle detail. The test does not
 publish the `LIFECYCLE_MANAGED` marker into the shared standalone process.
 Focused component tests instead cover the
 zero-difference, all-member capability, and Search-projection gates; permanent
@@ -206,8 +214,8 @@ marker retry/observation; per-request authority pinning; lifecycle
 create/read/update/delete and state-transition success paths; storage-first
 draft deletion/retry; and canonical re-authorization of deprecated ID-only
 requests. Embedded and standalone Console use this local lifecycle facade;
-remote Console remains disabled until the typed Maintainer SDK transport is
-introduced, so it does not fall back to the legacy Config-writing path.
+remote Console forwards the same typed contract through the Maintainer SDK
+transport and does not fall back to the legacy Config-writing path.
 
 RAD Agent Client coverage is split into three rows. Search/Discover validates
 the online catalog and discovery projection. The Search scenario is reusable
@@ -227,6 +235,15 @@ Server Publication soft watermark, allowing the same row to prove whole-batch
 crossing, atomic growth rejection, and slot reuse without creating 100 test
 entries. The Client-only renewal and Publisher-renewal separation is covered by
 the corresponding lifecycle unit tests.
+
+MCP Client coverage adds direct-online-compatible and managed-draft release,
+latest/exact serving reads, and stateful REF Runtime Endpoint publication. The
+Endpoint scenario proves that Agent and MCP share one external HTTP Client
+identity: removing either module's publication leaves heartbeat renewal active
+while the other remains, and removing the final publication yields typed
+`HTTP_CLIENT_NOT_FOUND`. Long-lived expiration and replay are exercised by the
+Java SDK directed-restart scenario instead of mutating the shared OpenAPI IT
+server lifecycle.
 
 Protocol-neutral AI Resource Search coverage publishes one current online
 resource for each declared type (Agent, AgentSpec, Skill, Prompt, and MCP),

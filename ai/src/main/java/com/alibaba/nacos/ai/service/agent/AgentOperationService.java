@@ -22,9 +22,11 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
@@ -100,6 +102,8 @@ public class AgentOperationService {
     private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
     
+    private AiResourceChangeNotifier resourceChangeNotifier = AiResourceChangeNotifier.NOOP;
+    
     public AgentOperationService(AgentPersistenceService persistenceService,
         AiResourceManager resourceManager, PublishPipelineExecutor publishPipelineExecutor) {
         this.persistenceService = persistenceService;
@@ -112,6 +116,13 @@ public class AgentOperationService {
         AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
         if (resourceIndexMaintenanceService != null) {
             this.resourceIndexMaintenanceService = resourceIndexMaintenanceService;
+        }
+    }
+    
+    @Autowired(required = false)
+    public void setAiResourceChangeNotifier(AiResourceChangeNotifier resourceChangeNotifier) {
+        if (resourceChangeNotifier != null) {
+            this.resourceChangeNotifier = resourceChangeNotifier;
         }
     }
     
@@ -163,7 +174,7 @@ public class AgentOperationService {
             Agent result = persistenceService.tryUpdateAgent(replacement, current);
             if (result != null) {
                 scheduleAgentIndexMaintenance(replacement.getNamespaceId(),
-                    replacement.getAgentName());
+                    replacement.getAgentName(), AiResourceChangeOperation.UPDATE, false);
                 AiResourceTraceService.logSuccess(RESOURCE_TYPE, replacement.getAgentName(), null,
                     AiResourceTraceService.OP_UPDATE_RESOURCE,
                     VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -287,7 +298,8 @@ public class AgentOperationService {
             AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
         if (directoryCreated) {
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.CREATE, true);
         }
         return result;
     }
@@ -314,7 +326,8 @@ public class AgentOperationService {
             AgentVersionDetail result = persistenceService.createInitialOnlineVersion(
                 toInitialLegacyAgent(namespaceId, request), toOnlineVersion(request),
                 LEGACY_A2A_RESOURCE_SOURCE);
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.CREATE, true);
             traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE, "mode=register");
             return result;
         } catch (Exception e) {
@@ -348,7 +361,8 @@ public class AgentOperationService {
                     AgentVersionDetail result = persistenceService.createInitialOnlineVersion(
                         toInitialLegacyAgent(namespaceId, request), toOnlineVersion(request),
                         LEGACY_A2A_RESOURCE_SOURCE);
-                    scheduleAgentIndexMaintenance(namespaceId, agentName);
+                    scheduleAgentIndexMaintenance(namespaceId, agentName,
+                        AiResourceChangeOperation.CREATE, true);
                     traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
                         "mode=client-create");
                     return result;
@@ -365,7 +379,8 @@ public class AgentOperationService {
             VisibilityHelper.checkWritableResource(current);
             AgentVersionDetail result = directOnlineExistingAgent(namespaceId, request,
                 setAsLatest, true);
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.UPDATE, true);
             traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
                 "mode=client-release");
             return result;
@@ -393,7 +408,8 @@ public class AgentOperationService {
             requireWritableMeta(namespaceId, agentName);
             AgentVersionDetail result = directOnlineExistingAgent(namespaceId, request,
                 setAsLatest, false);
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.UPDATE, true);
             traceLegacySuccess(agentName, version, OP_LEGACY_A2A_RELEASE,
                 "mode=management-update");
             return result;
@@ -429,7 +445,8 @@ public class AgentOperationService {
                 return false;
             }
             persistenceService.deleteVersion(namespaceId, agentName, version);
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.UPDATE, true);
             traceLegacySuccess(agentName, version, OP_LEGACY_A2A_DELETE, "mode=version");
             return true;
         } catch (Exception e) {
@@ -457,7 +474,8 @@ public class AgentOperationService {
             }
             VisibilityHelper.checkWritableResource(current);
             persistenceService.deleteAgent(namespaceId, agentName);
-            scheduleAgentIndexMaintenance(namespaceId, agentName);
+            scheduleAgentIndexMaintenance(namespaceId, agentName,
+                AiResourceChangeOperation.DELETE, true);
             traceLegacySuccess(agentName, null, OP_LEGACY_A2A_DELETE, "mode=agent");
             return true;
         } catch (Exception e) {
@@ -518,7 +536,8 @@ public class AgentOperationService {
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         requireWritableMeta(namespaceId, agentName);
         persistenceService.deleteAgent(namespaceId, agentName);
-        scheduleAgentIndexMaintenance(namespaceId, agentName);
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.DELETE, true);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, null,
             AiResourceTraceService.OP_DELETE_RESOURCE, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
@@ -653,7 +672,8 @@ public class AgentOperationService {
                 + versionInfo.getEditingVersion());
         }
         resourceManager.doRedraft(namespaceId, agentName, RESOURCE_TYPE, version);
-        scheduleAgentIndexMaintenance(namespaceId, agentName);
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.UPDATE, false);
         return persistenceService.getAgentVersionSummary(namespaceId, agentName, version);
     }
     
@@ -695,7 +715,8 @@ public class AgentOperationService {
         persistenceService.updateVersionStatus(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_OFFLINE);
         persistenceService.synchronizeDerivedState(namespaceId, agentName, null, null, null, null);
-        scheduleAgentIndexMaintenance(namespaceId, agentName);
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.UPDATE, false);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, version,
             AiResourceTraceService.OP_OFFLINE_VERSION, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
@@ -716,7 +737,8 @@ public class AgentOperationService {
         requireWritableMeta(namespaceId, agentName);
         Agent result = persistenceService.synchronizeDerivedState(namespaceId, agentName, null,
             labels, null, null);
-        scheduleAgentIndexMaintenance(namespaceId, agentName);
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.UPDATE, false);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, null,
             AiResourceTraceService.OP_UPDATE_LABELS, VisibilityHelper.resolveCurrentIdentity(),
             VisibilityHelper.resolveClientIp());
@@ -899,14 +921,23 @@ public class AgentOperationService {
             AiConstants.Agent.VERSION_STATUS_ONLINE);
         persistenceService.synchronizeDerivedState(namespaceId, agentName, version, null,
             clearEditing ? version : null, clearReviewing ? version : null);
-        scheduleAgentIndexMaintenance(namespaceId, agentName);
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            AiResourceChangeOperation.UPDATE, false);
     }
     
-    private void scheduleAgentIndexMaintenance(String namespaceId, String agentName) {
+    private void scheduleAgentIndexMaintenance(String namespaceId, String agentName,
+        AiResourceChangeOperation operation, boolean storageChanged) {
         try {
             resourceIndexMaintenanceService.schedule(namespaceId, RESOURCE_TYPE, agentName);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed to schedule Agent search-index maintenance for {} in namespace {}",
+                agentName, namespaceId, e);
+        }
+        try {
+            resourceChangeNotifier.notifyChanged(namespaceId, RESOURCE_TYPE, agentName, operation,
+                storageChanged);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to notify AI resource change for Agent {} in namespace {}",
                 agentName, namespaceId, e);
         }
     }

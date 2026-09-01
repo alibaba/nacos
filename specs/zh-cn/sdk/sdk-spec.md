@@ -130,9 +130,20 @@ Draft 创建/更新通过 Request Object 重载复用既有 `createMcpServer` �
 Row 解析别名，再执行相同的 Name-Based 鉴权和操作。Java Client 不开始填充 Dormant 顶层
 gRPC `mcpId`；当前 Model、Event 和 Release Response ID 字段保持 Wire-Compatible。
 
-Client HTTP 与 gRPC 对齐延期到 MCP 生命周期托管完成后。后续设计应尽量保持公开 SDK 接口，
-保证 HTTP 和 gRPC 语义相同，并复用 Agent HTTP Publisher 心跳/续约，不另建第二套活性模型。
-本文尚不定义这些 HTTP Path、Payload 或心跳周期。
+Java Client 通过既有 `nacosAiTransportMode` 属性，为 MCP Query、Release、Runtime Endpoint
+Publication 和轮询 Subscription 提供 `grpc`、`http`、`auto`。现有 Overload 继续保持
+Direct-online，等价于 `createDraft=false`。新增两个 Source/Binary Compatible 的 Default
+Overload 接收 `createDraft`；为 `true` 时只创建生命周期 Draft。未实现新操作的第三方
+`AiService` 必须对 `true` 返回 `SERVER_NOT_IMPLEMENTED`，不得静默委托到 Direct-online。
+
+一个 `AiService` 实例为 Agent 与 MCP Runtime Publication 共享一个稳定 HTTP Client Id 和一个
+Heartbeat Coordinator。各领域仍保存自己的完整 Desired Payload；收到
+`HTTP_CLIENT_NOT_FOUND` 时，必须把该 HTTP Client 拥有的 Agent 与 MCP Publication 意图全部
+标记并重放。MCP Subscription 继续使用本地轮询，但每次 Query 都经过选定的 Transport Router。
+
+MCP Client HTTP Input 使用 Canonical `mcpName`，不增加顶层 `mcpId`。Query、Release 分别
+返回既有 `McpServerDetailInfo` 和 String ID 形态，Endpoint 活性复用
+`ClientLivenessInfo`。
 
 ## 6. 安全规则
 

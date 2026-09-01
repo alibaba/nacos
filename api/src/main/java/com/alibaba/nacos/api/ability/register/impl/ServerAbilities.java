@@ -49,9 +49,11 @@ public class ServerAbilities extends AbstractAbilityRegistry {
         supportedAbilities.put(AbilityKey.SERVER_FUZZY_WATCH, true);
         supportedAbilities.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
         supportedAbilities.put(AbilityKey.SERVER_MCP_REGISTRY, true);
+        supportedAbilities.put(AbilityKey.SERVER_MCP_DRAFT_RELEASE, true);
         supportedAbilities.put(AbilityKey.SERVER_AGENT_REGISTRY, true);
         supportedAbilities.put(AbilityKey.SERVER_AGENT_CARD_V1, true);
         supportedAbilities.put(AbilityKey.SERVER_RAD_V1, true);
+        supportedAbilities.put(AbilityKey.SERVER_RAD_WATCH_V1, true);
     }
     
     /**.

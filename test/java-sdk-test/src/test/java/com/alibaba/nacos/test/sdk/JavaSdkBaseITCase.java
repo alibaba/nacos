@@ -48,7 +48,8 @@ public abstract class JavaSdkBaseITCase {
     
     protected static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
     
-    protected static final String SERVER_ADDR = NACOS_HOST + ":" + NACOS_PORT;
+    protected static final String SERVER_ADDR = System.getProperty("nacos.server.address",
+            NACOS_HOST + ":" + NACOS_PORT);
     
     protected static final int DEFAULT_TIMEOUT_MS = 3000;
     

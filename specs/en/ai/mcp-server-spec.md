@@ -288,6 +288,45 @@ compatible flow is:
 Consequently, lifecycle hosting must not require those consumers to negotiate a
 new Nacos ability or release merely to preserve existing discovery.
 
+### 5.1 Client HTTP Binding And Runtime Ownership
+
+The MCP Client compatibility contract is available through both gRPC and
+Form-based HTTP. The HTTP base path is `/v3/client/ai/mcp` and exposes exact or
+latest serving query, compatibility release, Runtime Endpoint registration and
+deregistration, and Publisher heartbeat. Complex release fields are JSON
+strings inside an `application/x-www-form-urlencoded` request; the binding does
+not introduce a JSON-body contract or a second MCP model.
+
+Existing `releaseMcpServer` calls remain direct-online. A new optional
+`createDraft` flag defaults to `false`; when `true`, release creates only a
+standard lifecycle draft and does not write the serving Manifest or run submit,
+review, or publish. Draft release is available only after
+`LIFECYCLE_MANAGED`. The gRPC binding additionally requires the negotiated
+`SERVER_MCP_DRAFT_RELEASE` ability before sending `createDraft=true`, because an
+older JSON-wrapped Payload handler could otherwise ignore the unknown field and
+perform the historical direct-online write. A missing or unknown ability fails
+before send and never falls back to direct-online.
+
+One Java `AiService` instance uses one stable external HTTP client id for both
+Agent and MCP Runtime publications. The server binds that id once to identity
+and namespace and maps it to the existing Naming
+`HttpConnectionBasedClient`. Endpoint writes and either AI heartbeat path renew
+the Client and every Publisher it owns. Query may renew an existing Client but
+must not create one or renew Publisher liveness.
+
+MCP Runtime Endpoint registration accepts a literal IPv4 or IPv6 address and a
+port in the range `1..65535`. HTTP and gRPC enter the same application-service
+validation before mutating Naming state, so invalid endpoints leave no partial
+registration state on the server.
+
+The SDK stores Agent and MCP desired payloads separately but schedules one
+shared HTTP heartbeat. `HTTP_CLIENT_NOT_FOUND` means that all publications
+owned by that HTTP Client may have disappeared: the coordinator marks every
+Agent and MCP HTTP publication dirty before replaying all desired state. MCP
+gRPC publications continue to use connection-scoped redo. A publication keeps
+the transport selected on its first send for replacement, deregistration,
+heartbeat, and redo.
+
 ## 6. Lifecycle And Compatibility Facades
 
 ### 6.1 Standard Management Lifecycle
@@ -308,6 +347,25 @@ Maintainer Version-management transport and must not fall back to a legacy
 write. The
 transport maps typed request objects onto the same form/query Admin routes; it
 does not introduce a second JSON-body HTTP contract.
+
+The two bundled Console frontends intentionally have different compatibility
+roles during this release window. The legacy `console-ui` remains on the
+historical direct-online create and update routes. `console-ui-next` creates or
+replaces drafts only through the standard lifecycle routes and exposes the
+valid submit, publish, force-publish, redraft, online, offline, draft-delete,
+label, and Visibility actions for the selected exact Version. Before
+`LIFECYCLE_MANAGED`, the next UI may retain historical reads for diagnosis but
+must disable lifecycle mutations and must not fall back to a historical write.
+
+The selected Version detail in `console-ui-next` presents copyable MCP Client
+configuration instead of copying the internal Server/Tools/Resources
+definition. For a remote Server, it uses the same frontend-first endpoint
+selection as the compatibility UI so gateway frontend and actual backend
+addresses are not confused. For a stdio Server, it wraps the local or Package
+launch configuration in the standard `mcpServers` object. Auto-derived
+capability values remain available as Resource metadata and Search filters;
+the detail page may omit their summary when the concrete Tool and Resource
+sections already present the same information.
 
 `McpMaintainerService` exposes Version-management methods with
 explicit-namespace and default-namespace overloads. New draft creation and
@@ -337,6 +395,14 @@ path. Otherwise the Version enters `reviewing`; an approved or rejected
 callback moves it to `reviewed`, and only an explicit approved publish updates
 the online lifecycle state and compatibility Manifest. Force-publish remains
 the audited Pipeline bypass.
+
+Version summaries and exact Version details expose the Version row's optional
+`publishPipelineInfo`. Management clients use this state to distinguish an
+approved review from a rejected review; Version status alone is insufficient
+because both outcomes are `reviewed`. `console-ui-next` presents force-publish
+only to a global administrator after the current Pipeline result is
+`REJECTED`, and never as an ordinary draft action. A rejection marked
+`historical` after redraft cannot authorize force-publishing that draft.
 
 ### 6.2 Historical Direct-Online Facades
 
@@ -511,10 +577,20 @@ There is no operator-selected storage mode. The one-way management completion
 marker is an internal Config object:
 
 ```text
+namespace = _nacos_internal_
 group  = nacos_internal
 dataId = nacos.ai.mcp.resource.migration.v1
 content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMillis>}
 ```
+
+`_nacos_internal_` is a dedicated implementation Namespace coordinate and is
+not registered in the user Namespace catalog. The leading and trailing
+underscores, together with the `internal` name, identify implementation-owned
+state and reduce accidental collision with normal user Namespaces. This
+convention does not add special access-control behavior: operators must not
+create that Namespace ID or read, publish, import, export, clone, or delete
+Config content under it. The lease and progress objects below use the same
+Namespace and group.
 
 The permanent marker means management rows are completely hosted. It does not
 authorize deletion or mutation of serving Config or Naming data. A renewable
@@ -657,8 +733,9 @@ management lifecycle operations:
   typed name/Version lifecycle methods may be added with the standard Admin
   semantics.
 - Import converges on the lifecycle service and MCP Storage.
-- Console UI moves to the lifecycle view only after the corresponding APIs are
-  available.
+- The legacy Console UI retains its direct-online compatibility flow; the next
+  Console UI uses lifecycle-only mutations after the corresponding APIs are
+  available and remains read-only while authority is still `SYNCING`.
 
 The first migration does not change:
 
@@ -667,11 +744,11 @@ The first migration does not change:
 - Client endpoint registration/deregistration, subscription, reconnect, redo,
   or heartbeat;
 - current Runtime Service names, clusters, or metadata;
-- MCP Client HTTP APIs; or
+- the already-deployed MCP Client HTTP wire contract introduced by this revision; or
 - AI Registry adaptor response shapes.
 
-Client HTTP parity with gRPC and reuse of Agent HTTP publisher
-heartbeat/renewal remain separate follow-up work.
+The MCP Client HTTP binding, shared Agent/MCP HTTP publisher heartbeat, and
+transport-neutral Java SDK routing are defined in Section 5.1.
 
 ## 11. Tool Schema Compatibility
 
@@ -700,7 +777,8 @@ Implementation PRs must cover at least:
   cleanup failure, retry by deprecated ID after Manifest removal, and no delete
   of ordinary REF or client Runtime state;
 - idempotent asynchronous reconciliation, lease takeover, mixed-member gating,
-  zero-difference completion, restart, and `LIFECYCLE_MANAGED` persistence;
+  the dedicated `_nacos_internal_` state Namespace, zero-difference completion,
+  restart, and `LIFECYCLE_MANAGED` persistence;
 - canonical name-keyed asynchronous Search, failure retry, backfill, and
   historical ID-keyed orphan cleanup;
 - equivalent Admin, Console, Maintainer, Client, Import, Search, and adaptor
@@ -716,8 +794,6 @@ for identity correctness.
 
 The following require later independent designs:
 
-- MCP Client HTTP query, release, endpoint, subscription, and
-  heartbeat/renewal parity;
 - Endpoint-kind persistence and Direct endpoint materialization;
 - retirement or version negotiation for the historical Manifest or Direct
   Services;

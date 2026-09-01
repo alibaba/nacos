@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.ai;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
@@ -113,6 +114,8 @@ class AgentEndpointPublicationManagerTest {
     @Test
     void grpcRegistrationDoesNotCreateHeartbeatExecutor() throws NacosException {
         when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        when(clientProxy.registerAgentEndpoints(any(), eq(AgentTransportType.GRPC)))
+            .thenReturn(liveness(777));
         AgentEndpointPublicationManager grpcManager =
             new AgentEndpointPublicationManager(clientProxy, executor);
         grpcManager.register(registration("a2a", endpoint("http://one:80/a")));
@@ -121,6 +124,18 @@ class AgentEndpointPublicationManagerTest {
         verify(executor, never()).schedule(any(Runnable.class), anyLong(), any());
         verify(clientProxy).deregisterAgentEndpoints("public", "agent-a", "a2a",
             AgentTransportType.GRPC);
+    }
+    
+    @Test
+    void nonPositiveHttpLivenessKeepsTheDefaultMaintenanceInterval()
+        throws NacosException {
+        when(clientProxy.registerAgentEndpoints(any(), eq(AgentTransportType.HTTP)))
+            .thenReturn(liveness(0));
+        
+        manager.register(registration("a2a", endpoint("http://one:80/a")));
+        
+        verify(executor).schedule(any(Runnable.class),
+            eq(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL), any());
     }
     
     @Test
@@ -303,6 +318,20 @@ class AgentEndpointPublicationManagerTest {
         manager.shutdown();
         
         verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void postShutdownCapacityCleanupCannotRestartMaintenance() throws NacosException {
+        AgentEndpointRegistrationBatch batch =
+            registration("a2a", endpoint("http://one:80/a"));
+        when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100));
+        manager.register(batch);
+        manager.shutdown();
+        
+        manager.discardAfterRemoteCapacityRejection(batch);
+        
+        verify(executor).schedule(any(Runnable.class), eq(100L), any());
+        verify(executor).shutdownNow();
     }
     
     @Test
@@ -496,6 +525,39 @@ class AgentEndpointPublicationManagerTest {
             AgentTransportType.HTTP);
         verify(clientProxy).deregisterAgentEndpoints("public", "agent-a", "mcp",
             AgentTransportType.GRPC);
+    }
+    
+    @Test
+    void maintenanceClassifiesHttpTombstoneDirtyGrpcAndRegisteredHttpIndependently()
+        throws NacosException {
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.HTTP,
+            AgentTransportType.HTTP, AgentTransportType.GRPC);
+        when(clientProxy.registerAgentEndpoints(any(), eq(AgentTransportType.HTTP)))
+            .thenReturn(liveness(100));
+        when(clientProxy.registerAgentEndpoints(any(), eq(AgentTransportType.GRPC)))
+            .thenReturn(null)
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "grpc retryable"));
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "deregister retryable"))
+            .when(clientProxy).deregisterAgentEndpoints("public", "agent-a", "a2a",
+                AgentTransportType.HTTP);
+        doThrow(new NacosException(ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode(), "missing"))
+            .when(clientProxy).heartbeatAgentEndpoints(AgentTransportType.HTTP);
+        manager.register(registration("a2a", endpoint("http://one:80/a")));
+        manager.register(registration("mcp", endpoint("http://two:80/b")));
+        manager.register(registration("custom", endpoint("http://three:80/c")));
+        assertThrows(NacosException.class,
+            () -> manager.register(
+                registration("custom", endpoint("http://replacement:80/c"))));
+        assertThrows(NacosException.class,
+            () -> manager.deregister(
+                deregistration("a2a", endpoint("http://one:80/other"))));
+        
+        runMaintenance(0);
+        
+        verify(clientProxy).heartbeatAgentEndpoints(AgentTransportType.HTTP);
+        verify(clientProxy, never()).heartbeatAgentEndpoints(AgentTransportType.GRPC);
+        verify(clientProxy, times(2)).registerAgentEndpoints(any(),
+            eq(AgentTransportType.GRPC));
     }
     
     @Test

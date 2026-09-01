@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.web;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -72,6 +73,10 @@ public class AiDistroFilter implements Filter {
         ReuseHttpServletRequest request =
             new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse response = (HttpServletResponse) servletResponse;
+        if (request.getRequestURI().endsWith(Constants.Agent.CLIENT_PATH + "/watch")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String externalClientId = request.getHeader(ClientConstants.HTTP_CLIENT_ID_HEADER);
         if (StringUtils.isBlank(externalClientId)) {
             filterChain.doFilter(request, response);
@@ -102,8 +107,7 @@ public class AiDistroFilter implements Filter {
         try {
             String targetServer = distroMapper.mapSrv(internalClientId);
             List<String> headers = getHeaders(request);
-            String body =
-                IoUtils.toString(request.getInputStream(), StandardCharsets.UTF_8.name());
+            String body = getRequestBody(request);
             RestResult<String> result = HttpClient.request(buildTargetUrl(targetServer, request),
                 headers, Collections.emptyMap(), body, PROXY_CONNECT_TIMEOUT,
                 PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), request.getMethod());
@@ -128,6 +132,21 @@ public class AiDistroFilter implements Filter {
             result.add(request.getHeader(name));
         }
         return result;
+    }
+    
+    private String getRequestBody(ReuseHttpServletRequest request) throws Exception {
+        String result =
+            IoUtils.toString(request.getInputStream(), StandardCharsets.UTF_8.name());
+        if (StringUtils.isNotBlank(result) || !supportsRequestBody(request.getMethod())) {
+            return result;
+        }
+        Object reusableBody = request.getBody();
+        return reusableBody instanceof String ? (String) reusableBody : result;
+    }
+    
+    private boolean supportsRequestBody(String method) {
+        return "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
+            || "PATCH".equalsIgnoreCase(method);
     }
     
     private String buildTargetUrl(String targetServer, HttpServletRequest request) {

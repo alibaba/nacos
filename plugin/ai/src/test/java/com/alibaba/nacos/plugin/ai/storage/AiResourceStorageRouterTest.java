@@ -19,14 +19,21 @@ package com.alibaba.nacos.plugin.ai.storage;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageChangeEvent;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageConsistencyMode;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorageChangeListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -88,9 +95,85 @@ class AiResourceStorageRouterTest {
         assertTrue(exception.getMessage().contains("disabled"));
     }
     
+    @Test
+    void testDefaultConsistencyAndListenerMethodsRemainCompatible() {
+        AiResourceStorage storage = new DefaultStorage();
+        AiResourceStorageChangeListener listener = event -> {
+        };
+        
+        assertEquals(AiResourceStorageConsistencyMode.EVENTUAL_WITHOUT_NOTIFICATION,
+            storage.consistencyMode());
+        assertDoesNotThrow(() -> storage.addChangeListener(listener));
+        assertDoesNotThrow(() -> storage.removeChangeListener(listener));
+    }
+    
+    @Test
+    void testListenerAttachesAfterStorageJoinAndCanBeRemoved() {
+        FakeStorage storage = new FakeStorage("first");
+        AtomicInteger events = new AtomicInteger();
+        AiResourceStorageChangeListener listener = event -> events.incrementAndGet();
+        AiResourceStorageRouter.join(storage);
+        
+        AiResourceStorageRouter.getInstance().addChangeListener(listener);
+        AiResourceStorageRouter.getInstance().addChangeListener(listener);
+        storage.fire();
+        AiResourceStorageRouter.getInstance().removeChangeListener(listener);
+        AiResourceStorageRouter.getInstance().removeChangeListener(listener);
+        storage.fire();
+        
+        assertEquals(1, events.get());
+        assertEquals(0, storage.listenerCount());
+    }
+    
+    @Test
+    void testListenerAttachesToSubsequentlyJoinedStorageAndResetDetachesIt() {
+        FakeStorage storage = new FakeStorage("later");
+        AtomicInteger events = new AtomicInteger();
+        AiResourceStorageChangeListener listener = event -> events.incrementAndGet();
+        AiResourceStorageRouter.getInstance().addChangeListener(listener);
+        AiResourceStorageRouter.getInstance().addChangeListener(null);
+        
+        assertTrue(AiResourceStorageRouter.join(storage));
+        storage.fire();
+        AiResourceStorageRouter.reset();
+        storage.fire();
+        
+        assertEquals(1, events.get());
+        assertEquals(0, storage.listenerCount());
+    }
+    
+    @Test
+    void testListenerProviderFailuresAreIsolated() {
+        ThrowingStorage storage = new ThrowingStorage("throwing");
+        AiResourceStorageChangeListener listener = event -> {
+        };
+        AiResourceStorageRouter.join(storage);
+        
+        storage.failAdd = true;
+        assertDoesNotThrow(
+            () -> AiResourceStorageRouter.getInstance().addChangeListener(listener));
+        storage.failAdd = false;
+        storage.failRemove = true;
+        assertDoesNotThrow(
+            () -> AiResourceStorageRouter.getInstance().removeChangeListener(listener));
+    }
+    
+    @Test
+    void testStorageChangeEventCarriesOpaqueRoutingHints() {
+        AiResourceStorageChangeEvent event =
+            new AiResourceStorageChangeEvent("provider", "agent", "opaque-key");
+        
+        assertEquals("provider", event.getProvider());
+        assertEquals("agent", event.getResourceType());
+        assertEquals("opaque-key", event.getNotificationKey());
+    }
+    
     private static class FakeStorage implements AiResourceStorage {
         
         private final String type;
+        
+        private final Set<AiResourceStorageChangeListener> listeners =
+            new LinkedHashSet<AiResourceStorageChangeListener>();
         
         private FakeStorage(String type) {
             this.type = type;
@@ -112,6 +195,81 @@ class AiResourceStorageRouterTest {
         
         @Override
         public void delete(StorageKey storageKey) {
+        }
+        
+        @Override
+        public void addChangeListener(AiResourceStorageChangeListener listener) {
+            listeners.add(listener);
+        }
+        
+        @Override
+        public void removeChangeListener(AiResourceStorageChangeListener listener) {
+            listeners.remove(listener);
+        }
+        
+        private void fire() {
+            for (AiResourceStorageChangeListener listener : new LinkedHashSet<AiResourceStorageChangeListener>(
+                listeners)) {
+                listener.onStorageChanged(
+                    new AiResourceStorageChangeEvent(type, "agent", "key"));
+            }
+        }
+        
+        private int listenerCount() {
+            return listeners.size();
+        }
+    }
+    
+    private static class DefaultStorage implements AiResourceStorage {
+        
+        @Override
+        public String type() {
+            return "default";
+        }
+        
+        @Override
+        public void save(StorageKey storageKey, byte[] content) {
+        }
+        
+        @Override
+        public byte[] get(StorageKey storageKey) {
+            return null;
+        }
+        
+        @Override
+        public void delete(StorageKey storageKey) {
+        }
+    }
+    
+    private static class ThrowingStorage extends DefaultStorage {
+        
+        private final String type;
+        
+        private boolean failAdd;
+        
+        private boolean failRemove;
+        
+        private ThrowingStorage(String type) {
+            this.type = type;
+        }
+        
+        @Override
+        public String type() {
+            return type;
+        }
+        
+        @Override
+        public void addChangeListener(AiResourceStorageChangeListener listener) {
+            if (failAdd) {
+                throw new IllegalStateException("add");
+            }
+        }
+        
+        @Override
+        public void removeChangeListener(AiResourceStorageChangeListener listener) {
+            if (failRemove) {
+                throw new IllegalStateException("remove");
+            }
         }
     }
 }
