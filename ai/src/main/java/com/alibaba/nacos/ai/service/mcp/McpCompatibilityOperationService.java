@@ -190,6 +190,14 @@ public class McpCompatibilityOperationService implements McpOperationService {
         Map<String, String> labels) throws NacosException {
         return managed().updateMcpServerLabels(namespaceId, mcpName, labels);
     }
+
+    /**
+     * Update MCP visibility scope after the managed lifecycle cutover.
+     */
+    public void updateScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        managed().updateScope(namespaceId, mcpName, scope);
+    }
     
     private McpOperationService current() throws NacosException {
         McpCompatibilityMode mode = modeResolver.resolve();

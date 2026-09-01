@@ -189,6 +189,8 @@ class McpCompatibilityOperationServiceTest {
             .thenReturn(summary);
         when(lifecycleService.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels))
             .thenReturn(labels);
+        org.mockito.Mockito.doNothing().when(lifecycleService)
+            .updateScope(NAMESPACE_ID, MCP_NAME, "PUBLIC");
         
         assertEquals(page,
             service.listMcpServerVersions(NAMESPACE_ID, MCP_NAME, "draft", 1, 10));
@@ -212,8 +214,10 @@ class McpCompatibilityOperationServiceTest {
         assertEquals(summary,
             service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(labels, service.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels));
+        service.updateScope(NAMESPACE_ID, MCP_NAME, "PUBLIC");
         
         verify(lifecycleService).deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
+        verify(lifecycleService).updateScope(NAMESPACE_ID, MCP_NAME, "PUBLIC");
         verifyNoInteractions(legacyService);
     }
     
@@ -223,6 +227,8 @@ class McpCompatibilityOperationServiceTest {
         
         assertThrows(NacosApiException.class,
             () -> service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> service.updateScope(NAMESPACE_ID, MCP_NAME, "PUBLIC"));
         
         verifyNoInteractions(legacyService, lifecycleService);
     }

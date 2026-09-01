@@ -911,6 +911,26 @@ class McpLifecycleOperationServiceTest {
         assertThrows(NacosException.class, () -> service.createMcpServerDraft(NAMESPACE_ID,
             server(VERSION_ONE, "duplicate"), null, null, null));
     }
+
+    @Test
+    void testUpdateScopeDelegatesToResourceManager() throws Exception {
+        AiResource existing = new AiResource();
+        existing.setNamespaceId(NAMESPACE_ID);
+        existing.setName(MCP_NAME);
+        existing.setType(AiResourceConstants.RESOURCE_TYPE_MCP);
+        existing.setMetaVersion(1L);
+        resource.set(existing);
+        when(resourcePersistService.updateScope(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, VisibilityConstants.SCOPE_PUBLIC))
+            .thenReturn(true);
+
+        service.updateScope(NAMESPACE_ID, MCP_NAME, VisibilityConstants.SCOPE_PUBLIC);
+
+        verify(resourcePersistService).updateScope(NAMESPACE_ID, MCP_NAME,
+            AiResourceConstants.RESOURCE_TYPE_MCP, VisibilityConstants.SCOPE_PUBLIC);
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
+    }
     
     @Test
     void testStandardDraftInsertFailureCanRetryWithoutWorkingPointer() throws Exception {

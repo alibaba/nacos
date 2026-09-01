@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
@@ -30,6 +31,10 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerCloneItem;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -46,7 +51,9 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.config.McpEndpointAccessValidator;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
 import com.alibaba.nacos.core.controller.compatibility.CompatibilityHelper;
@@ -54,23 +61,38 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.spec.McpClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE;
 import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
@@ -421,6 +443,287 @@ public class ConsoleMcpController {
         Map<String, String> labels = McpRequestUtil.parseMcpServerLabels(form.getLabels());
         return Result.success(mcpProxy.updateMcpServerLabels(form.getNamespaceId(),
             form.getMcpName(), labels));
+    }
+
+    /**
+     * Export the selected MCP servers as a JSON array of the legacy serving projection.
+     *
+     * <p>The projection is assembled by the lifecycle-backed operation service, so the exported
+     * file contains the selected current Version, optional tools/resources and endpoint data.</p>
+     *
+     * @param namespaceId namespace containing the MCP servers
+     * @param mcpNames selected server names, supplied repeatedly or as a comma-separated value
+     * @return downloadable JSON document
+     * @throws NacosException if a selected server cannot be read
+     */
+    @Since("3.3.0")
+    @GetMapping("/export")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public ResponseEntity<byte[]> exportMcpServers(
+        @RequestParam(value = "namespaceId", required = false) String namespaceId,
+        @RequestParam List<String> mcpNames)
+        throws NacosException {
+        namespaceId = StringUtils.isBlank(namespaceId) ? AiConstants.Mcp.MCP_DEFAULT_NAMESPACE
+            : namespaceId;
+        List<String> names = normalizeNames(mcpNames);
+        if (names.isEmpty()) {
+            throw invalidParameter("mcpNames");
+        }
+        List<McpServerDetailInfo> servers = new ArrayList<>(names.size());
+        for (String name : names) {
+            servers.add(requireSourceServer(namespaceId, name));
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentDisposition(ContentDisposition.attachment()
+            .filename("mcp-servers.json").build());
+        return new ResponseEntity<>(JacksonUtils.toJsonBytes(servers), headers, HttpStatus.OK);
+    }
+
+    /**
+     * Clone selected MCP servers using the lifecycle-backed draft and publish operations.
+     *
+     * <p>Clones use the current serving Version only. The default conflict policy is {@code
+     * ABORT}; {@code SKIP} and {@code OVERWRITE} are also supported. A missing target name keeps
+     * the source name, which matches the configuration clone API and allows callers to choose
+     * names explicitly when cloning within one namespace.</p>
+     *
+     * @param sourceNamespaceId source namespace
+     * @param targetNamespaceId target namespace, defaults to the source namespace
+     * @param cloneItems selected source and optional target names
+     * @param policy conflict policy
+     * @return clone counts and per-item status
+     * @throws NacosException if validation fails or the ABORT policy finds a conflict
+     */
+    @Since("3.3.0")
+    @PostMapping("/clone")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Map<String, Object>> cloneMcpServers(
+        @RequestParam(value = "namespaceId", required = false) String sourceNamespaceId,
+        @RequestParam(value = "targetNamespaceId", required = false) String targetNamespaceId,
+        @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy,
+        @RequestBody List<McpServerCloneItem> cloneItems) throws NacosException {
+        String sourceNamespace = StringUtils.isBlank(sourceNamespaceId)
+            ? AiConstants.Mcp.MCP_DEFAULT_NAMESPACE : sourceNamespaceId;
+        String targetNamespace = StringUtils.isBlank(targetNamespaceId)
+            ? sourceNamespace : targetNamespaceId;
+        List<McpServerCloneItem> items = cloneItems == null ? Collections.emptyList() : cloneItems;
+        SameConfigPolicy resolvedPolicy = policy == null ? SameConfigPolicy.ABORT : policy;
+        validateCloneItems(items);
+        Map<String, McpServerDetailInfo> sourceServers = new LinkedHashMap<>();
+        if (SameConfigPolicy.ABORT == resolvedPolicy) {
+            validateNoCloneConflicts(targetNamespace, items);
+            for (McpServerCloneItem item : items) {
+                String sourceName = item.getSourceName().trim();
+                if (!sourceServers.containsKey(sourceName)) {
+                    sourceServers.put(sourceName, requireSourceServer(sourceNamespace, sourceName));
+                }
+            }
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        List<Map<String, String>> results = new ArrayList<>(items.size());
+        int successCount = 0;
+        int skippedCount = 0;
+        int failedCount = 0;
+        for (McpServerCloneItem item : items) {
+            String sourceName = item.getSourceName().trim();
+            String targetName = resolveTargetName(item);
+            Map<String, String> itemResult = new LinkedHashMap<>();
+            itemResult.put("sourceName", sourceName);
+            itemResult.put("targetName", targetName);
+            try {
+                boolean targetExists = targetExists(targetNamespace, targetName);
+                if (targetExists
+                    && SameConfigPolicy.ABORT == resolvedPolicy) {
+                    throw new NacosException(NacosException.CONFLICT,
+                        "Target MCP server already exists: " + targetName);
+                }
+                if (targetExists
+                    && SameConfigPolicy.SKIP == resolvedPolicy) {
+                    itemResult.put("status", "SKIPPED");
+                    itemResult.put("message", "Target MCP server already exists");
+                    skippedCount++;
+                    results.add(itemResult);
+                    continue;
+                }
+                McpServerDetailInfo source = sourceServers.get(sourceName);
+                if (source == null) {
+                    source = requireSourceServer(sourceNamespace, sourceName);
+                }
+                McpServerVersionDetail sourceVersion = mcpProxy.getMcpServerVersion(sourceNamespace,
+                    sourceName, source.getVersion());
+                if (targetExists) {
+                    mcpProxy.deleteMcpServer(targetNamespace, targetName, null, null);
+                }
+                McpServerBasicInfo server = copyServerSpecification(source, targetNamespace,
+                    targetName);
+                McpServerVersionDetail created = mcpProxy.createMcpServerDraft(targetNamespace,
+                    server, source.getToolSpec(), source.getResourceSpec(),
+                    toEndpointSpecification(source));
+                mcpProxy.forcePublishMcpServerVersion(targetNamespace, targetName,
+                    created.getVersion());
+                if (sourceVersion != null && sourceVersion.getLabels() != null
+                    && !sourceVersion.getLabels().isEmpty()) {
+                    mcpProxy.updateMcpServerLabels(targetNamespace, targetName,
+                        sourceVersion.getLabels());
+                }
+                if (sourceVersion != null && !StringUtils.isBlank(sourceVersion.getScope())) {
+                    mcpProxy.updateMcpServerScope(targetNamespace, targetName,
+                        sourceVersion.getScope());
+                }
+                itemResult.put("status", "SUCCESS");
+                successCount++;
+            } catch (NacosException e) {
+                if (SameConfigPolicy.ABORT == resolvedPolicy) {
+                    throw e;
+                }
+                itemResult.put("status", "FAILED");
+                itemResult.put("message", e.getErrMsg());
+                failedCount++;
+            }
+            results.add(itemResult);
+        }
+        response.put("success", failedCount == 0);
+        response.put("totalCount", items.size());
+        response.put("successCount", successCount);
+        response.put("skippedCount", skippedCount);
+        response.put("failedCount", failedCount);
+        response.put("results", results);
+        return Result.success(response);
+    }
+
+    private List<String> normalizeNames(List<String> rawNames) {
+        List<String> result = new ArrayList<>();
+        if (rawNames == null) {
+            return result;
+        }
+        for (String rawName : rawNames) {
+            if (StringUtils.isBlank(rawName)) {
+                continue;
+            }
+            result.addAll(Arrays.stream(rawName.split(","))
+                .map(String::trim)
+                .filter(value -> !StringUtils.isBlank(value))
+                .distinct()
+                .toList());
+        }
+        return result.stream().distinct().toList();
+    }
+
+    private void validateCloneItems(List<McpServerCloneItem> cloneItems)
+        throws NacosApiException {
+        if (cloneItems.isEmpty()) {
+            throw invalidParameter("cloneItems");
+        }
+        for (McpServerCloneItem item : cloneItems) {
+            if (item == null || StringUtils.isBlank(item.getSourceName())) {
+                throw invalidParameter("cloneItems.sourceName");
+            }
+            if (item.getTargetName() != null && item.getTargetName().trim().isEmpty()) {
+                item.setTargetName(null);
+            }
+        }
+    }
+
+    private void validateNoCloneConflicts(String targetNamespace, List<McpServerCloneItem> items)
+        throws NacosException {
+        Set<String> targetNames = new HashSet<>();
+        for (McpServerCloneItem item : items) {
+            String targetName = resolveTargetName(item);
+            if (!targetNames.add(targetName)) {
+                throw new NacosException(NacosException.CONFLICT,
+                    "Duplicate target MCP server: " + targetName);
+            }
+            if (targetExists(targetNamespace, targetName)) {
+                throw new NacosException(NacosException.CONFLICT,
+                    "Target MCP server already exists: " + targetName);
+            }
+        }
+    }
+
+    private boolean targetExists(String namespaceId, String mcpName) throws NacosException {
+        try {
+            return mcpProxy.getMcpServer(namespaceId, mcpName, null, null) != null;
+        } catch (NacosException e) {
+            if (e.getErrCode() == NacosException.NOT_FOUND) {
+                return false;
+            }
+            throw e;
+        }
+    }
+
+    private McpServerDetailInfo requireSourceServer(String namespaceId, String mcpName)
+        throws NacosException {
+        McpServerDetailInfo source = mcpProxy.getMcpServer(namespaceId, mcpName, null, null);
+        if (source == null) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                "Source MCP server not found: " + mcpName);
+        }
+        return source;
+    }
+
+    private String resolveTargetName(McpServerCloneItem item) {
+        return StringUtils.isBlank(item.getTargetName()) ? item.getSourceName().trim()
+            : item.getTargetName().trim();
+    }
+
+    private McpServerBasicInfo copyServerSpecification(McpServerDetailInfo source,
+        String namespaceId, String targetName) {
+        McpServerBasicInfo result = new McpServerBasicInfo();
+        BeanUtils.copyProperties(source, result);
+        result.setId(null);
+        result.setName(targetName);
+        result.setNamespaceId(namespaceId);
+        return result;
+    }
+
+    private McpEndpointSpec toEndpointSpecification(McpServerDetailInfo source)
+        throws NacosException {
+        if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(source.getProtocol())) {
+            return null;
+        }
+        McpServerRemoteServiceConfig remote = source.getRemoteServerConfig();
+        if (remote == null || remote.getServiceRef() == null) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "MCP server has no backend endpoint specification: " + source.getName());
+        }
+        McpServiceRef serviceRef = remote.getServiceRef();
+        if (source.getVersion() != null
+            && Objects.equals(Constants.MCP_SERVER_ENDPOINT_GROUP, serviceRef.getGroupName())
+            && Objects.equals(source.getName() + "::" + source.getVersion(),
+                serviceRef.getServiceName())) {
+            List<McpEndpointInfo> endpoints = source.getBackendEndpoints();
+            if (endpoints == null || endpoints.isEmpty()) {
+                throw new NacosException(NacosException.INVALID_PARAM,
+                    "MCP direct endpoint has no registered instance: " + source.getName());
+            }
+            McpEndpointInfo endpoint = endpoints.get(0);
+            McpEndpointSpec result = new McpEndpointSpec();
+            result.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+            result.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, endpoint.getAddress());
+            result.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT,
+                String.valueOf(endpoint.getPort()));
+            result.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY,
+                StringUtils.isBlank(serviceRef.getTransportProtocol()) ? endpoint.getProtocol()
+                    : serviceRef.getTransportProtocol());
+            return result;
+        }
+        McpEndpointSpec result = new McpEndpointSpec();
+        result.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
+        result.getData().put(CommonParams.NAMESPACE_ID, serviceRef.getNamespaceId());
+        result.getData().put(CommonParams.GROUP_NAME, serviceRef.getGroupName());
+        result.getData().put(CommonParams.SERVICE_NAME, serviceRef.getServiceName());
+        if (!StringUtils.isBlank(serviceRef.getTransportProtocol())) {
+            result.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY,
+                serviceRef.getTransportProtocol());
+        }
+        return result;
+    }
+
+    private NacosApiException invalidParameter(String parameter) {
+        return new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+            "Required parameter '" + parameter + "' is not present");
     }
     
     /**

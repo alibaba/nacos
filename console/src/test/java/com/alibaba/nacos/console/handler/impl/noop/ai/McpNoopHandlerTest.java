@@ -95,6 +95,8 @@ class McpNoopHandlerTest {
             () -> mcpNoopHandler.offlineMcpServerVersion("ns", "name", "1.0.0"));
         assertThrows(NacosApiException.class,
             () -> mcpNoopHandler.updateMcpServerLabels("ns", "name", null));
+        assertThrows(NacosApiException.class,
+            () -> mcpNoopHandler.updateMcpServerScope("ns", "name", "PUBLIC"));
     }
     
     @Test
