@@ -80,6 +80,8 @@ class McpCompatibilityOperationServiceTest {
             .thenReturn(page);
         when(legacyService.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, "1.0.0"))
             .thenReturn(detail);
+        when(legacyService.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, "1.0.0"))
+            .thenReturn(detail);
         when(legacyService.createMcpServer(NAMESPACE_ID, server, tools, resources, endpoint))
             .thenReturn(MCP_ID);
         
@@ -87,6 +89,8 @@ class McpCompatibilityOperationServiceTest {
             service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME, "accurate", 1, 10));
         assertEquals(detail,
             service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, "1.0.0"));
+        assertEquals(detail,
+            service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(MCP_ID,
             service.createMcpServer(NAMESPACE_ID, server, tools, resources, endpoint));
         service.updateMcpServer(NAMESPACE_ID, true, server, tools, resources, endpoint, false);
@@ -111,12 +115,16 @@ class McpCompatibilityOperationServiceTest {
             .thenReturn(page);
         when(lifecycleService.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, null))
             .thenReturn(detail);
+        when(lifecycleService.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null))
+            .thenReturn(detail);
         when(lifecycleService.createMcpServer(NAMESPACE_ID, server, tools, resources, endpoint))
             .thenReturn(MCP_ID);
         
         assertEquals(page, service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME, "blur", 2, 20));
         assertEquals(detail,
             service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME, null));
+        assertEquals(detail,
+            service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null));
         assertEquals(MCP_ID,
             service.createMcpServer(NAMESPACE_ID, server, tools, resources, endpoint));
         service.updateMcpServer(NAMESPACE_ID, false, server, tools, resources, endpoint, true);
@@ -153,6 +161,8 @@ class McpCompatibilityOperationServiceTest {
         
         assertThrows(NacosApiException.class,
             () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null));
+        assertThrows(NacosApiException.class,
+            () -> service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null));
         verifyNoInteractions(legacyService, lifecycleService);
     }
     

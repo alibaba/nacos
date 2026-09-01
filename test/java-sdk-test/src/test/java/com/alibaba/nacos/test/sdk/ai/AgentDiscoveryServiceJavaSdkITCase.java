@@ -37,6 +37,13 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
@@ -58,6 +65,7 @@ import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.McpMaintainerService;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
@@ -1282,6 +1290,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Files.deleteIfExists(serverRestarted);
         
         AgentMaintainerService maintainer = createAgentMaintainerService();
+        McpMaintainerService mcpMaintainer = createMcpMaintainerService();
         AiService grpcService = createAiService();
         AiService httpService =
             createAiService(Constants.DEFAULT_NAMESPACE_ID, AiConstants.AI_TRANSPORT_MODE_HTTP);
@@ -1309,6 +1318,19 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("the asynchronous Search index exposes the Agent before restart",
             () -> agentName.equals(searchedAgentName(grpcService, agentName))
                 && agentName.equals(searchedAgentName(httpService, agentName)));
+
+        String mcpName = randomServiceName("mcp-real-reconnect");
+        String mcpId = httpService.releaseMcpServer(reconnectMcpServer(mcpName),
+            reconnectMcpTools(mcpName));
+        assertNotNull(mcpId);
+        addCleanup(() -> mcpMaintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName,
+            null, null));
+        int mcpEndpointPort = randomPort();
+        httpService.registerMcpServerEndpoint(mcpName, "127.0.0.1", mcpEndpointPort, VERSION);
+        addCleanup(() -> httpService.deregisterMcpServerEndpoint(mcpName, "127.0.0.1",
+            mcpEndpointPort));
+        waitUntilLong("HTTP MCP Endpoint should be visible before restart", () ->
+            containsMcpEndpoint(httpService.getMcpServer(mcpName, VERSION), mcpEndpointPort));
         
         RecordingAgentListener grpcLatestListener = new RecordingAgentListener();
         RecordingAgentListener httpLatestListener = new RecordingAgentListener();
@@ -1322,7 +1344,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForMarker(serverStopped, "external harness stops the standalone server");
         waitUntilLong("the same gRPC and HTTP SDKs observe connection unavailability",
             () -> searchUnavailable(grpcService, agentName)
-                && searchUnavailable(httpService, agentName));
+                && searchUnavailable(httpService, agentName)
+                && mcpUnavailable(httpService, mcpName));
         writeMarker(downObserved, agentName);
         waitForMarker(serverRestarted, "external harness restarts the standalone server");
         
@@ -1346,6 +1369,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                     && containsLegacyEndpoint(grpcService.getAgentCard(agentName, VERSION,
                         AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), legacyVersionOne);
             });
+        waitUntilLong("shared HTTP 50404 recovery should restore the MCP Endpoint", () ->
+            containsMcpEndpoint(httpService.getMcpServer(mcpName, VERSION), mcpEndpointPort));
         
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_2);
         waitUntilLong("the pre-registered legacy Version 2 Endpoint survives restart", () ->
@@ -2111,6 +2136,51 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         });
         return result;
     }
+
+    private McpMaintainerService createMcpMaintainerService() throws NacosException {
+        Properties properties = sdkProperties();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).mcp();
+    }
+
+    private McpServerBasicInfo reconnectMcpServer(String mcpName) {
+        McpServerBasicInfo result = new McpServerBasicInfo();
+        result.setName(mcpName);
+        result.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        result.setFrontProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        result.setDescription("MCP HTTP reconnect Java SDK IT");
+        result.setVersion(VERSION);
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(VERSION);
+        result.setVersionDetail(versionDetail);
+        McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
+        remoteConfig.setExportPath("/mcp");
+        remoteConfig.setFrontEndpointConfigList(Collections.emptyList());
+        result.setRemoteServerConfig(remoteConfig);
+        return result;
+    }
+
+    private McpToolSpecification reconnectMcpTools(String mcpName) {
+        McpTool tool = new McpTool();
+        tool.setName("tool_" + mcpName.replace('-', '_'));
+        tool.setDescription("MCP HTTP reconnect Java SDK IT tool");
+        tool.setInputSchema(Collections.singletonMap("type", "object"));
+        McpToolSpecification result = new McpToolSpecification();
+        result.setTools(Collections.singletonList(tool));
+        return result;
+    }
+
+    private boolean containsMcpEndpoint(McpServerDetailInfo detail, int port) {
+        if (detail == null || detail.getBackendEndpoints() == null) {
+            return false;
+        }
+        for (McpEndpointInfo endpoint : detail.getBackendEndpoints()) {
+            if ("127.0.0.1".equals(endpoint.getAddress()) && port == endpoint.getPort()) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     private AiService createAiService(String namespaceId, String transport) throws Exception {
         Properties properties = sdkProperties();
@@ -2517,6 +2587,15 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private boolean searchUnavailable(AiService service, String agentName) {
         try {
             searchOne(service, agentName);
+            return false;
+        } catch (NacosException e) {
+            return true;
+        }
+    }
+
+    private boolean mcpUnavailable(AiService service, String mcpName) {
+        try {
+            service.getMcpServer(mcpName, VERSION);
             return false;
         } catch (NacosException e) {
             return true;

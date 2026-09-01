@@ -277,7 +277,7 @@ type specs. The currently implemented compatibility methods include:
 | Capability | Methods | Contract |
 | --- | --- | --- |
 | MCP query | `getMcpServer` | Query MCP Server details by name and optional version. |
-| MCP release | `releaseMcpServer` | Create an MCP Server or release a new version. Existing same-version data remains idempotent. |
+| MCP release | `releaseMcpServer` | Create an MCP Server or release a new version. Existing overloads are direct-online and reject an existing exact Version; `createDraft=true` creates a lifecycle draft only. |
 | MCP endpoint | `registerMcpServerEndpoint`, `deregisterMcpServerEndpoint` | Register or remove endpoints owned by the current client. |
 | MCP subscription | `subscribeMcpServer`, `unsubscribeMcpServer` | Subscribe to MCP detail changes. |
 | A2A AgentCard query | `getAgentCard` | Query an AgentCard by name, optional version, and registration type. |
@@ -291,6 +291,21 @@ type specs. The currently implemented compatibility methods include:
 The Java implementation may mix gRPC, HTTP, and config assembly behind the
 interface. The public interface contract should stay independent from transport
 details.
+
+MCP and Agent protocol-neutral operations use the same `grpc`, `http`, or
+`auto` transport configuration. MCP reads may fall back from a selected gRPC
+transport only for connection-class failure. Persistent release never crosses
+transports after send. A Runtime Endpoint publication selects a sticky owner
+transport and keeps it for replacement, deregistration, heartbeat, and redo.
+The MCP polling cache depends on the transport-neutral query router rather than
+directly on the gRPC client.
+
+The HTTP implementation owns one stable client id per `NacosAiService` and one
+shared publication coordinator. Agent and MCP publication managers are
+participants with separate desired-state maps. The coordinator emits one
+heartbeat and, after `HTTP_CLIENT_NOT_FOUND`, marks every participant dirty
+before replaying them. This ordering prevents one domain from recreating the
+shared Client and hiding another domain's lost publication.
 
 ### 5.4 LockService
 

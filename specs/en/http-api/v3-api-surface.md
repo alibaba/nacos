@@ -75,7 +75,7 @@ guide, not as a final OpenAPI export.
 | `/v3/client/ai/prompt` | 2 | GET | Runtime prompt query and Search. |
 | `/v3/client/ai/skills` | 2 | GET | Runtime skill zip download and Search. |
 | `/v3/client/ai/agentspecs` | 2 | GET | Runtime AgentSpec get and search. |
-| `/v3/client/ai/mcp` | 1 | GET | Runtime MCP Search. |
+| `/v3/client/ai/mcp` | 6 | GET, POST, PUT, DELETE | MCP Search, serving query, compatibility release, Runtime Endpoint publication, and heartbeat. |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
@@ -306,9 +306,22 @@ through `AiResource.ext`, verifies a simultaneously supplied name, and enters
 the same name-based authorization and lifecycle service. Existing response ID
 fields remain wire-compatible.
 
-This target does not add MCP Client HTTP query, release, endpoint, heartbeat,
-or subscription paths. HTTP parity with the existing gRPC/Java Client surface
-is deferred to a separate design after lifecycle hosting is complete.
+The MCP Client HTTP binding uses `/v3/client/ai/mcp`:
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/v3/client/ai/mcp/search` | Existing current MCP Search facade. |
+| GET | `/v3/client/ai/mcp` | Query the latest published or one exact serving Version by `namespaceId + mcpName (+ version)`. |
+| POST | `/v3/client/ai/mcp` | Form release; omitted or false `createDraft` is direct-online, while true creates a lifecycle draft only. |
+| POST | `/v3/client/ai/mcp/endpoints` | Register the current HTTP Client's Runtime Endpoint using a literal IP address and a port in `1..65535`. |
+| DELETE | `/v3/client/ai/mcp/endpoints` | Deregister the current HTTP Client's matching Runtime Endpoint using the same validated identity. |
+| PUT | `/v3/client/ai/mcp/endpoints/heartbeat` | Refresh the shared AI HTTP Client and all of its Publishers. |
+
+All writes use form/query binding. `serverSpecification`, `toolSpecification`,
+`resourceSpecification`, and `endpointSpecification` are JSON string fields,
+not a JSON request body. Stateful Endpoint paths require the stable
+`X-Nacos-Client-Id` and `Request-Module: AI` headers. Query may carry the Client
+id to renew an existing Client only. No new top-level `mcpId` input is added.
 
 In an embedded or standalone Console process, the Console facade delegates to
 the same lifecycle application service as Admin. Console-only remote deployment

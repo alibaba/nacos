@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.McpEndpointOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpClientApplicationService;
+import com.alibaba.nacos.ai.service.mcp.McpCompatibilityOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -40,13 +43,21 @@ import static org.mockito.Mockito.when;
 class QueryMcpServerRequestHandlerTest {
     
     @Mock
-    private McpOperationService mcpServerOperationService;
+    private McpCompatibilityOperationService mcpServerOperationService;
+    
+    @Mock
+    private McpEndpointOperationService endpointOperationService;
+    
+    @Mock
+    private EphemeralClientOperationServiceImpl clientOperationService;
     
     QueryMcpServerRequestHandler requestHandler;
     
     @BeforeEach
     void setUp() {
-        requestHandler = new QueryMcpServerRequestHandler(mcpServerOperationService);
+        McpClientApplicationService applicationService = new McpClientApplicationService(
+            mcpServerOperationService, endpointOperationService, clientOperationService);
+        requestHandler = new QueryMcpServerRequestHandler(applicationService);
     }
     
     @AfterEach
@@ -76,7 +87,7 @@ class QueryMcpServerRequestHandlerTest {
     void handleMcpServerNotFoundWhenLifecycleLookupThrows() throws NacosException {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setMcpName("test");
-        when(mcpServerOperationService.getMcpServerDetail("public", null, "test", null))
+        when(mcpServerOperationService.getServingMcpServerDetail("public", "test", null))
             .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
                 ErrorCode.MCP_SERVER_NOT_FOUND, "MCP Resource not found"));
         QueryMcpServerResponse response = requestHandler.handle(request, null);
@@ -90,7 +101,7 @@ class QueryMcpServerRequestHandlerTest {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setMcpName("test");
         NacosException expected = new NacosException(NacosException.SERVER_ERROR, "failed");
-        when(mcpServerOperationService.getMcpServerDetail("public", null, "test", null))
+        when(mcpServerOperationService.getServingMcpServerDetail("public", "test", null))
             .thenThrow(expected);
         NacosException actual = assertThrows(NacosException.class,
             () -> requestHandler.handle(request, null));
@@ -102,7 +113,7 @@ class QueryMcpServerRequestHandlerTest {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setMcpName("test");
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServerDetail("public", null, "test", null))
+        when(mcpServerOperationService.getServingMcpServerDetail("public", "test", null))
             .thenReturn(
                 mcpServerDetailInfo);
         QueryMcpServerResponse response = requestHandler.handle(request, null);

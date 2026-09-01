@@ -245,6 +245,36 @@ Serving Manifest 中移除 Version，但保留内容和 Direct Service，以便�
 
 因此生命周期托管不能要求这些消费者仅为保持当前发现能力而协商新的 Nacos Ability 或发布新版本。
 
+### 5.1 Client HTTP Binding 与运行时所有权
+
+MCP Client 兼容契约同时提供 gRPC 和 Form HTTP Binding。HTTP Base Path 为
+`/v3/client/ai/mcp`，提供精确或 Latest Serving Query、兼容 Release、Runtime Endpoint
+注册/注销以及 Publisher Heartbeat。Release 的复杂字段是
+`application/x-www-form-urlencoded` 中的 JSON String；该 Binding 不增加 JSON Body
+契约或第二套 MCP 模型。
+
+现有 `releaseMcpServer` 调用继续保持 Direct-online。新增可选 `createDraft`，缺省为
+`false`；为 `true` 时 Release 只创建标准生命周期 Draft，不写 Serving Manifest，也不执行
+Submit、Review 或 Publish。Draft Release 只在达到 `LIFECYCLE_MANAGED` 后可用。gRPC
+Binding 发送 `createDraft=true` 前还必须协商 `SERVER_MCP_DRAFT_RELEASE`：旧的 JSON
+包装 Payload Handler 可能忽略未知字段并执行历史 Direct-online 写。Ability 缺失或 Unknown
+时必须在发送前失败，绝不能回退为 Direct-online。
+
+一个 Java `AiService` 实例为 Agent 与 MCP Runtime Publication 共用一个稳定的外部 HTTP
+Client Id。服务端把该 Id 一次性绑定到 Identity 和 Namespace，并映射到现有 Naming
+`HttpConnectionBasedClient`。Endpoint 写和任一 AI Heartbeat Path 都续约 Client 及其拥有的
+全部 Publisher。Query 可以续约已存在 Client，但不得创建 Client 或续约 Publisher 活性。
+
+MCP Runtime Endpoint 注册只接受 IPv4 或 IPv6 字面地址，端口范围为 `1..65535`。HTTP 与
+gRPC 在修改 Naming 状态前进入同一个 Application Service 校验，因此非法 Endpoint 不会在
+服务端留下部分注册状态。
+
+SDK 分别保存 Agent 与 MCP Desired Payload，但只调度一个共享 HTTP Heartbeat。
+`HTTP_CLIENT_NOT_FOUND` 表示该 HTTP Client 拥有的全部 Publication 都可能已经丢失：
+Coordinator 必须先把所有 Agent/MCP HTTP Publication 标记为 Dirty，再重放全部期望状态。
+MCP gRPC Publication 继续使用 Connection 维度 Redo。Publication 在首次发送时选定 Transport，
+后续替换、注销、Heartbeat 和 Redo 都保持该 Owner。
+
 ## 6. 生命周期与兼容 Facade
 
 ### 6.1 标准管理生命周期
@@ -553,10 +583,11 @@ Console 专用 `GET /v3/console/ai/mcp/importToolsFromMcp` Helper 保持现有�
 - Query、Release 或 Endpoint gRPC wire layout 和 field number；
 - Client Endpoint Register/Deregister、Subscription、Reconnect、Redo 或 Heartbeat；
 - 当前 Runtime ServiceName、Cluster 或 Metadata；
-- MCP Client HTTP API；
+- 本次修订已经发布的 MCP Client HTTP Wire Contract；
 - AI Registry Adaptor 响应形态。
 
-Client HTTP 与 gRPC 对齐以及复用 Agent HTTP Publisher 心跳/续约是后续独立工作。
+MCP Client HTTP Binding、Agent/MCP 共享 HTTP Publisher Heartbeat 以及传输无关的
+Java SDK 路由由 5.1 节定义。
 
 ## 11. Tool Schema 兼容
 
@@ -592,7 +623,6 @@ Implementation PR 至少覆盖：
 
 以下内容需要后续独立设计：
 
-- MCP Client HTTP Query、Release、Endpoint、Subscription 和 Heartbeat/Renewal 对齐；
 - Endpoint Kind 持久化和 Direct Endpoint 物化；
 - 历史 Manifest 或 Direct Service 的退役与版本协商；
 - 无 Version Runtime Publication、多 Transport Metadata 和 SemVer Range Binding；

@@ -196,12 +196,12 @@ Watch Hint 不携带业务数据。SDK 始终复用所选 Discover Transport 物
 写入超时后，只有 SDK 确定服务端未处理请求时才允许切换传输；结果未知的 gRPC 写入不得
 盲目通过 HTTP 重试。
 
-#### 2.2.1 Java SDK Agent Transport 模式
+#### 2.2.1 Java SDK AI Transport 模式
 
-Java SDK 使用 `nacosAiTransportMode` 配置通用 Agent/RAD 操作，公开取值为
+Java SDK 使用 `nacosAiTransportMode` 配置通用 Agent/RAD 和 MCP 操作，公开取值为
 `grpc`、`http` 和 `auto`，未设置时保持 `grpc`。取值大小写不敏感，但不接受首尾空白或
-未知值；非法值必须在创建 `AiService` 时返回参数错误。该配置只约束本节中的通用 Agent
-操作，不改变 MCP、旧 A2A、Prompt、Skill 或 AgentSpec 的既有传输契约。
+未知值；非法值必须在创建 `AiService` 时返回参数错误。该配置约束通用 Agent 和 MCP
+操作，不改变旧 A2A、Prompt、Skill 或 AgentSpec 的既有传输契约。
 
 - `grpc`：SDK 创建时同步执行初始 gRPC 连接；失败后持续异步重连，不切换到 HTTP；
 - `http`：通用 Agent 操作不启动初始 gRPC 连接。其他只支持 gRPC 的 AI 功能被调用时可按
@@ -210,18 +210,18 @@ Java SDK 使用 `nacosAiTransportMode` 配置通用 Agent/RAD 操作，公开取
   `SERVER_RAD_V1` 能力时优先使用 gRPC，否则当前调用立即使用 HTTP，不等待后台连接探测。
 
 `auto` 下，只有 gRPC 从未连接成功、状态持续为 `STARTING`、异步初始重连失败次数达到
-配置的 gRPC retry 次数，并且至少一个 Agent HTTP 操作已经成功时，Client 才暂停该初始
+配置的 gRPC retry 次数，并且至少一个 Agent 或 MCP HTTP 操作已经成功时，Client 才暂停该初始
 重连循环并稳定使用 HTTP。`UNHEALTHY` 表示曾经建立过连接，不适用此降级规则。若同一
-`AiService` 中其他功能明确需要 gRPC，Client 必须恢复并继续该连接的重试，但 Agent 路由可
+`AiService` 中其他功能明确需要 gRPC，Client 必须恢复并继续该连接的重试，但通用 AI 路由可
 继续保持已稳定的 HTTP 选择。
 
-Search 和 Discover 是只读操作；`auto` 中已选择 gRPC 后出现连接类失败，可以通过 HTTP
+Agent Search、Discover 和 MCP query 是只读操作；`auto` 中已选择 gRPC 后出现连接类失败，可以通过 HTTP
 重新读取。连接类失败仅包括 RPC connection 已断开、已注销、失败后连接已不再处于
 `RUNNING`，或底层 gRPC 返回
 `UNAVAILABLE`；通用 `SERVER_ERROR`、`BAD_GATEWAY`、Ability/Handler 不支持及其他服务端
 响应都不是传输不可用的证据，必须原样暴露给调用方。鉴权、参数、冲突、未找到和容量等确定
 业务错误同样不得触发 fallback。定义发布一旦交给某个传输就不得跨传输重放。Endpoint
-Publication 第一次发送时选择 owner transport，后续替换、注销、Heartbeat 和 Redo 在该
+Agent 或 MCP Endpoint Publication 第一次发送时选择 owner transport，后续替换、注销、Heartbeat 和 Redo 在该
 Publication 生命周期内始终使用同一 owner。
 
 本地 Watch Intent 与 Transport 无关，是 Listener/Cache 的唯一事实源。一个 Wire Watch
@@ -309,7 +309,7 @@ Endpoint 自然键。官方 SDK 的部分注销先更新本地期望 Batch，再
 
 ### 2.4 HTTP Publisher Identity 与活性
 
-Endpoint 写入和 Publisher heartbeat 必须携带：
+Agent 和 MCP Endpoint 写入及 Publisher heartbeat 必须携带：
 
 ```text
 X-Nacos-Client-Id: http-<ipToken>-<processToken>-<clientSequence>-<createTimestamp>
@@ -322,7 +322,7 @@ Request-Module: AI
 Server 和 redo 保持 id；进程重启生成新 id。它是路由身份，不是 credential。
 
 服务端将外部值包装为 `HTTP_CLIENT@@<externalClientId>` Naming 内部 Client id。
-Search 和 Discover 可以携带相同 Header；如果对应 Client 已存在，查询只刷新 Client 活性，
+Agent Search、Discover 和 MCP query 可以携带相同 Header；如果对应 Client 已存在，查询只刷新 Client 活性，
 不创建空 Client，也不修改该 Client 中任何 Publisher 的活性、健康或 revision。AI 模块自己的
 Distro Filter 根据该内部 id 把有状态请求路由到责任节点；它不扩展 Naming HTTP API 的
 Distro Filter。
@@ -359,6 +359,12 @@ type。`HttpConnectionBasedClientManager` 与现有 `ConnectionBasedClientManage
 首次有状态写入把 Client id 绑定到鉴权主体和 namespace，后续不匹配时拒绝。其他模块使用相同
 external Client id 时复用同一个 HTTP Client 生命周期。旧节点没有对应 Agent Client HTTP API
 能力；本规范不为 API 尚未可用的升级中集群定义兼容执行路径。
+
+官方 SDK 对同一个 `AiService` 拥有的 Agent 与 MCP HTTP Endpoint Publication 复用一个稳定的
+external Client id 和一个 heartbeat coordinator。各模块分别维护期望 Publication 状态和粘性的
+owner transport。Heartbeat 返回 HTTP Client 不存在时，coordinator 必须先把所有 Agent 与 MCP
+HTTP Publication 标记为 dirty，再开始任一模块的 redo，并使用同一 Client id 重建全部期望
+Publication。一个模块不能仅重建 Client 而掩盖另一个模块已经丢失的 Publication。
 
 ### 2.5 gRPC Payload 与能力位
 

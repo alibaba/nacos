@@ -211,7 +211,7 @@ AI payload 语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各资源
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
 | `QueryMcpServerRequest` | `QueryMcpServerResponse` | read | `namespace`, `mcpName`, `version` | 查询 MCP Server 详情。 |
-| `ReleaseMcpServerRequest` | `ReleaseMcpServerResponse` | write | `serverSpecification`, `toolSpecification`, `resourceSpecification`, `endpointSpecification` | 发布 MCP Server 或新版本。 |
+| `ReleaseMcpServerRequest` | `ReleaseMcpServerResponse` | write | `serverSpecification`, `toolSpecification`, `resourceSpecification`, `endpointSpecification`, `createDraft` | 发布 MCP Server 或创建生命周期 Draft。 |
 | `McpServerEndpointRequest` | `McpServerEndpointResponse` | write | `mcpName`, `address`, `port`, `version`, `type` | 注册或注销 MCP endpoint。 |
 | `QueryAgentCardRequest` | `QueryAgentCardResponse` | read | `namespace`, `agentName`, `version`, `registrationType` | 查询 A2A AgentCard 详情。 |
 | `ReleaseAgentCardRequest` | `ReleaseAgentCardResponse` | write | `agentCard`, `registrationType`, `setAsLatest` | 发布 AgentCard 或新版本。 |
@@ -221,13 +221,15 @@ AI payload 语义由 [AI Registry 规范](../ai/ai-registry-spec.md)和各资源
 
 MCP 管理迁移到通用 AI Resource 生命周期期间，现有三个 MCP Payload 继续作为兼容 Binding：
 
-- `ReleaseMcpServerRequest` 保持 Wire Shape 和 Direct-Online 行为。新的精确 Version
-  立即 Online；同 Version Conflict/Overwrite 行为只存在于该兼容 Facade。托管后的实现通过
-  MCP Storage 写入坐标不变的物理 Config 和 Manifest。
+- `ReleaseMcpServerRequest` 增加 Primitive Boolean `createDraft`；字段缺失或为 `false`
+  时保持 Direct-Online 行为。新的精确 Version 立即 Online；同 Version Conflict/Overwrite
+  行为只存在于该兼容 Facade。`true` 只创建标准生命周期 Draft，不写 Serving Manifest。
+  托管后的实现通过 MCP Storage 写入坐标不变的物理 Config。
 - `QueryMcpServerRequest` 保持 Wire Shape 和现有 Serving 投影。生命周期托管不修改
   Manifest、Config、Naming、Latest Version、frontend/backend 或 Endpoint 解析行为。
 - `McpServerEndpointRequest` 保持当前字段、按 Version 划分的 Naming 布局、Metadata、
-  Register/Deregister、Reconnect 和 Redo 行为。首期生命周期托管不增加
+  Register/Deregister、Reconnect 和 Redo 行为。`address` 为 IPv4 或 IPv6 字面地址，
+  `port` 范围为 `1..65535`；校验发生在 Naming 状态修改之前。首期生命周期托管不增加
   `supportedTransports`、`versionRange`、无 Version Service 或新的能力协商。
 
 MCP Request 继承的顶层 `AbstractMcpRequest.mcpId` 是 Ignored 且 Deprecated 的 Wire 字段。
@@ -235,6 +237,11 @@ MCP Request 继承的顶层 `AbstractMcpRequest.mcpId` 是 Ignored 且 Deprecate
 继续使用嵌套 Server Specification。任何 Handler 都不为顶层字段增加 ID 查询。当前 Client
 或响应契约实际使用的嵌套 `McpServerBasicInfo.id` 和
 `ReleaseMcpServerResponse.mcpId` 继续作为 Active Compatibility 字段。
+
+`createDraft=true` 必须由 Wire Key 为 `mcpDraftRelease` 的
+`SERVER_MCP_DRAFT_RELEASE` 控制。`NOT_SUPPORTED` 和 `UNKNOWN` 都在请求发送前失败，避免旧的
+JSON 包装 Payload Handler 忽略新 Boolean 后误执行 Direct-online Release。该 Ability 只表示
+选中节点理解字段；Handler 仍需检查动态 `LIFECYCLE_MANAGED` Cutover 状态。
 
 下列 Agent/RAD Payload 是 [Agent API 规范](../ai/agent-api-spec.md)确定的实验性目标。
 在 Runtime 中具备对应类、Handler、SPI 注册和协商能力位之前，它们不属于当前已实现

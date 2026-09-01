@@ -49,4 +49,10 @@ class ServerAbilitiesTest {
     void testSupportRadWatchV1Ability() {
         assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_RAD_WATCH_V1));
     }
+    
+    @Test
+    void testSupportMcpDraftReleaseAbility() {
+        assertTrue(ServerAbilities.getStaticAbilities()
+            .get(AbilityKey.SERVER_MCP_DRAFT_RELEASE));
+    }
 }

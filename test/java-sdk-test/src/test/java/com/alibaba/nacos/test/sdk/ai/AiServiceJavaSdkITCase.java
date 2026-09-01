@@ -40,6 +40,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.McpMaintainerService;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
@@ -205,6 +207,42 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 detail.toString());
         assertTrue(containsMcpEndpoint(detail, publishedPort, exportPath,
                 AiConstants.Mcp.MCP_PROTOCOL_SSE), detail.toString());
+    }
+
+    @Test
+    public void testMcpReleaseDraftChoiceOverGrpc() throws Exception {
+        AiService aiService = createAiService();
+        McpMaintainerService maintainer = createMcpMaintainerService();
+        String onlineName = randomServiceName("mcp-grpc-explicit-false");
+
+        String onlineId = aiService.releaseMcpServer(buildMcpServer(onlineName, "1.0.0"),
+                buildMcpToolSpecification(onlineName), buildMcpResourceSpecification(onlineName),
+                null, false);
+        assertNotNull(onlineId);
+        addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, onlineName,
+                null, null));
+        assertEquals("1.0.0",
+                aiService.getMcpServer(onlineName).getVersionDetail().getVersion());
+
+        String draftName = randomServiceName("mcp-grpc-draft");
+        try {
+            String draftId = aiService.releaseMcpServer(buildMcpServer(draftName, "1.0.0"),
+                    buildMcpToolSpecification(draftName),
+                    buildMcpResourceSpecification(draftName), null, true);
+            assertNotNull(draftId);
+            addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, draftName,
+                    null, null));
+            McpServerVersionDetail draft = maintainer.getMcpServerVersion(draftName, "1.0.0");
+            assertEquals("draft", draft.getStatus(), draft.toString());
+            NacosException notServing = assertThrows(NacosException.class,
+                    () -> aiService.getMcpServer(draftName, "1.0.0"));
+            assertEquals(NacosException.NOT_FOUND, notServing.getErrCode(),
+                    notServing.toString());
+        } catch (NacosException exception) {
+            assertEquals(NacosException.CONFLICT, exception.getErrCode(), exception.toString());
+            assertTrue(exception.getMessage().contains("LIFECYCLE_MANAGED cutover"),
+                    exception.toString());
+        }
     }
 
     @Test
@@ -720,6 +758,12 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Properties properties = sdkProperties();
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties).agent();
+    }
+
+    private McpMaintainerService createMcpMaintainerService() throws NacosException {
+        Properties properties = sdkProperties();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).mcp();
     }
 
     private void cleanupMcpServer(ConfigService configService, String mcpId, String version)

@@ -106,6 +106,17 @@ public class AgentGrpcTransport implements AgentTransport {
         return clientProxy;
     }
     
+    /**
+     * Acquire gRPC for a protocol-neutral Agent or MCP operation without pinning AUTO reconnect.
+     *
+     * @return initialized shared gRPC client
+     * @throws NacosException when transport initialization fails
+     */
+    public synchronized AiGrpcClient acquireProtocolNeutralClient() throws NacosException {
+        startIfNecessary();
+        return clientProxy;
+    }
+    
     private void startIfNecessary() throws NacosException {
         if (started) {
             return;
@@ -125,6 +136,19 @@ public class AgentGrpcTransport implements AgentTransport {
         }
         return mode == AgentTransportMode.AUTO && !autoHttpStable && clientProxy.isEnable()
             && clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1);
+    }
+    
+    /**
+     * Check whether AUTO may use the MCP gRPC contract.
+     *
+     * @return {@code true} when MCP gRPC is selected and negotiated
+     */
+    public synchronized boolean isMcpAvailable() {
+        if (mode == AgentTransportMode.GRPC) {
+            return true;
+        }
+        return mode == AgentTransportMode.AUTO && !autoHttpStable && clientProxy.isEnable()
+            && clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY);
     }
     
     /**

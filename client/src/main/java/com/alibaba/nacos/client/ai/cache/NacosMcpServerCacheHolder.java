@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.McpTransportRouter;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -48,7 +49,7 @@ public class NacosMcpServerCacheHolder implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosMcpServerCacheHolder.class);
     
-    private final AiGrpcClient aiGrpcClient;
+    private volatile McpQueryClient queryClient;
     
     private final Map<String, McpServerDetailInfo> mcpServerCache;
     
@@ -59,7 +60,18 @@ public class NacosMcpServerCacheHolder implements Closeable {
     private final Map<String, McpServerUpdater> updateTaskMap;
     
     public NacosMcpServerCacheHolder(AiGrpcClient aiGrpcClient, NacosClientProperties properties) {
-        this.aiGrpcClient = aiGrpcClient;
+        this(properties);
+        this.queryClient = new McpQueryClient() {
+            
+            @Override
+            public McpServerDetailInfo query(String mcpName, String version)
+                throws NacosException {
+                return aiGrpcClient.queryMcpServer(mcpName, version);
+            }
+        };
+    }
+    
+    public NacosMcpServerCacheHolder(NacosClientProperties properties) {
         this.mcpServerCache = new ConcurrentHashMap<>(4);
         this.updateTaskMap = new ConcurrentHashMap<>(4);
         this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
@@ -67,6 +79,22 @@ public class NacosMcpServerCacheHolder implements Closeable {
         this.updateIntervalMillis =
             properties.getLong(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL,
                 AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
+    }
+    
+    /**
+     * Install the protocol-neutral MCP query router after transport construction.
+     *
+     * @param transportRouter MCP transport router
+     */
+    public void setTransportRouter(McpTransportRouter transportRouter) {
+        this.queryClient = new McpQueryClient() {
+            
+            @Override
+            public McpServerDetailInfo query(String mcpName, String version)
+                throws NacosException {
+                return transportRouter.queryMcpServer(mcpName, version);
+            }
+        };
     }
     
     public McpServerDetailInfo getMcpServer(String mcpName, String version) {
@@ -169,7 +197,12 @@ public class NacosMcpServerCacheHolder implements Closeable {
                 return;
             }
             try {
-                McpServerDetailInfo detailInfo = aiGrpcClient.queryMcpServer(mcpName, version);
+                McpQueryClient client = queryClient;
+                if (client == null) {
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT,
+                        "MCP transport router is not ready.");
+                }
+                McpServerDetailInfo detailInfo = client.query(mcpName, version);
                 processMcpServerDetailInfo(detailInfo);
             } catch (Exception e) {
                 if (e instanceof NacosException) {
@@ -189,5 +222,10 @@ public class NacosMcpServerCacheHolder implements Closeable {
         public void cancel() {
             cancel.set(true);
         }
+    }
+    
+    private interface McpQueryClient {
+        
+        McpServerDetailInfo query(String mcpName, String version) throws NacosException;
     }
 }

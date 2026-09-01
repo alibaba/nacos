@@ -80,8 +80,11 @@ import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.AgentHttpTransport;
 import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
-import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
+import com.alibaba.nacos.client.ai.remote.McpGrpcTransport;
+import com.alibaba.nacos.client.ai.remote.McpHttpTransport;
+import com.alibaba.nacos.client.ai.remote.McpTransportRouter;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
+import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -131,6 +134,8 @@ public class NacosAiService implements AiService {
     
     private final AgentTransportRouter agentTransportRouter;
     
+    private final McpTransportRouter mcpTransportRouter;
+    
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
     
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
@@ -145,6 +150,10 @@ public class NacosAiService implements AiService {
     
     private final AgentEndpointPublicationManager agentEndpointPublicationManager;
     
+    private final McpEndpointPublicationManager mcpEndpointPublicationManager;
+    
+    private final AiHttpPublicationCoordinator httpPublicationCoordinator;
+    
     private final AiChangeNotifier aiChangeNotifier;
     
     private final AtomicBoolean shutdown = new AtomicBoolean();
@@ -156,11 +165,16 @@ public class NacosAiService implements AiService {
         AgentTransportMode transportMode = resolveAgentTransportMode(clientProperties);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
-        this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
+        this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.grpcTransport = new AgentGrpcTransport(transportMode, grpcClient,
             mcpServerCacheHolder, agentCardCacheHolder);
         this.httpTransport = new AgentHttpTransport(httpProxy);
+        McpGrpcTransport mcpGrpcTransport = new McpGrpcTransport(grpcTransport);
+        McpHttpTransport mcpHttpTransport = new McpHttpTransport(httpProxy);
+        this.mcpTransportRouter = new McpTransportRouter(grpcTransport, mcpGrpcTransport,
+            mcpHttpTransport);
+        this.mcpServerCacheHolder.setTransportRouter(mcpTransportRouter);
         if (transportMode == AgentTransportMode.HTTP) {
             LOGGER.info("Agent transport mode is HTTP; initial gRPC startup is disabled.");
             this.aiClientProxy = this.httpProxy;
@@ -179,11 +193,15 @@ public class NacosAiService implements AiService {
                     AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
                 new AgentWatchTransportRouter(transportMode, grpcClient, httpProxy,
                     AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
+        this.httpPublicationCoordinator = new AiHttpPublicationCoordinator();
         this.agentEndpointPublicationManager =
             new AgentEndpointPublicationManager(this.agentTransportRouter,
+                this.httpPublicationCoordinator,
                 resolvePositiveCapacity(clientProperties,
                     AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
                     AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS));
+        this.mcpEndpointPublicationManager = new McpEndpointPublicationManager(
+            this.mcpTransportRouter, this.httpPublicationCoordinator);
         this.grpcClient.setAgentEndpointPublicationCapacityRejectedHandler(
             new Consumer<AgentEndpointRegistrationBatch>() {
                 
@@ -253,7 +271,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter `mcpName` not present");
         }
-        return grpcTransport.requireGrpcClient().queryMcpServer(mcpName, version);
+        return mcpTransportRouter.queryMcpServer(mcpName, version);
     }
     
     @Override
@@ -261,7 +279,7 @@ public class NacosAiService implements AiService {
         McpToolSpecification toolSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
         return releaseMcpServer(serverSpecification, toolSpecification, null,
-            endpointSpecification);
+            endpointSpecification, false);
     }
     
     @Override
@@ -269,6 +287,15 @@ public class NacosAiService implements AiService {
         McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
         throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+            endpointSpecification, false);
+    }
+    
+    @Override
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
+        boolean createDraft) throws NacosException {
         if (null == serverSpecification) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter `serverSpecification` not present");
@@ -282,10 +309,8 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter `serverSpecification.versionDetail.version` not present");
         }
-        return grpcTransport.requireGrpcClient().releaseMcpServer(serverSpecification,
-            toolSpecification,
-            resourceSpecification,
-            endpointSpecification);
+        return mcpTransportRouter.releaseMcpServer(serverSpecification, toolSpecification,
+            resourceSpecification, endpointSpecification, createDraft);
     }
     
     @Override
@@ -299,8 +324,7 @@ public class NacosAiService implements AiService {
         instance.setIp(address);
         instance.setPort(port);
         instance.validate();
-        grpcTransport.requireGrpcClient()
-            .registerMcpServerEndpoint(mcpName, address, port, version);
+        mcpEndpointPublicationManager.register(mcpName, address, port, version);
     }
     
     @Override
@@ -314,8 +338,7 @@ public class NacosAiService implements AiService {
         instance.setIp(address);
         instance.setPort(port);
         instance.validate();
-        grpcTransport.requireGrpcClient()
-            .deregisterMcpServerEndpoint(mcpName, address, port);
+        mcpEndpointPublicationManager.deregister(mcpName, address, port);
     }
     
     @Override
@@ -331,8 +354,18 @@ public class NacosAiService implements AiService {
         }
         McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
         aiChangeNotifier.registerListener(mcpName, version, listenerInvoker);
-        McpServerDetailInfo result =
-            grpcTransport.requireGrpcClient().subscribeMcpServer(mcpName, version);
+        McpServerDetailInfo result = mcpServerCacheHolder.getMcpServer(mcpName, version);
+        if (result == null) {
+            try {
+                result = mcpTransportRouter.queryMcpServer(mcpName, version);
+                mcpServerCacheHolder.processMcpServerDetailInfo(result);
+            } catch (NacosException e) {
+                if (NacosException.NOT_FOUND != e.getErrCode()) {
+                    throw e;
+                }
+            }
+            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName, version);
+        }
         if (null != result && !listenerInvoker.isInvoked()) {
             listenerInvoker.invoke(new NacosMcpServerEvent(result));
         }
@@ -353,7 +386,7 @@ public class NacosAiService implements AiService {
         McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
         aiChangeNotifier.deregisterListener(mcpName, version, listenerInvoker);
         if (!aiChangeNotifier.isMcpServerSubscribed(mcpName, version)) {
-            grpcTransport.requireGrpcClient().unsubscribeMcpServer(mcpName, version);
+            mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName, version);
         }
     }
     
@@ -770,6 +803,8 @@ public class NacosAiService implements AiService {
         }
         this.agentDiscoveryCacheHolder.shutdown();
         this.agentEndpointPublicationManager.shutdown();
+        this.mcpEndpointPublicationManager.shutdown();
+        this.httpPublicationCoordinator.shutdown();
         this.mcpServerCacheHolder.shutdown();
         this.agentCardCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();

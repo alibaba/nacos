@@ -234,7 +234,7 @@ Agent 定义发布，且不得隐式创建定义。
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
 | MCP 查询 | `getMcpServer` | 按名称和可选版本查询 MCP Server 详情。 |
-| MCP 发布 | `releaseMcpServer` | 创建 MCP Server 或发布新版本。同版本已存在时保持幂等。 |
+| MCP 发布 | `releaseMcpServer` | 创建 MCP Server 或发布新版本。现有 Overload 保持 Direct-online；`createDraft=true` 只创建生命周期 Draft。 |
 | MCP endpoint | `registerMcpServerEndpoint`, `deregisterMcpServerEndpoint` | 注册或移除当前客户端拥有的 endpoint。 |
 | MCP 订阅 | `subscribeMcpServer`, `unsubscribeMcpServer` | 订阅 MCP 详情变化。 |
 | A2A AgentCard 查询 | `getAgentCard` | 按名称、可选版本和 registration type 查询 AgentCard。 |
@@ -247,6 +247,17 @@ Agent 定义发布，且不得隐式创建定义。
 
 当前 Java 实现在 interface 背后可以混合使用 gRPC、HTTP 和 config 组装。公开
 interface 契约应独立于具体传输方式保持稳定。
+
+MCP 与 Agent 的协议无关操作使用同一个 `grpc`、`http` 或 `auto` Transport 配置。MCP Read
+只有在选中的 gRPC 出现 Connection-class Failure 时才能 Fallback。持久 Release 一旦发送就不得
+跨 Transport。Runtime Endpoint Publication 选择 Sticky Owner Transport，并在替换、注销、
+Heartbeat 和 Redo 中保持该 Owner。MCP 轮询 Cache 依赖协议无关 Query Router，不再直接依赖
+gRPC Client。
+
+HTTP 实现为每个 `NacosAiService` 维护一个稳定 Client Id 和一个共享 Publication Coordinator。
+Agent 与 MCP Publication Manager 作为独立 Desired-state Participant。Coordinator 只发送一个
+Heartbeat；收到 `HTTP_CLIENT_NOT_FOUND` 后，必须先标记所有 Participant，再逐个重放。该顺序
+避免一个领域先重建共享 Client 后掩盖另一个领域已经丢失的 Publication。
 
 ### 5.4 LockService
 

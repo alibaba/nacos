@@ -53,6 +53,7 @@ The current server declares support for:
 | `SERVER_FUZZY_WATCH` | Config or Naming fuzzy watch is supported. |
 | `SERVER_DISTRIBUTED_LOCK` | Distributed Lock is supported. |
 | `SERVER_MCP_REGISTRY` | MCP registry operations are supported. |
+| `SERVER_MCP_DRAFT_RELEASE` | MCP release understands the `createDraft` field. |
 | `SERVER_AGENT_REGISTRY` | Legacy A2A Agent and AgentCard registry operations are supported. |
 | `SERVER_AGENT_CARD_V1` | A2A AgentCard 1.0 protocol fields are supported. |
 
@@ -78,6 +79,19 @@ the documented HTTP Watch or local Discover-polling fallback. Legacy
 `SERVER_AGENT_REGISTRY`, `SERVER_AGENT_CARD_V1`, and `SDK_AGENT_REGISTRY`
 continue to gate only the old A2A contract. They are not a fallback for any RAD
 operation.
+
+### 2.2 MCP Draft Release Ability
+
+| Mode | Constant | Wire key | Meaning |
+|---|---|---|---|
+| `SERVER` | `SERVER_MCP_DRAFT_RELEASE` | `mcpDraftRelease` | The selected server understands `ReleaseMcpServerRequest.createDraft` and will not reinterpret it as historical direct-online release. |
+
+The ability does not assert that cluster migration has reached
+`LIFECYCLE_MANAGED`; that remains a dynamic server-side precondition. A client
+sending `createDraft=true` requires `SUPPORTED` strictly. `NOT_SUPPORTED` and
+`UNKNOWN` both produce `SERVER_NOT_IMPLEMENTED` before send, with no fallback
+or replay. Historical release with the field absent or `false` continues to
+require only `SERVER_MCP_REGISTRY`.
 
 ## 3. gRPC Negotiation Flow
 
@@ -129,6 +143,7 @@ features:
 - Distributed Lock must require `SERVER_DISTRIBUTED_LOCK` because the feature is
   experimental and not universally available.
 - AI MCP registry operations must require `SERVER_MCP_REGISTRY`.
+- MCP draft release must additionally require `SERVER_MCP_DRAFT_RELEASE`.
 - Legacy A2A Agent and AgentCard operations must require
   `SERVER_AGENT_REGISTRY`.
 - A2A AgentCard 1.0 fields should require `SERVER_AGENT_CARD_V1` or use an
