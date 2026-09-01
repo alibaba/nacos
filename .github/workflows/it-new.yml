@@ -169,3 +169,11 @@ jobs:
         run: |
           mvn -B -pl test/openapi-test clean verify -Pintegration-test \
             -Dit.test=A2aMigrationAdminApiOpenApiITCase
+
+      - name: Run Historical A2A Migration Java SDK IT
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase \
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}"

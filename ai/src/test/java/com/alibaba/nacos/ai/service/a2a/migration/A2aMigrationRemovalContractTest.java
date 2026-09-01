@@ -67,6 +67,12 @@ class A2aMigrationRemovalContractTest {
         assertIntegrationPoint(repositoryRoot, inventory,
             "ai/src/main/java/com/alibaba/nacos/ai/service/agent/AgentOperationService.java");
         assertIntegrationPoint(repositoryRoot, inventory,
+            "ai/src/main/java/com/alibaba/nacos/ai/remote/handler/a2a/"
+                + "AgentEndpointRequestHandler.java");
+        assertIntegrationPoint(repositoryRoot, inventory,
+            "ai/src/main/java/com/alibaba/nacos/ai/remote/handler/a2a/"
+                + "BatchAgentEndpointRequestHandler.java");
+        assertIntegrationPoint(repositoryRoot, inventory,
             "core/src/main/java/com/alibaba/nacos/core/cluster/MemberMetaDataConstants.java");
     }
     

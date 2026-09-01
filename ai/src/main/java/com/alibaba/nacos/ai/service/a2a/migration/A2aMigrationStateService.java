@@ -139,6 +139,19 @@ public class A2aMigrationStateService
     }
     
     /**
+     * Return the frozen legacy Naming shadow policy from the current migration plan.
+     *
+     * <p>TODO(remove in 4.0): remove with the historical A2A Runtime migration router.</p>
+     *
+     * @return whether the current valid marker enables the exact-Version legacy shadow
+     */
+    public boolean isLegacyNamingShadowEnabled() {
+        VersionedValue<A2aMigrationMarker> marker = refreshMarker(false);
+        return marker != null && marker.getValue().isValid()
+            && marker.getValue().isLegacyNamingShadow();
+    }
+    
+    /**
      * Check all current members against the frozen AUTO migration policy.
      *
      * @param marker current valid migration marker

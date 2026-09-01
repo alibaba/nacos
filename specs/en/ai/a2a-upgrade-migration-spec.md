@@ -184,6 +184,11 @@ the same key back, and validates bytes, size, SHA-256 digest, and decoding. It
 then idempotently writes the Version row. The Resource row and derived Version
 catalog are written last, after every Version is complete.
 
+If a source-fence change or process failure leaves only Version-first rows, a later
+reconciliation may resume them only when they form an exact canonical subset of the current
+historical source. Extra rows, altered Storage descriptors, content differences, or metadata
+differences remain blocking conflicts.
+
 Storage consistency is handled as follows:
 
 | Provider consistency | Reconciliation behavior |

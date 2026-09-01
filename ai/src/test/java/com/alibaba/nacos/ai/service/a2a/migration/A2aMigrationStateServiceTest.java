@@ -84,6 +84,18 @@ class A2aMigrationStateServiceTest {
     }
     
     @Test
+    void shouldReadFrozenLegacyNamingShadowPolicy() {
+        assertFalse(service.isLegacyNamingShadowEnabled());
+        controlStore.marker = versioned(
+            A2aMigrationMarker.syncing("shadow", true, now.get()), "shadow-md5");
+        service = newService(false, A2aCompatibilityMode.AUTO);
+        assertTrue(service.isLegacyNamingShadowEnabled());
+        controlStore.marker.getValue().setUpdatedAt(0L);
+        service = newService(false, A2aCompatibilityMode.AUTO);
+        assertFalse(service.isLegacyNamingShadowEnabled());
+    }
+    
+    @Test
     void terminalMarkerShouldOverrideEveryModeAndLatchInProcess() {
         A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
         A2aMigrationMarker canonical = syncing.transition(A2aMigrationState.CANONICAL, "g",

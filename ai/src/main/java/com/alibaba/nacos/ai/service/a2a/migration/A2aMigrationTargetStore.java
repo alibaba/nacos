@@ -306,16 +306,21 @@ public class A2aMigrationTargetStore {
     
     private void preflightUnownedVersionRows(Map<String, AiResourceVersion> existing,
         PreparedTarget target) throws NacosException {
-        if (!target.versionRows.keySet().equals(existing.keySet())) {
-            if (!existing.isEmpty()) {
-                throw conflict("Unowned canonical Agent Version rows conflict with migration: "
-                    + target.agentName);
-            }
+        if (existing.isEmpty()) {
             return;
         }
+        // A source-fence change or process failure may leave the Version-first half of this
+        // migration without its Resource-last owner. Only an exact, canonical subset of the
+        // current historical source is safe to resume; extra or altered rows remain conflicts.
+        if (!target.versionRows.keySet().containsAll(existing.keySet())) {
+            throw conflict("Unowned canonical Agent Version rows conflict with migration: "
+                + target.agentName);
+        }
         for (Map.Entry<String, AiResourceVersion> entry : existing.entrySet()) {
+            AiResourceVersion expected = target.versionRows.get(entry.getKey());
             if (!equivalentVersionContent(entry.getValue(), target.prepared.get(entry.getKey()))
-                || !AiConstants.Agent.VERSION_STATUS_ONLINE.equals(entry.getValue().getStatus())) {
+                || !sameDescriptor(entry.getValue(), expected)
+                || !sameVersionMetadata(entry.getValue(), expected)) {
                 throw conflict("Unowned canonical Agent Version conflicts with migration: "
                     + target.agentName + '@' + entry.getKey());
             }

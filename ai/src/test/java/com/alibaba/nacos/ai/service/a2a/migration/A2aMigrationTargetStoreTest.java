@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -412,6 +413,25 @@ class A2aMigrationTargetStoreTest {
         storage.put(descriptor.getKey(), stored);
         assertThrows(NacosApiException.class,
             () -> targetStore.reconcile(definition("1.0.0", "1.0.0"), () -> true));
+    }
+    
+    @Test
+    void shouldResumeExactUnownedVersionSubsetAfterSourceFenceChange()
+        throws NacosException {
+        AtomicInteger checks = new AtomicInteger();
+        assertThrows(NacosException.class, () -> targetStore.reconcile(
+            definition("1.0.0", "1.0.0"), () -> checks.incrementAndGet() == 1));
+        assertNull(resourcePersistService.current());
+        assertEquals(Collections.singleton("1.0.0"), versionPersistService.rows.keySet());
+        
+        assertEquals(A2aMigrationTargetStore.Result.CREATED,
+            targetStore.reconcile(definition("2.0.0", "1.0.0", "2.0.0"), () -> true));
+        Map<?, ?> versionInfo = JacksonUtils.toObj(
+            resourcePersistService.current().getVersionInfo(), Map.class);
+        assertEquals("2.0.0", ((Map<?, ?>) versionInfo.get("labels"))
+            .get(AiResourceConstants.LABEL_LATEST));
+        assertEquals(new LinkedHashSet<String>(Arrays.asList("1.0.0", "2.0.0")),
+            versionPersistService.rows.keySet());
     }
     
     @Test

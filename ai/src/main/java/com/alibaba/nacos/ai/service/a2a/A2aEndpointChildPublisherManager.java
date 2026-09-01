@@ -1,0 +1,210 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.service.a2a;
+
+import com.alibaba.nacos.ai.remote.manager.AiConnectionBasedClientManager;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
+import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * Owns deterministic exact-Version A2A child publishers for one AI connection.
+ *
+ * <p>The canonical legacy-A2A adapter requires one child per exact Version so independent SDK
+ * redo identities cannot overwrite each other. Temporary upgrade migration layouts reuse the
+ * same lifecycle owner with a distinct layout token instead of duplicating connection cleanup.</p>
+ *
+ * @author Nacos
+ */
+@Component
+public class A2aEndpointChildPublisherManager extends ClientConnectionEventListener {
+    
+    public static final String CHILD_CLIENT_ID_PREFIX = "A2A_ENDPOINT_";
+    
+    private final AiConnectionBasedClientManager clientManager;
+    
+    private final ConcurrentMap<String, Set<String>> childClientIds =
+        new ConcurrentHashMap<String, Set<String>>();
+    
+    public A2aEndpointChildPublisherManager(AiConnectionBasedClientManager clientManager) {
+        this.clientManager = clientManager;
+    }
+    
+    /**
+     * Get or create one deterministic child bound to an active parent connection.
+     *
+     * @param parentClientId original AI connection id
+     * @param namespaceId namespace identifier
+     * @param agentName Agent name
+     * @param version exact Agent Version
+     * @param layout physical layout token
+     * @return child handle and whether this call created it
+     */
+    public ChildPublisher ensureChild(String parentClientId, String namespaceId,
+        String agentName, String version, String layout) {
+        if (StringUtils.isBlank(layout)) {
+            throw new IllegalArgumentException("A2A child publisher layout must not be empty");
+        }
+        requireParent(parentClientId);
+        String childClientId = childClientId(parentClientId, namespaceId, agentName, version,
+            layout);
+        boolean created = false;
+        if (!clientManager.contains(childClientId)) {
+            ClientAttributes attributes = new ClientAttributes();
+            attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
+                ClientConstants.DEFAULT_FACTORY);
+            created = clientManager.clientConnected(childClientId, attributes);
+        }
+        if (!clientManager.contains(childClientId)) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "Failed to create A2A child publisher for active AI connection");
+        }
+        childClientIds.computeIfAbsent(parentClientId,
+            key -> ConcurrentHashMap.newKeySet()).add(childClientId);
+        if (!clientManager.contains(parentClientId)) {
+            disconnectChild(parentClientId, childClientId);
+            throw disconnected(parentClientId);
+        }
+        return new ChildPublisher(childClientId, created);
+    }
+    
+    /**
+     * Find an existing deterministic child without creating it.
+     *
+     * @param parentClientId original AI connection id
+     * @param namespaceId namespace identifier
+     * @param agentName Agent name
+     * @param version exact Agent Version
+     * @param layout physical layout token
+     * @return child id, or {@code null} when no live child exists
+     */
+    public String findChild(String parentClientId, String namespaceId, String agentName,
+        String version, String layout) {
+        String childClientId = childClientId(parentClientId, namespaceId, agentName, version,
+            layout);
+        if (!clientManager.contains(childClientId)) {
+            removeChildId(parentClientId, childClientId);
+            return null;
+        }
+        return childClientId;
+    }
+    
+    /**
+     * Disconnect one child and remove its parent binding.
+     *
+     * @param parentClientId original AI connection id
+     * @param childClientId child publisher id
+     */
+    public void disconnectChild(String parentClientId, String childClientId) {
+        clientManager.clientDisconnected(childClientId);
+        removeChildId(parentClientId, childClientId);
+    }
+    
+    @Override
+    public void clientConnected(Connection connect) {
+    }
+    
+    @Override
+    public void clientDisConnected(Connection connect) {
+        if (!RemoteConstants.LABEL_MODULE_AI
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+            return;
+        }
+        Set<String> children = childClientIds.remove(connect.getMetaInfo().getConnectionId());
+        if (children == null) {
+            return;
+        }
+        for (String childClientId : children) {
+            clientManager.clientDisconnected(childClientId);
+        }
+    }
+    
+    int childCount(String parentClientId) {
+        Set<String> children = childClientIds.get(parentClientId);
+        return children == null ? 0 : children.size();
+    }
+    
+    private void requireParent(String parentClientId) {
+        if (!clientManager.contains(parentClientId)) {
+            throw disconnected(parentClientId);
+        }
+    }
+    
+    private NacosRuntimeException disconnected(String parentClientId) {
+        return new NacosRuntimeException(NacosException.CLIENT_DISCONNECT,
+            "AI client connection already disconnected: " + parentClientId);
+    }
+    
+    private void removeChildId(String parentClientId, String childClientId) {
+        Set<String> children = childClientIds.get(parentClientId);
+        if (children == null) {
+            return;
+        }
+        children.remove(childClientId);
+        if (children.isEmpty()) {
+            childClientIds.remove(parentClientId, children);
+        }
+    }
+    
+    private String childClientId(String parentClientId, String namespaceId, String agentName,
+        String version, String layout) {
+        String identity = component(parentClientId) + component(namespaceId)
+            + component(agentName) + component(version) + component(layout);
+        return CHILD_CLIENT_ID_PREFIX
+            + UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    private String component(String value) {
+        String normalized = value == null ? "" : value;
+        return normalized.length() + ":" + normalized;
+    }
+    
+    /**
+     * One resolved child publisher.
+     */
+    public static final class ChildPublisher {
+        
+        private final String clientId;
+        
+        private final boolean created;
+        
+        private ChildPublisher(String clientId, boolean created) {
+            this.clientId = clientId;
+            this.created = created;
+        }
+        
+        public String getClientId() {
+            return clientId;
+        }
+        
+        public boolean isCreated() {
+            return created;
+        }
+    }
+}

@@ -160,6 +160,10 @@ Reconciler 为每个 Version 准备标准 `AgentVersionContent`，通过当前 A
 再用同一 Key 读回并校验 Bytes、Size、SHA-256 Digest 和反序列化结果，随后幂等写 Version Row。
 只有全部 Version 完整后，最后写 Resource Row 和派生 Version Catalog。
 
+如果 Source Fence 变化或进程失败只留下 Version-first Row，后续对账只有在这些 Row 构成当前
+历史源的精确标准子集时才能续写；出现额外 Version、Storage Descriptor 被改动、内容差异或元数据
+差异时，仍必须记录阻断冲突。
+
 不同 Storage 一致性按以下方式处理：
 
 | Provider 一致性 | 对账行为 |

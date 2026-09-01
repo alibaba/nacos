@@ -19,11 +19,13 @@
 This document freezes the real-client, Runtime, redo, Watch, and cluster test
 plan for the
 [Historical A2A Upgrade Migration Spec](../../specs/en/ai/a2a-upgrade-migration-spec.md).
-Rows remain `Planned` until their executable test has run successfully.
+Rows remain `Planned` until their executable test has run successfully. U4
+standalone rows are now `Verified`; cluster cutover rows remain planned for
+U5/U6.
 
 ## Standalone Client Responsibilities
 
-The planned `A2aUpgradeMigrationJavaSdkITCase` uses public `A2aService`,
+The `A2aUpgradeMigrationJavaSdkITCase` uses public `A2aService`,
 `AiService`, `NamingService`, and both RAD Watch transports against an external
 standalone server. It complements the OpenAPI `M-ST-01..10` matrix by verifying:
 
@@ -40,6 +42,27 @@ standalone server. It complements the OpenAPI `M-ST-01..10` matrix by verifying:
 
 The opt-in restart scenario stops only the server process owned by its fixture,
 uses explicit bounded deadlines, and restores it in `finally`.
+
+## Standalone Runtime Migration Matrix
+
+| ID | Observable assertion | Commit | Status |
+| --- | --- | --- | --- |
+| `M-SDK-01` | In `AUTO/SYNCING`, an old A2A single Endpoint publication appears in both the historical exact-Version Naming service and canonical RAD Discover. | U4 | Verified |
+| `M-SDK-02` | A complete batch replacement updates both layouts atomically from the client's point of view; URI/path projection is equal in both reads. | U4 | Verified |
+| `M-SDK-03` | Exact Versions `1.0.0` and `2.0.0` use independent child publishers and remain independently discoverable and deregistrable. | U4 | Verified |
+| `M-SDK-04` | With a server soft watermark of three logical publications, dual physical materialization is charged once; the fourth publication is rejected with `OVER_THRESHOLD`, leaves no retry/redo state, and succeeds after one slot is released. | U4 | Verified |
+| `M-SDK-05` | Closing the publishing SDK connection removes both physical layouts; a fresh publisher can reuse the same logical identity. | U4 | Verified |
+| `M-SDK-06` | After a real standalone server stop and restart with the same data directory, the same live SDK process redoes two exact-Version publications into both layouts; later deregistration of one Version does not affect the other. | U4 | Verified |
+
+The default standalone run completed `M-SDK-01..05` with two executed tests
+and one opt-in restart test skipped. The separately controlled real-restart
+run completed `M-SDK-06` with the server unavailable for about one minute.
+Both runs used the release distribution and a publication soft watermark of
+three. During this run, rapid historical Version publication exposed a
+Version-first/Resource-last reconciliation race: an exact unowned canonical
+Version subset could be left before the source fence changed. U4 fixed the
+resume rule to accept only an exact canonical subset with no extra or altered
+row; conflicting content or metadata still blocks migration.
 
 ## Three-Member Directed Matrix
 
@@ -80,7 +103,8 @@ is idempotent and does not depend on one child publisher executing first.
 
 ## Completion Record
 
-U4 records successful standalone dual-publication, failure, reconnect, and redo
-evidence. U5 records quiescing and `M-CL-01..07`. U6 records both shadow plans,
-rollback boundaries, unrelated-resource regression, and the final complete
-suite before changing the relevant rows to `Verified`.
+U4 has recorded successful standalone dual-publication, capacity rejection,
+disconnect cleanup, reconnect, and redo evidence in `M-SDK-01..06`. U5 records
+quiescing and `M-CL-01..07`. U6 records both shadow plans, rollback boundaries,
+unrelated-resource regression, and the final complete suite before changing
+the remaining rows to `Verified`.

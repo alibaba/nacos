@@ -76,10 +76,13 @@ class CanonicalA2aEndpointOperationServiceTest {
     
     private CanonicalA2aEndpointOperationService service;
     
+    private A2aEndpointChildPublisherManager childPublisherManager;
+    
     @BeforeEach
     void setUp() {
-        service =
-            new CanonicalA2aEndpointOperationService(clientManager, clientOperationService);
+        childPublisherManager = new A2aEndpointChildPublisherManager(clientManager);
+        service = new CanonicalA2aEndpointOperationService(childPublisherManager,
+            clientOperationService);
     }
     
     @Test
@@ -149,7 +152,14 @@ class CanonicalA2aEndpointOperationServiceTest {
     }
     
     @Test
-    void shouldValidateBatchAndParentConnection() {
+    void shouldValidateBatchAndParentConnection() throws NacosException {
+        AgentEndpoint explicitProtocol = endpoint("1.0.0", "127.0.0.1", 8080, null, false);
+        explicitProtocol.setProtocol("grpc");
+        service.validate("public", "demo-agent", Collections.singletonList(explicitProtocol));
+        assertEquals("grpc",
+            service.toCanonicalInstance(explicitProtocol).getMetadata().get(
+                Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
+        
         assertThrows(NacosApiException.class,
             () -> service.register(PARENT_CLIENT_ID, "public", "demo-agent", null));
         assertThrows(NacosApiException.class,
@@ -212,11 +222,17 @@ class CanonicalA2aEndpointOperationServiceTest {
     
     @Test
     void shouldCleanChildWhenParentDisconnectsDuringCreation() {
-        AtomicBoolean firstParentCheck = new AtomicBoolean(true);
+        AtomicBoolean parentExists = new AtomicBoolean(true);
+        AtomicBoolean childExists = new AtomicBoolean(false);
         when(clientManager.contains(anyString())).thenAnswer(invocation -> {
             String clientId = invocation.getArgument(0);
-            return PARENT_CLIENT_ID.equals(clientId) && firstParentCheck.getAndSet(false);
+            return PARENT_CLIENT_ID.equals(clientId) ? parentExists.get() : childExists.get();
         });
+        doAnswer(invocation -> {
+            childExists.set(true);
+            parentExists.set(false);
+            return true;
+        }).when(clientManager).clientConnected(anyString(), any(ClientAttributes.class));
         
         assertThrows(NacosRuntimeException.class,
             () -> service.register(PARENT_CLIENT_ID, "public", "demo-agent",
@@ -232,24 +248,24 @@ class CanonicalA2aEndpointOperationServiceTest {
     @Test
     void shouldReleaseChildrenOnlyForDisconnectedAiConnections() throws NacosException {
         connectedClientState();
-        service.clientConnected(connection);
+        childPublisherManager.clientConnected(connection);
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
         when(connectionMeta.getConnectionId()).thenReturn(PARENT_CLIENT_ID);
         when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn("naming");
-        service.clientDisConnected(connection);
+        childPublisherManager.clientDisConnected(connection);
         verify(clientManager, never()).clientDisconnected(anyString());
         
         when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE))
             .thenReturn(RemoteConstants.LABEL_MODULE_AI);
-        service.clientDisConnected(connection);
+        childPublisherManager.clientDisConnected(connection);
         verify(clientManager, never()).clientDisconnected(anyString());
         
         service.register(PARENT_CLIENT_ID, "public", "demo-agent",
             Collections.singletonList(
                 endpoint("1.0.0", "127.0.0.1", 8080, "/rpc", false)));
-        service.clientDisConnected(connection);
+        childPublisherManager.clientDisConnected(connection);
         verify(clientManager).clientDisconnected(anyString());
-        service.clientDisConnected(connection);
+        childPublisherManager.clientDisConnected(connection);
         verify(clientManager).clientDisconnected(anyString());
     }
     

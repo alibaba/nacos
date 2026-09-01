@@ -30,6 +30,11 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Serializes Runtime Publication admission and replacement for one Naming Client.
  *
@@ -41,6 +46,9 @@ public class AgentRuntimePublicationCapacityGate {
     private final ClientManager clientManager;
     
     private final int maxPublicationsPerClient;
+    
+    private final ConcurrentMap<String, Map<String, Integer>> logicalPublications =
+        new ConcurrentHashMap<String, Map<String, Integer>>();
     
     @Autowired
     public AgentRuntimePublicationCapacityGate(ClientManagerDelegate clientManager) {
@@ -77,14 +85,126 @@ public class AgentRuntimePublicationCapacityGate {
         synchronized (client) {
             int existingPublicationCount =
                 countPublicationEntries(client.getInstancePublishInfo(service));
-            if (countAgentPublications(client) >= maxPublicationsPerClient
-                && requestedPublicationCount > existingPublicationCount) {
-                throw new NacosApiException(NacosException.OVER_THRESHOLD,
-                    ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
-                    "Agent Endpoint publication limit of " + maxPublicationsPerClient
-                        + " reached for this Client.");
-            }
+            ensureCapacity(client, countLogicalPublications(clientId),
+                existingPublicationCount, requestedPublicationCount);
             registration.run();
+        }
+    }
+    
+    /**
+     * Admit one logical Runtime publication materialized under internal child publishers.
+     *
+     * <p>The reservation is counted together with publications physically owned by the parent
+     * Client, but any number of implementation-only physical projections still consumes the
+     * requested logical count once.</p>
+     *
+     * @param clientId parent Client id
+     * @param publicationKey stable logical publication identity within the Client
+     * @param requestedPublicationCount number of Endpoint entries in the replacement batch
+     * @param registration validated primary registration operation
+     * @throws NacosException when capacity or the primary registration rejects the write
+     */
+    public void registerLogical(String clientId, String publicationKey,
+        int requestedPublicationCount, PublicationOperation registration)
+        throws NacosException {
+        validateLogicalArguments(publicationKey, requestedPublicationCount, registration);
+        Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            registration.run();
+            return;
+        }
+        synchronized (client) {
+            Map<String, Integer> reservations = logicalPublications.get(clientId);
+            int existingPublicationCount = reservations == null ? 0
+                : reservations.getOrDefault(publicationKey, 0);
+            ensureCapacity(client, countLogicalPublications(reservations),
+                existingPublicationCount, requestedPublicationCount);
+            registration.run();
+            logicalPublications.computeIfAbsent(clientId,
+                key -> new HashMap<String, Integer>()).put(publicationKey,
+                    requestedPublicationCount);
+        }
+    }
+    
+    /**
+     * Remove one logical Runtime reservation after its primary physical publication is removed.
+     *
+     * @param clientId parent Client id
+     * @param publicationKey stable logical publication identity within the Client
+     * @param deregistration primary deregistration operation
+     * @throws NacosException when the primary deregistration rejects the write
+     */
+    public void deregisterLogical(String clientId, String publicationKey,
+        PublicationOperation deregistration) throws NacosException {
+        validateLogicalArguments(publicationKey, 0, deregistration);
+        Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            deregistration.run();
+            clearLogicalPublication(clientId, publicationKey);
+            return;
+        }
+        synchronized (client) {
+            deregistration.run();
+            clearLogicalPublication(clientId, publicationKey);
+        }
+    }
+    
+    /**
+     * Release every logical reservation owned by a disconnected Client.
+     *
+     * @param clientId disconnected parent Client id
+     */
+    public void clearLogicalPublications(String clientId) {
+        logicalPublications.remove(clientId);
+    }
+    
+    int countLogicalPublicationsForTest(String clientId) {
+        return countLogicalPublications(clientId);
+    }
+    
+    private void ensureCapacity(Client client, int additionalPublicationCount,
+        int existingPublicationCount, int requestedPublicationCount) throws NacosApiException {
+        if (countAgentPublications(client) + additionalPublicationCount >= maxPublicationsPerClient
+            && requestedPublicationCount > existingPublicationCount) {
+            throw new NacosApiException(NacosException.OVER_THRESHOLD,
+                ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT,
+                "Agent Endpoint publication limit of " + maxPublicationsPerClient
+                    + " reached for this Client.");
+        }
+    }
+    
+    private void validateLogicalArguments(String publicationKey, int requestedPublicationCount,
+        PublicationOperation operation) {
+        if (publicationKey == null || publicationKey.isEmpty()
+            || requestedPublicationCount < 0 || operation == null) {
+            throw new IllegalArgumentException(
+                "Logical publication key, non-negative count, and operation are required");
+        }
+    }
+    
+    private int countLogicalPublications(String clientId) {
+        return countLogicalPublications(logicalPublications.get(clientId));
+    }
+    
+    private int countLogicalPublications(Map<String, Integer> reservations) {
+        if (reservations == null) {
+            return 0;
+        }
+        int result = 0;
+        for (Integer count : reservations.values()) {
+            result += count;
+        }
+        return result;
+    }
+    
+    private void clearLogicalPublication(String clientId, String publicationKey) {
+        Map<String, Integer> reservations = logicalPublications.get(clientId);
+        if (reservations == null) {
+            return;
+        }
+        reservations.remove(publicationKey);
+        if (reservations.isEmpty()) {
+            logicalPublications.remove(clientId, reservations);
         }
     }
     
@@ -110,5 +230,19 @@ public class AgentRuntimePublicationCapacityGate {
     private static int resolveMaxPublicationsPerClient() {
         return EnvUtil.getProperty(Constants.Agent.MAX_PUBLICATIONS_PER_CLIENT_CONFIG_KEY,
             Integer.class, Constants.Agent.DEFAULT_MAX_PUBLICATIONS_PER_CLIENT);
+    }
+    
+    /**
+     * One checked primary publication operation.
+     */
+    @FunctionalInterface
+    public interface PublicationOperation {
+        
+        /**
+         * Execute the operation.
+         *
+         * @throws NacosException when the primary publication fails
+         */
+        void run() throws NacosException;
     }
 }

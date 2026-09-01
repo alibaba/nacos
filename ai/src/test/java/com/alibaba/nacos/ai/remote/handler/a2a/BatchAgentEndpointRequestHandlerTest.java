@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,18 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityModeResolver;
 import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
-import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
+import com.alibaba.nacos.ai.service.a2a.LegacyA2aEndpointOperationService;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationEndpointRouter;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationState;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
-import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,15 +35,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -55,197 +46,123 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class BatchAgentEndpointRequestHandlerTest {
     
-    @Mock
-    private EphemeralClientOperationServiceImpl clientOperationService;
+    private static final String CLIENT_ID = "client-1";
+    
+    private static final String SOURCE_IP = "127.0.0.1";
     
     @Mock
-    private AgentIdCodecHolder agentIdCodecHolder;
+    private LegacyA2aEndpointOperationService legacyService;
     
     @Mock
     private A2aCompatibilityModeResolver compatibilityModeResolver;
     
     @Mock
-    private CanonicalA2aEndpointOperationService canonicalEndpointOperationService;
+    private CanonicalA2aEndpointOperationService canonicalService;
+    
+    @Mock
+    private A2aMigrationEndpointRouter migrationRouter;
     
     @Mock
     private RequestMeta meta;
     
-    private BatchAgentEndpointRequestHandler requestHandler;
-    
-    private List<Instance> capturedInstances;
+    private BatchAgentEndpointRequestHandler handler;
     
     @BeforeEach
     void setUp() {
-        requestHandler =
-            new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder,
-                compatibilityModeResolver, canonicalEndpointOperationService);
-        capturedInstances = null;
-    }
-    
-    @AfterEach
-    void tearDown() {
+        handler = new BatchAgentEndpointRequestHandler(legacyService,
+            compatibilityModeResolver, canonicalService, migrationRouter);
     }
     
     @Test
-    void handleWithInvalidAgentName() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+    void shouldRejectMissingBatchBeforeRouting() throws NacosException {
+        assertError(handler.handle(new BatchAgentEndpointRequest(), meta),
             "Required parameter `agentName` can't be empty or null");
-    }
-    
-    @Test
-    void handleWithNullEndpoints() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setAgentName("test");
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+        
+        BatchAgentEndpointRequest missing = new BatchAgentEndpointRequest();
+        missing.setAgentName("demo");
+        assertError(handler.handle(missing, meta),
             "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
-    }
-    
-    @Test
-    void handleWithEmptyEndpoints() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setAgentName("test");
-        request.setEndpoints(Arrays.asList());
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+        missing.setEndpoints(Collections.emptyList());
+        assertError(handler.handle(missing, meta),
             "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
+        verifyNoInteractions(migrationRouter, compatibilityModeResolver, legacyService,
+            canonicalService);
     }
     
     @Test
-    void handleWithEmptyEndpointVersion() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setAgentName("test");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("1.1.1.1");
-        endpoint.setPort(8080);
-        request.setEndpoints(Arrays.asList(endpoint));
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+    void shouldRejectNullEmptyAndMixedVersions() throws NacosException {
+        BatchAgentEndpointRequest request = request();
+        request.setEndpoints(Collections.singletonList(null));
+        assertError(handler.handle(request, meta),
             "Required parameter `endpoint.version` can't be empty or null.");
-    }
-    
-    @Test
-    void handleWithDifferentVersions() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setAgentName("test");
         
-        AgentEndpoint endpoint1 = new AgentEndpoint();
-        endpoint1.setAddress("1.1.1.1");
-        endpoint1.setPort(8080);
-        endpoint1.setVersion("1.0.0");
+        request.setEndpoints(Collections.singletonList(endpoint(null, 8080)));
+        assertError(handler.handle(request, meta),
+            "Required parameter `endpoint.version` can't be empty or null.");
         
-        AgentEndpoint endpoint2 = new AgentEndpoint();
-        endpoint2.setAddress("2.2.2.2");
-        endpoint2.setPort(9090);
-        endpoint2.setVersion("2.0.0");
-        
-        request.setEndpoints(Arrays.asList(endpoint1, endpoint2));
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
+        request.setEndpoints(Arrays.asList(endpoint("1.0.0", 8080),
+            endpoint("2.0.0", 8081)));
+        AgentEndpointResponse response = handler.handle(request, meta);
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
-        assertTrue(response.getMessage()
-            .startsWith(
-                "Required parameter `endpoint.version` can't be different, current includes:"));
-        assertTrue(response.getMessage().contains("1.0.0"));
-        assertTrue(response.getMessage().contains("2.0.0"));
+        assertTrue(response.getMessage().startsWith(
+            "Required parameter `endpoint.version` can't be different, current includes:"));
     }
     
     @Test
-    void handleForBatchRegisterEndpoint() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setAgentName("test");
-        request.setNamespaceId("public");
+    void shouldKeepStaticLegacyAndCanonicalPaths() throws NacosException {
+        prepareMeta();
+        BatchAgentEndpointRequest request = request();
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY,
+            A2aCompatibilityMode.CANONICAL);
         
-        AgentEndpoint endpoint1 = new AgentEndpoint();
-        endpoint1.setAddress("1.1.1.1");
-        endpoint1.setPort(8080);
-        endpoint1.setVersion("1.0.0");
-        endpoint1.setPath("/test1");
-        endpoint1.setTransport("JSONRPC");
-        endpoint1.setSupportTls(false);
-        endpoint1.setProtocol("HTTP");
-        endpoint1.setQuery("param1=value1");
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(legacyService).register(CLIENT_ID, "public", "demo", request.getEndpoints(),
+            SOURCE_IP);
         
-        AgentEndpoint endpoint2 = new AgentEndpoint();
-        endpoint2.setAddress("2.2.2.2");
-        endpoint2.setPort(9090);
-        endpoint2.setVersion("1.0.0");
-        endpoint2.setPath("/test2");
-        endpoint2.setTransport("GRPC");
-        endpoint2.setSupportTls(true);
-        endpoint2.setProtocol("HTTPS");
-        endpoint2.setQuery("param2=value2");
-        
-        Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint1, endpoint2);
-        request.setEndpoints(endpoints);
-        
-        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
-        when(agentIdCodecHolder.encode("test")).thenReturn("test");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        
-        // Mock the batchRegisterInstance method to capture the Instance list argument
-        doAnswer(invocation -> {
-            capturedInstances = invocation.getArgument(1);
-            for (Instance instance : capturedInstances) {
-                validateInstanceMetadata(instance);
-            }
-            return null;
-        }).when(clientOperationService)
-            .batchRegisterInstance(any(Service.class), any(List.class), eq("TEST_CONNECTION_ID"));
-        
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        
-        assertEquals(AiRemoteConstants.BATCH_REGISTER_ENDPOINT, response.getType());
-        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        verify(clientOperationService).batchRegisterInstance(any(Service.class), any(List.class),
-            eq("TEST_CONNECTION_ID"));
-        
-        // Verify captured instances
-        assertEquals(2, capturedInstances.size());
-        Instance instance1 = capturedInstances.get(0);
-        assertEquals("1.1.1.1", instance1.getIp());
-        assertEquals(8080, instance1.getPort());
-        
-        Instance instance2 = capturedInstances.get(1);
-        assertEquals("2.2.2.2", instance2.getIp());
-        assertEquals(9090, instance2.getPort());
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(canonicalService).register(CLIENT_ID, "public", "demo", request.getEndpoints());
     }
     
     @Test
-    void handleCanonicalBatchRegisterEndpoint() throws NacosException {
-        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
-        request.setNamespaceId("public");
-        request.setAgentName("test");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("127.0.0.1");
-        endpoint.setPort(8080);
-        endpoint.setVersion("1.0.0");
-        request.setEndpoints(Arrays.asList(endpoint));
-        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+    void shouldRouteMigrationBatchBeforeStaticMode() throws NacosException {
+        prepareMeta();
+        BatchAgentEndpointRequest request = request();
+        when(migrationRouter.resolveState()).thenReturn(A2aMigrationState.QUIESCING);
         
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
+        AgentEndpointResponse response = handler.handle(request, meta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        verify(canonicalEndpointOperationService).register("TEST_CONNECTION_ID", "public", "test",
-            request.getEndpoints());
-        verifyNoInteractions(clientOperationService, agentIdCodecHolder);
+        verify(migrationRouter).register(CLIENT_ID, "public", "demo", request.getEndpoints(),
+            SOURCE_IP, A2aMigrationState.QUIESCING);
+        verifyNoInteractions(compatibilityModeResolver, legacyService, canonicalService);
     }
     
-    private void assertErrorResponse(AgentEndpointResponse response, int code, String message) {
+    private void prepareMeta() {
+        when(meta.getConnectionId()).thenReturn(CLIENT_ID);
+        when(meta.getClientIp()).thenReturn(SOURCE_IP);
+    }
+    
+    private BatchAgentEndpointRequest request() {
+        BatchAgentEndpointRequest result = new BatchAgentEndpointRequest();
+        result.setNamespaceId("public");
+        result.setAgentName("demo");
+        result.setEndpoints(Arrays.asList(endpoint("1.0.0", 8080),
+            endpoint("1.0.0", 8081)));
+        return result;
+    }
+    
+    private AgentEndpoint endpoint(String version, int port) {
+        AgentEndpoint result = new AgentEndpoint();
+        result.setAddress("127.0.0.1");
+        result.setPort(port);
+        result.setVersion(version);
+        return result;
+    }
+    
+    private void assertError(AgentEndpointResponse response, String message) {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        assertEquals(code, response.getErrorCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         assertEquals(message, response.getMessage());
-    }
-    
-    private void validateInstanceMetadata(Instance instance) {
-        Map<String, String> metadata = instance.getMetadata();
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
     }
 }
