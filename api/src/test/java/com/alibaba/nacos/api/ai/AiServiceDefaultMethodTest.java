@@ -125,6 +125,19 @@ class AiServiceDefaultMethodTest {
     }
     
     @Test
+    void releaseMcpServerWithFalseDraftFlagPreservesLegacyDelegate() throws NacosException {
+        aiService.releaseMcpServer(new McpServerBasicInfo(), null, null, null, false);
+        assertTrue(invokeMark.get());
+    }
+    
+    @Test
+    void releaseMcpServerWithTrueDraftFlagRequiresImplementation() {
+        NacosException exception = assertThrows(NacosException.class,
+            () -> aiService.releaseMcpServer(new McpServerBasicInfo(), null, null, null, true));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+    }
+    
+    @Test
     void subscribeMcpServer() throws NacosException {
         aiService.subscribeMcpServer("", null);
     }

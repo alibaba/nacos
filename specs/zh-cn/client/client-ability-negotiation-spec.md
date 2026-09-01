@@ -51,6 +51,7 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 | `SERVER_FUZZY_WATCH` | 支持 Config 或 Naming fuzzy watch。 |
 | `SERVER_DISTRIBUTED_LOCK` | 支持分布式锁。 |
 | `SERVER_MCP_REGISTRY` | 支持 MCP registry 操作。 |
+| `SERVER_MCP_DRAFT_RELEASE` | MCP Release 能理解 `createDraft` 字段。 |
 | `SERVER_AGENT_REGISTRY` | 支持旧 A2A Agent 和 AgentCard registry 操作。 |
 | `SERVER_AGENT_CARD_V1` | 支持 A2A AgentCard 1.0 协议字段。 |
 
@@ -72,6 +73,17 @@ Ability name 在同一 mode 内必须唯一。Ability key 定义是连接两侧�
 文档说明的 HTTP Watch 或本地 Discover 轮询回退。旧 `SERVER_AGENT_REGISTRY`、
 `SERVER_AGENT_CARD_V1` 和 `SDK_AGENT_REGISTRY` 继续只控制旧 A2A 契约，不作为
 任何 RAD 操作的 fallback。
+
+### 2.2 MCP Draft Release 能力
+
+| Mode | 常量 | Wire key | 含义 |
+|---|---|---|---|
+| `SERVER` | `SERVER_MCP_DRAFT_RELEASE` | `mcpDraftRelease` | 选中的 Server 能理解 `ReleaseMcpServerRequest.createDraft`，不会把它重解释为历史 Direct-online Release。 |
+
+该 Ability 不表示集群迁移已经达到 `LIFECYCLE_MANAGED`；后者仍是服务端动态前置条件。
+Client 发送 `createDraft=true` 时必须严格要求 `SUPPORTED`。`NOT_SUPPORTED` 和 `UNKNOWN`
+都在发送前返回 `SERVER_NOT_IMPLEMENTED`，不得 Fallback 或 Replay。字段缺失或为 `false` 的
+历史 Release 继续只要求 `SERVER_MCP_REGISTRY`。
 
 ## 3. gRPC 协商流程
 
@@ -111,6 +123,7 @@ Unknown 不是成功。新功能应优先返回 fail-fast unsupported error，�
 - Config 和 Naming fuzzy watch 必须要求 `SERVER_FUZZY_WATCH`。
 - 分布式锁必须要求 `SERVER_DISTRIBUTED_LOCK`，因为该功能实验性且不保证所有服务端可用。
 - AI MCP registry 操作必须要求 `SERVER_MCP_REGISTRY`。
+- MCP Draft Release 还必须要求 `SERVER_MCP_DRAFT_RELEASE`。
 - 旧 A2A Agent 和 AgentCard 操作必须要求 `SERVER_AGENT_REGISTRY`。
 - A2A AgentCard 1.0 字段应要求 `SERVER_AGENT_CARD_V1`，或使用显式文档化的兼容转换。
 - RAD Definition Publication、Search/Discover 和 Runtime Endpoint Publication 必须要求

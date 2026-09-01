@@ -516,6 +516,34 @@ public class McpLifecycleOperationService implements McpOperationService {
             "MCP server not found: " + resource.getName());
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         AiResourceVersion selected = resolveVersion(lifecycle, version);
+        return buildMcpServerDetail(lifecycle, selected);
+    }
+    
+    /**
+     * Read one exact or latest online MCP Version for the Client serving API.
+     *
+     * <p>This intentionally does not use the compatibility-detail fallback to the highest stored
+     * Version. A Resource with only draft or offline Versions has no serving projection.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpServerName canonical MCP name
+     * @param version optional exact online Version
+     * @return serving MCP detail
+     * @throws NacosException when the Resource or serving Version is unavailable
+     */
+    public McpServerDetailInfo getServingMcpServerDetail(String namespaceId,
+        String mcpServerName, String version) throws NacosException {
+        AiResource resource = resourceLocator.locate(namespaceId, mcpServerName, null);
+        resourceManager.ensureReadableOrNotFound(resource,
+            "MCP server not found: " + resource.getName());
+        LifecycleResource lifecycle = requireLifecycleResource(resource);
+        AiResourceVersion selected = resolveServingVersion(lifecycle, version);
+        return buildMcpServerDetail(lifecycle, selected);
+    }
+    
+    private McpServerDetailInfo buildMcpServerDetail(LifecycleResource lifecycle,
+        AiResourceVersion selected) throws NacosException {
+        AiResource resource = lifecycle.resource;
         LoadedVersion loaded = loadVersion(lifecycle, selected);
         McpServerDetailInfo result = new McpServerDetailInfo();
         BeanUtils.copyProperties(loaded.server, result);
@@ -1338,6 +1366,17 @@ public class McpLifecycleOperationService implements McpOperationService {
         }
         AiResourceVersion result = findVersion(lifecycle.versions, selected);
         if (result == null) {
+            throw versionNotFound(lifecycle.mcpId, selected);
+        }
+        return result;
+    }
+    
+    private AiResourceVersion resolveServingVersion(LifecycleResource lifecycle, String version)
+        throws NacosException {
+        String selected = StringUtils.isBlank(version) ? lifecycle.latestVersion : version;
+        AiResourceVersion result = findVersion(lifecycle.versions, selected);
+        if (result == null || !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(
+            result.getStatus())) {
             throw versionNotFound(lifecycle.mcpId, selected);
         }
         return result;

@@ -57,6 +57,13 @@ public enum AbilityKey {
         AbilityMode.SERVER),
     
     /**
+     * For creating an MCP lifecycle draft through the Client release request.
+     */
+    SERVER_MCP_DRAFT_RELEASE("mcpDraftRelease",
+        "Server whether support creating an MCP lifecycle draft through Client release",
+        AbilityMode.SERVER),
+    
+    /**
      * For AI module Agent & Agent Card registry.
      */
     SERVER_AGENT_REGISTRY("agent",

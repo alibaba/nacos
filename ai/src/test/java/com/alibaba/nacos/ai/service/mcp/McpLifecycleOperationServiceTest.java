@@ -213,6 +213,10 @@ class McpLifecycleOperationServiceTest {
         McpServerDetailInfo detail = service.getMcpServerDetail(NAMESPACE_ID, MCP_ID, MCP_NAME,
             null);
         assertEquals(VERSION_ONE, detail.getVersion());
+        assertEquals(VERSION_ONE,
+            service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null).getVersion());
+        assertEquals(VERSION_ONE,
+            service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, VERSION_ONE).getVersion());
         assertNotNull(detail.getToolSpec());
         assertNotNull(detail.getResourceSpec());
         InOrder publishOrder = inOrder(resourcePersistService, versionPersistService,
@@ -868,6 +872,10 @@ class McpLifecycleOperationServiceTest {
         assertEquals(0, created.getOnlineCount());
         assertEquals(VERSION_ONE, versionInfo(resource.get()).getEditingVersion());
         assertNull(manifest.get());
+        assertThrows(NacosException.class,
+            () -> service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null));
+        assertThrows(NacosException.class,
+            () -> service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, VERSION_ONE));
         
         Page<McpServerVersionSummary> page = service.listMcpServerVersions(NAMESPACE_ID,
             MCP_NAME, AiResourceConstants.VERSION_STATUS_DRAFT, 1, 10);

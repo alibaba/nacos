@@ -234,15 +234,15 @@ Publisher. After a write timeout, an SDK may change transport only when it
 knows the server did not process the request. An unknown gRPC write result must
 not be blindly repeated through HTTP.
 
-#### 2.2.1 Java SDK Agent Transport Modes
+#### 2.2.1 Java SDK AI Transport Modes
 
-The Java SDK configures protocol-neutral Agent/RAD operations with
+The Java SDK configures protocol-neutral Agent/RAD and MCP operations with
 `nacosAiTransportMode`. Its public values are `grpc`, `http`, and `auto`, and
 the unset default remains `grpc`. Values are case-insensitive, but surrounding
 whitespace and unknown values are rejected while creating `AiService`. This
-property controls only the protocol-neutral Agent operations in this section;
-it does not change the existing transport contracts of MCP, legacy A2A,
-Prompt, Skill, or AgentSpec.
+property controls the protocol-neutral Agent and MCP operations; it does not
+change the existing transport contracts of legacy A2A, Prompt, Skill, or
+AgentSpec.
 
 - `grpc`: synchronously attempts the initial gRPC connection while creating the
   SDK and keeps reconnecting asynchronously after failure, without HTTP fallback;
@@ -254,17 +254,17 @@ Prompt, Skill, or AgentSpec.
   `SERVER_RAD_V1` ability is negotiated; otherwise that invocation uses HTTP
   immediately and never waits for a background probe.
 
-In `auto`, the client suspends the initial reconnect loop and settles Agent
-routing on HTTP only when gRPC has never connected, remains `STARTING`, reaches
+In `auto`, the client suspends the initial reconnect loop and settles
+protocol-neutral AI routing on HTTP only when gRPC has never connected, remains `STARTING`, reaches
 the configured gRPC retry count in failed asynchronous initial reconnects, and
-at least one Agent HTTP operation has succeeded. `UNHEALTHY` means that a
+at least one Agent or MCP HTTP operation has succeeded. `UNHEALTHY` means that a
 connection existed previously and is not eligible for this startup fallback.
 If another feature of the same `AiService` explicitly requires gRPC, the client
-resumes and keeps retrying that connection, while Agent routing may remain on
-its settled HTTP choice.
+resumes and keeps retrying that connection, while protocol-neutral routing may
+remain on its settled HTTP choice.
 
-Search and Discover are reads. In `auto`, a connection-class failure after
-selecting gRPC may be reread through HTTP. Definite business failures such as
+Agent Search and Discover and MCP query are reads. In `auto`, a connection-class
+failure after selecting gRPC may be reread through HTTP. Definite business failures such as
 authorization, validation, conflict, not-found, and capacity errors do not
 trigger fallback. A connection-class failure is limited to a disconnected or
 unregistered RPC connection, a connection that is no longer `RUNNING` after
@@ -272,7 +272,7 @@ the failed invocation, or an underlying gRPC `UNAVAILABLE` status.
 Generic `SERVER_ERROR`, `BAD_GATEWAY`, unsupported ability/handler errors, and
 other server responses are not transport evidence and must remain visible to
 the caller. Definition publication never crosses transports after it is handed
-to one transport. Endpoint Publication selects an owner transport on its first
+to one transport. Agent or MCP Endpoint Publication selects an owner transport on its first
 send and keeps that owner for replacement, deregistration, heartbeat, and redo
 throughout the Publication lifetime.
 
@@ -387,7 +387,7 @@ the `X-Nacos-Client-Id` or `Request-Module` headers used by Endpoint publishers.
 
 ### 2.4 HTTP Publisher Identity And Liveness
 
-Endpoint write and Publisher heartbeat requests require:
+Agent and MCP Endpoint write and Publisher heartbeat requests require:
 
 ```text
 X-Nacos-Client-Id: http-<ipToken>-<processToken>-<clientSequence>-<createTimestamp>
@@ -403,7 +403,7 @@ redo; a process restart creates a new id. It is routing identity, not a
 credential.
 
 The server wraps the external value as the Naming internal Client id
-`HTTP_CLIENT@@<externalClientId>`. Search and Discover may carry the same
+`HTTP_CLIENT@@<externalClientId>`. Agent Search and Discover and MCP query may carry the same
 header. When the Client already exists, a query renews only Client liveness. It
 does not create an empty Client or change any Publisher liveness, health, or
 revision. An AI-module Distro Filter routes stateful requests by that internal
@@ -450,6 +450,15 @@ namespace. Later mismatches are rejected. Another module using the same
 external Client id shares the same HTTP Client lifecycle. Old nodes have no
 corresponding Agent Client HTTP API capability; this spec defines no execution
 path for an upgrading cluster in which that API is not yet available.
+
+The official SDK uses one stable external Client id and one heartbeat
+coordinator for Agent and MCP HTTP Endpoint publications owned by the same
+`AiService`. Each module keeps its own desired Publication state and sticky
+owner transport. If a heartbeat reports that the HTTP Client is missing, the
+coordinator marks every Agent and MCP HTTP Publication dirty before it redoes
+either module, then recreates all expected Publications under the same Client
+id. One module must not recreate the Client and thereby hide lost Publications
+owned by the other module.
 
 ### 2.5 gRPC Payloads And Abilities
 

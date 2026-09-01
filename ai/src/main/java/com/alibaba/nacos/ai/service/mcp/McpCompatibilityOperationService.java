@@ -66,6 +66,29 @@ public class McpCompatibilityOperationService implements McpOperationService {
         return current().getMcpServerDetail(namespaceId, mcpServerId, mcpServerName, version);
     }
     
+    /**
+     * Read one exact or latest serving MCP Version for the Client API.
+     *
+     * <p>Before cutover, the historical serving projection remains authoritative. After cutover,
+     * only online lifecycle Versions are visible; drafts and offline Versions must not leak into
+     * Client discovery.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpServerName canonical MCP name
+     * @param version optional exact serving Version
+     * @return serving MCP detail
+     * @throws NacosException when the MCP Server or serving Version is unavailable
+     */
+    public McpServerDetailInfo getServingMcpServerDetail(String namespaceId,
+        String mcpServerName, String version) throws NacosException {
+        McpCompatibilityMode mode = modeResolver.resolve();
+        if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {
+            return legacyService.getMcpServerDetail(namespaceId, null, mcpServerName, version);
+        }
+        ensureManagedLifecycleSupported();
+        return lifecycleService.getServingMcpServerDetail(namespaceId, mcpServerName, version);
+    }
+    
     @Override
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
@@ -196,10 +219,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
         if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {
             return legacyService;
         }
-        if (!modeResolver.localMemberSupportsManagedLifecycle()) {
-            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "This Nacos member cannot process MCP lifecycle-managed requests");
-        }
+        ensureManagedLifecycleSupported();
         return lifecycleService;
     }
     
@@ -208,10 +228,14 @@ public class McpCompatibilityOperationService implements McpOperationService {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "MCP standard lifecycle APIs are unavailable before LIFECYCLE_MANAGED cutover");
         }
+        ensureManagedLifecycleSupported();
+        return lifecycleService;
+    }
+    
+    private void ensureManagedLifecycleSupported() throws NacosApiException {
         if (!modeResolver.localMemberSupportsManagedLifecycle()) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                 "This Nacos member cannot process MCP lifecycle-managed requests");
         }
-        return lifecycleService;
     }
 }

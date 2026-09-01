@@ -228,7 +228,7 @@ AI payload semantics are defined by the
 | Request type | Response type | Action | Main fields | Contract |
 | --- | --- | --- | --- | --- |
 | `QueryMcpServerRequest` | `QueryMcpServerResponse` | read | `namespace`, `mcpName`, `version` | Query MCP server detail. |
-| `ReleaseMcpServerRequest` | `ReleaseMcpServerResponse` | write | `serverSpecification`, `toolSpecification`, `resourceSpecification`, `endpointSpecification` | Release MCP server or a new version. |
+| `ReleaseMcpServerRequest` | `ReleaseMcpServerResponse` | write | `serverSpecification`, `toolSpecification`, `resourceSpecification`, `endpointSpecification`, `createDraft` | Release MCP server or create a lifecycle draft. |
 | `McpServerEndpointRequest` | `McpServerEndpointResponse` | write | `mcpName`, `address`, `port`, `version`, `type` | Register or deregister an MCP endpoint. |
 | `QueryAgentCardRequest` | `QueryAgentCardResponse` | read | `namespace`, `agentName`, `version`, `registrationType` | Query A2A AgentCard detail. |
 | `ReleaseAgentCardRequest` | `ReleaseAgentCardResponse` | write | `agentCard`, `registrationType`, `setAsLatest` | Release an AgentCard or a new version. |
@@ -239,16 +239,19 @@ AI payload semantics are defined by the
 The three existing MCP payloads remain compatibility bindings while MCP
 management moves to the common AI Resource lifecycle:
 
-- `ReleaseMcpServerRequest` keeps its wire shape and direct-online behavior. A
-  new exact Version becomes online immediately; same-Version conflict or
-  overwrite behavior remains isolated to this compatibility facade. Managed
-  implementations write the unchanged physical Config and Manifest coordinates
-  through MCP Storage.
+- `ReleaseMcpServerRequest` adds primitive boolean `createDraft`, whose absent
+  or `false` value keeps the direct-online behavior. A new exact Version becomes
+  online immediately; same-Version conflict or overwrite behavior remains
+  isolated to this compatibility facade. `true` creates only a standard
+  lifecycle draft and writes no serving Manifest. Managed implementations write
+  the unchanged physical Config coordinates through MCP Storage.
 - `QueryMcpServerRequest` keeps its wire shape and existing serving
   projection. Lifecycle hosting does not change its Manifest, Config, Naming,
   latest-Version, frontend/backend, or endpoint resolution behavior.
 - `McpServerEndpointRequest` keeps its current fields, version-scoped Naming
   layout, metadata, registration/deregistration, reconnect, and redo behavior.
+  `address` is a literal IPv4 or IPv6 address and `port` is in `1..65535`;
+  validation occurs before Naming mutation.
   The first lifecycle-hosting migration does not add `supportedTransports`,
   `versionRange`, a versionless Service, or a new ability negotiation.
 
@@ -259,6 +262,13 @@ continues using its nested Server specification. No handler adds ID lookup for
 the top-level field. Nested `McpServerBasicInfo.id` and
 `ReleaseMcpServerResponse.mcpId` remain active compatibility fields where the
 current Client or response contract uses them.
+
+`createDraft=true` is gated by `SERVER_MCP_DRAFT_RELEASE` with wire key
+`mcpDraftRelease`. Both `NOT_SUPPORTED` and `UNKNOWN` fail before sending the
+request. This strict gate prevents an older JSON-wrapped Payload handler from
+ignoring the new boolean and accidentally performing a direct-online release.
+The ability means only that the selected node understands the field; the
+handler still checks the dynamic `LIFECYCLE_MANAGED` cutover state.
 
 The following Agent/RAD payloads are the approved Experimental target defined
 by the [Agent API Spec](../ai/agent-api-spec.md). They are not part of the

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
-import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.ai.service.mcp.McpOperationService;
+import com.alibaba.nacos.ai.service.mcp.McpClientApplicationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
+import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
@@ -35,19 +33,19 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 /**
- * Nacos AI module query mcp request handler.
+ * gRPC binding for MCP Client query.
  *
- * @author xiweng.yy
+ * @author Nacos
  */
 @Since("3.0.3")
 @Component
 public class QueryMcpServerRequestHandler
     extends RequestHandler<QueryMcpServerRequest, QueryMcpServerResponse> {
     
-    private final McpOperationService mcpServerOperationService;
+    private final McpClientApplicationService applicationService;
     
-    public QueryMcpServerRequestHandler(McpOperationService mcpServerOperationService) {
-        this.mcpServerOperationService = mcpServerOperationService;
+    public QueryMcpServerRequestHandler(McpClientApplicationService applicationService) {
+        this.applicationService = applicationService;
     }
     
     @Override
@@ -57,40 +55,17 @@ public class QueryMcpServerRequestHandler
     public QueryMcpServerResponse handle(QueryMcpServerRequest request, RequestMeta meta)
         throws NacosException {
         McpRequestUtil.fillNamespaceId(request);
-        if (StringUtils.isBlank(request.getMcpName())) {
-            QueryMcpServerResponse errorResponse = new QueryMcpServerResponse();
-            errorResponse.setErrorInfo(NacosException.INVALID_PARAM,
-                "parameters `mcpName` can't be empty or null");
-            return errorResponse;
-        }
-        return doHandler(request, meta);
-    }
-    
-    private QueryMcpServerResponse doHandler(QueryMcpServerRequest request, RequestMeta meta)
-        throws NacosException {
         QueryMcpServerResponse response = new QueryMcpServerResponse();
-        McpServerDetailInfo detailInfo;
         try {
-            detailInfo = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
-                null, request.getMcpName(), request.getVersion());
-        } catch (NacosException exception) {
-            if (NacosException.NOT_FOUND != exception.getErrCode()) {
-                throw exception;
+            response.setMcpServerDetailInfo(applicationService.query(request.getNamespaceId(),
+                request.getMcpName(), request.getVersion()));
+        } catch (NacosException e) {
+            if (NacosException.NOT_FOUND != e.getErrCode()
+                && NacosException.INVALID_PARAM != e.getErrCode()) {
+                throw e;
             }
-            return buildNotFoundResponse(request, response);
+            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
         }
-        if (detailInfo == null) {
-            return buildNotFoundResponse(request, response);
-        }
-        response.setMcpServerDetailInfo(detailInfo);
-        return response;
-    }
-    
-    private QueryMcpServerResponse buildNotFoundResponse(QueryMcpServerRequest request,
-        QueryMcpServerResponse response) {
-        response.setErrorInfo(NacosException.NOT_FOUND,
-            String.format("MCP server `%s` not found in namespaceId: `%s`",
-                request.getMcpName(), request.getNamespaceId()));
         return response;
     }
 }

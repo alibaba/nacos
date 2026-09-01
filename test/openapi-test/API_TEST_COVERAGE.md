@@ -55,11 +55,11 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 
 | API surface | Scenario rows | Covered | Partial | Pending | Strict coverage | Effective coverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Client OpenAPI | 12 | 11 | 1 | 0 | 91.67% | 95.83% |
+| Client OpenAPI | 14 | 13 | 1 | 0 | 92.86% | 96.43% |
 | Admin API | 38 | 31 | 7 | 0 | 81.58% | 90.79% |
 | Console API | 29 | 24 | 5 | 0 | 82.76% | 91.38% |
 | Auth API | 4 | 0 | 2 | 2 | 0.00% | 25.00% |
-| Total | 83 | 66 | 15 | 2 | 79.52% | 88.55% |
+| Total | 85 | 68 | 15 | 2 | 80.00% | 88.82% |
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -235,6 +235,15 @@ Server Publication soft watermark, allowing the same row to prove whole-batch
 crossing, atomic growth rejection, and slot reuse without creating 100 test
 entries. The Client-only renewal and Publisher-renewal separation is covered by
 the corresponding lifecycle unit tests.
+
+MCP Client coverage adds direct-online-compatible and managed-draft release,
+latest/exact serving reads, and stateful REF Runtime Endpoint publication. The
+Endpoint scenario proves that Agent and MCP share one external HTTP Client
+identity: removing either module's publication leaves heartbeat renewal active
+while the other remains, and removing the final publication yields typed
+`HTTP_CLIENT_NOT_FOUND`. Long-lived expiration and replay are exercised by the
+Java SDK directed-restart scenario instead of mutating the shared OpenAPI IT
+server lifecycle.
 
 Protocol-neutral AI Resource Search coverage publishes one current online
 resource for each declared type (Agent, AgentSpec, Skill, Prompt, and MCP),

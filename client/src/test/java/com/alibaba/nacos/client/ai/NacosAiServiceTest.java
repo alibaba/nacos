@@ -70,6 +70,7 @@ import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.AgentHttpTransport;
 import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
+import com.alibaba.nacos.client.ai.remote.McpTransportRouter;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,6 +144,15 @@ class NacosAiServiceTest {
     
     @Mock
     private AgentTransportRouter agentTransportRouter;
+    
+    @Mock
+    private McpTransportRouter mcpTransportRouter;
+    
+    @Mock
+    private McpEndpointPublicationManager mcpEndpointPublicationManager;
+    
+    @Mock
+    private AiHttpPublicationCoordinator httpPublicationCoordinator;
     
     @Mock
     private AiChangeNotifier aiChangeNotifier;
@@ -260,7 +270,7 @@ class NacosAiServiceTest {
     @Test
     void getMcpServer() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
-        when(grpcClient.queryMcpServer("testMcpName", "1.0.0"))
+        when(mcpTransportRouter.queryMcpServer("testMcpName", "1.0.0"))
             .thenReturn(new McpServerDetailInfo());
         assertNotNull(nacosAiService.getMcpServer("testMcpName", "1.0.0"));
     }
@@ -279,8 +289,24 @@ class NacosAiServiceTest {
         serverSpecification.setVersionDetail(new ServerVersionDetail());
         serverSpecification.getVersionDetail().setVersion("1.0.0");
         String id = UUID.randomUUID().toString();
-        when(grpcClient.releaseMcpServer(serverSpecification, null, null, null)).thenReturn(id);
+        when(mcpTransportRouter.releaseMcpServer(serverSpecification, null, null, null, false))
+            .thenReturn(id);
         assertEquals(id, nacosAiService.releaseMcpServer(serverSpecification, null));
+        verify(mcpTransportRouter).releaseMcpServer(serverSpecification, null, null, null, false);
+    }
+    
+    @Test
+    void releaseMcpServerAsDraftRoutesExplicitFlag() throws Exception {
+        injectMocks();
+        McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
+        serverSpecification.setName("testMcpName");
+        serverSpecification.setVersionDetail(new ServerVersionDetail());
+        serverSpecification.getVersionDetail().setVersion("1.0.0");
+        when(mcpTransportRouter.releaseMcpServer(serverSpecification, null, null, null, true))
+            .thenReturn("mcp-id");
+        
+        assertEquals("mcp-id",
+            nacosAiService.releaseMcpServer(serverSpecification, null, null, null, true));
     }
     
     @Test
@@ -302,7 +328,8 @@ class NacosAiServiceTest {
         throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.registerMcpServerEndpoint("testMcpName", "1.1.1.1", 8848, "1.0.0");
-        verify(grpcClient).registerMcpServerEndpoint("testMcpName", "1.1.1.1", 8848, "1.0.0");
+        verify(mcpEndpointPublicationManager)
+            .register("testMcpName", "1.1.1.1", 8848, "1.0.0");
     }
     
     @Test
@@ -321,7 +348,7 @@ class NacosAiServiceTest {
         throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.deregisterMcpServerEndpoint("testMcpName", "1.1.1.1", 8848);
-        verify(grpcClient).deregisterMcpServerEndpoint("testMcpName", "1.1.1.1", 8848);
+        verify(mcpEndpointPublicationManager).deregister("testMcpName", "1.1.1.1", 8848);
     }
     
     @Test
@@ -340,9 +367,11 @@ class NacosAiServiceTest {
         AbstractNacosMcpServerListener listener =
             Mockito.mock(AbstractNacosMcpServerListener.class);
         McpServerDetailInfo expected = new McpServerDetailInfo();
-        when(grpcClient.subscribeMcpServer("testMcpName", null)).thenReturn(expected);
+        when(mcpTransportRouter.queryMcpServer("testMcpName", null)).thenReturn(expected);
         McpServerDetailInfo actual = nacosAiService.subscribeMcpServer("testMcpName", listener);
         assertEquals(expected, actual);
+        verify(mcpServerCacheHolder).processMcpServerDetailInfo(expected);
+        verify(mcpServerCacheHolder).addMcpServerUpdateTask("testMcpName", null);
         verify(aiChangeNotifier).registerListener(eq("testMcpName"), isNull(),
             any(McpServerListenerInvoker.class));
         verify(listener).onEvent(any(NacosMcpServerEvent.class));
@@ -364,7 +393,7 @@ class NacosAiServiceTest {
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
         verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(),
             any(McpServerListenerInvoker.class));
-        verify(grpcClient).unsubscribeMcpServer("testMcpName", null);
+        verify(mcpServerCacheHolder).removeMcpServerUpdateTask("testMcpName", null);
     }
     
     @Test
@@ -377,7 +406,7 @@ class NacosAiServiceTest {
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
         verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(),
             any(McpServerListenerInvoker.class));
-        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
+        verify(mcpServerCacheHolder, never()).removeMcpServerUpdateTask("testMcpName", null);
     }
     
     @Test
@@ -387,7 +416,7 @@ class NacosAiServiceTest {
         nacosAiService.unsubscribeMcpServer("testMcpName", null);
         verify(aiChangeNotifier, never()).deregisterListener(eq("testMcpName"), isNull(),
             any(McpServerListenerInvoker.class));
-        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
+        verify(mcpServerCacheHolder, never()).removeMcpServerUpdateTask("testMcpName", null);
     }
     
     @Test
@@ -936,6 +965,8 @@ class NacosAiServiceTest {
         verify(httpProxy).shutdown();
         verify(agentDiscoveryCacheHolder).shutdown();
         verify(agentEndpointPublicationManager).shutdown();
+        verify(mcpEndpointPublicationManager).shutdown();
+        verify(httpPublicationCoordinator).shutdown();
         verify(mcpServerCacheHolder).shutdown();
         verify(agentCardCacheHolder).shutdown();
         verify(promptCacheHolder).shutdown();
@@ -1129,6 +1160,9 @@ class NacosAiServiceTest {
         field = NacosAiService.class.getDeclaredField("agentTransportRouter");
         field.setAccessible(true);
         field.set(nacosAiService, agentTransportRouter);
+        field = NacosAiService.class.getDeclaredField("mcpTransportRouter");
+        field.setAccessible(true);
+        field.set(nacosAiService, mcpTransportRouter);
         field = NacosAiService.class.getDeclaredField("mcpServerCacheHolder");
         field.setAccessible(true);
         NacosMcpServerCacheHolder autoBuildCacheHolder =
@@ -1164,6 +1198,16 @@ class NacosAiServiceTest {
         AgentEndpointPublicationManager autoBuildPublicationManager =
             (AgentEndpointPublicationManager) field.get(nacosAiService);
         field.set(nacosAiService, agentEndpointPublicationManager);
+        field = NacosAiService.class.getDeclaredField("mcpEndpointPublicationManager");
+        field.setAccessible(true);
+        McpEndpointPublicationManager autoBuildMcpPublicationManager =
+            (McpEndpointPublicationManager) field.get(nacosAiService);
+        field.set(nacosAiService, mcpEndpointPublicationManager);
+        field = NacosAiService.class.getDeclaredField("httpPublicationCoordinator");
+        field.setAccessible(true);
+        AiHttpPublicationCoordinator autoBuildHttpPublicationCoordinator =
+            (AiHttpPublicationCoordinator) field.get(nacosAiService);
+        field.set(nacosAiService, httpPublicationCoordinator);
         field = NacosAiService.class.getDeclaredField("aiChangeNotifier");
         field.setAccessible(true);
         field.set(nacosAiService, aiChangeNotifier);
@@ -1177,6 +1221,8 @@ class NacosAiServiceTest {
             autoBuildSkillCacheHolder.shutdown();
             autoBuildDiscoveryCacheHolder.shutdown();
             autoBuildPublicationManager.shutdown();
+            autoBuildMcpPublicationManager.shutdown();
+            autoBuildHttpPublicationCoordinator.shutdown();
         } catch (NacosException ignored) {
         }
     }

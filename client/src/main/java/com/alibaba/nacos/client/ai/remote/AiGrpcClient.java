@@ -486,7 +486,7 @@ public class AiGrpcClient implements AiClientProxy {
         McpToolSpecification toolSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
         return releaseMcpServer(serverSpecification, toolSpecification, null,
-            endpointSpecification);
+            endpointSpecification, false);
     }
     
     /**
@@ -503,9 +503,32 @@ public class AiGrpcClient implements AiClientProxy {
         McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
         throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+            endpointSpecification, false);
+    }
+    
+    /**
+     * Release one MCP Version with an explicit lifecycle-draft choice.
+     *
+     * @param serverSpecification MCP Server specification
+     * @param toolSpecification optional Tool specification
+     * @param resourceSpecification optional Resource specification
+     * @param endpointSpecification optional Endpoint specification
+     * @param createDraft whether to create only a standard lifecycle draft
+     * @return internal MCP id
+     * @throws NacosException when ability negotiation or release fails
+     */
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
+        boolean createDraft) throws NacosException {
         LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
             serverSpecification.getVersionDetail().getVersion());
         checkServerAbilityOrThrow(AbilityKey.SERVER_MCP_REGISTRY, "mcp registry");
+        if (createDraft) {
+            checkServerAbilityStrict(AbilityKey.SERVER_MCP_DRAFT_RELEASE,
+                "MCP lifecycle draft release");
+        }
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(serverSpecification.getName());
@@ -513,6 +536,7 @@ public class AiGrpcClient implements AiClientProxy {
         request.setToolSpecification(toolSpecification);
         request.setResourceSpecification(resourceSpecification);
         request.setEndpointSpecification(endpointSpecification);
+        request.setCreateDraft(createDraft);
         ReleaseMcpServerResponse response =
             requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();

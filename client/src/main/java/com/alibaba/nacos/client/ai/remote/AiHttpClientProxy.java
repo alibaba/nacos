@@ -20,6 +20,11 @@ import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
@@ -108,6 +113,12 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     
     private static final String AGENT_ENDPOINT_HEARTBEAT_PATH =
         AGENT_ENDPOINT_PATH + "/heartbeat";
+    
+    private static final String MCP_CLIENT_PATH = "/v3/client/ai/mcp";
+    
+    private static final String MCP_ENDPOINT_PATH = MCP_CLIENT_PATH + "/endpoints";
+    
+    private static final String MCP_ENDPOINT_HEARTBEAT_PATH = MCP_ENDPOINT_PATH + "/heartbeat";
     
     private static final String HTTP_CLIENT_ID_HEADER = "X-Nacos-Client-Id";
     
@@ -270,6 +281,96 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     @Override
     public ClientLivenessInfo heartbeatAgentEndpoints() throws NacosException {
         String response = requestAgentApi(AGENT_ENDPOINT_HEARTBEAT_PATH, AgentHttpMethod.PUT,
+            Collections.<QueryParameter>emptyList(), Collections.<String, String>emptyMap(),
+            buildAgentResource(null));
+        Result<ClientLivenessInfo> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<ClientLivenessInfo>>() {
+            });
+        return requireSuccess(result);
+    }
+    
+    /**
+     * Query one exact or latest serving MCP Version over HTTP.
+     */
+    public McpServerDetailInfo queryMcpServer(String mcpName, String version)
+        throws NacosException {
+        List<QueryParameter> parameters = new ArrayList<QueryParameter>();
+        addParameter(parameters, "namespaceId", namespaceId);
+        addParameter(parameters, "mcpName", mcpName);
+        addParameter(parameters, "version", version);
+        String response = requestAgentApi(MCP_CLIENT_PATH, AgentHttpMethod.GET, parameters,
+            Collections.<String, String>emptyMap(), buildAgentResource(mcpName));
+        Result<McpServerDetailInfo> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<McpServerDetailInfo>>() {
+            });
+        return requireSuccess(result);
+    }
+    
+    /**
+     * Release one MCP Version over HTTP without cross-server replay.
+     */
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+        McpToolSpecification toolSpecification,
+        McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
+        boolean createDraft) throws NacosException {
+        Map<String, String> form = new HashMap<String, String>();
+        form.put("namespaceId", namespaceId);
+        form.put("mcpName", serverSpecification.getName());
+        form.put("serverSpecification", JsonUtils.toJson(serverSpecification));
+        putJson(form, "toolSpecification", toolSpecification);
+        putJson(form, "resourceSpecification", resourceSpecification);
+        putJson(form, "endpointSpecification", endpointSpecification);
+        form.put("createDraft", String.valueOf(createDraft));
+        String response = requestAgentApi(MCP_CLIENT_PATH, AgentHttpMethod.POST,
+            Collections.<QueryParameter>emptyList(), form,
+            buildAgentResource(serverSpecification.getName()), false);
+        Result<String> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<String>>() {
+            });
+        return requireSuccess(result);
+    }
+    
+    /**
+     * Register one MCP Runtime Endpoint under this proxy's stable HTTP Client id.
+     */
+    public ClientLivenessInfo registerMcpServerEndpoint(String mcpName, String address, int port,
+        String version) throws NacosException {
+        Map<String, String> form = new HashMap<String, String>();
+        form.put("namespaceId", namespaceId);
+        form.put("mcpName", mcpName);
+        form.put("address", address);
+        form.put("port", String.valueOf(port));
+        putOptional(form, "version", version);
+        String response = requestAgentApi(MCP_ENDPOINT_PATH, AgentHttpMethod.POST,
+            Collections.<QueryParameter>emptyList(), form, buildAgentResource(mcpName));
+        Result<ClientLivenessInfo> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<ClientLivenessInfo>>() {
+            });
+        return requireSuccess(result);
+    }
+    
+    /**
+     * Deregister one MCP Runtime Endpoint owned by this proxy's HTTP Client id.
+     */
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+        throws NacosException {
+        Map<String, String> form = new HashMap<String, String>();
+        form.put("namespaceId", namespaceId);
+        form.put("mcpName", mcpName);
+        form.put("address", address);
+        form.put("port", String.valueOf(port));
+        String response = requestAgentApi(MCP_ENDPOINT_PATH, AgentHttpMethod.DELETE,
+            Collections.<QueryParameter>emptyList(), form, buildAgentResource(mcpName));
+        Result<Void> result = JsonUtils.toObj(response, new NacosTypeReference<Result<Void>>() {
+        });
+        requireSuccess(result);
+    }
+    
+    /**
+     * Heartbeat the shared HTTP Client through the MCP path.
+     */
+    public ClientLivenessInfo heartbeatMcpServerEndpoints() throws NacosException {
+        String response = requestAgentApi(MCP_ENDPOINT_HEARTBEAT_PATH, AgentHttpMethod.PUT,
             Collections.<QueryParameter>emptyList(), Collections.<String, String>emptyMap(),
             buildAgentResource(null));
         Result<ClientLivenessInfo> result = JsonUtils.toObj(response,
@@ -468,13 +569,20 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     private String requestAgentApi(String api, AgentHttpMethod method,
         List<QueryParameter> parameters, Map<String, String> form, RequestResource resource)
         throws NacosException {
+        return requestAgentApi(api, method, parameters, form, resource, true);
+    }
+    
+    private String requestAgentApi(String api, AgentHttpMethod method,
+        List<QueryParameter> parameters, Map<String, String> form, RequestResource resource,
+        boolean replaySafe) throws NacosException {
         List<String> servers = serverListManager.getServerList();
         if (servers.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         NacosException exception = new NacosException();
         int index = ThreadLocalRandom.current().nextInt(servers.size());
-        for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
+        int attempts = replaySafe ? Math.max(servers.size(), MAX_RETRY) : 1;
+        for (int i = 0; i < attempts; i++) {
             String server = servers.get(index % servers.size());
             try {
                 return callAgentServer(api, method, parameters, form, server, resource);
@@ -626,7 +734,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     private <T> T requireSuccess(Result<T> result) throws NacosException {
         if (result == null || result.getCode() == null) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                "Agent API returned an invalid response.");
+                "AI API returned an invalid response.");
         }
         if (!ErrorCode.SUCCESS.getCode().equals(result.getCode())) {
             throw new NacosException(result.getCode(), result.getMessage());

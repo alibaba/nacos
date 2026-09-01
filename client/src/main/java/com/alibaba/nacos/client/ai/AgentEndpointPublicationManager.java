@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.ai;
 
-import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
@@ -29,7 +28,6 @@ import com.alibaba.nacos.client.ai.remote.AgentTransportType;
 import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import org.slf4j.Logger;
 
@@ -40,9 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Stores complete Agent Endpoint publication intent and owns HTTP heartbeat/redo.
@@ -52,52 +47,63 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Nacos
  */
-class AgentEndpointPublicationManager implements Closeable {
+class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationParticipant {
     
     private static final Logger LOGGER =
         LogUtils.logger(AgentEndpointPublicationManager.class);
     
     private final AgentTransportRouter transportRouter;
     
-    private final ScheduledExecutorService executor;
+    private final AiHttpPublicationCoordinator coordinator;
+    
+    private final boolean ownsCoordinator;
     
     private final int maxPublications;
     
     private final Map<PublicationKey, PublicationState> publications =
         new HashMap<PublicationKey, PublicationState>();
     
-    private long heartbeatIntervalMillis = AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL;
-    
-    private ScheduledFuture<?> maintenanceFuture;
-    
     private boolean closed;
     
     AgentEndpointPublicationManager(AgentTransportRouter transportRouter) {
-        this(transportRouter,
-            AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS);
+        this(transportRouter, new AiHttpPublicationCoordinator(),
+            com.alibaba.nacos.api.ai.constant.AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+            true);
     }
     
     AgentEndpointPublicationManager(AgentTransportRouter transportRouter,
         int maxPublications) {
-        this(transportRouter, new ScheduledThreadPoolExecutor(1,
-            new NameThreadFactory("com.alibaba.nacos.client.ai.agent.endpoint")),
-            maxPublications);
+        this(transportRouter, new AiHttpPublicationCoordinator(), maxPublications, true);
     }
     
     AgentEndpointPublicationManager(AgentTransportRouter transportRouter,
         ScheduledExecutorService executor) {
-        this(transportRouter, executor,
-            AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS);
+        this(transportRouter, new AiHttpPublicationCoordinator(executor),
+            com.alibaba.nacos.api.ai.constant.AiConstants.DEFAULT_AI_AGENT_ENDPOINT_MAX_PUBLICATIONS,
+            true);
     }
     
     AgentEndpointPublicationManager(AgentTransportRouter transportRouter,
         ScheduledExecutorService executor, int maxPublications) {
+        this(transportRouter, new AiHttpPublicationCoordinator(executor), maxPublications, true);
+    }
+    
+    AgentEndpointPublicationManager(AgentTransportRouter transportRouter,
+        AiHttpPublicationCoordinator coordinator, int maxPublications) {
+        this(transportRouter, coordinator, maxPublications, false);
+    }
+    
+    private AgentEndpointPublicationManager(AgentTransportRouter transportRouter,
+        AiHttpPublicationCoordinator coordinator, int maxPublications,
+        boolean ownsCoordinator) {
         if (maxPublications < 1) {
             throw new IllegalArgumentException("maxPublications must be greater than 0");
         }
         this.transportRouter = transportRouter;
-        this.executor = executor;
+        this.coordinator = coordinator;
+        this.ownsCoordinator = ownsCoordinator;
         this.maxPublications = maxPublications;
+        coordinator.register(this);
     }
     
     synchronized void register(AgentEndpointRegistrationBatch batch) throws NacosException {
@@ -122,8 +128,8 @@ class AgentEndpointPublicationManager implements Closeable {
                 desired.ownerTransport);
             desired.dirty = false;
             desired.rollback = null;
-            updateLiveness(liveness, desired.ownerTransport);
-            scheduleMaintenanceIfRequired();
+            notifyCoordinator(desired.ownerTransport == AgentTransportType.HTTP
+                ? liveness : null);
         } catch (NacosException e) {
             handleWriteFailure(key, previous, desired, e);
             throw e;
@@ -160,19 +166,19 @@ class AgentEndpointPublicationManager implements Closeable {
             true);
         publications.put(key, desired);
         try {
+            ClientLivenessInfo liveness = null;
             if (desired.batch == null) {
                 transportRouter.deregisterAgentEndpoints(key.namespaceId, key.agentName,
                     key.protocol, desired.ownerTransport);
                 publications.remove(key);
             } else {
-                ClientLivenessInfo liveness =
-                    transportRouter.registerAgentEndpoints(desired.batch,
-                        desired.ownerTransport);
+                liveness = transportRouter.registerAgentEndpoints(desired.batch,
+                    desired.ownerTransport);
                 desired.dirty = false;
                 desired.rollback = null;
-                updateLiveness(liveness, desired.ownerTransport);
             }
-            scheduleMaintenanceIfRequired();
+            notifyCoordinator(desired.ownerTransport == AgentTransportType.HTTP
+                ? liveness : null);
         } catch (NacosException e) {
             handleWriteFailure(key, previous, desired, e);
             throw e;
@@ -186,12 +192,12 @@ class AgentEndpointPublicationManager implements Closeable {
         } else if (isRetryable(exception)) {
             desired.dirty = true;
             desired.rollback = previous;
-            scheduleMaintenanceIfRequired();
         } else if (previous == null) {
             publications.remove(key);
         } else {
             publications.put(key, previous);
         }
+        notifyCoordinator(null);
     }
     
     private boolean isRetryable(NacosException exception) {
@@ -209,7 +215,7 @@ class AgentEndpointPublicationManager implements Closeable {
     synchronized void discardAfterRemoteCapacityRejection(
         AgentEndpointRegistrationBatch batch) {
         publications.remove(PublicationKey.of(batch));
-        scheduleMaintenanceIfRequired();
+        notifyCoordinator(null);
     }
     
     private Set<EndpointNaturalKey> naturalKeys(String namespaceId, String agentName,
@@ -237,54 +243,13 @@ class AgentEndpointPublicationManager implements Closeable {
         return result;
     }
     
-    private void updateLiveness(ClientLivenessInfo liveness,
-        AgentTransportType ownerTransport) {
-        if (ownerTransport == AgentTransportType.HTTP && liveness != null
-            && liveness.getHeartbeatIntervalMillis() > 0) {
-            heartbeatIntervalMillis = liveness.getHeartbeatIntervalMillis();
-        }
+    private void notifyCoordinator(ClientLivenessInfo liveness) {
+        coordinator.stateChanged(this, liveness, hasHttpPublication());
     }
     
-    private void scheduleMaintenanceIfRequired() {
-        if (closed || !hasHttpPublication()) {
-            cancelMaintenance();
-            return;
-        }
-        if (maintenanceFuture == null || maintenanceFuture.isDone()) {
-            maintenanceFuture = executor.schedule(new Runnable() {
-                
-                @Override
-                public void run() {
-                    maintainHttpPublications();
-                }
-            }, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
-        }
-    }
-    
-    private synchronized void maintainHttpPublications() {
-        maintenanceFuture = null;
-        if (closed || publications.isEmpty()) {
-            return;
-        }
-        redoDirtyPublications();
-        if (hasRegisteredHttpPublication()) {
-            try {
-                updateLiveness(
-                    transportRouter.heartbeatAgentEndpoints(AgentTransportType.HTTP),
-                    AgentTransportType.HTTP);
-            } catch (NacosException e) {
-                if (e.getErrCode() == ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode()) {
-                    markRegistrationsDirty();
-                    redoDirtyPublications();
-                } else {
-                    LOGGER.warn("Agent Endpoint HTTP heartbeat failed.", e);
-                }
-            }
-        }
-        scheduleMaintenanceIfRequired();
-    }
-    
-    private void redoDirtyPublications() {
+    @Override
+    public synchronized void redoDirtyHttpPublications() {
+        ClientLivenessInfo liveness = null;
         List<Map.Entry<PublicationKey, PublicationState>> entries =
             new ArrayList<Map.Entry<PublicationKey, PublicationState>>(publications.entrySet());
         for (Map.Entry<PublicationKey, PublicationState> entry : entries) {
@@ -299,8 +264,8 @@ class AgentEndpointPublicationManager implements Closeable {
                         key.protocol, state.ownerTransport);
                     publications.remove(key);
                 } else {
-                    updateLiveness(transportRouter.registerAgentEndpoints(state.batch,
-                        state.ownerTransport), state.ownerTransport);
+                    liveness = transportRouter.registerAgentEndpoints(state.batch,
+                        state.ownerTransport);
                     state.dirty = false;
                     state.rollback = null;
                 }
@@ -313,6 +278,7 @@ class AgentEndpointPublicationManager implements Closeable {
                 LOGGER.warn("Redo Agent Endpoint HTTP publication failed.", e);
             }
         }
+        notifyCoordinator(liveness);
     }
     
     private void restorePrevious(PublicationKey key, PublicationState state) {
@@ -323,7 +289,8 @@ class AgentEndpointPublicationManager implements Closeable {
         }
     }
     
-    private void markRegistrationsDirty() {
+    @Override
+    public synchronized void markHttpPublicationsDirty() {
         for (PublicationState state : publications.values()) {
             if (state.batch != null && state.ownerTransport == AgentTransportType.HTTP) {
                 state.dirty = true;
@@ -331,7 +298,8 @@ class AgentEndpointPublicationManager implements Closeable {
         }
     }
     
-    private boolean hasRegisteredHttpPublication() {
+    @Override
+    public synchronized boolean hasRegisteredHttpPublication() {
         for (PublicationState state : publications.values()) {
             if (state.ownerTransport == AgentTransportType.HTTP && state.batch != null
                 && !state.dirty) {
@@ -341,7 +309,8 @@ class AgentEndpointPublicationManager implements Closeable {
         return false;
     }
     
-    private boolean hasHttpPublication() {
+    @Override
+    public synchronized boolean hasHttpPublication() {
         for (PublicationState state : publications.values()) {
             if (state.ownerTransport == AgentTransportType.HTTP) {
                 return true;
@@ -350,11 +319,14 @@ class AgentEndpointPublicationManager implements Closeable {
         return false;
     }
     
-    private void cancelMaintenance() {
-        if (maintenanceFuture != null) {
-            maintenanceFuture.cancel(false);
-            maintenanceFuture = null;
-        }
+    @Override
+    public ClientLivenessInfo heartbeat() throws NacosException {
+        return transportRouter.heartbeatAgentEndpoints(AgentTransportType.HTTP);
+    }
+    
+    @Override
+    public String getPublicationModuleName() {
+        return "Agent";
     }
     
     @Override
@@ -363,7 +335,6 @@ class AgentEndpointPublicationManager implements Closeable {
             return;
         }
         closed = true;
-        cancelMaintenance();
         for (Map.Entry<PublicationKey, PublicationState> entry : new ArrayList<Map.Entry<PublicationKey, PublicationState>>(
             publications.entrySet())) {
             PublicationKey key = entry.getKey();
@@ -376,8 +347,9 @@ class AgentEndpointPublicationManager implements Closeable {
             }
         }
         publications.clear();
-        if (executor != null) {
-            executor.shutdownNow();
+        notifyCoordinator(null);
+        if (ownsCoordinator) {
+            coordinator.shutdown();
         }
     }
     

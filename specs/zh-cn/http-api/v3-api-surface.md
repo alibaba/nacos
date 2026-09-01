@@ -73,7 +73,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/client/ai/prompt` | 2 | GET | 运行时 Prompt 查询和 Search。 |
 | `/v3/client/ai/skills` | 2 | GET | 运行时 Skill zip 下载和 Search。 |
 | `/v3/client/ai/agentspecs` | 2 | GET | 运行时 AgentSpec 获取和搜索。 |
-| `/v3/client/ai/mcp` | 1 | GET | 运行时 MCP Search。 |
+| `/v3/client/ai/mcp` | 6 | GET, POST, PUT, DELETE | MCP Search、Serving Query、兼容 Release、Runtime Endpoint Publication 和 Heartbeat。 |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
@@ -274,8 +274,21 @@ Editing/Reviewing 指针和 Online Version 数量。生命周期命令返回转�
 校验同时提供的名称，再进入相同的 Name-Based 鉴权和 Lifecycle Service。现有响应 ID
 字段保持 Wire-Compatible。
 
-该目标不新增 MCP Client HTTP query、release、endpoint、heartbeat 或 subscription 路径。
-HTTP 与现有 gRPC/Java Client 表面对齐，需要等生命周期托管完成后再独立设计。
+MCP Client HTTP Binding 使用 `/v3/client/ai/mcp`：
+
+| Method | Path | 契约 |
+| --- | --- | --- |
+| GET | `/v3/client/ai/mcp/search` | 现有 Current MCP Search Facade。 |
+| GET | `/v3/client/ai/mcp` | 按 `namespaceId + mcpName (+ version)` 查询 Latest Published 或一个精确 Serving Version。 |
+| POST | `/v3/client/ai/mcp` | Form Release；`createDraft` 缺失或为 false 时 Direct-online，为 true 时只创建生命周期 Draft。 |
+| POST | `/v3/client/ai/mcp/endpoints` | 使用 IP 字面地址及 `1..65535` 端口注册当前 HTTP Client 的 Runtime Endpoint。 |
+| DELETE | `/v3/client/ai/mcp/endpoints` | 使用相同的已校验身份注销当前 HTTP Client 匹配的 Runtime Endpoint。 |
+| PUT | `/v3/client/ai/mcp/endpoints/heartbeat` | 刷新共享 AI HTTP Client 及其全部 Publisher。 |
+
+所有写使用 Form/Query Binding。`serverSpecification`、`toolSpecification`、
+`resourceSpecification` 和 `endpointSpecification` 都是 JSON String 字段，不使用 JSON Body。
+有状态 Endpoint Path 要求稳定的 `X-Nacos-Client-Id` 与 `Request-Module: AI` Header。Query
+可以携带 Client Id，但只续约已经存在的 Client。不增加新的顶层 `mcpId` Input。
 
 Embedded 或 Standalone Console 直接委托与 Admin 相同的生命周期 Application Service。
 Console-only Remote 部署需要下一 MCP 治理阶段计划的 Typed Maintainer Lifecycle Transport；在该
