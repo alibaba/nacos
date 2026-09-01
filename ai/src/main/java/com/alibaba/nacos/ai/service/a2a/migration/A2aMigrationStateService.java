@@ -130,6 +130,15 @@ public class A2aMigrationStateService
     }
     
     /**
+     * Resolve migration state from the node's configured compatibility mode.
+     *
+     * @return migration state for AUTO or terminal CANONICAL; otherwise {@code null}
+     */
+    public A2aMigrationState resolveConfigured() {
+        return resolve(configuredModeSupplier.get());
+    }
+    
+    /**
      * Check all current members against the frozen AUTO migration policy.
      *
      * @param marker current valid migration marker

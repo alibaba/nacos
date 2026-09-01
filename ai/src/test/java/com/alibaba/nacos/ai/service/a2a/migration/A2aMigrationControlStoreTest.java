@@ -20,12 +20,11 @@ import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.Versi
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.when;
 
 class A2aMigrationControlStoreTest {
     
-    private ConfigQueryChainService queryService;
+    private ConfigInfoPersistService persistService;
     
     private ConfigOperationService operationService;
     
@@ -51,31 +50,27 @@ class A2aMigrationControlStoreTest {
     
     @BeforeEach
     void setUp() {
-        queryService = mock(ConfigQueryChainService.class);
+        persistService = mock(ConfigInfoPersistService.class);
         operationService = mock(ConfigOperationService.class);
-        store = new A2aMigrationControlStore(queryService, operationService);
+        store = new A2aMigrationControlStore(persistService, operationService);
     }
     
     @Test
     void shouldReadMarkerAndLeaseWithMd5() {
         A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", false, 10L);
-        when(queryService.handle(any(ConfigQueryChainRequest.class)))
+        when(persistService.findConfigInfo(A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
             .thenReturn(found(JacksonUtils.toJson(marker), "marker-md5"));
         VersionedValue<A2aMigrationMarker> markerValue = store.readMarker();
         assertEquals("g", markerValue.getValue().getGeneration());
         assertEquals("marker-md5", markerValue.getMd5());
-        ArgumentCaptor<ConfigQueryChainRequest> requestCaptor =
-            ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
-        verify(queryService).handle(requestCaptor.capture());
-        assertEquals(A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
-            requestCaptor.getValue().getDataId());
-        assertEquals(A2aMigrationControlStore.INTERNAL_GROUP,
-            requestCaptor.getValue().getGroup());
-        assertEquals(Constants.DEFAULT_NAMESPACE_ID,
-            requestCaptor.getValue().getTenant());
+        verify(persistService).findConfigInfo(
+            A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID);
         
         A2aMigrationLeaseRecord lease = A2aMigrationLeaseRecord.of("owner", 20L);
-        when(queryService.handle(any(ConfigQueryChainRequest.class)))
+        when(persistService.findConfigInfo(A2aMigrationControlStore.RECONCILIATION_LEASE_DATA_ID,
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
             .thenReturn(found(JacksonUtils.toJson(lease), "lease-md5"));
         VersionedValue<A2aMigrationLeaseRecord> leaseValue = store.readLease();
         assertEquals("owner", leaseValue.getValue().getOwner());
@@ -84,24 +79,16 @@ class A2aMigrationControlStoreTest {
     
     @Test
     void absentControlObjectShouldReturnNull() {
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(queryService.handle(any(ConfigQueryChainRequest.class))).thenReturn(null, response);
         assertNull(store.readMarker());
         assertNull(store.readLease());
     }
     
     @Test
     void unavailableOrInvalidControlObjectShouldFailClosed() {
-        ConfigQueryChainResponse gray = found("{}", "md5");
-        gray.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
-        ConfigQueryChainResponse empty = found(" ", "md5");
-        ConfigQueryChainResponse noMd5 = found("{}", " ");
-        ConfigQueryChainResponse nullValue = found("null", "md5");
-        ConfigQueryChainResponse invalid = found("not-json", "md5");
-        when(queryService.handle(any(ConfigQueryChainRequest.class))).thenReturn(gray, empty,
-            noMd5, nullValue, invalid);
-        assertThrows(IllegalStateException.class, store::readMarker);
+        when(persistService.findConfigInfo(A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
+            .thenReturn(found(" ", "md5"), found("{}", " "), found("null", "md5"),
+                found("not-json", "md5"));
         assertThrows(IllegalStateException.class, store::readMarker);
         assertThrows(IllegalStateException.class, store::readMarker);
         assertThrows(IllegalStateException.class, store::readMarker);
@@ -144,9 +131,8 @@ class A2aMigrationControlStoreTest {
         assertEquals(512, persisted.getCursor().length());
     }
     
-    private ConfigQueryChainResponse found(String content, String md5) {
-        ConfigQueryChainResponse result = new ConfigQueryChainResponse();
-        result.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+    private ConfigInfoWrapper found(String content, String md5) {
+        ConfigInfoWrapper result = new ConfigInfoWrapper();
         result.setContent(content);
         result.setMd5(md5);
         return result;

@@ -21,12 +21,11 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Function;
@@ -51,13 +50,13 @@ public class A2aMigrationControlStore {
     
     public static final String INTERNAL_GROUP = "nacos_internal";
     
-    private final ConfigQueryChainService configQueryChainService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
     private final ConfigOperationService configOperationService;
     
-    public A2aMigrationControlStore(ConfigQueryChainService configQueryChainService,
+    public A2aMigrationControlStore(ConfigInfoPersistService configInfoPersistService,
         ConfigOperationService configOperationService) {
-        this.configQueryChainService = configQueryChainService;
+        this.configInfoPersistService = configInfoPersistService;
         this.configOperationService = configOperationService;
     }
     
@@ -141,16 +140,15 @@ public class A2aMigrationControlStore {
     }
     
     private <T> VersionedValue<T> read(String dataId, Function<String, T> parser) {
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-            dataId, INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID);
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
-        if (response == null || response
-            .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+        // TODO(remove in 4.0): migration CAS must read the authoritative persistence MD5.
+        // Config query-chain results intentionally follow the asynchronous dump/cache path and
+        // can briefly expose the previous MD5 immediately after an internal control write.
+        ConfigInfoWrapper response = configInfoPersistService.findConfigInfo(dataId,
+            INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID);
+        if (response == null) {
             return null;
         }
-        if (response.getStatus() != ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL
-            || StringUtils.isBlank(response.getContent())
-            || StringUtils.isBlank(response.getMd5())) {
+        if (StringUtils.isBlank(response.getContent()) || StringUtils.isBlank(response.getMd5())) {
             throw new IllegalStateException("Unavailable A2A migration control object: " + dataId);
         }
         T value = parser.apply(response.getContent());

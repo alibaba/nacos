@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -74,6 +74,13 @@ class A2aMigrationStateServiceTest {
         assertFalse(controlStore.marker.getValue().isLegacyNamingShadow());
         assertNull(service.resolve(A2aCompatibilityMode.LEGACY));
         assertNull(service.resolve(A2aCompatibilityMode.CANONICAL));
+    }
+    
+    @Test
+    void shouldResolveConfiguredCompatibilityMode() {
+        assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
+        service = newService(false, A2aCompatibilityMode.LEGACY);
+        assertNull(service.resolveConfigured());
     }
     
     @Test
@@ -363,7 +370,7 @@ class A2aMigrationStateServiceTest {
         private boolean dropMarkerAfterWrite;
         
         private InMemoryControlStore() {
-            super(mock(ConfigQueryChainService.class), mock(ConfigOperationService.class));
+            super(mock(ConfigInfoPersistService.class), mock(ConfigOperationService.class));
         }
         
         @Override

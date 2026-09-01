@@ -23,8 +23,10 @@ import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageConsistencyMode;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorageChangeListener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -393,6 +395,23 @@ class AgentVersionStorageServiceTest {
         verify(storage).delete(keyCaptor.capture());
         assertEquals(descriptor.getProvider(), keyCaptor.getValue().getProvider());
         assertEquals(descriptor.getKey(), keyCaptor.getValue().getKey());
+    }
+    
+    @Test
+    void testConsistencyAndChangeListenersDelegateToStorageRouter() throws NacosException {
+        AgentVersionStorageDescriptor descriptor = descriptor(reorderedContentBytes());
+        AiResourceStorageChangeListener listener = event -> {
+        };
+        when(storageRouter.route(any(StorageKey.class))).thenReturn(storage);
+        when(storage.consistencyMode()).thenReturn(AiResourceStorageConsistencyMode.STRONG);
+        
+        assertEquals(AiResourceStorageConsistencyMode.STRONG,
+            service.consistencyMode(descriptor));
+        service.addChangeListener(listener);
+        service.removeChangeListener(listener);
+        
+        verify(storageRouter).addChangeListener(listener);
+        verify(storageRouter).removeChangeListener(listener);
     }
     
     @Test
