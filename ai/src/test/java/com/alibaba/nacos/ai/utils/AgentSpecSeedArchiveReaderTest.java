@@ -23,6 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecSeedArchiveReaderTest {
@@ -85,6 +87,53 @@ class AgentSpecSeedArchiveReaderTest {
             AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingEntryLimit() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"limited-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("limited-agent/manifest.json", manifest),
+            new ArchiveEntry("limited-agent/config/", ""),
+            new ArchiveEntry("limited-agent/config/SOUL.md", "# soul\n"));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 2,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("too many entries"));
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingUncompressedSizeLimit() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"limited-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("limited-agent/manifest.json", manifest),
+            new ArchiveEntry("limited-agent/config/SOUL.md", "0123456789"));
+        long maxBytes = manifest.getBytes(StandardCharsets.UTF_8).length + 5L;
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 10,
+                maxBytes));
+        
+        assertTrue(exception.getMessage().contains("decompressed size exceeds limit"));
+    }
+    
+    @Test
+    void shouldRejectDuplicateNormalizedEntryPaths() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"duplicate-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("duplicate-agent/manifest.json", manifest),
+            new ArchiveEntry("./duplicate-agent/manifest.json", manifest));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive), 10,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("duplicate entry path"));
     }
     
     @Test

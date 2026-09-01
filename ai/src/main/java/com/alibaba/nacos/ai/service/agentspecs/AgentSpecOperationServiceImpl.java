@@ -32,7 +32,6 @@ import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.AiResourceStorageUtils;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecContentDigestUtils;
-import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.ai.utils.AiResourceVersionStorageJsonUtil;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
@@ -58,8 +57,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -388,55 +385,31 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
-     * Upload AgentSpec(s) from a ZIP archive. Supports both single-spec ZIPs and multi-spec seed archives
-     * (containing multiple inner ZIPs). Each spec is processed via {@link #uploadSingleAgentSpecFromZip}.
+     * Upload AgentSpec(s) from a ZIP archive. Supports both single-spec ZIPs and multi-spec archives
+     * containing multiple directories with manifest.json.
      */
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException {
-        // Try to parse ZIP as a multi-spec seed archive (containing multiple inner ZIPs)
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages = readUploadPackages(zipBytes);
-        if (!packages.isEmpty()) {
-            // Multi-spec archive: import each one and return summary
-            if (packages.size() == 1) {
-                return uploadSingleAgentSpecFromZip(namespaceId, packages.get(0).getZipBytes(),
-                    overwrite);
-            }
-            List<String> importedNames = new ArrayList<>(packages.size());
-            for (AgentSpecSeedArchiveReader.AgentSpecPackage each : packages) {
-                importedNames
-                    .add(uploadSingleAgentSpecFromZip(namespaceId, each.getZipBytes(), overwrite));
-            }
-            return String.format("Imported %d agentspecs: %s", importedNames.size(),
-                String.join(", ", importedNames));
+        List<AgentSpec> agentSpecs =
+            AgentSpecZipParser.parseMultipleAgentSpecsFromZip(zipBytes, namespaceId);
+        if (agentSpecs.size() == 1) {
+            return uploadSingleAgentSpec(namespaceId, agentSpecs.get(0), overwrite);
         }
-        // Not a seed archive: treat as a single AgentSpec ZIP
-        return uploadSingleAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+        List<String> importedNames = new ArrayList<>(agentSpecs.size());
+        for (AgentSpec each : agentSpecs) {
+            importedNames.add(uploadSingleAgentSpec(namespaceId, each, overwrite));
+        }
+        return String.format("Imported %d agentspecs: %s", importedNames.size(),
+            String.join(", ", importedNames));
     }
     
     /**
-     * Try to read the ZIP as a multi-spec seed archive. Returns empty list if it's a regular single-spec ZIP.
-     */
-    private List<AgentSpecSeedArchiveReader.AgentSpecPackage> readUploadPackages(byte[] zipBytes)
-        throws NacosException {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(zipBytes)) {
-            return AgentSpecSeedArchiveReader.read(inputStream);
-        } catch (IOException e) {
-            throw new NacosApiException(NacosException.INVALID_PARAM,
-                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
-                "Failed to read agentspec zip archive");
-        }
-    }
-    
-    /**
-     * Upload a single AgentSpec from ZIP bytes.
+     * Upload a parsed AgentSpec.
      * If overwrite=true, replaces existing draft or creates new. Otherwise fails on working version conflict.
      */
-    private String uploadSingleAgentSpecFromZip(String namespaceId, byte[] zipBytes,
-        boolean overwrite)
-        throws NacosException {
-        // Step 1: Parse ZIP and validate agentspec name
-        AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
+    private String uploadSingleAgentSpec(String namespaceId, AgentSpec agentSpec,
+        boolean overwrite) throws NacosException {
         if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "AgentSpec name is required");
