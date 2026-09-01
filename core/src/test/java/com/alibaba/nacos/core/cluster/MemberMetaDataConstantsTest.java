@@ -37,6 +37,11 @@ class MemberMetaDataConstantsTest {
         assertEquals("supportJraftAuth", MemberMetaDataConstants.SUPPORT_JRAFT_AUTH);
         assertEquals("supportMcpLifecycleManagement",
             MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT);
+        assertEquals("supportA2aMigrationV1",
+            MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1);
+        assertEquals("a2aMigrationPolicyHash",
+            MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH);
+        assertEquals("a2aMigrationAck", MemberMetaDataConstants.A2A_MIGRATION_ACK);
     }
     
     @Test
@@ -50,13 +55,16 @@ class MemberMetaDataConstantsTest {
         assertNotNull(MemberMetaDataConstants.SUPPORT_GRAY_MODEL);
         assertNotNull(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH);
         assertNotNull(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT);
+        assertNotNull(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1);
+        assertNotNull(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH);
+        assertNotNull(MemberMetaDataConstants.A2A_MIGRATION_ACK);
     }
     
     @Test
     void testBasicMetaKeys() {
         String[] keys = MemberMetaDataConstants.BASIC_META_KEYS;
         assertNotNull(keys);
-        assertEquals(8, keys.length);
+        assertEquals(11, keys.length);
         assertEquals(MemberMetaDataConstants.SITE_KEY, keys[0]);
         assertEquals(MemberMetaDataConstants.AD_WEIGHT, keys[1]);
         assertEquals(MemberMetaDataConstants.RAFT_PORT, keys[2]);
@@ -65,5 +73,8 @@ class MemberMetaDataConstantsTest {
         assertEquals(MemberMetaDataConstants.READY_TO_UPGRADE, keys[5]);
         assertEquals(MemberMetaDataConstants.SUPPORT_JRAFT_AUTH, keys[6]);
         assertEquals(MemberMetaDataConstants.SUPPORT_MCP_LIFECYCLE_MANAGEMENT, keys[7]);
+        assertEquals(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1, keys[8]);
+        assertEquals(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH, keys[9]);
+        assertEquals(MemberMetaDataConstants.A2A_MIGRATION_ACK, keys[10]);
     }
 }

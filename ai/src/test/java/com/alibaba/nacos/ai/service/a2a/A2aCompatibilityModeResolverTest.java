@@ -16,90 +16,68 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationState;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationStateService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-
-import java.util.Arrays;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class A2aCompatibilityModeResolverTest {
     
     @Test
     void shouldDefaultToCanonical() {
-        ServerMemberManager memberManager = mock(ServerMemberManager.class);
+        A2aMigrationStateService stateService = mock(A2aMigrationStateService.class);
         assertEquals(A2aCompatibilityMode.CANONICAL,
-            new A2aCompatibilityModeResolver(memberManager, () -> null).resolve());
+            new A2aCompatibilityModeResolver(stateService, () -> null).resolve());
         assertEquals(A2aCompatibilityMode.CANONICAL,
-            new A2aCompatibilityModeResolver(memberManager, () -> "  ").resolve());
+            new A2aCompatibilityModeResolver(stateService, () -> "  ").resolve());
         try (MockedStatic<EnvUtil> envUtil = mockStatic(EnvUtil.class)) {
             envUtil.when(() -> EnvUtil.getProperty(A2aCompatibilityModeResolver.MODE_PROPERTY,
                 A2aCompatibilityMode.CANONICAL.name())).thenReturn("CANONICAL");
             assertEquals(A2aCompatibilityMode.CANONICAL,
-                new A2aCompatibilityModeResolver(memberManager).resolve());
+                new A2aCompatibilityModeResolver(stateService).resolve());
         }
+        verify(stateService, times(3)).resolve(A2aCompatibilityMode.CANONICAL);
     }
     
     @Test
     void shouldParseExplicitModesCaseInsensitively() {
-        ServerMemberManager memberManager = mock(ServerMemberManager.class);
+        A2aMigrationStateService stateService = mock(A2aMigrationStateService.class);
         assertEquals(A2aCompatibilityMode.CANONICAL,
-            new A2aCompatibilityModeResolver(memberManager, () -> " canonical ").resolve());
+            new A2aCompatibilityModeResolver(stateService, () -> " canonical ").resolve());
         assertEquals(A2aCompatibilityMode.LEGACY,
-            new A2aCompatibilityModeResolver(memberManager, () -> "legacy").resolve());
+            new A2aCompatibilityModeResolver(stateService, () -> "legacy").resolve());
         assertThrows(IllegalArgumentException.class,
-            () -> new A2aCompatibilityModeResolver(memberManager, () -> "unknown").resolve());
+            () -> new A2aCompatibilityModeResolver(stateService, () -> "unknown").resolve());
     }
     
     @Test
-    void shouldKeepAutoLegacyWithoutCompleteSupportedMembership() {
-        ServerMemberManager memberManager = mock(ServerMemberManager.class);
+    void shouldKeepAutoOnLegacyAuthorityUntilTerminalMarker() {
+        A2aMigrationStateService stateService = mock(A2aMigrationStateService.class);
+        when(stateService.resolve(A2aCompatibilityMode.AUTO)).thenReturn(
+            A2aMigrationState.SYNCING, A2aMigrationState.QUIESCING,
+            A2aMigrationState.CANONICAL);
         A2aCompatibilityModeResolver resolver =
-            new A2aCompatibilityModeResolver(memberManager, () -> "AUTO");
-        Member missing = memberWithVersion(null);
-        Member nonString = memberWithValue(330);
-        Member blank = memberWithVersion("");
-        Member invalid = memberWithVersion("invalid");
-        Member old = memberWithVersion("3.2.9");
-        when(memberManager.allMembers()).thenReturn(null, Collections.emptyList(),
-            Collections.singletonList(missing), Collections.singletonList(nonString),
-            Collections.singletonList(blank), Collections.singletonList(invalid),
-            Collections.singletonList(old));
-        for (int i = 0; i < 7; i++) {
-            assertEquals(A2aCompatibilityMode.LEGACY, resolver.resolve());
-        }
+            new A2aCompatibilityModeResolver(stateService, () -> "AUTO");
+        assertEquals(A2aCompatibilityMode.LEGACY, resolver.resolve());
+        assertEquals(A2aCompatibilityMode.LEGACY, resolver.resolve());
+        assertEquals(A2aCompatibilityMode.CANONICAL, resolver.resolve());
     }
     
     @Test
-    void shouldSwitchAutoToCanonicalOnlyOnce() {
-        ServerMemberManager memberManager = mock(ServerMemberManager.class);
-        Member current = memberWithVersion("3.3.0-SNAPSHOT");
-        Member future = memberWithVersion("3.4.1");
-        Member old = memberWithVersion("3.2.0");
-        when(memberManager.allMembers()).thenReturn(Arrays.asList(current, future),
-            Collections.singletonList(old));
-        A2aCompatibilityModeResolver resolver =
-            new A2aCompatibilityModeResolver(memberManager, () -> "auto");
-        assertEquals(A2aCompatibilityMode.CANONICAL, resolver.resolve());
-        assertEquals(A2aCompatibilityMode.CANONICAL, resolver.resolve());
-    }
-    
-    private Member memberWithVersion(String version) {
-        return memberWithValue(version);
-    }
-    
-    private Member memberWithValue(Object version) {
-        Member member = mock(Member.class);
-        when(member.getExtendVal(MemberMetaDataConstants.VERSION)).thenReturn(version);
-        return member;
+    void terminalMarkerShouldOverrideExplicitLegacyMode() {
+        A2aMigrationStateService stateService = mock(A2aMigrationStateService.class);
+        when(stateService.resolve(A2aCompatibilityMode.LEGACY))
+            .thenReturn(A2aMigrationState.CANONICAL);
+        assertEquals(A2aCompatibilityMode.CANONICAL,
+            new A2aCompatibilityModeResolver(stateService, () -> "legacy").resolve());
     }
 }
