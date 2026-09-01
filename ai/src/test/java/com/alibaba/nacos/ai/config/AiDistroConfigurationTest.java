@@ -23,6 +23,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class AiDistroConfigurationTest {
@@ -38,8 +39,8 @@ class AiDistroConfigurationTest {
         assertSame(filter, registration.getFilter());
         assertEquals("aiDistroFilter", registration.getFilterName());
         assertEquals(7, registration.getOrder());
-        assertEquals(1, registration.getUrlPatterns().size());
-        assertEquals("/v3/client/ai/agents/*",
-            registration.getUrlPatterns().iterator().next());
+        assertEquals(2, registration.getUrlPatterns().size());
+        assertTrue(registration.getUrlPatterns().contains("/v3/client/ai/agents/*"));
+        assertTrue(registration.getUrlPatterns().contains("/v3/client/ai/mcp/*"));
     }
 }
