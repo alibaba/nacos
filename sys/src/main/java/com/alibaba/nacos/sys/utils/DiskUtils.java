@@ -40,6 +40,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -455,6 +456,7 @@ public final class DiskUtils {
      */
     public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
             throws IOException {
+        final Path outputPath = Paths.get(outputDir).toAbsolutePath().normalize();
         try (final FileInputStream fis = new FileInputStream(sourceFile);
                 final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
                 final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
@@ -464,7 +466,15 @@ public final class DiskUtils {
                 if (isIllegalFileName(fileName)) {
                     continue;
                 }
-                final File entryFile = new File(Paths.get(outputDir, fileName).toString());
+                final Path entryPath = resolveZipEntry(outputPath, fileName);
+                if (entryPath == null) {
+                    continue;
+                }
+                final File entryFile = entryPath.toFile();
+                if (entry.isDirectory()) {
+                    FileUtils.forceMkdir(entryFile);
+                    continue;
+                }
                 FileUtils.forceMkdir(entryFile.getParentFile());
                 try (final FileOutputStream fos = new FileOutputStream(entryFile);
                         final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
@@ -503,6 +513,28 @@ public final class DiskUtils {
             result = bos.toByteArray();
         }
         return result;
+    }
+    
+    private static Path resolveZipEntry(Path outputPath, String fileName) {
+        if (hasWindowsDrivePrefix(fileName)) {
+            return null;
+        }
+        try {
+            Path relativePath = outputPath.getFileSystem().getPath(fileName);
+            Path targetPath = outputPath.resolve(relativePath).normalize();
+            if (relativePath.isAbsolute() || targetPath.equals(outputPath)
+                    || !targetPath.startsWith(outputPath)) {
+                return null;
+            }
+            return targetPath;
+        } catch (InvalidPathException e) {
+            return null;
+        }
+    }
+    
+    private static boolean hasWindowsDrivePrefix(String fileName) {
+        return fileName.length() > 1 && Character.isLetter(fileName.charAt(0))
+                && fileName.charAt(1) == ':';
     }
     
     /**

@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 
@@ -40,6 +42,10 @@ import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class ConfigRawDiskService implements ConfigDiskService {
+    
+    private static final String CURRENT_DIRECTORY = ".";
+    
+    private static final String PARENT_DIRECTORY = "..";
     
     private static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
     
@@ -64,22 +70,12 @@ public class ConfigRawDiskService implements ConfigDiskService {
         try {
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+            throw invalidParameterException();
         }
-        // fix https://github.com/alibaba/nacos/issues/10067
-        dataId = PathEncoderManager.getInstance().encode(dataId);
-        group = PathEncoderManager.getInstance().encode(group);
-        tenant = PathEncoderManager.getInstance().encode(tenant);
-        File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BASE_DIR);
-        } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BASE_DIR);
-            file = new File(file, tenant);
+            return resolveTargetFile(BASE_DIR, group, dataId);
         }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        return file;
+        return resolveTargetFile(TENANT_BASE_DIR, tenant, group, dataId);
     }
     
     /**
@@ -90,24 +86,55 @@ public class ConfigRawDiskService implements ConfigDiskService {
             ParamUtils.checkParam(grayName);
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+            throw invalidParameterException();
         }
-        // fix https://github.com/alibaba/nacos/issues/10067
-        dataId = PathEncoderManager.getInstance().encode(dataId);
-        group = PathEncoderManager.getInstance().encode(group);
-        tenant = PathEncoderManager.getInstance().encode(tenant);
-        
-        File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), GRAY_DIR);
-        } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_GRAY_DIR);
-            file = new File(file, tenant);
+            return resolveTargetFile(GRAY_DIR, group, dataId, grayName);
         }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        file = new File(file, grayName);
-        return file;
+        return resolveTargetFile(TENANT_GRAY_DIR, tenant, group, dataId, grayName);
+    }
+    
+    private static File resolveTargetFile(String baseDir, String... pathSegments) {
+        Path current = new File(EnvUtil.getNacosHome(), baseDir).toPath().toAbsolutePath()
+                .normalize();
+        for (String pathSegment : pathSegments) {
+            validatePathSegment(pathSegment);
+            String encodedSegment = PathEncoderManager.getInstance().encode(pathSegment);
+            validateEncodedPathSegment(encodedSegment);
+            try {
+                // Each identity field must add exactly one child without collapsing its parent.
+                Path encodedPath = current.getFileSystem().getPath(encodedSegment);
+                Path target = current.resolve(encodedPath).normalize();
+                if (encodedPath.isAbsolute() || encodedPath.getNameCount() != 1
+                        || !current.equals(target.getParent())) {
+                    throw invalidParameterException();
+                }
+                current = target;
+            } catch (InvalidPathException e) {
+                throw invalidParameterException();
+            }
+        }
+        return current.toFile();
+    }
+    
+    private static void validatePathSegment(String pathSegment) {
+        if (StringUtils.isBlank(pathSegment) || CURRENT_DIRECTORY.equals(pathSegment)
+                || PARENT_DIRECTORY.equals(pathSegment) || !ParamUtils.isValid(pathSegment)) {
+            throw invalidParameterException();
+        }
+    }
+
+    private static void validateEncodedPathSegment(String pathSegment) {
+        if (StringUtils.isBlank(pathSegment) || CURRENT_DIRECTORY.equals(pathSegment)
+                || PARENT_DIRECTORY.equals(pathSegment) || pathSegment.indexOf('/') >= 0
+                || pathSegment.indexOf('\\') >= 0 || new File(pathSegment).isAbsolute()) {
+            throw invalidParameterException();
+        }
+    }
+    
+    private static NacosRuntimeException invalidParameterException() {
+        return new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM,
+                "parameter is invalid.");
     }
     
     /**

@@ -24,14 +24,20 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+import java.util.zip.Adler32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -402,6 +408,40 @@ class DiskUtilsTest {
             });
             assertEquals(3, lineCount.get());
         }
+    }
+    
+    @Test
+    void testDecompressKeepsEntriesInsideOutputDirectory() throws IOException {
+        File zipFile = Files.createTempFile("nacos-sys-safe-zip", ".zip").toFile();
+        zipFile.deleteOnExit();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            writeZipEntry(zipOutputStream, ".", "ignored");
+            writeZipEntry(zipOutputStream, "../outside.txt", "ignored");
+            writeZipEntry(zipOutputStream, "C:/windows-absolute.txt", "ignored");
+            writeZipEntry(zipOutputStream, "invalid\0name", "ignored");
+            zipOutputStream.putNextEntry(new ZipEntry("nested/"));
+            zipOutputStream.closeEntry();
+            writeZipEntry(zipOutputStream, "nested/safe.txt", "safe");
+        }
+        File outputDir = Files.createTempDirectory("nacos-sys-safe-output").toFile();
+        outputDir.deleteOnExit();
+        
+        DiskUtils.decompress(zipFile.getAbsolutePath(), outputDir.getAbsolutePath(), new Adler32());
+        
+        assertFalse(new File(outputDir.getParentFile(), "outside.txt").exists());
+        assertTrue(new File(outputDir, "nested").isDirectory());
+        assertTrue(new File(outputDir, "nested/safe.txt").isFile());
+        try (Stream<Path> paths = Files.walk(outputDir.toPath())) {
+            assertFalse(paths.anyMatch(
+                    path -> "windows-absolute.txt".equals(path.getFileName().toString())));
+        }
+    }
+    
+    private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content)
+            throws IOException {
+        zipOutputStream.putNextEntry(new ZipEntry(name));
+        zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+        zipOutputStream.closeEntry();
     }
     
     @Test

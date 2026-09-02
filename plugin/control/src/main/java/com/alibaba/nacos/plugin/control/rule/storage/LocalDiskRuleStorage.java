@@ -24,6 +24,9 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * local disk storage.
@@ -90,14 +93,13 @@ public class LocalDiskRuleStorage implements RuleStorage {
     
     @Override
     public void saveTpsRule(String pointName, String ruleContent) throws IOException {
-        File file = checkTpsBaseDir();
-        File tpsFile = new File(file, pointName);
-        if (!tpsFile.exists()) {
-            tpsFile.createNewFile();
-        }
+        File tpsFile = resolveTpsRuleFile(pointName);
         if (ruleContent == null) {
             DiskUtils.deleteQuietly(tpsFile);
         } else {
+            if (!tpsFile.exists()) {
+                tpsFile.createNewFile();
+            }
             DiskUtils.writeFile(tpsFile, ruleContent.getBytes(Constants.ENCODE), false);
             LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName, ruleContent);
             
@@ -107,11 +109,34 @@ public class LocalDiskRuleStorage implements RuleStorage {
     
     @Override
     public String getTpsRule(String pointName) {
-        File file = checkTpsBaseDir();
-        File tpsFile = new File(file, pointName);
+        File tpsFile = resolveTpsRuleFile(pointName);
         if (!tpsFile.exists()) {
             return null;
         }
         return DiskUtils.readFile(tpsFile);
+    }
+    
+    private File resolveTpsRuleFile(String pointName) {
+        if (pointName == null || pointName.trim().isEmpty() || ".".equals(pointName)
+                || "..".equals(pointName) || pointName.indexOf('/') >= 0
+                || pointName.indexOf('\\') >= 0) {
+            throw invalidPointNameException();
+        }
+        try {
+            Path pointPath = Paths.get(pointName);
+            Path basePath = checkTpsBaseDir().toPath().toAbsolutePath().normalize();
+            Path targetPath = basePath.resolve(pointPath).normalize();
+            if (pointPath.isAbsolute() || pointPath.getNameCount() != 1
+                    || !basePath.equals(targetPath.getParent())) {
+                throw invalidPointNameException();
+            }
+            return targetPath.toFile();
+        } catch (InvalidPathException e) {
+            throw invalidPointNameException();
+        }
+    }
+    
+    private static IllegalArgumentException invalidPointNameException() {
+        return new IllegalArgumentException("pointName must be a direct child file name");
     }
 }
