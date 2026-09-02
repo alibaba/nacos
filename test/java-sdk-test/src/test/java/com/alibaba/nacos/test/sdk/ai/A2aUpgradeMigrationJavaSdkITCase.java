@@ -18,7 +18,10 @@ package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
+import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -28,11 +31,17 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
@@ -49,6 +58,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,6 +87,15 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static final String ENDPOINT_GROUP = "agent-endpoints";
 
+    private static final String MIGRATION_MARKER_DATA_ID = "nacos.ai.a2a.migration.v1";
+
+    private static final String MIGRATION_INTERNAL_GROUP = "nacos_internal";
+
+    private static final String CUTOVER_AGENT = "a2a-migration-cutover-it";
+
+    private static final String CUTOVER_ENABLED_PROPERTY =
+        "nacos.a2a.migration.cutover.enabled";
+
     private static final String SERVER_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
 
@@ -85,7 +105,87 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String RECONNECT_CONTROL_DIRECTORY_PROPERTY =
         "nacos.a2a.migration.reconnect.control.dir";
 
+    private static final String CLUSTER_RUNTIME_ENABLED_PROPERTY =
+        "nacos.a2a.migration.cluster.runtime.enabled";
+
+    private static final String CLUSTER_CUTOVER_ENABLED_PROPERTY =
+        "nacos.a2a.migration.cluster.cutover.enabled";
+
+    private static final String CLUSTER_CUTOVER_CONTROL_DIRECTORY_PROPERTY =
+        "nacos.a2a.migration.cluster.cutover.control.dir";
+
+    private static final String CLUSTER_NODE_A_ADDRESS_PROPERTY =
+        "nacos.a2a.migration.cluster.node-a.address";
+
+    private static final String CLUSTER_NODE_B_ADDRESS_PROPERTY =
+        "nacos.a2a.migration.cluster.node-b.address";
+
+    private static final String CLUSTER_NODE_C_ADDRESS_PROPERTY =
+        "nacos.a2a.migration.cluster.node-c.address";
+
     private static final long RECONNECT_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(2);
+
+    private static final long EXTERNAL_CONTROL_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
+    @Test
+    @EnabledIfSystemProperty(named = CUTOVER_ENABLED_PROPERTY, matches = "true")
+    void shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover()
+        throws Exception {
+        ConfigService configService = createConfigService();
+        assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
+
+        AiService grpcService = createAiService(transportProperties(
+            AiConstants.AI_TRANSPORT_MODE_GRPC));
+        AiService httpService = createAiService(transportProperties(
+            AiConstants.AI_TRANSPORT_MODE_HTTP));
+        assertEquals(VERSION_ONE, grpcService.getAgentCard(CUTOVER_AGENT).getVersion());
+        assertEquals(VERSION_ONE, httpService.getAgentCard(CUTOVER_AGENT).getVersion());
+
+        NacosException fenced = assertThrows(NacosException.class,
+            () -> grpcService.releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true));
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), fenced.getErrCode(),
+            fenced.toString());
+
+        AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/quiescing-initial");
+        grpcService.registerAgentEndpoint(CUTOVER_AGENT, initial);
+        awaitRuntimeEndpoint(grpcService, CUTOVER_AGENT, VERSION_ONE, uri(initial));
+
+        AgentReference reference = reference(CUTOVER_AGENT, VERSION_ONE);
+        RecordingListener grpcListener = new RecordingListener();
+        RecordingListener httpListener = new RecordingListener();
+        assertTrue(containsRuntimeEndpoint(grpcService.subscribeAgent(reference, grpcListener),
+            uri(initial)));
+        assertTrue(containsRuntimeEndpoint(httpService.subscribeAgent(reference, httpListener),
+            uri(initial)));
+        addCleanup(() -> grpcService.unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> httpService.unsubscribeAgent(reference, httpListener));
+
+        AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
+            "/quiescing-replacement");
+        grpcService.registerAgentEndpoint(CUTOVER_AGENT,
+            Collections.singletonList(replacement));
+        assertWatchEndpoint(grpcListener, uri(replacement), "gRPC");
+        assertWatchEndpoint(httpListener, uri(replacement), "HTTP");
+        assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
+
+        grpcService.deregisterAgentEndpoint(CUTOVER_AGENT, replacement);
+        awaitRuntimeEndpointCount(grpcService, CUTOVER_AGENT, VERSION_ONE, 0);
+
+        assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
+        grpcService.releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
+            AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        waitUntil("terminal legacy facade should publish canonical Version 2",
+            () -> VERSION_TWO.equals(grpcService.getAgentCard(CUTOVER_AGENT).getVersion()));
+        assertEquals(VERSION_TWO,
+            grpcService.discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
+        AgentSearchRequest search = new AgentSearchRequest();
+        search.setAgentNameContains(CUTOVER_AGENT);
+        waitUntil("terminal Agent should remain searchable", () -> grpcService
+            .searchAgents(search).getPageItems().stream()
+            .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
+                && VERSION_TWO.equals(each.getLatestVersion())));
+    }
 
     @Test
     void shouldDualMaterializeReplaceDeregisterAndChargeCapacityOnce() throws Exception {
@@ -200,6 +300,126 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         awaitLayouts(service, namingService, agentName, VERSION_TWO, 1);
     }
 
+    @Test
+    @EnabledIfSystemProperty(named = CLUSTER_RUNTIME_ENABLED_PROPERTY, matches = "true")
+    void shouldConvergeExactVersionDualLayoutsAcrossThreeMembers() throws Exception {
+        String nodeAAddress = requiredDistinctClusterAddress(CLUSTER_NODE_A_ADDRESS_PROPERTY,
+            Collections.<String>emptyList());
+        String nodeBAddress = requiredDistinctClusterAddress(CLUSTER_NODE_B_ADDRESS_PROPERTY,
+            Collections.singletonList(nodeAAddress));
+        String nodeCAddress = requiredDistinctClusterAddress(CLUSTER_NODE_C_ADDRESS_PROPERTY,
+            Arrays.asList(nodeAAddress, nodeBAddress));
+        ConfigService configServiceA = createConfigServiceAt(nodeAAddress);
+        assertEquals("SYNCING", awaitMigrationState(configServiceA, "SYNCING"));
+
+        AiService publisherA = createAiServiceAt(nodeAAddress,
+            AgentTransportMode.GRPC.getValue());
+        List<AiService> readers = Arrays.asList(publisherA,
+            createAiServiceAt(nodeBAddress, AgentTransportMode.HTTP.getValue()),
+            createAiServiceAt(nodeCAddress, AgentTransportMode.HTTP.getValue()));
+        List<NamingService> namingReaders = Arrays.asList(createNamingServiceAt(nodeAAddress),
+            createNamingServiceAt(nodeBAddress), createNamingServiceAt(nodeCAddress));
+        A2aMaintainerService maintainerA = createA2aMaintainerServiceAt(nodeAAddress);
+        String agentName = randomUnencodedAgentName("migration-cluster-runtime");
+        releaseVersions(publisherA, maintainerA, agentName, VERSION_ONE, VERSION_TWO);
+
+        AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/cluster-initial");
+        publisherA.registerAgentEndpoint(agentName, initial);
+        addCleanup(() -> publisherA.deregisterAgentEndpoint(agentName, initial));
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 1);
+        assertClusterLayoutUris(readers, namingReaders, agentName, VERSION_ONE,
+            Collections.singletonList(uri(initial)));
+
+        AgentEndpoint first = endpoint(VERSION_ONE, randomPort(), "/cluster-replaced-first");
+        AgentEndpoint second = endpoint(VERSION_ONE, randomPort(), "/cluster-replaced-second");
+        publisherA.registerAgentEndpoint(agentName, Arrays.asList(first, second));
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 2);
+        assertClusterLayoutUris(readers, namingReaders, agentName, VERSION_ONE,
+            Arrays.asList(uri(first), uri(second)));
+
+        AgentEndpoint versionTwo = endpoint(VERSION_TWO, randomPort(), "/cluster-version-two");
+        publisherA.registerAgentEndpoint(agentName, versionTwo);
+        addCleanup(() -> publisherA.deregisterAgentEndpoint(agentName, versionTwo));
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 1);
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 2);
+
+        publisherA.deregisterAgentEndpoint(agentName, first);
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 0);
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 1);
+        publisherA.deregisterAgentEndpoint(agentName, versionTwo);
+        awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 0);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = CLUSTER_CUTOVER_ENABLED_PROPERTY, matches = "true")
+    void shouldKeepClusterReadsAndWatchesEquivalentDuringTerminalCutover() throws Exception {
+        Path controlDirectory = Paths.get(
+            System.getProperty(CLUSTER_CUTOVER_CONTROL_DIRECTORY_PROPERTY));
+        Files.createDirectories(controlDirectory);
+        Path ready = controlDirectory.resolve("client-ready");
+        Path nodeCUpgraded = controlDirectory.resolve("node-c-upgraded");
+        Files.deleteIfExists(ready);
+        Files.deleteIfExists(nodeCUpgraded);
+
+        String nodeAAddress = requiredDistinctClusterAddress(CLUSTER_NODE_A_ADDRESS_PROPERTY,
+            Collections.<String>emptyList());
+        String nodeBAddress = requiredDistinctClusterAddress(CLUSTER_NODE_B_ADDRESS_PROPERTY,
+            Collections.singletonList(nodeAAddress));
+        String nodeCAddress = requiredDistinctClusterAddress(CLUSTER_NODE_C_ADDRESS_PROPERTY,
+            Arrays.asList(nodeAAddress, nodeBAddress));
+        List<ConfigService> configReaders = Arrays.asList(createConfigServiceAt(nodeAAddress),
+            createConfigServiceAt(nodeBAddress), createConfigServiceAt(nodeCAddress));
+        assertClusterMigrationState(configReaders, "SYNCING");
+
+        AiService readerA = createAiServiceAt(nodeAAddress,
+            AgentTransportMode.GRPC.getValue());
+        AiService readerB = createAiServiceAt(nodeBAddress,
+            AgentTransportMode.HTTP.getValue());
+        AiService readerC = createAiServiceAt(nodeCAddress,
+            AgentTransportMode.HTTP.getValue());
+        AiService loadBalancedReader = createAiServiceAt(
+            nodeAAddress + ',' + nodeBAddress + ',' + nodeCAddress,
+            AgentTransportMode.HTTP.getValue());
+        List<AiService> readers = Arrays.asList(readerA, readerB, readerC,
+            loadBalancedReader);
+        A2aMaintainerService maintainerA = createA2aMaintainerServiceAt(nodeAAddress);
+        String agentName = randomUnencodedAgentName("migration-cluster-cutover");
+        releaseVersions(readerA, maintainerA, agentName, VERSION_ONE);
+        AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/cluster-cutover-initial");
+        readerA.registerAgentEndpoint(agentName, initial);
+        addCleanup(() -> readerA.deregisterAgentEndpoint(agentName, initial));
+        awaitClusterRuntime(readers, agentName, VERSION_ONE, uri(initial));
+        assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(initial));
+
+        AgentReference reference = reference(agentName, VERSION_ONE);
+        RecordingListener grpcListener = new RecordingListener();
+        RecordingListener httpListener = new RecordingListener();
+        assertTrue(containsRuntimeEndpoint(readerA.subscribeAgent(reference, grpcListener),
+            uri(initial)));
+        assertTrue(containsRuntimeEndpoint(
+            loadBalancedReader.subscribeAgent(reference, httpListener), uri(initial)));
+        addCleanup(() -> readerA.unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> loadBalancedReader.unsubscribeAgent(reference, httpListener));
+        writeMarker(ready, agentName);
+
+        waitForMarker(nodeCUpgraded,
+            "the external fixture upgrades the third migration-capable member");
+        assertClusterMigrationStateAtOrPastQuiescing(configReaders);
+        AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
+            "/cluster-cutover-replacement");
+        readerA.registerAgentEndpoint(agentName, Collections.singletonList(replacement));
+        assertWatchEndpoint(grpcListener, uri(replacement), "cluster gRPC");
+        assertWatchEndpoint(httpListener, uri(replacement), "cluster HTTP");
+        assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(replacement));
+        assertNoDuplicateEndpointEvent(grpcListener, uri(replacement), "cluster gRPC");
+        assertNoDuplicateEndpointEvent(httpListener, uri(replacement), "cluster HTTP");
+
+        assertClusterMigrationState(configReaders, "CANONICAL");
+        assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(replacement));
+        readerA.deregisterAgentEndpoint(agentName, replacement);
+        awaitClusterRuntimeCount(readers, agentName, VERSION_ONE, 0);
+    }
+
     private void releaseVersions(AiService service, A2aMaintainerService maintainer,
         String agentName, String... versions) throws Exception {
         for (int i = 0; i < versions.length; i++) {
@@ -288,6 +508,97 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(expected, canonical);
     }
 
+    private void awaitClusterLayouts(List<AiService> services,
+        List<NamingService> namingServices, String agentName, String version, int expected)
+        throws Exception {
+        long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
+        Throwable lastFailure = null;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (clusterLayoutsHaveCount(services, namingServices, agentName, version,
+                    expected)) {
+                    return;
+                }
+            } catch (Throwable throwable) {
+                lastFailure = throwable;
+            }
+            Thread.sleep(500L);
+        }
+        AssertionError failure = new AssertionError("all cluster members did not expose "
+            + expected + " Endpoints in both migration Runtime layouts for " + agentName
+            + " Version " + version);
+        if (lastFailure != null) {
+            failure.initCause(lastFailure);
+        }
+        throw failure;
+    }
+
+    private boolean clusterLayoutsHaveCount(List<AiService> services,
+        List<NamingService> namingServices, String agentName, String version, int expected)
+        throws NacosException {
+        for (AiService service : services) {
+            if (runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                .size() != expected) {
+                return false;
+            }
+        }
+        for (NamingService namingService : namingServices) {
+            if (historicalInstances(namingService, agentName, version).size() != expected) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void assertClusterLayoutUris(List<AiService> services,
+        List<NamingService> namingServices, String agentName, String version,
+        List<String> expectedUris) throws Exception {
+        for (int i = 0; i < services.size(); i++) {
+            assertLayoutUris(services.get(i), namingServices.get(i), agentName, version,
+                expectedUris);
+        }
+    }
+
+    private void awaitClusterRuntime(List<AiService> services, String agentName, String version,
+        String expectedUri) throws Exception {
+        waitUntilLong("all cluster members should expose Runtime Endpoint " + expectedUri,
+            () -> {
+                for (AiService service : services) {
+                    if (!containsRuntimeEndpoint(service.discoverAgent(
+                        reference(agentName, version)), expectedUri)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+    }
+
+    private void awaitClusterRuntimeCount(List<AiService> services, String agentName,
+        String version, int expected) throws Exception {
+        waitUntilLong("all cluster members should expose " + expected + " Runtime Endpoints",
+            () -> {
+                for (AiService service : services) {
+                    if (runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                        .size() != expected) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+    }
+
+    private void assertClusterDefinitionAndRuntime(List<AiService> services, String agentName,
+        String version, String expectedUri) throws Exception {
+        for (AiService service : services) {
+            assertEquals(version, service.getAgentCard(agentName).getVersion());
+            AgentDiscoveryResult discovered = service.discoverAgent(
+                reference(agentName, version));
+            assertEquals(version, discovered.getVersion());
+            assertTrue(containsRuntimeEndpoint(discovered, expectedUri),
+                "missing Runtime Endpoint " + expectedUri);
+        }
+    }
+
     private List<Instance> historicalInstances(NamingService namingService, String agentName,
         String version) throws NacosException {
         return namingService.getAllInstances(agentName + "::" + version, ENDPOINT_GROUP);
@@ -319,6 +630,113 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
+    private Properties transportProperties(String transport) {
+        Properties result = sdkProperties();
+        result.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
+        return result;
+    }
+
+    private String awaitMigrationState(ConfigService configService, String... expected)
+        throws Exception {
+        long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
+        String last = null;
+        while (System.currentTimeMillis() < deadline) {
+            String content = configService.getConfig(MIGRATION_MARKER_DATA_ID,
+                MIGRATION_INTERNAL_GROUP, DEFAULT_TIMEOUT_MS);
+            if (content != null) {
+                last = JacksonUtils.toObj(content).path("state").asText();
+                if (Arrays.asList(expected).contains(last)) {
+                    return last;
+                }
+            }
+            Thread.sleep(100L);
+        }
+        fail("Migration marker did not reach one of " + Arrays.toString(expected)
+            + ", last state: " + last);
+        return last;
+    }
+
+    private void assertClusterMigrationState(List<ConfigService> configServices,
+        String expected) throws Exception {
+        for (ConfigService configService : configServices) {
+            assertEquals(expected, awaitMigrationState(configService, expected));
+        }
+    }
+
+    private void assertClusterMigrationStateAtOrPastQuiescing(
+        List<ConfigService> configServices) throws Exception {
+        for (ConfigService configService : configServices) {
+            assertTrue(Arrays.asList("QUIESCING", "CANONICAL")
+                .contains(awaitMigrationState(configService, "QUIESCING", "CANONICAL")));
+        }
+    }
+
+    private void awaitRuntimeEndpoint(AiService service, String agentName, String version,
+        String endpointUri) throws Exception {
+        waitUntil("Runtime Endpoint should become discoverable during cutover",
+            () -> containsRuntimeEndpoint(service.discoverAgent(reference(agentName, version)),
+                endpointUri));
+    }
+
+    private void awaitRuntimeEndpointCount(AiService service, String agentName, String version,
+        int expected) throws Exception {
+        waitUntil("Runtime Endpoint count should converge to " + expected,
+            () -> runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                .size() == expected);
+    }
+
+    private void assertWatchEndpoint(RecordingListener listener, String endpointUri,
+        String transport) throws Exception {
+        long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+        while (System.currentTimeMillis() < deadline) {
+            AgentDiscoveryResult result = listener.events.poll(1L, TimeUnit.SECONDS);
+            if (containsRuntimeEndpoint(result, endpointUri)) {
+                return;
+            }
+        }
+        fail(transport + " Watch did not receive Runtime Endpoint " + endpointUri);
+    }
+
+    private void assertNoDuplicateEndpointEvent(RecordingListener listener, String endpointUri,
+        String transport) throws Exception {
+        long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(3);
+        while (System.currentTimeMillis() < deadline) {
+            AgentDiscoveryResult result = listener.events.poll(250L, TimeUnit.MILLISECONDS);
+            if (containsRuntimeEndpoint(result, endpointUri)) {
+                fail(transport + " Watch delivered a duplicate business Snapshot for "
+                    + endpointUri);
+            }
+        }
+    }
+
+    private void waitUntilLong(String reason, CheckedCondition condition) throws Exception {
+        long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
+        Throwable lastFailure = null;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (condition.evaluate()) {
+                    return;
+                }
+            } catch (Throwable throwable) {
+                lastFailure = throwable;
+            }
+            Thread.sleep(500L);
+        }
+        if (lastFailure == null) {
+            fail(reason);
+        }
+        fail(reason + ", last failure: " + lastFailure.getMessage(), lastFailure);
+    }
+
+    private boolean containsRuntimeEndpoint(AgentDiscoveryResult result, String endpointUri) {
+        for (Endpoint each : runtimeEndpoints(result)) {
+            if (endpointUri.equals(each.getUri())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String uri(AgentEndpoint endpoint) {
         return "http://" + endpoint.getAddress() + ':' + endpoint.getPort()
             + endpoint.getPath();
@@ -340,12 +758,61 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         return AiMaintainerFactory.createAiMaintainerService(properties).a2a();
     }
 
+    private A2aMaintainerService createA2aMaintainerServiceAt(String serverAddress)
+        throws NacosException {
+        Properties properties = sdkProperties(serverAddress);
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).a2a();
+    }
+
+    private AiService createAiServiceAt(String serverAddress, String transport)
+        throws Exception {
+        Properties properties = sdkProperties(serverAddress);
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, transport);
+        return createAiService(properties);
+    }
+
+    private NamingService createNamingServiceAt(String serverAddress) throws Exception {
+        NamingService result = NamingFactory.createNamingService(sdkProperties(serverAddress));
+        addCleanup(result::shutDown);
+        waitUntil("Naming SDK client should connect to " + serverAddress,
+            () -> "UP".equals(result.getServerStatus()));
+        return result;
+    }
+
+    private ConfigService createConfigServiceAt(String serverAddress) throws Exception {
+        ConfigService result = ConfigFactory.createConfigService(sdkProperties(serverAddress));
+        addCleanup(result::shutDown);
+        waitUntil("Config SDK client should connect to " + serverAddress,
+            () -> "UP".equals(result.getServerStatus()));
+        return result;
+    }
+
+    private Properties sdkProperties(String serverAddress) {
+        Properties result = new Properties();
+        result.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddress);
+        return result;
+    }
+
+    private String requiredDistinctClusterAddress(String property,
+        List<String> otherAddresses) {
+        String value = System.getProperty(property);
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalStateException("Missing required cluster IT property: " + property);
+        }
+        if (otherAddresses.contains(value)) {
+            throw new IllegalStateException("Cluster IT node addresses must be different: "
+                + value);
+        }
+        return value;
+    }
+
     private void writeMarker(Path path, String value) throws Exception {
         Files.write(path, value.getBytes(StandardCharsets.UTF_8));
     }
 
     private void waitForMarker(Path path, String reason) throws Exception {
-        long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
+        long deadline = System.currentTimeMillis() + EXTERNAL_CONTROL_TIMEOUT_MILLIS;
         while (System.currentTimeMillis() < deadline) {
             if (Files.exists(path)) {
                 return;
@@ -353,5 +820,19 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             Thread.sleep(250L);
         }
         fail("Timed out waiting for " + reason + ": " + path);
+    }
+
+    private static final class RecordingListener
+        extends AbstractNacosAgentDiscoveryListener {
+
+        private final BlockingQueue<AgentDiscoveryResult> events =
+            new LinkedBlockingQueue<>();
+
+        @Override
+        public void onEvent(NacosAgentDiscoveryEvent event) {
+            if (event.getAgentDiscoveryResult() != null) {
+                events.add(event.getAgentDiscoveryResult());
+            }
+        }
     }
 }

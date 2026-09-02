@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -81,6 +82,20 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private static final String MIGRATION_PROGRESS_DATA_ID =
             "nacos.ai.a2a.reconciliation.progress.v1";
 
+    private static final String MIGRATION_MARKER_DATA_ID = "nacos.ai.a2a.migration.v1";
+
+    private static final String CUTOVER_BLOCKER_DATA_ID =
+            "nacos.ai.a2a.migration.cutover.blocker";
+
+    private static final String CUTOVER_PHASE_PROPERTY =
+            "nacos.a2a.migration.cutover.phase";
+
+    private static final String CUTOVER_AGENT = "a2a-migration-cutover-it";
+
+    private static final String CUTOVER_VERSION_ONE = "1.0.0";
+
+    private static final String CUTOVER_VERSION_TWO = "2.0.0";
+
     private static final String MIGRATION_INTERNAL_GROUP = "nacos_internal";
 
     private static final String HISTORICAL_AGENT_GROUP = "agent";
@@ -90,6 +105,77 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private static final long RETRY_INTERVAL_MILLIS = 250L;
 
     private static final AsciiAgentIdCodec AGENT_ID_CODEC = new AsciiAgentIdCodec();
+
+    @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "prepare")
+    public void testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable()
+            throws Exception {
+        deleteQuietly(ADMIN_A2A_PATH, historicalIdentity(DEFAULT_NAMESPACE, CUTOVER_AGENT,
+                null, REGISTRATION_TYPE_URL));
+        deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, CUTOVER_AGENT);
+        assertEquals("SYNCING", awaitMigrationState("SYNCING").path("state").asText());
+
+        postFormOk(ADMIN_A2A_PATH, historicalForm(DEFAULT_NAMESPACE, CUTOVER_AGENT,
+                CUTOVER_VERSION_ONE, REGISTRATION_TYPE_URL,
+                buildV1AgentCard(CUTOVER_AGENT, CUTOVER_VERSION_ONE, "1.0")));
+        awaitCanonical(CUTOVER_AGENT, DEFAULT_NAMESPACE, Set.of(CUTOVER_VERSION_ONE),
+                CUTOVER_VERSION_ONE);
+        awaitCrossSurface(CUTOVER_AGENT, DEFAULT_NAMESPACE, CUTOVER_VERSION_ONE);
+
+        deleteConfig(CUTOVER_BLOCKER_DATA_ID, HISTORICAL_AGENT_GROUP, DEFAULT_NAMESPACE);
+        JsonNode quiescing = awaitMigrationState("QUIESCING");
+        JsonNode completedAt = quiescing.path("completedAt");
+        assertTrue(completedAt.isMissingNode() || completedAt.isNull(),
+                quiescing.toString());
+
+        Map<String, String> nextVersion = historicalForm(DEFAULT_NAMESPACE, CUTOVER_AGENT,
+                CUTOVER_VERSION_TWO, REGISTRATION_TYPE_URL,
+                buildV1AgentCard(CUTOVER_AGENT, CUTOVER_VERSION_TWO, "1.0"));
+        assertError(postFormRaw(ADMIN_A2A_PATH, nextVersion), 409,
+                ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+                "definition migration is quiescing");
+        assertError(putConsoleA2aRaw(nextVersion), 409,
+                ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+                "definition migration is quiescing");
+        assertError(deleteRaw(ADMIN_A2A_PATH, historicalIdentity(DEFAULT_NAMESPACE,
+                CUTOVER_AGENT, CUTOVER_VERSION_ONE, REGISTRATION_TYPE_URL)), 409,
+                ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+                "definition migration is quiescing");
+
+        JsonNode historical = getJsonOk(ADMIN_A2A_PATH,
+                historicalIdentity(DEFAULT_NAMESPACE, CUTOVER_AGENT, CUTOVER_VERSION_ONE,
+                        REGISTRATION_TYPE_URL)).path("data");
+        assertEquals(CUTOVER_VERSION_ONE, historical.path("version").asText(),
+                historical.toString());
+        JsonNode console = getConsoleA2a(CUTOVER_AGENT, CUTOVER_VERSION_ONE);
+        assertEquals(CUTOVER_AGENT, console.path("name").asText(), console.toString());
+        awaitCrossSurface(CUTOVER_AGENT, DEFAULT_NAMESPACE, CUTOVER_VERSION_ONE);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "verify")
+    public void testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent()
+            throws Exception {
+        JsonNode canonicalMarker = awaitMigrationState("CANONICAL");
+        assertTrue(canonicalMarker.path("completedAt").asLong() > 0L,
+                canonicalMarker.toString());
+        awaitCanonical(CUTOVER_AGENT, DEFAULT_NAMESPACE,
+                Set.of(CUTOVER_VERSION_ONE, CUTOVER_VERSION_TWO), CUTOVER_VERSION_TWO);
+        JsonNode historicalLatest = getJsonOk(ADMIN_A2A_PATH,
+                historicalIdentity(DEFAULT_NAMESPACE, CUTOVER_AGENT, null,
+                        REGISTRATION_TYPE_URL)).path("data");
+        assertEquals(CUTOVER_VERSION_TWO, historicalLatest.path("version").asText(),
+                historicalLatest.toString());
+        JsonNode consoleLatest = getConsoleA2a(CUTOVER_AGENT, CUTOVER_VERSION_TWO);
+        assertEquals(CUTOVER_VERSION_TWO, consoleLatest.path("version").asText(),
+                consoleLatest.toString());
+        awaitCrossSurface(CUTOVER_AGENT, DEFAULT_NAMESPACE, CUTOVER_VERSION_TWO);
+
+        deleteJsonOk(ADMIN_A2A_PATH, historicalIdentity(DEFAULT_NAMESPACE, CUTOVER_AGENT,
+                null, REGISTRATION_TYPE_URL));
+        awaitCanonicalAbsent(CUTOVER_AGENT, DEFAULT_NAMESPACE);
+        assertEquals("CANONICAL", awaitMigrationState("CANONICAL").path("state").asText());
+    }
 
     @Test
     public void testHistoricalMutationConvergesAcrossCanonicalSurfaces() throws Exception {
@@ -405,13 +491,39 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     }
 
     private JsonNode putConsoleA2a(Map<String, String> form) throws Exception {
-        HttpPut request = new HttpPut(CONSOLE_BASE_URL + CONSOLE_A2A_PATH);
-        HttpUtils.initRequestFromEntity(request, form, StandardCharsets.UTF_8.name());
-        HttpResponse response = executeRaw(request);
+        HttpResponse response = putConsoleA2aRaw(form);
         assertEquals(200, response.code(), response.body());
         JsonNode root = JacksonUtils.toObj(response.body());
         assertSuccess(root);
         return root;
+    }
+
+    private HttpResponse putConsoleA2aRaw(Map<String, String> form) throws Exception {
+        HttpPut request = new HttpPut(CONSOLE_BASE_URL + CONSOLE_A2A_PATH);
+        HttpUtils.initRequestFromEntity(request, form, StandardCharsets.UTF_8.name());
+        return executeRaw(request);
+    }
+
+    private JsonNode awaitMigrationState(String expectedState) throws Exception {
+        JsonNode last = null;
+        for (int retry = 0; retry <= MAX_RETRIES; retry++) {
+            HttpResponse response = getRaw(ADMIN_CONFIG_PATH,
+                    configIdentity(MIGRATION_MARKER_DATA_ID, MIGRATION_INTERNAL_GROUP,
+                            DEFAULT_NAMESPACE));
+            if (response.code() == 200) {
+                String content = JacksonUtils.toObj(response.body()).path("data")
+                        .path("content").asText();
+                if (!content.isEmpty()) {
+                    last = JacksonUtils.toObj(content);
+                    if (expectedState.equals(last.path("state").asText())) {
+                        return last;
+                    }
+                }
+            }
+            retry();
+        }
+        fail("Migration marker did not reach " + expectedState + ": " + last);
+        return last;
     }
 
     private String getConfigContent(String dataId, String groupName, String namespaceId)

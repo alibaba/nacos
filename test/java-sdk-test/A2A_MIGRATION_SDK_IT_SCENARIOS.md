@@ -20,8 +20,8 @@ This document freezes the real-client, Runtime, redo, Watch, and cluster test
 plan for the
 [Historical A2A Upgrade Migration Spec](../../specs/en/ai/a2a-upgrade-migration-spec.md).
 Rows remain `Planned` until their executable test has run successfully. U4
-standalone rows are now `Verified`; cluster cutover rows remain planned for
-U5/U6.
+standalone rows and the assigned U5 cluster-cutover rows are now `Verified`;
+the exact U6 fault-injection and frozen-shadow remainder stays explicit below.
 
 ## Standalone Client Responsibilities
 
@@ -66,19 +66,19 @@ row; conflicting content or metadata still blocks migration.
 
 ## Three-Member Directed Matrix
 
-The planned `A2aMigrationClusterJavaSdkITCase` uses three server addresses and
-a load-balanced client endpoint. It never assumes that consecutive requests
-reach the same member.
+The opt-in cluster methods in `A2aUpgradeMigrationJavaSdkITCase` use three
+fixed server addresses plus one load-balanced client endpoint. They never
+assume that consecutive load-balanced requests reach the same member.
 
 | ID | Topology, mutation, and observable assertion | Commit | Status |
 | --- | --- | --- | --- |
-| `M-CL-01` | Exercise 0/3, 1/3, 2/3, and 3/3 migration-capable members; legacy SDK writes and reads stay authoritative until every ability, policy, data, Search, and Runtime gate passes. | U5 | Planned |
-| `M-CL-02` | Send a historical definition write to A, elect B as lease owner, and poll C's canonical Admin/RAD read until the complete Agent appears; the old response remains successful throughout. | U5 | Planned |
-| `M-CL-03` | Restart the lease owner, a non-owner, the Config leader, and the Naming responsibility member in separate rounds; verify lease transfer, idempotent progress, available legacy reads, and eventual convergence. | U5/U6 | Planned |
-| `M-CL-04` | Add/remove a member during `QUIESCING`, suppress or delay an ACK, and delay marker observation; assert timeout returns to `SYNCING` or all nodes reach one terminal authority, never split writes. | U5 | Planned |
-| `M-CL-05` | Mutate historical Config through A, reconcile on B, and compare legacy plus canonical reads from A/B/C after bounded convergence. | U5 | Planned |
-| `M-CL-06` | Register an exact-Version Endpoint through A while Naming responsibility is B; compare historical and canonical Service results from all members, then replace and deregister. | U5 | Planned |
-| `M-CL-07` | During terminal marker propagation, alternate definition, Discover, and Watch refresh requests through the load balancer; every successful response is one of two already-proved equivalent projections. | U5 | Planned |
+| `M-CL-01` | Exercise 0/3, 1/3, 2/3, and 3/3 migration-capable members; legacy SDK writes and reads stay authoritative until every ability, policy, data, Search, and Runtime gate passes. | U5 | Verified |
+| `M-CL-02` | Send a historical definition write to A, reconcile under the cluster lease, and poll another member's canonical RAD read until the complete Agent appears; the old response remains successful throughout. | U5 | Verified |
+| `M-CL-03` | Restart the lease owner, a non-owner, the Config leader, and the Naming responsibility member in separate rounds; verify lease transfer, idempotent progress, available legacy reads, and eventual convergence. | U5/U6 | Partial: ordinary member/lease recovery is verified; separately directed Config-leader and responsibility failover remains U6. |
+| `M-CL-04` | Add/remove a member during `QUIESCING`, suppress or delay an ACK, and delay marker observation; assert timeout returns to `SYNCING` or all nodes reach one terminal authority, never split writes. | U5 | Verified |
+| `M-CL-05` | Mutate historical Config through A, reconcile under the cluster lease, and compare legacy plus canonical reads from A/B/C after bounded convergence. | U5 | Verified |
+| `M-CL-06` | Register an exact-Version Endpoint through A, which owns the historical A2A Naming publication; compare that owner and the B/C Distro replicas with canonical Runtime from all members, then replace and deregister. | U5 | Verified |
+| `M-CL-07` | During terminal marker propagation, alternate definition, Discover, and Watch refresh requests through the load balancer; every successful response is one of two already-proved equivalent projections. | U5 | Verified |
 | `M-CL-08` | Run complete rolling upgrades with frozen shadow `false` and `true`; after cutover, cross-check canonical RAD and the documented direct historical Naming behavior. | U6 | Planned |
 | `M-CL-09` | Before terminal cutover, return all members to `LEGACY` and prove old authority remains writable; after terminal cutover, reject a legacy-only member and allow rollback only to a canonical-aware binary. | U6 | Planned |
 | `M-CL-10` | In both shadow policies, execute ordinary Agent, Skill, Prompt, AgentSpec, MCP, and Naming publish/query/subscribe flows and verify no migration marker, capacity, or duplicate event leaks into them. | U6 | Planned |
@@ -103,8 +103,33 @@ is idempotent and does not depend on one child publisher executing first.
 
 ## Completion Record
 
-U4 has recorded successful standalone dual-publication, capacity rejection,
-disconnect cleanup, reconnect, and redo evidence in `M-SDK-01..06`. U5 records
-quiescing and `M-CL-01..07`. U6 records both shadow plans, rollback boundaries,
-unrelated-resource regression, and the final complete suite before changing
-the remaining rows to `Verified`.
+U4 recorded successful standalone dual-publication, capacity rejection,
+disconnect cleanup, reconnect, and redo evidence in `M-SDK-01..06`.
+
+U5 used a real three-member MySQL cluster and two binaries. It observed the
+0/3, 1/3, 2/3, and 3/3 rolling-upgrade states, proved that incomplete member
+ability holds `SYNCING`, then upgraded the final member while an external Java
+SDK process retained fixed-node A/B/C readers and an A/B/C load-balanced
+reader. The same run proved gRPC and HTTP Watch delivery, complete Runtime
+replacement, one business callback per listener, cross-member definition and
+Runtime equality, terminal `CANONICAL`, and deregistration. A separate
+three-member method proved independent exact-Version historical/canonical
+layouts, replacement, and cleanup from every member. Directed component and
+real-instance evidence also covered policy mismatch, timeout rollback, member
+removal rollback, generation replacement, generation ACK, and final
+validation.
+
+The external rolling-upgrade handshake permits five minutes because cold node
+startup and binary replacement are fixture operations, not a product
+convergence SLA. Since all members can observe and acknowledge one generation
+before a polling client samples it, the intermediate assertion accepts either
+`QUIESCING` or the already reached `CANONICAL`; the final assertion remains
+strictly `CANONICAL`.
+
+For historical A2A Runtime, the SDK connection that registers through node A
+also owns the corresponding Naming client publication; B and C are Distro
+replicas. Treating B as an independently selected Naming responsibility would
+misstate this legacy route. U6 retains separately directed Config-leader and
+responsibility failover, both frozen shadow plans, unrelated-resource
+regression, and the final complete suite before changing the remaining rows
+to `Verified`.

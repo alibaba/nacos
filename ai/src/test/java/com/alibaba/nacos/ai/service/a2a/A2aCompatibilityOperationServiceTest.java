@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationDefinitionWriteAfterHook;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationLegacyMutationGuard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -53,12 +54,15 @@ class A2aCompatibilityOperationServiceTest {
     @Mock
     private A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook;
     
+    @Mock
+    private A2aMigrationLegacyMutationGuard migrationMutationGuard;
+    
     private A2aCompatibilityOperationService service;
     
     @BeforeEach
     void setUp() {
         service = new A2aCompatibilityOperationService(modeResolver, canonicalService,
-            legacyService, migrationWriteAfterHook);
+            legacyService, migrationWriteAfterHook, migrationMutationGuard);
     }
     
     @Test
@@ -98,6 +102,7 @@ class A2aCompatibilityOperationServiceTest {
         verify(selected).releaseAgent(card, "ns", "SERVICE", true);
         verify(selected).updateAgentCard(card, "ns", "URL", false);
         verify(selected).deleteAgent("ns", "agent", "1.0.0");
+        verify(migrationMutationGuard, times(4)).checkMutable();
         if (selected == legacyService) {
             verify(migrationWriteAfterHook, times(4)).afterSuccessfulMutation("ns", "agent");
         } else {

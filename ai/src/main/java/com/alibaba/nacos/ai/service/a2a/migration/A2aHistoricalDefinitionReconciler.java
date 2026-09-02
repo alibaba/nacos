@@ -71,6 +71,20 @@ public class A2aHistoricalDefinitionReconciler {
         return targetStore.reconcile(definition, sourceCurrent);
     }
     
+    /**
+     * Verify the complete canonical target for one immutable source without repairing it.
+     *
+     * @param snapshot historical source snapshot
+     * @return whether Resource, Versions, and Storage are completely current
+     * @throws NacosException when source conversion fails
+     */
+    public boolean isCurrent(A2aHistoricalDefinitionSnapshot snapshot) throws NacosException {
+        if (snapshot == null) {
+            return false;
+        }
+        return targetStore.isCurrent(convert(snapshot));
+    }
+    
     A2aMigrationDefinition convert(A2aHistoricalDefinitionSnapshot snapshot)
         throws NacosException {
         String namespaceId = snapshot.getNamespaceId();

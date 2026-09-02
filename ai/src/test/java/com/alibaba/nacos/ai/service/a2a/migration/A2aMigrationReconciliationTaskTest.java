@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -35,10 +36,12 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -81,6 +84,9 @@ class A2aMigrationReconciliationTaskTest {
     private A2aMigrationStateService stateService;
     
     @Mock
+    private A2aMigrationCutoverCoordinator cutoverCoordinator;
+    
+    @Mock
     private A2aMigrationLease lease;
     
     private A2aMigrationReconciliationTask task;
@@ -91,11 +97,14 @@ class A2aMigrationReconciliationTaskTest {
         lenient().when(stateService.resolveConfigured())
             .thenReturn(A2aMigrationState.SYNCING);
         lenient().when(stateService.tryAcquireLease(anyString(), anyLong())).thenReturn(lease);
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("syncing", false, 1L);
+        lenient().when(stateService.currentMarker())
+            .thenReturn(new VersionedValue<A2aMigrationMarker>(marker, "marker-md5"));
         lenient().when(lease.renew()).thenReturn(true);
         lenient().when(namespaceOperationService.getNamespaceList())
             .thenReturn(Collections.singletonList(new Namespace(NAMESPACE_ID, NAMESPACE_ID)));
         task = new A2aMigrationReconciliationTask(namespaceOperationService, scanner, reconciler,
-            targetStore, stateService);
+            targetStore, stateService, cutoverCoordinator);
     }
     
     @AfterEach
@@ -121,6 +130,23 @@ class A2aMigrationReconciliationTaskTest {
         
         verify(namespaceOperationService, never()).getNamespaceList();
         verify(stateService, never()).persistProgress(any());
+    }
+    
+    @Test
+    void shouldSkipQuiescingAndMissingOrStaleSyncingMarker() {
+        A2aMigrationMarker quiescing = A2aMigrationMarker.syncing("syncing", false, 1L)
+            .transition(A2aMigrationState.QUIESCING, "quiescing", 2L);
+        when(stateService.resolveConfigured()).thenReturn(A2aMigrationState.QUIESCING,
+            A2aMigrationState.SYNCING, A2aMigrationState.SYNCING);
+        when(stateService.currentMarker()).thenReturn(null,
+            new VersionedValue<A2aMigrationMarker>(quiescing, "quiescing-md5"));
+        
+        task.executeReconciliation();
+        task.executeReconciliation();
+        task.executeReconciliation();
+        
+        verify(stateService, never()).tryAcquireLease(anyString(), anyLong());
+        verify(namespaceOperationService, never()).getNamespaceList();
     }
     
     @Test
@@ -174,6 +200,7 @@ class A2aMigrationReconciliationTaskTest {
         assertEquals(1L, progress.getValue().getFailed());
         assertEquals("storage unavailable", progress.getValue().getLastError());
         verify(lease).close();
+        verify(cutoverCoordinator).afterSyncingRound(any(), eq(lease), eq(false), any(), eq(2));
     }
     
     @Test
@@ -197,6 +224,23 @@ class A2aMigrationReconciliationTaskTest {
         verify(stateService).persistProgress(progress.capture());
         assertEquals(2L, progress.getValue().getScanned());
         assertEquals(2L, progress.getValue().getMigrated());
+    }
+    
+    @Test
+    void completeZeroDifferenceRoundShouldBeOfferedToCutoverCoordinator() throws Exception {
+        A2aHistoricalDefinitionSnapshot equivalent = snapshot("equivalent");
+        when(scanner.scanPage(NAMESPACE_ID, 1, 100)).thenReturn(page(1, 1, equivalent));
+        when(reconciler.reconcile(eq(equivalent), any()))
+            .thenReturn(A2aMigrationTargetStore.Result.EQUIVALENT);
+        when(targetStore.listMigratedAgentNames(NAMESPACE_ID))
+            .thenReturn(Collections.emptySet());
+        
+        task.executeReconciliation();
+        
+        verify(cutoverCoordinator).afterSyncingRound(any(), eq(lease), eq(true),
+            eq(Collections.singletonMap(NAMESPACE_ID,
+                Collections.singleton("equivalent"))),
+            eq(100));
     }
     
     @Test
@@ -256,6 +300,50 @@ class A2aMigrationReconciliationTaskTest {
         assertEquals("Historical A2A reconciliation lease lost",
             progress.getAllValues().get(1).getLastError());
         verify(scanner, never()).scanPage(anyString(), anyInt(), anyInt());
+    }
+    
+    @Test
+    void namespacePageShouldFailClosedWhenLeaseRenewalIsLost() {
+        when(lease.renew()).thenReturn(true, false);
+        
+        task.executeReconciliation();
+        
+        ArgumentCaptor<A2aMigrationProgress> progress =
+            ArgumentCaptor.forClass(A2aMigrationProgress.class);
+        verify(stateService).persistProgress(progress.capture());
+        assertEquals(1L, progress.getValue().getFailed());
+        assertEquals("Historical A2A reconciliation lease lost",
+            progress.getValue().getLastError());
+        verify(scanner, never()).scanPage(anyString(), anyInt(), anyInt());
+        verify(cutoverCoordinator).afterSyncingRound(any(), eq(lease), eq(false), any(), eq(100));
+    }
+    
+    @Test
+    void unresolvedOrphanDeleteShouldKeepRoundNonZeroDifference() throws Exception {
+        when(scanner.scanPage(NAMESPACE_ID, 1, 100)).thenReturn(emptyPage());
+        when(targetStore.listMigratedAgentNames(NAMESPACE_ID))
+            .thenReturn(Collections.singleton("orphan"));
+        when(targetStore.deleteConfirmedOrphan(NAMESPACE_ID, "orphan")).thenReturn(false);
+        
+        task.executeReconciliation();
+        task.executeReconciliation();
+        
+        verify(targetStore).deleteConfirmedOrphan(NAMESPACE_ID, "orphan");
+        verify(cutoverCoordinator, times(2)).afterSyncingRound(any(), eq(lease), eq(false),
+            any(), eq(100));
+    }
+    
+    @Test
+    void canonicalStateShouldCancelExistingPeriodicSchedule() {
+        @SuppressWarnings("unchecked")
+        ScheduledFuture<Object> scheduledFuture = mock(ScheduledFuture.class);
+        ReflectionTestUtils.setField(task, "scheduledFuture", scheduledFuture);
+        when(stateService.resolveConfigured()).thenReturn(A2aMigrationState.CANONICAL);
+        
+        task.executeReconciliation();
+        
+        verify(scheduledFuture).cancel(false);
+        verify(namespaceOperationService, never()).getNamespaceList();
     }
     
     @Test

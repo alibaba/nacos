@@ -165,6 +165,32 @@ public class A2aMigrationTargetStore {
     }
     
     /**
+     * Verify one complete canonical target without mutating Resource, Version, or Storage state.
+     *
+     * @param definition normalized historical definition
+     * @return whether the complete target is currently readable and semantically equivalent
+     */
+    public boolean isCurrent(A2aMigrationDefinition definition) {
+        PreparedTarget target;
+        try {
+            target = prepare(definition);
+        } catch (RuntimeException e) {
+            return false;
+        }
+        AiResource resource = resourcePersistService.find(target.namespaceId,
+            target.agentName, Constants.Agent.RESOURCE_TYPE_AGENT);
+        if (resource == null) {
+            return false;
+        }
+        Map<String, AiResourceVersion> versions = listVersionRows(target.namespaceId,
+            target.agentName);
+        if (MIGRATION_RESOURCE_SOURCE.equals(resource.getFrom())) {
+            return migrationOwnedEquivalent(resource, versions, target);
+        }
+        return strictlyEquivalent(resource, versions, target);
+    }
+    
+    /**
      * List target Agent names owned by this temporary migration.
      *
      * @param namespaceId namespace identifier
@@ -438,6 +464,24 @@ public class A2aMigrationTargetStore {
         }
         for (Map.Entry<String, AiResourceVersion> entry : versions.entrySet()) {
             if (!AiConstants.Agent.VERSION_STATUS_ONLINE.equals(entry.getValue().getStatus())
+                || !equivalentVersionContent(entry.getValue(),
+                    target.prepared.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private boolean migrationOwnedEquivalent(AiResource resource,
+        Map<String, AiResourceVersion> versions, PreparedTarget target) {
+        if (!sameOwnedResource(resource, target.resource)
+            || !versions.keySet().equals(target.versionRows.keySet())) {
+            return false;
+        }
+        for (Map.Entry<String, AiResourceVersion> entry : versions.entrySet()) {
+            AiResourceVersion expected = target.versionRows.get(entry.getKey());
+            if (!sameVersionMetadata(entry.getValue(), expected)
+                || !sameDescriptor(entry.getValue(), expected)
                 || !equivalentVersionContent(entry.getValue(),
                     target.prepared.get(entry.getKey()))) {
                 return false;

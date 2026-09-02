@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -85,22 +87,28 @@ public class A2aMigrationReconciliationTask
     
     private final A2aMigrationStateService stateService;
     
+    private final A2aMigrationCutoverCoordinator cutoverCoordinator;
+    
     private final String leaseOwner = UUID.randomUUID().toString();
     
     private final Map<String, Integer> orphanConfirmations = new HashMap<String, Integer>();
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
+    private volatile ScheduledFuture<?> scheduledFuture;
+    
     public A2aMigrationReconciliationTask(NamespaceOperationService namespaceOperationService,
         A2aHistoricalDefinitionScanner scanner,
         A2aHistoricalDefinitionReconciler reconciler,
         A2aMigrationTargetStore targetStore,
-        A2aMigrationStateService stateService) {
+        A2aMigrationStateService stateService,
+        A2aMigrationCutoverCoordinator cutoverCoordinator) {
         this.namespaceOperationService = namespaceOperationService;
         this.scanner = scanner;
         this.reconciler = reconciler;
         this.targetStore = targetStore;
         this.stateService = stateService;
+        this.cutoverCoordinator = cutoverCoordinator;
     }
     
     @Override
@@ -110,14 +118,14 @@ public class A2aMigrationReconciliationTask
             return;
         }
         A2aMigrationState state = stateService.resolveConfigured();
-        if (A2aMigrationState.SYNCING != state) {
+        if (state == null || A2aMigrationState.CANONICAL == state) {
             LOGGER.info("Historical A2A reconciliation is inactive in state {}", state);
             return;
         }
         long interval = positiveLong(RECONCILIATION_INTERVAL_SECONDS_PROPERTY,
             DEFAULT_INTERVAL_SECONDS);
-        executor.scheduleWithFixedDelay(this::safeExecuteReconciliation, 0L, interval,
-            TimeUnit.SECONDS);
+        scheduledFuture = executor.scheduleWithFixedDelay(this::safeExecuteReconciliation, 0L,
+            interval, TimeUnit.SECONDS);
     }
     
     void safeExecuteReconciliation() {
@@ -131,7 +139,16 @@ public class A2aMigrationReconciliationTask
     }
     
     void executeReconciliation() {
-        if (A2aMigrationState.SYNCING != stateService.resolveConfigured()) {
+        A2aMigrationState state = stateService.resolveConfigured();
+        if (A2aMigrationState.CANONICAL == state) {
+            stopScheduling();
+            return;
+        }
+        if (A2aMigrationState.SYNCING != state) {
+            return;
+        }
+        VersionedValue<A2aMigrationMarker> marker = stateService.currentMarker();
+        if (marker == null || A2aMigrationState.SYNCING != marker.getValue().getState()) {
             return;
         }
         A2aMigrationLease lease = stateService.tryAcquireLease(leaseOwner,
@@ -142,11 +159,13 @@ public class A2aMigrationReconciliationTask
         }
         ScanStats stats = new ScanStats();
         stats.generation = UUID.randomUUID().toString();
+        stats.lease = lease;
         try {
             List<Namespace> namespaces = namespaceOperationService.getNamespaceList();
             if (namespaces == null) {
                 throw new IllegalStateException("Namespace listing is unavailable");
             }
+            int pageSize = configuredPageSize();
             Map<String, Set<String>> sourceNames = new HashMap<String, Set<String>>();
             boolean sourceScanComplete = true;
             for (Namespace namespace : namespaces) {
@@ -156,7 +175,7 @@ public class A2aMigrationReconciliationTask
                 }
                 String namespaceId = namespace.getNamespace();
                 try {
-                    Set<String> names = reconcileNamespace(namespaceId, stats);
+                    Set<String> names = reconcileNamespace(namespaceId, pageSize, stats);
                     sourceNames.put(namespaceId, names);
                 } catch (Exception e) {
                     sourceScanComplete = false;
@@ -168,6 +187,9 @@ public class A2aMigrationReconciliationTask
             if (sourceScanComplete) {
                 reconcileOrphans(sourceNames, stats);
             }
+            stats.sourceScanComplete = sourceScanComplete;
+            cutoverCoordinator.afterSyncingRound(marker, lease, stats.isZeroDifference(),
+                sourceNames, pageSize);
         } catch (Exception e) {
             stats.recordFailure(e);
             LOGGER.error("Historical A2A reconciliation failed", e);
@@ -180,12 +202,15 @@ public class A2aMigrationReconciliationTask
         }
     }
     
-    private Set<String> reconcileNamespace(String namespaceId, ScanStats stats) {
+    private Set<String> reconcileNamespace(String namespaceId, int pageSize, ScanStats stats) {
         Set<String> sourceNames = new HashSet<String>();
         int pageNo = 1;
         int pages = 1;
-        int pageSize = configuredPageSize();
         while (pageNo <= pages) {
+            stats.lease.assertOwned();
+            if (!stats.lease.renew()) {
+                throw new IllegalStateException("Historical A2A reconciliation lease lost");
+            }
             Page<A2aHistoricalDefinitionSnapshot> page = scanner.scanPage(namespaceId, pageNo,
                 pageSize);
             pages = page.getPagesAvailable();
@@ -238,10 +263,13 @@ public class A2aMigrationReconciliationTask
                 if (confirmations >= 2) {
                     if (targetStore.deleteConfirmedOrphan(namespace.getKey(), migratedName)) {
                         stats.migrated++;
+                    } else {
+                        stats.pendingDeletes = true;
                     }
                     orphanConfirmations.remove(key);
                 } else {
                     orphanConfirmations.put(key, confirmations);
+                    stats.pendingDeletes = true;
                 }
             }
         }
@@ -298,6 +326,13 @@ public class A2aMigrationReconciliationTask
         executor.shutdownNow();
     }
     
+    private void stopScheduling() {
+        ScheduledFuture<?> future = scheduledFuture;
+        if (future != null) {
+            future.cancel(false);
+        }
+    }
+    
     private static final class ScanStats {
         
         private String generation;
@@ -311,6 +346,17 @@ public class A2aMigrationReconciliationTask
         private long failed;
         
         private String lastError;
+        
+        private boolean sourceScanComplete;
+        
+        private boolean pendingDeletes;
+        
+        private A2aMigrationLease lease;
+        
+        private boolean isZeroDifference() {
+            return sourceScanComplete && !pendingDeletes && migrated == 0 && conflicts == 0
+                && failed == 0;
+        }
         
         private void recordFailure(Exception e) {
             failed++;

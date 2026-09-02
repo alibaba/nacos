@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -32,6 +33,9 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -114,9 +118,14 @@ public class A2aMigrationStateService
      * @return migration state for AUTO or terminal CANONICAL; otherwise {@code null}
      */
     public A2aMigrationState resolve(A2aCompatibilityMode configured) {
+        return resolve(configured, false);
+    }
+    
+    private A2aMigrationState resolve(A2aCompatibilityMode configured,
+        boolean authoritative) {
         Objects.requireNonNull(configured, "configured");
         advertiseLocalCapability(configured);
-        VersionedValue<A2aMigrationMarker> marker = refreshMarker(false);
+        VersionedValue<A2aMigrationMarker> marker = refreshMarker(authoritative);
         if (canonicalLatched.get()) {
             return A2aMigrationState.CANONICAL;
         }
@@ -127,6 +136,19 @@ public class A2aMigrationStateService
             marker = ensureSyncingPlan();
         }
         return marker == null ? A2aMigrationState.SYNCING : marker.getValue().getState();
+    }
+    
+    /**
+     * Resolve the configured migration state from an authoritative marker read.
+     *
+     * <p>TODO(remove in 4.0): the historical mutation fence uses this path so child and root
+     * Spring contexts cannot admit a write from their independent bounded marker caches while
+     * another context has already installed {@code QUIESCING}.</p>
+     *
+     * @return current migration state for AUTO or terminal CANONICAL; otherwise {@code null}
+     */
+    public A2aMigrationState resolveConfiguredAuthoritative() {
+        return resolve(configuredModeSupplier.get(), true);
     }
     
     /**
@@ -158,29 +180,115 @@ public class A2aMigrationStateService
      * @return {@code true} only when a non-empty member view has matching valid metadata
      */
     public boolean allMembersReady(A2aMigrationMarker marker) {
-        if (marker == null || !marker.isValid()) {
+        return readyMemberView(marker) != null;
+    }
+    
+    /**
+     * Capture the complete, healthy, policy-compatible member set.
+     *
+     * @param marker current migration marker
+     * @return stable member view, or {@code null} when any member is not ready
+     */
+    public A2aMigrationMemberView readyMemberView(A2aMigrationMarker marker) {
+        MemberInspection inspection = inspectMembers(marker);
+        return inspection == null ? null : inspection.view;
+    }
+    
+    /**
+     * Check exact-generation acknowledgements from the unchanged current member set.
+     *
+     * @param marker current quiescing marker
+     * @param expectedView member view bound into the generation
+     * @return whether every current member acknowledged this exact generation
+     */
+    public boolean allMembersAcknowledged(A2aMigrationMarker marker,
+        A2aMigrationMemberView expectedView) {
+        if (marker == null || A2aMigrationState.QUIESCING != marker.getState()
+            || expectedView == null) {
             return false;
         }
-        String expectedPolicy = policyHash(A2aCompatibilityMode.AUTO,
-            marker.isLegacyNamingShadow());
-        try {
-            Collection<Member> members = serverMemberManager.allMembers();
-            if (members == null || members.isEmpty()) {
+        MemberInspection inspection = inspectMembers(marker);
+        if (inspection == null || !expectedView.equals(inspection.view)) {
+            return false;
+        }
+        String expectedAck = marker.getGeneration() + ":READY";
+        for (Member member : inspection.members) {
+            if (!expectedAck.equals(
+                member.getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK))) {
                 return false;
             }
-            for (Member member : members) {
-                if (member == null || !Boolean.TRUE.equals(member
-                    .getExtendVal(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1))
-                    || !expectedPolicy.equals(member
-                        .getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH))) {
-                    return false;
-                }
-            }
-            return true;
-        } catch (Exception e) {
-            LOGGER.warn("Failed to inspect A2A migration member capabilities", e);
+        }
+        return true;
+    }
+    
+    /**
+     * Publish this member's exact-generation readiness acknowledgement.
+     *
+     * @param marker locally verified quiescing marker
+     * @return whether the marker remained current while the ACK was installed
+     */
+    public boolean advertiseLocalAck(A2aMigrationMarker marker) {
+        if (marker == null || A2aMigrationState.QUIESCING != marker.getState()) {
             return false;
         }
+        VersionedValue<A2aMigrationMarker> observed = refreshMarker(true);
+        if (observed == null || A2aMigrationState.QUIESCING != observed.getValue().getState()
+            || !marker.getGeneration().equals(observed.getValue().getGeneration())) {
+            return false;
+        }
+        try {
+            Member self = serverMemberManager.getSelf();
+            if (self == null) {
+                return false;
+            }
+            self.setExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK,
+                marker.getGeneration() + ":READY");
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to advertise local A2A migration ACK", e);
+            return false;
+        }
+    }
+    
+    /**
+     * Remove this member's stale quiescing acknowledgement.
+     */
+    public void clearLocalAck() {
+        try {
+            Member self = serverMemberManager.getSelf();
+            if (self != null) {
+                self.delExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to clear local A2A migration ACK", e);
+        }
+    }
+    
+    /**
+     * Force a current authoritative marker read for cutover orchestration.
+     *
+     * @return current marker and persistence MD5, or {@code null}
+     */
+    public VersionedValue<A2aMigrationMarker> currentMarker() {
+        return refreshMarker(true);
+    }
+    
+    /**
+     * Create a fresh opaque generation token.
+     *
+     * @return unique generation token
+     */
+    public String newGeneration() {
+        return generationSupplier.get();
+    }
+    
+    /**
+     * Return the state service clock for timeout checks.
+     *
+     * @return current epoch milliseconds
+     */
+    public long currentTimeMillis() {
+        return clock.getAsLong();
     }
     
     /**
@@ -346,6 +454,45 @@ public class A2aMigrationStateService
         }
     }
     
+    private MemberInspection inspectMembers(A2aMigrationMarker marker) {
+        if (marker == null || !marker.isValid()) {
+            return null;
+        }
+        String expectedPolicy = policyHash(A2aCompatibilityMode.AUTO,
+            marker.isLegacyNamingShadow());
+        try {
+            Collection<Member> current = serverMemberManager.allMembers();
+            if (current == null || current.isEmpty()) {
+                return null;
+            }
+            List<Member> members = new ArrayList<Member>(current.size());
+            List<String> identities = new ArrayList<String>(current.size());
+            for (Member member : current) {
+                if (member == null || StringUtils.isBlank(member.getAddress())
+                    || !NodeState.UP.equals(member.getState())
+                    || !Boolean.TRUE.equals(member
+                        .getExtendVal(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1))
+                    || !expectedPolicy.equals(member
+                        .getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH))) {
+                    return null;
+                }
+                members.add(member);
+                identities.add(member.getAddress());
+            }
+            Collections.sort(identities);
+            StringBuilder canonical = new StringBuilder();
+            for (String identity : identities) {
+                canonical.append(identity.length()).append(':').append(identity);
+            }
+            A2aMigrationMemberView view = new A2aMigrationMemberView(
+                DigestUtils.sha256Hex(canonical.toString()), members.size());
+            return new MemberInspection(view, members);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to inspect A2A migration member capabilities", e);
+            return null;
+        }
+    }
+    
     private VersionedValue<A2aMigrationLeaseRecord> readLeaseSafely() {
         try {
             return controlStore.readLease();
@@ -389,5 +536,17 @@ public class A2aMigrationStateService
         String normalized = StringUtils.isBlank(value) ? A2aCompatibilityMode.CANONICAL.name()
             : value.trim().toUpperCase(Locale.ROOT);
         return A2aCompatibilityMode.valueOf(normalized);
+    }
+    
+    private static final class MemberInspection {
+        
+        private final A2aMigrationMemberView view;
+        
+        private final List<Member> members;
+        
+        private MemberInspection(A2aMigrationMemberView view, List<Member> members) {
+            this.view = view;
+            this.members = members;
+        }
     }
 }

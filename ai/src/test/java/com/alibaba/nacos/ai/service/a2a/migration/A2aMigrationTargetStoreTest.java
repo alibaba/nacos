@@ -183,6 +183,31 @@ class A2aMigrationTargetStoreTest {
     }
     
     @Test
+    void shouldVerifyCompleteOwnedAndExternalTargetsWithoutMutation() throws NacosException {
+        A2aMigrationDefinition definition = definition("1.0.0", "1.0.0");
+        assertFalse(targetStore.isCurrent(null));
+        assertFalse(targetStore.isCurrent(definition));
+        targetStore.reconcile(definition, () -> true);
+        assertTrue(targetStore.isCurrent(definition));
+        resourcePersistService.current().setDesc("stale");
+        assertFalse(targetStore.isCurrent(definition));
+        targetStore.reconcile(definition, () -> true);
+        versionPersistService.rows.get("1.0.0")
+            .setStatus(AiConstants.Agent.VERSION_STATUS_DRAFT);
+        assertFalse(targetStore.isCurrent(definition));
+        versionPersistService.rows.get("1.0.0")
+            .setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        resourcePersistService.current().setFrom("external");
+        resourcePersistService.current().setOwner("alice");
+        resourcePersistService.current().setScope(VisibilityConstants.SCOPE_PRIVATE);
+        versionPersistService.rows.get("1.0.0").setAuthor("alice");
+        assertTrue(targetStore.isCurrent(definition));
+        versionPersistService.rows.get("1.0.0")
+            .setStatus(AiConstants.Agent.VERSION_STATUS_DRAFT);
+        assertFalse(targetStore.isCurrent(definition));
+    }
+    
+    @Test
     void sourceFenceShouldPreventInitialWriteAndRecoverVersionOnlyPartialWrite()
         throws NacosException {
         A2aMigrationDefinition definition = definition("2.0.0", "1.0.0", "2.0.0");

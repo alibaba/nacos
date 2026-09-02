@@ -304,8 +304,11 @@ The lease owner may enter `QUIESCING` only when all of the following hold:
 The owner creates a new quiescing generation by CAS. Every member installs the
 write fence, validates all local target Resource, Version, and Storage reads,
 checks its local required Runtime mirror queue, and publishes a generation
-ACK. After the current member set has ACKed, the owner performs one final full
-definition, Storage, Search, and Runtime zero-difference round.
+ACK. The generation is externally opaque and internally binds the stable
+member-view digest plus a fresh nonce, so an ACK from an older member view
+cannot satisfy the current fence. After the current member set has ACKed, the
+owner performs one final full definition, Storage, Search, and Runtime
+zero-difference round.
 
 Success writes the terminal `CANONICAL` marker with `completedAt`. Timeout,
 member or policy change, missing ACK, or any final difference CASes the plan
@@ -318,7 +321,10 @@ write while another member has started canonical writes. During terminal
 marker propagation, both read branches are safe because the final round proved
 them equivalent and both Runtime layouts are materialized. Config notification
 accelerates marker observation; every node also performs a low-frequency
-three-second recheck.
+three-second recheck by default. The temporary internal property
+`nacos.ai.a2a.migration.quiescing-check-interval-seconds` may tune this period
+for controlled verification or operations, but does not relax any member,
+ACK, lease, Search, Runtime, or final-scan gate.
 
 ## 8. Failure, Rollback, And Cleanup
 

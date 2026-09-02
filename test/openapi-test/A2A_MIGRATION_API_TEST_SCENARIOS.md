@@ -47,12 +47,12 @@ the corresponding migration implementation and executable tests land.
 | `M-ST-02` | During `SYNCING`, perform historical create, update, set-latest, and delete through Admin/Console; assert the historical response immediately, then boundedly poll canonical Agent/Search and verify final equality without resurrecting deleted content. | `A2aMigrationAdminApiOpenApiITCase`. | U3 | Verified |
 | `M-ST-03` | Isolate malformed summary JSON, missing Version content, invalid name/Version, invalid latest, and same-name different canonical content; assert migration progress remains blocking, legacy valid resources remain readable, and no conflicting target is overwritten. | `A2aMigrationAdminApiOpenApiITCase` with documented Config fixtures. | U2/U3 | Verified |
 | `M-ST-04` | Stop and restart the standalone server after observable Storage-prepared, Version-complete, and Resource-complete boundaries; assert idempotent convergence and that no canonical API returns a partial Agent. | Directed real-instance restart plus deterministic target-store boundary tests; U6 retains crash-at-each-boundary automation. | U2/U3/U6 | Partial |
-| `M-ST-05` | For the same resource before and after cutover, cross-check legacy Admin/Console A2A, canonical Admin/Console Agent, generic/Agent Search, ARD catalog/artifact, RAD Discover, and HTTP Watch fingerprint/Discover refresh. | `A2aMigrationAdminApiOpenApiITCase`; U5 retains Watch and post-cutover assertions. | U3/U5 | Partial |
-| `M-ST-06` | Publish historical gRPC single and complete batches and prove the historical exact-Version and canonical RAD services are both visible during migration. | Java SDK `A2aUpgradeMigrationJavaSdkITCase`; OpenAPI verifies canonical Runtime snapshots. | U4 | Planned |
-| `M-ST-07` | Complete migration with shadow disabled; assert canonical RAD/Watch remains correct and direct historical Naming lookup is not promised to retain the new post-cutover publication. | Java SDK directed scenario plus OpenAPI RAD/Watch assertions. | U5/U6 | Planned |
+| `M-ST-05` | For the same resource before and after cutover, cross-check legacy Admin/Console A2A, canonical Admin/Console Agent, generic/Agent Search, ARD catalog/artifact, RAD Discover, and HTTP Watch fingerprint/Discover refresh. | `A2aMigrationAdminApiOpenApiITCase` plus Java SDK terminal Watch scenario. | U3/U5 | Verified |
+| `M-ST-06` | Publish historical gRPC single and complete batches and prove the historical exact-Version and canonical RAD services are both visible during migration. | Java SDK `A2aUpgradeMigrationJavaSdkITCase`; OpenAPI verifies canonical Runtime snapshots. | U4 | Verified |
+| `M-ST-07` | Complete migration with shadow disabled; assert canonical RAD/Watch remains correct and direct historical Naming lookup is not promised to retain the new post-cutover publication. | Java SDK directed scenario plus OpenAPI RAD/Watch assertions. | U5/U6 | Partial: canonical terminal behavior is verified; the full frozen-shadow comparison remains U6. |
 | `M-ST-08` | Complete migration with shadow enabled; publish, replace, and deregister an exact Version after cutover; compare normalized historical Naming and canonical Runtime snapshots. | Java SDK `A2aUpgradeMigrationJavaSdkITCase`; OpenAPI verifies Admin/Console Runtime views. | U5/U6 | Planned |
-| `M-ST-09` | Inject required-mirror failure, recover it, disconnect/reconnect/redo a real client, and restart the server; assert no lost retained batch, no duplicate logical capacity, and final historical/canonical equality. | Opt-in Java SDK restart scenario; deterministic failure injection remains in unit tests. | U4/U6 | Planned |
-| `M-ST-10` | Hold one generation in `QUIESCING`; assert legacy Admin/Console definition mutations return detail code `50105`, while GET/list, RAD Discover, HTTP Watch, and Endpoint register/deregister continue and converge. | `A2aMigrationAdminApiOpenApiITCase` plus Java SDK client. | U5 | Planned |
+| `M-ST-09` | Inject required-mirror failure, recover it, disconnect/reconnect/redo a real client, and restart the server; assert no lost retained batch, no duplicate logical capacity, and final historical/canonical equality. | Opt-in Java SDK restart scenario; deterministic failure injection remains in unit tests. | U4/U6 | Partial: restart/redo and deterministic mirror failure are verified; the combined U6 fault run remains. |
+| `M-ST-10` | Hold one generation in `QUIESCING`; assert legacy Admin/Console definition mutations return detail code `50105`, while GET/list, RAD Discover, HTTP Watch, and Endpoint register/deregister continue and converge. | `A2aMigrationAdminApiOpenApiITCase` plus Java SDK client. | U5 | Verified |
 
 ## Cross-Surface Assertions
 
@@ -84,5 +84,15 @@ canonical conflict preservation, orphan removal, and Agent/generic Search,
 ARD, RAD, and Console reads. The focused suite passed with bounded polling.
 A separate real-instance scenario retained one migrated Agent across a graceful
 server restart and revalidated historical A2A, canonical Agent, Agent Search,
-and RAD Discover before cleanup. Crash injection at each internal persistence
-boundary and pre/post-cutover Watch remain assigned to U6 and U5 respectively.
+and RAD Discover before cleanup.
+
+U5 added a controlled standalone quiescing/terminal method and two opt-in
+three-member Java SDK methods. The standalone flow proves definition-mutation
+fencing with detail code `50105` while reads, Runtime publication, gRPC Watch,
+HTTP Watch, replacement, deregistration, terminal legacy-facade publication,
+Search, and Discover remain available. The cluster flow uses fixed-node A/B/C
+readers plus a load-balanced HTTP reader during a real 0/3-to-3/3 rolling
+upgrade, accepts an already-completed `CANONICAL` transition when the
+short-lived `QUIESCING` state was not sampled, and then requires terminal
+`CANONICAL` on every member. U6 still owns shadow=true and the combined
+persistence/failover fault matrix.

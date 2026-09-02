@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -57,12 +58,15 @@ class A2aMigrationStateServiceTest {
     
     private A2aMigrationStateService service;
     
+    private int memberSequence;
+    
     @BeforeEach
     void setUp() {
         controlStore = new InMemoryControlStore();
         memberManager = mock(ServerMemberManager.class);
         self = mock(Member.class);
         when(memberManager.getSelf()).thenReturn(self);
+        memberSequence = 0;
         service = newService(false, A2aCompatibilityMode.AUTO);
     }
     
@@ -81,6 +85,20 @@ class A2aMigrationStateServiceTest {
         assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
         service = newService(false, A2aCompatibilityMode.LEGACY);
         assertNull(service.resolveConfigured());
+    }
+    
+    @Test
+    void authoritativeResolveShouldBypassIndependentContextMarkerCache() {
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        controlStore.marker = versioned(syncing, "syncing");
+        assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
+        A2aMigrationMarker quiescing = syncing.transition(A2aMigrationState.QUIESCING,
+            "q", now.incrementAndGet());
+        controlStore.marker = versioned(quiescing, "quiescing");
+        assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
+        assertEquals(A2aMigrationState.QUIESCING,
+            service.resolveConfiguredAuthoritative());
+        assertEquals(A2aMigrationState.QUIESCING, service.resolveConfigured());
     }
     
     @Test
@@ -187,6 +205,69 @@ class A2aMigrationStateServiceTest {
         assertFalse(service.allMembersReady(marker));
         assertFalse(service.allMembersReady(marker));
         assertTrue(service.allMembersReady(marker));
+    }
+    
+    @Test
+    void memberViewAndAcknowledgementsShouldRequireExactHealthyGeneration() {
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        Member first = member(true, service.policyHash(A2aCompatibilityMode.AUTO, false));
+        Member second = member(true, service.policyHash(A2aCompatibilityMode.AUTO, false));
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(first, second));
+        A2aMigrationMemberView view = service.readyMemberView(syncing);
+        assertNotNull(view);
+        assertEquals(2, view.getMemberCount());
+        String generation = A2aMigrationQuiescingGeneration.create(view, "nonce");
+        A2aMigrationMarker quiescing = syncing.transition(A2aMigrationState.QUIESCING,
+            generation, now.incrementAndGet());
+        assertFalse(service.allMembersAcknowledged(null, view));
+        assertFalse(service.allMembersAcknowledged(syncing, view));
+        assertFalse(service.allMembersAcknowledged(quiescing, null));
+        assertFalse(service.allMembersAcknowledged(quiescing, view));
+        when(first.getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK))
+            .thenReturn(generation + ":READY");
+        when(second.getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK))
+            .thenReturn("old:READY", generation + ":READY");
+        assertFalse(service.allMembersAcknowledged(quiescing, view));
+        assertTrue(service.allMembersAcknowledged(quiescing, view));
+        
+        Member replacement = member(true,
+            service.policyHash(A2aCompatibilityMode.AUTO, false));
+        when(replacement.getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK))
+            .thenReturn(generation + ":READY");
+        when(memberManager.allMembers()).thenReturn(Arrays.asList(first, replacement));
+        assertFalse(service.allMembersAcknowledged(quiescing, view));
+        when(replacement.getState()).thenReturn(NodeState.DOWN);
+        assertNull(service.readyMemberView(quiescing));
+    }
+    
+    @Test
+    void localAcknowledgementShouldRecheckMarkerAndClearStaleValue() {
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker quiescing = syncing.transition(A2aMigrationState.QUIESCING,
+            "q", now.incrementAndGet());
+        assertFalse(service.advertiseLocalAck(null));
+        assertFalse(service.advertiseLocalAck(syncing));
+        controlStore.marker = versioned(quiescing, "quiescing");
+        assertTrue(service.advertiseLocalAck(quiescing));
+        verify(self).setExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK, "q:READY");
+        service.clearLocalAck();
+        verify(self).delExtendVal(MemberMetaDataConstants.A2A_MIGRATION_ACK);
+        
+        controlStore.marker = versioned(syncing, "syncing");
+        assertFalse(service.advertiseLocalAck(quiescing));
+        controlStore.marker = versioned(quiescing, "quiescing-2");
+        when(memberManager.getSelf()).thenReturn(null).thenThrow(
+            new IllegalStateException("self unavailable"));
+        assertFalse(service.advertiseLocalAck(quiescing));
+        assertFalse(service.advertiseLocalAck(quiescing));
+        service.clearLocalAck();
+    }
+    
+    @Test
+    void shouldExposeFreshMarkerGenerationAndClockForCoordinator() {
+        assertEquals("generation-1", service.newGeneration());
+        assertEquals(now.get(), service.currentTimeMillis());
+        assertNull(service.currentMarker());
     }
     
     @Test
@@ -340,6 +421,8 @@ class A2aMigrationStateServiceTest {
     
     private Member member(Object ability, Object policy) {
         Member result = mock(Member.class);
+        when(result.getAddress()).thenReturn("127.0.0." + ++memberSequence + ":8848");
+        when(result.getState()).thenReturn(NodeState.UP);
         when(result.getExtendVal(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1))
             .thenReturn(ability);
         when(result.getExtendVal(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH))

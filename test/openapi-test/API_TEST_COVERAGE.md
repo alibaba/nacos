@@ -183,9 +183,15 @@ canonical Agent convergence, migration-owned Agent write protection with
 detail code `50105`, namespace and URL/SERVICE isolation, malformed summary,
 missing Version, invalid identity/Version/latest, independent canonical
 conflict preservation, orphan cleanup, and cross-reads through Agent/generic
-Search, Console, ARD, and RAD. Internal persistence-boundary crash injection,
-Watch across permanent cutover, and Runtime dual materialization remain in the
-later migration commits identified by the migration scenario registry.
+Search, Console, ARD, and RAD. Runtime dual materialization, standalone
+quiescing/terminal behavior, and Watch across permanent cutover are now
+covered by the migration Java SDK suite. The directed three-member suite
+additionally verifies fixed-node and load-balanced reads, gRPC/HTTP Watch
+de-duplication, cross-member Runtime replacement, terminal `CANONICAL`, and
+cleanup during a real rolling binary upgrade. Internal persistence-boundary
+crash injection, shadow=true, and separately directed Config-leader/Naming-
+responsibility failures remain in the later migration commit identified by
+the migration scenario registry.
 
 The legacy MCP Console import validation and execute endpoints remain covered
 by `McpConsoleApiOpenApiITCase` through Nacos 3.3.x. Their default HTTP 410 and

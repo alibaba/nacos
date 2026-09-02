@@ -250,7 +250,9 @@ Lease Owner 只有在以下条件全部满足时才能进入 `QUIESCING`：
 
 Owner 通过 CAS 创建新的 Quiescing Generation。每个 Member 安装写屏障、验证本地所有目标
 Resource/Version/Storage 可读、确认本地必需 Runtime Mirror Queue，并发布该 Generation ACK。
-当前成员全集 ACK 后，Owner 再完成一次最终定义、Storage、Search 和 Runtime 零差异扫描。
+Generation 对外保持不透明，内部绑定稳定 Member View Digest 和一次性 Nonce，因此旧成员视图的
+ACK 不能满足当前写屏障。当前成员全集 ACK 后，Owner 再完成一次最终定义、Storage、Search 和
+Runtime 零差异扫描。
 
 成功时写入带 `completedAt` 的终态 `CANONICAL` Marker。超时、成员或策略变化、ACK 缺失或最终
 出现任一差异时，通过 CAS 回到 `SYNCING` 并解除定义写屏障。Quiescing 全程保持读取、Discover、
@@ -258,7 +260,9 @@ Watch、Endpoint 发布和已有 Runtime 流量可用。
 
 两阶段写屏障避免一个 Member 已接受标准写而另一个仍接受历史定义写。终态 Marker 传播期间，最终
 扫描已证明两种读取等价，且两套 Runtime 都已物化，因此读取安全。Config Notification 加速 Marker
-感知，每个节点同时每 3 秒低频复核。
+感知，每个节点默认同时每 3 秒低频复核。临时内部配置
+`nacos.ai.a2a.migration.quiescing-check-interval-seconds` 可在受控验证或运维时调整该周期，但不会
+放宽成员、ACK、Lease、Search、Runtime 或最终扫描的任何门禁。
 
 ## 8. 故障、回滚与清理
 

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationDefinitionWriteAfterHook;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationLegacyMutationGuard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -45,18 +46,25 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     // Keep canonical behavior independent from this branch.
     private final A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook;
     
+    // TODO(remove in 4.0): Temporary migration path for Nacos 3.0-3.2 A2A data.
+    // Keep canonical behavior independent from this branch.
+    private final A2aMigrationLegacyMutationGuard migrationMutationGuard;
+    
     public A2aCompatibilityOperationService(A2aCompatibilityModeResolver modeResolver,
         A2aServerOperationService canonicalService, LegacyA2aOperationService legacyService,
-        A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook) {
+        A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook,
+        A2aMigrationLegacyMutationGuard migrationMutationGuard) {
         this.modeResolver = modeResolver;
         this.canonicalService = canonicalService;
         this.legacyService = legacyService;
         this.migrationWriteAfterHook = migrationWriteAfterHook;
+        this.migrationMutationGuard = migrationMutationGuard;
     }
     
     @Override
     public void registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
         throws NacosException {
+        migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.registerAgent(agentCard, namespaceId, registrationType);
         notifyLegacyMutation(selected, namespaceId, agentCard.getName());
@@ -65,6 +73,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void releaseAgent(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
+        migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.releaseAgent(agentCard, namespaceId, registrationType, setAsLatest);
         notifyLegacyMutation(selected, namespaceId, agentCard.getName());
@@ -73,6 +82,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void updateAgentCard(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
+        migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.updateAgentCard(agentCard, namespaceId, registrationType, setAsLatest);
         notifyLegacyMutation(selected, namespaceId, agentCard.getName());
@@ -81,6 +91,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void deleteAgent(String namespaceId, String agentName, String version)
         throws NacosException {
+        migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.deleteAgent(namespaceId, agentName, version);
         notifyLegacyMutation(selected, namespaceId, agentName);

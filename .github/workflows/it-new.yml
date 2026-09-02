@@ -142,6 +142,18 @@ jobs:
         run: |
           SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
           PROP_FILE="$SERVER_HOME/conf/application.properties"
+
+          # Freeze the post-cutover shadow policy before AUTO starts. The first AUTO restart
+          # intentionally keeps a different local policy so U3/U4 scenarios remain in SYNCING.
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u5","legacyNamingShadow":true,"startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content=$MARKER" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
           bash "$SERVER_HOME/bin/shutdown.sh" || true
           if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
             echo "Canonical-mode server did not stop"
@@ -177,3 +189,59 @@ jobs:
             -Dit.test=A2aUpgradeMigrationJavaSdkITCase \
             -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
             -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}"
+
+      - name: Install Historical A2A Cutover Blocker
+        run: |
+          # One malformed historical source keeps the matching-policy restart in SYNCING until
+          # the U5 OpenAPI fixture has created every definition needed by the cutover matrix.
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.cutover.blocker" \
+            --data-urlencode "groupName=agent" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content={" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+
+      - name: Restart Server With Frozen A2A Cutover Policy
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "SYNCING migration server did not stop"
+            exit 1
+          fi
+
+          echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=true" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.quiescing-check-interval-seconds=90" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.quiescing-timeout-seconds=180" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Matching-policy migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart for cutover"
+            exit 1
+          fi
+
+      - name: Verify Historical A2A Quiescing OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable \
+            -Dnacos.a2a.migration.cutover.phase=prepare
+
+      - name: Verify Historical A2A Cutover Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover \
+            -Dnacos.a2a.migration.cutover.enabled=true
+
+      - name: Verify Historical A2A Terminal OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent \
+            -Dnacos.a2a.migration.cutover.phase=verify
