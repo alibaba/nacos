@@ -71,33 +71,39 @@ public class A2aMigrationCutoverCoordinator {
         if (!definitionReady) {
             LOGGER.debug("Historical A2A cutover is waiting for a zero-difference Definition "
                 + "round");
+            recordBlockedGate();
             return false;
         }
         if (marker == null || lease == null
             || A2aMigrationState.SYNCING != marker.getValue().getState()) {
             LOGGER.debug("Historical A2A cutover skipped because the SYNCING marker or lease "
                 + "is unavailable");
+            recordBlockedGate();
             return false;
         }
         A2aMigrationMemberView memberView = stateService.readyMemberView(marker.getValue());
         if (memberView == null) {
             LOGGER.info("Historical A2A cutover remains SYNCING: waiting for a stable capable "
                 + "member view");
+            recordBlockedGate();
             return false;
         }
         if (!searchReadinessGate.isReady(sourceNames)) {
             LOGGER.info("Historical A2A cutover remains SYNCING: waiting for current Search "
                 + "projections");
+            recordBlockedGate();
             return false;
         }
         if (!runtimeReadinessGate.isReady()) {
             LOGGER.info("Historical A2A cutover remains SYNCING: waiting for Runtime mirror "
                 + "convergence");
+            recordBlockedGate();
             return false;
         }
         if (!lease.renew()) {
             LOGGER.debug("Historical A2A cutover stopped because the reconciliation lease was "
                 + "lost before the second Definition round");
+            recordBlockedGate();
             return false;
         }
         // The first zero-difference round was the reconciliation scan. Keep the same lease
@@ -110,16 +116,19 @@ public class A2aMigrationCutoverCoordinator {
                 + "not ready: "
                 + "differences={}, failed={}", secondRound.getDifferences(),
                 secondRound.getFailed());
+            recordBlockedGate();
             return false;
         }
         if (!searchReadinessGate.isReady(secondRound.getSourceNames())) {
             LOGGER.info("Historical A2A cutover remains SYNCING: second round is waiting for "
                 + "current Search projections");
+            recordBlockedGate();
             return false;
         }
         if (!runtimeReadinessGate.isReady()) {
             LOGGER.info("Historical A2A cutover remains SYNCING: second round is waiting for "
                 + "Runtime mirror convergence");
+            recordBlockedGate();
             return false;
         }
         VersionedValue<A2aMigrationMarker> current = stateService.currentMarker();
@@ -133,6 +142,7 @@ public class A2aMigrationCutoverCoordinator {
             LOGGER.info("Historical A2A cutover remains SYNCING: final recheck observed changed "
                 + "authority, "
                 + "membership, Search, or Runtime state");
+            recordBlockedGate();
             return false;
         }
         String quiescingGeneration = A2aMigrationQuiescingGeneration.create(memberView,
@@ -141,8 +151,11 @@ public class A2aMigrationCutoverCoordinator {
             A2aMigrationState.QUIESCING, quiescingGeneration);
         if (transitioned == null) {
             LOGGER.debug("Historical A2A cutover lost the marker CAS while entering QUIESCING");
+            recordBlockedGate();
             return false;
         }
+        A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ENTER_QUIESCING,
+            A2aMigrationMetrics.Result.SUCCESS);
         LOGGER.info("Historical A2A migration entered QUIESCING: generationHash={}, members={}",
             hash(quiescingGeneration), memberView.getMemberCount());
         return true;
@@ -150,5 +163,10 @@ public class A2aMigrationCutoverCoordinator {
     
     private String hash(String value) {
         return Integer.toHexString(value.hashCode());
+    }
+    
+    private void recordBlockedGate() {
+        A2aMigrationMetrics.record(A2aMigrationMetrics.Event.CUTOVER_GATE,
+            A2aMigrationMetrics.Result.BLOCKED);
     }
 }

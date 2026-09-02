@@ -91,10 +91,23 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static final String MIGRATION_INTERNAL_GROUP = "nacos_internal";
 
-    private static final String CUTOVER_AGENT = "a2a-migration-cutover-it";
+    private static final String CUTOVER_BLOCKER_DATA_ID =
+        "nacos.ai.a2a.migration.cutover.blocker";
+
+    private static final String HISTORICAL_AGENT_GROUP = "agent";
+
+    // This scenario queries the historical Naming service directly, so use an identity that
+    // never requires the server-only historical Agent codec.
+    private static final String CUTOVER_AGENT = "migration-cutover-it";
 
     private static final String CUTOVER_ENABLED_PROPERTY =
         "nacos.a2a.migration.cutover.enabled";
+
+    private static final String CUTOVER_SHADOW_ENABLED_PROPERTY =
+        "nacos.a2a.migration.cutover.shadow-enabled";
+
+    private static final String TERMINAL_ROLLBACK_ENABLED_PROPERTY =
+        "nacos.a2a.migration.terminal-rollback.enabled";
 
     private static final String SERVER_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
@@ -131,13 +144,17 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     @EnabledIfSystemProperty(named = CUTOVER_ENABLED_PROPERTY, matches = "true")
     void shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover()
         throws Exception {
+        boolean shadowEnabled = Boolean.parseBoolean(
+            System.getProperty(CUTOVER_SHADOW_ENABLED_PROPERTY, "true"));
         ConfigService configService = createConfigService();
         assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
+        assertEquals(shadowEnabled, currentLegacyNamingShadow(configService));
 
         AiService grpcService = createAiService(transportProperties(
             AiConstants.AI_TRANSPORT_MODE_GRPC));
         AiService httpService = createAiService(transportProperties(
             AiConstants.AI_TRANSPORT_MODE_HTTP));
+        NamingService namingService = createNamingService();
         assertEquals(VERSION_ONE, grpcService.getAgentCard(CUTOVER_AGENT).getVersion());
         assertEquals(VERSION_ONE, httpService.getAgentCard(CUTOVER_AGENT).getVersion());
 
@@ -167,12 +184,29 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(replacement));
         assertWatchEndpoint(grpcListener, uri(replacement), "gRPC");
         assertWatchEndpoint(httpListener, uri(replacement), "HTTP");
+        awaitLayouts(grpcService, namingService, CUTOVER_AGENT, VERSION_ONE, 1);
         assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
 
-        grpcService.deregisterAgentEndpoint(CUTOVER_AGENT, replacement);
-        awaitRuntimeEndpointCount(grpcService, CUTOVER_AGENT, VERSION_ONE, 0);
-
+        assertTrue(configService.removeConfig(CUTOVER_BLOCKER_DATA_ID,
+            HISTORICAL_AGENT_GROUP), "the Java SDK cutover phase must release its hold");
         assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
+        assertEquals(shadowEnabled, currentLegacyNamingShadow(configService));
+        AgentEndpoint terminalReplacement = endpoint(VERSION_ONE, randomPort(),
+            "/terminal-replacement");
+        awaitTerminalLayout(grpcService, namingService, CUTOVER_AGENT, terminalReplacement,
+            shadowEnabled);
+        addCleanup(() -> grpcService.deregisterAgentEndpoint(CUTOVER_AGENT,
+            terminalReplacement));
+        assertWatchEndpoint(grpcListener, uri(terminalReplacement), "terminal gRPC");
+        assertWatchEndpoint(httpListener, uri(terminalReplacement), "terminal HTTP");
+        assertNoDuplicateEndpointEvent(grpcListener, uri(terminalReplacement),
+            "terminal gRPC");
+        assertNoDuplicateEndpointEvent(httpListener, uri(terminalReplacement),
+            "terminal HTTP");
+
+        grpcService.deregisterAgentEndpoint(CUTOVER_AGENT, terminalReplacement);
+        awaitRuntimeAndHistoricalCounts(grpcService, namingService, CUTOVER_AGENT,
+            VERSION_ONE, 0, 0);
         grpcService.releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
             AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
         waitUntil("terminal legacy facade should publish canonical Version 2",
@@ -185,6 +219,30 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             .searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
                 && VERSION_TWO.equals(each.getLatestVersion())));
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = TERMINAL_ROLLBACK_ENABLED_PROPERTY, matches = "true")
+    void shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy()
+        throws Exception {
+        ConfigService configService = createConfigService();
+        assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
+        boolean shadowEnabled = currentLegacyNamingShadow(configService);
+        AiService service = createAiService();
+        NamingService namingService = createNamingService();
+        A2aMaintainerService maintainer = createA2aMaintainerService();
+        String agentName = randomUnencodedAgentName("migration-terminal-rollback");
+        releaseVersions(service, maintainer, agentName, VERSION_ONE);
+
+        assertEquals(VERSION_ONE, service.getAgentCard(agentName).getVersion());
+        assertEquals(VERSION_ONE,
+            service.discoverAgent(reference(agentName, VERSION_ONE)).getVersion());
+        AgentEndpoint endpoint = endpoint(VERSION_ONE, randomPort(), "/terminal-legacy-mode");
+        awaitTerminalLayout(service, namingService, agentName, endpoint, shadowEnabled);
+        addCleanup(() -> service.deregisterAgentEndpoint(agentName, endpoint));
+        service.deregisterAgentEndpoint(agentName, endpoint);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 0, 0);
+        assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
     }
 
     @Test
@@ -260,7 +318,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
     @Test
     @EnabledIfSystemProperty(named = RECONNECT_ENABLED_PROPERTY, matches = "true")
-    void shouldRedoBothLayoutsAfterRealServerRestart() throws Exception {
+    void shouldRedoEnabledLayoutsAfterRealServerRestart() throws Exception {
         Path controlDirectory = Paths.get(
             System.getProperty(RECONNECT_CONTROL_DIRECTORY_PROPERTY));
         Files.createDirectories(controlDirectory);
@@ -271,6 +329,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         Files.deleteIfExists(stopped);
         Files.deleteIfExists(restarted);
 
+        ConfigService configService = createConfigService();
+        boolean shadowEnabled = currentLegacyNamingShadow(configService);
+        int expectedHistorical = shadowEnabled ? 1 : 0;
         AiService service = createAiService();
         NamingService namingService = createNamingService();
         A2aMaintainerService maintainer = createA2aMaintainerService();
@@ -282,22 +343,27 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         service.registerAgentEndpoint(agentName, second);
         addCleanup(() -> service.deregisterAgentEndpoint(agentName, first));
         addCleanup(() -> service.deregisterAgentEndpoint(agentName, second));
-        awaitLayouts(service, namingService, agentName, VERSION_ONE, 1);
-        awaitLayouts(service, namingService, agentName, VERSION_TWO, 1);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 1,
+            expectedHistorical);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_TWO, 1,
+            expectedHistorical);
         writeMarker(ready, agentName);
 
         waitForMarker(stopped, "the external fixture stops the AUTO server");
         waitForMarker(restarted, "the external fixture restarts the AUTO server");
-        awaitLayoutsLong(service, namingService, agentName, VERSION_ONE, 1);
-        awaitLayoutsLong(service, namingService, agentName, VERSION_TWO, 1);
-        assertLayoutUris(service, namingService, agentName, VERSION_ONE,
-            Collections.singletonList(uri(first)));
-        assertLayoutUris(service, namingService, agentName, VERSION_TWO,
-            Collections.singletonList(uri(second)));
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 1,
+            expectedHistorical);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_TWO, 1,
+            expectedHistorical);
+        assertConfiguredLayoutUris(service, namingService, agentName, VERSION_ONE,
+            Collections.singletonList(uri(first)), shadowEnabled);
+        assertConfiguredLayoutUris(service, namingService, agentName, VERSION_TWO,
+            Collections.singletonList(uri(second)), shadowEnabled);
 
         service.deregisterAgentEndpoint(agentName, first);
-        awaitLayouts(service, namingService, agentName, VERSION_ONE, 0);
-        awaitLayouts(service, namingService, agentName, VERSION_TWO, 1);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 0, 0);
+        awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_TWO, 1,
+            expectedHistorical);
     }
 
     @Test
@@ -464,30 +530,6 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
                     .size() == expected);
     }
 
-    private void awaitLayoutsLong(AiService service, NamingService namingService,
-        String agentName, String version, int expected) throws Exception {
-        long deadline = System.currentTimeMillis() + RECONNECT_TIMEOUT_MILLIS;
-        Throwable lastFailure = null;
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                if (historicalInstances(namingService, agentName, version).size() == expected
-                    && runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
-                        .size() == expected) {
-                    return;
-                }
-            } catch (Throwable throwable) {
-                lastFailure = throwable;
-            }
-            Thread.sleep(500L);
-        }
-        AssertionError failure = new AssertionError(
-            "both migration Runtime layouts did not recover after restart");
-        if (lastFailure != null) {
-            failure.initCause(lastFailure);
-        }
-        throw failure;
-    }
-
     private void assertLayoutUris(AiService service, NamingService namingService,
         String agentName, String version, List<String> expectedUris) throws Exception {
         List<String> historical = new ArrayList<String>();
@@ -506,6 +548,19 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         Collections.sort(expected);
         assertEquals(expected, historical);
         assertEquals(expected, canonical);
+    }
+
+    private void assertConfiguredLayoutUris(AiService service, NamingService namingService,
+        String agentName, String version, List<String> expectedUris, boolean shadowEnabled)
+        throws Exception {
+        List<String> expected = new ArrayList<String>(expectedUris);
+        Collections.sort(expected);
+        assertEquals(expected, runtimeUris(service, agentName, version));
+        if (shadowEnabled) {
+            assertEquals(expected, historicalUris(namingService, agentName, version));
+        } else {
+            assertTrue(historicalInstances(namingService, agentName, version).isEmpty());
+        }
     }
 
     private void awaitClusterLayouts(List<AiService> services,
@@ -685,6 +740,63 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
                 .size() == expected);
     }
 
+    private void awaitTerminalLayout(AiService service, NamingService namingService,
+        String agentName, AgentEndpoint endpoint, boolean shadowEnabled) throws Exception {
+        int expectedHistorical = shadowEnabled ? 1 : 0;
+        List<String> expectedUris = Collections.singletonList(uri(endpoint));
+        waitUntilLong("terminal Runtime layouts should honor frozen shadow=" + shadowEnabled,
+            () -> {
+                service.registerAgentEndpoint(agentName,
+                    Collections.singletonList(endpoint));
+                return expectedUris.equals(runtimeUris(service, agentName,
+                    endpoint.getVersion()))
+                    && historicalInstances(namingService, agentName, endpoint.getVersion())
+                        .size() == expectedHistorical
+                    && (!shadowEnabled || expectedUris.equals(historicalUris(namingService,
+                        agentName, endpoint.getVersion())));
+            });
+        if (shadowEnabled) {
+            assertLayoutUris(service, namingService, agentName, endpoint.getVersion(),
+                expectedUris);
+        } else {
+            assertEquals(expectedUris, runtimeUris(service, agentName, endpoint.getVersion()));
+            assertTrue(historicalInstances(namingService, agentName, endpoint.getVersion())
+                .isEmpty());
+        }
+    }
+
+    private void awaitRuntimeAndHistoricalCounts(AiService service,
+        NamingService namingService, String agentName, String version, int expectedRuntime,
+        int expectedHistorical) throws Exception {
+        waitUntilLong("Runtime and historical Endpoint counts should converge",
+            () -> runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                .size() == expectedRuntime
+                && historicalInstances(namingService, agentName, version)
+                    .size() == expectedHistorical);
+    }
+
+    private List<String> runtimeUris(AiService service, String agentName, String version)
+        throws NacosException {
+        List<String> result = new ArrayList<String>();
+        for (Endpoint endpoint : runtimeEndpoints(service.discoverAgent(
+            reference(agentName, version)))) {
+            result.add(endpoint.getUri());
+        }
+        Collections.sort(result);
+        return result;
+    }
+
+    private List<String> historicalUris(NamingService namingService, String agentName,
+        String version) throws NacosException {
+        List<String> result = new ArrayList<String>();
+        for (Instance instance : historicalInstances(namingService, agentName, version)) {
+            result.add("http://" + instance.getIp() + ':' + instance.getPort()
+                + instance.getMetadata().get("__nacos.agent.endpoint.path__"));
+        }
+        Collections.sort(result);
+        return result;
+    }
+
     private void assertWatchEndpoint(RecordingListener listener, String endpointUri,
         String transport) throws Exception {
         long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
@@ -735,6 +847,14 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             }
         }
         return false;
+    }
+
+    private boolean currentLegacyNamingShadow(ConfigService configService)
+        throws NacosException {
+        String content = configService.getConfig(MIGRATION_MARKER_DATA_ID,
+            MIGRATION_INTERNAL_GROUP, DEFAULT_TIMEOUT_MS);
+        assertTrue(content != null && !content.isEmpty(), "migration marker is missing");
+        return JacksonUtils.toObj(content).path("legacyNamingShadow").asBoolean();
     }
 
     private String uri(AgentEndpoint endpoint) {

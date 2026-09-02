@@ -126,16 +126,20 @@ public class A2aMigrationStateService
         Objects.requireNonNull(configured, "configured");
         advertiseLocalCapability(configured);
         VersionedValue<A2aMigrationMarker> marker = refreshMarker(authoritative);
+        A2aMigrationState result;
         if (canonicalLatched.get()) {
-            return A2aMigrationState.CANONICAL;
+            result = A2aMigrationState.CANONICAL;
+        } else if (A2aCompatibilityMode.AUTO != configured) {
+            result = null;
+        } else {
+            if (marker == null) {
+                marker = ensureSyncingPlan();
+            }
+            result = marker == null ? A2aMigrationState.SYNCING
+                : marker.getValue().getState();
         }
-        if (A2aCompatibilityMode.AUTO != configured) {
-            return null;
-        }
-        if (marker == null) {
-            marker = ensureSyncingPlan();
-        }
-        return marker == null ? A2aMigrationState.SYNCING : marker.getValue().getState();
+        A2aMigrationMetrics.setState(result);
+        return result;
     }
     
     /**

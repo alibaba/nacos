@@ -116,6 +116,7 @@ class A2aMigrationReconciliationTaskTest {
             A2aMigrationReconciliationTask.RECONCILIATION_PAGE_SIZE_PROPERTY);
         System.clearProperty(
             A2aMigrationReconciliationTask.RECONCILIATION_INTERVAL_SECONDS_PROPERTY);
+        System.clearProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY);
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     
@@ -130,6 +131,20 @@ class A2aMigrationReconciliationTaskTest {
         
         verify(namespaceOperationService, never()).getNamespaceList();
         verify(stateService, never()).persistProgress(any());
+    }
+    
+    @Test
+    void shouldUseConfiguredLeaseDurationAndRejectInvalidValue() {
+        System.setProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY,
+            "7");
+        when(stateService.tryAcquireLease(anyString(), eq(7000L))).thenReturn(null);
+        
+        task.executeReconciliation();
+        
+        verify(stateService).tryAcquireLease(anyString(), eq(7000L));
+        System.setProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY,
+            "0");
+        assertThrows(IllegalArgumentException.class, task::executeReconciliation);
     }
     
     @Test

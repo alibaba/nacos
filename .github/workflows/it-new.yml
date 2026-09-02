@@ -165,6 +165,9 @@ jobs:
           echo "nacos.ai.a2a.compatibility.mode=AUTO" >> "$PROP_FILE"
           echo "nacos.ai.a2a.migration.reconciliation.interval-seconds=1" >> "$PROP_FILE"
           echo "nacos.ai.a2a.migration.reconciliation.page-size=2" >> "$PROP_FILE"
+          # Bound takeover time when the previous process exits after Config storage has
+          # already become unavailable and therefore cannot release its migration lease.
+          echo "nacos.ai.a2a.migration.lease-duration-seconds=10" >> "$PROP_FILE"
           bash "$SERVER_HOME/bin/startup.sh" -m standalone
           if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
             echo "AUTO migration server failed to start"
@@ -190,6 +193,12 @@ jobs:
             -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
             -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}"
 
+      - name: Verify AI Resource Isolation During Historical A2A Migration
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
       - name: Install Historical A2A Cutover Blocker
         run: |
           # One malformed historical source keeps the matching-policy restart in SYNCING until
@@ -199,6 +208,19 @@ jobs:
             --data-urlencode "groupName=agent" \
             --data-urlencode "namespaceId=public" \
             --data-urlencode "content={" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+
+          # Simulate an uncleanly terminated reconciliation owner. The restarted process must
+          # take over this expired lease instead of waiting for the production default lease.
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          EXPIRES_AT=$((NOW_MILLIS + 10000))
+          LEASE=$(printf '{"schemaVersion":1,"owner":"terminated-process-it","expiresAt":%s}' "$EXPIRES_AT")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.reconciliation.lease.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content=$LEASE" \
             --data-urlencode "type=json" \
             --data-urlencode "tag="
 
@@ -213,8 +235,10 @@ jobs:
           fi
 
           echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=true" >> "$PROP_FILE"
-          echo "nacos.ai.a2a.migration.quiescing-check-interval-seconds=90" >> "$PROP_FILE"
-          echo "nacos.ai.a2a.migration.quiescing-timeout-seconds=180" >> "$PROP_FILE"
+          # OpenAPI and Java SDK exchange an explicit hold, so the scheduled check can be
+          # frequent without racing Maven process startup.
+          echo "nacos.ai.a2a.migration.quiescing-check-interval-seconds=10" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.quiescing-timeout-seconds=300" >> "$PROP_FILE"
           bash "$SERVER_HOME/bin/startup.sh" -m standalone
           if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
             echo "Matching-policy migration server failed to start"
@@ -238,10 +262,135 @@ jobs:
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
             -DskipTests=false \
             -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover \
-            -Dnacos.a2a.migration.cutover.enabled=true
+            -Dnacos.a2a.migration.cutover.enabled=true \
+            -Dnacos.a2a.migration.cutover.shadow-enabled=true
 
       - name: Verify Historical A2A Terminal OpenAPI
         run: |
           mvn -B -pl test/openapi-test clean verify -Pintegration-test \
             -Dit.test=A2aMigrationAdminApiOpenApiITCase#testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent \
             -Dnacos.a2a.migration.cutover.phase=verify
+
+      - name: Verify AI Resource Isolation After Shadow-Enabled Cutover
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
+      - name: Restart Terminal A2A Server With Explicit Legacy Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Terminal migration server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=LEGACY" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Terminal server configured with LEGACY failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify Terminal Marker Overrides Explicit Legacy Mode
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy \
+            -Dnacos.a2a.migration.terminal-rollback.enabled=true
+
+      - name: Reset Test Fixture For Shadow-Disabled A2A Cutover
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+
+          # This direct internal-marker rewrite is an isolated CI fixture reset, not a
+          # supported operator downgrade. The product transition API remains irreversible.
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.cutover.blocker" \
+            --data-urlencode "groupName=agent" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content={" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u6-shadow-off","legacyNamingShadow":false,"startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content=$MARKER" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-enabled terminal server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=AUTO" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=false" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart for shadow-disabled cutover"
+            exit 1
+          fi
+
+      - name: Verify Shadow-Disabled Historical A2A Quiescing OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable \
+            -Dnacos.a2a.migration.cutover.phase=prepare
+
+      - name: Verify Shadow-Disabled Historical A2A Cutover Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover \
+            -Dnacos.a2a.migration.cutover.enabled=true \
+            -Dnacos.a2a.migration.cutover.shadow-enabled=false
+
+      - name: Verify Shadow-Disabled Historical A2A Terminal OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent \
+            -Dnacos.a2a.migration.cutover.phase=verify
+
+      - name: Verify AI Resource Isolation After Shadow-Disabled Cutover
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
+      - name: Restart Shadow-Disabled Terminal Server With Explicit Legacy Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled terminal server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=LEGACY" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled terminal server configured with LEGACY failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify Shadow-Disabled Terminal Marker Overrides Legacy Mode
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy \
+            -Dnacos.a2a.migration.terminal-rollback.enabled=true

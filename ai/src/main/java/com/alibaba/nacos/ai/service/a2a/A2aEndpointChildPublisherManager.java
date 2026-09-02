@@ -17,14 +17,20 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.remote.manager.AiConnectionBasedClientManager;
+import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -45,12 +51,20 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 public class A2aEndpointChildPublisherManager extends ClientConnectionEventListener {
     
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(A2aEndpointChildPublisherManager.class);
+    
     public static final String CHILD_CLIENT_ID_PREFIX = "A2A_ENDPOINT_";
     
     private final AiConnectionBasedClientManager clientManager;
     
     private final ConcurrentMap<String, Set<String>> childClientIds =
         new ConcurrentHashMap<String, Set<String>>();
+    
+    private final ConcurrentMap<String, String> childOwners =
+        new ConcurrentHashMap<String, String>();
+    
+    private final Object childLifecycleLock = new Object();
     
     public A2aEndpointChildPublisherManager(AiConnectionBasedClientManager clientManager) {
         this.clientManager = clientManager;
@@ -72,26 +86,18 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
             throw new IllegalArgumentException("A2A child publisher layout must not be empty");
         }
         requireParent(parentClientId);
-        String childClientId = childClientId(parentClientId, namespaceId, agentName, version,
-            layout);
-        boolean created = false;
-        if (!clientManager.contains(childClientId)) {
-            ClientAttributes attributes = new ClientAttributes();
-            attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
-                ClientConstants.DEFAULT_FACTORY);
-            created = clientManager.clientConnected(childClientId, attributes);
+        String childClientId = childClientId(resolvePublisherIdentity(parentClientId),
+            namespaceId, agentName, version, layout);
+        synchronized (childLifecycleLock) {
+            requireParent(parentClientId);
+            boolean created = ensureResponsibleChild(childClientId, true);
+            bindOwner(parentClientId, childClientId);
+            if (!clientManager.contains(parentClientId)) {
+                disconnectOwnedChild(parentClientId, childClientId);
+                throw disconnected(parentClientId);
+            }
+            return new ChildPublisher(childClientId, created);
         }
-        if (!clientManager.contains(childClientId)) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                "Failed to create A2A child publisher for active AI connection");
-        }
-        childClientIds.computeIfAbsent(parentClientId,
-            key -> ConcurrentHashMap.newKeySet()).add(childClientId);
-        if (!clientManager.contains(parentClientId)) {
-            disconnectChild(parentClientId, childClientId);
-            throw disconnected(parentClientId);
-        }
-        return new ChildPublisher(childClientId, created);
     }
     
     /**
@@ -106,13 +112,20 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
      */
     public String findChild(String parentClientId, String namespaceId, String agentName,
         String version, String layout) {
-        String childClientId = childClientId(parentClientId, namespaceId, agentName, version,
-            layout);
-        if (!clientManager.contains(childClientId)) {
-            removeChildId(parentClientId, childClientId);
+        if (!clientManager.contains(parentClientId)) {
             return null;
         }
-        return childClientId;
+        String childClientId = childClientId(resolvePublisherIdentity(parentClientId),
+            namespaceId, agentName, version, layout);
+        synchronized (childLifecycleLock) {
+            if (!clientManager.contains(childClientId)) {
+                removeChildBinding(parentClientId, childClientId);
+                return null;
+            }
+            ensureResponsibleChild(childClientId, false);
+            bindOwner(parentClientId, childClientId);
+            return childClientId;
+        }
     }
     
     /**
@@ -122,8 +135,9 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
      * @param childClientId child publisher id
      */
     public void disconnectChild(String parentClientId, String childClientId) {
-        clientManager.clientDisconnected(childClientId);
-        removeChildId(parentClientId, childClientId);
+        synchronized (childLifecycleLock) {
+            disconnectOwnedChild(parentClientId, childClientId);
+        }
     }
     
     @Override
@@ -140,8 +154,10 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
         if (children == null) {
             return;
         }
-        for (String childClientId : children) {
-            clientManager.clientDisconnected(childClientId);
+        synchronized (childLifecycleLock) {
+            for (String childClientId : children) {
+                disconnectOwnedChild(connect.getMetaInfo().getConnectionId(), childClientId);
+            }
         }
     }
     
@@ -161,6 +177,50 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
             "AI client connection already disconnected: " + parentClientId);
     }
     
+    private boolean ensureResponsibleChild(String childClientId, boolean createWhenMissing) {
+        boolean created = false;
+        Client child = clientManager.getClient(childClientId);
+        boolean promoteReplica = child != null && !clientManager.isResponsibleClient(child);
+        if (promoteReplica) {
+            LOGGER.info("[A2A-ENDPOINT-REDO] Promote replicated child publisher after SDK "
+                + "reconnect, childId={}", childClientId);
+            clientManager.clientDisconnected(childClientId);
+        }
+        boolean missing = !clientManager.contains(childClientId);
+        if (missing && (createWhenMissing || promoteReplica)) {
+            ClientAttributes attributes = new ClientAttributes();
+            attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
+                ClientConstants.DEFAULT_FACTORY);
+            created = clientManager.clientConnected(childClientId, attributes);
+        }
+        if ((createWhenMissing || promoteReplica) && !clientManager.contains(childClientId)) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                "Failed to create A2A child publisher for active AI connection");
+        }
+        return created;
+    }
+    
+    private void bindOwner(String parentClientId, String childClientId) {
+        String previousOwner = childOwners.put(childClientId, parentClientId);
+        if (previousOwner != null && !previousOwner.equals(parentClientId)) {
+            removeChildId(previousOwner, childClientId);
+        }
+        childClientIds.computeIfAbsent(parentClientId,
+            key -> ConcurrentHashMap.newKeySet()).add(childClientId);
+    }
+    
+    private void disconnectOwnedChild(String parentClientId, String childClientId) {
+        if (childOwners.remove(childClientId, parentClientId)) {
+            clientManager.clientDisconnected(childClientId);
+        }
+        removeChildId(parentClientId, childClientId);
+    }
+    
+    private void removeChildBinding(String parentClientId, String childClientId) {
+        childOwners.remove(childClientId, parentClientId);
+        removeChildId(parentClientId, childClientId);
+    }
+    
     private void removeChildId(String parentClientId, String childClientId) {
         Set<String> children = childClientIds.get(parentClientId);
         if (children == null) {
@@ -172,9 +232,33 @@ public class A2aEndpointChildPublisherManager extends ClientConnectionEventListe
         }
     }
     
-    private String childClientId(String parentClientId, String namespaceId, String agentName,
+    private String resolvePublisherIdentity(String parentClientId) {
+        Client parent = clientManager.getClient(parentClientId);
+        if (!(parent instanceof AbstractClient)) {
+            return "connection:" + parentClientId;
+        }
+        ClientAttributes attributes = ((AbstractClient) parent).getClientAttributes();
+        ConnectionMeta metadata = attributes == null ? null
+            : attributes.getClientAttribute(ClientConstants.CONNECTION_METADATA);
+        String clientUuid = metadata == null ? null
+            : metadata.getLabel(AiRemoteConstants.LABEL_CLIENT_UUID);
+        if (StringUtils.isNotBlank(clientUuid)) {
+            try {
+                String normalized = UUID.fromString(clientUuid).toString();
+                if (normalized.equalsIgnoreCase(clientUuid)) {
+                    return "client:" + normalized;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Older or non-SDK clients retain the connection-scoped compatibility path.
+                return "connection:" + parentClientId;
+            }
+        }
+        return "connection:" + parentClientId;
+    }
+    
+    private String childClientId(String publisherIdentity, String namespaceId, String agentName,
         String version, String layout) {
-        String identity = component(parentClientId) + component(namespaceId)
+        String identity = component(publisherIdentity) + component(namespaceId)
             + component(agentName) + component(version) + component(layout);
         return CHILD_CLIENT_ID_PREFIX
             + UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));

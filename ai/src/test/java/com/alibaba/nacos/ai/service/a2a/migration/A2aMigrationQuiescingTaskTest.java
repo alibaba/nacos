@@ -92,6 +92,7 @@ class A2aMigrationQuiescingTaskTest {
         System.clearProperty(
             A2aMigrationQuiescingTask.QUIESCING_CHECK_INTERVAL_SECONDS_PROPERTY);
         System.clearProperty(A2aMigrationReconciliationTask.RECONCILIATION_PAGE_SIZE_PROPERTY);
+        System.clearProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY);
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     
@@ -223,6 +224,19 @@ class A2aMigrationQuiescingTaskTest {
     }
     
     @Test
+    void shouldUseConfiguredLeaseDurationForTerminalGate() {
+        readyCurrent();
+        localReadyAndAllAck();
+        System.setProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY,
+            "7");
+        when(stateService.tryAcquireLease("owner", 7000L)).thenReturn(null);
+        
+        task.executeCheck();
+        
+        verify(stateService).tryAcquireLease("owner", 7000L);
+    }
+    
+    @Test
     void shouldWaitWithoutLeaseAndRollbackChangedAck() {
         readyCurrent();
         localReadyAndAllAck();
@@ -337,6 +351,13 @@ class A2aMigrationQuiescingTaskTest {
             new VersionedValue<>(syncing, "syncing");
         ReflectionTestUtils.invokeMethod(task, "rollback", nonQuiescing, "ignored");
         verify(stateService, never()).newGeneration();
+        
+        double failures = A2aMigrationMetrics.eventCount(
+            A2aMigrationMetrics.Event.ROLLBACK, A2aMigrationMetrics.Result.FAILED);
+        when(stateService.newGeneration()).thenReturn("new-generation");
+        ReflectionTestUtils.invokeMethod(task, "rollback", current, "cas-failed");
+        assertTrue(A2aMigrationMetrics.eventCount(A2aMigrationMetrics.Event.ROLLBACK,
+            A2aMigrationMetrics.Result.FAILED) > failures);
     }
     
     private void readyCurrent() {

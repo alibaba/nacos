@@ -35,11 +35,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.lang.reflect.Constructor;
+import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +95,7 @@ class A2aMigrationEndpointRouterTest {
     
     @BeforeEach
     void setUp() throws NacosException {
+        A2aMigrationMetrics.resetGaugesForTest();
         router = router(4);
         lenient().doAnswer(invocation -> {
             invocation.<PublicationOperation>getArgument(3).run();
@@ -109,6 +112,7 @@ class A2aMigrationEndpointRouterTest {
     @AfterEach
     void tearDown() {
         router.destroy();
+        A2aMigrationMetrics.resetGaugesForTest();
     }
     
     @Test
@@ -242,6 +246,165 @@ class A2aMigrationEndpointRouterTest {
         verify(canonicalService).deregister(CLIENT, "public", "demo", "1.0.0");
         verifyNoInteractions(legacyService);
         assertFalse(router.hasPendingRetries());
+    }
+    
+    @Test
+    void shouldRemoveLegacyChildWhenExistingPublicationCrossesToCanonicalOnly()
+        throws NacosException {
+        AgentEndpoint initial = endpoint("1.0.0", 8080);
+        AgentEndpoint replacement = endpoint("1.0.0", 8081);
+        router.register(CLIENT, "public", "demo", initial, "source",
+            A2aMigrationState.SYNCING);
+        when(stateService.isLegacyNamingShadowEnabled()).thenReturn(false);
+        
+        router.register(CLIENT, "public", "demo", replacement, "source",
+            A2aMigrationState.CANONICAL);
+        
+        verify(canonicalService, times(2)).register(eq(CLIENT), eq("public"), eq("demo"),
+            any(Collection.class));
+        verify(legacyService).registerChild(eq(CLIENT), eq("public"), eq("demo"),
+            any(AgentEndpoint.class), eq("source"));
+        verify(legacyService).deregisterChild(CLIENT, "public", "demo", initial,
+            "source");
+        assertFalse(router.hasPendingRetries());
+        
+        router.deregister(CLIENT, "public", "demo", replacement, "source",
+            A2aMigrationState.CANONICAL);
+        verify(legacyService, times(1)).deregisterChild(anyString(), anyString(), anyString(),
+            any(AgentEndpoint.class), anyString());
+        assertEquals(0, router.publicationCount(CLIENT));
+    }
+    
+    @Test
+    void shouldRetryLegacyCleanupWithoutRollingBackCanonicalReplacement()
+        throws NacosException {
+        AgentEndpoint initial = endpoint("1.0.0", 8080);
+        AgentEndpoint replacement = endpoint("1.0.0", 8081);
+        router.register(CLIENT, "public", "demo", initial, "source",
+            A2aMigrationState.SYNCING);
+        when(stateService.isLegacyNamingShadowEnabled()).thenReturn(false);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "cleanup failed"))
+            .doNothing().when(legacyService).deregisterChild(CLIENT, "public", "demo",
+                initial, "source");
+        
+        router.register(CLIENT, "public", "demo", replacement, "source",
+            A2aMigrationState.CANONICAL);
+        
+        assertEquals(1, router.pendingRetryCount(CLIENT));
+        assertEquals(1, A2aMigrationMetrics.pendingEndpointRetries());
+        assertEquals(1, router.publicationCount(CLIENT));
+        verify(canonicalService, times(2)).register(eq(CLIENT), eq("public"), eq("demo"),
+            any(Collection.class));
+        router.retryPendingNow();
+        assertEquals(0, router.pendingRetryCount(CLIENT));
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
+        verify(legacyService, times(2)).deregisterChild(CLIENT, "public", "demo", initial,
+            "source");
+    }
+    
+    @Test
+    void shouldClearPendingCanonicalMirrorWhenItBecomesSuccessfulPrimary()
+        throws NacosException {
+        AgentEndpoint endpoint = endpoint("1.0.0", 8080);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "mirror failed"))
+            .doNothing().when(canonicalService).register(eq(CLIENT), eq("public"), eq("demo"),
+                any(Collection.class));
+        
+        router.register(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.SYNCING);
+        assertEquals(1, router.pendingRetryCount(CLIENT));
+        when(stateService.isLegacyNamingShadowEnabled()).thenReturn(false);
+        
+        router.register(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.CANONICAL);
+        
+        assertEquals(0, router.pendingRetryCount(CLIENT));
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
+        verify(canonicalService, times(2)).register(eq(CLIENT), eq("public"), eq("demo"),
+            any(Collection.class));
+    }
+    
+    @Test
+    void shouldRetryLegacyCleanupWhenExistingPublicationIsDeregisteredAfterCutover()
+        throws NacosException {
+        AgentEndpoint endpoint = endpoint("1.0.0", 8080);
+        router.register(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.SYNCING);
+        when(stateService.isLegacyNamingShadowEnabled()).thenReturn(false);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "cleanup failed"))
+            .doNothing().when(legacyService).deregisterChild(CLIENT, "public", "demo",
+                endpoint, "source");
+        
+        router.deregister(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.CANONICAL);
+        
+        verify(canonicalService).deregister(CLIENT, "public", "demo", "1.0.0");
+        assertEquals(0, router.publicationCount(CLIENT));
+        assertEquals(1, router.pendingRetryCount(CLIENT));
+        assertEquals(1, A2aMigrationMetrics.pendingEndpointRetries());
+        router.retryPendingNow();
+        assertEquals(0, router.pendingRetryCount(CLIENT));
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
+        verify(legacyService, times(2)).deregisterChild(CLIENT, "public", "demo", endpoint,
+            "source");
+    }
+    
+    @Test
+    void shouldIdempotentlyDeregisterCanonicalPublicationWithoutLocalMaterialization()
+        throws NacosException {
+        AgentEndpoint endpoint = endpoint("1.0.0", 8080);
+        when(stateService.isLegacyNamingShadowEnabled()).thenReturn(false);
+        
+        router.deregister(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.CANONICAL);
+        
+        verify(canonicalService).deregister(CLIENT, "public", "demo", "1.0.0");
+        verifyNoInteractions(legacyService);
+        assertEquals(0, router.publicationCount(CLIENT));
+        assertFalse(router.hasPendingRetries());
+    }
+    
+    @Test
+    void shouldRecordPrimarySecondaryAndRetryEndpointWrites() throws NacosException {
+        double primaryRegister = A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.PRIMARY, A2aMigrationMetrics.Target.LEGACY,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS);
+        double secondaryRegister = A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.SECONDARY, A2aMigrationMetrics.Target.CANONICAL,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS);
+        double retryFailure = A2aMigrationMetrics.eventCount(
+            A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+            A2aMigrationMetrics.Result.FAILED);
+        double retrySuccess = A2aMigrationMetrics.eventCount(
+            A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+            A2aMigrationMetrics.Result.SUCCESS);
+        double retryWrite = A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.RETRY, A2aMigrationMetrics.Target.CANONICAL,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS);
+        AgentEndpoint endpoint = endpoint("1.0.0", 8080);
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "mirror failed"))
+            .doNothing().when(canonicalService).register(eq(CLIENT), eq("public"), eq("demo"),
+                any(Collection.class));
+        
+        router.register(CLIENT, "public", "demo", endpoint, "source",
+            A2aMigrationState.SYNCING);
+        router.retryPendingNow();
+        
+        assertEquals(primaryRegister + 1D, A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.PRIMARY, A2aMigrationMetrics.Target.LEGACY,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS));
+        assertEquals(secondaryRegister, A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.SECONDARY, A2aMigrationMetrics.Target.CANONICAL,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS));
+        assertEquals(retryFailure, A2aMigrationMetrics.eventCount(
+            A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+            A2aMigrationMetrics.Result.FAILED));
+        assertEquals(retrySuccess + 1D, A2aMigrationMetrics.eventCount(
+            A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+            A2aMigrationMetrics.Result.SUCCESS));
+        assertEquals(retryWrite + 1D, A2aMigrationMetrics.endpointWriteCount(
+            A2aMigrationMetrics.Role.RETRY, A2aMigrationMetrics.Target.CANONICAL,
+            A2aMigrationMetrics.Operation.REGISTER, A2aMigrationMetrics.Result.SUCCESS));
     }
     
     @Test
@@ -386,6 +549,53 @@ class A2aMigrationEndpointRouterTest {
         router.clientDisConnected(connection);
         assertEquals(0, router.publicationCount(CLIENT));
         verify(capacityGate).clearLogicalPublications(CLIENT);
+    }
+    
+    @Test
+    void shouldClearPendingRetryGaugeWhenConnectionLeavesOrRouterStops()
+        throws NacosException {
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "mirror failed"))
+            .when(canonicalService).register(anyString(), anyString(), anyString(),
+                any(Collection.class));
+        when(connection.getMetaInfo()).thenReturn(connectionMeta);
+        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE))
+            .thenReturn(RemoteConstants.LABEL_MODULE_AI);
+        
+        router.register(CLIENT, "public", "demo", endpoint("1.0.0", 8080), "source",
+            A2aMigrationState.SYNCING);
+        assertEquals(1, A2aMigrationMetrics.pendingEndpointRetries());
+        when(connectionMeta.getConnectionId()).thenReturn(CLIENT);
+        router.clientDisConnected(connection);
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
+        
+        router.register("client-2", "public", "demo", endpoint("1.0.0", 8081), "source",
+            A2aMigrationState.SYNCING);
+        assertEquals(1, A2aMigrationMetrics.pendingEndpointRetries());
+        router.destroy();
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
+    }
+    
+    @Test
+    void shouldNotExecuteStaleRetryAfterConnectionLeaves() throws NacosException {
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "mirror failed"))
+            .doNothing().when(canonicalService).register(anyString(), anyString(), anyString(),
+                any(Collection.class));
+        when(connection.getMetaInfo()).thenReturn(connectionMeta);
+        when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE))
+            .thenReturn(RemoteConstants.LABEL_MODULE_AI);
+        when(connectionMeta.getConnectionId()).thenReturn(CLIENT);
+        router.register(CLIENT, "public", "demo", endpoint("1.0.0", 8080), "source",
+            A2aMigrationState.SYNCING);
+        Map<?, ?> states = (Map<?, ?>) ReflectionTestUtils.getField(router,
+            "connectionStates");
+        Object detachedState = states.get(CLIENT);
+        
+        router.clientDisConnected(connection);
+        ReflectionTestUtils.invokeMethod(router, "retryConnection", CLIENT, detachedState);
+        
+        verify(canonicalService).register(anyString(), anyString(), anyString(),
+            any(Collection.class));
+        assertEquals(0, A2aMigrationMetrics.pendingEndpointRetries());
     }
     
     @Test

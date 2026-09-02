@@ -131,6 +131,18 @@ class AiGrpcClientTest {
     }
     
     @Test
+    void shouldExposeStablePublisherIdentityOnGrpcConnection() throws Exception {
+        Field uuidField = AiGrpcClient.class.getDeclaredField("uuid");
+        uuidField.setAccessible(true);
+        Field rpcClientField = AiGrpcClient.class.getDeclaredField("rpcClient");
+        rpcClientField.setAccessible(true);
+        RpcClient actualRpcClient = (RpcClient) rpcClientField.get(aiGrpcClient);
+        
+        assertEquals(uuidField.get(aiGrpcClient),
+            actualRpcClient.getLabels().get(AiRemoteConstants.LABEL_CLIENT_UUID));
+    }
+    
+    @Test
     void queryMcpServer() throws NacosException, NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.isRunning()).thenReturn(true);

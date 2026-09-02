@@ -57,8 +57,6 @@ public class A2aMigrationQuiescingTask
     
     private static final long DEFAULT_CHECK_INTERVAL_SECONDS = 3L;
     
-    private static final long LEASE_DURATION_MILLIS = 10 * 60 * 1000L;
-    
     private static final int DEFAULT_PAGE_SIZE = 100;
     
     private static final int MAX_PAGE_SIZE = 500;
@@ -163,6 +161,8 @@ public class A2aMigrationQuiescingTask
                 return;
             }
             locallyVerifiedGeneration = marker.getGeneration();
+            A2aMigrationMetrics.record(A2aMigrationMetrics.Event.MEMBER_ACK,
+                A2aMigrationMetrics.Result.SUCCESS);
             LOGGER.info("Historical A2A migration member is READY: generationHash={}, "
                 + "definitions={}", hash(marker.getGeneration()), local.getScanned());
         }
@@ -175,7 +175,7 @@ public class A2aMigrationQuiescingTask
     private void completeOrRollback(VersionedValue<A2aMigrationMarker> expected,
         A2aMigrationMemberView expectedView) {
         A2aMigrationLease lease = stateService.tryAcquireLease(leaseOwner,
-            LEASE_DURATION_MILLIS);
+            A2aMigrationReconciliationTask.configuredLeaseDurationMillis());
         if (lease == null) {
             return;
         }
@@ -217,6 +217,8 @@ public class A2aMigrationQuiescingTask
             VersionedValue<A2aMigrationMarker> canonical = stateService.transition(verified,
                 A2aMigrationState.CANONICAL, verified.getValue().getGeneration());
             if (canonical != null) {
+                A2aMigrationMetrics.record(A2aMigrationMetrics.Event.CUTOVER,
+                    A2aMigrationMetrics.Result.SUCCESS);
                 LOGGER.info("Historical A2A migration is permanently CANONICAL: "
                     + "generationHash={}, members={}, definitions={}",
                     hash(canonical.getValue().getGeneration()), expectedView.getMemberCount(),
@@ -224,6 +226,8 @@ public class A2aMigrationQuiescingTask
                 clearLocalAck();
                 stopScheduling();
             } else {
+                A2aMigrationMetrics.record(A2aMigrationMetrics.Event.CUTOVER,
+                    A2aMigrationMetrics.Result.FAILED);
                 VersionedValue<A2aMigrationMarker> unresolved = stateService.currentMarker();
                 if (sameQuiescingGeneration(verified, unresolved)) {
                     rollback(unresolved, "canonical-cas-conflict");
@@ -243,8 +247,13 @@ public class A2aMigrationQuiescingTask
         stateService.clearLocalAck();
         locallyVerifiedGeneration = null;
         if (syncing != null) {
+            A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ROLLBACK,
+                A2aMigrationMetrics.Result.SUCCESS);
             LOGGER.warn("Historical A2A migration returned to SYNCING: reason={}, "
                 + "previousGenerationHash={}", reason, hash(expected.getValue().getGeneration()));
+        } else {
+            A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ROLLBACK,
+                A2aMigrationMetrics.Result.FAILED);
         }
     }
     

@@ -60,6 +60,9 @@ public class A2aMigrationReconciliationTask
     public static final String RECONCILIATION_PAGE_SIZE_PROPERTY =
         "nacos.ai.a2a.migration.reconciliation.page-size";
     
+    public static final String LEASE_DURATION_SECONDS_PROPERTY =
+        "nacos.ai.a2a.migration.lease-duration-seconds";
+    
     private static final Logger LOGGER =
         LoggerFactory.getLogger(A2aMigrationReconciliationTask.class);
     
@@ -69,7 +72,7 @@ public class A2aMigrationReconciliationTask
     
     private static final int MAX_PAGE_SIZE = 500;
     
-    private static final long LEASE_DURATION_MILLIS = 10 * 60 * 1000L;
+    private static final long DEFAULT_LEASE_DURATION_SECONDS = 10 * 60L;
     
     private final ScheduledExecutorService executor =
         ExecutorFactory.Managed.newSingleScheduledExecutorService(
@@ -152,12 +155,13 @@ public class A2aMigrationReconciliationTask
             return;
         }
         A2aMigrationLease lease = stateService.tryAcquireLease(leaseOwner,
-            LEASE_DURATION_MILLIS);
+            configuredLeaseDurationMillis());
         if (lease == null) {
             LOGGER.debug("Skip historical A2A reconciliation because another node owns lease");
             return;
         }
         ScanStats stats = new ScanStats();
+        long startedAt = System.nanoTime();
         stats.generation = UUID.randomUUID().toString();
         stats.lease = lease;
         try {
@@ -196,6 +200,8 @@ public class A2aMigrationReconciliationTask
         } finally {
             persistProgress(stats);
             lease.close();
+            A2aMigrationMetrics.recordReconciliation(stats.scanned, stats.migrated,
+                stats.conflicts, stats.failed, System.nanoTime() - startedAt);
             LOGGER.info("Historical A2A reconciliation completed: generation={}, scanned={}, "
                 + "migrated={}, conflicts={}, failed={}", stats.generation, stats.scanned,
                 stats.migrated, stats.conflicts, stats.failed);
@@ -319,6 +325,16 @@ public class A2aMigrationReconciliationTask
             throw new IllegalArgumentException(key + " must be positive");
         }
         return configured;
+    }
+    
+    static long configuredLeaseDurationMillis() {
+        long configured = Long.parseLong(EnvUtil.getProperty(LEASE_DURATION_SECONDS_PROPERTY,
+            String.valueOf(DEFAULT_LEASE_DURATION_SECONDS)));
+        if (configured < 1 || configured > Long.MAX_VALUE / 1000L) {
+            throw new IllegalArgumentException(
+                LEASE_DURATION_SECONDS_PROPERTY + " must be a positive number of seconds");
+        }
+        return configured * 1000L;
     }
     
     @Override

@@ -67,6 +67,7 @@ compatibility behavior and never creates a second definition authority.
 | `nacos.ai.a2a.migration.legacy-naming-shadow-enabled` | `false` | Whether exact-Version historical Naming services remain as a shadow after cutover. The value is frozen in the migration marker. |
 | `nacos.ai.a2a.migration.reconciliation.interval-seconds` | `300` | Full reconciliation interval. |
 | `nacos.ai.a2a.migration.reconciliation.page-size` | `100` | Bounded historical definition page size. The implementation applies a safe upper bound. |
+| `nacos.ai.a2a.migration.lease-duration-seconds` | `600` | Renewable migration lease duration. Operators may shorten it to bound takeover latency after an unclean process exit, but it must remain longer than one expected reconciliation unit. |
 | `nacos.ai.a2a.migration.quiescing-timeout-seconds` | `120` | Maximum time for one quiescing generation before returning to `SYNCING`. |
 
 There is no separate migration enable switch. Members in one migration plan
@@ -87,7 +88,10 @@ three bounded control objects:
 Marker and lease changes use Config compare-and-set. An uncertain write result
 is resolved by rereading the same object. No per-Agent migration row or
 `ai_resource_task` migration task is created. Existing Search tasks retain
-their independent contract.
+their independent contract. A process performs best-effort lease release on
+shutdown. If Config is already unavailable, the persisted expiry bounds
+takeover by another member; reconciliation and cutover must resume after that
+expiry without manual cleanup.
 
 The marker schema is:
 
@@ -261,12 +265,34 @@ physical layout uses a deterministic child publisher bound to the original AI
 connection. Register, complete-batch replace, deregister, disconnect, client
 expiration, and server shutdown clean both children idempotently.
 
+The current Java SDK carries one opaque, process-stable publisher UUID in its
+AI gRPC connection labels. A child publisher identity includes that UUID,
+Namespace, Agent, exact Version, and physical layout, so a reconnect with a new
+connection id reattaches to the same logical child. If the reconnect lands on a
+member holding only that child's Distro replica, the member first promotes the
+replica to a locally responsible child and then replays the complete desired
+Batch. Ownership is transferred to the new connection before a delayed old
+connection-disconnect callback may clean it. The UUID changes after SDK process
+restart, is not a public resource identity, and must not appear in metrics or
+ordinary logs. Clients predating this label retain connection-scoped child ids;
+their stale replicas converge through the existing Distro expiry path after an
+owner restart.
+
 In `SYNCING` and `QUIESCING`, a canonical mirror failure does not roll back a
 successful historical primary write. The complete batch enters bounded
 connection-local retry and blocks cutover until converged. In `CANONICAL`, a
 legacy shadow failure does not roll back a successful canonical write or alter
 RAD reads; it is retried within the connection and reported through bounded
 logs and metrics.
+
+When one live connection crosses from dual materialization to terminal
+`CANONICAL` with the frozen shadow disabled, its first exact-Version replace or
+deregister also removes the historical child that the same connection created.
+The router retains the last physically materialized snapshot for each layout so
+cleanup uses the historical identity rather than the replacement payload. A
+cleanup failure never rolls back the canonical primary write; it becomes a
+bounded deregistration retry. A publication created only after cutover does not
+create or probe a historical child.
 
 The optional shadow covers only historical A2A single, batch, and deregister
 operations carrying one exact Version. General RAD ranges are never expanded
@@ -356,6 +382,14 @@ Logs, metrics, marker, lease, and progress use bounded resource summaries or
 hashes. They must not expose complete AgentCards, credentials, tokens, or
 sensitive Endpoint metadata.
 
+The temporary migration metrics use only closed state, event, result, role,
+target, and operation labels. They expose the effective migration state,
+reconciliation item/result/duration, cutover and rollback events, primary,
+secondary, and retry Endpoint write duration, and the current bounded Endpoint
+retry count. Namespace, Agent name, Version, connection/client id, AgentCard,
+and Endpoint metadata are not metric labels. Metrics failure never changes
+migration authority, availability, or a public response.
+
 ## 9. Upgrade Runbook
 
 ### 9.1 Historical 3.0-3.2 Cluster
@@ -428,7 +462,7 @@ or stable internal facts, not fixed sleeps.
 | --- | --- |
 | `M-UT-01` | Mode, marker priority, and terminal process latch. |
 | `M-UT-02` | Member ability/policy validation and conservative missing or invalid metadata. |
-| `M-UT-03` | Marker/lease CAS, renewal, owner loss, uncertain result, and terminal irreversibility. |
+| `M-UT-03` | Marker/lease CAS, configurable expiry, renewal, owner loss, uncertain result, takeover after an unreleased lease expires, and terminal irreversibility. |
 | `M-UT-04` | Complete legacy summary/Version conversion, codec boundaries, and strict validation. |
 | `M-UT-05` | All AI Storage consistency modes and byte/size/digest read-back. |
 | `M-UT-06` | Version-first/Resource-last writes, concurrent source change, and idempotent recovery. |

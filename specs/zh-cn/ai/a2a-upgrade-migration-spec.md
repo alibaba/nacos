@@ -59,6 +59,7 @@ Runtime 双物化是独立的连接态兼容行为，不创建第二个定义权
 | `nacos.ai.a2a.migration.legacy-naming-shadow-enabled` | `false` | 切流后是否保留精确 Version 历史 Naming 影子；值固化在迁移 Marker 中。 |
 | `nacos.ai.a2a.migration.reconciliation.interval-seconds` | `300` | 全量对账间隔。 |
 | `nacos.ai.a2a.migration.reconciliation.page-size` | `100` | 有界历史定义分页大小；实现设置安全上限。 |
+| `nacos.ai.a2a.migration.lease-duration-seconds` | `600` | 可续约迁移 Lease 时长。运维可缩短该值以限制进程非正常退出后的接管延迟，但必须长于一个预期对账单元的执行时间。 |
 | `nacos.ai.a2a.migration.quiescing-timeout-seconds` | `120` | 一代 Quiescing 超时后回到 `SYNCING` 的最大时间。 |
 
 不新增独立迁移 Enable 开关。同一个迁移计划的全部 Member 必须使用 `AUTO` 和相同的固化
@@ -75,7 +76,9 @@ Shadow 策略；策略不一致会阻止 Quiescing 和切流。
 | `nacos.ai.a2a.reconciliation.progress.v1` | 有界 Cursor、Counter、Conflict 和最近错误摘要。 | 只用于诊断。 |
 
 Marker 和 Lease 使用 Config Compare-And-Set。写入结果不确定时，重读同一对象确认。迁移不创建
-逐 Agent Row，也不使用 `ai_resource_task` 保存迁移任务；已有 Search Task 维持独立契约。
+逐 Agent Row，也不使用 `ai_resource_task` 保存迁移任务；已有 Search Task 维持独立契约。进程关闭时
+尽力释放 Lease；若 Config 已先不可用，则持久化过期时间限制其他 Member 的接管等待，新 Member
+必须在过期后自动恢复对账与切流，不要求人工清理。
 
 Marker Schema 为：
 
@@ -221,9 +224,23 @@ CANONICAL:           canonical primary -> optional legacy shadow
 Publisher。Register、完整 Batch Replace、Deregister、Disconnect、Client Expire 和 Server
 Shutdown 都幂等清理两个 Child。
 
+当前 Java SDK 在 AI gRPC Connection Label 中携带一个进程生命周期内稳定的不透明
+Publisher UUID。Child Publisher 身份包含该 UUID、Namespace、Agent、精确 Version 和物理
+Layout，因此新 Connection Id 的重连仍会重新绑定同一逻辑 Child。若重连落在只持有该
+Child Distro 副本的节点，该节点先把副本提升为本地责任 Child，再重放完整期望 Batch。
+旧 Connection 的延迟断开回调执行清理前，所有权已转移给新 Connection。SDK 进程重启后
+UUID 会变化；它不是公开资源身份，不得出现在 Metric 或常规日志中。不携带该 Label 的旧
+Client 继续使用 Connection 范围 Child Id；Owner 重启后的旧副本由现有 Distro 过期路径最终收敛。
+
 `SYNCING`/`QUIESCING` 中，标准镜像失败不回滚已经成功的历史主写；完整 Batch 进入有界 Connection
 内重试，并在收敛前阻止切流。`CANONICAL` 中，历史 Shadow 失败不回滚标准主写，也不改变 RAD 读取；
 它在连接内重试，并通过有界日志和 Metric 报告。
+
+同一个存活 Connection 从双物化跨入终态 `CANONICAL` 且冻结的 Shadow 为关闭时，其第一次精确
+Version Replace 或 Deregister 还必须清理由该 Connection 创建的历史 Child。Router 按 Layout 保留
+最近一次已实际物化的 Snapshot，保证清理使用历史身份而不是替换请求的新 Payload。清理失败不得
+回滚成功的标准主写，而是进入有界 Deregister Retry；只在切流后新建的 Publication 不创建也不探测
+历史 Child。
 
 可选 Shadow 只覆盖天然携带一个精确 Version 的旧 A2A 单条、批量和注销操作。通用 RAD Range
 不得展开成多个历史 Version Service；Declared Endpoint、其他 Protocol 和定义生命周期变化都不得
@@ -288,6 +305,11 @@ Watch、Endpoint 发布和已有 Runtime 流量可用。
 日志、Metric、Marker、Lease 和 Progress 使用有界资源摘要或 Hash，不得暴露完整 AgentCard、
 Credential、Token 或敏感 Endpoint Metadata。
 
+临时迁移指标只使用闭集的 State、Event、Result、Role、Target 和 Operation 标签，覆盖有效迁移状态、
+对账条目/结果/耗时、切流与回退事件、Primary/Secondary/Retry Endpoint 写耗时，以及当前有界
+Endpoint Retry 数。Namespace、Agent Name、Version、Connection/Client Id、AgentCard 和 Endpoint
+Metadata 不得作为指标标签；指标失败不得改变迁移权威、可用性或公开响应。
+
 ## 9. 升级 Runbook
 
 ### 9.1 历史 3.0～3.2 集群
@@ -347,7 +369,7 @@ Shadow 及其配置计划在 Nacos 4.0 删除。删除时不得改写已经标�
 | --- | --- |
 | `M-UT-01` | Mode、Marker 优先级和终态进程 Latch。 |
 | `M-UT-02` | Member Ability/Policy 校验，以及缺失或非法 Metadata 保守处理。 |
-| `M-UT-03` | Marker/Lease CAS、续约、失主、结果不确定和终态不可逆。 |
+| `M-UT-03` | Marker/Lease CAS、可配置过期、续约、失主、结果不确定、未释放 Lease 过期后的自动接管和终态不可逆。 |
 | `M-UT-04` | 完整 Legacy Summary/Version 转换、Codec 边界和严格校验。 |
 | `M-UT-05` | 全部 AI Storage 一致性模式和 Byte/Size/Digest 读回。 |
 | `M-UT-06` | Version-first/Resource-last、并发源变化和幂等恢复。 |

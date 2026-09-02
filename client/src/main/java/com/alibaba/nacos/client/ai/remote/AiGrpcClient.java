@@ -183,10 +183,11 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     private GrpcClientConfig buildGrpcClientConfig(NacosClientProperties properties) {
-        Map<String, String> labels = new HashMap<>(3);
+        Map<String, String> labels = new HashMap<>(4);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_AI);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+        labels.put(AiRemoteConstants.LABEL_CLIENT_UUID, uuid);
         return RpcClientConfigFactory.getInstance()
             .createGrpcClientConfig(properties.asProperties(), labels);
     }

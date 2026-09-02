@@ -38,6 +38,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Temporary Runtime router for Nacos 3.0-3.2 A2A upgrade migration.
@@ -86,6 +88,8 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
         new ConcurrentHashMap<String, ConnectionState>();
     
     private final AtomicBoolean retryScheduled = new AtomicBoolean(false);
+    
+    private final AtomicInteger pendingRetryTotal = new AtomicInteger();
     
     private volatile boolean destroyed;
     
@@ -165,25 +169,30 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
             copiedEndpoint.getVersion());
         ConnectionState connectionState = connectionState(parentClientId);
         synchronized (connectionState) {
-            ensureRetryCapacity(connectionState, publicationKey, route.secondary);
+            ensureRetryCapacity(connectionState, publicationKey,
+                retryTarget(connectionState, publicationKey, route));
             publicationCapacityGate.deregisterLogical(parentClientId,
                 logicalPublicationKey(publicationKey),
-                () -> applyDeregister(route.primary, parentClientId, publicationKey,
-                    copiedEndpoint, sourceIp));
+                () -> applyDeregister(route.primary, A2aMigrationMetrics.Role.PRIMARY,
+                    parentClientId, publicationKey, copiedEndpoint, sourceIp));
+            markNotMaterialized(connectionState, publicationKey, route.primary);
             connectionState.publications.remove(publicationKey);
             clearPendingForTarget(connectionState, publicationKey, route.primary);
             if (route.secondary == null) {
                 clearAllPending(connectionState, publicationKey);
             } else {
                 try {
-                    applyDeregister(route.secondary, parentClientId, publicationKey,
-                        copiedEndpoint, sourceIp);
+                    applyDeregister(route.secondary, A2aMigrationMetrics.Role.SECONDARY,
+                        parentClientId, publicationKey, copiedEndpoint, sourceIp);
+                    markNotMaterialized(connectionState, publicationKey, route.secondary);
                     clearPendingForTarget(connectionState, publicationKey, route.secondary);
                 } catch (Exception e) {
                     queueRetry(connectionState, RetryCommand.deregister(route.secondary,
                         publicationKey, copiedEndpoint, sourceIp), e, parentClientId);
                 }
             }
+            cleanupStaleTarget(connectionState, parentClientId, publicationKey,
+                route.cleanup);
             removeEmptyState(parentClientId, connectionState);
         }
     }
@@ -214,9 +223,15 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
             .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
-        publicationCapacityGate.clearLogicalPublications(
-            connect.getMetaInfo().getConnectionId());
-        connectionStates.remove(connect.getMetaInfo().getConnectionId());
+        String connectionId = connect.getMetaInfo().getConnectionId();
+        publicationCapacityGate.clearLogicalPublications(connectionId);
+        ConnectionState removed = connectionStates.remove(connectionId);
+        if (removed != null) {
+            synchronized (removed) {
+                removed.attached = false;
+                updatePendingRetryTotal(-removed.pending.size());
+            }
+        }
     }
     
     @Override
@@ -226,7 +241,14 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
         for (String clientId : connectionStates.keySet()) {
             publicationCapacityGate.clearLogicalPublications(clientId);
         }
+        for (ConnectionState state : connectionStates.values()) {
+            synchronized (state) {
+                state.attached = false;
+            }
+        }
         connectionStates.clear();
+        int removedPending = pendingRetryTotal.getAndSet(0);
+        A2aMigrationMetrics.adjustPendingEndpointRetries(-removedPending);
     }
     
     void retryPendingNow() {
@@ -265,17 +287,23 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
             snapshot.version());
         ConnectionState connectionState = connectionState(parentClientId);
         synchronized (connectionState) {
-            ensureRetryCapacity(connectionState, publicationKey, route.secondary);
+            ensureRetryCapacity(connectionState, publicationKey,
+                retryTarget(connectionState, publicationKey, route));
             publicationCapacityGate.registerLogical(parentClientId,
                 logicalPublicationKey(publicationKey), snapshot.endpoints.size(),
-                () -> applyRegister(route.primary, parentClientId, publicationKey, snapshot));
+                () -> applyRegister(route.primary, A2aMigrationMetrics.Role.PRIMARY,
+                    parentClientId, publicationKey, snapshot));
+            markMaterialized(connectionState, publicationKey, route.primary, snapshot);
             connectionState.publications.put(publicationKey, snapshot);
             clearPendingForTarget(connectionState, publicationKey, route.primary);
             if (route.secondary == null) {
                 clearAllPending(connectionState, publicationKey);
             } else {
                 try {
-                    applyRegister(route.secondary, parentClientId, publicationKey, snapshot);
+                    applyRegister(route.secondary, A2aMigrationMetrics.Role.SECONDARY,
+                        parentClientId, publicationKey, snapshot);
+                    markMaterialized(connectionState, publicationKey, route.secondary,
+                        snapshot);
                     clearPendingForTarget(connectionState, publicationKey, route.secondary);
                 } catch (Exception e) {
                     queueRetry(connectionState,
@@ -283,6 +311,33 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
                         parentClientId);
                 }
             }
+            cleanupStaleTarget(connectionState, parentClientId, publicationKey,
+                route.cleanup);
+        }
+    }
+    
+    private Target retryTarget(ConnectionState state, PublicationKey key, Route route) {
+        if (route.secondary != null) {
+            return route.secondary;
+        }
+        return route.cleanup != null && isMaterialized(state, key, route.cleanup)
+            ? route.cleanup : null;
+    }
+    
+    private void cleanupStaleTarget(ConnectionState state, String parentClientId,
+        PublicationKey key, Target target) {
+        PublicationSnapshot materialized = materializedSnapshot(state, key, target);
+        if (materialized == null) {
+            return;
+        }
+        clearPendingForTarget(state, key, target);
+        try {
+            applyDeregister(target, A2aMigrationMetrics.Role.SECONDARY, parentClientId, key,
+                materialized.endpoints.get(0), materialized.sourceIp);
+            markNotMaterialized(state, key, target);
+        } catch (Exception e) {
+            queueRetry(state, RetryCommand.deregister(target, key,
+                materialized.endpoints.get(0), materialized.sourceIp), e, parentClientId);
         }
     }
     
@@ -307,30 +362,57 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
         }
     }
     
-    private void applyRegister(Target target, String parentClientId,
-        PublicationKey publicationKey, PublicationSnapshot snapshot) throws NacosException {
-        if (Target.CANONICAL == target) {
-            canonicalService.register(parentClientId, publicationKey.namespaceId,
-                publicationKey.agentName, snapshot.endpoints);
-        } else if (snapshot.single) {
-            legacyService.registerChild(parentClientId, publicationKey.namespaceId,
-                publicationKey.agentName, snapshot.endpoints.get(0), snapshot.sourceIp);
-        } else {
-            legacyService.registerChild(parentClientId, publicationKey.namespaceId,
-                publicationKey.agentName, snapshot.endpoints, snapshot.sourceIp);
+    private void applyRegister(Target target, A2aMigrationMetrics.Role role,
+        String parentClientId, PublicationKey publicationKey, PublicationSnapshot snapshot)
+        throws NacosException {
+        long start = System.nanoTime();
+        try {
+            if (Target.CANONICAL == target) {
+                canonicalService.register(parentClientId, publicationKey.namespaceId,
+                    publicationKey.agentName, snapshot.endpoints);
+            } else if (snapshot.single) {
+                legacyService.registerChild(parentClientId, publicationKey.namespaceId,
+                    publicationKey.agentName, snapshot.endpoints.get(0), snapshot.sourceIp);
+            } else {
+                legacyService.registerChild(parentClientId, publicationKey.namespaceId,
+                    publicationKey.agentName, snapshot.endpoints, snapshot.sourceIp);
+            }
+            recordEndpointWrite(role, target, A2aMigrationMetrics.Operation.REGISTER,
+                A2aMigrationMetrics.Result.SUCCESS, start);
+        } catch (NacosException | RuntimeException e) {
+            recordEndpointWrite(role, target, A2aMigrationMetrics.Operation.REGISTER,
+                A2aMigrationMetrics.Result.FAILED, start);
+            throw e;
         }
     }
     
-    private void applyDeregister(Target target, String parentClientId,
-        PublicationKey publicationKey, AgentEndpoint endpoint, String sourceIp)
-        throws NacosException {
-        if (Target.CANONICAL == target) {
-            canonicalService.deregister(parentClientId, publicationKey.namespaceId,
-                publicationKey.agentName, publicationKey.version);
-        } else {
-            legacyService.deregisterChild(parentClientId, publicationKey.namespaceId,
-                publicationKey.agentName, endpoint, sourceIp);
+    private void applyDeregister(Target target, A2aMigrationMetrics.Role role,
+        String parentClientId, PublicationKey publicationKey, AgentEndpoint endpoint,
+        String sourceIp) throws NacosException {
+        long start = System.nanoTime();
+        try {
+            if (Target.CANONICAL == target) {
+                canonicalService.deregister(parentClientId, publicationKey.namespaceId,
+                    publicationKey.agentName, publicationKey.version);
+            } else {
+                legacyService.deregisterChild(parentClientId, publicationKey.namespaceId,
+                    publicationKey.agentName, endpoint, sourceIp);
+            }
+            recordEndpointWrite(role, target, A2aMigrationMetrics.Operation.DEREGISTER,
+                A2aMigrationMetrics.Result.SUCCESS, start);
+        } catch (NacosException | RuntimeException e) {
+            recordEndpointWrite(role, target, A2aMigrationMetrics.Operation.DEREGISTER,
+                A2aMigrationMetrics.Result.FAILED, start);
+            throw e;
         }
+    }
+    
+    private void recordEndpointWrite(A2aMigrationMetrics.Role role, Target target,
+        A2aMigrationMetrics.Operation operation, A2aMigrationMetrics.Result result,
+        long startNanos) {
+        A2aMigrationMetrics.recordEndpointWrite(role,
+            A2aMigrationMetrics.Target.valueOf(target.name()), operation, result,
+            System.nanoTime() - startNanos);
     }
     
     private void ensureRetryCapacity(ConnectionState state, PublicationKey key,
@@ -388,7 +470,12 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
     
     private void queueRetry(ConnectionState state, RetryCommand command, Exception failure,
         String parentClientId) {
-        state.pending.put(command.retryKey, command);
+        RetryCommand previous = state.pending.put(command.retryKey, command);
+        if (previous == null && state.attached) {
+            updatePendingRetryTotal(1);
+        }
+        A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+            A2aMigrationMetrics.Result.SCHEDULED);
         LOGGER.warn("Historical A2A physical Endpoint write queued for retry: clientHash={}, "
             + "namespaceHash={}, agentHash={}, versionHash={}, target={}, operation={}, reason={}",
             hash(parentClientId), hash(command.retryKey.publicationKey.namespaceId),
@@ -401,20 +488,37 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
     
     private void retryConnection(String parentClientId, ConnectionState state) {
         synchronized (state) {
+            // TODO(remove in 4.0): a retry snapshot can outlive its connection-map entry.
+            // Never recreate a physical migration shadow after disconnect cleanup won the race.
+            if (!state.attached || connectionStates.get(parentClientId) != state) {
+                return;
+            }
             List<RetryCommand> commands =
                 new ArrayList<RetryCommand>(state.pending.values());
             for (RetryCommand command : commands) {
                 try {
                     if (command.snapshot == null) {
-                        applyDeregister(command.retryKey.target, parentClientId,
-                            command.retryKey.publicationKey, command.deregistrationEndpoint,
-                            command.sourceIp);
+                        applyDeregister(command.retryKey.target,
+                            A2aMigrationMetrics.Role.RETRY, parentClientId,
+                            command.retryKey.publicationKey,
+                            command.deregistrationEndpoint, command.sourceIp);
+                        markNotMaterialized(state, command.retryKey.publicationKey,
+                            command.retryKey.target);
                     } else {
-                        applyRegister(command.retryKey.target, parentClientId,
+                        applyRegister(command.retryKey.target,
+                            A2aMigrationMetrics.Role.RETRY, parentClientId,
                             command.retryKey.publicationKey, command.snapshot);
+                        markMaterialized(state, command.retryKey.publicationKey,
+                            command.retryKey.target, command.snapshot);
                     }
-                    state.pending.remove(command.retryKey, command);
+                    if (state.pending.remove(command.retryKey, command) && state.attached) {
+                        updatePendingRetryTotal(-1);
+                    }
+                    A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+                        A2aMigrationMetrics.Result.SUCCESS);
                 } catch (Exception e) {
+                    A2aMigrationMetrics.record(A2aMigrationMetrics.Event.ENDPOINT_RETRY,
+                        A2aMigrationMetrics.Result.FAILED);
                     LOGGER.debug("Historical A2A physical Endpoint retry is still pending: "
                         + "clientHash={}, namespaceHash={}, agentHash={}, versionHash={}, "
                         + "target={}", hash(parentClientId),
@@ -458,7 +562,46 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
     
     private void clearPendingForTarget(ConnectionState state, PublicationKey publicationKey,
         Target target) {
-        state.pending.remove(new RetryKey(publicationKey, target));
+        if (state.pending.remove(new RetryKey(publicationKey, target)) != null
+            && state.attached) {
+            updatePendingRetryTotal(-1);
+        }
+    }
+    
+    private void updatePendingRetryTotal(int delta) {
+        pendingRetryTotal.addAndGet(delta);
+        A2aMigrationMetrics.adjustPendingEndpointRetries(delta);
+    }
+    
+    private boolean isMaterialized(ConnectionState state, PublicationKey key, Target target) {
+        return materializedSnapshot(state, key, target) != null;
+    }
+    
+    private PublicationSnapshot materializedSnapshot(ConnectionState state, PublicationKey key,
+        Target target) {
+        if (target == null) {
+            return null;
+        }
+        Map<Target, PublicationSnapshot> targets = state.materializedTargets.get(key);
+        return targets == null ? null : targets.get(target);
+    }
+    
+    private void markMaterialized(ConnectionState state, PublicationKey key, Target target,
+        PublicationSnapshot snapshot) {
+        state.materializedTargets.computeIfAbsent(key,
+            ignored -> new EnumMap<Target, PublicationSnapshot>(Target.class))
+            .put(target, snapshot);
+    }
+    
+    private void markNotMaterialized(ConnectionState state, PublicationKey key, Target target) {
+        Map<Target, PublicationSnapshot> targets = state.materializedTargets.get(key);
+        if (targets == null) {
+            return;
+        }
+        targets.remove(target);
+        if (targets.isEmpty()) {
+            state.materializedTargets.remove(key);
+        }
     }
     
     private ConnectionState connectionState(String parentClientId) {
@@ -466,10 +609,13 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
     }
     
     private void removeEmptyState(String parentClientId, ConnectionState state) {
-        if (!state.publications.isEmpty() || !state.pending.isEmpty()) {
+        if (!state.publications.isEmpty() || !state.pending.isEmpty()
+            || !state.materializedTargets.isEmpty()) {
             return;
         }
-        connectionStates.remove(parentClientId, state);
+        if (connectionStates.remove(parentClientId, state)) {
+            state.attached = false;
+        }
     }
     
     private Route route(A2aMigrationState state) {
@@ -522,17 +668,20 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
     
     private enum Route {
         
-        SYNCING(Target.LEGACY, Target.CANONICAL),
-        CANONICAL_ONLY(Target.CANONICAL, null),
-        CANONICAL_WITH_SHADOW(Target.CANONICAL, Target.LEGACY);
+        SYNCING(Target.LEGACY, Target.CANONICAL, null),
+        CANONICAL_ONLY(Target.CANONICAL, null, Target.LEGACY),
+        CANONICAL_WITH_SHADOW(Target.CANONICAL, Target.LEGACY, null);
         
         private final Target primary;
         
         private final Target secondary;
         
-        Route(Target primary, Target secondary) {
+        private final Target cleanup;
+        
+        Route(Target primary, Target secondary, Target cleanup) {
             this.primary = primary;
             this.secondary = secondary;
+            this.cleanup = cleanup;
         }
         
         private boolean includes(Target target) {
@@ -547,6 +696,11 @@ public class A2aMigrationEndpointRouter extends ClientConnectionEventListener
         
         private final Map<RetryKey, RetryCommand> pending =
             new LinkedHashMap<RetryKey, RetryCommand>();
+        
+        private final Map<PublicationKey, Map<Target, PublicationSnapshot>> materializedTargets =
+            new LinkedHashMap<PublicationKey, Map<Target, PublicationSnapshot>>();
+        
+        private boolean attached = true;
     }
     
     private static final class PublicationKey {

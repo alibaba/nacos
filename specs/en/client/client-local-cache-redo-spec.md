@@ -189,6 +189,13 @@ old connection unregistered, and replays complete desired groups under the new
 connection. HTTP and gRPC publisher records stay separate; one transport must
 not deregister contributions owned by the other.
 
+The AI gRPC connection also carries an opaque UUID that remains stable only for
+the lifetime of that SDK process. It lets the server reattach temporary
+historical-A2A physical child publishers when a new connection id replays one
+logical Publication after reconnect. It does not change the public redo key,
+the current-connection ownership of SDK intent, or sticky transport ownership;
+a process restart creates a new UUID.
+
 In Agent `AUTO` transport mode, a Publication selects and caches its
 `ownerTransport` before the first send. Subsequent complete-Batch replacement,
 partial deregistration, whole-publication deregistration, HTTP heartbeat, and
@@ -271,7 +278,12 @@ defined by the
 The client does not cache physical child-publisher ids, double its local
 capacity, or independently retry one layout. Reconnect replays the complete
 logical record once under the new connection, and the server rebuilds the
-layouts required by its current migration marker.
+layouts required by its current migration marker. For the current Java SDK,
+the server derives those children from the process-stable connection label and
+claims a matching Distro replica before replay, preventing old and new
+connection ids from creating duplicate physical contributions. Older clients
+without the label keep the connection-scoped compatibility path and rely on
+normal Distro expiry after an owner restart.
 
 A successful primary response remains a successful client operation when a
 required mirror or optional shadow enters bounded server-side retry. A primary

@@ -90,7 +90,9 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private static final String CUTOVER_PHASE_PROPERTY =
             "nacos.a2a.migration.cutover.phase";
 
-    private static final String CUTOVER_AGENT = "a2a-migration-cutover-it";
+    // Keep the direct historical Naming identity readable without importing a server codec
+    // into this external API test. Encoding edge cases are covered by the codec unit suite.
+    private static final String CUTOVER_AGENT = "migration-cutover-it";
 
     private static final String CUTOVER_VERSION_ONE = "1.0.0";
 
@@ -124,6 +126,11 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
 
         deleteConfig(CUTOVER_BLOCKER_DATA_ID, HISTORICAL_AGENT_GROUP, DEFAULT_NAMESPACE);
         JsonNode quiescing = awaitMigrationState("QUIESCING");
+        // Hold this generation after proving the SYNCING -> QUIESCING transition. The
+        // following Java SDK process releases the blocker only after both HTTP and gRPC
+        // subscriptions are active, so this test does not depend on Maven startup speed.
+        postFormOk(ADMIN_CONFIG_PATH, configForm(CUTOVER_BLOCKER_DATA_ID,
+                HISTORICAL_AGENT_GROUP, DEFAULT_NAMESPACE, "{"));
         JsonNode completedAt = quiescing.path("completedAt");
         assertTrue(completedAt.isMissingNode() || completedAt.isNull(),
                 quiescing.toString());
