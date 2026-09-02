@@ -125,6 +125,11 @@ only on the persisted Config identity for the current model.
 
 ## 8. Failure And Recovery
 
+- A persisted Config identity rejected by disk-path safety validation must be
+  logged with a bounded, control-character-safe field and value. Batch, change,
+  and full dump processing must continue independent identities before
+  retaining the existing failure, retry, and startup-fatal semantics for the
+  rejected identity; the rejection must not be translated into success.
 - If local disk cannot safely store dump content, the server must treat the
   condition as fatal because runtime queries depend on local serving cache.
 - If cluster notification fails, it must be retried with bounded/backoff

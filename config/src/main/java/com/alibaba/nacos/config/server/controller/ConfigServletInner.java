@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -148,6 +149,9 @@ public class ConfigServletInner {
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
         
         if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
+            if (NacosException.INVALID_PARAM == chainResponse.getErrorCode()) {
+                return handlerInvalidParam(response, apiVersion, chainResponse.getMessage());
+            }
             throw new NacosConfigException(chainResponse.getMessage());
         }
         
@@ -174,6 +178,14 @@ public class ConfigServletInner {
             return writeResponseForV2(response,
                 Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
         }
+    }
+    
+    private String handlerInvalidParam(HttpServletResponse response, ApiVersionEnum apiVersion,
+        String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        Result<String> result = Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, message);
+        return apiVersion == ApiVersionEnum.V1 ? writeResponseForV1(response, result)
+            : writeResponseForV2(response, result);
     }
     
     private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion)

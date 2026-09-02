@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.ExternalDumpService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -48,6 +49,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -182,6 +184,52 @@ class DumpAllGrayProcessorTest {
             .thenReturn(page);
         boolean result = dumpAllGrayProcessor.process(task);
         assertTrue(result);
+    }
+    
+    @Test
+    void testRejectedRecordDoesNotBlockOtherRecordsAndStillFailsTask() {
+        DumpAllGrayTask task = mock(DumpAllGrayTask.class);
+        ConfigInfoGrayWrapper rejected = createGrayWrapper("badData", "..");
+        ConfigInfoGrayWrapper rejectedAgain = createGrayWrapper("badDataAgain", "..");
+        ConfigInfoGrayWrapper valid = createGrayWrapper("goodData", "group");
+        Page<ConfigInfoGrayWrapper> page = new Page<>();
+        page.setPageItems(List.of(rejected, rejectedAgain, valid));
+        when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(3);
+        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt()))
+            .thenReturn(page);
+        
+        try (MockedStatic<ConfigCacheService> cacheServiceMock =
+            Mockito.mockStatic(ConfigCacheService.class)) {
+            cacheServiceMock.when(() -> ConfigCacheService.dumpGray(rejected.getDataId(),
+                rejected.getGroup(), rejected.getTenant(), rejected.getGrayName(),
+                rejected.getGrayRule(), rejected.getContent(), rejected.getLastModified(),
+                rejected.getEncryptedDataKey()))
+                .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.dumpGray(rejectedAgain.getDataId(),
+                rejectedAgain.getGroup(), rejectedAgain.getTenant(), rejectedAgain.getGrayName(),
+                rejectedAgain.getGrayRule(), rejectedAgain.getContent(),
+                rejectedAgain.getLastModified(), rejectedAgain.getEncryptedDataKey()))
+                .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.dumpGray(valid.getDataId(),
+                valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
+                valid.getContent(), valid.getLastModified(), valid.getEncryptedDataKey()))
+                .thenReturn(true);
+            
+            assertThrows(ConfigDiskPathException.class,
+                () -> dumpAllGrayProcessor.process(task));
+            
+            cacheServiceMock.verify(() -> ConfigCacheService.dumpGray(rejected.getDataId(),
+                rejected.getGroup(), rejected.getTenant(), rejected.getGrayName(),
+                rejected.getGrayRule(), rejected.getContent(), rejected.getLastModified(),
+                rejected.getEncryptedDataKey()));
+            cacheServiceMock.verify(() -> ConfigCacheService.dumpGray(rejectedAgain.getDataId(),
+                rejectedAgain.getGroup(), rejectedAgain.getTenant(), rejectedAgain.getGrayName(),
+                rejectedAgain.getGrayRule(), rejectedAgain.getContent(),
+                rejectedAgain.getLastModified(), rejectedAgain.getEncryptedDataKey()));
+            cacheServiceMock.verify(() -> ConfigCacheService.dumpGray(valid.getDataId(),
+                valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
+                valid.getContent(), valid.getLastModified(), valid.getEncryptedDataKey()));
+        }
     }
     
     /**

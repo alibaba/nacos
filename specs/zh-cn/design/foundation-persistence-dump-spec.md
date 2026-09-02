@@ -200,6 +200,8 @@ Durable write or cluster change notification
 - raw disk 存储将正式和灰度内容保存在 Nacos home 下的数据目录，并区分带 namespace 和不带
   namespace 的路径；
 - dump 存储 key 必须从经过校验和编码的 Config 身份字段派生；
+- 不安全的派生 identity 必须 fail-closed，并记录有长度边界且已处理控制字符的诊断信息。单个 identity
+  被拒绝不得阻止其他无关 dump identity 执行，同时必须保持已有任务重试和启动失败语义；
 - 切换本地 dump backend 不得改变 Config 资源身份、md5 语义、鉴权或持久事实来源。
 
 本地 dump 存储属于服务缓存路径，不是 repository 契约，也不得作为独立持久数据库使用。

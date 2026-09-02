@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
@@ -568,6 +570,42 @@ class ConfigServletInnerTest {
                 null, "false", "127.0.0.1", ApiVersionEnum.V1));
         
         assertEquals("query failed", actual.getMessage());
+    }
+    
+    @Test
+    void testDoGetConfigWhenDiskPathIsRejected() throws Exception {
+        ConfigQueryChainResponse chainResponse = ConfigQueryChainResponse.buildFailResponse(
+            NacosException.INVALID_PARAM,
+            "Rejected unsafe Config disk path parameter: group='..'");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V2);
+        
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST + "", actualValue);
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(), Result.class);
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), result.getCode());
+        assertTrue(result.getData().contains("group='..'"));
+    }
+    
+    @Test
+    void testDoGetConfigV1WhenDiskPathIsRejected() throws Exception {
+        ConfigQueryChainResponse chainResponse = ConfigQueryChainResponse.buildFailResponse(
+            NacosException.INVALID_PARAM,
+            "Rejected unsafe Config disk path parameter: group='..'");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V1);
+        
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST + "", actualValue);
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        assertTrue(response.getContentAsString().contains("group='..'"));
     }
     
     @Test

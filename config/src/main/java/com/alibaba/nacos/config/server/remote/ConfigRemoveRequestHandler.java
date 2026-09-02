@@ -21,10 +21,12 @@ import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -86,8 +88,23 @@ public class ConfigRemoveRequestHandler
             return ConfigRemoveResponse.buildSuccessResponse();
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);
-            return ConfigRemoveResponse.buildFailResponse(e.getMessage());
+            ConfigRemoveResponse response = ConfigRemoveResponse.buildFailResponse(e.getMessage());
+            response.setErrorCode(resolveErrorCode(e));
+            return response;
         }
+    }
+    
+    private int resolveErrorCode(Exception exception) {
+        if (exception instanceof NacosException) {
+            return ((NacosException) exception).getErrCode();
+        }
+        if (exception instanceof ConfigDiskPathException) {
+            return ((ConfigDiskPathException) exception).getErrCode();
+        }
+        if (exception instanceof IllegalArgumentException) {
+            return NacosException.INVALID_PARAM;
+        }
+        return ResponseCode.FAIL.getCode();
     }
     
 }

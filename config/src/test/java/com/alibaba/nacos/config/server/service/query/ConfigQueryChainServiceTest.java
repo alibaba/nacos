@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.query;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 import com.alibaba.nacos.config.server.service.query.handler.ConfigQueryHandler;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,7 +76,20 @@ class ConfigQueryChainServiceTest {
         ConfigQueryChainResponse actualResponse = service.handle(new ConfigQueryChainRequest());
         
         assertEquals(ResponseCode.FAIL.getCode(), actualResponse.getResultCode());
+        assertEquals(ResponseCode.FAIL.getCode(), actualResponse.getErrorCode());
         assertEquals("disk", actualResponse.getMessage());
+    }
+    
+    @Test
+    void testHandleReturnsInvalidParamWhenDiskPathIsRejected() throws Exception {
+        ConfigQueryChainService service = createServiceWithHandler(null,
+            new ConfigDiskPathException("group", ".."));
+        
+        ConfigQueryChainResponse actualResponse = service.handle(new ConfigQueryChainRequest());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), actualResponse.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, actualResponse.getErrorCode());
+        assertTrue(actualResponse.getMessage().contains("group='..'"));
     }
     
     @Test
@@ -84,7 +100,7 @@ class ConfigQueryChainServiceTest {
     }
     
     private ConfigQueryChainService createServiceWithHandler(ConfigQueryChainResponse response,
-        IOException exception) throws Exception {
+        Exception exception) throws Exception {
         try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
             MockedStatic<NacosServiceLoader> serviceLoaderMock =
                 Mockito.mockStatic(NacosServiceLoader.class)) {

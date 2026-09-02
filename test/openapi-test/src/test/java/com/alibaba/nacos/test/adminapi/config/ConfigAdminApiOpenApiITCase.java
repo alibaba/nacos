@@ -30,8 +30,9 @@ import org.junit.jupiter.api.Test;
  *     <li>Expected capability: publish creates a config, republish updates its content, query returns the admin detail
  *     model, metadata update changes description and config tags, and delete removes the config.</li>
  *     <li>Boundary/validation: omitted namespaceId is stored as public, invalid config type is normalized to text,
- *     {@code dataId}, {@code groupName}, and {@code content} are required, and the legacy {@code group} parameter does
- *     not replace {@code groupName} for the v3 API.</li>
+ *     {@code dataId}, {@code groupName}, and {@code content} are required, embedded dots remain valid in Config names,
+ *     directory control segments are rejected, and the legacy {@code group} parameter does not replace
+ *     {@code groupName} for the v3 API.</li>
  *     <li>Exception/error handling: absent configs return HTTP 404 with the v3 {@code Result} error envelope, and
  *     invalid namespace values return HTTP 400 instead of leaking HTTP 500.</li>
  * </ul>
@@ -42,8 +43,8 @@ public class ConfigAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
     
     @Test
     public void testPublishQueryUpdateMetadataAndDeleteConfig() throws Exception {
-        String dataId = randomDataId("crud");
-        String groupName = randomGroupName("crud");
+        String dataId = randomDataId("crud") + ".properties";
+        String groupName = randomGroupName("crud") + ".v1";
         String initialContent = "{\"name\":\"initial\"}";
         String initialDescription = "initial config description";
         String initialTags = "tag-a,tag-b";
@@ -86,6 +87,25 @@ public class ConfigAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         assertError(postRaw(ADMIN_CONFIG_PATH, Query.newInstance().addParam("dataId", dataId)
                 .addParam("group", groupName).addParam("content", "content")), 400,
                 ErrorCode.PARAMETER_MISSING, "groupName");
+    }
+
+    @Test
+    public void testPublishConfigRejectsDirectoryControlIdentitySegments() throws Exception {
+        String dataId = randomDataId("path-segment");
+        String groupName = randomGroupName("path-segment");
+        assertInvalidPublishIdentity(".", groupName, "", "dataId");
+        assertInvalidPublishIdentity("..", groupName, "", "dataId");
+        assertInvalidPublishIdentity(dataId, ".", "", "group");
+        assertInvalidPublishIdentity(dataId, "..", "", "group");
+        assertInvalidPublishIdentity(dataId, groupName, ".", "namespaceId");
+        assertInvalidPublishIdentity(dataId, groupName, "..", "namespaceId");
+    }
+
+    private void assertInvalidPublishIdentity(String dataId, String groupName, String namespaceId,
+            String expectedField) throws Exception {
+        Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
+                .addParam("namespaceId", namespaceId).addParam("content", "content");
+        assertError(postRaw(ADMIN_CONFIG_PATH, query), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, expectedField);
     }
     
     @Test

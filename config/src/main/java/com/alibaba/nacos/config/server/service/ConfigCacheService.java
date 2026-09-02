@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigCachePostProcessorDelegate;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -143,6 +144,9 @@ public class ConfigCacheService {
             }
             
             return true;
+        } catch (ConfigDiskPathException e) {
+            DUMP_LOG.error("[dump-rejected] {}", e.getMessage());
+            throw e;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
@@ -269,6 +273,9 @@ public class ConfigCacheService {
                     grayName);
             }
             return true;
+        } catch (ConfigDiskPathException e) {
+            DUMP_LOG.error("[dump-gray-rejected] {}", e.getMessage());
+            throw e;
         } catch (IOException ioe) {
             DUMP_LOG.error(
                 "[dump-gray-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
@@ -328,6 +335,9 @@ public class ConfigCacheService {
             
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
             return true;
+        } catch (ConfigDiskPathException e) {
+            DUMP_LOG.error("[remove-gray-rejected] {}", e.getMessage());
+            throw e;
         } finally {
             releaseWriteLock(groupKey);
         }
@@ -367,6 +377,9 @@ public class ConfigCacheService {
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
             
             return true;
+        } catch (ConfigDiskPathException e) {
+            DUMP_LOG.error("[remove-rejected] {}", e.getMessage());
+            throw e;
         } finally {
             releaseWriteLock(groupKey);
         }

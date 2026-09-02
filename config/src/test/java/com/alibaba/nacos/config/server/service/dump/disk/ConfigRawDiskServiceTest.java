@@ -16,12 +16,18 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -33,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +52,7 @@ class ConfigRawDiskServiceTest {
     private String cachedOsName;
     
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         cachedOsName = System.getProperty("os.name");
     }
     
@@ -57,24 +64,18 @@ class ConfigRawDiskServiceTest {
      * 测试获取文件路径.
      */
     @Test
-    void testTargetFile()
-        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method =
-            ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
-                String.class);
-        method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
-        // 分解路径
+    void testTargetFile() {
+        String dataId = "aaaa-dsaknkf";
+        String group = "aaaa.dsaknkf";
+        String tenant = "aaaa:dsaknkf";
+        File result = ConfigRawDiskService.targetFile(dataId, group, tenant);
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
         Path grandParent = parent.getParent();
-        // 获取最后三段路径
-        String lastSegment = path.getFileName().toString();
-        String secondLastSegment = parent.getFileName().toString();
-        String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa.dsaknkf" : secondLastSegment, secondLastSegment);
-        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
+        assertEquals(dataId, path.getFileName().toString());
+        assertEquals(group, parent.getFileName().toString());
+        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : tenant,
+            grandParent.getFileName().toString());
     }
     
     @Test
@@ -82,9 +83,63 @@ class ConfigRawDiskServiceTest {
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
         assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("..\\aaa", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile(".", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", ".", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "testG", "."));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("..", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "..", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "testG", ".."));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile(" dataId", "testG", "testNS"));
+    }
+    
+    @Test
+    void testTargetFileReportsRejectedParameter() {
+        ConfigDiskPathException exception = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigRawDiskService.targetFile("dataId", "..", "namespace"));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertTrue(exception.getMessage().contains("group='..'"));
+    }
+    
+    @Test
+    void testTargetFileSanitizesRejectedParameterForLog() {
+        ConfigDiskPathException exception = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigRawDiskService.targetFile("bad\nname", "group", "namespace"));
+        
+        assertTrue(exception.getMessage().contains("dataId='bad?name'"));
+        assertFalse(exception.getMessage().contains("\n"));
+    }
+    
+    @Test
+    void testDiskPathExceptionSanitizesNullAndLongValues() {
+        ConfigDiskPathException nullValue = new ConfigDiskPathException("group", null);
+        assertTrue(nullValue.getMessage().contains("group='<null>'"));
+        
+        String unsafeValue = "'\\" + (char) 0x200E + (char) 0x2028 + (char) 0x2029
+            + "a".repeat(300);
+        IllegalArgumentException cause = new IllegalArgumentException("invalid path");
+        ConfigDiskPathException longValue =
+            new ConfigDiskPathException("group", unsafeValue, cause);
+        assertEquals(cause, longValue.getCause());
+        assertTrue(longValue.getMessage().contains("\\'\\\\???"));
+        assertTrue(longValue.getMessage().contains("..."));
+        assertFalse(longValue.getMessage().contains("\u2028"));
     }
     
     @Test
@@ -98,6 +153,71 @@ class ConfigRawDiskServiceTest {
                 () -> method.invoke(null, "dataId", "group", "tenant", "../gray"));
         
         assertTrue(exception.getCause() instanceof NacosRuntimeException);
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", ".");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", "..");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", "");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", " gray");
+        assertInvalidTargetGrayFile(method, "dataId", "..", "tenant", "gray");
+        assertInvalidTargetGrayFile(method, "dataId", "..", "tenant", "");
+    }
+    
+    @Test
+    void testValidatePathSegmentRetainsDirectoryControlDefense() throws Exception {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("validatePathSegment",
+            String.class);
+        method.setAccessible(true);
+        try (MockedStatic<ParamUtils> paramUtilsMock =
+            Mockito.mockStatic(ParamUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            paramUtilsMock.when(() -> ParamUtils.isValid(".")).thenReturn(true);
+            paramUtilsMock.when(() -> ParamUtils.isValid("..")).thenReturn(true);
+            
+            InvocationTargetException currentDirectory =
+                assertThrows(InvocationTargetException.class,
+                    () -> method.invoke(null, "."));
+            InvocationTargetException parentDirectory =
+                assertThrows(InvocationTargetException.class,
+                    () -> method.invoke(null, ".."));
+            assertTrue(currentDirectory.getCause() instanceof ConfigDiskPathException);
+            assertTrue(parentDirectory.getCause() instanceof ConfigDiskPathException);
+        }
+    }
+    
+    private void assertInvalidTargetGrayFile(Method method, String dataId, String group,
+        String tenant, String grayName) {
+        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+            () -> method.invoke(null, dataId, group, tenant, grayName));
+        assertTrue(exception.getCause() instanceof NacosRuntimeException);
+    }
+    
+    @ParameterizedTest
+    @EmptySource
+    @ValueSource(strings = {".", "..", "../target", "..\\target"})
+    void testTargetFileWithUnsafeEncodedParam(String unsafeEncodedParam) {
+        PathEncoderManager pathEncoderManager = Mockito.mock(PathEncoderManager.class);
+        Mockito.when(pathEncoderManager.encode(Mockito.anyString()))
+            .thenAnswer(invocation -> "group".equals(invocation.getArgument(0)) ? unsafeEncodedParam
+                : invocation.getArgument(0));
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
+            MockedStatic<PathEncoderManager> pathEncoderMock =
+                Mockito.mockStatic(PathEncoderManager.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            pathEncoderMock.when(PathEncoderManager::getInstance).thenReturn(pathEncoderManager);
+            assertThrows(NacosRuntimeException.class,
+                () -> ConfigRawDiskService.targetFile("dataId", "group", "tenant"));
+        }
+    }
+    
+    @Test
+    void testRemoveConfigInfoRejectsParentDirectoryTraversal() throws IOException {
+        try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
+            envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
+            File marker = new File(tempDir, "marker");
+            FileUtils.writeStringToFile(marker, "marker", "UTF-8");
+            ConfigRawDiskService service = new ConfigRawDiskService();
+            assertThrows(NacosRuntimeException.class,
+                () -> service.removeConfigInfo("..", "..", ""));
+            assertTrue(marker.isFile());
+        }
     }
     
     @Test
@@ -231,8 +351,10 @@ class ConfigRawDiskServiceTest {
         try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class)) {
             envUtilMock.when(EnvUtil::getNacosHome).thenReturn(tempDir.getAbsolutePath());
             ConfigRawDiskService service = new ConfigRawDiskService();
-            service.saveToDisk("d", "g", "myTenant", "tenant content");
-            assertEquals("tenant content", service.getContent("d", "g", "myTenant"));
+            service.saveToDisk("application.properties", "group.v1", "myTenant.v1",
+                "tenant content");
+            assertEquals("tenant content",
+                service.getContent("application.properties", "group.v1", "myTenant.v1"));
         }
     }
     
@@ -248,22 +370,14 @@ class ConfigRawDiskServiceTest {
         method.setAccessible(true);
         File result =
             (File) method.invoke(null, "data345678", "group3456", "tenant1234", "graynem4567");
-        // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
         Path grandParent = parent.getParent();
-        Path grand2Parent = grandParent.getParent();
-        
-        // 获取最后三段路径
-        String fourthLastSegment = grand2Parent.getFileName().toString();
-        assertEquals(fourthLastSegment, "tenant1234");
-        String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, "group3456");
-        String secondLastSegment = parent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : secondLastSegment, "data345678");
-        String lastSegment = path.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : lastSegment, "graynem4567");
-        
+        Path greatGrandParent = grandParent.getParent();
+        assertEquals("graynem4567", path.getFileName().toString());
+        assertEquals("data345678", parent.getFileName().toString());
+        assertEquals("group3456", grandParent.getFileName().toString());
+        assertEquals("tenant1234", greatGrandParent.getFileName().toString());
     }
     
 }

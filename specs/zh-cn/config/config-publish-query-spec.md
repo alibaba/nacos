@@ -76,6 +76,9 @@ entry/cache lock
 运行时查询必须使用缓存和 dump 内容，而不是大范围持久化查询。共享 dump 与 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 
+同步运行时查询中的 Config identity 被磁盘路径安全校验拒绝时，HTTP API 必须返回 400 参数校验错误，
+RPC API 必须返回对应的非法参数错误码；不得把该拒绝转换为 500 服务端错误。
+
 ## 4. 管理查询
 
 Admin 查询面向管理用户返回配置详情。当存储的配置为加密配置时，Admin 查询会先解密内容，再返回

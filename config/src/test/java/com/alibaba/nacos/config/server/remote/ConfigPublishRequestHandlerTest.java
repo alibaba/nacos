@@ -31,6 +31,7 @@ import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
@@ -53,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -271,6 +273,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
         assertTrue(response.getMessage().contains("mock error"));
         Thread.sleep(500L);
         assertTrue(reference.get() == null);
@@ -305,6 +308,53 @@ class ConfigPublishRequestHandlerTest {
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertTrue(response.getMessage().contains("already exist"));
+    }
+    
+    @Test
+    void testPublishConfigInvalidTagReturnsInvalidParam() throws Exception {
+        ConfigPublishRequest request = new ConfigPublishRequest("dataId", "group", "tenant",
+            "content");
+        request.putAdditionalParam("tag", "..");
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        
+        ConfigPublishResponse response = configPublishRequestHandler.handle(request, requestMeta);
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        verifyNoInteractions(configInfoPersistService, configInfoGrayPersistService);
+    }
+    
+    @Test
+    void testPublishConfigNacosExceptionPreservesErrorCode() throws Exception {
+        int expectedErrorCode = 12345;
+        ConfigPublishResponse response = handleWithOperationException(
+            new NacosException(expectedErrorCode, "mock nacos exception"));
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(expectedErrorCode, response.getErrorCode());
+    }
+    
+    @Test
+    void testPublishConfigRejectedDiskPathReturnsInvalidParam() throws Exception {
+        ConfigPublishResponse response = handleWithOperationException(
+            new ConfigDiskPathException("group", ".."));
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+    }
+    
+    private ConfigPublishResponse handleWithOperationException(Exception exception)
+        throws Exception {
+        ConfigOperationService operationService = Mockito.mock(ConfigOperationService.class);
+        when(operationService.publishConfig(any(), any(), anyString())).thenThrow(exception);
+        ConfigPublishRequestHandler handler = new ConfigPublishRequestHandler(operationService);
+        ConfigPublishRequest request = new ConfigPublishRequest("dataId", "group", "tenant",
+            "content");
+        request.putAdditionalParam("encryptedDataKey", "key");
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        return handler.handle(request, requestMeta);
     }
     
     @Test

@@ -37,6 +37,8 @@ class ParamUtilsTest {
         assertTrue(ParamUtils.isValid("test"));
         assertTrue(ParamUtils.isValid("test1234"));
         assertTrue(ParamUtils.isValid("test_-.:"));
+        assertFalse(ParamUtils.isValid("."));
+        assertFalse(ParamUtils.isValid(".."));
         assertFalse(ParamUtils.isValid("test!"));
         assertFalse(ParamUtils.isValid("test~"));
     }

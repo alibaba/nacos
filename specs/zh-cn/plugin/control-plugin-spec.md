@@ -169,6 +169,10 @@ nacos.plugin.control.rule.external.storage=${controlPluginName}
 nacos.plugin.control.rule.local.basedir=${expectedDir}
 ```
 
+TPS 规则存储到本地磁盘时，`pointName` 必须是 TPS 规则目录下的单个直接子文件名。读取、
+写入或删除规则文件前，必须拒绝目录控制名称（`.` 和 `..`）、路径分隔符、绝对路径，以及
+规范化后逃逸该目录的任何路径。
+
 自定义 control 插件可以通过覆盖规则解析器支持非 JSON 规则文本。自定义 TPS 插件可以通过
 覆盖 barrier creator 支持滑动窗口等其他计数算法。
 

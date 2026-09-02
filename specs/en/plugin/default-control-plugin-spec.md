@@ -62,6 +62,10 @@ ${expectedDir}/data/connection/limitRule
 ${expectedDir}/data/tps/{pointName}
 ```
 
+`pointName` must resolve to one direct child file below `data/tps`. The local
+storage rejects directory-control names, path separators, absolute paths, and
+normalized paths outside that directory.
+
 Connection rule example:
 
 ```json

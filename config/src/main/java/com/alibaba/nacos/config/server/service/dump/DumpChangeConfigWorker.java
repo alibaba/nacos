@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -72,6 +73,7 @@ public class DumpChangeConfigWorker implements Runnable {
                 return;
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            ConfigDiskPathException rejectedPathException = null;
             LogUtil.DEFAULT_LOG.info("DumpChange start ,from time {},current time {}", startTime,
                 currentTime);
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
@@ -83,15 +85,22 @@ public class DumpChangeConfigWorker implements Runnable {
                     historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize, Constants.FORMAL);
                 for (ConfigInfoStateWrapper configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(),
-                        configInfo.getGroup(),
-                        configInfo.getTenant()) == null) {
-                        ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant());
-                        LogUtil.DEFAULT_LOG.info("[dump-delete-ok], groupKey: {}, tenant: {}",
-                            new Object[] {GroupKey2.getKey(configInfo.getDataId(),
-                                configInfo.getGroup())},
-                            configInfo.getTenant());
+                    try {
+                        if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(),
+                            configInfo.getGroup(), configInfo.getTenant()) == null) {
+                            ConfigCacheService.remove(configInfo.getDataId(),
+                                configInfo.getGroup(), configInfo.getTenant());
+                            LogUtil.DEFAULT_LOG.info(
+                                "[dump-delete-ok], groupKey: {}, tenant: {}",
+                                new Object[] {GroupKey2.getKey(configInfo.getDataId(),
+                                    configInfo.getGroup())},
+                                configInfo.getTenant());
+                        }
+                    } catch (ConfigDiskPathException e) {
+                        LogUtil.DUMP_LOG.error("[dump-change-delete-rejected] {}", e.getMessage());
+                        if (rejectedPathException == null) {
+                            rejectedPathException = e;
+                        }
                     }
                 }
                 if (configDeleted.size() < pageSize) {
@@ -111,37 +120,46 @@ public class DumpChangeConfigWorker implements Runnable {
                     configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoStateWrapper cf : changeConfigs) {
-                    if (StringUtils.isBlank(cf.getTenant())) {
-                        continue;
-                    }
-                    final String groupKey =
-                        GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
-                    //check md5 & localtimestamp update local disk cache.
-                    boolean newLastModified =
-                        cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
-                    String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
-                    boolean md5Update = !localContentMd5.equals(cf.getMd5());
-                    if (newLastModified || md5Update) {
-                        LogUtil.DEFAULT_LOG.info("[dump-change] find change config  {}, {}, md5={}",
-                            groupKey, cf.getLastModified(),
-                            cf.getMd5());
-                        ConfigInfoWrapper configInfoWrapper =
-                            configInfoPersistService.findConfigInfo(cf.getDataId(),
-                                cf.getGroup(), cf.getTenant());
-                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}",
-                            groupKey, cf.getLastModified(),
-                            cf.getMd5());
-                        ConfigCacheService.dump(configInfoWrapper.getDataId(),
-                            configInfoWrapper.getGroup(),
-                            configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
-                            configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
-                            configInfoWrapper.getEncryptedDataKey());
-                        final String content = configInfoWrapper.getContent();
-                        final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
-                        final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
-                        LogUtil.DEFAULT_LOG.info(
-                            "[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}", groupKey,
-                            configInfoWrapper.getLastModified(), content.length(), md5, md5Utf8);
+                    try {
+                        if (StringUtils.isBlank(cf.getTenant())) {
+                            continue;
+                        }
+                        final String groupKey =
+                            GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                        //check md5 & localtimestamp update local disk cache.
+                        boolean newLastModified =
+                            cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
+                        String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
+                        boolean md5Update = !localContentMd5.equals(cf.getMd5());
+                        if (newLastModified || md5Update) {
+                            LogUtil.DEFAULT_LOG.info(
+                                "[dump-change] find change config  {}, {}, md5={}", groupKey,
+                                cf.getLastModified(), cf.getMd5());
+                            ConfigInfoWrapper configInfoWrapper =
+                                configInfoPersistService.findConfigInfo(cf.getDataId(),
+                                    cf.getGroup(), cf.getTenant());
+                            LogUtil.DUMP_LOG.info(
+                                "[dump-change] find change config  {}, {}, md5={}", groupKey,
+                                cf.getLastModified(), cf.getMd5());
+                            ConfigCacheService.dump(configInfoWrapper.getDataId(),
+                                configInfoWrapper.getGroup(), configInfoWrapper.getTenant(),
+                                configInfoWrapper.getContent(),
+                                configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
+                                configInfoWrapper.getEncryptedDataKey());
+                            final String content = configInfoWrapper.getContent();
+                            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
+                            final String md5Utf8 =
+                                MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
+                            LogUtil.DEFAULT_LOG.info(
+                                "[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}", groupKey,
+                                configInfoWrapper.getLastModified(), content.length(), md5,
+                                md5Utf8);
+                        }
+                    } catch (ConfigDiskPathException e) {
+                        LogUtil.DUMP_LOG.error("[dump-change-rejected] {}", e.getMessage());
+                        if (rejectedPathException == null) {
+                            rejectedPathException = e;
+                        }
                     }
                 }
                 if (changeConfigs.size() < pageSize) {
@@ -153,6 +171,9 @@ public class DumpChangeConfigWorker implements Runnable {
             LogUtil.DEFAULT_LOG.info(
                 "Check changed configs finished,cost:{}, next task ready will from start time  {}",
                 endChangeConfigTime - startChangeConfigTime, currentTime);
+            if (rejectedPathException != null) {
+                throw rejectedPathException;
+            }
             startTime = currentTime;
         } catch (Throwable e) {
             LogUtil.DEFAULT_LOG.error("Check changed configs error", e);

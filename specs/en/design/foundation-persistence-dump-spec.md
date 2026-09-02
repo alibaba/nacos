@@ -250,6 +250,10 @@ Rules:
   directories, separated by namespace-aware and no-namespace paths;
 - dump storage keys must be derived from validated and encoded Config identity
   fields;
+- an unsafe derived identity must fail closed with a bounded, control-character-
+  safe diagnostic. Processing one rejected identity must not prevent unrelated
+  dump identities from running, and existing task retry or startup-failure
+  semantics must remain unchanged;
 - changing the local dump backend must not change Config resource identity,
   md5 semantics, authorization, or the durable persistence source.
 

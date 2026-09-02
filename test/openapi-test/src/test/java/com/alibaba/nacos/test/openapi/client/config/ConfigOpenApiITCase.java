@@ -52,7 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     content, md5, lastModified, contentType, and beta response fields.</li>
  *     <li>Boundary/validation: omitted {@code namespaceId} uses the public namespace; wrong namespace returns a wrapped
  *     not-found result; {@code dataId} and {@code groupName} are required; v3 does not accept the legacy {@code group}
- *     parameter as a replacement for {@code groupName}; invalid namespace values are rejected by parameter checking.</li>
+ *     parameter as a replacement for {@code groupName}; invalid namespace values and directory-control identity
+ *     segments are rejected by parameter checking.</li>
  *     <li>Exception/error handling: absent config returns HTTP 2xx with {@code RESOURCE_NOT_FOUND}; invalid namespace
  *     returns HTTP 400 with wrapped {@code Result} fields; required-field validation currently returns controlled
  *     HTTP 400 text from this controller path rather than HTTP 500.</li>
@@ -184,6 +185,21 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
         assertBadRequestResult(getRaw(CLIENT_CONFIG_PATH, query),
             ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
     }
+
+    @Test
+    public void testGetConfigDirectoryControlSegmentsReturnBadRequest() throws Exception {
+        Query invalidDataId = Query.newInstance().addParam("dataId", ".")
+            .addParam("groupName", TEST_GROUP).addParam("namespaceId", DEFAULT_NAMESPACE);
+        assertValidationBadRequest(getRaw(CLIENT_CONFIG_PATH, invalidDataId), "dataId");
+
+        Query invalidGroup = Query.newInstance().addParam("dataId", "any")
+            .addParam("groupName", "..").addParam("namespaceId", DEFAULT_NAMESPACE);
+        assertValidationBadRequest(getRaw(CLIENT_CONFIG_PATH, invalidGroup), "group");
+
+        Query invalidNamespace = Query.newInstance().addParam("dataId", "any")
+            .addParam("groupName", TEST_GROUP).addParam("namespaceId", "..");
+        assertValidationBadRequest(getRaw(CLIENT_CONFIG_PATH, invalidNamespace), "namespaceId");
+    }
     
     private HttpRestResult<String> getConfig(String dataId, String group, String namespace)
         throws Exception {
@@ -207,6 +223,11 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
     private void assertPlainBadRequest(HttpResponse response, String expectedField) {
         assertEquals(400, response.code(), response.body());
         assertTrue(response.body().contains("Required parameter"), response.body());
+        assertTrue(response.body().contains(expectedField), response.body());
+    }
+
+    private void assertValidationBadRequest(HttpResponse response, String expectedField) {
+        assertEquals(400, response.code(), response.body());
         assertTrue(response.body().contains(expectedField), response.body());
     }
     

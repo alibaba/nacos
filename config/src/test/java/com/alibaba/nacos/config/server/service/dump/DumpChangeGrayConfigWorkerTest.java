@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -112,6 +114,33 @@ public class DumpChangeGrayConfigWorkerTest {
             () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
                 eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
         
+    }
+    
+    @Test
+    public void testRunSkipsUnchangedGrayConfig() {
+        ConfigInfoGrayWrapper unchanged = mock(2);
+        unchanged.setLastModified(10L);
+        unchanged.setMd5("same-md5");
+        String groupKey = GroupKey.getKeyTenant(unchanged.getDataId(), unchanged.getGroup(),
+            unchanged.getTenant());
+        when(historyConfigInfoPersistService.findDeletedConfig(
+            any(Timestamp.class), anyLong(), eq(100), anyString()))
+            .thenReturn(Collections.emptyList());
+        when(configInfoGrayPersistService.findChangeConfig(
+            any(Timestamp.class), eq(0L), eq(100)))
+            .thenReturn(Collections.singletonList(unchanged));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getLastModifiedTs(groupKey))
+            .thenReturn(10L);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(groupKey))
+            .thenReturn("same-md5");
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(
+            () -> ConfigCacheService.dumpGray(anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(),
+                anyLong(), anyString()),
+            never());
     }
     
     @Test
@@ -303,6 +332,104 @@ public class DumpChangeGrayConfigWorkerTest {
         configExecutorMockedStatic.verify(
             () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
                 eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+    }
+    
+    @Test
+    public void testRejectedDeleteDoesNotBlockOtherRecordsAndKeepsRetryCursor() {
+        PropertyUtil.setDumpChangeOn(true);
+        Timestamp startTime = dumpGrayConfigWorker.startTime;
+        ConfigInfoStateWrapper rejectedFirst = newDeletedGrayConfig("badData1", "..", "tenant",
+            "gray", 1L);
+        ConfigInfoStateWrapper rejectedSecond = newDeletedGrayConfig("badData2", "..", "tenant",
+            "gray", 2L);
+        ConfigInfoStateWrapper valid = newDeletedGrayConfig("goodData", "group", "tenant",
+            "gray", 3L);
+        when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(100),
+            anyString())).thenReturn(List.of(rejectedFirst, rejectedSecond, valid));
+        when(configInfoGrayPersistService.findChangeConfig(eq(startTime), eq(0L), eq(100)))
+            .thenReturn(Collections.emptyList());
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.removeGray(
+            rejectedFirst.getDataId(), rejectedFirst.getGroup(), rejectedFirst.getTenant(),
+            rejectedFirst.getGrayName())).thenThrow(new ConfigDiskPathException("group", ".."));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.removeGray(
+            rejectedSecond.getDataId(), rejectedSecond.getGroup(), rejectedSecond.getTenant(),
+            rejectedSecond.getGrayName()))
+            .thenThrow(new ConfigDiskPathException("namespaceId", ".."));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.removeGray(valid.getDataId(),
+            valid.getGroup(), valid.getTenant(), valid.getGrayName())).thenReturn(true);
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(() -> ConfigCacheService.removeGray(
+            rejectedFirst.getDataId(), rejectedFirst.getGroup(), rejectedFirst.getTenant(),
+            rejectedFirst.getGrayName()));
+        configCacheServiceMockedStatic.verify(() -> ConfigCacheService.removeGray(
+            rejectedSecond.getDataId(), rejectedSecond.getGroup(), rejectedSecond.getTenant(),
+            rejectedSecond.getGrayName()));
+        configCacheServiceMockedStatic.verify(() -> ConfigCacheService.removeGray(valid.getDataId(),
+            valid.getGroup(), valid.getTenant(), valid.getGrayName()));
+        assertEquals(startTime, dumpGrayConfigWorker.startTime);
+        configExecutorMockedStatic.verify(
+            () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
+                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+    }
+    
+    @Test
+    public void testRejectedChangedConfigsDoNotBlockOtherRecordsAndKeepRetryCursor() {
+        PropertyUtil.setDumpChangeOn(true);
+        Timestamp startTime = dumpGrayConfigWorker.startTime;
+        ConfigInfoGrayWrapper rejectedFirst = mock(11);
+        rejectedFirst.setId(11L);
+        rejectedFirst.setLastModified(startTime.getTime() + 1);
+        ConfigInfoGrayWrapper rejectedSecond = mock(12);
+        rejectedSecond.setId(12L);
+        rejectedSecond.setLastModified(startTime.getTime() + 2);
+        ConfigInfoGrayWrapper valid = mock(13);
+        valid.setId(13L);
+        valid.setLastModified(startTime.getTime() + 3);
+        when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(100),
+            anyString())).thenReturn(Collections.emptyList());
+        when(configInfoGrayPersistService.findChangeConfig(eq(startTime), eq(0L), eq(100)))
+            .thenReturn(List.of(rejectedFirst, rejectedSecond, valid));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getLastModifiedTs(anyString()))
+            .thenReturn(0L);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(anyString()))
+            .thenReturn("");
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dumpGray(
+            rejectedFirst.getDataId(), rejectedFirst.getGroup(), rejectedFirst.getTenant(),
+            rejectedFirst.getGrayName(), rejectedFirst.getGrayRule(), rejectedFirst.getContent(),
+            rejectedFirst.getLastModified(), rejectedFirst.getEncryptedDataKey()))
+            .thenThrow(new ConfigDiskPathException("group", ".."));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dumpGray(
+            rejectedSecond.getDataId(), rejectedSecond.getGroup(), rejectedSecond.getTenant(),
+            rejectedSecond.getGrayName(), rejectedSecond.getGrayRule(), rejectedSecond.getContent(),
+            rejectedSecond.getLastModified(), rejectedSecond.getEncryptedDataKey()))
+            .thenThrow(new ConfigDiskPathException("namespaceId", ".."));
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.dumpGray(valid.getDataId(),
+            valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
+            valid.getContent(), valid.getLastModified(), valid.getEncryptedDataKey()))
+            .thenReturn(true);
+        
+        dumpGrayConfigWorker.run();
+        
+        configCacheServiceMockedStatic.verify(() -> ConfigCacheService.dumpGray(valid.getDataId(),
+            valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
+            valid.getContent(), valid.getLastModified(), valid.getEncryptedDataKey()));
+        assertEquals(startTime, dumpGrayConfigWorker.startTime);
+        configExecutorMockedStatic.verify(
+            () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
+                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+    }
+    
+    private ConfigInfoStateWrapper newDeletedGrayConfig(String dataId, String group, String tenant,
+        String grayName, long id) {
+        ConfigInfoStateWrapper result = new ConfigInfoStateWrapper();
+        result.setDataId(dataId);
+        result.setGroup(group);
+        result.setTenant(tenant);
+        result.setGrayName(grayName);
+        result.setId(id);
+        return result;
     }
     
     ConfigInfoGrayWrapper mock(int id) {
