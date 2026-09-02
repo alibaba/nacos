@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
@@ -83,6 +84,7 @@ public class ConfigQueryRequestHandler
             String dataId = request.getDataId();
             String group = request.getGroup();
             String tenant = request.getTenant();
+            ParamUtils.checkParam(dataId, group, tenant);
             String groupKey = GroupKey2.getKey(dataId, group, tenant);
             boolean notify = request.isNotify();
             
@@ -94,8 +96,9 @@ public class ConfigQueryRequestHandler
             ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
             
             if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
-                return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                    chainResponse.getMessage());
+                int errorCode = chainResponse.getErrorCode() == 0 ? ResponseCode.FAIL.getCode()
+                    : chainResponse.getErrorCode();
+                return ConfigQueryResponse.buildFailResponse(errorCode, chainResponse.getMessage());
             }
             
             if (chainResponse
@@ -158,8 +161,9 @@ public class ConfigQueryRequestHandler
             
         } catch (Exception e) {
             LOGGER.error("Failed to handle grpc configuration query", e);
-            return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                e.getMessage());
+            int errorCode = e instanceof NacosException ? ((NacosException) e).getErrCode()
+                : ResponseCode.FAIL.getCode();
+            return ConfigQueryResponse.buildFailResponse(errorCode, e.getMessage());
         }
         
     }

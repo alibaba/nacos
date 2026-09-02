@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -271,6 +272,7 @@ class ConfigPublishRequestHandlerTest {
             configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
         assertTrue(response.getMessage().contains("mock error"));
         Thread.sleep(500L);
         assertTrue(reference.get() == null);
@@ -305,6 +307,21 @@ class ConfigPublishRequestHandlerTest {
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertTrue(response.getMessage().contains("already exist"));
+    }
+    
+    @Test
+    void testPublishConfigInvalidTagReturnsInvalidParam() throws Exception {
+        ConfigPublishRequest request = new ConfigPublishRequest("dataId", "group", "tenant",
+            "content");
+        request.putAdditionalParam("tag", "..");
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        
+        ConfigPublishResponse response = configPublishRequestHandler.handle(request, requestMeta);
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        verifyNoInteractions(configInfoPersistService, configInfoGrayPersistService);
     }
     
     @Test

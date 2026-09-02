@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -84,10 +86,16 @@ public class ConfigOpenApiController {
         configForm.validate();
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(),
+            configForm.getNamespaceId());
         RequestContext requestContext = RequestContextHolder.getContext();
         String sourceIp = requestContext.getBasicContext().getAddressContext().getSourceIp();
         ConfigQueryChainRequest chainRequest = buildQueryChainRequest(configForm, sourceIp);
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
+        if (NacosException.INVALID_PARAM == chainResponse.getErrorCode()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, chainResponse.getMessage());
+        }
         if (Objects.isNull(chainResponse.getContent())) {
             traceQuery(configForm, chainResponse, requestContext, sourceIp,
                 ConfigTraceService.PULL_TYPE_NOTFOUND);

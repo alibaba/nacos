@@ -92,6 +92,11 @@ Runtime query must use cached and dumped content rather than broad persistence
 queries. The shared dump and cache boundary is defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
 
+If disk-path safety rejects a Config identity during a synchronous runtime
+query, HTTP APIs must return a 400 parameter-validation response and RPC APIs
+must expose the corresponding invalid-parameter error code. The rejection must
+not be converted to a 500 server error.
+
 ## 4. Admin Query
 
 Admin query returns Config detail for management users. When the stored config

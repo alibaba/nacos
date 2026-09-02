@@ -36,6 +36,7 @@ class ConfigQueryChainResponseTest {
         resp.setMd5("md5");
         resp.setLastModified(100L);
         resp.setResultCode(200);
+        resp.setErrorCode(400);
         resp.setMessage("ok");
         resp.setStatus(
             ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
@@ -47,6 +48,7 @@ class ConfigQueryChainResponseTest {
         assertEquals("md5", resp.getMd5());
         assertEquals(100L, resp.getLastModified());
         assertEquals(200, resp.getResultCode());
+        assertEquals(400, resp.getErrorCode());
         assertEquals("ok", resp.getMessage());
         assertEquals(
             ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL,
@@ -59,13 +61,17 @@ class ConfigQueryChainResponseTest {
         ConfigQueryChainResponse resp =
             ConfigQueryChainResponse.buildFailResponse(500, "error");
         assertNotNull(resp);
+        assertEquals(500, resp.getResultCode());
+        assertEquals(500, resp.getErrorCode());
         assertEquals("error", resp.getMessage());
     }
     
     @Test
     void testSetErrorInfo() {
         ConfigQueryChainResponse resp = new ConfigQueryChainResponse();
-        resp.setErrorInfo(500, "error");
+        resp.setErrorInfo(400, "error");
+        assertEquals(500, resp.getResultCode());
+        assertEquals(400, resp.getErrorCode());
         assertEquals("error", resp.getMessage());
     }
     

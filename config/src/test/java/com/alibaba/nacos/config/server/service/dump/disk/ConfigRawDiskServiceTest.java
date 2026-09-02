@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,6 +98,24 @@ class ConfigRawDiskServiceTest {
             () -> ConfigRawDiskService.targetFile("testD", "testG", ".."));
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile(" dataId", "testG", "testNS"));
+    }
+    
+    @Test
+    void testTargetFileReportsRejectedParameter() {
+        ConfigDiskPathException exception = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigRawDiskService.targetFile("dataId", "..", "namespace"));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertTrue(exception.getMessage().contains("group='..'"));
+    }
+    
+    @Test
+    void testTargetFileSanitizesRejectedParameterForLog() {
+        ConfigDiskPathException exception = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigRawDiskService.targetFile("bad\nname", "group", "namespace"));
+        
+        assertTrue(exception.getMessage().contains("dataId='bad?name'"));
+        assertFalse(exception.getMessage().contains("\n"));
     }
     
     @Test

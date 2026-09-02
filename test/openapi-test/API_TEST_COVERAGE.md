@@ -238,6 +238,10 @@ crossing, atomic growth rejection, and slot reuse without creating 100 test
 entries. The Client-only renewal and Publisher-renewal separation is covered by
 the corresponding lifecycle unit tests.
 
+Config Client OpenAPI validation coverage includes exact current-directory and
+parent-directory identity segments for dataId, group, and namespace, and
+asserts that each rejection remains an HTTP 400 parameter error.
+
 MCP Client coverage adds direct-online-compatible and managed-draft release,
 latest/exact serving reads, and stateful REF Runtime Endpoint publication. The
 Endpoint scenario proves that Agent and MCP share one external HTTP Client

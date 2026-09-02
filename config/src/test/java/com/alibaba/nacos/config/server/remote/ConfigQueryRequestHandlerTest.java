@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.remote;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -409,6 +410,37 @@ class ConfigQueryRequestHandlerTest {
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals("chain failed", response.getMessage());
+    }
+    
+    @Test
+    void testHandleWhenDiskPathIsRejected() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = ConfigQueryChainResponse.buildFailResponse(
+            NacosException.INVALID_PARAM,
+            "Rejected unsafe Config disk path parameter: group='..'");
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+        
+        ConfigQueryResponse response = requestHandler.handle(newConfigQueryRequest(),
+            newRequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        assertTrue(response.getMessage().contains("group='..'"));
+    }
+    
+    @Test
+    void testHandleRejectsDirectoryControlSegmentBeforeQuery() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+        ConfigQueryRequest request = newConfigQueryRequest();
+        request.setGroup("..");
+        
+        ConfigQueryResponse response = requestHandler.handle(request, newRequestMeta());
+        
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        assertTrue(response.getMessage().contains("invalid group"));
     }
     
     @Test

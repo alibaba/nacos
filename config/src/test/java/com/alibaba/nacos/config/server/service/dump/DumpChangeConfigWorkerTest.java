@@ -20,11 +20,12 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
-import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -46,9 +47,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -103,7 +106,7 @@ class DumpChangeConfigWorkerTest {
     }
     
     protected ConfigDiskService createDiskService() {
-        return new ConfigRocksDbDiskService();
+        return Mockito.mock(ConfigDiskService.class);
     }
     
     @AfterEach
@@ -351,6 +354,43 @@ class DumpChangeConfigWorkerTest {
     }
     
     @Test
+    void testRejectedDeleteDoesNotBlockOtherRecordsAndKeepsRetryCursor() {
+        PropertyUtil.setDumpChangeOn(true);
+        Timestamp startTime = dumpChangeConfigWorker.startTime;
+        ConfigInfoStateWrapper rejected = createConfigInfoStateWrapper("badData", 1,
+            startTime.getTime() + 1);
+        rejected.setGroup("..");
+        ConfigInfoStateWrapper valid = createConfigInfoStateWrapper("goodData", 2,
+            startTime.getTime() + 2);
+        when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L),
+            anyInt(), eq("formal"))).thenReturn(List.of(rejected, valid));
+        when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), anyInt()))
+            .thenReturn(Collections.emptyList());
+        
+        try (MockedStatic<ConfigCacheService> cacheServiceMock =
+            Mockito.mockStatic(ConfigCacheService.class);
+            MockedStatic<ConfigExecutor> configExecutorMock =
+                Mockito.mockStatic(ConfigExecutor.class)) {
+            cacheServiceMock.when(() -> ConfigCacheService.remove(rejected.getDataId(),
+                rejected.getGroup(), rejected.getTenant()))
+                .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.remove(valid.getDataId(),
+                valid.getGroup(), valid.getTenant())).thenReturn(true);
+            
+            dumpChangeConfigWorker.run();
+            
+            cacheServiceMock.verify(() -> ConfigCacheService.remove(rejected.getDataId(),
+                rejected.getGroup(), rejected.getTenant()));
+            cacheServiceMock.verify(() -> ConfigCacheService.remove(valid.getDataId(),
+                valid.getGroup(), valid.getTenant()));
+            assertEquals(startTime, dumpChangeConfigWorker.startTime);
+            configExecutorMock.verify(() -> ConfigExecutor.scheduleConfigChangeTask(
+                any(DumpChangeConfigWorker.class),
+                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+        }
+    }
+    
+    @Test
     void testDumpChangeOfChangedConfigsEqualsTimestampMd5Update() {
         PropertyUtil.setDumpChangeOn(true);
         dumpChangeConfigWorker.setPageSize(3);
@@ -400,9 +440,11 @@ class DumpChangeConfigWorkerTest {
     }
     
     private void preSetCache(String dataIdPrefix, long id, long timeStamp) {
-        ConfigCacheService.dumpWithMd5(dataIdPrefix + id, "group" + id, "tenant" + id,
+        boolean success = ConfigCacheService.dumpWithMd5(dataIdPrefix + id, "group" + id,
+            "tenant" + id,
             "content" + id,
             MD5Utils.md5Hex("content" + id, "UTF-8"), timeStamp, "json", "encrykey" + id);
+        assertTrue(success);
     }
     
     private ConfigInfoStateWrapper createConfigInfoStateWrapper(String dataIdPreFix, long id,

@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -54,6 +55,7 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
         int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
         
         int actualRowCount = 0;
+        ConfigDiskPathException rejectedPathException = null;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
             Page<ConfigInfoGrayWrapper> page =
                 configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, PAGE_SIZE);
@@ -62,20 +64,29 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
                     if (StringUtils.isBlank(cf.getTenant())) {
                         continue;
                     }
-                    boolean result = ConfigCacheService
-                        .dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getGrayName(),
-                            cf.getGrayRule(), cf.getContent(),
+                    try {
+                        boolean result = ConfigCacheService.dumpGray(cf.getDataId(), cf.getGroup(),
+                            cf.getTenant(), cf.getGrayName(), cf.getGrayRule(), cf.getContent(),
                             cf.getLastModified(), cf.getEncryptedDataKey());
-                    LogUtil.DUMP_LOG.info(
-                        "[dump-all-gray-ok] result={}, {}, {}, length={}, md5={}, grayName={}",
-                        result,
-                        GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-                        cf.getContent().length(), cf.getMd5(), cf.getGrayName());
+                        LogUtil.DUMP_LOG.info(
+                            "[dump-all-gray-ok] result={}, {}, {}, length={}, md5={}, grayName={}",
+                            result, GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
+                            cf.getLastModified(), cf.getContent().length(), cf.getMd5(),
+                            cf.getGrayName());
+                    } catch (ConfigDiskPathException e) {
+                        LogUtil.DUMP_LOG.error("[dump-all-gray-rejected] {}", e.getMessage());
+                        if (rejectedPathException == null) {
+                            rejectedPathException = e;
+                        }
+                    }
                 }
                 
                 actualRowCount += page.getPageItems().size();
                 DEFAULT_LOG.info("[all-dump-gray] {} / {}", actualRowCount, rowCount);
             }
+        }
+        if (rejectedPathException != null) {
+            throw rejectedPathException;
         }
         return true;
     }

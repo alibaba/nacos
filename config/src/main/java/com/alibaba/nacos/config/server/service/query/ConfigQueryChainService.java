@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.query;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -68,6 +69,9 @@ public class ConfigQueryChainService {
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) {
         try {
             return chain.handle(request);
+        } catch (ConfigDiskPathException e) {
+            LOGGER.error("[Error] Config query rejected unsafe disk path: {}", e.getMessage(), e);
+            return ConfigQueryChainResponse.buildFailResponse(e.getErrCode(), e.getMessage());
         } catch (Exception e) {
             LOGGER.error("[Error] Fail to handle ConfigQueryChainRequest", e);
             return ConfigQueryChainResponse.buildFailResponse(ResponseCode.FAIL.getCode(),

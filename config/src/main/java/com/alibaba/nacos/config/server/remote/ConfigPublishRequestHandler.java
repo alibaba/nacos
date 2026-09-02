@@ -33,6 +33,7 @@ import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
@@ -136,11 +137,21 @@ public class ConfigPublishRequestHandler
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error(
                 "[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
-            return ConfigPublishResponse.buildFailResponse(
-                (e instanceof NacosException) ? ((NacosException) e).getErrCode()
-                    : ResponseCode.FAIL.getCode(),
-                e.getMessage());
+            return ConfigPublishResponse.buildFailResponse(resolveErrorCode(e), e.getMessage());
         }
+    }
+    
+    private int resolveErrorCode(Exception exception) {
+        if (exception instanceof NacosException) {
+            return ((NacosException) exception).getErrCode();
+        }
+        if (exception instanceof ConfigDiskPathException) {
+            return ((ConfigDiskPathException) exception).getErrCode();
+        }
+        if (exception instanceof IllegalArgumentException) {
+            return NacosException.INVALID_PARAM;
+        }
+        return ResponseCode.FAIL.getCode();
     }
     
 }

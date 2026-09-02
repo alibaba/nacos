@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -72,7 +70,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
         try {
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw invalidParameterException();
+            throw invalidIdentityException(dataId, group, tenant, e);
         }
         if (StringUtils.isBlank(tenant)) {
             return resolveTargetFile(BASE_DIR, group, dataId);
@@ -89,7 +87,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
             ParamUtils.checkParam(grayName);
             ParamUtils.checkParam(dataId, group, tenant);
         } catch (Exception e) {
-            throw invalidParameterException();
+            if (StringUtils.isBlank(grayName) || !ParamUtils.isValid(grayName)) {
+                throw invalidParameterException("grayName", grayName, e);
+            }
+            throw invalidIdentityException(dataId, group, tenant, e);
         }
         if (StringUtils.isBlank(tenant)) {
             return resolveTargetFile(GRAY_DIR, group, dataId, grayName);
@@ -106,7 +107,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
             try {
                 current = PathSafetyUtils.resolveDirectChild(current, encodedSegment);
             } catch (IllegalArgumentException e) {
-                throw invalidParameterException();
+                throw invalidParameterException("encodedPathSegment", encodedSegment, e);
             }
         }
         return current.toFile();
@@ -115,7 +116,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
     private static void validatePathSegment(String pathSegment) {
         if (StringUtils.isBlank(pathSegment) || !ParamUtils.isValid(pathSegment)
             || isDirectoryControlSegment(pathSegment)) {
-            throw invalidParameterException();
+            throw invalidParameterException("pathSegment", pathSegment);
         }
     }
     
@@ -123,9 +124,25 @@ public class ConfigRawDiskService implements ConfigDiskService {
         return CURRENT_DIRECTORY.equals(pathSegment) || PARENT_DIRECTORY.equals(pathSegment);
     }
     
-    private static NacosRuntimeException invalidParameterException() {
-        return new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM,
-            "parameter is invalid.");
+    private static ConfigDiskPathException invalidIdentityException(String dataId, String group,
+        String tenant, Throwable cause) {
+        if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
+            return invalidParameterException("dataId", dataId, cause);
+        }
+        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+            return invalidParameterException("group", group, cause);
+        }
+        return invalidParameterException("namespaceId", tenant, cause);
+    }
+    
+    private static ConfigDiskPathException invalidParameterException(String parameterName,
+        String parameterValue) {
+        return new ConfigDiskPathException(parameterName, parameterValue);
+    }
+    
+    private static ConfigDiskPathException invalidParameterException(String parameterName,
+        String parameterValue, Throwable cause) {
+        return new ConfigDiskPathException(parameterName, parameterValue, cause);
     }
     
     /**
