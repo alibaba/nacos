@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -221,6 +222,17 @@ class AgentSpecZipParserTest {
         
         assertEquals(1, result.size());
         assertEquals("duplicate-agent", result.get(0).getName());
+    }
+    
+    @Test
+    void testParseMultipleAgentSpecsFromInvalidZipPreservesUploadValidationError() {
+        byte[] invalidZip = "not a zip".getBytes(StandardCharsets.UTF_8);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> AgentSpecZipParser.parseMultipleAgentSpecsFromZip(invalidZip, NAMESPACE_ID));
+        
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+        assertEquals("Failed to read agentspec zip archive", exception.getErrMsg());
     }
     
     // ---- Helper methods ----

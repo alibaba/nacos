@@ -181,6 +181,11 @@ public class AgentSpecZipParser {
             return result;
         } catch (NacosApiException e) {
             throw e;
+        } catch (IOException e) {
+            LOGGER.error("Failed to read multi-AgentSpec zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                "Failed to read agentspec zip archive");
         } catch (Exception e) {
             LOGGER.error("Failed to parse multi-AgentSpec zip file", e);
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
