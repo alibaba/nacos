@@ -153,6 +153,11 @@ class MetricsMonitorTest {
                 "NacosException");
         });
         
+        double eventsBefore = MetricsMonitor.getAgentWatchEventCount("listener_callback", "failure");
+        assertDoesNotThrow(() -> MetricsMonitor.recordAgentWatchEvent("listener_callback", "failure"));
+        assertEquals(eventsBefore + 1D,
+            MetricsMonitor.getAgentWatchEventCount("listener_callback", "failure"));
+        
         String businessResult = simulateConfigRequestWithMetricsInFinally();
         assertEquals("business-ok", businessResult);
     }
@@ -228,7 +233,7 @@ class MetricsMonitorTest {
         
         @Override
         protected Counter newCounter(Counter.Id id) {
-            if ("FailureRequest".equals(id.getTag("req_class"))) {
+            if ("FailureRequest".equals(id.getTag("req_class")) || isFailureProbe(id.getTag("result"))) {
                 throw new IllegalStateException("simulated registry failure");
             }
             return super.newCounter(id);
