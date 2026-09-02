@@ -619,6 +619,8 @@ class DiskUtilsTest {
             writeZipEntry(zos, "..\\windows-illegal.txt", "evil");
             writeZipEntry(zos, "C:/windows-absolute.txt", "evil");
             writeZipEntry(zos, "C:windows-relative.txt", "evil");
+            zos.putNextEntry(new ZipEntry("empty-directory/"));
+            zos.closeEntry();
             writeZipEntry(zos, "safe.txt", "ok");
             writeZipEntry(zos, "legacy\\nested.txt", "legacy");
             writeZipEntry(zos, "safe..name", "dots");
@@ -627,6 +629,7 @@ class DiskUtilsTest {
         outDir.deleteOnExit();
         DiskUtils.decompress(zipFile.getAbsolutePath(), outDir.getAbsolutePath(), new Adler32());
         assertFalse(new File(outDir.getParentFile(), "illegal.txt").exists());
+        assertTrue(new File(outDir, "empty-directory").isDirectory());
         assertTrue(new File(outDir, "safe.txt").exists());
         assertTrue(new File(outDir, "legacy/nested.txt").isFile());
         assertTrue(new File(outDir, "safe..name").isFile());
@@ -648,6 +651,51 @@ class DiskUtilsTest {
         try (ZipInputStream inputStream = new ZipInputStream(new FileInputStream(zipFile))) {
             assertEquals("directory/file", inputStream.getNextEntry().getName());
         }
+    }
+    
+    @Test
+    void testCompressIntoZipFileRejectsUnsafeEntryName() throws IOException {
+        Path outputDir = Files.createTempDirectory("nacos-sys-illegal-compress");
+        outputDir.toFile().deleteOnExit();
+        File zipFile = outputDir.resolve("unsafe.zip").toFile();
+        try (InputStream inputStream = new java.io.ByteArrayInputStream(
+            "content".getBytes(StandardCharsets.UTF_8))) {
+            DiskUtils.compressIntoZipFile("../unsafe", inputStream,
+                zipFile.getAbsolutePath(), new Adler32());
+        }
+        assertFalse(zipFile.exists());
+    }
+    
+    @Test
+    void testCompressDirectoryUsesNormalizedArchiveEntry() throws IOException {
+        Path rootDir = Files.createTempDirectory("nacos-sys-compress-root");
+        Path sourceDir = Files.createDirectories(rootDir.resolve("source"));
+        Files.write(sourceDir.resolve("config.txt"), "content".getBytes(StandardCharsets.UTF_8));
+        File zipFile = Files.createTempFile("nacos-sys-compress", ".zip").toFile();
+        rootDir.toFile().deleteOnExit();
+        zipFile.deleteOnExit();
+        
+        DiskUtils.compress(rootDir.toString(), "source", zipFile.getAbsolutePath(), new Adler32());
+        
+        try (ZipInputStream inputStream = new ZipInputStream(new FileInputStream(zipFile))) {
+            assertEquals("source/config.txt", inputStream.getNextEntry().getName());
+        }
+    }
+    
+    @Test
+    void testCompressDirectoryRejectsUnsafeSourceEntry() throws IOException {
+        Path baseDir = Files.createTempDirectory("nacos-sys-illegal-source");
+        Path rootDir = Files.createDirectory(baseDir.resolve("root"));
+        Path sourceDir = Files.createDirectory(baseDir.resolve("source"));
+        Files.write(sourceDir.resolve("config.txt"), "content".getBytes(StandardCharsets.UTF_8));
+        File zipFile = baseDir.resolve("unsafe.zip").toFile();
+        baseDir.toFile().deleteOnExit();
+        
+        IOException actual = assertThrows(IOException.class,
+            () -> DiskUtils.compress(rootDir.toString(), "../source", zipFile.getAbsolutePath(),
+                new Adler32()));
+        
+        assertTrue(actual.getCause() instanceof IllegalArgumentException);
     }
     
     @Test

@@ -190,10 +190,11 @@ class DumpAllGrayProcessorTest {
     void testRejectedRecordDoesNotBlockOtherRecordsAndStillFailsTask() {
         DumpAllGrayTask task = mock(DumpAllGrayTask.class);
         ConfigInfoGrayWrapper rejected = createGrayWrapper("badData", "..");
+        ConfigInfoGrayWrapper rejectedAgain = createGrayWrapper("badDataAgain", "..");
         ConfigInfoGrayWrapper valid = createGrayWrapper("goodData", "group");
         Page<ConfigInfoGrayWrapper> page = new Page<>();
-        page.setPageItems(List.of(rejected, valid));
-        when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(2);
+        page.setPageItems(List.of(rejected, rejectedAgain, valid));
+        when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(3);
         when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt()))
             .thenReturn(page);
         
@@ -203,6 +204,11 @@ class DumpAllGrayProcessorTest {
                 rejected.getGroup(), rejected.getTenant(), rejected.getGrayName(),
                 rejected.getGrayRule(), rejected.getContent(), rejected.getLastModified(),
                 rejected.getEncryptedDataKey()))
+                .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.dumpGray(rejectedAgain.getDataId(),
+                rejectedAgain.getGroup(), rejectedAgain.getTenant(), rejectedAgain.getGrayName(),
+                rejectedAgain.getGrayRule(), rejectedAgain.getContent(),
+                rejectedAgain.getLastModified(), rejectedAgain.getEncryptedDataKey()))
                 .thenThrow(new ConfigDiskPathException("group", ".."));
             cacheServiceMock.when(() -> ConfigCacheService.dumpGray(valid.getDataId(),
                 valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
@@ -216,6 +222,10 @@ class DumpAllGrayProcessorTest {
                 rejected.getGroup(), rejected.getTenant(), rejected.getGrayName(),
                 rejected.getGrayRule(), rejected.getContent(), rejected.getLastModified(),
                 rejected.getEncryptedDataKey()));
+            cacheServiceMock.verify(() -> ConfigCacheService.dumpGray(rejectedAgain.getDataId(),
+                rejectedAgain.getGroup(), rejectedAgain.getTenant(), rejectedAgain.getGrayName(),
+                rejectedAgain.getGrayRule(), rejectedAgain.getContent(),
+                rejectedAgain.getLastModified(), rejectedAgain.getEncryptedDataKey()));
             cacheServiceMock.verify(() -> ConfigCacheService.dumpGray(valid.getDataId(),
                 valid.getGroup(), valid.getTenant(), valid.getGrayName(), valid.getGrayRule(),
                 valid.getContent(), valid.getLastModified(), valid.getEncryptedDataKey()));

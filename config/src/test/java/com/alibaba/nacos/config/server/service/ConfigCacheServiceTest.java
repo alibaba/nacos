@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -635,6 +637,81 @@ class ConfigCacheServiceTest {
         boolean result = ConfigCacheService.dumpGray(dataId, group, tenant,
             "gray1", "{}", "content", System.currentTimeMillis(), "key");
         assertFalse(result);
+        cache().remove(groupKey);
+    }
+    
+    @Test
+    void testDumpRethrowsRejectedDiskPath() throws Exception {
+        String dataId = "rejectedDumpD";
+        String group = "rejectedDumpG";
+        String tenant = "rejectedDumpT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        ConfigDiskPathException rejection = new ConfigDiskPathException("group", "..");
+        doThrow(rejection).when(configDiskService)
+            .saveToDisk(eq(dataId), eq(group), eq(tenant), anyString());
+        
+        ConfigDiskPathException actual = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigCacheService.dump(dataId, group, tenant, "content",
+                System.currentTimeMillis(), "text", "key"));
+        
+        assertEquals(rejection, actual);
+        cache().remove(groupKey);
+    }
+    
+    @Test
+    void testDumpGrayRethrowsRejectedDiskPath() throws Exception {
+        String dataId = "rejectedGrayDumpD";
+        String group = "rejectedGrayDumpG";
+        String tenant = "rejectedGrayDumpT";
+        String grayName = "tag_rejected";
+        String grayRule = "{\"type\":\"tag\",\"version\":\"1.0.0\","
+            + "\"expr\":\"rejected\",\"priority\":1}";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        ConfigDiskPathException rejection = new ConfigDiskPathException("grayName", "..");
+        doThrow(rejection).when(configDiskService)
+            .saveGrayToDisk(eq(dataId), eq(group), eq(tenant), eq(grayName), anyString());
+        
+        ConfigDiskPathException actual = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRule,
+                "content", System.currentTimeMillis(), "key"));
+        
+        assertEquals(rejection, actual);
+        cache().remove(groupKey);
+    }
+    
+    @Test
+    void testRemoveRethrowsRejectedDiskPath() throws Exception {
+        String dataId = "rejectedRemoveD";
+        String group = "rejectedRemoveG";
+        String tenant = "rejectedRemoveT";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        ConfigCacheService.makeSure(groupKey, null);
+        ConfigDiskPathException rejection = new ConfigDiskPathException("group", "..");
+        doThrow(rejection).when(configDiskService).removeConfigInfo(dataId, group, tenant);
+        
+        ConfigDiskPathException actual = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigCacheService.remove(dataId, group, tenant));
+        
+        assertEquals(rejection, actual);
+        cache().remove(groupKey);
+    }
+    
+    @Test
+    void testRemoveGrayRethrowsRejectedDiskPath() throws Exception {
+        String dataId = "rejectedGrayRemoveD";
+        String group = "rejectedGrayRemoveG";
+        String tenant = "rejectedGrayRemoveT";
+        String grayName = "tag_rejected";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        ConfigCacheService.makeSure(groupKey, null);
+        ConfigDiskPathException rejection = new ConfigDiskPathException("grayName", "..");
+        doThrow(rejection).when(configDiskService)
+            .removeConfigInfo4Gray(dataId, group, tenant, grayName);
+        
+        ConfigDiskPathException actual = assertThrows(ConfigDiskPathException.class,
+            () -> ConfigCacheService.removeGray(dataId, group, tenant, grayName));
+        
+        assertEquals(rejection, actual);
         cache().remove(groupKey);
     }
     

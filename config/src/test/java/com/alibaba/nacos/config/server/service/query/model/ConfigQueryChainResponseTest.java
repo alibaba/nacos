@@ -114,6 +114,15 @@ class ConfigQueryChainResponseTest {
     }
     
     @Test
+    void testNotEqualsDifferentErrorCode() {
+        ConfigQueryChainResponse a = new ConfigQueryChainResponse();
+        a.setErrorCode(400);
+        ConfigQueryChainResponse b = new ConfigQueryChainResponse();
+        b.setErrorCode(500);
+        assertNotEquals(a, b);
+    }
+    
+    @Test
     void testHashCode() {
         ConfigQueryChainResponse a = new ConfigQueryChainResponse();
         a.setContent("c");

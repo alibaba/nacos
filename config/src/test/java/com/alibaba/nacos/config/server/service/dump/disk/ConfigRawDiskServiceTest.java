@@ -19,11 +19,15 @@ package com.alibaba.nacos.config.server.service.dump.disk;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -97,6 +101,10 @@ class ConfigRawDiskServiceTest {
         assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile("testD", "testG", ".."));
         assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class,
+            () -> ConfigRawDiskService.targetFile("testD", "", "testNS"));
+        assertThrows(NacosRuntimeException.class,
             () -> ConfigRawDiskService.targetFile(" dataId", "testG", "testNS"));
     }
     
@@ -119,6 +127,22 @@ class ConfigRawDiskServiceTest {
     }
     
     @Test
+    void testDiskPathExceptionSanitizesNullAndLongValues() {
+        ConfigDiskPathException nullValue = new ConfigDiskPathException("group", null);
+        assertTrue(nullValue.getMessage().contains("group='<null>'"));
+        
+        String unsafeValue = "'\\" + (char) 0x200E + (char) 0x2028 + (char) 0x2029
+            + "a".repeat(300);
+        IllegalArgumentException cause = new IllegalArgumentException("invalid path");
+        ConfigDiskPathException longValue =
+            new ConfigDiskPathException("group", unsafeValue, cause);
+        assertEquals(cause, longValue.getCause());
+        assertTrue(longValue.getMessage().contains("\\'\\\\???"));
+        assertTrue(longValue.getMessage().contains("..."));
+        assertFalse(longValue.getMessage().contains("\u2028"));
+    }
+    
+    @Test
     void testTargetGrayFileWithInvalidParam() throws Exception {
         Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class,
             String.class, String.class, String.class);
@@ -131,7 +155,31 @@ class ConfigRawDiskServiceTest {
         assertTrue(exception.getCause() instanceof NacosRuntimeException);
         assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", ".");
         assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", "..");
+        assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", "");
         assertInvalidTargetGrayFile(method, "dataId", "group", "tenant", " gray");
+        assertInvalidTargetGrayFile(method, "dataId", "..", "tenant", "gray");
+        assertInvalidTargetGrayFile(method, "dataId", "..", "tenant", "");
+    }
+    
+    @Test
+    void testValidatePathSegmentRetainsDirectoryControlDefense() throws Exception {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("validatePathSegment",
+            String.class);
+        method.setAccessible(true);
+        try (MockedStatic<ParamUtils> paramUtilsMock =
+            Mockito.mockStatic(ParamUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            paramUtilsMock.when(() -> ParamUtils.isValid(".")).thenReturn(true);
+            paramUtilsMock.when(() -> ParamUtils.isValid("..")).thenReturn(true);
+            
+            InvocationTargetException currentDirectory =
+                assertThrows(InvocationTargetException.class,
+                    () -> method.invoke(null, "."));
+            InvocationTargetException parentDirectory =
+                assertThrows(InvocationTargetException.class,
+                    () -> method.invoke(null, ".."));
+            assertTrue(currentDirectory.getCause() instanceof ConfigDiskPathException);
+            assertTrue(parentDirectory.getCause() instanceof ConfigDiskPathException);
+        }
     }
     
     private void assertInvalidTargetGrayFile(Method method, String dataId, String group,
@@ -141,11 +189,13 @@ class ConfigRawDiskServiceTest {
         assertTrue(exception.getCause() instanceof NacosRuntimeException);
     }
     
-    @Test
-    void testTargetFileWithUnsafeEncodedParam() {
+    @ParameterizedTest
+    @EmptySource
+    @ValueSource(strings = {".", "..", "../target", "..\\target"})
+    void testTargetFileWithUnsafeEncodedParam(String unsafeEncodedParam) {
         PathEncoderManager pathEncoderManager = Mockito.mock(PathEncoderManager.class);
         Mockito.when(pathEncoderManager.encode(Mockito.anyString()))
-            .thenAnswer(invocation -> "group".equals(invocation.getArgument(0)) ? ".."
+            .thenAnswer(invocation -> "group".equals(invocation.getArgument(0)) ? unsafeEncodedParam
                 : invocation.getArgument(0));
         try (MockedStatic<EnvUtil> envUtilMock = Mockito.mockStatic(EnvUtil.class);
             MockedStatic<PathEncoderManager> pathEncoderMock =

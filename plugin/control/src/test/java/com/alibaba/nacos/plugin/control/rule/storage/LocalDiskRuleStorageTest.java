@@ -51,6 +51,9 @@ class LocalDiskRuleStorageTest {
         String content = "{\"pointName\":\"ConfigQuery\"}";
         storage.saveTpsRule("ConfigQuery", content);
         assertEquals(content, storage.getTpsRule("ConfigQuery"));
+        String updatedContent = "{\"pointName\":\"ConfigQueryUpdated\"}";
+        storage.saveTpsRule("ConfigQuery", updatedContent);
+        assertEquals(updatedContent, storage.getTpsRule("ConfigQuery"));
         storage.saveTpsRule("ConfigQuery", null);
         assertNull(storage.getTpsRule("ConfigQuery"));
     }

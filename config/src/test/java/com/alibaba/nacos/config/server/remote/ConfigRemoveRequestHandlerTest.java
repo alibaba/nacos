@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskPathException;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,6 +129,16 @@ class ConfigRemoveRequestHandlerTest {
         assertInvalidParam(newRemoveRequest("dataId", "group", "..", null));
         assertInvalidParam(newRemoveRequest("dataId", "group", "tenant", ".."));
         verifyNoInteractions(configOperationService);
+    }
+    
+    @Test
+    void testHandleRejectedDiskPathReturnsInvalidParam() throws Exception {
+        ConfigRemoveRequest request = newRemoveRequest("dataId", "group", "tenant", null);
+        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), isNull(),
+            anyString(), isNull(), eq(Constants.RPC)))
+            .thenThrow(new ConfigDiskPathException("group", ".."));
+        
+        assertInvalidParam(request);
     }
     
     private void assertInvalidParam(ConfigRemoveRequest request) throws Exception {

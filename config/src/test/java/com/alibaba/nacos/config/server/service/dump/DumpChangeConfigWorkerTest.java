@@ -148,8 +148,9 @@ class DumpChangeConfigWorkerTest {
             .add(createConfigInfoStateWrapper(dataIdPrefix, 2, startTime.getTime() + 2));
         firstPageDeleted
             .add(createConfigInfoStateWrapper(dataIdPrefix, 3, startTime.getTime() + 3));
-        //pre set cache for id1
+        //pre set cache for id1 and id3
         preSetCache(dataIdPrefix, 1, System.currentTimeMillis());
+        preSetCache(dataIdPrefix, 3, System.currentTimeMillis());
         assertEquals("encrykey" + 1,
             ConfigCacheService
                 .getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
@@ -166,6 +167,10 @@ class DumpChangeConfigWorkerTest {
             .when(configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 2),
                 eq("group" + 2), eq("tenant" + 2)))
             .thenReturn(null);
+        Mockito
+            .when(configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 3),
+                eq("group" + 3), eq("tenant" + 3)))
+            .thenReturn(new ConfigInfoStateWrapper());
         dumpChangeConfigWorker.run();
         
         //expect delete page return pagesize and will select second page
@@ -174,6 +179,11 @@ class DumpChangeConfigWorkerTest {
         //expect cache to be cleared.
         assertNull(ConfigCacheService
             .getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)));
+        assertEquals("encrykey" + 3,
+            ConfigCacheService
+                .getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 3, "group" + 3, "tenant" + 3))
+                .getConfigCache()
+                .getEncryptedDataKey());
     }
     
     @Test
@@ -288,20 +298,13 @@ class DumpChangeConfigWorkerTest {
                 .getConfigCache()
                 .getLastModifiedTs());
         List<ConfigInfoStateWrapper> firstChanged = new ArrayList<>();
-        firstChanged.add(createConfigInfoStateWrapper(dataIdPrefix, 1, startTime.getTime() - 2));
+        ConfigInfoStateWrapper unchanged =
+            createConfigInfoStateWrapper(dataIdPrefix, 1, startTime.getTime() - 2);
+        unchanged.setMd5(MD5Utils.md5Hex("content" + 1, "UTF-8"));
+        firstChanged.add(unchanged);
         
         Mockito.when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(3)))
             .thenReturn(firstChanged);
-        
-        //mock change config query obj
-        //1 timestamp-new&content-new
-        ConfigInfoWrapper configInfoWrapperNewForId1 =
-            createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() - 2);
-        configInfoWrapperNewForId1.setContent("content" + System.currentTimeMillis());
-        Mockito
-            .when(configInfoPersistService.findConfigInfo(eq(dataIdPrefix + 1), eq("group" + 1),
-                eq("tenant" + 1)))
-            .thenReturn(configInfoWrapperNewForId1);
         
         dumpChangeConfigWorker.run();
         
@@ -316,6 +319,8 @@ class DumpChangeConfigWorkerTest {
                 .getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                 .getConfigCache()
                 .getMd5());
+        Mockito.verify(configInfoPersistService, times(0))
+            .findConfigInfo(anyString(), anyString(), anyString());
         
     }
     
@@ -357,13 +362,16 @@ class DumpChangeConfigWorkerTest {
     void testRejectedDeleteDoesNotBlockOtherRecordsAndKeepsRetryCursor() {
         PropertyUtil.setDumpChangeOn(true);
         Timestamp startTime = dumpChangeConfigWorker.startTime;
-        ConfigInfoStateWrapper rejected = createConfigInfoStateWrapper("badData", 1,
+        ConfigInfoStateWrapper rejectedFirst = createConfigInfoStateWrapper("badData", 1,
             startTime.getTime() + 1);
-        rejected.setGroup("..");
-        ConfigInfoStateWrapper valid = createConfigInfoStateWrapper("goodData", 2,
+        rejectedFirst.setGroup("..");
+        ConfigInfoStateWrapper rejectedSecond = createConfigInfoStateWrapper("badData", 2,
             startTime.getTime() + 2);
+        rejectedSecond.setGroup("..");
+        ConfigInfoStateWrapper valid = createConfigInfoStateWrapper("goodData", 3,
+            startTime.getTime() + 3);
         when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L),
-            anyInt(), eq("formal"))).thenReturn(List.of(rejected, valid));
+            anyInt(), eq("formal"))).thenReturn(List.of(rejectedFirst, rejectedSecond, valid));
         when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), anyInt()))
             .thenReturn(Collections.emptyList());
         
@@ -371,18 +379,87 @@ class DumpChangeConfigWorkerTest {
             Mockito.mockStatic(ConfigCacheService.class);
             MockedStatic<ConfigExecutor> configExecutorMock =
                 Mockito.mockStatic(ConfigExecutor.class)) {
-            cacheServiceMock.when(() -> ConfigCacheService.remove(rejected.getDataId(),
-                rejected.getGroup(), rejected.getTenant()))
+            cacheServiceMock.when(() -> ConfigCacheService.remove(rejectedFirst.getDataId(),
+                rejectedFirst.getGroup(), rejectedFirst.getTenant()))
                 .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.remove(rejectedSecond.getDataId(),
+                rejectedSecond.getGroup(), rejectedSecond.getTenant()))
+                .thenThrow(new ConfigDiskPathException("namespaceId", ".."));
             cacheServiceMock.when(() -> ConfigCacheService.remove(valid.getDataId(),
                 valid.getGroup(), valid.getTenant())).thenReturn(true);
             
             dumpChangeConfigWorker.run();
             
-            cacheServiceMock.verify(() -> ConfigCacheService.remove(rejected.getDataId(),
-                rejected.getGroup(), rejected.getTenant()));
+            cacheServiceMock.verify(() -> ConfigCacheService.remove(rejectedFirst.getDataId(),
+                rejectedFirst.getGroup(), rejectedFirst.getTenant()));
+            cacheServiceMock.verify(() -> ConfigCacheService.remove(rejectedSecond.getDataId(),
+                rejectedSecond.getGroup(), rejectedSecond.getTenant()));
             cacheServiceMock.verify(() -> ConfigCacheService.remove(valid.getDataId(),
                 valid.getGroup(), valid.getTenant()));
+            assertEquals(startTime, dumpChangeConfigWorker.startTime);
+            configExecutorMock.verify(() -> ConfigExecutor.scheduleConfigChangeTask(
+                any(DumpChangeConfigWorker.class),
+                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+        }
+    }
+    
+    @Test
+    void testRejectedChangedConfigsDoNotBlockOtherRecordsAndKeepRetryCursor() {
+        PropertyUtil.setDumpChangeOn(true);
+        Timestamp startTime = dumpChangeConfigWorker.startTime;
+        ConfigInfoStateWrapper rejectedFirst = createConfigInfoStateWrapper("badChangedData", 1,
+            startTime.getTime() + 1);
+        ConfigInfoStateWrapper rejectedSecond = createConfigInfoStateWrapper("badChangedData", 2,
+            startTime.getTime() + 2);
+        ConfigInfoStateWrapper valid = createConfigInfoStateWrapper("goodChangedData", 3,
+            startTime.getTime() + 3);
+        ConfigInfoWrapper rejectedFirstContent = createConfigInfoWrapper("badChangedData", 1,
+            startTime.getTime() + 1);
+        ConfigInfoWrapper rejectedSecondContent = createConfigInfoWrapper("badChangedData", 2,
+            startTime.getTime() + 2);
+        ConfigInfoWrapper validContent = createConfigInfoWrapper("goodChangedData", 3,
+            startTime.getTime() + 3);
+        when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), anyInt(),
+            eq("formal"))).thenReturn(Collections.emptyList());
+        when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), anyInt()))
+            .thenReturn(List.of(rejectedFirst, rejectedSecond, valid));
+        when(configInfoPersistService.findConfigInfo(rejectedFirst.getDataId(),
+            rejectedFirst.getGroup(), rejectedFirst.getTenant())).thenReturn(rejectedFirstContent);
+        when(configInfoPersistService.findConfigInfo(rejectedSecond.getDataId(),
+            rejectedSecond.getGroup(), rejectedSecond.getTenant()))
+            .thenReturn(rejectedSecondContent);
+        when(configInfoPersistService.findConfigInfo(valid.getDataId(), valid.getGroup(),
+            valid.getTenant())).thenReturn(validContent);
+        
+        try (MockedStatic<ConfigCacheService> cacheServiceMock =
+            Mockito.mockStatic(ConfigCacheService.class);
+            MockedStatic<ConfigExecutor> configExecutorMock =
+                Mockito.mockStatic(ConfigExecutor.class)) {
+            cacheServiceMock.when(() -> ConfigCacheService.getLastModifiedTs(anyString()))
+                .thenReturn(0L);
+            cacheServiceMock.when(() -> ConfigCacheService.getContentMd5(anyString()))
+                .thenReturn("");
+            cacheServiceMock.when(() -> ConfigCacheService.dump(rejectedFirstContent.getDataId(),
+                rejectedFirstContent.getGroup(), rejectedFirstContent.getTenant(),
+                rejectedFirstContent.getContent(), rejectedFirstContent.getLastModified(),
+                rejectedFirstContent.getType(), rejectedFirstContent.getEncryptedDataKey()))
+                .thenThrow(new ConfigDiskPathException("group", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.dump(rejectedSecondContent.getDataId(),
+                rejectedSecondContent.getGroup(), rejectedSecondContent.getTenant(),
+                rejectedSecondContent.getContent(), rejectedSecondContent.getLastModified(),
+                rejectedSecondContent.getType(), rejectedSecondContent.getEncryptedDataKey()))
+                .thenThrow(new ConfigDiskPathException("namespaceId", ".."));
+            cacheServiceMock.when(() -> ConfigCacheService.dump(validContent.getDataId(),
+                validContent.getGroup(), validContent.getTenant(), validContent.getContent(),
+                validContent.getLastModified(), validContent.getType(),
+                validContent.getEncryptedDataKey())).thenReturn(true);
+            
+            dumpChangeConfigWorker.run();
+            
+            cacheServiceMock.verify(() -> ConfigCacheService.dump(validContent.getDataId(),
+                validContent.getGroup(), validContent.getTenant(), validContent.getContent(),
+                validContent.getLastModified(), validContent.getType(),
+                validContent.getEncryptedDataKey()));
             assertEquals(startTime, dumpChangeConfigWorker.startTime);
             configExecutorMock.verify(() -> ConfigExecutor.scheduleConfigChangeTask(
                 any(DumpChangeConfigWorker.class),

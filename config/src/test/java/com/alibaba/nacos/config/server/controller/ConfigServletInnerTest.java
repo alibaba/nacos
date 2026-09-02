@@ -592,6 +592,23 @@ class ConfigServletInnerTest {
     }
     
     @Test
+    void testDoGetConfigV1WhenDiskPathIsRejected() throws Exception {
+        ConfigQueryChainResponse chainResponse = ConfigQueryChainResponse.buildFailResponse(
+            NacosException.INVALID_PARAM,
+            "Rejected unsafe Config disk path parameter: group='..'");
+        useMockQueryChain(chainResponse);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        String actualValue = configServletInner.doGetConfig(request, response, "data", "group",
+            "tenant", null, "false", "127.0.0.1", ApiVersionEnum.V1);
+        
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST + "", actualValue);
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        assertTrue(response.getContentAsString().contains("group='..'"));
+    }
+    
+    @Test
     void testDoGetConfigV1WhenFormalContentIsNull() throws Exception {
         ConfigQueryChainResponse chainResponse = buildFormalResponse(null);
         useMockQueryChain(chainResponse);
