@@ -181,6 +181,7 @@ class MetricsMonitorTest {
     @Test
     void testAgentWatchEventCounterIsExportedAndReadableByLabels() {
         double before = MetricsMonitor.getAgentWatchEventCount("listener_callback", "success");
+        double failedBefore = MetricsMonitor.getAgentWatchEventCount("listener_callback", "failed");
         SimpleMeterRegistry meterRegistry = addRegistry(new SimpleMeterRegistry());
         
         MetricsMonitor.recordAgentWatchEvent("listener_callback", "success");
@@ -191,7 +192,8 @@ class MetricsMonitorTest {
             .tags("event", "listener_callback", "result", "success").counter();
         assertNotNull(counter);
         assertEquals(1.0, counter.count());
-        assertEquals(0.0, MetricsMonitor.getAgentWatchEventCount("listener_callback", "failed"));
+        assertEquals(failedBefore,
+            MetricsMonitor.getAgentWatchEventCount("listener_callback", "failed"));
     }
     
     /**
