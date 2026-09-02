@@ -17,6 +17,7 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.PathSafetyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -40,7 +41,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -52,9 +52,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import static com.alibaba.nacos.common.utils.StringUtils.FOLDER_SEPARATOR;
 import static com.alibaba.nacos.common.utils.StringUtils.TOP_PATH;
-import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATOR;
 
 /**
  * IO operates on the utility class.
@@ -83,10 +81,11 @@ public final class DiskUtils {
      * @throws IOException during touch
      */
     public static void touch(String path, String fileName) throws IOException {
-        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+        File targetFile = resolveDirectChildFile(path, fileName);
+        if (targetFile == null) {
             return;
         }
-        touch(Paths.get(path, fileName).toFile());
+        touch(targetFile);
     }
     
     /**
@@ -254,11 +253,8 @@ public final class DiskUtils {
      * @return content bytes
      */
     public static byte[] readFileBytes(String path, String fileName) {
-        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
-            return null;
-        }
         File file = openFile(path, fileName);
-        return readFileBytes(file);
+        return file == null ? null : readFileBytes(file);
     }
     
     /**
@@ -307,10 +303,10 @@ public final class DiskUtils {
      * @return delete success
      */
     public static boolean deleteFile(String path, String fileName) {
-        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+        File file = resolveDirectChildFile(path, fileName);
+        if (file == null) {
             return false;
         }
-        File file = Paths.get(path, fileName).toFile();
         if (file.exists()) {
             return file.delete();
         }
@@ -355,7 +351,8 @@ public final class DiskUtils {
      * @return {@link File}
      */
     public static File openFile(String path, String fileName, boolean rewrite) {
-        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+        File file = resolveDirectChildFile(path, fileName);
+        if (file == null) {
             return null;
         }
         File directory = new File(path);
@@ -367,7 +364,6 @@ public final class DiskUtils {
             LOGGER.error("[DiskUtils] can't create directory");
             return null;
         }
-        File file = new File(path, fileName);
         try {
             boolean create = true;
             if (!file.exists()) {
@@ -425,7 +421,13 @@ public final class DiskUtils {
             } else {
                 try (final FileInputStream fis = new FileInputStream(file);
                     final BufferedInputStream bis = new BufferedInputStream(fis)) {
-                    compressIntoZipFile(child, bis, zos);
+                    final String entryName;
+                    try {
+                        entryName = PathSafetyUtils.normalizeArchiveEntryName(child);
+                    } catch (IllegalArgumentException e) {
+                        throw new IOException("Unsafe archive entry name", e);
+                    }
+                    compressIntoZipFile(entryName, bis, zos);
                 }
             }
         }
@@ -442,7 +444,10 @@ public final class DiskUtils {
      */
     public static void compressIntoZipFile(final String childName, final InputStream inputStream,
         final String outputFile, final Checksum checksum) throws IOException {
-        if (isIllegalFileName(childName)) {
+        final String entryName;
+        try {
+            entryName = PathSafetyUtils.normalizeArchiveEntryName(childName);
+        } catch (IllegalArgumentException e) {
             return;
         }
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
@@ -450,7 +455,7 @@ public final class DiskUtils {
                 new CheckedOutputStream(fileOutputStream, checksum);
             final ZipOutputStream zipStream =
                 new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
-            compressIntoZipFile(childName, inputStream, zipStream);
+            compressIntoZipFile(entryName, inputStream, zipStream);
             zipStream.flush();
             fileOutputStream.getFD().sync();
         }
@@ -482,11 +487,10 @@ public final class DiskUtils {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
-                if (isIllegalFileName(fileName)) {
-                    continue;
-                }
-                final Path entryPath = resolveZipEntry(outputPath, fileName);
-                if (entryPath == null) {
+                final Path entryPath;
+                try {
+                    entryPath = PathSafetyUtils.resolveArchiveEntry(outputPath, fileName);
+                } catch (IllegalArgumentException e) {
                     continue;
                 }
                 final File entryFile = entryPath.toFile();
@@ -535,39 +539,30 @@ public final class DiskUtils {
         return result;
     }
     
-    private static Path resolveZipEntry(Path outputPath, String fileName) {
-        if (hasWindowsDrivePrefix(fileName)) {
+    /**
+     * Check whether a file name may escape its intended direct-child target.
+     *
+     * @param fileName file name
+     * @return {@code true} when the name may resolve to an unintended target
+     */
+    public static boolean isIllegalFileName(String fileName) {
+        try {
+            PathSafetyUtils.validateDirectChildName(fileName);
+            return false;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
+    }
+    
+    private static File resolveDirectChildFile(String path, String fileName) {
+        if (isIllegalPath(path)) {
             return null;
         }
         try {
-            Path relativePath = outputPath.getFileSystem().getPath(fileName);
-            Path targetPath = outputPath.resolve(relativePath).normalize();
-            if (relativePath.isAbsolute() || targetPath.equals(outputPath)
-                || !targetPath.startsWith(outputPath)) {
-                return null;
-            }
-            return targetPath;
-        } catch (InvalidPathException e) {
+            return PathSafetyUtils.resolveDirectChild(Paths.get(path), fileName).toFile();
+        } catch (IllegalArgumentException e) {
             return null;
         }
-    }
-    
-    private static boolean hasWindowsDrivePrefix(String fileName) {
-        return fileName.length() > 1 && Character.isLetter(fileName.charAt(0))
-            && fileName.charAt(1) == ':';
-    }
-    
-    /**
-     * Whether is illegal file name, it should not be start with root path '/' or '\\' and should not contain top path
-     * <code>..</code>.
-     *
-     * @param fileName File name
-     * @return {@code true} when file name contain <code>..</code> or start with root path.
-     */
-    public static boolean isIllegalFileName(String fileName) {
-        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR)
-            || fileName.startsWith(
-                WINDOWS_FOLDER_SEPARATOR);
     }
     
     public static boolean isIllegalPath(String path) {

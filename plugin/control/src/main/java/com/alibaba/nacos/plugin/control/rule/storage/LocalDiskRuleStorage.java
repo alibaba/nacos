@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.control.rule.storage;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.PathSafetyUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.utils.DiskUtils;
 import com.alibaba.nacos.plugin.control.utils.EnvUtils;
@@ -24,9 +25,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * local disk storage.
@@ -119,21 +118,13 @@ public class LocalDiskRuleStorage implements RuleStorage {
     }
     
     private File resolveTpsRuleFile(String pointName) {
-        if (pointName == null || pointName.trim().isEmpty() || ".".equals(pointName)
-            || "..".equals(pointName) || pointName.indexOf('/') >= 0
-            || pointName.indexOf('\\') >= 0) {
-            throw invalidPointNameException();
-        }
         try {
-            Path pointPath = Paths.get(pointName);
-            Path basePath = checkTpsBaseDir().toPath().toAbsolutePath().normalize();
-            Path targetPath = basePath.resolve(pointPath).normalize();
-            if (pointPath.isAbsolute() || pointPath.getNameCount() != 1
-                || !basePath.equals(targetPath.getParent())) {
-                throw invalidPointNameException();
-            }
+            Path basePath = new File(localRuleBaseDir,
+                "data" + File.separator + "tps" + File.separator).toPath();
+            Path targetPath = PathSafetyUtils.resolveDirectChild(basePath, pointName);
+            checkTpsBaseDir();
             return targetPath.toFile();
-        } catch (InvalidPathException e) {
+        } catch (IllegalArgumentException e) {
             throw invalidPointNameException();
         }
     }

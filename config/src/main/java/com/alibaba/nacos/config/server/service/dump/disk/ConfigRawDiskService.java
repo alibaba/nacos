@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.PathSafetyUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -30,7 +31,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
@@ -103,17 +103,9 @@ public class ConfigRawDiskService implements ConfigDiskService {
         for (String pathSegment : pathSegments) {
             validatePathSegment(pathSegment);
             String encodedSegment = PathEncoderManager.getInstance().encode(pathSegment);
-            validateEncodedPathSegment(encodedSegment);
             try {
-                // Each identity field must add exactly one child without collapsing its parent.
-                Path encodedPath = current.getFileSystem().getPath(encodedSegment);
-                Path target = current.resolve(encodedPath).normalize();
-                if (encodedPath.isAbsolute() || encodedPath.getNameCount() != 1
-                    || !current.equals(target.getParent())) {
-                    throw invalidParameterException();
-                }
-                current = target;
-            } catch (InvalidPathException e) {
+                current = PathSafetyUtils.resolveDirectChild(current, encodedSegment);
+            } catch (IllegalArgumentException e) {
                 throw invalidParameterException();
             }
         }
@@ -123,14 +115,6 @@ public class ConfigRawDiskService implements ConfigDiskService {
     private static void validatePathSegment(String pathSegment) {
         if (StringUtils.isBlank(pathSegment) || !ParamUtils.isValid(pathSegment)
             || isDirectoryControlSegment(pathSegment)) {
-            throw invalidParameterException();
-        }
-    }
-    
-    private static void validateEncodedPathSegment(String pathSegment) {
-        if (StringUtils.isBlank(pathSegment) || isDirectoryControlSegment(pathSegment)
-            || pathSegment.indexOf('/') >= 0 || pathSegment.indexOf('\\') >= 0
-            || new File(pathSegment).isAbsolute()) {
             throw invalidParameterException();
         }
     }

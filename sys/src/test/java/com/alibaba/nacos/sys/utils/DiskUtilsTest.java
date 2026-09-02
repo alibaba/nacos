@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -614,28 +615,56 @@ class DiskUtilsTest {
         File zipFile = Files.createTempFile("nacos-sys-illegal-zip", ".zip").toFile();
         zipFile.deleteOnExit();
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
-            ZipEntry illegal = new ZipEntry("../illegal.txt");
-            zos.putNextEntry(illegal);
-            zos.write("evil".getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
-            ZipEntry windowsAbsolute = new ZipEntry("C:/windows-absolute.txt");
-            zos.putNextEntry(windowsAbsolute);
-            zos.write("evil".getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
-            ZipEntry safe = new ZipEntry("safe.txt");
-            zos.putNextEntry(safe);
-            zos.write("ok".getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
+            writeZipEntry(zos, "../illegal.txt", "evil");
+            writeZipEntry(zos, "..\\windows-illegal.txt", "evil");
+            writeZipEntry(zos, "C:/windows-absolute.txt", "evil");
+            writeZipEntry(zos, "C:windows-relative.txt", "evil");
+            writeZipEntry(zos, "safe.txt", "ok");
+            writeZipEntry(zos, "legacy\\nested.txt", "legacy");
+            writeZipEntry(zos, "safe..name", "dots");
         }
         File outDir = Files.createTempDirectory("nacos-sys-illegal-out").toFile();
         outDir.deleteOnExit();
         DiskUtils.decompress(zipFile.getAbsolutePath(), outDir.getAbsolutePath(), new Adler32());
         assertFalse(new File(outDir.getParentFile(), "illegal.txt").exists());
         assertTrue(new File(outDir, "safe.txt").exists());
+        assertTrue(new File(outDir, "legacy/nested.txt").isFile());
+        assertTrue(new File(outDir, "safe..name").isFile());
         try (Stream<Path> paths = Files.walk(outDir.toPath())) {
             assertFalse(paths.anyMatch(
-                path -> "windows-absolute.txt".equals(path.getFileName().toString())));
+                path -> path.getFileName().toString().contains("windows")));
         }
+    }
+    
+    @Test
+    void testCompressIntoZipFileNormalizesWindowsSeparator() throws IOException {
+        File zipFile = Files.createTempFile("nacos-sys-portable-zip", ".zip").toFile();
+        zipFile.deleteOnExit();
+        try (InputStream inputStream = new java.io.ByteArrayInputStream(
+            "content".getBytes(StandardCharsets.UTF_8))) {
+            DiskUtils.compressIntoZipFile("directory\\file", inputStream,
+                zipFile.getAbsolutePath(), new Adler32());
+        }
+        try (ZipInputStream inputStream = new ZipInputStream(new FileInputStream(zipFile))) {
+            assertEquals("directory/file", inputStream.getNextEntry().getName());
+        }
+    }
+    
+    @Test
+    void testIllegalFileNameUsesDirectChildSemantics() {
+        assertFalse(DiskUtils.isIllegalFileName("safe..name"));
+        assertFalse(DiskUtils.isIllegalFileName(".hidden"));
+        assertTrue(DiskUtils.isIllegalFileName("safe/nested"));
+        assertTrue(DiskUtils.isIllegalFileName("safe\\nested"));
+        assertTrue(DiskUtils.isIllegalFileName("."));
+        assertTrue(DiskUtils.isIllegalFileName(".."));
+    }
+    
+    private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content)
+        throws IOException {
+        zipOutputStream.putNextEntry(new ZipEntry(name));
+        zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+        zipOutputStream.closeEntry();
     }
     
     @Test

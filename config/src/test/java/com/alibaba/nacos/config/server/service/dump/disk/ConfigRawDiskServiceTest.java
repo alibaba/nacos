@@ -46,7 +46,7 @@ class ConfigRawDiskServiceTest {
     private String cachedOsName;
     
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         cachedOsName = System.getProperty("os.name");
     }
     
@@ -58,24 +58,18 @@ class ConfigRawDiskServiceTest {
      * 测试获取文件路径.
      */
     @Test
-    void testTargetFile()
-        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method =
-            ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
-                String.class);
-        method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
-        // 分解路径
+    void testTargetFile() {
+        String dataId = "aaaa-dsaknkf";
+        String group = "aaaa.dsaknkf";
+        String tenant = "aaaa:dsaknkf";
+        File result = ConfigRawDiskService.targetFile(dataId, group, tenant);
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
         Path grandParent = parent.getParent();
-        // 获取最后三段路径
-        String lastSegment = path.getFileName().toString();
-        String secondLastSegment = parent.getFileName().toString();
-        String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa.dsaknkf" : secondLastSegment, secondLastSegment);
-        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
+        assertEquals(dataId, path.getFileName().toString());
+        assertEquals(group, parent.getFileName().toString());
+        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : tenant,
+            grandParent.getFileName().toString());
     }
     
     @Test
@@ -306,22 +300,14 @@ class ConfigRawDiskServiceTest {
         method.setAccessible(true);
         File result =
             (File) method.invoke(null, "data345678", "group3456", "tenant1234", "graynem4567");
-        // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
         Path grandParent = parent.getParent();
-        Path grand2Parent = grandParent.getParent();
-        
-        // 获取最后三段路径
-        String fourthLastSegment = grand2Parent.getFileName().toString();
-        assertEquals(fourthLastSegment, "tenant1234");
-        String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, "group3456");
-        String secondLastSegment = parent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : secondLastSegment, "data345678");
-        String lastSegment = path.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa-dsaknkf" : lastSegment, "graynem4567");
-        
+        Path greatGrandParent = grandParent.getParent();
+        assertEquals("graynem4567", path.getFileName().toString());
+        assertEquals("data345678", parent.getFileName().toString());
+        assertEquals("group3456", grandParent.getFileName().toString());
+        assertEquals("tenant1234", greatGrandParent.getFileName().toString());
     }
     
 }

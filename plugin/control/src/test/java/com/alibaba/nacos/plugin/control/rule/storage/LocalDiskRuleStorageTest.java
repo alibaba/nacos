@@ -65,6 +65,15 @@ class LocalDiskRuleStorageTest {
         assertThrows(IllegalArgumentException.class, () -> storage.getTpsRule(pointName));
     }
     
+    @ParameterizedTest
+    @ValueSource(strings = {".hidden", "rule..name"})
+    void testAllowsDotsWithoutDirectoryControlMeaning(String pointName) throws IOException {
+        storage.saveTpsRule(pointName, "rule");
+        assertEquals("rule", storage.getTpsRule(pointName));
+        storage.saveTpsRule(pointName, null);
+        assertNull(storage.getTpsRule(pointName));
+    }
+    
     @Test
     void testDirectoryControlPointNamesCannotDeleteParentDirectories() throws IOException {
         Path tpsMarker = tempDir.resolve("data").resolve("tps").resolve("marker");

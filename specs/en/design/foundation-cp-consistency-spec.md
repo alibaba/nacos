@@ -220,6 +220,9 @@ Snapshot rules:
 - an archive entry used during snapshot recovery must resolve within the
   snapshot reader destination; absolute, directory-control, and escaping paths
   must be rejected before creating directories or writing files;
+- snapshot archives must emit `/` separators, and recovery must treat both `/`
+  and `\\` as entry separators when applying absolute-path, directory-control,
+  and containment checks;
 - groups without snapshot operations rely on log replay or separate persistence;
 - domain specs must define how snapshot recovery interacts with local cache and
   derived indexes.
