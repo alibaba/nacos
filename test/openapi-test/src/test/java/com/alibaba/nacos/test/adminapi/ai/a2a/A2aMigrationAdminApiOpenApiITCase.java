@@ -187,6 +187,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     }
 
     @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "syncing")
     public void testHistoricalMutationConvergesAcrossCanonicalSurfaces() throws Exception {
         String agentName = randomAiName("a2a-migration-write-after");
         String versionOne = "1.0.0";
@@ -247,6 +248,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     }
 
     @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "syncing")
     public void testNamespaceServiceAndCanonicalConflictRemainIsolated() throws Exception {
         String namespaceId = "oit_a2a_migration_"
                 + UUID.randomUUID().toString().substring(0, 8);
@@ -303,6 +305,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     }
 
     @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "syncing")
     public void testMalformedHistoricalSourceBlocksOneCycleAndRecovers() throws Exception {
         String validAgent = randomAiName("a2a-migration-malformed-control");
         String malformedDataId = randomAiName("a2a-migration-malformed");

@@ -183,7 +183,8 @@ jobs:
       - name: Run Historical A2A Migration OpenAPI IT
         run: |
           mvn -B -pl test/openapi-test clean verify -Pintegration-test \
-            -Dit.test=A2aMigrationAdminApiOpenApiITCase
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase \
+            -Dnacos.a2a.migration.cutover.phase=syncing
 
       - name: Run Historical A2A Migration Java SDK IT
         run: |
