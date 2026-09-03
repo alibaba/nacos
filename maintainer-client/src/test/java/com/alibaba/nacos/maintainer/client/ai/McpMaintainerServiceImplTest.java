@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -216,6 +217,20 @@ class McpMaintainerServiceImplTest {
             assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
                 request.getParamValues().get("namespaceId"));
         }
+    }
+
+    @Test
+    void testUpdateScopeUsesLifecycleFormRequest() throws NacosException {
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(response("ok"));
+
+        assertTrue(service.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PUBLIC"));
+
+        HttpRequest request = captureRequests(1).get(0);
+        assertRequest(request, HttpMethod.PUT, rootPath() + "/scope");
+        assertEquals(NAMESPACE_ID, request.getParamValues().get("namespaceId"));
+        assertEquals(MCP_NAME, request.getParamValues().get("mcpName"));
+        assertEquals("PUBLIC", request.getParamValues().get("scope"));
     }
     
     @Test

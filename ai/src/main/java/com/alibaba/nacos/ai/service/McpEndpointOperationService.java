@@ -97,9 +97,10 @@ public class McpEndpointOperationService {
                     ErrorCode.PARAMETER_MISSING,
                     "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
             }
+            String refNamespaceId = endpointServiceData.get(CommonParams.NAMESPACE_ID);
             String refGroupName = endpointSpecification.getData().get(CommonParams.GROUP_NAME);
             String refServiceName = endpointSpecification.getData().get(CommonParams.SERVICE_NAME);
-            return Service.newService(namespaceId, refGroupName, refServiceName);
+            return Service.newService(refNamespaceId, refGroupName, refServiceName);
         }
         String versionMcpName = mcpName + "::" + version;
         Service service = generateService(namespaceId, versionMcpName);

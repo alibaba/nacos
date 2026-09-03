@@ -20,8 +20,14 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerCloneItem;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -36,6 +42,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -47,6 +55,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +65,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -163,6 +174,254 @@ class ConsoleMcpControllerTest {
             });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
+    }
+
+    @Test
+    void testExportMcpServers() throws Exception {
+        McpServerDetailInfo first = new McpServerDetailInfo();
+        first.setName("first");
+        first.setVersion("1.0.0");
+        McpServerDetailInfo second = new McpServerDetailInfo();
+        second.setName("second");
+        second.setVersion("2.0.0");
+        when(mcpProxy.getMcpServer("nacos-default-mcp", "first", null, null)).thenReturn(first);
+        when(mcpProxy.getMcpServer("nacos-default-mcp", "second", null, null)).thenReturn(second);
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get("/v3/console/ai/mcp/export")
+                .param("namespaceId", "nacos-default-mcp")
+                .param("mcpNames", "first,second"))
+            .andReturn().getResponse();
+
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        assertTrue(response.getContentType().contains("application/json"));
+        List<McpServerDetailInfo> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(2, result.size());
+        assertEquals("first", result.get(0).getName());
+        assertTrue(response.getHeader("Content-Disposition").contains("mcp-servers.json"));
+    }
+
+    @Test
+    void testCloneMcpServersWithDefaultNamesAndPublish() throws Exception {
+        McpServerDetailInfo source = new McpServerDetailInfo();
+        source.setName("source");
+        source.setProtocol("stdio");
+        source.setVersion("1.0.0");
+        McpServerVersionDetail sourceVersion = new McpServerVersionDetail();
+        sourceVersion.setLabels(Map.of("stable", "1.0.0"));
+        McpServerVersionDetail created = new McpServerVersionDetail();
+        created.setVersion("1.0.0");
+        when(mcpProxy.getMcpServer("source-ns", "source-copy", null, null)).thenReturn(null);
+        when(mcpProxy.getMcpServer("source-ns", "source", null, null)).thenReturn(source);
+        when(mcpProxy.getMcpServerVersion("source-ns", "source", "1.0.0"))
+            .thenReturn(sourceVersion);
+        when(mcpProxy.createMcpServerDraft(eq("source-ns"), any(McpServerBasicInfo.class),
+            isNull(), isNull(), isNull())).thenReturn(created);
+
+        McpServerCloneItem item = new McpServerCloneItem();
+        item.setSourceName("source");
+        item.setTargetName("source-copy");
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(item))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().get("successCount"));
+        verify(mcpProxy).forcePublishMcpServerVersion("source-ns", "source-copy", "1.0.0");
+        verify(mcpProxy).updateMcpServerLabels("source-ns", "source-copy",
+            Map.of("stable", "1.0.0"));
+    }
+
+    @Test
+    void testCloneMcpServersSkipsExistingTarget() throws Exception {
+        McpServerDetailInfo existing = new McpServerDetailInfo();
+        when(mcpProxy.getMcpServer("source-ns", "source-copy", null, null)).thenReturn(existing);
+        McpServerCloneItem item = new McpServerCloneItem();
+        item.setSourceName("source");
+        item.setTargetName("source-copy");
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .param("policy", "SKIP")
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(item))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().get("skippedCount"));
+        verifyNoInteractionsExceptTargetLookup();
+    }
+
+    @Test
+    void testCloneMcpServerRebuildsDirectEndpoint() throws Exception {
+        McpServerDetailInfo source = sourceWithEndpoint("mcp-streamable", "source::1.0.0");
+        source.getRemoteServerConfig().getServiceRef().setGroupName("mcp-endpoints");
+        McpEndpointInfo endpoint = new McpEndpointInfo();
+        endpoint.setAddress("127.0.0.1");
+        endpoint.setPort(8080);
+        endpoint.setProtocol("http");
+        source.setBackendEndpoints(List.of(endpoint));
+        McpServerVersionDetail created = new McpServerVersionDetail();
+        created.setVersion("1.0.0");
+        when(mcpProxy.getMcpServer("source-ns", "source-copy", null, null)).thenReturn(null);
+        when(mcpProxy.getMcpServer("source-ns", "source", null, null)).thenReturn(source);
+        when(mcpProxy.getMcpServerVersion("source-ns", "source", "1.0.0"))
+            .thenReturn(new McpServerVersionDetail());
+        ArgumentCaptor<McpEndpointSpec> endpointCaptor = ArgumentCaptor.forClass(
+            McpEndpointSpec.class);
+        when(mcpProxy.createMcpServerDraft(eq("source-ns"), any(McpServerBasicInfo.class),
+            isNull(), isNull(), endpointCaptor.capture())).thenReturn(created);
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(cloneItem("source", "source-copy")))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("DIRECT", endpointCaptor.getValue().getType());
+        assertEquals("127.0.0.1", endpointCaptor.getValue().getData().get("address"));
+        assertEquals("8080", endpointCaptor.getValue().getData().get("port"));
+        assertEquals("http", endpointCaptor.getValue().getData().get("transportProtocol"));
+    }
+
+    @Test
+    void testCloneMcpServerRebuildsRefEndpoint() throws Exception {
+        McpServerDetailInfo source = sourceWithEndpoint("mcp-streamable", "backend-service");
+        McpServiceRef serviceRef = source.getRemoteServerConfig().getServiceRef();
+        serviceRef.setNamespaceId("backend-ns");
+        serviceRef.setGroupName("backend-group");
+        serviceRef.setTransportProtocol("https");
+        McpServerVersionDetail created = new McpServerVersionDetail();
+        created.setVersion("1.0.0");
+        when(mcpProxy.getMcpServer("source-ns", "source-copy", null, null)).thenReturn(null);
+        when(mcpProxy.getMcpServer("source-ns", "source", null, null)).thenReturn(source);
+        when(mcpProxy.getMcpServerVersion("source-ns", "source", "1.0.0"))
+            .thenReturn(new McpServerVersionDetail());
+        ArgumentCaptor<McpEndpointSpec> endpointCaptor = ArgumentCaptor.forClass(
+            McpEndpointSpec.class);
+        when(mcpProxy.createMcpServerDraft(eq("source-ns"), any(McpServerBasicInfo.class),
+            isNull(), isNull(), endpointCaptor.capture())).thenReturn(created);
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(cloneItem("source", "source-copy")))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("REF", endpointCaptor.getValue().getType());
+        assertEquals("backend-ns", endpointCaptor.getValue().getData().get("namespaceId"));
+        assertEquals("backend-group", endpointCaptor.getValue().getData().get("groupName"));
+        assertEquals("backend-service", endpointCaptor.getValue().getData().get("serviceName"));
+        assertEquals("https", endpointCaptor.getValue().getData().get("transportProtocol"));
+    }
+
+    @Test
+    void testCloneMcpServerDoesNotMisclassifyRefEndpointWithVersionLikeName() throws Exception {
+        McpServerDetailInfo source = sourceWithEndpoint("mcp-streamable", "source::1.0.0");
+        source.getRemoteServerConfig().getServiceRef().setGroupName("backend-group");
+        McpServerVersionDetail created = new McpServerVersionDetail();
+        created.setVersion("1.0.0");
+        when(mcpProxy.getMcpServer("source-ns", "source-copy", null, null)).thenReturn(null);
+        when(mcpProxy.getMcpServer("source-ns", "source", null, null)).thenReturn(source);
+        when(mcpProxy.getMcpServerVersion("source-ns", "source", "1.0.0"))
+            .thenReturn(new McpServerVersionDetail());
+        ArgumentCaptor<McpEndpointSpec> endpointCaptor = ArgumentCaptor.forClass(
+            McpEndpointSpec.class);
+        when(mcpProxy.createMcpServerDraft(eq("source-ns"), any(McpServerBasicInfo.class),
+            isNull(), isNull(), endpointCaptor.capture())).thenReturn(created);
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(cloneItem("source", "source-copy")))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("REF", endpointCaptor.getValue().getType());
+    }
+
+    @Test
+    void testCloneMcpServerReadsSourceBeforeOverwrite() throws Exception {
+        McpServerDetailInfo source = sourceWithEndpoint("stdio", null);
+        McpServerVersionDetail created = new McpServerVersionDetail();
+        created.setVersion("1.0.0");
+        when(mcpProxy.getMcpServer("source-ns", "source", null, null))
+            .thenReturn(source, source);
+        when(mcpProxy.getMcpServerVersion("source-ns", "source", "1.0.0"))
+            .thenReturn(new McpServerVersionDetail());
+        when(mcpProxy.createMcpServerDraft(eq("source-ns"), any(McpServerBasicInfo.class),
+            isNull(), isNull(), isNull())).thenReturn(created);
+
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.post("/v3/console/ai/mcp/clone")
+                .param("namespaceId", "source-ns")
+                .param("policy", SameConfigPolicy.OVERWRITE.name())
+                .contentType("application/json")
+                .content(JacksonUtils.toJson(List.of(cloneItem("source", null)))))
+            .andReturn().getResponse();
+
+        Result<Map<String, Object>> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        InOrder order = inOrder(mcpProxy);
+        order.verify(mcpProxy, times(2)).getMcpServer("source-ns", "source", null, null);
+        order.verify(mcpProxy).getMcpServerVersion("source-ns", "source", "1.0.0");
+        order.verify(mcpProxy).deleteMcpServer("source-ns", "source", null, null);
+    }
+
+    private McpServerCloneItem cloneItem(String sourceName, String targetName) {
+        McpServerCloneItem result = new McpServerCloneItem();
+        result.setSourceName(sourceName);
+        result.setTargetName(targetName);
+        return result;
+    }
+
+    private McpServerDetailInfo sourceWithEndpoint(String protocol, String serviceName) {
+        McpServerDetailInfo result = new McpServerDetailInfo();
+        result.setName("source");
+        result.setProtocol(protocol);
+        result.setVersion("1.0.0");
+        if (serviceName != null) {
+            McpServerRemoteServiceConfig remote = new McpServerRemoteServiceConfig();
+            McpServiceRef serviceRef = new McpServiceRef();
+            serviceRef.setNamespaceId("source-ns");
+            serviceRef.setGroupName("DEFAULT_GROUP");
+            serviceRef.setServiceName(serviceName);
+            remote.setServiceRef(serviceRef);
+            result.setRemoteServerConfig(remote);
+        }
+        return result;
+    }
+
+    private void verifyNoInteractionsExceptTargetLookup() throws Exception {
+        verify(mcpProxy).getMcpServer("source-ns", "source-copy", null, null);
     }
     
     @Test

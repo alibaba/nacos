@@ -253,6 +253,20 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             });
         return result.getData();
     }
+
+    @Override
+    public boolean updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
+        params.put("scope", scope);
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.PUT,
+            Constants.AdminApiPath.AI_MCP_SCOPE_ADMIN_PATH, namespaceId, mcpName, params);
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
     
     private Page<McpServerBasicInfo> queryServerPage(String namespaceId, String mcpName, int pageNo,
         int pageSize,

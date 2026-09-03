@@ -199,6 +199,13 @@ public class McpRemoteHandler implements McpHandler {
         return clientHolder.getAiMaintainerService().mcp().updateMcpServerLabels(namespaceId,
             request);
     }
+
+    @Override
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        clientHolder.getAiMaintainerService().mcp().updateMcpServerScope(namespaceId, mcpName,
+            scope);
+    }
     
     @Deprecated
     @Override

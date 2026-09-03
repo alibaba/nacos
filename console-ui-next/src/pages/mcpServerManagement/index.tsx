@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Plus, Download, Trash2, Search, X, ChevronLeft, ChevronRight, Cpu } from 'lucide-react';
+import { Plus, Download, Copy, Trash2, Search, X, ChevronLeft, ChevronRight, Cpu } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { ImportMcpDialog } from '@/components/ai/mcp/ImportMcpDialog';
 import { useMcpStore } from '@/stores/mcp-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { mcpApi } from '@/api/mcp';
+import type { ConflictPolicy } from '@/types/config';
 
 export default function McpServerManagementPage() {
   const { t } = useTranslation();
@@ -51,6 +52,11 @@ export default function McpServerManagementPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchName);
+  const [batchExportLoading, setBatchExportLoading] = useState(false);
+  const [batchCloneOpen, setBatchCloneOpen] = useState(false);
+  const [batchCloneLoading, setBatchCloneLoading] = useState(false);
+  const [cloneNameSuffix, setCloneNameSuffix] = useState('-copy');
+  const [clonePolicy, setClonePolicy] = useState<ConflictPolicy>('ABORT');
 
   const namespaceId = currentNamespace || 'public';
 
@@ -120,6 +126,53 @@ export default function McpServerManagementPage() {
     loadData();
   };
 
+  const handleBatchExport = async () => {
+    setBatchExportLoading(true);
+    try {
+      const blob = await mcpApi.exportServers({
+        namespaceId,
+        mcpNames: Array.from(selectedNames),
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'mcp-servers.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success(t('mcp.batchExportSuccess'));
+    } finally {
+      setBatchExportLoading(false);
+    }
+  };
+
+  const handleBatchClone = async () => {
+    setBatchCloneLoading(true);
+    try {
+      const response = await mcpApi.cloneServers(
+        { namespaceId, targetNamespaceId: namespaceId, policy: clonePolicy },
+        Array.from(selectedNames).map((sourceName) => ({
+          sourceName,
+          targetName: `${sourceName}${cloneNameSuffix}`,
+        })),
+      );
+      const result = response.data as { failedCount?: number; skippedCount?: number };
+      if ((result.failedCount || 0) > 0) {
+        toast.error(t('common.requestFailed'));
+      } else if ((result.skippedCount || 0) > 0) {
+        toast.success(t('mcp.batchClonePartialSuccess'));
+      } else {
+        toast.success(t('mcp.batchCloneSuccess'));
+      }
+      clearSelection();
+      setBatchCloneOpen(false);
+      loadData();
+    } finally {
+      setBatchCloneLoading(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
   const allSelected = mcpServers.length > 0 && mcpServers.every((s) => selectedNames.has(s.name));
 
@@ -173,6 +226,25 @@ export default function McpServerManagementPage() {
             <span className="text-xs text-muted-foreground">
               {t('config.selectedCount', { count: selectedNames.size })}
             </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={handleBatchExport}
+              disabled={batchExportLoading}
+            >
+              <Download className="mr-1 h-3 w-3" />
+              {t('mcp.batchExport')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setBatchCloneOpen(true)}
+            >
+              <Copy className="mr-1 h-3 w-3" />
+              {t('mcp.batchClone')}
+            </Button>
             <Button
               variant="destructive"
               size="sm"
@@ -336,6 +408,54 @@ export default function McpServerManagementPage() {
             </Button>
             <Button variant="destructive" onClick={handleBatchDelete} disabled={deleteLoading}>
               {deleteLoading ? t('common.loading') : t('common.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch clone dialog */}
+      <Dialog open={batchCloneOpen} onOpenChange={setBatchCloneOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('mcp.batchCloneTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('mcp.batchCloneDescription', { count: selectedNames.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label htmlFor="mcp-clone-suffix" className="text-sm font-medium">
+                {t('mcp.cloneNameSuffix')}
+              </label>
+              <Input
+                id="mcp-clone-suffix"
+                value={cloneNameSuffix}
+                onChange={(event) => setCloneNameSuffix(event.target.value)}
+                placeholder={t('mcp.cloneNameSuffixPlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="mcp-clone-policy" className="text-sm font-medium">
+                {t('mcp.clonePolicy')}
+              </label>
+              <Select value={clonePolicy} onValueChange={(value) => setClonePolicy(value as ConflictPolicy)}>
+                <SelectTrigger id="mcp-clone-policy">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ABORT">{t('mcp.conflictAbort')}</SelectItem>
+                  <SelectItem value="SKIP">{t('mcp.conflictSkip')}</SelectItem>
+                  <SelectItem value="OVERWRITE">{t('mcp.conflictOverwrite')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchCloneOpen(false)} disabled={batchCloneLoading}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleBatchClone} disabled={batchCloneLoading}>
+              {batchCloneLoading ? t('common.loading') : t('mcp.batchClone')}
             </Button>
           </DialogFooter>
         </DialogContent>
