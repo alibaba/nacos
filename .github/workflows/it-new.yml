@@ -191,6 +191,7 @@ jobs:
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
             -DskipTests=false \
             -Dit.test=A2aUpgradeMigrationJavaSdkITCase \
+            -Dnacos.a2a.migration.syncing.enabled=true \
             -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
             -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}"
 

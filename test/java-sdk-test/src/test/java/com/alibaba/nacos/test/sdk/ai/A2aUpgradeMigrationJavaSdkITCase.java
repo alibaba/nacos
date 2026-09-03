@@ -114,6 +114,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String SERVER_CAPACITY_PROPERTY =
         "nacos.agent.it.server.publication.capacity";
 
+    private static final String SYNCING_ENABLED_PROPERTY =
+        "nacos.a2a.migration.syncing.enabled";
+
     private static final String RECONNECT_ENABLED_PROPERTY =
         "nacos.a2a.migration.reconnect.enabled";
 
@@ -249,6 +252,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = SYNCING_ENABLED_PROPERTY, matches = "true")
     void shouldDualMaterializeReplaceDeregisterAndChargeCapacityOnce() throws Exception {
         int serverCapacity = Integer.getInteger(SERVER_CAPACITY_PROPERTY, 3);
         assertEquals(3, serverCapacity,
@@ -299,6 +303,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = SYNCING_ENABLED_PROPERTY, matches = "true")
     void shouldCleanBothLayoutsOnDisconnectAndAllowFreshPublisher() throws Exception {
         AiService definitionClient = createAiService();
         AiService publisher = createAiService();
