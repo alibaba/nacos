@@ -146,11 +146,11 @@ jobs:
           # Freeze the post-cutover shadow policy before AUTO starts. The first AUTO restart
           # intentionally keeps a different local policy so U3/U4 scenarios remain in SYNCING.
           NOW_MILLIS=$(($(date +%s) * 1000))
-          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u5","legacyNamingShadow":true,"startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u5","legacyNamingShadow":true,"storageProvider":"nacos_config","startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
           curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
             --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
             --data-urlencode "groupName=nacos_internal" \
-            --data-urlencode "namespaceId=public" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
             --data-urlencode "content=$MARKER" \
             --data-urlencode "type=json" \
             --data-urlencode "tag="
@@ -219,7 +219,7 @@ jobs:
           curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
             --data-urlencode "dataId=nacos.ai.a2a.reconciliation.lease.v1" \
             --data-urlencode "groupName=nacos_internal" \
-            --data-urlencode "namespaceId=public" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
             --data-urlencode "content=$LEASE" \
             --data-urlencode "type=json" \
             --data-urlencode "tag="
@@ -317,11 +317,11 @@ jobs:
             --data-urlencode "type=json" \
             --data-urlencode "tag="
           NOW_MILLIS=$(($(date +%s) * 1000))
-          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u6-shadow-off","legacyNamingShadow":false,"startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"it-new-u6-shadow-off","legacyNamingShadow":false,"storageProvider":"nacos_config","startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
           curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
             --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
             --data-urlencode "groupName=nacos_internal" \
-            --data-urlencode "namespaceId=public" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
             --data-urlencode "content=$MARKER" \
             --data-urlencode "type=json" \
             --data-urlencode "tag="

@@ -148,7 +148,8 @@ Config MD5。读取后再次计算；并发源变化会使本次结果失效并�
 
 AgentName 非法、Version 非法、Version 内容缺失、Latest 非法、未知 Registration Type、JSON
 损坏或 AgentCard 无法按当前 Adapter 规范化时，记录为阻断冲突。迁移不得 Trim、改名、虚构
-Version 或静默丢字段。
+Version 或静默丢字段。单个无效源条目会阻塞该 Agent 和全局切换，但不能阻止同一有界分页或
+Namespace 中其他有效条目继续完成对账。
 
 ### 4.2 标准投影
 

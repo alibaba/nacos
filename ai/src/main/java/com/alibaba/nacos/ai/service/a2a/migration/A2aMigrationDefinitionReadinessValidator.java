@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.springframework.stereotype.Component;
@@ -92,8 +91,11 @@ public class A2aMigrationDefinitionReadinessValidator {
         int pages = 1;
         while (pageNo <= pages) {
             renew(lease);
-            Page<A2aHistoricalDefinitionSnapshot> page = scanner.scanPage(namespaceId, pageNo,
+            A2aHistoricalDefinitionScanner.ScanPage page = scanner.scanPage(namespaceId, pageNo,
                 pageSize);
+            if (page.getFailureCount() > 0) {
+                result.failed(page.getFailureCount(), page.getLastError());
+            }
             pages = page.getPagesAvailable();
             if (pages == 0 && page.getTotalCount() > 0) {
                 pages = (int) Math.ceil((double) page.getTotalCount() / pageSize);
@@ -175,7 +177,11 @@ public class A2aMigrationDefinitionReadinessValidator {
         }
         
         private Result failed(String message) {
-            failed++;
+            return failed(1, message);
+        }
+        
+        private Result failed(long count, String message) {
+            failed += count;
             lastError = message;
             return this;
         }

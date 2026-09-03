@@ -91,6 +91,8 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static final String MIGRATION_INTERNAL_GROUP = "nacos_internal";
 
+    private static final String MIGRATION_INTERNAL_NAMESPACE = "_nacos_internal_";
+
     private static final String CUTOVER_BLOCKER_DATA_ID =
         "nacos.ai.a2a.migration.cutover.blocker";
 
@@ -147,8 +149,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         boolean shadowEnabled = Boolean.parseBoolean(
             System.getProperty(CUTOVER_SHADOW_ENABLED_PROPERTY, "true"));
         ConfigService configService = createConfigService();
-        assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
-        assertEquals(shadowEnabled, currentLegacyNamingShadow(configService));
+        ConfigService migrationConfigService = createMigrationConfigService();
+        assertEquals("QUIESCING", awaitMigrationState(migrationConfigService, "QUIESCING"));
+        assertEquals(shadowEnabled, currentLegacyNamingShadow(migrationConfigService));
 
         AiService grpcService = createAiService(transportProperties(
             AiConstants.AI_TRANSPORT_MODE_GRPC));
@@ -185,12 +188,12 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         assertWatchEndpoint(grpcListener, uri(replacement), "gRPC");
         assertWatchEndpoint(httpListener, uri(replacement), "HTTP");
         awaitLayouts(grpcService, namingService, CUTOVER_AGENT, VERSION_ONE, 1);
-        assertEquals("QUIESCING", awaitMigrationState(configService, "QUIESCING"));
+        assertEquals("QUIESCING", awaitMigrationState(migrationConfigService, "QUIESCING"));
 
         assertTrue(configService.removeConfig(CUTOVER_BLOCKER_DATA_ID,
             HISTORICAL_AGENT_GROUP), "the Java SDK cutover phase must release its hold");
-        assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
-        assertEquals(shadowEnabled, currentLegacyNamingShadow(configService));
+        assertEquals("CANONICAL", awaitMigrationState(migrationConfigService, "CANONICAL"));
+        assertEquals(shadowEnabled, currentLegacyNamingShadow(migrationConfigService));
         AgentEndpoint terminalReplacement = endpoint(VERSION_ONE, randomPort(),
             "/terminal-replacement");
         awaitTerminalLayout(grpcService, namingService, CUTOVER_AGENT, terminalReplacement,
@@ -225,7 +228,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     @EnabledIfSystemProperty(named = TERMINAL_ROLLBACK_ENABLED_PROPERTY, matches = "true")
     void shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy()
         throws Exception {
-        ConfigService configService = createConfigService();
+        ConfigService configService = createMigrationConfigService();
         assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
         boolean shadowEnabled = currentLegacyNamingShadow(configService);
         AiService service = createAiService();
@@ -329,7 +332,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         Files.deleteIfExists(stopped);
         Files.deleteIfExists(restarted);
 
-        ConfigService configService = createConfigService();
+        ConfigService configService = createMigrationConfigService();
         boolean shadowEnabled = currentLegacyNamingShadow(configService);
         int expectedHistorical = shadowEnabled ? 1 : 0;
         AiService service = createAiService();
@@ -375,7 +378,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(nodeAAddress));
         String nodeCAddress = requiredDistinctClusterAddress(CLUSTER_NODE_C_ADDRESS_PROPERTY,
             Arrays.asList(nodeAAddress, nodeBAddress));
-        ConfigService configServiceA = createConfigServiceAt(nodeAAddress);
+        ConfigService configServiceA = createMigrationConfigServiceAt(nodeAAddress);
         assertEquals("SYNCING", awaitMigrationState(configServiceA, "SYNCING"));
 
         AiService publisherA = createAiServiceAt(nodeAAddress,
@@ -433,8 +436,10 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(nodeAAddress));
         String nodeCAddress = requiredDistinctClusterAddress(CLUSTER_NODE_C_ADDRESS_PROPERTY,
             Arrays.asList(nodeAAddress, nodeBAddress));
-        List<ConfigService> configReaders = Arrays.asList(createConfigServiceAt(nodeAAddress),
-            createConfigServiceAt(nodeBAddress), createConfigServiceAt(nodeCAddress));
+        List<ConfigService> configReaders = Arrays.asList(
+            createMigrationConfigServiceAt(nodeAAddress),
+            createMigrationConfigServiceAt(nodeBAddress),
+            createMigrationConfigServiceAt(nodeCAddress));
         assertClusterMigrationState(configReaders, "SYNCING");
 
         AiService readerA = createAiServiceAt(nodeAAddress,
@@ -900,8 +905,14 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private ConfigService createConfigServiceAt(String serverAddress) throws Exception {
-        ConfigService result = ConfigFactory.createConfigService(sdkProperties(serverAddress));
+    private ConfigService createMigrationConfigService() throws Exception {
+        return createMigrationConfigServiceAt(SERVER_ADDR);
+    }
+
+    private ConfigService createMigrationConfigServiceAt(String serverAddress) throws Exception {
+        Properties properties = sdkProperties(serverAddress);
+        properties.setProperty(PropertyKeyConst.NAMESPACE, MIGRATION_INTERNAL_NAMESPACE);
+        ConfigService result = ConfigFactory.createConfigService(properties);
         addCleanup(result::shutDown);
         waitUntil("Config SDK client should connect to " + serverAddress,
             () -> "UP".equals(result.getServerStatus()));

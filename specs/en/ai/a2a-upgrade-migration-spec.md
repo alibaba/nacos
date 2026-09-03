@@ -174,7 +174,9 @@ cache token.
 Invalid AgentName, invalid Version, missing Version content, invalid latest,
 unknown registration type, malformed JSON, or an AgentCard that cannot be
 normalized under the current adapter is a blocking conflict. The migration
-does not trim, rename, invent Versions, or silently drop fields.
+does not trim, rename, invent Versions, or silently drop fields. One invalid
+source entry blocks that Agent and global cutover, but it must not prevent
+other valid entries in the same bounded page or Namespace from reconciling.
 
 ### 4.2 Canonical Projection
 

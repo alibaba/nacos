@@ -100,6 +100,8 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
 
     private static final String MIGRATION_INTERNAL_GROUP = "nacos_internal";
 
+    private static final String MIGRATION_INTERNAL_NAMESPACE = "_nacos_internal_";
+
     private static final String HISTORICAL_AGENT_GROUP = "agent";
 
     private static final int MAX_RETRIES = 160;
@@ -474,7 +476,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
         for (int retry = 0; retry <= MAX_RETRIES; retry++) {
             HttpResponse response = getRaw(ADMIN_CONFIG_PATH,
                     configIdentity(MIGRATION_PROGRESS_DATA_ID, MIGRATION_INTERNAL_GROUP,
-                            DEFAULT_NAMESPACE));
+                            MIGRATION_INTERNAL_NAMESPACE));
             if (response.code() == 200) {
                 JsonNode root = JacksonUtils.toObj(response.body());
                 String content = root.path("data").path("content").asText();
@@ -516,7 +518,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
         for (int retry = 0; retry <= MAX_RETRIES; retry++) {
             HttpResponse response = getRaw(ADMIN_CONFIG_PATH,
                     configIdentity(MIGRATION_MARKER_DATA_ID, MIGRATION_INTERNAL_GROUP,
-                            DEFAULT_NAMESPACE));
+                            MIGRATION_INTERNAL_NAMESPACE));
             if (response.code() == 200) {
                 String content = JacksonUtils.toObj(response.body()).path("data")
                         .path("content").asText();

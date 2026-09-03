@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,6 +115,28 @@ class A2aMigrationDefinitionReadinessValidatorTest {
     }
     
     @Test
+    void shouldFailReadinessButValidateOtherEntriesWhenOneSourceIsInvalid() throws Exception {
+        A2aHistoricalDefinitionSnapshot valid = snapshot("valid");
+        A2aHistoricalDefinitionScanner.ScanPage sourcePage = page(2, 1, valid);
+        sourcePage.recordFailure(new IllegalStateException("malformed historical source"));
+        when(namespaceOperationService.getNamespaceList())
+            .thenReturn(Collections.singletonList(new Namespace("public", "public")));
+        when(scanner.scanPage("public", 1, 100)).thenReturn(sourcePage);
+        when(reconciler.isCurrent(valid)).thenReturn(true);
+        when(scanner.isCurrent(valid)).thenReturn(true);
+        when(targetStore.listMigratedAgentNames("public")).thenReturn(Set.of("valid"));
+        
+        A2aMigrationDefinitionReadinessValidator.Result result =
+            validator.validate(100, null);
+        
+        assertFalse(result.isReady());
+        assertEquals(1L, result.getScanned());
+        assertEquals(0L, result.getDifferences());
+        assertEquals(1L, result.getFailed());
+        assertEquals("malformed historical source", result.getLastError());
+    }
+    
+    @Test
     void shouldFailClosedForNamespaceAndLeaseFailures() {
         when(namespaceOperationService.getNamespaceList()).thenReturn(null);
         A2aMigrationDefinitionReadinessValidator.Result unavailable =
@@ -143,9 +164,10 @@ class A2aMigrationDefinitionReadinessValidatorTest {
     }
     
     @SafeVarargs
-    private final Page<A2aHistoricalDefinitionSnapshot> page(long total, int pages,
+    private final A2aHistoricalDefinitionScanner.ScanPage page(long total, int pages,
         A2aHistoricalDefinitionSnapshot... items) {
-        Page<A2aHistoricalDefinitionSnapshot> result = new Page<>();
+        A2aHistoricalDefinitionScanner.ScanPage result =
+            new A2aHistoricalDefinitionScanner.ScanPage();
         result.setTotalCount((int) total);
         result.setPagesAvailable(pages);
         result.setPageItems(Arrays.asList(items));

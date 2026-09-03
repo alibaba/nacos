@@ -17,7 +17,6 @@
 package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
@@ -176,7 +175,7 @@ public class A2aMigrationReconciliationTask
             }
             int pageSize = configuredPageSize();
             Map<String, Set<String>> sourceNames = new HashMap<String, Set<String>>();
-            boolean sourceScanComplete = true;
+            stats.sourceScanComplete = true;
             for (Namespace namespace : namespaces) {
                 lease.assertOwned();
                 if (!lease.renew()) {
@@ -187,16 +186,15 @@ public class A2aMigrationReconciliationTask
                     Set<String> names = reconcileNamespace(namespaceId, pageSize, stats);
                     sourceNames.put(namespaceId, names);
                 } catch (Exception e) {
-                    sourceScanComplete = false;
+                    stats.sourceScanComplete = false;
                     stats.recordFailure(e);
                     clearOrphanConfirmations(namespaceId);
                     LOGGER.warn("Failed to scan historical A2A namespace {}", namespaceId, e);
                 }
             }
-            if (sourceScanComplete) {
+            if (stats.sourceScanComplete) {
                 reconcileOrphans(sourceNames, stats);
             }
-            stats.sourceScanComplete = sourceScanComplete;
             cutoverCoordinator.afterSyncingRound(marker, lease, stats.isZeroDifference(),
                 sourceNames, pageSize);
         } catch (Exception e) {
@@ -222,8 +220,16 @@ public class A2aMigrationReconciliationTask
             if (!stats.lease.renew()) {
                 throw new IllegalStateException("Historical A2A reconciliation lease lost");
             }
-            Page<A2aHistoricalDefinitionSnapshot> page = scanner.scanPage(namespaceId, pageNo,
+            A2aHistoricalDefinitionScanner.ScanPage page = scanner.scanPage(namespaceId, pageNo,
                 pageSize);
+            if (page.getFailureCount() > 0) {
+                stats.sourceScanComplete = false;
+                stats.failed += page.getFailureCount();
+                stats.lastError = page.getLastError();
+                LOGGER.warn("Skipped {} invalid historical A2A source entries in namespace={} "
+                    + "page={}: {}", page.getFailureCount(), namespaceId, pageNo,
+                    page.getLastError());
+            }
             pages = page.getPagesAvailable();
             if (pages == 0 && page.getTotalCount() > 0) {
                 pages = (int) Math.ceil((double) page.getTotalCount() / pageSize);

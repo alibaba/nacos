@@ -80,10 +80,9 @@ public class A2aHistoricalDefinitionScanner {
      * @param namespaceId namespace identifier
      * @param pageNo one-based page number
      * @param pageSize bounded page size
-     * @return complete historical snapshots
+     * @return valid historical snapshots and isolated invalid-entry failures
      */
-    public Page<A2aHistoricalDefinitionSnapshot> scanPage(String namespaceId, int pageNo,
-        int pageSize) {
+    public ScanPage scanPage(String namespaceId, int pageNo, int pageSize) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         if (pageNo < 1 || pageSize < 1) {
             throw new IllegalArgumentException("Historical A2A scan page must be positive");
@@ -94,18 +93,56 @@ public class A2aHistoricalDefinitionScanner {
         if (source == null || source.getPageItems() == null) {
             throw new IllegalStateException("Historical A2A summary page is unavailable");
         }
+        ScanPage result = new ScanPage();
         List<A2aHistoricalDefinitionSnapshot> snapshots =
             new ArrayList<A2aHistoricalDefinitionSnapshot>(source.getPageItems().size());
         for (ConfigInfo configInfo : source.getPageItems()) {
-            snapshots.add(load(namespaceId, configInfo));
+            try {
+                snapshots.add(load(namespaceId, configInfo));
+            } catch (RuntimeException e) {
+                result.recordFailure(e);
+            }
         }
-        Page<A2aHistoricalDefinitionSnapshot> result =
-            new Page<A2aHistoricalDefinitionSnapshot>();
         result.setPageNumber(pageNo);
         result.setTotalCount(source.getTotalCount());
         result.setPagesAvailable(resolvePages(source, pageSize));
         result.setPageItems(snapshots);
         return result;
+    }
+    
+    /**
+     * One bounded historical scan page with invalid source entries isolated from valid entries.
+     */
+    public static final class ScanPage extends Page<A2aHistoricalDefinitionSnapshot> {
+        
+        private static final long serialVersionUID = 1L;
+        
+        private int failureCount;
+        
+        private String lastError;
+        
+        /**
+         * Return the number of invalid or unavailable source entries in this page.
+         *
+         * @return failed source-entry count
+         */
+        public int getFailureCount() {
+            return failureCount;
+        }
+        
+        /**
+         * Return the latest bounded failure summary for this page.
+         *
+         * @return latest failure summary, or {@code null}
+         */
+        public String getLastError() {
+            return lastError;
+        }
+        
+        void recordFailure(RuntimeException error) {
+            failureCount++;
+            lastError = error.getMessage();
+        }
     }
     
     /**

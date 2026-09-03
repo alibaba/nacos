@@ -277,13 +277,37 @@ class A2aHistoricalDefinitionScannerTest {
         assertInvalidScan();
     }
     
+    @Test
+    void shouldIsolateInvalidEntriesAndKeepValidSnapshotsInOnePage() {
+        ConfigInfo malformed = new ConfigInfo("malformed", Constants.A2A.AGENT_GROUP, "{");
+        malformed.setTenant(NAMESPACE_ID);
+        malformed.setMd5("malformed-md5");
+        Page<ConfigInfo> page = new Page<ConfigInfo>();
+        page.setPageItems(Arrays.asList(malformed, summaryConfig));
+        page.setTotalCount(2);
+        page.setPagesAvailable(1);
+        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+            anyString(), anyString(), any())).thenReturn(page);
+        
+        A2aHistoricalDefinitionScanner.ScanPage result = scanner.scanPage(NAMESPACE_ID, 1, 100);
+        
+        assertEquals(1, result.getFailureCount());
+        assertEquals("Invalid historical A2A summary JSON", result.getLastError());
+        assertEquals(1, result.getPageItems().size());
+        assertEquals(AGENT_NAME, result.getPageItems().get(0).getSummary().getName());
+        assertEquals(2, result.getTotalCount());
+    }
+    
     private void assertInvalidSummary(AgentCardVersionInfo value) {
         summaryConfig.setContent(JacksonUtils.toJson(value));
         assertInvalidScan();
     }
     
     private void assertInvalidScan() {
-        assertThrows(RuntimeException.class, () -> scanner.scanPage(NAMESPACE_ID, 1, 100));
+        A2aHistoricalDefinitionScanner.ScanPage result =
+            scanner.scanPage(NAMESPACE_ID, 1, 100);
+        assertEquals(1, result.getFailureCount());
+        assertTrue(result.getPageItems().isEmpty());
     }
     
     private void page(ConfigInfo configInfo, int total, int pages) {

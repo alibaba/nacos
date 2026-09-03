@@ -19,7 +19,6 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
@@ -229,6 +228,29 @@ class A2aMigrationReconciliationTaskTest {
         assertEquals("storage unavailable", progress.getValue().getLastError());
         verify(lease).close();
         verify(cutoverCoordinator).afterSyncingRound(any(), eq(lease), eq(false), any(), eq(2));
+    }
+    
+    @Test
+    void shouldReconcileValidEntriesButFailCutoverForInvalidEntriesInSamePage()
+        throws Exception {
+        A2aHistoricalDefinitionSnapshot valid = snapshot("valid");
+        A2aHistoricalDefinitionScanner.ScanPage sourcePage = page(2, 1, valid);
+        sourcePage.recordFailure(new IllegalStateException("malformed historical source"));
+        when(scanner.scanPage(NAMESPACE_ID, 1, 100)).thenReturn(sourcePage);
+        when(reconciler.reconcile(eq(valid), any()))
+            .thenReturn(A2aMigrationTargetStore.Result.CREATED);
+        
+        task.executeReconciliation();
+        
+        ArgumentCaptor<A2aMigrationProgress> progress =
+            ArgumentCaptor.forClass(A2aMigrationProgress.class);
+        verify(stateService).persistProgress(progress.capture());
+        assertEquals(1L, progress.getValue().getScanned());
+        assertEquals(1L, progress.getValue().getMigrated());
+        assertEquals(1L, progress.getValue().getFailed());
+        assertEquals("malformed historical source", progress.getValue().getLastError());
+        verify(targetStore, never()).listMigratedAgentNames(anyString());
+        verify(cutoverCoordinator).afterSyncingRound(any(), eq(lease), eq(false), any(), eq(100));
     }
     
     @Test
@@ -445,16 +467,17 @@ class A2aMigrationReconciliationTaskTest {
     }
     
     @SafeVarargs
-    private final Page<A2aHistoricalDefinitionSnapshot> page(long total, int pages,
+    private final A2aHistoricalDefinitionScanner.ScanPage page(long total, int pages,
         A2aHistoricalDefinitionSnapshot... items) {
-        Page<A2aHistoricalDefinitionSnapshot> result = new Page<A2aHistoricalDefinitionSnapshot>();
+        A2aHistoricalDefinitionScanner.ScanPage result =
+            new A2aHistoricalDefinitionScanner.ScanPage();
         result.setTotalCount((int) total);
         result.setPagesAvailable(pages);
         result.setPageItems(Arrays.asList(items));
         return result;
     }
     
-    private Page<A2aHistoricalDefinitionSnapshot> emptyPage() {
+    private A2aHistoricalDefinitionScanner.ScanPage emptyPage() {
         return page(0, 0);
     }
     
