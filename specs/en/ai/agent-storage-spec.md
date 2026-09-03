@@ -733,9 +733,17 @@ submits the complete batch for its exact Version, so Versions do not overwrite
 one another and the server does not perform read-merge-write. Disconnecting the
 original connection releases all children.
 
-The `LEGACY` branch keeps the historical version-specific Naming layout in full.
-The Beta `CANONICAL` branch does not dual-write the historical Service.
-Compatibility for Naming Gateway callers that depend directly on the legacy
-serviceName, mixed-cluster dual read or write, rollback, old-Service cleanup,
-and malformed historical identity handling belong to a separate post-Beta
-rolling-upgrade and migration contract.
+The `LEGACY` branch keeps the historical Version-specific Naming layout in
+full. The explicit `CANONICAL` branch does not dual-write the historical
+Service. `AUTO` temporarily materializes historical-primary/canonical-mirror
+publications before cutover and canonical-primary/optional-historical-shadow
+publications after cutover. It validates and counts one logical publication,
+uses independent deterministic child publishers, and never reads either
+layout to merge a write. Runtime equivalence, retry, connection cleanup,
+cutover, rollback, and deferred old-Service cleanup follow the
+[Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md).
+
+The optional shadow represents only historical exact-Version A2A publication
+requests. It is not a second RAD fact source and does not support general RAD
+Version ranges. This temporary dual-materialization implementation is targeted
+for removal in Nacos 4.0 without changing the canonical Runtime layout.

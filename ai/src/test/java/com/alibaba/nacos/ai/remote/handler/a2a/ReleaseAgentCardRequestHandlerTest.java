@@ -124,4 +124,24 @@ class ReleaseAgentCardRequestHandlerTest {
         assertEquals("test error", response.getMessage());
         verify(a2aServerOperationService).releaseAgent(agentCard, "public", "SERVICE", false);
     }
+    
+    @Test
+    void shouldPreserveMigrationFenceDetailCode() throws NacosException {
+        ReleaseAgentCardRequest request = new ReleaseAgentCardRequest();
+        AgentCard agentCard = new AgentCard();
+        agentCard.setName("test");
+        agentCard.setVersion("1.0.0");
+        agentCard.setProtocolVersion("0.3.0");
+        agentCard.setPreferredTransport("JSONRPC");
+        agentCard.setUrl("https://example.com");
+        request.setAgentCard(agentCard);
+        request.setNamespaceId("public");
+        doThrow(new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "retry later"))
+            .when(a2aServerOperationService).releaseAgent(agentCard, "public", "SERVICE", false);
+        ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), response.getErrorCode());
+        assertEquals("retry later", response.getMessage());
+    }
 }

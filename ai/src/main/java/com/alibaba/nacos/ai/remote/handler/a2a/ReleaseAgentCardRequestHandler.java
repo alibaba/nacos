@@ -71,12 +71,26 @@ public class ReleaseAgentCardRequestHandler
             doHandler(request, meta);
             return response;
         } catch (NacosException e) {
-            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
+            setMigrationAwareError(response, e);
             LOGGER.error("[{}] Release agent card {} error: {}", meta.getConnectionId(),
                 null == request.getAgentCard() ? null : JacksonUtils.toJson(request.getAgentCard()),
                 e.getErrMsg());
         }
         return response;
+    }
+    
+    private void setMigrationAwareError(ReleaseAgentCardResponse response, NacosException error) {
+        // TODO(remove in 4.0): the Nacos 3.0-3.2 migration fence must preserve its retryable
+        // detail code through the historical A2A gRPC facade. Keep every other legacy error
+        // mapping unchanged until this facade is removed.
+        if (error instanceof NacosApiException
+            && ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode() == ((NacosApiException) error)
+                .getDetailErrCode()) {
+            response.setErrorInfo(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                error.getErrMsg());
+            return;
+        }
+        response.setErrorInfo(error.getErrCode(), error.getErrMsg());
     }
     
     private void validateRequest(ReleaseAgentCardRequest request) throws NacosApiException {

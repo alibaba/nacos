@@ -18,7 +18,7 @@
 
 | 项目 | 值 |
 | --- | --- |
-| 状态 | 实验性目标兼容契约 |
+| 状态 | 实验性 Binding 与升级兼容契约 |
 | 生效条件 | `nacos.ai.a2a.compatibility.mode`，默认 `CANONICAL` |
 
 本文定义 A2A 作为 Nacos 标准 Agent 资源的一种协议 Binding，并规定历史 AgentCard API
@@ -31,17 +31,25 @@
 
 | 模式 | 兼容实现 |
 | --- | --- |
-| `CANONICAL` | 标准 Agent metadata、Version 存储与 RAD Runtime Endpoint。当前版本不支持该功能的滚动升级，因此默认使用此模式。 |
+| `CANONICAL` | 标准 Agent Metadata、Version 存储与 RAD Runtime Endpoint。它仍是默认静态模式，不扫描历史数据。 |
 | `LEGACY` | 历史 AgentCard Config group 与按精确 Version 划分的 Naming Endpoint。旧实现保持不变。 |
-| `AUTO` | 从 `LEGACY` 启动；全部已知集群成员都上报 3.3.0 或更高版本后，仅单向切换一次到 `CANONICAL`。成员版本缺失或非法时继续使用旧分支。 |
+| `AUTO` | 运行一次性历史升级状态机。`SYNCING` 和 `QUIESCING` 期间历史 Config 定义仍是权威；只有永久、零差异的 `CANONICAL` Marker 才切换完整定义 Facade。 |
 
 模式 token 大小写不敏感。一次请求必须完整路由到同一分支，不进行按操作混用、回退、
-双读或双写。`AUTO` 只预留保守的未来切流入口，不构成滚动升级保证；单向切换也不会迁移
-历史 Config 数据。在独立迁移契约落地前，选择 `LEGACY` 或后续从 `LEGACY` 切到
-`CANONICAL` 的可见性后果由运维方承担。
+定义合并读取或定义双写。`AUTO` 由
+[历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)规定：后台对账历史定义，使用明确
+Member Ability 和短暂定义写屏障，绝不只按成员版本切流。迁移期间的 Runtime 双物化是连接态
+兼容投影，不是第二个定义权威。
+
+持久化的终态迁移 Marker 优先于本地模式配置。有能力节点一旦观察到终态，本进程永久把 A2A
+定义操作路由到 `CANONICAL`；Marker 被删除或配置变化时也不得恢复 Legacy-only 写入。非终态
+Marker 不覆盖显式选择的静态模式。
 
 第 2～7 节对路由到 `CANONICAL` 的请求生效；路由到 `LEGACY` 的请求完整保留历史 Config
-定义和按 Version 划分的 Naming Endpoint 行为。`AUTO` 切换后使用与 `CANONICAL` 相同的完整分支。
+定义和按 Version 划分的 Naming Endpoint 行为。`AUTO` 同步期间，定义读写保持完整历史行为；
+终态 Marker 后，完整 Facade 使用与
+`CANONICAL` 相同的分支。唯一例外是 `QUIESCING`：定义 Mutation 以可重试
+`AGENT_MIGRATION_IN_PROGRESS` Detail Error 暂时拒绝，读取和 Runtime 操作继续。
 
 A2A 不是顶层 AI 资源类型。标准身份为：
 
@@ -122,9 +130,14 @@ deregister 注销该精确 Version 的完整子 publication。不同 Version 的
 映射校验。
 
 `LEGACY` 分支保持原 Handler 和 `<legacyEncodedAgentName>::<exactVersion>` Naming Service
-实现不变，以便未来兼容开关需要时仍可运行。Beta 的 `CANONICAL` 分支只写标准 Service，不双写
-旧 Service。直接通过 Naming Gateway 发现历史 serviceName 的调用方因此不会看到这些新发布；
-兼容双写、开关、回滚和旧 Service 清理由 Beta 后的独立设计处理。
+实现不变。显式 `CANONICAL` 分支只写标准 Service。
+
+`AUTO` 在这两个不变物理实现之上增加临时迁移 Router。`SYNCING` 和 `QUIESCING` 使用历史
+Service 主写、标准 Service 必需镜像；终态切流后标准 RAD 为主，固化的迁移策略可以选择继续保留
+历史精确 Version Naming Shadow。一个逻辑 Publication 只校验和计数一次；两个物理 Child
+Publisher 都绑定原始 Connection 并幂等清理。Mirror 或 Shadow 失败不回滚成功主写，而是进入
+有界 Connection 内重试。精确顺序、切流门禁、Shadow 范围和回滚边界遵循
+[历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)。
 
 Endpoint 可以先于 Agent 或 Version 定义发布，但不得隐式创建 Agent 定义。
 
@@ -172,8 +185,10 @@ SDK shutdown 必须停止所有旧 AgentCard 轮询任务。
 兼容窗口内，旧路径、Payload type、DTO、能力位、鉴权身份和响应包装保持稳定。新 Agent/RAD API
 不得暴露 `registrationType`、`setAsLatest` 或 AgentCard 专属列表包装。
 
-历史数据迁移、混合版本双读双写、回滚和清理仍属于滚动升级设计，不由本 API 兼容规范定义。
-上述模式开关只选择实现，不提供这些能力。
+历史 3.0～3.2 数据对账、混合 Member 运行、安全切流、可选历史 Naming Shadow、回滚边界和
+延期清理由[历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)定义。迁移专用实现代码及配置
+计划在 Nacos 4.0 删除；完成迁移后的标准 Agent/RAD 事实和仍处于兼容期的公开 A2A Facade
+不依赖这些临时代码。
 
 ## 7. 演进
 

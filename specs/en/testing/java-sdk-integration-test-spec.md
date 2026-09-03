@@ -236,3 +236,30 @@ least:
 Versionless Runtime Services, explicit transport lists, MCP Version ranges,
 Client HTTP parity, and heartbeat renewal remain outside this matrix until
 their separate designs are approved.
+
+## 11. Historical A2A Upgrade And Cluster Scenarios
+
+When historical A2A migration changes, Java SDK IT complements the OpenAPI
+`M-ST-01..10` matrix with real `A2aService`, `AiService`, Naming, gRPC/HTTP RAD,
+Watch, reconnect, and redo clients. In particular, `M-ST-06`, `M-ST-09`, and
+`M-ST-10` require observable client behavior rather than only internal
+publisher assertions.
+
+Directed three-member tests cover this cluster matrix:
+
+| ID | Required cluster behavior |
+| --- | --- |
+| `M-CL-01` | With 0/3, 1/3, 2/3, and 3/3 capable members, historical authority remains until all abilities and gates pass. |
+| `M-CL-02` | A historical write on member A is reconciled by lease owner B and canonical content is readable on C. |
+| `M-CL-03` | Restarting lease owner, non-owner, Config leader, or Naming responsibility member preserves progress and availability. |
+| `M-CL-04` | Member join/leave, lost ACK, and delayed marker observation during quiescing return safely to syncing or converge without split authority. |
+| `M-CL-05` | Historical Config mutation on A, reconciliation on B, and historical/canonical reads on A/B/C converge. |
+| `M-CL-06` | Endpoint publication on A with Naming responsibility on B converges in both historical and canonical Services. |
+| `M-CL-07` | Load-balanced A/B/C reads during terminal marker propagation see equivalent definitions and Runtime snapshots. |
+| `M-CL-08` | Complete rolling upgrades with shadow disabled and enabled satisfy their documented Gateway behavior. |
+| `M-CL-09` | Pre-cutover rollback to historical authority succeeds; post-cutover rollback accepts only a canonical-aware binary. |
+| `M-CL-10` | Ordinary Agent, Skill, Prompt, AgentSpec, MCP, and Naming registration/subscription remain isolated. |
+
+Every test uses explicit bounded deadlines and public or stable wire behavior.
+The suite does not assume load-balancer stickiness, one Config leader, one
+Naming responsibility member, or fixed task execution order.

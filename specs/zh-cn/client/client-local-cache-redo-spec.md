@@ -163,6 +163,11 @@ gRPC Endpoint 意图归属于当前 connection id。Reconnect 后，SDK 获取�
 期望分组。HTTP 与 gRPC Publisher record 必须隔离；一种 Transport 不得注销另一种
 Transport 拥有的 Contribution。
 
+AI gRPC Connection 还携带一个仅在当前 SDK 进程生命周期内稳定的不透明 UUID。
+新 Connection Id 在重连后重放一个逻辑 Publication 时，Server 借此重新绑定临时历史 A2A
+物理 Child Publisher。它不修改公开 Redo Key、SDK Intent 的当前 Connection 所有权或粘性
+Transport 所有权；进程重启后会生成新 UUID。
+
 当 Agent Transport 为 `AUTO` 时，Publication 首次准备发送前选择并缓存
 `ownerTransport`。同一 `(namespaceId, agentName, protocol)` 后续完整 Batch 替换、部分
 注销、整份注销、HTTP Heartbeat 和 Redo 均使用该 owner。Client 可同时持有由 HTTP 和
@@ -218,6 +223,21 @@ namespace-bound `A2aService` 的旧 Version-specific Endpoint Publication 使用
 `(agentName, exactVersion)` 作为本地 redo 身份；不同精确 Version 不得相互覆盖。Redo record
 保存 Endpoint 集合及其 URI、transport、metadata 等字段的防御性快照，调用方后续修改原始
 `AgentEndpoint` 或 Collection 不得改变重连意图。
+
+临时历史 A2A `AUTO` 迁移期间，Client 仍只持有一条逻辑 Redo Record，并只发送一次旧
+Publication 请求。Server 可以按照
+[历史 A2A 升级迁移规范](../ai/a2a-upgrade-migration-spec.md)把该请求物化为历史主写/标准镜像，
+或标准主写/可选历史 Shadow。Client 不缓存物理 Child Publisher Id、不重复计算本地容量，也不独立
+重试某一 Layout。Reconnect 只在新 Connection 下重放一次完整逻辑 Record，Server 根据当前迁移
+Marker 重建所需 Layout。
+
+对当前 Java SDK，Server 基于进程稳定的 Connection Label 派生这些 Child，并在重放前
+接管匹配的 Distro 副本，避免旧/新 Connection Id 创建重复物理 Contribution。不携带该
+Label 的旧 Client 保持 Connection 范围兼容路径，Owner 重启后依赖常规 Distro 过期收敛。
+
+主写成功时，即使必需 Mirror 或可选 Shadow 进入有界服务端重试，Client 操作仍然成功；主写失败
+继续表现为普通受控 SDK 失败。迁移完成且固化 Shadow 策略关闭时，Server 可以删除历史 Child，
+但不改变 Client 的 Redo Identity 或期望 Batch。
 
 旧 AgentCard 订阅的 exact Version 和 latest 是不同本地身份。服务端返回的 Version 当前是否为
 latest 不能替代调用方订阅身份；一次变化必须通知所有受影响的 exact/latest key。当 latest 指向已

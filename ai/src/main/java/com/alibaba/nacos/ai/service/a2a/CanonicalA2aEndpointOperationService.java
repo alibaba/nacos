@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.remote.manager.AiConnectionBasedClientManager;
+import com.alibaba.nacos.ai.service.a2a.A2aEndpointChildPublisherManager.ChildPublisher;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -25,28 +25,17 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
-import com.alibaba.nacos.core.remote.Connection;
-import com.alibaba.nacos.naming.constants.ClientConstants;
-import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Adapts legacy exact-Version A2A Endpoint operations to the canonical RAD Runtime layout.
@@ -59,27 +48,52 @@ import java.util.concurrent.ConcurrentMap;
  * @author Nacos
  */
 @Component
-public class CanonicalA2aEndpointOperationService extends ClientConnectionEventListener {
+public class CanonicalA2aEndpointOperationService {
     
-    static final String CHILD_CLIENT_ID_PREFIX = "A2A_ENDPOINT_";
+    static final String CHILD_CLIENT_ID_PREFIX =
+        A2aEndpointChildPublisherManager.CHILD_CLIENT_ID_PREFIX;
     
     private static final String A2A_PROTOCOL = "a2a";
     
-    private static final String CHILD_ID_SEPARATOR = "@@";
+    static final String CHILD_LAYOUT = "canonical";
     
     private static final int MAX_RUNTIME_ENDPOINTS = 1000;
     
-    private final AiConnectionBasedClientManager clientManager;
+    private final A2aEndpointChildPublisherManager childPublisherManager;
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    private final ConcurrentMap<String, Set<String>> childClientIds =
-        new ConcurrentHashMap<String, Set<String>>();
-    
-    public CanonicalA2aEndpointOperationService(AiConnectionBasedClientManager clientManager,
+    public CanonicalA2aEndpointOperationService(
+        A2aEndpointChildPublisherManager childPublisherManager,
         EphemeralClientOperationServiceImpl clientOperationService) {
-        this.clientManager = clientManager;
+        this.childPublisherManager = childPublisherManager;
         this.clientOperationService = clientOperationService;
+    }
+    
+    /**
+     * Validate one legacy exact-Version publication against the canonical Runtime mapping.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName Agent name
+     * @param endpoints complete legacy batch
+     * @throws NacosException when the publication cannot be represented canonically
+     */
+    public void validate(String namespaceId, String agentName,
+        Collection<AgentEndpoint> endpoints) throws NacosException {
+        prepare(namespaceId, agentName, endpoints);
+    }
+    
+    /**
+     * Convert one historical A2A Endpoint to its canonical Runtime Naming representation.
+     *
+     * <p>This pure adapter is shared by migration snapshot verification so the mirror writer and
+     * cutover gate cannot drift in URI, transport, binding, or metadata semantics.</p>
+     *
+     * @param source historical exact-Version Endpoint
+     * @return canonical Naming instance without a Service identity
+     */
+    public Instance toCanonicalInstance(AgentEndpoint source) {
+        return toInstance(source);
     }
     
     /**
@@ -92,6 +106,22 @@ public class CanonicalA2aEndpointOperationService extends ClientConnectionEventL
      * @throws NacosException when validation or Naming registration fails
      */
     public void register(String parentClientId, String namespaceId, String agentName,
+        Collection<AgentEndpoint> endpoints) throws NacosException {
+        PreparedPublication prepared = prepare(namespaceId, agentName, endpoints);
+        ChildPublisher child = childPublisherManager.ensureChild(parentClientId, namespaceId,
+            agentName, prepared.version, CHILD_LAYOUT);
+        try {
+            clientOperationService.batchRegisterInstance(prepared.service, prepared.instances,
+                child.getClientId());
+        } catch (RuntimeException e) {
+            if (child.isCreated()) {
+                childPublisherManager.disconnectChild(parentClientId, child.getClientId());
+            }
+            throw e;
+        }
+    }
+    
+    private PreparedPublication prepare(String namespaceId, String agentName,
         Collection<AgentEndpoint> endpoints) throws NacosException {
         if (endpoints == null || endpoints.isEmpty()) {
             throw invalidEndpoint("Legacy A2A Endpoint batch must not be empty");
@@ -112,25 +142,14 @@ public class CanonicalA2aEndpointOperationService extends ClientConnectionEventL
                     "Legacy A2A Endpoint batch must contain one exact Version");
             }
             try {
-                instances.add(toInstance(endpoint));
+                instances.add(toCanonicalInstance(endpoint));
             } catch (IllegalArgumentException e) {
                 throw invalidEndpoint(e.getMessage());
             }
         }
         NamingUtils.batchCheckInstanceIsLegal(instances);
         Service service = composeService(namespaceId, agentName);
-        String expectedChildClientId =
-            childClientId(parentClientId, namespaceId, agentName, version);
-        boolean childAlreadyExisted = clientManager.contains(expectedChildClientId);
-        String childClientId = ensureChildClient(parentClientId, namespaceId, agentName, version);
-        try {
-            clientOperationService.batchRegisterInstance(service, instances, childClientId);
-        } catch (RuntimeException e) {
-            if (!childAlreadyExisted) {
-                disconnectChild(parentClientId, childClientId);
-            }
-            throw e;
-        }
+        return new PreparedPublication(version, service, instances);
     }
     
     /**
@@ -143,80 +162,14 @@ public class CanonicalA2aEndpointOperationService extends ClientConnectionEventL
      */
     public void deregister(String parentClientId, String namespaceId, String agentName,
         String version) {
-        String childClientId = childClientId(parentClientId, namespaceId, agentName, version);
-        if (!clientManager.contains(childClientId)) {
-            removeChildId(parentClientId, childClientId);
+        String childClientId = childPublisherManager.findChild(parentClientId, namespaceId,
+            agentName, version, CHILD_LAYOUT);
+        if (childClientId == null) {
             return;
         }
         clientOperationService.deregisterInstance(composeService(namespaceId, agentName),
             new Instance(), childClientId);
-        disconnectChild(parentClientId, childClientId);
-    }
-    
-    @Override
-    public void clientConnected(Connection connect) {
-    }
-    
-    @Override
-    public void clientDisConnected(Connection connect) {
-        if (!RemoteConstants.LABEL_MODULE_AI
-            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
-            return;
-        }
-        Set<String> children = childClientIds.remove(connect.getMetaInfo().getConnectionId());
-        if (children == null) {
-            return;
-        }
-        for (String childClientId : children) {
-            clientManager.clientDisconnected(childClientId);
-        }
-    }
-    
-    private String ensureChildClient(String parentClientId, String namespaceId, String agentName,
-        String version) {
-        if (!clientManager.contains(parentClientId)) {
-            throw new NacosRuntimeException(NacosException.CLIENT_DISCONNECT,
-                "AI client connection already disconnected: " + parentClientId);
-        }
-        String childClientId = childClientId(parentClientId, namespaceId, agentName, version);
-        if (!clientManager.contains(childClientId)) {
-            ClientAttributes attributes = new ClientAttributes();
-            attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE,
-                ClientConstants.DEFAULT_FACTORY);
-            clientManager.clientConnected(childClientId, attributes);
-        }
-        childClientIds.computeIfAbsent(parentClientId,
-            key -> ConcurrentHashMap.newKeySet()).add(childClientId);
-        if (!clientManager.contains(parentClientId)) {
-            disconnectChild(parentClientId, childClientId);
-            throw new NacosRuntimeException(NacosException.CLIENT_DISCONNECT,
-                "AI client connection already disconnected: " + parentClientId);
-        }
-        return childClientId;
-    }
-    
-    private void disconnectChild(String parentClientId, String childClientId) {
-        clientManager.clientDisconnected(childClientId);
-        removeChildId(parentClientId, childClientId);
-    }
-    
-    private void removeChildId(String parentClientId, String childClientId) {
-        Set<String> children = childClientIds.get(parentClientId);
-        if (children == null) {
-            return;
-        }
-        children.remove(childClientId);
-        if (children.isEmpty()) {
-            childClientIds.remove(parentClientId, children);
-        }
-    }
-    
-    private String childClientId(String parentClientId, String namespaceId, String agentName,
-        String version) {
-        String identity = parentClientId + CHILD_ID_SEPARATOR + namespaceId + CHILD_ID_SEPARATOR
-            + agentName + CHILD_ID_SEPARATOR + version;
-        return CHILD_CLIENT_ID_PREFIX
-            + UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
+        childPublisherManager.disconnectChild(parentClientId, childClientId);
     }
     
     private Service composeService(String namespaceId, String agentName) {
@@ -255,5 +208,21 @@ public class CanonicalA2aEndpointOperationService extends ClientConnectionEventL
     private NacosApiException invalidEndpoint(String message) {
         return new NacosApiException(NacosException.INVALID_PARAM,
             ErrorCode.PARAMETER_VALIDATE_ERROR, message);
+    }
+    
+    private static final class PreparedPublication {
+        
+        private final String version;
+        
+        private final Service service;
+        
+        private final ArrayList<Instance> instances;
+        
+        private PreparedPublication(String version, Service service,
+            ArrayList<Instance> instances) {
+            this.version = version;
+            this.service = service;
+            this.instances = instances;
+        }
     }
 }

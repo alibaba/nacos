@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityModeResolver;
 import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
-import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
+import com.alibaba.nacos.ai.service.a2a.LegacyA2aEndpointOperationService;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationEndpointRouter;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationState;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,13 +38,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -53,186 +50,149 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AgentEndpointRequestHandlerTest {
     
-    @Mock
-    private EphemeralClientOperationServiceImpl clientOperationService;
+    private static final String CLIENT_ID = "client-1";
+    
+    private static final String SOURCE_IP = "127.0.0.1";
     
     @Mock
-    private AgentIdCodecHolder agentIdCodecHolder;
+    private LegacyA2aEndpointOperationService legacyService;
     
     @Mock
     private A2aCompatibilityModeResolver compatibilityModeResolver;
     
     @Mock
-    private CanonicalA2aEndpointOperationService canonicalEndpointOperationService;
+    private CanonicalA2aEndpointOperationService canonicalService;
+    
+    @Mock
+    private A2aMigrationEndpointRouter migrationRouter;
     
     @Mock
     private RequestMeta meta;
     
-    private AgentEndpointRequestHandler requestHandler;
-    
-    private Instance capturedInstance;
+    private AgentEndpointRequestHandler handler;
     
     @BeforeEach
     void setUp() {
-        requestHandler =
-            new AgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder,
-                compatibilityModeResolver, canonicalEndpointOperationService);
-        capturedInstance = null;
-    }
-    
-    @AfterEach
-    void tearDown() {
+        handler = new AgentEndpointRequestHandler(legacyService, compatibilityModeResolver,
+            canonicalService, migrationRouter);
     }
     
     @Test
-    void handleWithInvalidAgentName() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+    void shouldRejectInvalidRequestBeforeRouting() throws NacosException {
+        assertError(handler.handle(new AgentEndpointRequest(), meta),
             "Required parameter `agentName` can't be empty or null");
-    }
-    
-    @Test
-    void handleWithNullEndpoint() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        request.setAgentName("test");
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+        
+        AgentEndpointRequest missingEndpoint = new AgentEndpointRequest();
+        missingEndpoint.setAgentName("demo");
+        assertError(handler.handle(missingEndpoint, meta),
             "Required parameter `endpoint` can't be null");
-    }
-    
-    @Test
-    void handleWithEmptyEndpointVersion() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        request.setAgentName("test");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("1.1.1.1");
-        endpoint.setPort(8080);
-        request.setEndpoint(endpoint);
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
+        
+        AgentEndpointRequest missingVersion = new AgentEndpointRequest();
+        missingVersion.setAgentName("demo");
+        missingVersion.setEndpoint(new AgentEndpoint());
+        assertError(handler.handle(missingVersion, meta),
             "Required parameter `endpoint.version` can't be empty or null");
+        verifyNoInteractions(migrationRouter, compatibilityModeResolver, legacyService,
+            canonicalService);
     }
     
     @Test
-    void handleWithInvalidType() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        request.setAgentName("test");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("1.1.1.1");
-        endpoint.setPort(8080);
-        endpoint.setVersion("1.0.0");
-        request.setEndpoint(endpoint);
-        request.setType("INVALID_TYPE");
+    void shouldKeepExplicitLegacyRegisterAndDeregister() throws NacosException {
+        prepareMeta();
         when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
-        when(agentIdCodecHolder.encode("test")).thenReturn("test");
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
-            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
-    }
-    
-    @Test
-    void handleForRegisterEndpoint() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        request.setAgentName("test");
-        request.setNamespaceId("public");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("1.1.1.1");
-        endpoint.setPort(8080);
-        endpoint.setVersion("1.0.0");
-        endpoint.setPath("/test");
-        endpoint.setTransport("JSONRPC");
-        endpoint.setSupportTls(false);
-        endpoint.setProtocol("HTTP");
-        endpoint.setQuery("param1=value1&param2=value2");
-        request.setEndpoint(endpoint);
-        request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
-        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
-        when(agentIdCodecHolder.encode("test")).thenReturn("test");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        // Mock the registerInstance method to capture the Instance argument
-        doAnswer(invocation -> {
-            capturedInstance = invocation.getArgument(1);
-            validateInstanceMetadata(capturedInstance);
-            return null;
-        }).when(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
-            eq("TEST_CONNECTION_ID"));
-        
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertEquals(AiRemoteConstants.REGISTER_ENDPOINT, response.getType());
-        verify(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
-            eq("TEST_CONNECTION_ID"));
-    }
-    
-    @Test
-    void handleForDeregisterEndpoint() throws NacosException {
-        AgentEndpointRequest request = new AgentEndpointRequest();
-        request.setAgentName("test");
-        request.setNamespaceId("public");
-        AgentEndpoint endpoint = new AgentEndpoint();
-        endpoint.setAddress("1.1.1.1");
-        endpoint.setPort(8080);
-        endpoint.setVersion("1.0.0");
-        endpoint.setPath("/test");
-        endpoint.setTransport("JSONRPC");
-        endpoint.setSupportTls(false);
-        endpoint.setProtocol("HTTPS");
-        endpoint.setQuery("token=abc123");
-        request.setEndpoint(endpoint);
-        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
-        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
-        when(agentIdCodecHolder.encode("test")).thenReturn("test");
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
-        // Mock the deregisterInstance method to capture the Instance argument
-        doAnswer(invocation -> {
-            capturedInstance = invocation.getArgument(1);
-            validateInstanceMetadata(capturedInstance);
-            return null;
-        }).when(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
-            eq("TEST_CONNECTION_ID"));
-        
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
-        assertEquals(AiRemoteConstants.DE_REGISTER_ENDPOINT, response.getType());
-        verify(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
-            eq("TEST_CONNECTION_ID"));
-    }
-    
-    @Test
-    void handleCanonicalRegisterAndDeregister() throws NacosException {
         AgentEndpointRequest request = request(AiRemoteConstants.REGISTER_ENDPOINT);
-        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
-        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
         
-        AgentEndpointResponse registerResponse = requestHandler.handle(request, meta);
+        AgentEndpointResponse registered = handler.handle(request, meta);
         
-        assertEquals(ResponseCode.SUCCESS.getCode(), registerResponse.getResultCode());
-        verify(canonicalEndpointOperationService).register("TEST_CONNECTION_ID", "public", "test",
-            Collections.singletonList(request.getEndpoint()));
-        verifyNoInteractions(clientOperationService, agentIdCodecHolder);
+        assertEquals(ResponseCode.SUCCESS.getCode(), registered.getResultCode());
+        verify(legacyService).register(CLIENT_ID, "public", "demo", request.getEndpoint(),
+            SOURCE_IP);
         
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
-        AgentEndpointResponse deregisterResponse = requestHandler.handle(request, meta);
+        AgentEndpointResponse deregistered = handler.handle(request, meta);
         
-        assertEquals(ResponseCode.SUCCESS.getCode(), deregisterResponse.getResultCode());
-        verify(canonicalEndpointOperationService).deregister("TEST_CONNECTION_ID", "public",
-            "test", "1.0.0");
+        assertEquals(ResponseCode.SUCCESS.getCode(), deregistered.getResultCode());
+        verify(legacyService).deregister(CLIENT_ID, "public", "demo", request.getEndpoint(),
+            SOURCE_IP);
+        verifyNoInteractions(canonicalService);
     }
     
     @Test
-    void handleCanonicalInvalidType() throws NacosException {
-        AgentEndpointRequest request = request("INVALID_TYPE");
+    void shouldKeepExplicitCanonicalRegisterAndDeregister() throws NacosException {
+        prepareMeta();
         when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
+        AgentEndpointRequest request = request(AiRemoteConstants.REGISTER_ENDPOINT);
         
-        AgentEndpointResponse response = requestHandler.handle(request, meta);
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(canonicalService).register(CLIENT_ID, "public", "demo",
+            Collections.singletonList(request.getEndpoint()));
         
-        assertErrorResponse(response, NacosException.INVALID_PARAM,
-            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(canonicalService).deregister(CLIENT_ID, "public", "demo", "1.0.0");
+        verifyNoInteractions(legacyService);
+    }
+    
+    @Test
+    void shouldRouteMigrationRegisterAndDeregisterBeforeStaticMode() throws NacosException {
+        prepareMeta();
+        when(migrationRouter.resolveState()).thenReturn(A2aMigrationState.SYNCING);
+        AgentEndpointRequest request = request(AiRemoteConstants.REGISTER_ENDPOINT);
+        
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(migrationRouter).register(CLIENT_ID, "public", "demo", request.getEndpoint(),
+            SOURCE_IP, A2aMigrationState.SYNCING);
+        
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        assertEquals(ResponseCode.SUCCESS.getCode(), handler.handle(request, meta).getResultCode());
+        verify(migrationRouter).deregister(CLIENT_ID, "public", "demo", request.getEndpoint(),
+            SOURCE_IP, A2aMigrationState.SYNCING);
+        verifyNoInteractions(compatibilityModeResolver, legacyService, canonicalService);
+    }
+    
+    @Test
+    void shouldMapValidationFailureAndPropagateRuntimeFailure() throws NacosException {
+        prepareMeta();
+        when(migrationRouter.resolveState()).thenReturn(A2aMigrationState.QUIESCING);
+        AgentEndpointRequest request = request(AiRemoteConstants.REGISTER_ENDPOINT);
+        doThrow(new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "invalid endpoint"))
+            .when(migrationRouter).register(CLIENT_ID, "public", "demo", request.getEndpoint(),
+                SOURCE_IP, A2aMigrationState.QUIESCING);
+        
+        assertError(handler.handle(request, meta), "invalid endpoint");
+        
+        doThrow(new NacosException(NacosException.SERVER_ERROR, "server failed"))
+            .when(migrationRouter).register(CLIENT_ID, "public", "demo", request.getEndpoint(),
+                SOURCE_IP, A2aMigrationState.QUIESCING);
+        assertThrows(NacosException.class, () -> handler.handle(request, meta));
+    }
+    
+    @Test
+    void shouldRejectInvalidTypeOnStaticAndMigrationPaths() throws NacosException {
+        AgentEndpointRequest request = request("invalid");
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.LEGACY);
+        assertError(handler.handle(request, meta),
+            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was invalid");
+        
+        when(compatibilityModeResolver.resolve()).thenReturn(A2aCompatibilityMode.CANONICAL);
+        assertError(handler.handle(request, meta),
+            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was invalid");
+        
+        when(migrationRouter.resolveState()).thenReturn(A2aMigrationState.SYNCING);
+        assertError(handler.handle(request, meta),
+            "parameter `type` should be registerEndpoint or deregisterEndpoint, but was invalid");
+    }
+    
+    private void prepareMeta() {
+        when(meta.getConnectionId()).thenReturn(CLIENT_ID);
+        lenient().when(meta.getClientIp()).thenReturn(SOURCE_IP);
     }
     
     private AgentEndpointRequest request(String type) {
         AgentEndpointRequest result = new AgentEndpointRequest();
         result.setNamespaceId("public");
-        result.setAgentName("test");
+        result.setAgentName("demo");
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
@@ -242,18 +202,9 @@ class AgentEndpointRequestHandlerTest {
         return result;
     }
     
-    private void assertErrorResponse(AgentEndpointResponse response, int code, String message) {
+    private void assertError(AgentEndpointResponse response, String message) {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        assertEquals(code, response.getErrorCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         assertEquals(message, response.getMessage());
-    }
-    
-    private void validateInstanceMetadata(Instance instance) {
-        Map<String, String> metadata = instance.getMetadata();
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_TRANSPORT_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_SUPPORT_TLS_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
-        assertTrue(metadata.containsKey(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
     }
 }

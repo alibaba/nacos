@@ -438,10 +438,19 @@ different content in an already published Version.
 Runtime A2A publication and deregistration projection are defined by the
 [Agent Storage Spec](agent-storage-spec.md).
 
-Historical Config rows, historical Naming layouts, mixed-version cluster
-dual-read or dual-write, source cutover, rollback, and malformed historical
-identities belong to a separate rolling-upgrade and data-migration contract.
-They are not relaxed by this target model.
+Historical Config rows, historical Naming layouts, mixed-member operation,
+source cutover, rollback, and malformed historical identities follow the
+[Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md). During
+`AUTO` synchronization, a completely reconciled Agent may be visible through
+canonical reads, but `legacy-a2a-migration-v1` facts remain read-only to normal
+Agent mutation paths until terminal cutover. A conflicting independently
+created canonical Agent is never overwritten. These migration restrictions do
+not relax this target model's identity, lifecycle, validation, storage, Search,
+or visibility rules.
+
+The temporary migration implementation is targeted for removal in Nacos 4.0.
+Already canonical Agent facts and the pure AgentCard adapter remain valid after
+that removal.
 
 Agent and AgentSpec resources may reference each other through a general
 resource relation, but neither owns the other's lifecycle. This version does

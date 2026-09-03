@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationDefinitionWriteAfterHook;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationLegacyMutationGuard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -33,7 +35,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class A2aCompatibilityOperationServiceTest {
@@ -47,12 +51,18 @@ class A2aCompatibilityOperationServiceTest {
     @Mock
     private LegacyA2aOperationService legacyService;
     
+    @Mock
+    private A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook;
+    
+    @Mock
+    private A2aMigrationLegacyMutationGuard migrationMutationGuard;
+    
     private A2aCompatibilityOperationService service;
     
     @BeforeEach
     void setUp() {
         service = new A2aCompatibilityOperationService(modeResolver, canonicalService,
-            legacyService);
+            legacyService, migrationWriteAfterHook, migrationMutationGuard);
     }
     
     @Test
@@ -69,6 +79,7 @@ class A2aCompatibilityOperationServiceTest {
     
     private void exerciseAndVerify(A2aOperationService selected) throws NacosException {
         AgentCard card = new AgentCard();
+        card.setName("agent");
         AgentCardDetailInfo detail = new AgentCardDetailInfo();
         Page<AgentCardVersionInfo> page = new Page<>();
         List<AgentVersionDetail> versions = Collections.singletonList(new AgentVersionDetail());
@@ -91,5 +102,11 @@ class A2aCompatibilityOperationServiceTest {
         verify(selected).releaseAgent(card, "ns", "SERVICE", true);
         verify(selected).updateAgentCard(card, "ns", "URL", false);
         verify(selected).deleteAgent("ns", "agent", "1.0.0");
+        verify(migrationMutationGuard, times(4)).checkMutable();
+        if (selected == legacyService) {
+            verify(migrationWriteAfterHook, times(4)).afterSuccessfulMutation("ns", "agent");
+        } else {
+            verifyNoInteractions(migrationWriteAfterHook);
+        }
     }
 }

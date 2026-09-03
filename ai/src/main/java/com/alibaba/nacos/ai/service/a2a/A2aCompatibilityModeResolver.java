@@ -16,25 +16,21 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationState;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationStateService;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
  * Resolves the active historical A2A definition implementation.
  *
- * <p>AUTO is deliberately conservative and one-way. It reserves a future cutover hook but does
- * not provide data migration, dual reads, dual writes, or rolling-upgrade guarantees.</p>
+ * <p>AUTO remains on historical authority until the migration control plane observes the
+ * permanent canonical marker.</p>
  *
  * @author Nacos
  */
@@ -43,23 +39,19 @@ public class A2aCompatibilityModeResolver {
     
     public static final String MODE_PROPERTY = "nacos.ai.a2a.compatibility.mode";
     
-    static final String MIN_CANONICAL_VERSION = "3.3.0";
-    
-    private final ServerMemberManager serverMemberManager;
+    private final A2aMigrationStateService migrationStateService;
     
     private final Supplier<String> configuredModeSupplier;
     
-    private final AtomicBoolean autoCanonical = new AtomicBoolean(false);
-    
     @Autowired
-    public A2aCompatibilityModeResolver(ServerMemberManager serverMemberManager) {
-        this(serverMemberManager,
+    public A2aCompatibilityModeResolver(A2aMigrationStateService migrationStateService) {
+        this(migrationStateService,
             () -> EnvUtil.getProperty(MODE_PROPERTY, A2aCompatibilityMode.CANONICAL.name()));
     }
     
-    A2aCompatibilityModeResolver(ServerMemberManager serverMemberManager,
+    A2aCompatibilityModeResolver(A2aMigrationStateService migrationStateService,
         Supplier<String> configuredModeSupplier) {
-        this.serverMemberManager = serverMemberManager;
+        this.migrationStateService = migrationStateService;
         this.configuredModeSupplier = configuredModeSupplier;
     }
     
@@ -70,14 +62,14 @@ public class A2aCompatibilityModeResolver {
      */
     public A2aCompatibilityMode resolve() {
         A2aCompatibilityMode configured = parse(configuredModeSupplier.get());
-        if (A2aCompatibilityMode.AUTO != configured) {
-            return configured;
+        // TODO(remove in 4.0): Temporary migration path for Nacos 3.0-3.2 A2A data.
+        // Keep canonical behavior independent from this branch.
+        A2aMigrationState migrationState = migrationStateService.resolve(configured);
+        if (A2aMigrationState.CANONICAL == migrationState) {
+            return A2aCompatibilityMode.CANONICAL;
         }
-        if (!autoCanonical.get() && supportsCanonical(serverMemberManager.allMembers())) {
-            autoCanonical.compareAndSet(false, true);
-        }
-        return autoCanonical.get() ? A2aCompatibilityMode.CANONICAL
-            : A2aCompatibilityMode.LEGACY;
+        return A2aCompatibilityMode.AUTO == configured ? A2aCompatibilityMode.LEGACY
+            : configured;
     }
     
     private A2aCompatibilityMode parse(String configured) {
@@ -86,27 +78,4 @@ public class A2aCompatibilityModeResolver {
         return A2aCompatibilityMode.valueOf(value);
     }
     
-    private boolean supportsCanonical(Collection<Member> members) {
-        if (members == null || members.isEmpty()) {
-            return false;
-        }
-        for (Member member : members) {
-            Object value = member.getExtendVal(MemberMetaDataConstants.VERSION);
-            if (!(value instanceof String) || !supportsCanonical((String) value)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    private boolean supportsCanonical(String version) {
-        if (StringUtils.isBlank(version)) {
-            return false;
-        }
-        try {
-            return VersionUtils.compareVersion(version, MIN_CANONICAL_VERSION) >= 0;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
 }

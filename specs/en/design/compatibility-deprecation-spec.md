@@ -219,8 +219,14 @@ Compatibility windows are intentionally different by audience:
 
 No new capability may be added only to these facades. New development targets
 the Agent Management and RAD contracts. Historical data and mixed-server
-rolling upgrade are a separate migration plan and do not extend the API window
-by themselves.
+rolling upgrade follow the
+[Historical A2A Upgrade Migration Spec](../ai/a2a-upgrade-migration-spec.md)
+and do not extend the API window by themselves. Its reconciliation state,
+control objects, migration source guards, transition Runtime dual
+materialization, optional historical Naming shadow, and migration-only
+configuration support Nacos 3.0-3.2 upgrades and are pending removal in Nacos
+4.0. Canonical Agent/RAD facts and any public A2A facade still inside its own
+compatibility window remain after that temporary implementation is removed.
 
 ## 12. Legacy MCP Identifiers
 

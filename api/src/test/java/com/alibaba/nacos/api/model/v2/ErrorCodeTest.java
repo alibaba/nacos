@@ -46,6 +46,8 @@ class ErrorCodeTest {
         assertEquals(ErrorCode.SUCCESS, ErrorCode.getErrorCode("SUCCESS"));
         assertEquals(ErrorCode.PARAMETER_MISSING, ErrorCode.getErrorCode("PARAMETER_MISSING"));
         assertEquals(ErrorCode.SERVER_ERROR, ErrorCode.getErrorCode("SERVER_ERROR"));
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+            ErrorCode.getErrorCode("AGENT_MIGRATION_IN_PROGRESS"));
         
         // 测试不存在的错误码
         assertNull(ErrorCode.getErrorCode("NON_EXISTENT_ERROR"));

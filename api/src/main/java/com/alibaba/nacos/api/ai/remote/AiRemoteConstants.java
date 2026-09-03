@@ -23,6 +23,11 @@ package com.alibaba.nacos.api.ai.remote;
  */
 public class AiRemoteConstants {
     
+    /**
+     * Process-stable AI SDK publisher identity carried by the gRPC connection.
+     */
+    public static final String LABEL_CLIENT_UUID = "aiClientUuid";
+    
     public static final String REGISTER_ENDPOINT = "registerEndpoint";
     
     public static final String BATCH_REGISTER_ENDPOINT = "batchRegisterEndpoint";

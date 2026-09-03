@@ -203,3 +203,25 @@ Agent HTTP Batch-long-poll Watch Binding 发生变化时，OpenAPI IT 至少覆�
 
 迁移测试只把公开行为和重启后的耐久结果作为断言契约。测试准备可以写入文档化的历史 Fixture，
 但不能用直接数据库 row 断言作为成功标准。所有异步条件都使用有界轮询，不使用固定 sleep。
+
+## 12. 历史 A2A 升级迁移场景
+
+历史 A2A 升级状态机、对账或 Runtime 双物化发生变化时，OpenAPI IT 必须按
+[历史 A2A 升级迁移规范](../ai/a2a-upgrade-migration-spec.md)冻结并记录以下单机场景：
+
+| ID | 公开场景 |
+| --- | --- |
+| `M-ST-01` | 多 Namespace、Agent、Version 和 URL/SERVICE 定义完整迁移，并保持身份、Latest、Descriptor、Declared Endpoint 和 Enable。 |
+| `M-ST-02` | `SYNCING` 期间历史 Create、Update、Set-Latest、Delete 最终收敛，不改变已经返回的历史操作结果。 |
+| `M-ST-03` | 非法 JSON、缺失 Version、非法 Name/Version 和独立标准 Agent 冲突会阻止切流，但历史读取保持可用。 |
+| `M-ST-04` | 在 Storage、Version Row 和 Resource Row 边界重启后幂等恢复，永不暴露部分 Agent。 |
+| `M-ST-05` | 切流前后，历史 A2A、Admin、Console、ARD/Search、RAD Discover 和 Watch 结果一致。 |
+| `M-ST-06` | 迁移期间，历史 gRPC 单条/批量 Endpoint Publication 同时在历史与标准 Runtime Layout 可见。 |
+| `M-ST-07` | Shadow 关闭时，切流后标准 RAD 保持可用，旧 Gateway 不再承诺可见。 |
+| `M-ST-08` | Shadow 开启时，切流后标准精确 Version RAD 与旧 Gateway 暴露等价的规范化 Runtime Snapshot。 |
+| `M-ST-09` | Mirror 故障/重试、Client Disconnect/Reconnect/Redo 和 Server Restart 最终收敛，不重复计算逻辑容量，也不丢失保留 Publication。 |
+| `M-ST-10` | Quiescing 对定义 Mutation 返回可重试迁移错误，同时 Query、Discover、Watch 和 Endpoint 操作继续。 |
+
+`test/openapi-test/A2A_MIGRATION_API_TEST_SCENARIOS.md` 分配可执行 HTTP 场景，并记录必须使用
+Java SDK 或定向集群 Fixture 的场景。测试准备可以写入文档化的历史 Config，但成功契约只使用公开
+API、重启后的耐久行为和有界轮询，不直接检查 Row，也不以固定 Sleep 作为成功条件。

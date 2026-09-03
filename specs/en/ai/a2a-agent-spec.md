@@ -18,7 +18,7 @@
 
 | Item | Value |
 | --- | --- |
-| Status | Experimental target compatibility contract |
+| Status | Experimental binding and upgrade compatibility contract |
 | Activation | `nacos.ai.a2a.compatibility.mode`, default `CANONICAL` |
 
 This document defines A2A as a protocol binding of the canonical Nacos Agent
@@ -34,22 +34,33 @@ The legacy A2A surfaces select one complete definition implementation through
 
 | Mode | Compatibility implementation |
 | --- | --- |
-| `CANONICAL` | Canonical Agent metadata, Version storage, and RAD Runtime Endpoints. This is the default because this release does not support a rolling upgrade for this feature. |
+| `CANONICAL` | Canonical Agent metadata, Version storage, and RAD Runtime Endpoints. This remains the default static mode and does not scan historical data. |
 | `LEGACY` | Historical AgentCard Config groups and exact-Version Naming Endpoints. The legacy implementation remains unchanged. |
-| `AUTO` | Start on `LEGACY`; switch once, and only once, to `CANONICAL` after every known cluster member reports version 3.3.0 or later. Missing or invalid member versions keep the legacy branch active. |
+| `AUTO` | Run the one-time historical upgrade state machine. Historical Config definitions remain authoritative through `SYNCING` and `QUIESCING`; only a permanent, zero-difference `CANONICAL` marker switches the complete definition facade. |
 
 Mode tokens are case-insensitive. Each request is routed wholly to one branch;
-there is no per-operation mixture, fallback, dual read, or dual write. The
-`AUTO` entry only reserves a conservative future cutover hook. It is not a
-rolling-upgrade guarantee, and a one-way switch does not migrate historical
-Config data. Operators that select `LEGACY` or later change from `LEGACY` to
-`CANONICAL` are responsible for the visibility consequences until a separate
-migration contract is implemented.
+there is no per-operation mixture, fallback, merged definition read, or
+definition dual write. `AUTO` is specified by the
+[Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md). It
+reconciles historical definitions in the background, uses an explicit member
+ability and a short definition-write fence, and never switches by member
+version alone. Runtime dual materialization during that migration is a
+connection-state compatibility projection, not a second definition authority.
+
+A persisted terminal migration marker has priority over local mode
+configuration. Once a capable member observes it, that process permanently
+routes A2A definition operations to `CANONICAL`; it must not resume legacy-only
+writes if the marker is deleted or configuration changes. A non-terminal
+marker does not override an explicitly selected static mode.
 
 Sections 2 through 7 are normative for requests routed to `CANONICAL`. Requests
 routed to `LEGACY` retain the complete historical Config definition and
-Version-specific Naming Endpoint behavior. After `AUTO` switches, it uses the
-same complete branch as `CANONICAL`.
+Version-specific Naming Endpoint behavior. During `AUTO` synchronization,
+definition reads and writes retain that complete historical behavior; after
+the terminal marker, the complete facade uses the same branch as `CANONICAL`.
+`QUIESCING` is the sole exception: definition mutations are temporarily
+rejected with the retryable `AGENT_MIGRATION_IN_PROGRESS` detail error while
+reads and Runtime operations continue.
 
 A2A is not a top-level AI resource type. The canonical identity is:
 
@@ -150,12 +161,19 @@ and weight pass through the canonical Runtime mapping and validation.
 
 The `LEGACY` branch preserves the existing handler and
 `<legacyEncodedAgentName>::<exactVersion>` Naming Service implementation
-unchanged. This keeps the old path available for a future compatibility
-switch. In Beta, `CANONICAL` writes only the canonical Service and does not
-dual-write the legacy Service. A caller discovering the historical serviceName
-directly through a Naming Gateway will therefore not see these new
-publications. A dual-write policy, switch, rollback, and old-service cleanup are
-post-Beta design work.
+unchanged. The explicit `CANONICAL` branch writes only the canonical Service.
+
+`AUTO` adds a temporary migration router above those two unchanged physical
+implementations. In `SYNCING` and `QUIESCING`, it writes the historical Service
+as primary and the canonical Service as a required mirror. After terminal
+cutover, canonical RAD is primary and the frozen migration policy may retain an
+optional historical exact-Version Naming shadow. One logical publication is
+validated and counted once; both physical child publishers remain bound to the
+original connection and are cleaned idempotently. Mirror or shadow failure
+does not roll back a successful primary write, but enters bounded
+connection-local retry. The exact ordering, cutover gate, supported shadow
+scope, and rollback boundary follow the
+[Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md).
 
 Endpoint publication may precede Agent or Version creation. It never creates an
 Agent definition implicitly.
@@ -218,10 +236,13 @@ and response wrappers remain stable during their windows. New Agent/RAD APIs
 must not expose `registrationType`, `setAsLatest`, or AgentCard-specific list
 wrappers.
 
-Historical data migration, mixed-version dual read/write, rollback, and cleanup
-remain rolling-upgrade concerns and are not defined by this API compatibility
-spec. The mode switch above selects an implementation; it does not provide any
-of those capabilities.
+Historical 3.0-3.2 data reconciliation, mixed-member operation, safe cutover,
+optional historical Naming shadow, rollback boundary, and deferred cleanup are
+defined by the
+[Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md).
+Migration-only implementation code and its configuration are targeted for
+removal in Nacos 4.0. Canonical Agent/RAD facts and a still-supported public A2A
+facade do not depend on that temporary code after completion.
 
 ## 7. Evolution
 

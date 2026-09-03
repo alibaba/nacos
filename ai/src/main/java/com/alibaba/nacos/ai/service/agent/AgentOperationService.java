@@ -24,6 +24,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationAgentMutationGuard;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
@@ -104,6 +105,10 @@ public class AgentOperationService {
     
     private AiResourceChangeNotifier resourceChangeNotifier = AiResourceChangeNotifier.NOOP;
     
+    // TODO(remove in 4.0): Temporary migration path for Nacos 3.0-3.2 A2A data.
+    // Keep canonical behavior independent from this branch.
+    private A2aMigrationAgentMutationGuard migrationMutationGuard;
+    
     public AgentOperationService(AgentPersistenceService persistenceService,
         AiResourceManager resourceManager, PublishPipelineExecutor publishPipelineExecutor) {
         this.persistenceService = persistenceService;
@@ -124,6 +129,12 @@ public class AgentOperationService {
         if (resourceChangeNotifier != null) {
             this.resourceChangeNotifier = resourceChangeNotifier;
         }
+    }
+    
+    @Autowired(required = false)
+    public void setA2aMigrationAgentMutationGuard(
+        A2aMigrationAgentMutationGuard migrationMutationGuard) {
+        this.migrationMutationGuard = migrationMutationGuard;
     }
     
     /**
@@ -280,6 +291,7 @@ public class AgentOperationService {
                 draft);
         } else {
             VisibilityHelper.checkWritableResource(meta);
+            checkMigrationMutable(meta);
             if (hasInitialAgentMetadata(request)) {
                 requireInitialDraftContent(request);
                 if (!request.getVersion().equals(
@@ -321,6 +333,7 @@ public class AgentOperationService {
             AiResource current = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
             if (current != null) {
                 VisibilityHelper.checkWritableResource(current);
+                checkMigrationMutable(current);
                 throw conflict("Agent already exists: " + agentName);
             }
             AgentVersionDetail result = persistenceService.createInitialOnlineVersion(
@@ -377,6 +390,7 @@ public class AgentOperationService {
                 }
             }
             VisibilityHelper.checkWritableResource(current);
+            checkMigrationMutable(current);
             AgentVersionDetail result = directOnlineExistingAgent(namespaceId, request,
                 setAsLatest, true);
             scheduleAgentIndexMaintenance(namespaceId, agentName,
@@ -439,6 +453,7 @@ public class AgentOperationService {
                 return false;
             }
             VisibilityHelper.checkWritableResource(current);
+            checkMigrationMutable(current);
             AiResourceVersion versionRow =
                 persistenceService.findVersionRow(namespaceId, agentName, version);
             if (versionRow == null) {
@@ -473,6 +488,7 @@ public class AgentOperationService {
                 return false;
             }
             VisibilityHelper.checkWritableResource(current);
+            checkMigrationMutable(current);
             persistenceService.deleteAgent(namespaceId, agentName);
             scheduleAgentIndexMaintenance(namespaceId, agentName,
                 AiResourceChangeOperation.DELETE, true);
@@ -952,7 +968,14 @@ public class AgentOperationService {
         throws NacosException {
         AiResource result = requireMeta(namespaceId, agentName);
         VisibilityHelper.checkWritableResource(result);
+        checkMigrationMutable(result);
         return result;
+    }
+    
+    private void checkMigrationMutable(AiResource resource) throws NacosException {
+        if (migrationMutationGuard != null) {
+            migrationMutationGuard.checkMutable(resource);
+        }
     }
     
     private AiResourceVersion requireVersionState(String namespaceId, String agentName,

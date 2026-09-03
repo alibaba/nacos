@@ -168,8 +168,10 @@ introducing another page class.
 - Ordinary objects reject unknown properties.
 - Only `nativeDescriptor` and explicitly declared `metadata` maps are open
   content.
-- An optional request array contains at least one item when present. An empty
-  response collection is explicitly returned as `[]`.
+- An optional request array contains at least one item when present. A required
+  empty response collection is explicitly returned as `[]`; an optional
+  response collection whose schema declares `minItems: 1` is omitted when
+  empty.
 - An empty filter object `{}` means no filtering.
 - An empty metadata object `{}` is canonicalized to field omission. An empty
   `metadataSelector` is equivalent to no metadata filtering.

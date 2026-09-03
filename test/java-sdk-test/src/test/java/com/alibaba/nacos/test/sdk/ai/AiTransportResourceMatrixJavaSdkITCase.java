@@ -56,6 +56,10 @@ import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
@@ -67,6 +71,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -75,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Real standalone-server transport matrix for the five AI resource families exposed by
- * {@link AiService}.
+ * {@link AiService} and an ordinary Naming lifecycle isolation control.
  *
  * <p>The Maintainer SDK is used only to prepare and remove Prompt, Skill, and AgentSpec
  * fixtures. Agent, MCP, and every asserted read/subscription operation use the public Java SDK.
@@ -114,6 +120,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         verifyPrompt(service, maintainer, mode);
         verifySkill(service, maintainer, mode);
         verifyAgentSpec(service, maintainer, mode);
+        verifyOrdinaryNaming(mode);
     }
 
     private void verifyAgent(AiService service, AiMaintainerService maintainer,
@@ -252,6 +259,41 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             assertNotImplemented(() -> service.loadAgentSpec(specName));
             assertNotImplemented(() -> service.subscribeAgentSpec(specName, listener));
         }
+    }
+
+    private void verifyOrdinaryNaming(AgentTransportMode mode) throws Exception {
+        NamingService namingService = createNamingService();
+        String serviceName = randomServiceName("transport-" + mode.getValue() + "-naming");
+        String groupName = "AI_TRANSPORT_MATRIX";
+        int port = randomPort();
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(port);
+        instance.setHealthy(true);
+        instance.setEnabled(true);
+        instance.addMetadata("source", "ai-transport-matrix");
+        CountDownLatch pushed = new CountDownLatch(1);
+        EventListener listener = event -> {
+            if (event instanceof NamingEvent && ((NamingEvent) event).getInstances().stream()
+                    .anyMatch(each -> port == each.getPort())) {
+                pushed.countDown();
+            }
+        };
+        addCleanup(() -> namingService.unsubscribe(serviceName, groupName, listener));
+        addCleanup(() -> namingService.deregisterInstance(serviceName, groupName, instance));
+
+        namingService.subscribe(serviceName, groupName, listener);
+        namingService.registerInstance(serviceName, groupName, instance);
+        assertTrue(pushed.await(10, TimeUnit.SECONDS),
+                mode + " ordinary Naming listener should receive the instance");
+        waitUntil(mode + " ordinary Naming query should return the instance",
+                () -> namingService.getAllInstances(serviceName, groupName).stream()
+                        .anyMatch(each -> port == each.getPort()
+                                && "ai-transport-matrix".equals(
+                                each.getMetadata().get("source"))));
+        namingService.deregisterInstance(serviceName, groupName, instance);
+        waitUntil(mode + " ordinary Naming instance should be removed",
+                () -> namingService.getAllInstances(serviceName, groupName).isEmpty());
     }
 
     private AiService createAiService(AgentTransportMode mode) throws Exception {

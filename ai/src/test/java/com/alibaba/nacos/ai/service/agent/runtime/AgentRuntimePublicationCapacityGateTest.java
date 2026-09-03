@@ -184,6 +184,107 @@ class AgentRuntimePublicationCapacityGateTest {
     }
     
     @Test
+    void testLogicalPublicationIsCountedOnceWithPhysicalPublications() throws NacosException {
+        when(clientManager.getClient("client-1")).thenReturn(client);
+        Service ordinaryRad = agent("ordinary-rad");
+        when(client.getAllPublishedService()).thenReturn(Collections.singletonList(ordinaryRad));
+        when(client.getInstancePublishInfo(ordinaryRad)).thenReturn(singlePublication());
+        AgentRuntimePublicationCapacityGate gate = gate(3);
+        AtomicBoolean invoked = new AtomicBoolean();
+        
+        gate.registerLogical("client-1", "legacy-a2a-v1", 2, () -> invoked.set(true));
+        
+        assertTrue(invoked.get());
+        assertEquals(2, gate.countLogicalPublicationsForTest("client-1"));
+        NacosApiException physicalRejected = assertThrows(NacosApiException.class,
+            () -> gate.register("client-1", agent("new"), 1, () -> invoked.set(true)));
+        assertEquals(NacosException.OVER_THRESHOLD, physicalRejected.getErrCode());
+        
+        invoked.set(false);
+        gate.registerLogical("client-1", "legacy-a2a-v1", 2, () -> invoked.set(true));
+        assertTrue(invoked.get());
+        assertEquals(2, gate.countLogicalPublicationsForTest("client-1"));
+    }
+    
+    @Test
+    void testLogicalWholeBatchMayCrossWatermarkButFurtherGrowthIsRejected()
+        throws NacosException {
+        when(clientManager.getClient("client-1")).thenReturn(client);
+        when(client.getAllPublishedService()).thenReturn(Collections.emptyList());
+        AgentRuntimePublicationCapacityGate gate = gate(2);
+        
+        gate.registerLogical("client-1", "v1", 3, () -> {
+        });
+        assertEquals(3, gate.countLogicalPublicationsForTest("client-1"));
+        
+        gate.registerLogical("client-1", "v1", 2, () -> {
+        });
+        assertEquals(2, gate.countLogicalPublicationsForTest("client-1"));
+        assertThrows(NacosApiException.class,
+            () -> gate.registerLogical("client-1", "v2", 1, () -> {
+            }));
+        assertThrows(NacosApiException.class,
+            () -> gate.registerLogical("client-1", "v1", 3, () -> {
+            }));
+    }
+    
+    @Test
+    void testLogicalFailureDeregisterAndDisconnectCleanup() throws NacosException {
+        when(clientManager.getClient("client-1")).thenReturn(client);
+        when(client.getAllPublishedService()).thenReturn(Collections.emptyList());
+        AgentRuntimePublicationCapacityGate gate = gate(2);
+        
+        assertThrows(NacosException.class,
+            () -> gate.registerLogical("client-1", "v1", 1,
+                () -> {
+                    throw new NacosException(NacosException.SERVER_ERROR, "failed");
+                }));
+        assertEquals(0, gate.countLogicalPublicationsForTest("client-1"));
+        
+        gate.registerLogical("client-1", "v1", 1, () -> {
+        });
+        assertThrows(NacosException.class,
+            () -> gate.deregisterLogical("client-1", "v1",
+                () -> {
+                    throw new NacosException(NacosException.SERVER_ERROR, "failed");
+                }));
+        assertEquals(1, gate.countLogicalPublicationsForTest("client-1"));
+        
+        gate.deregisterLogical("client-1", "v1", () -> {
+        });
+        assertEquals(0, gate.countLogicalPublicationsForTest("client-1"));
+        gate.registerLogical("client-1", "v2", 1, () -> {
+        });
+        gate.clearLogicalPublications("client-1");
+        assertEquals(0, gate.countLogicalPublicationsForTest("client-1"));
+    }
+    
+    @Test
+    void testMissingClientLogicalOperationAndArgumentValidation() throws NacosException {
+        AgentRuntimePublicationCapacityGate gate = gate(1);
+        AtomicBoolean invoked = new AtomicBoolean();
+        
+        gate.registerLogical("missing", "v1", 1, () -> invoked.set(true));
+        assertTrue(invoked.get());
+        assertEquals(0, gate.countLogicalPublicationsForTest("missing"));
+        invoked.set(false);
+        gate.deregisterLogical("missing", "v1", () -> invoked.set(true));
+        assertTrue(invoked.get());
+        
+        assertThrows(IllegalArgumentException.class,
+            () -> gate.registerLogical("missing", "", 1, () -> {
+            }));
+        assertThrows(IllegalArgumentException.class,
+            () -> gate.registerLogical("missing", "v1", -1, () -> {
+            }));
+        assertThrows(IllegalArgumentException.class,
+            () -> gate.registerLogical("missing", "v1", 1, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> gate.deregisterLogical("missing", null, () -> {
+            }));
+    }
+    
+    @Test
     void testRejectInvalidConfiguredLimit() {
         assertThrows(IllegalArgumentException.class,
             () -> new AgentRuntimePublicationCapacityGate(clientManager, 0));

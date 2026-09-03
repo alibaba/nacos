@@ -100,13 +100,14 @@ class A2aServerOperationServiceTest {
     @BeforeEach
     void setUp() {
         Executor directExecutor = Runnable::run;
-        service =
-            new A2aServerOperationService(agentOperationService, serviceStorage, directExecutor);
+        service = new A2aServerOperationService(agentOperationService, serviceStorage,
+            new A2aCanonicalDefinitionConverter(), directExecutor);
     }
     
     @Test
     void testPublicConstructor() {
-        assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage));
+        assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage,
+            new A2aCanonicalDefinitionConverter()));
     }
     
     @Test

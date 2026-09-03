@@ -616,6 +616,11 @@ A2A Adapter 是本存储契约的首个使用方：
 提交该精确 Version 的完整批次，因此不同 Version 不会覆盖，也不需要服务端 read-merge-write；
 原 connection 断开时释放全部子 publisher。
 
-`LEGACY` 分支仍完整使用历史按 Version 划分的 Naming layout。Beta 的 `CANONICAL` 分支不向历史
-Service 双写。直接依赖旧 Naming serviceName 的 Gateway 调用方兼容、混合集群双读或双写、回滚、
-旧 Service 清理和异常历史身份处理属于独立的 Beta 后滚动升级与迁移契约。
+`LEGACY` 分支仍完整使用历史按 Version 划分的 Naming Layout；显式 `CANONICAL` 分支不向历史
+Service 双写。`AUTO` 在切流前临时执行历史主写/标准镜像，切流后执行标准主写/可选历史 Shadow。
+它只校验并计数一个逻辑 Publication，使用独立确定性 Child Publisher，绝不读取任一 Layout 合并写入。
+Runtime 等价、重试、Connection 清理、切流、回滚和延期旧 Service 清理遵循
+[历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)。
+
+可选 Shadow 只表达历史精确 Version A2A Publication 请求，不是第二个 RAD 事实源，也不支持
+通用 RAD Version Range。这套临时双物化实现计划在 Nacos 4.0 删除，且不改变标准 Runtime Layout。

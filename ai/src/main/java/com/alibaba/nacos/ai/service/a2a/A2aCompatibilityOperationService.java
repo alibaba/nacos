@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationDefinitionWriteAfterHook;
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationLegacyMutationGuard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
@@ -40,35 +42,59 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     
     private final LegacyA2aOperationService legacyService;
     
+    // TODO(remove in 4.0): Temporary migration path for Nacos 3.0-3.2 A2A data.
+    // Keep canonical behavior independent from this branch.
+    private final A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook;
+    
+    // TODO(remove in 4.0): Temporary migration path for Nacos 3.0-3.2 A2A data.
+    // Keep canonical behavior independent from this branch.
+    private final A2aMigrationLegacyMutationGuard migrationMutationGuard;
+    
     public A2aCompatibilityOperationService(A2aCompatibilityModeResolver modeResolver,
-        A2aServerOperationService canonicalService, LegacyA2aOperationService legacyService) {
+        A2aServerOperationService canonicalService, LegacyA2aOperationService legacyService,
+        A2aMigrationDefinitionWriteAfterHook migrationWriteAfterHook,
+        A2aMigrationLegacyMutationGuard migrationMutationGuard) {
         this.modeResolver = modeResolver;
         this.canonicalService = canonicalService;
         this.legacyService = legacyService;
+        this.migrationWriteAfterHook = migrationWriteAfterHook;
+        this.migrationMutationGuard = migrationMutationGuard;
     }
     
     @Override
     public void registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
         throws NacosException {
-        current().registerAgent(agentCard, namespaceId, registrationType);
+        migrationMutationGuard.checkMutable();
+        A2aOperationService selected = current();
+        selected.registerAgent(agentCard, namespaceId, registrationType);
+        notifyLegacyMutation(selected, namespaceId, agentCard.getName());
     }
     
     @Override
     public void releaseAgent(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
-        current().releaseAgent(agentCard, namespaceId, registrationType, setAsLatest);
+        migrationMutationGuard.checkMutable();
+        A2aOperationService selected = current();
+        selected.releaseAgent(agentCard, namespaceId, registrationType, setAsLatest);
+        notifyLegacyMutation(selected, namespaceId, agentCard.getName());
     }
     
     @Override
     public void updateAgentCard(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
-        current().updateAgentCard(agentCard, namespaceId, registrationType, setAsLatest);
+        migrationMutationGuard.checkMutable();
+        A2aOperationService selected = current();
+        selected.updateAgentCard(agentCard, namespaceId, registrationType, setAsLatest);
+        notifyLegacyMutation(selected, namespaceId, agentCard.getName());
     }
     
     @Override
     public void deleteAgent(String namespaceId, String agentName, String version)
         throws NacosException {
-        current().deleteAgent(namespaceId, agentName, version);
+        migrationMutationGuard.checkMutable();
+        A2aOperationService selected = current();
+        selected.deleteAgent(namespaceId, agentName, version);
+        notifyLegacyMutation(selected, namespaceId, agentName);
     }
     
     @Override
@@ -98,5 +124,12 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     private A2aOperationService current() {
         return A2aCompatibilityMode.CANONICAL == modeResolver.resolve() ? canonicalService
             : legacyService;
+    }
+    
+    private void notifyLegacyMutation(A2aOperationService selected, String namespaceId,
+        String agentName) {
+        if (selected == legacyService) {
+            migrationWriteAfterHook.afterSuccessfulMutation(namespaceId, agentName);
+        }
     }
 }
