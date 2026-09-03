@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
-import com.alibaba.nacos.ai.utils.SkillSeedArchiveReader;
+import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
@@ -128,7 +128,7 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
                 return;
             }
             
-            List<SkillSeedArchiveReader.SkillPackage> skillPackages = readSkillPackages();
+            List<SkillZipParser.SkillPackage> skillPackages = readSkillPackages();
             if (skillPackages.isEmpty()) {
                 LOGGER.info("No built-in skills found in archive `{}`", bundledSkillsArchive);
                 return;
@@ -161,7 +161,7 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
                 bootstrapPlan.getExistingBuiltInCount(), BOOTSTRAP_IMPORT_CONCURRENCY);
             List<Future<ImportTaskResult>> futures =
                 new ArrayList<>(bootstrapPlan.getMissingSkillPackages().size());
-            for (SkillSeedArchiveReader.SkillPackage skillPackage : bootstrapPlan
+            for (SkillZipParser.SkillPackage skillPackage : bootstrapPlan
                 .getMissingSkillPackages()) {
                 futures.add(bootstrapImportExecutor.submit(() -> importBuiltInSkill(skillPackage)));
             }
@@ -189,10 +189,10 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
         }
     }
     
-    private List<SkillSeedArchiveReader.SkillPackage> readSkillPackages() throws IOException {
+    private List<SkillZipParser.SkillPackage> readSkillPackages() throws IOException {
         Resource bundledSkillsArchive = resolveBundledSkillsArchive();
         try (InputStream inputStream = bundledSkillsArchive.getInputStream()) {
-            return SkillSeedArchiveReader.read(inputStream);
+            return SkillZipParser.parseSkillPackagesFromZip(inputStream);
         }
     }
     
@@ -201,7 +201,7 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
         return new FileSystemResource(archivePath);
     }
     
-    private ImportTaskResult importBuiltInSkill(SkillSeedArchiveReader.SkillPackage skillPackage) {
+    private ImportTaskResult importBuiltInSkill(SkillZipParser.SkillPackage skillPackage) {
         try {
             LOGGER.info("Import built-in skill `{}` from `{}`", skillPackage.getSkillName(),
                 skillPackage.getSourcePath());
@@ -224,12 +224,12 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
     }
     
     private BootstrapPlan buildBootstrapPlan(
-        List<SkillSeedArchiveReader.SkillPackage> skillPackages) {
+        List<SkillZipParser.SkillPackage> skillPackages) {
         boolean existingAiData = hasExistingAiData();
         int existingBuiltInCount = 0;
-        List<SkillSeedArchiveReader.SkillPackage> missingSkillPackages =
+        List<SkillZipParser.SkillPackage> missingSkillPackages =
             new ArrayList<>(skillPackages.size());
-        for (SkillSeedArchiveReader.SkillPackage skillPackage : skillPackages) {
+        for (SkillZipParser.SkillPackage skillPackage : skillPackages) {
             if (aiResourcePersistService.find(Constants.DEFAULT_NAMESPACE_ID,
                 skillPackage.getSkillName(),
                 RESOURCE_TYPE_SKILL) != null) {
@@ -315,12 +315,12 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
         
         private final String skipReason;
         
-        private final List<SkillSeedArchiveReader.SkillPackage> missingSkillPackages;
+        private final List<SkillZipParser.SkillPackage> missingSkillPackages;
         
         private final int existingBuiltInCount;
         
         private BootstrapPlan(boolean shouldBootstrap, String skipReason,
-            List<SkillSeedArchiveReader.SkillPackage> missingSkillPackages,
+            List<SkillZipParser.SkillPackage> missingSkillPackages,
             int existingBuiltInCount) {
             this.shouldBootstrap = shouldBootstrap;
             this.skipReason = skipReason;
@@ -329,7 +329,7 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
         }
         
         private static BootstrapPlan bootstrap(
-            List<SkillSeedArchiveReader.SkillPackage> missingSkillPackages,
+            List<SkillZipParser.SkillPackage> missingSkillPackages,
             int existingBuiltInCount) {
             return new BootstrapPlan(true, null, missingSkillPackages, existingBuiltInCount);
         }
@@ -346,7 +346,7 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
             return skipReason;
         }
         
-        private List<SkillSeedArchiveReader.SkillPackage> getMissingSkillPackages() {
+        private List<SkillZipParser.SkillPackage> getMissingSkillPackages() {
             return missingSkillPackages;
         }
         

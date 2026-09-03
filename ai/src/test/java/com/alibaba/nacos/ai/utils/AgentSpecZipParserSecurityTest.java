@@ -93,6 +93,39 @@ class AgentSpecZipParserSecurityTest {
         }
     }
     
+    @Test
+    void testWindowsDrivePathEntryShouldBeRejected() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "manifest.json", VALID_MANIFEST.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "C:/windows/system.ini", "malicious".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        try {
+            AgentSpecZipParser.parseAgentSpecFromZip(baos.toByteArray(), NAMESPACE_ID);
+            fail("Expected the Windows-drive-path zip to be rejected, but parsing succeeded");
+        } catch (SecurityException | NacosApiException e) {
+            assertTrue(e.getMessage().contains("Absolute path"));
+        }
+    }
+    
+    @Test
+    void testDuplicateNormalizedEntryPathShouldBeRejected() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "manifest.json", VALID_MANIFEST.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "config/file.txt", "first".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "./config/file.txt", "second".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        try {
+            AgentSpecZipParser.parseAgentSpecFromZip(baos.toByteArray(), NAMESPACE_ID);
+            fail("Expected duplicate normalized entry paths to be rejected, but parsing succeeded");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("duplicate entry path"));
+        }
+    }
+    
     // ---- Test 2: zip bomb (decompressed-size attack) ----
     
     @Test

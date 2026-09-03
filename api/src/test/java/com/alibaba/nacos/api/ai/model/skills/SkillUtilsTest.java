@@ -320,6 +320,20 @@ class SkillUtilsTest {
             () -> SkillUtils.validatePathSafety("\\windows\\system"));
     }
     
+    @Test
+    @DisplayName("test validatePathSafety with windows drive path throws exception")
+    void testValidatePathSafetyWithWindowsDrivePathThrowsException() {
+        assertThrows(SecurityException.class,
+            () -> SkillUtils.validatePathSafety("C:/windows/system"));
+    }
+    
+    @Test
+    @DisplayName("test validatePathSafety with null byte throws exception")
+    void testValidatePathSafetyWithNullByteThrowsException() {
+        assertThrows(SecurityException.class,
+            () -> SkillUtils.validatePathSafety("skill/config\u0000.yaml"));
+    }
+    
     // ========== validateZipBytes Tests ==========
     
     @Test

@@ -17,12 +17,15 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -184,6 +187,54 @@ class AgentSpecZipParserTest {
         assertTrue(result.getResource().size() >= 6);
     }
     
+    @Test
+    void testParseMultipleAgentSpecsFromZip() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "source/agent-a/manifest.json", manifest("agent-a"));
+            addZipEntry(zos, "source/agent-a/config/a.md", "a".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "source/agent-b/manifest.json", manifest("agent-b"));
+            addZipEntry(zos, "source/agent-b/config/b.md", "b".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        List<AgentSpec> result =
+            AgentSpecZipParser.parseMultipleAgentSpecsFromZip(baos.toByteArray(), NAMESPACE_ID);
+        
+        assertEquals(2, result.size());
+        assertEquals("agent-a", result.get(0).getName());
+        assertEquals(1, result.get(0).getResource().size());
+        assertEquals("a.md", result.get(0).getResource().values().iterator().next().getName());
+        assertEquals("agent-b", result.get(1).getName());
+        assertEquals(1, result.get(1).getResource().size());
+        assertEquals("b.md", result.get(1).getResource().values().iterator().next().getName());
+    }
+    
+    @Test
+    void testParseMultipleAgentSpecsSkipsDuplicateNames() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "source-a/agent/manifest.json", manifest("duplicate-agent"));
+            addZipEntry(zos, "source-b/agent/manifest.json", manifest("duplicate-agent"));
+        }
+        
+        List<AgentSpec> result =
+            AgentSpecZipParser.parseMultipleAgentSpecsFromZip(baos.toByteArray(), NAMESPACE_ID);
+        
+        assertEquals(1, result.size());
+        assertEquals("duplicate-agent", result.get(0).getName());
+    }
+    
+    @Test
+    void testParseMultipleAgentSpecsFromInvalidZipPreservesUploadValidationError() {
+        byte[] invalidZip = "not a zip".getBytes(StandardCharsets.UTF_8);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> AgentSpecZipParser.parseMultipleAgentSpecsFromZip(invalidZip, NAMESPACE_ID));
+        
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+        assertEquals("Failed to read agentspec zip archive", exception.getErrMsg());
+    }
+    
     // ---- Helper methods ----
     
     private byte[] createValidAgentSpecZip() throws IOException {
@@ -208,6 +259,12 @@ class AgentSpecZipParserTest {
             addZipEntry(zos, "README.md", "readme".getBytes(StandardCharsets.UTF_8));
         }
         return baos.toByteArray();
+    }
+    
+    private static byte[] manifest(String name) {
+        return ("{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"" + name
+            + "\"}}")
+            .getBytes(StandardCharsets.UTF_8);
     }
     
     private static void addZipEntry(ZipOutputStream zos, String name, byte[] data)

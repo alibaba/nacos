@@ -35,11 +35,19 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * AgentSpec zip parser utility. Mirrors {@link SkillZipParser} for HiClaw Worker packages.
@@ -83,6 +91,10 @@ public class AgentSpecZipParser {
      */
     static final int DEFAULT_MAX_UNCOMPRESSED_SIZE_MB = 50;
     
+    static final int DEFAULT_MAX_SEED_ARCHIVE_ENTRIES = 2048;
+    
+    static final long DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES = 50L * 1024L * 1024L;
+    
     /**
      * Property key for overriding {@link #DEFAULT_MAX_UPLOAD_SIZE_MB}. The value is in megabytes
      * and applies to the raw compressed AgentSpec ZIP before parsing. Non-positive values are
@@ -117,6 +129,254 @@ public class AgentSpecZipParser {
      */
     public static AgentSpec parseAgentSpecFromZip(byte[] zipBytes, String namespaceId)
         throws NacosApiException {
+        validateZipBytes(zipBytes);
+        try {
+            List<ZipEntryData> entries = unzipToEntries(zipBytes);
+            ZipEntryData manifestEntry = findFirstManifestEntry(entries);
+            if (manifestEntry == null) {
+                throw manifestNotFoundException();
+            }
+            return parseAgentSpec(entries, manifestEntry, namespaceId);
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse AgentSpec zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARSING_DATA_FAILED,
+                "Failed to parse zip file: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Parse one or more AgentSpecs from a ZIP archive. A regular AgentSpec ZIP produces one
+     * result; an archive containing multiple directories with {@code manifest.json} produces one
+     * result per directory.
+     *
+     * @param zipBytes zip file bytes
+     * @param namespaceId namespace ID
+     * @return parsed AgentSpecs
+     * @throws NacosApiException if parsing failed or the archive violates a security limit
+     */
+    public static List<AgentSpec> parseMultipleAgentSpecsFromZip(byte[] zipBytes,
+        String namespaceId) throws NacosApiException {
+        validateZipBytes(zipBytes);
+        try {
+            List<ZipEntryData> entries = unzipToEntries(zipBytes);
+            List<ZipEntryData> manifestEntries = findManifestEntries(entries);
+            if (manifestEntries.isEmpty()) {
+                throw manifestNotFoundException();
+            }
+            manifestEntries.sort((left, right) -> left.name.compareTo(right.name));
+            Set<String> seenNames = new HashSet<>();
+            List<AgentSpec> result = new ArrayList<>(manifestEntries.size());
+            for (ZipEntryData manifestEntry : manifestEntries) {
+                AgentSpec agentSpec = parseAgentSpec(entries, manifestEntry, namespaceId);
+                if (!seenNames.add(agentSpec.getName())) {
+                    LOGGER.warn("Skip duplicate agentspec name `{}` from archive path `{}`",
+                        agentSpec.getName(), getManifestPrefix(manifestEntry.name));
+                    continue;
+                }
+                result.add(agentSpec);
+            }
+            return result;
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (IOException e) {
+            LOGGER.error("Failed to read multi-AgentSpec zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                "Failed to read agentspec zip archive");
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse multi-AgentSpec zip file", e);
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                ErrorCode.PARSING_DATA_FAILED,
+                "Failed to parse zip file: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Parse the bundled seed archive into standalone AgentSpec ZIP packages.
+     *
+     * @param inputStream bundled archive input stream
+     * @return standalone AgentSpec packages
+     * @throws IOException if the archive cannot be read or violates a security limit
+     */
+    public static List<AgentSpecPackage> parseAgentSpecPackagesFromZip(InputStream inputStream)
+        throws IOException {
+        int maxEntries = Math.max(DEFAULT_MAX_SEED_ARCHIVE_ENTRIES, resolveMaxZipEntries());
+        long maxUncompressedBytes = Math.max(DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES,
+            resolveMaxUncompressedBytes());
+        return parseAgentSpecPackagesFromZip(inputStream, maxEntries, maxUncompressedBytes);
+    }
+    
+    static List<AgentSpecPackage> parseAgentSpecPackagesFromZip(InputStream inputStream,
+        int maxEntries, long maxUncompressedBytes) throws IOException {
+        Map<String, byte[]> entries =
+            readSeedArchiveEntries(inputStream, maxEntries, maxUncompressedBytes);
+        if (entries.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        Set<String> roots = detectAgentSpecRoots(entries.keySet());
+        if (roots.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        Set<String> seenNames = new HashSet<>();
+        List<AgentSpecPackage> result = new ArrayList<>(roots.size());
+        for (String root : roots) {
+            String manifestPath = buildRootPath(root, MANIFEST_JSON);
+            byte[] manifestBytes = entries.get(manifestPath);
+            if (manifestBytes == null) {
+                continue;
+            }
+            String agentSpecName = extractSeedSuggestedName(manifestBytes);
+            if (StringUtils.isBlank(agentSpecName)) {
+                throw new IOException("Missing worker.suggested_name in " + manifestPath);
+            }
+            if (!seenNames.add(agentSpecName)) {
+                LOGGER.warn("Skip duplicate built-in agentspec name `{}` from archive path `{}`",
+                    agentSpecName, root);
+                continue;
+            }
+            result.add(new AgentSpecPackage(agentSpecName, extractSeedFrom(root), root,
+                buildStandaloneAgentSpecZip(entries, root)));
+        }
+        return result;
+    }
+    
+    private static Map<String, byte[]> readSeedArchiveEntries(InputStream inputStream,
+        int maxEntries, long maxUncompressedBytes) throws IOException {
+        Map<String, byte[]> result = new LinkedHashMap<>();
+        Set<String> seenEntryNames = new HashSet<>();
+        int entryCount = 0;
+        long totalSize = 0;
+        try (ZipArchiveInputStream zis =
+            new ZipArchiveInputStream(inputStream, StandardCharsets.UTF_8.name(), true, true)) {
+            ZipArchiveEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = zis.getNextEntry()) != null) {
+                entryCount++;
+                if (entryCount > maxEntries) {
+                    throw new IOException(
+                        "ZIP file contains too many entries (max " + maxEntries + ")");
+                }
+                String entryName = normalizeEntryName(entry.getName());
+                if (StringUtils.isNotBlank(entryName)) {
+                    SkillUtils.validatePathSafety(entryName);
+                    if (!seenEntryNames.add(entryName)) {
+                        throw new IOException(
+                            "ZIP file contains duplicate entry path: " + entryName);
+                    }
+                }
+                boolean shouldStore = !entry.isDirectory() && StringUtils.isNotBlank(entryName);
+                ByteArrayOutputStream out = shouldStore ? new ByteArrayOutputStream() : null;
+                int bytesRead;
+                while ((bytesRead = zis.read(buffer)) != -1) {
+                    totalSize += bytesRead;
+                    if (totalSize > maxUncompressedBytes) {
+                        throw new IOException("ZIP decompressed size exceeds limit ("
+                            + (maxUncompressedBytes / 1024 / 1024) + "MB)");
+                    }
+                    if (out != null) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                }
+                if (out != null) {
+                    result.put(entryName, out.toByteArray());
+                }
+            }
+        }
+        return result;
+    }
+    
+    private static Set<String> detectAgentSpecRoots(Set<String> entryNames) {
+        Set<String> result = new TreeSet<>();
+        for (String entryName : entryNames) {
+            if (MANIFEST_JSON.equals(entryName)) {
+                result.add("");
+                continue;
+            }
+            if (entryName.endsWith(SLASH + MANIFEST_JSON)) {
+                result.add(entryName.substring(0, entryName.length() - MANIFEST_JSON.length() - 1));
+            }
+        }
+        return result;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static String extractSeedSuggestedName(byte[] manifestBytes) {
+        String manifestContent = new String(manifestBytes, StandardCharsets.UTF_8);
+        Map<String, Object> root;
+        try {
+            root = JacksonUtils.toObj(manifestContent, Map.class);
+        } catch (Exception e) {
+            return null;
+        }
+        Object workerObj = root.get("worker");
+        if (!(workerObj instanceof Map)) {
+            return null;
+        }
+        Map<String, Object> workerMap = (Map<String, Object>) workerObj;
+        Object nameObj = workerMap.get("suggested_name");
+        if (nameObj == null) {
+            return null;
+        }
+        String suggestedName = nameObj.toString();
+        return StringUtils.isBlank(suggestedName) ? null : suggestedName.trim();
+    }
+    
+    private static byte[] buildStandaloneAgentSpecZip(Map<String, byte[]> entries, String root)
+        throws IOException {
+        List<String> paths = new ArrayList<>();
+        for (String entryName : entries.keySet()) {
+            if (isInSeedRoot(entryName, root)) {
+                paths.add(entryName);
+            }
+        }
+        Collections.sort(paths);
+        
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
+            for (String path : paths) {
+                String relativePath = root.isEmpty() ? path : path.substring(root.length() + 1);
+                if (StringUtils.isBlank(relativePath)) {
+                    continue;
+                }
+                ZipEntry zipEntry = new ZipEntry(relativePath);
+                zos.putNextEntry(zipEntry);
+                zos.write(entries.get(path));
+                zos.closeEntry();
+            }
+        }
+        return out.toByteArray();
+    }
+    
+    private static boolean isInSeedRoot(String entryName, String root) {
+        return root.isEmpty() || entryName.startsWith(root + SLASH);
+    }
+    
+    private static String buildRootPath(String root, String fileName) {
+        return root.isEmpty() ? fileName : root + SLASH + fileName;
+    }
+    
+    private static String extractSeedFrom(String sourcePath) {
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        String normalized = sourcePath;
+        while (normalized.endsWith(SLASH)) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        int idx = normalized.lastIndexOf('/');
+        if (idx <= 0) {
+            return null;
+        }
+        String from = normalized.substring(0, idx).trim();
+        return StringUtils.isBlank(from) ? null : from;
+    }
+    
+    private static void validateZipBytes(byte[] zipBytes) throws NacosApiException {
         if (zipBytes == null || zipBytes.length == 0) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
@@ -130,41 +390,50 @@ public class AgentSpecZipParser {
                     + (maxUploadBytes / 1024 / 1024)
                     + "MB, current: " + (zipBytes.length / 1024 / 1024) + "MB");
         }
-        try {
-            List<ZipEntryData> entries = unzipToEntries(zipBytes);
-            String manifestContent = null;
-            for (ZipEntryData entry : entries) {
-                String name = entry.name;
-                if (isMacOsMetadataFile(name)) {
-                    continue;
-                }
-                boolean isManifestFile = MANIFEST_JSON.equals(name);
-                boolean isManifestInSubdir = name.endsWith(SLASH + MANIFEST_JSON);
-                if (isManifestFile || isManifestInSubdir) {
-                    manifestContent = new String(entry.data, StandardCharsets.UTF_8);
-                    break;
-                }
+    }
+    
+    private static ZipEntryData findFirstManifestEntry(List<ZipEntryData> entries) {
+        for (ZipEntryData entry : entries) {
+            if (isManifestEntry(entry.name)) {
+                return entry;
             }
-            
-            if (StringUtils.isBlank(manifestContent)) {
-                throw new NacosApiException(NacosApiException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "manifest.json file not found in zip");
-            }
-            
-            AgentSpec agentSpec = parseManifest(manifestContent, namespaceId);
-            Map<String, AgentSpecResource> resources = parseResources(entries, agentSpec.getName());
-            agentSpec.setResource(resources);
-            
-            return agentSpec;
-        } catch (NacosApiException e) {
-            throw e;
-        } catch (Exception e) {
-            LOGGER.error("Failed to parse AgentSpec zip file", e);
-            throw new NacosApiException(NacosApiException.INVALID_PARAM,
-                ErrorCode.PARSING_DATA_FAILED,
-                "Failed to parse zip file: " + e.getMessage());
         }
+        return null;
+    }
+    
+    private static List<ZipEntryData> findManifestEntries(List<ZipEntryData> entries) {
+        List<ZipEntryData> result = new ArrayList<>();
+        for (ZipEntryData entry : entries) {
+            if (isManifestEntry(entry.name)) {
+                result.add(entry);
+            }
+        }
+        return result;
+    }
+    
+    private static boolean isManifestEntry(String name) {
+        return MANIFEST_JSON.equals(name)
+            || (name != null && name.endsWith(SLASH + MANIFEST_JSON));
+    }
+    
+    private static AgentSpec parseAgentSpec(List<ZipEntryData> entries,
+        ZipEntryData manifestEntry, String namespaceId) throws NacosApiException {
+        String manifestContent = new String(manifestEntry.data, StandardCharsets.UTF_8);
+        if (StringUtils.isBlank(manifestContent)) {
+            throw manifestNotFoundException();
+        }
+        AgentSpec agentSpec = parseManifest(manifestContent, namespaceId);
+        List<ZipEntryData> resourceEntries =
+            filterEntriesByPrefix(entries, getManifestPrefix(manifestEntry.name));
+        Map<String, AgentSpecResource> resources =
+            parseResources(resourceEntries, agentSpec.getName());
+        agentSpec.setResource(resources);
+        return agentSpec;
+    }
+    
+    private static NacosApiException manifestNotFoundException() {
+        return new NacosApiException(NacosApiException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "manifest.json file not found in zip");
     }
     
     /**
@@ -185,13 +454,16 @@ public class AgentSpecZipParser {
      *
      * <p>Security-limit violations are reported as {@link NacosRuntimeException} (not {@link IOException})
      * because they represent invalid user input rather than an underlying I/O failure. The caller
-     * {@link #parseAgentSpecFromZip(byte[], String)} translates them into a {@link NacosApiException}
-     * for the HTTP layer.
+     * {@link #parseAgentSpecFromZip(byte[], String)} and
+     * {@link #parseMultipleAgentSpecsFromZip(byte[], String)} translate them into a
+     * {@link NacosApiException} for the HTTP layer.
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         final int maxEntries = resolveMaxZipEntries();
         final long maxUncompressedBytes = resolveMaxUncompressedBytes();
         List<ZipEntryData> result = new ArrayList<>();
+        Set<String> seenEntryNames = new HashSet<>();
+        int entryCount = 0;
         long totalSize = 0;
         try (ZipArchiveInputStream zis =
             new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
@@ -199,20 +471,22 @@ public class AgentSpecZipParser {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) {
-                    continue;
-                }
-                String name = entry.getName();
-                // Security: reject path traversal (..) and absolute paths.
-                SkillUtils.validatePathSafety(name);
-                if (name != null && (name.startsWith("__MACOSX/") || name.contains("/__MACOSX/"))) {
-                    continue;
-                }
-                if (result.size() >= maxEntries) {
+                entryCount++;
+                if (entryCount > maxEntries) {
                     throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                         "ZIP file contains too many entries (max " + maxEntries + ")");
                 }
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String normalizedName = normalizeEntryName(entry.getName());
+                SkillUtils.validatePathSafety(normalizedName);
+                if (StringUtils.isNotBlank(normalizedName)
+                    && !seenEntryNames.add(normalizedName)) {
+                    throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+                        "ZIP file contains duplicate entry path: " + normalizedName);
+                }
+                boolean shouldStore = !entry.isDirectory()
+                    && StringUtils.isNotBlank(normalizedName)
+                    && !isMacOsMetadataFile(normalizedName);
+                ByteArrayOutputStream out = shouldStore ? new ByteArrayOutputStream() : null;
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
@@ -222,10 +496,25 @@ public class AgentSpecZipParser {
                             "ZIP decompressed size exceeds limit ("
                                 + (maxUncompressedBytes / 1024 / 1024) + "MB)");
                     }
-                    out.write(buffer, 0, n);
+                    if (out != null) {
+                        out.write(buffer, 0, n);
+                    }
                 }
-                result.add(new ZipEntryData(name, out.toByteArray()));
+                if (out != null) {
+                    result.add(new ZipEntryData(normalizedName, out.toByteArray()));
+                }
             }
+        }
+        return result;
+    }
+    
+    private static String normalizeEntryName(String entryName) {
+        if (entryName == null) {
+            return null;
+        }
+        String result = entryName.replace('\\', '/');
+        while (result.startsWith("./")) {
+            result = result.substring(2);
         }
         return result;
     }
@@ -349,6 +638,28 @@ public class AgentSpecZipParser {
         return null;
     }
     
+    private static String getManifestPrefix(String manifestPath) {
+        int lastSlash = manifestPath.lastIndexOf(SLASH);
+        return lastSlash < 0 ? "" : manifestPath.substring(0, lastSlash + 1);
+    }
+    
+    private static List<ZipEntryData> filterEntriesByPrefix(List<ZipEntryData> entries,
+        String prefix) {
+        if (prefix.isEmpty()) {
+            return entries;
+        }
+        List<ZipEntryData> result = new ArrayList<>();
+        for (ZipEntryData entry : entries) {
+            if (entry.name.startsWith(prefix)) {
+                String relativeName = entry.name.substring(prefix.length());
+                if (StringUtils.isNotBlank(relativeName)) {
+                    result.add(new ZipEntryData(relativeName, entry.data));
+                }
+            }
+        }
+        return result;
+    }
+    
     /**
      * Parse resources from zip entries. Text files use UTF-8 content; binary (by extension) use Base64 content
      * and metadata encoding=base64. manifest.json is excluded from resources.
@@ -435,6 +746,44 @@ public class AgentSpecZipParser {
         }
         // ._ prefixed files (AppleDouble resource fork metadata)
         return fileName.startsWith(MACOS_METADATA_PREFIX);
+    }
+    
+    /**
+     * Standalone AgentSpec package built from a bundled seed archive.
+     */
+    public static final class AgentSpecPackage {
+        
+        private final String agentSpecName;
+        
+        private final String from;
+        
+        private final String sourcePath;
+        
+        private final byte[] zipBytes;
+        
+        public AgentSpecPackage(String agentSpecName, String from, String sourcePath,
+            byte[] zipBytes) {
+            this.agentSpecName = agentSpecName;
+            this.from = from;
+            this.sourcePath = sourcePath;
+            this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
+        }
+        
+        public String getAgentSpecName() {
+            return agentSpecName;
+        }
+        
+        public String getFrom() {
+            return from;
+        }
+        
+        public String getSourcePath() {
+            return sourcePath;
+        }
+        
+        public byte[] getZipBytes() {
+            return zipBytes;
+        }
     }
     
     /**

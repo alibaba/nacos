@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.config;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
-import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
+import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
@@ -115,7 +115,7 @@ class AgentSpecDataBootstrapInitializerTest {
             "team/agent-a/manifest.json", manifest("agent-a"),
             "team/agent-a/AGENTS.md", "instructions"));
         
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages =
+        List<AgentSpecZipParser.AgentSpecPackage> packages =
             ReflectionTestUtils.invokeMethod(initializer, "readAgentSpecPackages");
         
         assertEquals(1, packages.size());
@@ -252,8 +252,8 @@ class AgentSpecDataBootstrapInitializerTest {
             "nacos_internal", "public", null, null, "nacos", null);
     }
     
-    private static AgentSpecSeedArchiveReader.AgentSpecPackage agentSpecPackage(String name) {
-        return new AgentSpecSeedArchiveReader.AgentSpecPackage(name, "team", "team/" + name,
+    private static AgentSpecZipParser.AgentSpecPackage agentSpecPackage(String name) {
+        return new AgentSpecZipParser.AgentSpecPackage(name, "team", "team/" + name,
             agentSpecZip(name));
     }
     

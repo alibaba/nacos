@@ -31,6 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,6 +108,30 @@ class AgentSpecZipParserPathsTest {
                 }
             }
         }
+    }
+    
+    @Test
+    void resourcesAreScopedToSelectedManifestDirectory() throws Exception {
+        String manifestJson =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"workerA\"}}";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "worker-a/manifest.json",
+                manifestJson.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "worker-a/config/in-scope.md",
+                "inside".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "outside.txt", "outside".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "worker-b/config/out-of-scope.md",
+                "outside".getBytes(StandardCharsets.UTF_8));
+        }
+        
+        AgentSpec result =
+            AgentSpecZipParser.parseAgentSpecFromZip(baos.toByteArray(), NAMESPACE_ID);
+        
+        assertEquals(1, result.getResource().size());
+        AgentSpecResource resource = result.getResource().values().iterator().next();
+        assertEquals("config", resource.getType());
+        assertEquals("in-scope.md", resource.getName());
     }
     
     private static byte[] buildZip(String manifestJson, List<String> resourcePaths,

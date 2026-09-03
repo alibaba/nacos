@@ -24,6 +24,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.nio.charset.StandardCharsets;
@@ -35,9 +36,17 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SkillSeedArchiveReaderTest {
+class SkillZipParserSeedArchiveTest {
+    
+    @Test
+    void shouldUseTightSeedArchiveDefaults() {
+        assertEquals(2048, SkillZipParser.DEFAULT_MAX_SEED_ARCHIVE_ENTRIES);
+        assertEquals(50L * 1024L * 1024L,
+            SkillZipParser.DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES);
+    }
     
     @Test
     void shouldBuildStandaloneSkillZipWithTopLevelResources() throws Exception {
@@ -46,8 +55,8 @@ class SkillSeedArchiveReaderTest {
             new ArchiveEntry("vendor/demo-skill/LICENSE.txt", "license"),
             new ArchiveEntry("vendor/demo-skill/references/guide.md", "guide"));
         
-        List<SkillSeedArchiveReader.SkillPackage> actual =
-            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<SkillZipParser.SkillPackage> actual =
+            SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("demo-skill", actual.get(0).getSkillName());
@@ -65,8 +74,8 @@ class SkillSeedArchiveReaderTest {
             new ArchiveEntry("source-a/demo/SKILL.md", buildSkillMarkdown("same-skill")),
             new ArchiveEntry("source-b/demo/SKILL.md", buildSkillMarkdown("same-skill")));
         
-        List<SkillSeedArchiveReader.SkillPackage> actual =
-            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<SkillZipParser.SkillPackage> actual =
+            SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("same-skill", actual.get(0).getSkillName());
@@ -76,10 +85,53 @@ class SkillSeedArchiveReaderTest {
     void shouldParseNestedFromPath() throws Exception {
         byte[] archive = buildArchive(new ArchiveEntry("github.com/nacos/find-skills/SKILL.md",
             buildSkillMarkdown("find-skills")));
-        List<SkillSeedArchiveReader.SkillPackage> actual =
-            SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<SkillZipParser.SkillPackage> actual =
+            SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingEntryLimit() throws Exception {
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", buildSkillMarkdown("demo-skill")),
+            new ArchiveEntry("vendor/demo-skill/assets/", ""),
+            new ArchiveEntry("vendor/demo-skill/assets/demo.txt", "demo"));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive), 2,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("too many entries"));
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingUncompressedSizeLimit() throws Exception {
+        String skillMarkdown = buildSkillMarkdown("demo-skill");
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", skillMarkdown),
+            new ArchiveEntry("vendor/demo-skill/assets/demo.txt", "0123456789"));
+        long maxBytes = skillMarkdown.getBytes(StandardCharsets.UTF_8).length + 5L;
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive), 10,
+                maxBytes));
+        
+        assertTrue(exception.getMessage().contains("decompressed size exceeds limit"));
+    }
+    
+    @Test
+    void shouldRejectDuplicateNormalizedEntryPaths() throws Exception {
+        String skillMarkdown = buildSkillMarkdown("demo-skill");
+        byte[] archive = buildArchive(
+            new ArchiveEntry("vendor/demo-skill/SKILL.md", skillMarkdown),
+            new ArchiveEntry("./vendor/demo-skill/SKILL.md", skillMarkdown));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> SkillZipParser.parseSkillPackagesFromZip(new ByteArrayInputStream(archive), 10,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("duplicate entry path"));
     }
     
     @Test
@@ -88,12 +140,12 @@ class SkillSeedArchiveReaderTest {
         Assumptions.assumeTrue(resource.exists(),
             "bootstrap/skills-data.zip is not bundled in this test runtime");
         try (InputStream inputStream = resource.getInputStream()) {
-            List<SkillSeedArchiveReader.SkillPackage> actual =
-                SkillSeedArchiveReader.read(inputStream);
+            List<SkillZipParser.SkillPackage> actual =
+                SkillZipParser.parseSkillPackagesFromZip(inputStream);
             
             assertEquals(139, actual.size());
             Set<String> skillNames = new HashSet<>();
-            for (SkillSeedArchiveReader.SkillPackage each : actual) {
+            for (SkillZipParser.SkillPackage each : actual) {
                 skillNames.add(each.getSkillName());
                 Skill skill = SkillZipParser.parseSkillFromZip(each.getZipBytes(), "public");
                 assertNotNull(skill);

@@ -23,6 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -34,9 +35,17 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentSpecSeedArchiveReaderTest {
+class AgentSpecZipParserSeedArchiveTest {
+    
+    @Test
+    void shouldUseTightSeedArchiveDefaults() {
+        assertEquals(2048, AgentSpecZipParser.DEFAULT_MAX_SEED_ARCHIVE_ENTRIES);
+        assertEquals(50L * 1024L * 1024L,
+            AgentSpecZipParser.DEFAULT_MAX_SEED_UNCOMPRESSED_BYTES);
+    }
     
     @Test
     void shouldBuildStandaloneAgentSpecZipWithNestedLayout() throws Exception {
@@ -46,8 +55,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("vendor/demo-agent/manifest.json", manifest),
             new ArchiveEntry("vendor/demo-agent/config/SOUL.md", "# soul\n"));
         
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("演示坐席", actual.get(0).getAgentSpecName());
@@ -68,8 +77,8 @@ class AgentSpecSeedArchiveReaderTest {
             new ArchiveEntry("source-a/demo/manifest.json", manifest),
             new ArchiveEntry("source-b/demo/manifest.json", manifest));
         
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         
         assertEquals(1, actual.size());
         assertEquals("同名坐席", actual.get(0).getAgentSpecName());
@@ -81,10 +90,60 @@ class AgentSpecSeedArchiveReaderTest {
             "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"find-agentspec\"}}";
         byte[] archive = buildArchive(
             new ArchiveEntry("github.com/nacos/find-agentspec/manifest.json", manifest));
-        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-            AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        List<AgentSpecZipParser.AgentSpecPackage> actual =
+            AgentSpecZipParser.parseAgentSpecPackagesFromZip(new ByteArrayInputStream(archive));
         assertEquals(1, actual.size());
         assertEquals("github.com/nacos", actual.get(0).getFrom());
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingEntryLimit() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"limited-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("limited-agent/manifest.json", manifest),
+            new ArchiveEntry("limited-agent/config/", ""),
+            new ArchiveEntry("limited-agent/config/SOUL.md", "# soul\n"));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 2,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("too many entries"));
+    }
+    
+    @Test
+    void shouldRejectArchiveExceedingUncompressedSizeLimit() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"limited-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("limited-agent/manifest.json", manifest),
+            new ArchiveEntry("limited-agent/config/SOUL.md", "0123456789"));
+        long maxBytes = manifest.getBytes(StandardCharsets.UTF_8).length + 5L;
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 10,
+                maxBytes));
+        
+        assertTrue(exception.getMessage().contains("decompressed size exceeds limit"));
+    }
+    
+    @Test
+    void shouldRejectDuplicateNormalizedEntryPaths() throws Exception {
+        String manifest =
+            "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"duplicate-agent\"}}";
+        byte[] archive = buildArchive(
+            new ArchiveEntry("duplicate-agent/manifest.json", manifest),
+            new ArchiveEntry("./duplicate-agent/manifest.json", manifest));
+        
+        IOException exception = assertThrows(IOException.class,
+            () -> AgentSpecZipParser.parseAgentSpecPackagesFromZip(
+                new ByteArrayInputStream(archive), 10,
+                1024 * 1024));
+        
+        assertTrue(exception.getMessage().contains("duplicate entry path"));
     }
     
     @Test
@@ -93,12 +152,12 @@ class AgentSpecSeedArchiveReaderTest {
         Assumptions.assumeTrue(resource.exists(),
             "bootstrap/agentspec-data.zip is not bundled in this test runtime");
         try (InputStream inputStream = resource.getInputStream()) {
-            List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
-                AgentSpecSeedArchiveReader.read(inputStream);
+            List<AgentSpecZipParser.AgentSpecPackage> actual =
+                AgentSpecZipParser.parseAgentSpecPackagesFromZip(inputStream);
             
             assertTrue(actual.size() > 100);
             Set<String> names = new HashSet<>();
-            for (AgentSpecSeedArchiveReader.AgentSpecPackage each : actual) {
+            for (AgentSpecZipParser.AgentSpecPackage each : actual) {
                 names.add(each.getAgentSpecName());
                 AgentSpec spec =
                     AgentSpecZipParser.parseAgentSpecFromZip(each.getZipBytes(), "public");

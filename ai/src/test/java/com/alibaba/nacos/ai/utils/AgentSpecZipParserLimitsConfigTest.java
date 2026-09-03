@@ -176,6 +176,22 @@ class AgentSpecZipParserLimitsConfigTest {
     }
     
     @Test
+    void parseAgentSpecFromZipCountsIgnoredAndDirectoryEntries() throws IOException {
+        ((MockEnvironment) EnvUtil.getEnvironment())
+            .setProperty(AgentSpecZipParser.CONFIG_MAX_ZIP_ENTRIES, "3");
+        byte[] zipBytes = buildZipWithIgnoredAndDirectoryEntries();
+        
+        try {
+            AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
+            fail("Expected ignored and directory entries to count toward the configured limit");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("too many entries"),
+                "NacosApiException should describe the entry-count violation, got: "
+                    + e.getMessage());
+        }
+    }
+    
+    @Test
     void unzipToEntriesAcceptsEntryCountAboveDefaultWhenLimitRaised() throws Exception {
         ((MockEnvironment) EnvUtil.getEnvironment())
             .setProperty(AgentSpecZipParser.CONFIG_MAX_ZIP_ENTRIES, "1000");
@@ -206,6 +222,23 @@ class AgentSpecZipParserLimitsConfigTest {
                     + e.getMessage());
             assertTrue(e.getMessage().contains("1MB"),
                 "Error message should report the configured maximum (1MB), got: "
+                    + e.getMessage());
+        }
+    }
+    
+    @Test
+    void parseAgentSpecFromZipCountsIgnoredMetadataTowardUncompressedSizeLimit()
+        throws IOException {
+        ((MockEnvironment) EnvUtil.getEnvironment())
+            .setProperty(AgentSpecZipParser.CONFIG_MAX_UNCOMPRESSED_SIZE_MB, "1");
+        byte[] zipBytes = buildZipWithIgnoredOneMbEntries(2);
+        
+        try {
+            AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
+            fail("Expected ignored metadata content to count toward the decompressed-size limit");
+        } catch (NacosApiException e) {
+            assertTrue(e.getMessage().contains("decompressed size exceeds limit"),
+                "NacosApiException should describe the decompressed-size violation, got: "
                     + e.getMessage());
         }
     }
@@ -258,6 +291,29 @@ class AgentSpecZipParserLimitsConfigTest {
             for (int i = 0; i < count; i++) {
                 addZipEntry(zos, "assets/blob_" + i + ".bin", oneMegabyteOfZeros);
             }
+        }
+        return baos.toByteArray();
+    }
+    
+    private static byte[] buildZipWithIgnoredOneMbEntries(int count) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "manifest.json", VALID_MANIFEST.getBytes(StandardCharsets.UTF_8));
+            byte[] oneMegabyteOfZeros = new byte[1024 * 1024];
+            for (int i = 0; i < count; i++) {
+                addZipEntry(zos, "__MACOSX/blob_" + i + ".bin", oneMegabyteOfZeros);
+            }
+        }
+        return baos.toByteArray();
+    }
+    
+    private static byte[] buildZipWithIgnoredAndDirectoryEntries() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "manifest.json", VALID_MANIFEST.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "__MACOSX/first", new byte[0]);
+            addZipEntry(zos, "__MACOSX/second", new byte[0]);
+            addZipEntry(zos, "assets/", new byte[0]);
         }
         return baos.toByteArray();
     }
