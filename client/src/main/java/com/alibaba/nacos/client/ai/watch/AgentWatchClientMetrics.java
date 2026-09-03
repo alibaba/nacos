@@ -34,47 +34,47 @@ final class AgentWatchClientMetrics {
     }
     
     static void intentAdded() {
-        MetricsMonitor.getAgentWatchIntentCountMonitor().inc();
+        MetricsMonitor.agentWatchIntentCount().increment();
     }
     
     static void intentRemoved() {
-        MetricsMonitor.getAgentWatchIntentCountMonitor().dec();
+        MetricsMonitor.agentWatchIntentCount().decrement();
     }
     
     static void pendingAdded() {
-        MetricsMonitor.getAgentWatchPendingCountMonitor().inc();
+        MetricsMonitor.agentWatchPendingCount().increment();
     }
     
     static void pendingRemoved() {
-        MetricsMonitor.getAgentWatchPendingCountMonitor().dec();
+        MetricsMonitor.agentWatchPendingCount().decrement();
     }
     
     static void dirtyAdded() {
-        MetricsMonitor.getAgentWatchDirtyCountMonitor().inc();
+        MetricsMonitor.agentWatchDirtyCount().increment();
     }
     
     static void dirtyRemoved() {
-        MetricsMonitor.getAgentWatchDirtyCountMonitor().dec();
+        MetricsMonitor.agentWatchDirtyCount().decrement();
     }
     
     static void record(Event event, Result result) {
-        MetricsMonitor.getAgentWatchEventMonitor(event.value, result.value).inc();
+        MetricsMonitor.recordAgentWatchEvent(event.value, result.value);
     }
     
     static double intentCount() {
-        return MetricsMonitor.getAgentWatchIntentCountMonitor().get();
+        return MetricsMonitor.agentWatchIntentCount().get();
     }
     
     static double pendingCount() {
-        return MetricsMonitor.getAgentWatchPendingCountMonitor().get();
+        return MetricsMonitor.agentWatchPendingCount().get();
     }
     
     static double dirtyCount() {
-        return MetricsMonitor.getAgentWatchDirtyCountMonitor().get();
+        return MetricsMonitor.agentWatchDirtyCount().get();
     }
     
     static double eventCount(Event event, Result result) {
-        return MetricsMonitor.getAgentWatchEventMonitor(event.value, result.value).get();
+        return MetricsMonitor.getAgentWatchEventCount(event.value, result.value);
     }
     
     enum Event {
