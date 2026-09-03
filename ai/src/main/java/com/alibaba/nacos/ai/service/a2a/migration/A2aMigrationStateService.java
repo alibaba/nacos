@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCompatibilityMode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.ai.storage.AiResourceStorageUtils;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.common.NodeState;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -73,6 +76,8 @@ public class A2aMigrationStateService
     
     private final Supplier<A2aCompatibilityMode> configuredModeSupplier;
     
+    private final Supplier<String> storageProviderSupplier;
+    
     private final AtomicBoolean canonicalLatched = new AtomicBoolean(false);
     
     private volatile VersionedValue<A2aMigrationMarker> cachedMarker;
@@ -86,19 +91,22 @@ public class A2aMigrationStateService
             () -> UUID.randomUUID().toString(),
             () -> Boolean.parseBoolean(
                 EnvUtil.getProperty(LEGACY_NAMING_SHADOW_ENABLED_PROPERTY, "false")),
-            A2aMigrationStateService::configuredMode);
+            A2aMigrationStateService::configuredMode,
+            A2aMigrationStateService::configuredStorageProvider);
     }
     
     A2aMigrationStateService(A2aMigrationControlStore controlStore,
         ServerMemberManager serverMemberManager, LongSupplier clock,
         Supplier<String> generationSupplier, Supplier<Boolean> shadowPolicySupplier,
-        Supplier<A2aCompatibilityMode> configuredModeSupplier) {
+        Supplier<A2aCompatibilityMode> configuredModeSupplier,
+        Supplier<String> storageProviderSupplier) {
         this.controlStore = controlStore;
         this.serverMemberManager = serverMemberManager;
         this.clock = clock;
         this.generationSupplier = generationSupplier;
         this.shadowPolicySupplier = shadowPolicySupplier;
         this.configuredModeSupplier = configuredModeSupplier;
+        this.storageProviderSupplier = storageProviderSupplier;
     }
     
     @Override
@@ -185,6 +193,26 @@ public class A2aMigrationStateService
      */
     public boolean allMembersReady(A2aMigrationMarker marker) {
         return readyMemberView(marker) != null;
+    }
+    
+    /**
+     * Check whether this node can safely write targets for the frozen migration plan.
+     *
+     * <p>TODO(remove in 4.0): a member with a different local migration policy must not become a
+     * reconciliation writer. Otherwise a lease-owner change could select another AI Storage
+     * provider and create incompatible descriptors for the same historical Agent.</p>
+     *
+     * @param marker current migration marker
+     * @return whether the complete local policy matches the frozen AUTO plan
+     */
+    public boolean isLocalPolicyCompatible(A2aMigrationMarker marker) {
+        if (marker == null || !marker.isValid()) {
+            return false;
+        }
+        return policyHash(A2aCompatibilityMode.AUTO, marker.isLegacyNamingShadow(),
+            marker.getStorageProvider()).equals(
+                policyHash(configuredModeSupplier.get(),
+                    shadowPolicySupplier.get(), storageProviderSupplier.get()));
     }
     
     /**
@@ -385,8 +413,13 @@ public class A2aMigrationStateService
     }
     
     String policyHash(A2aCompatibilityMode mode, boolean shadowEnabled) {
+        return policyHash(mode, shadowEnabled, storageProviderSupplier.get());
+    }
+    
+    String policyHash(A2aCompatibilityMode mode, boolean shadowEnabled,
+        String storageProvider) {
         String policy = mode.name() + '|' + A2aMigrationMarker.SCHEMA_VERSION + '|'
-            + shadowEnabled;
+            + shadowEnabled + '|' + storageProvider;
         return DigestUtils.sha256Hex(policy);
     }
     
@@ -397,7 +430,7 @@ public class A2aMigrationStateService
         }
         long now = clock.getAsLong();
         A2aMigrationMarker marker = A2aMigrationMarker.syncing(generationSupplier.get(),
-            shadowPolicySupplier.get(), now);
+            shadowPolicySupplier.get(), storageProviderSupplier.get(), now);
         try {
             controlStore.createMarker(marker);
         } catch (Exception e) {
@@ -452,7 +485,7 @@ public class A2aMigrationStateService
             }
             self.setExtendVal(MemberMetaDataConstants.SUPPORT_A2A_MIGRATION_V1, true);
             self.setExtendVal(MemberMetaDataConstants.A2A_MIGRATION_POLICY_HASH,
-                policyHash(mode, shadowPolicySupplier.get()));
+                policyHash(mode, shadowPolicySupplier.get(), storageProviderSupplier.get()));
         } catch (Exception e) {
             LOGGER.warn("Failed to advertise local A2A migration capability", e);
         }
@@ -463,7 +496,7 @@ public class A2aMigrationStateService
             return null;
         }
         String expectedPolicy = policyHash(A2aCompatibilityMode.AUTO,
-            marker.isLegacyNamingShadow());
+            marker.isLegacyNamingShadow(), marker.getStorageProvider());
         try {
             Collection<Member> current = serverMemberManager.allMembers();
             if (current == null || current.isEmpty()) {
@@ -523,6 +556,7 @@ public class A2aMigrationStateService
         A2aMigrationMarker value = actual.getValue();
         return value.isValid() && expected.getState() == value.getState()
             && expected.isLegacyNamingShadow() == value.isLegacyNamingShadow()
+            && Objects.equals(expected.getStorageProvider(), value.getStorageProvider())
             && expected.getGeneration().equals(value.getGeneration())
             && Objects.equals(expected.getCompletedAt(), value.getCompletedAt());
     }
@@ -540,6 +574,12 @@ public class A2aMigrationStateService
         String normalized = StringUtils.isBlank(value) ? A2aCompatibilityMode.CANONICAL.name()
             : value.trim().toUpperCase(Locale.ROOT);
         return A2aCompatibilityMode.valueOf(normalized);
+    }
+    
+    private static String configuredStorageProvider() {
+        return AiResourceStorageUtils.resolveProvider(
+            Constants.Agent.AGENT_STORAGE_PROVIDER_CONFIG_KEY,
+            NacosConfigAiResourceStorage.TYPE);
     }
     
     private static final class MemberInspection {

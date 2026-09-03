@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -123,6 +124,19 @@ class A2aMigrationDefinitionHintReconcilerTest {
     }
     
     @Test
+    void shouldStopQueuedHintWhenLocalPolicyDiffersFromFrozenPlan() {
+        ControlledExecutor executor = new ControlledExecutor();
+        A2aMigrationDefinitionHintReconciler service = service(executor, 2);
+        when(stateService.resolveConfigured()).thenReturn(A2aMigrationState.SYNCING);
+        when(stateService.isLocalPolicyCompatible(any())).thenReturn(false);
+        
+        assertTrue(service.submit("ns", "agent"));
+        executor.runNext();
+        
+        verify(scanner, never()).scanOne(any(), any());
+    }
+    
+    @Test
     void shouldRejectInvalidCapacityAndExecutorRejection() {
         ControlledExecutor executor = new ControlledExecutor();
         assertThrows(IllegalArgumentException.class,
@@ -145,6 +159,12 @@ class A2aMigrationDefinitionHintReconcilerTest {
     
     private A2aMigrationDefinitionHintReconciler service(ControlledExecutor executor,
         int capacity) {
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("syncing", false,
+            "nacos_config", 1L);
+        org.mockito.Mockito.lenient().when(stateService.currentMarker())
+            .thenReturn(new VersionedValue<A2aMigrationMarker>(marker, "marker-md5"));
+        org.mockito.Mockito.lenient().when(stateService.isLocalPolicyCompatible(marker))
+            .thenReturn(true);
         return new A2aMigrationDefinitionHintReconciler(scanner, reconciler, stateService,
             executor, capacity);
     }

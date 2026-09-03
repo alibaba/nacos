@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
@@ -25,6 +25,7 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -57,20 +58,21 @@ class A2aMigrationControlStoreTest {
     
     @Test
     void shouldReadMarkerAndLeaseWithMd5() {
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", false, 10L);
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", false,
+            "nacos_config", 10L);
         when(persistService.findConfigInfo(A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
-            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.AI_INTERNAL_STATE_NAMESPACE))
             .thenReturn(found(JacksonUtils.toJson(marker), "marker-md5"));
         VersionedValue<A2aMigrationMarker> markerValue = store.readMarker();
         assertEquals("g", markerValue.getValue().getGeneration());
         assertEquals("marker-md5", markerValue.getMd5());
         verify(persistService).findConfigInfo(
             A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
-            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID);
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.AI_INTERNAL_STATE_NAMESPACE);
         
         A2aMigrationLeaseRecord lease = A2aMigrationLeaseRecord.of("owner", 20L);
         when(persistService.findConfigInfo(A2aMigrationControlStore.RECONCILIATION_LEASE_DATA_ID,
-            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.AI_INTERNAL_STATE_NAMESPACE))
             .thenReturn(found(JacksonUtils.toJson(lease), "lease-md5"));
         VersionedValue<A2aMigrationLeaseRecord> leaseValue = store.readLease();
         assertEquals("owner", leaseValue.getValue().getOwner());
@@ -86,7 +88,7 @@ class A2aMigrationControlStoreTest {
     @Test
     void unavailableOrInvalidControlObjectShouldFailClosed() {
         when(persistService.findConfigInfo(A2aMigrationControlStore.MIGRATION_MARKER_DATA_ID,
-            A2aMigrationControlStore.INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID))
+            A2aMigrationControlStore.INTERNAL_GROUP, Constants.AI_INTERNAL_STATE_NAMESPACE))
             .thenReturn(found(" ", "md5"), found("{}", " "), found("null", "md5"),
                 found("not-json", "md5"));
         assertThrows(IllegalStateException.class, store::readMarker);
@@ -98,8 +100,12 @@ class A2aMigrationControlStoreTest {
     @Test
     void shouldWriteCreateCasAndBoundedProgressForms() throws Exception {
         when(operationService.publishConfig(any(ConfigForm.class),
-            any(ConfigRequestInfo.class), isNull())).thenReturn(true, true, true, true, false);
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", true, 10L);
+            any(ConfigRequestInfo.class), isNull())).thenAnswer(invocation -> {
+                assertTrue(ConfigPersistContext.isSkipHistory());
+                return true;
+            }).thenReturn(true, true, true, false);
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", true,
+            "nacos_config", 10L);
         assertTrue(store.createMarker(marker));
         assertTrue(store.compareAndSetMarker(marker, "marker-md5"));
         A2aMigrationLeaseRecord lease = A2aMigrationLeaseRecord.of("owner", 20L);
@@ -108,6 +114,7 @@ class A2aMigrationControlStoreTest {
         A2aMigrationProgress progress = new A2aMigrationProgress();
         progress.setCursor("c".repeat(600));
         assertFalse(store.saveProgress(progress));
+        assertFalse(ConfigPersistContext.isSkipHistory());
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         ArgumentCaptor<ConfigRequestInfo> infoCaptor =
@@ -141,7 +148,7 @@ class A2aMigrationControlStoreTest {
     private void assertForm(ConfigForm form, String dataId) {
         assertEquals(dataId, form.getDataId());
         assertEquals(A2aMigrationControlStore.INTERNAL_GROUP, form.getGroup());
-        assertEquals(Constants.DEFAULT_NAMESPACE_ID, form.getNamespaceId());
+        assertEquals(Constants.AI_INTERNAL_STATE_NAMESPACE, form.getNamespaceId());
         assertEquals(ConfigType.JSON.getType(), form.getType());
         assertEquals("nacos", form.getSrcUser());
     }

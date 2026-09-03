@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,6 +48,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class A2aMigrationStateServiceTest {
+    
+    private static final String STORAGE_PROVIDER = "nacos_config";
     
     private final AtomicLong now = new AtomicLong(1000L);
     
@@ -76,6 +79,7 @@ class A2aMigrationStateServiceTest {
         assertNotNull(controlStore.marker);
         assertEquals("generation-1", controlStore.marker.getValue().getGeneration());
         assertFalse(controlStore.marker.getValue().isLegacyNamingShadow());
+        assertEquals(STORAGE_PROVIDER, controlStore.marker.getValue().getStorageProvider());
         assertNull(service.resolve(A2aCompatibilityMode.LEGACY));
         assertNull(service.resolve(A2aCompatibilityMode.CANONICAL));
     }
@@ -89,7 +93,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void authoritativeResolveShouldBypassIndependentContextMarkerCache() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         controlStore.marker = versioned(syncing, "syncing");
         assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
         A2aMigrationMarker quiescing = syncing.transition(A2aMigrationState.QUIESCING,
@@ -105,7 +110,8 @@ class A2aMigrationStateServiceTest {
     void shouldReadFrozenLegacyNamingShadowPolicy() {
         assertFalse(service.isLegacyNamingShadowEnabled());
         controlStore.marker = versioned(
-            A2aMigrationMarker.syncing("shadow", true, now.get()), "shadow-md5");
+            A2aMigrationMarker.syncing("shadow", true, STORAGE_PROVIDER, now.get()),
+            "shadow-md5");
         service = newService(false, A2aCompatibilityMode.AUTO);
         assertTrue(service.isLegacyNamingShadowEnabled());
         controlStore.marker.getValue().setUpdatedAt(0L);
@@ -115,7 +121,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void terminalMarkerShouldOverrideEveryModeAndLatchInProcess() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         A2aMigrationMarker canonical = syncing.transition(A2aMigrationState.CANONICAL, "g",
             now.incrementAndGet());
         controlStore.marker = versioned(canonical, "marker-1");
@@ -131,7 +138,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void invalidMarkerShouldNeverCutOver() {
-        A2aMigrationMarker invalid = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker invalid = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         invalid.setState(A2aMigrationState.CANONICAL);
         controlStore.marker = versioned(invalid, "invalid");
         assertEquals(A2aMigrationState.SYNCING,
@@ -185,7 +193,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void memberReadinessShouldRejectIncompleteOrMismatchedMetadata() {
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", true, now.get());
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", true,
+            STORAGE_PROVIDER, now.get());
         assertFalse(service.allMembersReady(null));
         marker.setUpdatedAt(0L);
         assertFalse(service.allMembersReady(marker));
@@ -208,8 +217,29 @@ class A2aMigrationStateServiceTest {
     }
     
     @Test
+    void storageProviderShouldBeFrozenAndGuardReconciliationWriters() {
+        service = newService(false, A2aCompatibilityMode.AUTO, "object_storage");
+        assertEquals(A2aMigrationState.SYNCING, service.resolveConfigured());
+        A2aMigrationMarker marker = controlStore.marker.getValue();
+        assertEquals("object_storage", marker.getStorageProvider());
+        assertTrue(service.isLocalPolicyCompatible(marker));
+        assertNotEquals(service.policyHash(A2aCompatibilityMode.AUTO, false,
+            STORAGE_PROVIDER),
+            service.policyHash(A2aCompatibilityMode.AUTO, false,
+                "object_storage"));
+        
+        A2aMigrationStateService mismatched = newService(false,
+            A2aCompatibilityMode.AUTO, STORAGE_PROVIDER);
+        assertFalse(mismatched.isLocalPolicyCompatible(marker));
+        marker.setStorageProvider(" ");
+        assertFalse(mismatched.isLocalPolicyCompatible(marker));
+        assertFalse(mismatched.isLocalPolicyCompatible(null));
+    }
+    
+    @Test
     void memberViewAndAcknowledgementsShouldRequireExactHealthyGeneration() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         Member first = member(true, service.policyHash(A2aCompatibilityMode.AUTO, false));
         Member second = member(true, service.policyHash(A2aCompatibilityMode.AUTO, false));
         when(memberManager.allMembers()).thenReturn(Arrays.asList(first, second));
@@ -242,7 +272,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void localAcknowledgementShouldRecheckMarkerAndClearStaleValue() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         A2aMigrationMarker quiescing = syncing.transition(A2aMigrationState.QUIESCING,
             "q", now.incrementAndGet());
         assertFalse(service.advertiseLocalAck(null));
@@ -272,7 +303,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void memberReadinessAndCapabilityFailuresShouldFailClosed() {
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         when(memberManager.allMembers()).thenThrow(new IllegalStateException("member failure"));
         assertFalse(service.allMembersReady(marker));
         when(memberManager.getSelf()).thenReturn(null).thenThrow(
@@ -284,7 +316,8 @@ class A2aMigrationStateServiceTest {
     @Test
     void markerRefreshShouldBeBoundedAndFailClosed() {
         assertNull(service.resolve(A2aCompatibilityMode.LEGACY));
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g", false,
+            STORAGE_PROVIDER, now.get());
         A2aMigrationMarker canonical = syncing.transition(A2aMigrationState.CANONICAL, "g",
             now.incrementAndGet());
         controlStore.marker = versioned(canonical, "canonical");
@@ -302,7 +335,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void markerCasShouldResolveUncertainResultAndRejectIllegalTransitions() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g1", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g1", false,
+            STORAGE_PROVIDER, now.get());
         controlStore.marker = versioned(syncing, "marker-1");
         controlStore.throwAfterMarkerWrite = true;
         VersionedValue<A2aMigrationMarker> quiescing = service.transition(controlStore.marker,
@@ -322,7 +356,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void markerCasConflictShouldNotPretendTransitionSucceeded() {
-        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g1", false, now.get());
+        A2aMigrationMarker syncing = A2aMigrationMarker.syncing("g1", false,
+            STORAGE_PROVIDER, now.get());
         controlStore.marker = versioned(syncing, "marker-1");
         VersionedValue<A2aMigrationMarker> stale = versioned(syncing, "stale");
         assertNull(service.transition(stale, A2aMigrationState.QUIESCING, "g2"));
@@ -335,7 +370,8 @@ class A2aMigrationStateServiceTest {
     
     @Test
     void concurrentMarkerCreationShouldBeAdoptedWithoutOverwrite() {
-        A2aMigrationMarker peerMarker = A2aMigrationMarker.syncing("peer", true, now.get());
+        A2aMigrationMarker peerMarker = A2aMigrationMarker.syncing("peer", true,
+            STORAGE_PROVIDER, now.get());
         controlStore.markerToExpose = versioned(peerMarker, "peer-md5");
         controlStore.exposeMarkerOnRead = 2;
         assertEquals(A2aMigrationState.SYNCING, service.resolve(A2aCompatibilityMode.AUTO));
@@ -415,8 +451,13 @@ class A2aMigrationStateServiceTest {
     }
     
     private A2aMigrationStateService newService(boolean shadow, A2aCompatibilityMode mode) {
+        return newService(shadow, mode, STORAGE_PROVIDER);
+    }
+    
+    private A2aMigrationStateService newService(boolean shadow, A2aCompatibilityMode mode,
+        String storageProvider) {
         return new A2aMigrationStateService(controlStore, memberManager, now::get,
-            () -> "generation-1", () -> shadow, () -> mode);
+            () -> "generation-1", () -> shadow, () -> mode, () -> storageProvider);
     }
     
     private Member member(Object ability, Object policy) {

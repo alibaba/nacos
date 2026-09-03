@@ -97,9 +97,11 @@ class A2aMigrationReconciliationTaskTest {
         lenient().when(stateService.resolveConfigured())
             .thenReturn(A2aMigrationState.SYNCING);
         lenient().when(stateService.tryAcquireLease(anyString(), anyLong())).thenReturn(lease);
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("syncing", false, 1L);
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("syncing", false,
+            "nacos_config", 1L);
         lenient().when(stateService.currentMarker())
             .thenReturn(new VersionedValue<A2aMigrationMarker>(marker, "marker-md5"));
+        lenient().when(stateService.isLocalPolicyCompatible(marker)).thenReturn(true);
         lenient().when(lease.renew()).thenReturn(true);
         lenient().when(namespaceOperationService.getNamespaceList())
             .thenReturn(Collections.singletonList(new Namespace(NAMESPACE_ID, NAMESPACE_ID)));
@@ -134,6 +136,16 @@ class A2aMigrationReconciliationTaskTest {
     }
     
     @Test
+    void shouldNotAcquireLeaseWhenLocalPolicyDiffersFromFrozenPlan() {
+        when(stateService.isLocalPolicyCompatible(any())).thenReturn(false);
+        
+        task.executeReconciliation();
+        
+        verify(stateService, never()).tryAcquireLease(anyString(), anyLong());
+        verify(namespaceOperationService, never()).getNamespaceList();
+    }
+    
+    @Test
     void shouldUseConfiguredLeaseDurationAndRejectInvalidValue() {
         System.setProperty(A2aMigrationReconciliationTask.LEASE_DURATION_SECONDS_PROPERTY,
             "7");
@@ -149,7 +161,8 @@ class A2aMigrationReconciliationTaskTest {
     
     @Test
     void shouldSkipQuiescingAndMissingOrStaleSyncingMarker() {
-        A2aMigrationMarker quiescing = A2aMigrationMarker.syncing("syncing", false, 1L)
+        A2aMigrationMarker quiescing = A2aMigrationMarker.syncing("syncing", false,
+            "nacos_config", 1L)
             .transition(A2aMigrationState.QUIESCING, "quiescing", 2L);
         when(stateService.resolveConfigured()).thenReturn(A2aMigrationState.QUIESCING,
             A2aMigrationState.SYNCING, A2aMigrationState.SYNCING);

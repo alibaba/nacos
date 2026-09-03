@@ -71,27 +71,40 @@ compatibility behavior and never creates a second definition authority.
 | `nacos.ai.a2a.migration.quiescing-timeout-seconds` | `120` | Maximum time for one quiescing generation before returning to `SYNCING`. |
 
 There is no separate migration enable switch. Members in one migration plan
-must use `AUTO` and the same frozen shadow policy. A policy mismatch prevents
-quiescing and cutover.
+must use `AUTO`, the same frozen shadow policy, and the same effective Agent
+Storage provider. A policy mismatch prevents reconciliation writes, quiescing,
+and cutover.
 
 ### 2.2 Internal Config Objects
 
-The default Namespace and internal group `nacos_internal` contain at most
-three bounded control objects:
+The dedicated, non-catalogued Config Namespace `_nacos_internal_` and internal
+group `nacos_internal` contain at most three bounded control objects:
 
 | DataId | Meaning | Authority |
 | --- | --- | --- |
-| `nacos.ai.a2a.migration.v1` | State, generation, frozen shadow policy, and completion time. | Authoritative state machine marker. |
+| `nacos.ai.a2a.migration.v1` | State, generation, frozen shadow and Storage-provider policies, and completion time. | Authoritative state machine marker. |
 | `nacos.ai.a2a.reconciliation.lease.v1` | Renewable single-writer lease. | Temporary ownership only. |
 | `nacos.ai.a2a.reconciliation.progress.v1` | Bounded cursor, counters, conflicts, and recent error summaries. | Diagnostic only. |
 
 Marker and lease changes use Config compare-and-set. An uncertain write result
-is resolved by rereading the same object. No per-Agent migration row or
-`ai_resource_task` migration task is created. Existing Search tasks retain
-their independent contract. A process performs best-effort lease release on
-shutdown. If Config is already unavailable, the persisted expiry bounds
-takeover by another member; reconciliation and cutover must resume after that
-expiry without manual cleanup.
+is resolved by rereading the same object. These internal current-state objects
+skip user Config history; Marker timestamps plus bounded logs and metrics retain
+the required diagnostics, while lease renewal and progress updates do not grow
+`his_config_info` continuously. No per-Agent migration row or migration task is
+created.
+
+`ai_resource_task`, `ai_resource_search_document`, and
+`ai_resource_search_chunk` remain exclusively part of the ordinary shared
+Search indexing pipeline. They may contain derived index work and output for a
+migrated Agent after its canonical Resource becomes visible, but they do not
+store migration truth, ownership, cursor, or completion. Using current Search
+projection as a cutover readiness gate does not make these tables migration
+state.
+
+A process performs best-effort lease release on shutdown. If Config is already
+unavailable, the persisted expiry bounds takeover by another member;
+reconciliation and cutover must resume after that expiry without manual
+cleanup.
 
 The marker schema is:
 
@@ -101,6 +114,7 @@ The marker schema is:
   "state": "SYNCING | QUIESCING | CANONICAL",
   "generation": "opaque-generation",
   "legacyNamingShadow": false,
+  "storageProvider": "nacos_config",
   "startedAt": 0,
   "updatedAt": 0,
   "completedAt": null
@@ -132,8 +146,8 @@ ABSENT -- AUTO creates plan --> SYNCING -- all gates --> QUIESCING
 The following member metadata is required before `QUIESCING`:
 
 - `supportA2aMigrationV1=true`;
-- `a2aMigrationPolicyHash`, derived from the mode, marker schema, and frozen
-  shadow policy; and
+- `a2aMigrationPolicyHash`, derived from the mode, marker schema, frozen
+  shadow policy, and frozen Agent Storage provider; and
 - `a2aMigrationAck=<generation>:READY` after the member has installed the
   definition write fence and verified local target readability.
 
@@ -183,7 +197,8 @@ remains reusable after the temporary migration package is removed.
 ### 4.3 Storage And Visibility Order
 
 For every Version, the reconciler prepares canonical
-`AgentVersionContent`, writes it through the current AI Storage provider, reads
+`AgentVersionContent`, writes it through the provider frozen in the migration
+marker, reads
 the same key back, and validates bytes, size, SHA-256 digest, and decoding. It
 then idempotently writes the Version row. The Resource row and derived Version
 catalog are written last, after every Version is complete.
@@ -205,6 +220,12 @@ Temporary storage invisibility blocks only that Agent and global cutover. It
 does not break the historical read path. The internal batch persistence entry
 may create or repair only `legacy-a2a-migration-v1` facts; it is not a general
 Agent lifecycle bypass.
+
+A node whose local effective Agent Storage provider differs from the marker
+must not acquire or execute reconciliation work, including write-after hints.
+The mismatch remains visible in member policy metadata and blocks cutover until
+the node configuration matches the frozen plan. This prevents lease-owner
+changes from producing different Storage descriptors for one historical Agent.
 
 ### 4.4 Idempotence, Conflict, And Delete
 

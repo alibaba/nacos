@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Function;
@@ -144,7 +145,7 @@ public class A2aMigrationControlStore {
         // Config query-chain results intentionally follow the asynchronous dump/cache path and
         // can briefly expose the previous MD5 immediately after an internal control write.
         ConfigInfoWrapper response = configInfoPersistService.findConfigInfo(dataId,
-            INTERNAL_GROUP, Constants.DEFAULT_NAMESPACE_ID);
+            INTERNAL_GROUP, Constants.AI_INTERNAL_STATE_NAMESPACE);
         if (response == null) {
             return null;
         }
@@ -163,13 +164,18 @@ public class A2aMigrationControlStore {
         ConfigRequestInfo requestInfo = new ConfigRequestInfo();
         requestInfo.setUpdateForExist(updateForExist);
         requestInfo.setCasMd5(expectedMd5);
-        return Boolean.TRUE.equals(configOperationService.publishConfig(
-            internalForm(dataId, JacksonUtils.toJson(value)), requestInfo, null));
+        // TODO(remove in 4.0): migration control objects are current-state coordination records,
+        // not user Config revisions. In particular, lease renewals and progress snapshots must not
+        // continuously grow Config history while a long migration remains active.
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
+            return Boolean.TRUE.equals(configOperationService.publishConfig(
+                internalForm(dataId, JacksonUtils.toJson(value)), requestInfo, null));
+        }
     }
     
     private ConfigForm internalForm(String dataId, String content) {
         ConfigForm result = new ConfigForm();
-        result.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        result.setNamespaceId(Constants.AI_INTERNAL_STATE_NAMESPACE);
         result.setGroup(INTERNAL_GROUP);
         result.setDataId(dataId);
         result.setContent(content);

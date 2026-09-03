@@ -37,6 +37,8 @@ public class A2aMigrationMarker {
     
     private boolean legacyNamingShadow;
     
+    private String storageProvider;
+    
     private long startedAt;
     
     private long updatedAt;
@@ -48,16 +50,18 @@ public class A2aMigrationMarker {
      *
      * @param generation opaque plan generation
      * @param legacyNamingShadow frozen post-cutover shadow policy
+     * @param storageProvider frozen Agent Version storage provider
      * @param now current epoch milliseconds
      * @return syncing marker
      */
     public static A2aMigrationMarker syncing(String generation, boolean legacyNamingShadow,
-        long now) {
+        String storageProvider, long now) {
         A2aMigrationMarker result = new A2aMigrationMarker();
         result.setSchemaVersion(SCHEMA_VERSION);
         result.setState(A2aMigrationState.SYNCING);
         result.setGeneration(generation);
         result.setLegacyNamingShadow(legacyNamingShadow);
+        result.setStorageProvider(storageProvider);
         result.setStartedAt(now);
         result.setUpdatedAt(now);
         return result;
@@ -78,6 +82,7 @@ public class A2aMigrationMarker {
         result.setState(target);
         result.setGeneration(generation);
         result.setLegacyNamingShadow(legacyNamingShadow);
+        result.setStorageProvider(storageProvider);
         result.setStartedAt(startedAt);
         result.setUpdatedAt(now);
         result.setCompletedAt(A2aMigrationState.CANONICAL == target ? now : null);
@@ -91,7 +96,8 @@ public class A2aMigrationMarker {
      */
     public boolean isValid() {
         if (SCHEMA_VERSION != schemaVersion || state == null
-            || StringUtils.isBlank(generation) || startedAt <= 0 || updatedAt < startedAt) {
+            || StringUtils.isBlank(generation) || StringUtils.isBlank(storageProvider)
+            || startedAt <= 0 || updatedAt < startedAt) {
             return false;
         }
         return A2aMigrationState.CANONICAL == state ? completedAt != null && completedAt > 0
@@ -128,6 +134,14 @@ public class A2aMigrationMarker {
     
     public void setLegacyNamingShadow(boolean legacyNamingShadow) {
         this.legacyNamingShadow = legacyNamingShadow;
+    }
+    
+    public String getStorageProvider() {
+        return storageProvider;
+    }
+    
+    public void setStorageProvider(String storageProvider) {
+        this.storageProvider = storageProvider;
     }
     
     public long getStartedAt() {

@@ -66,12 +66,17 @@ public class Constants {
     public static final String MCP_SERVER_RESOURCE_GROUP = "mcp-resources";
     
     /**
-     * Dedicated Config namespace for MCP lifecycle reconciliation state.
+     * Dedicated Config namespace for internal AI control state.
      *
      * <p>The namespace is intentionally not registered in the user Namespace catalog. Operators
      * should avoid creating a Namespace or managing Config content with this identifier.</p>
      */
-    public static final String MCP_LIFECYCLE_STATE_NAMESPACE = "_nacos_internal_";
+    public static final String AI_INTERNAL_STATE_NAMESPACE = "_nacos_internal_";
+    
+    /**
+     * Dedicated Config namespace for MCP lifecycle reconciliation state.
+     */
+    public static final String MCP_LIFECYCLE_STATE_NAMESPACE = AI_INTERNAL_STATE_NAMESPACE;
     
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     

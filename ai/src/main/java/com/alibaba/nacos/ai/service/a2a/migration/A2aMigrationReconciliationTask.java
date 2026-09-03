@@ -154,6 +154,11 @@ public class A2aMigrationReconciliationTask
         if (marker == null || A2aMigrationState.SYNCING != marker.getValue().getState()) {
             return;
         }
+        if (!stateService.isLocalPolicyCompatible(marker.getValue())) {
+            LOGGER.warn("Skip historical A2A reconciliation because the local migration policy "
+                + "does not match the frozen plan");
+            return;
+        }
         A2aMigrationLease lease = stateService.tryAcquireLease(leaseOwner,
             configuredLeaseDurationMillis());
         if (lease == null) {

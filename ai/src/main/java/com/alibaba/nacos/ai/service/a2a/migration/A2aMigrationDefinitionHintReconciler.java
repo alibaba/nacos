@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
+import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationControlStore.VersionedValue;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
@@ -156,6 +157,11 @@ public class A2aMigrationDefinitionHintReconciler implements DisposableBean {
     
     private void reconcile(HintKey key) {
         if (A2aMigrationState.SYNCING != stateService.resolveConfigured()) {
+            return;
+        }
+        VersionedValue<A2aMigrationMarker> marker = stateService.currentMarker();
+        if (marker == null || A2aMigrationState.SYNCING != marker.getValue().getState()
+            || !stateService.isLocalPolicyCompatible(marker.getValue())) {
             return;
         }
         try {

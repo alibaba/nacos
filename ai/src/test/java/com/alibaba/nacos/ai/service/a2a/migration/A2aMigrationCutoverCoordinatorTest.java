@@ -68,7 +68,8 @@ class A2aMigrationCutoverCoordinatorTest {
     void setUp() {
         coordinator = new A2aMigrationCutoverCoordinator(stateService, searchGate, runtimeGate,
             definitionValidator);
-        syncing = A2aMigrationMarker.syncing("syncing-generation", false, 1L);
+        syncing = A2aMigrationMarker.syncing("syncing-generation", false,
+            "nacos_config", 1L);
         marker = new VersionedValue<>(syncing, "marker-md5");
         memberView = new A2aMigrationMemberView("members", 3);
         sourceNames = Collections.singletonMap("public", Collections.singleton("agent"));

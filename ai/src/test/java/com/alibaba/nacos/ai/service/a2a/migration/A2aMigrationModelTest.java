@@ -27,12 +27,14 @@ class A2aMigrationModelTest {
     
     @Test
     void markerShouldValidateEveryRequiredFieldAndTransition() {
-        A2aMigrationMarker marker = A2aMigrationMarker.syncing("generation", true, 10L);
+        A2aMigrationMarker marker = A2aMigrationMarker.syncing("generation", true,
+            "nacos_config", 10L);
         assertTrue(marker.isValid());
         assertEquals(A2aMigrationMarker.SCHEMA_VERSION, marker.getSchemaVersion());
         assertEquals(A2aMigrationState.SYNCING, marker.getState());
         assertEquals("generation", marker.getGeneration());
         assertTrue(marker.isLegacyNamingShadow());
+        assertEquals("nacos_config", marker.getStorageProvider());
         assertEquals(10L, marker.getStartedAt());
         assertEquals(10L, marker.getUpdatedAt());
         assertNull(marker.getCompletedAt());
@@ -49,6 +51,9 @@ class A2aMigrationModelTest {
         marker.setState(null);
         assertFalse(marker.isValid());
         marker.setState(A2aMigrationState.SYNCING);
+        marker.setStorageProvider(" ");
+        assertFalse(marker.isValid());
+        marker.setStorageProvider("nacos_config");
         marker.setGeneration(" ");
         assertFalse(marker.isValid());
         marker.setGeneration("generation");

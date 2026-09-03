@@ -62,23 +62,30 @@ Runtime 双物化是独立的连接态兼容行为，不创建第二个定义权
 | `nacos.ai.a2a.migration.lease-duration-seconds` | `600` | 可续约迁移 Lease 时长。运维可缩短该值以限制进程非正常退出后的接管延迟，但必须长于一个预期对账单元的执行时间。 |
 | `nacos.ai.a2a.migration.quiescing-timeout-seconds` | `120` | 一代 Quiescing 超时后回到 `SYNCING` 的最大时间。 |
 
-不新增独立迁移 Enable 开关。同一个迁移计划的全部 Member 必须使用 `AUTO` 和相同的固化
-Shadow 策略；策略不一致会阻止 Quiescing 和切流。
+不新增独立迁移 Enable 开关。同一个迁移计划的全部 Member 必须使用 `AUTO`、相同的固化
+Shadow 策略和相同的有效 Agent Storage Provider；策略不一致会阻止对账写、Quiescing 和切流。
 
 ### 2.2 内部 Config 对象
 
-默认 Namespace 和内部 Group `nacos_internal` 最多包含三个有界控制对象：
+不登记到用户 Namespace Catalog 的专用 Config Namespace `_nacos_internal_` 与内部 Group
+`nacos_internal` 最多包含三个有界控制对象：
 
 | DataId | 含义 | 权威性 |
 | --- | --- | --- |
-| `nacos.ai.a2a.migration.v1` | State、Generation、固化 Shadow 策略和完成时间。 | 状态机权威 Marker。 |
+| `nacos.ai.a2a.migration.v1` | State、Generation、固化 Shadow/Storage Provider 策略和完成时间。 | 状态机权威 Marker。 |
 | `nacos.ai.a2a.reconciliation.lease.v1` | 可续约单 Writer Lease。 | 只表示临时所有权。 |
 | `nacos.ai.a2a.reconciliation.progress.v1` | 有界 Cursor、Counter、Conflict 和最近错误摘要。 | 只用于诊断。 |
 
-Marker 和 Lease 使用 Config Compare-And-Set。写入结果不确定时，重读同一对象确认。迁移不创建
-逐 Agent Row，也不使用 `ai_resource_task` 保存迁移任务；已有 Search Task 维持独立契约。进程关闭时
-尽力释放 Lease；若 Config 已先不可用，则持久化过期时间限制其他 Member 的接管等待，新 Member
-必须在过期后自动恢复对账与切流，不要求人工清理。
+Marker 和 Lease 使用 Config Compare-And-Set。写入结果不确定时，重读同一对象确认。这些内部当前
+状态对象跳过用户 Config History；Marker 时间戳、受限日志和指标保留必要诊断，同时 Lease 续约和
+Progress 更新不会持续膨胀 `his_config_info`。迁移不创建逐 Agent Row，也不创建迁移任务。
+
+`ai_resource_task`、`ai_resource_search_document` 和 `ai_resource_search_chunk` 只属于普通共享
+Search 索引流水线。标准 Resource 可见后，它们可以承载迁移 Agent 的派生索引任务和结果，但不保存
+迁移真相、Owner、Cursor 或完成状态。切流前检查 Search Projection 已追平，不会把这些表变成迁移状态。
+
+进程关闭时尽力释放 Lease；若 Config 已先不可用，则持久化过期时间限制其他 Member 的接管等待，新
+Member 必须在过期后自动恢复对账与切流，不要求人工清理。
 
 Marker Schema 为：
 
@@ -88,6 +95,7 @@ Marker Schema 为：
   "state": "SYNCING | QUIESCING | CANONICAL",
   "generation": "opaque-generation",
   "legacyNamingShadow": false,
+  "storageProvider": "nacos_config",
   "startedAt": 0,
   "updatedAt": 0,
   "completedAt": null
@@ -118,7 +126,8 @@ ABSENT -- AUTO creates plan --> SYNCING -- all gates --> QUIESCING
 进入 `QUIESCING` 前，Member Metadata 必须包含：
 
 - `supportA2aMigrationV1=true`；
-- 由 Mode、Marker Schema 和固化 Shadow 策略生成的 `a2aMigrationPolicyHash`；
+- 由 Mode、Marker Schema、固化 Shadow 策略和固化 Agent Storage Provider 生成的
+  `a2aMigrationPolicyHash`；
 - Member 安装定义写屏障并验证本地目标可读后上报
   `a2aMigrationAck=<generation>:READY`。
 
@@ -159,7 +168,8 @@ Version 或静默丢字段。
 
 ### 4.3 Storage 与可见顺序
 
-Reconciler 为每个 Version 准备标准 `AgentVersionContent`，通过当前 AI Storage Provider 写入，
+Reconciler 为每个 Version 准备标准 `AgentVersionContent`，通过 Marker 固化的 AI Storage Provider
+写入，
 再用同一 Key 读回并校验 Bytes、Size、SHA-256 Digest 和反序列化结果，随后幂等写 Version Row。
 只有全部 Version 完整后，最后写 Resource Row 和派生 Version Catalog。
 
@@ -177,6 +187,10 @@ Reconciler 为每个 Version 准备标准 `AgentVersionContent`，通过当前 A
 
 Storage 暂不可见只阻塞该 Agent 和全局切流，不破坏历史读取。内部 Batch Persistence 入口只能
 创建或修复 `legacy-a2a-migration-v1` 事实，不能成为通用 Agent 生命周期绕过入口。
+
+本地有效 Agent Storage Provider 与 Marker 不一致的节点不得获取或执行对账写，包括写后 Hint。
+该差异通过 Member Policy Metadata 保持可见，并在节点配置与固化计划一致前阻止切流，从而避免
+Lease Owner 切换后为同一个历史 Agent 生成不同的 Storage Descriptor。
 
 ### 4.4 幂等、冲突与删除
 

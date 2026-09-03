@@ -76,7 +76,7 @@ class A2aMigrationQuiescingTaskTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        syncing = A2aMigrationMarker.syncing("syncing", false, 1000L);
+        syncing = A2aMigrationMarker.syncing("syncing", false, "nacos_config", 1000L);
         memberView = new A2aMigrationMemberView("members", 3);
         quiescing = syncing.transition(A2aMigrationState.QUIESCING,
             A2aMigrationQuiescingGeneration.create(memberView, "nonce"), 1001L);
