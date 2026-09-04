@@ -83,4 +83,21 @@ class ConfigQueryResponseTest extends BasedConfigResponseTest {
         assertEquals("text", actual.getContentType());
         assertEquals(1111111L, actual.getLastModified());
     }
+
+    @Test
+    void testConfigNotModifiedConstant() {
+        assertEquals(304, ConfigQueryResponse.CONFIG_NOT_MODIFIED);
+    }
+
+    @Test
+    void testBuildNotModifiedResponse() {
+        ConfigQueryResponse response = new ConfigQueryResponse();
+        response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_MODIFIED,
+            "config not modified, use local cache");
+        response.setMd5("cached-md5");
+
+        assertEquals(ConfigQueryResponse.CONFIG_NOT_MODIFIED, response.getErrorCode());
+        assertEquals("cached-md5", response.getMd5());
+        assertEquals("config not modified, use local cache", response.getMessage());
+    }
 }

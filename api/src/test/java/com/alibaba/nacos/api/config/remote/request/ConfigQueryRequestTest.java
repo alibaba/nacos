@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigQueryRequestTest extends BasedConfigRequestTest {
@@ -47,6 +48,29 @@ class ConfigQueryRequestTest extends BasedConfigRequestTest {
     @Test
     void testIsNotify() {
         assertTrue(configQueryRequest.isNotify());
+    }
+
+    @Test
+    void testLocalMd5GetterAndSetter() {
+        assertNull(configQueryRequest.getLocalMd5());
+        configQueryRequest.setLocalMd5("test-local-md5-hash");
+        assertEquals("test-local-md5-hash", configQueryRequest.getLocalMd5());
+    }
+
+    @Test
+    void testSerializeWithLocalMd5() throws JsonProcessingException {
+        configQueryRequest.setLocalMd5("local-md5-123");
+        String json = mapper.writeValueAsString(configQueryRequest);
+        assertTrue(json.contains("\"localMd5\":\"local-md5-123\""));
+    }
+
+    @Test
+    void testDeserializeWithLocalMd5() throws JsonProcessingException {
+        String json =
+            "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
+                + "\"tenant\":\"test_tenant\",\"module\":\"config\",\"tag\":\"tag\",\"localMd5\":\"deserialized-md5\"}";
+        ConfigQueryRequest actual = mapper.readValue(json, ConfigQueryRequest.class);
+        assertEquals("deserialized-md5", actual.getLocalMd5());
     }
     
     @Override

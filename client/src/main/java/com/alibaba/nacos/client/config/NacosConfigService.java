@@ -21,6 +21,11 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigQueryResult;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.GetConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigResult;
+import com.alibaba.nacos.api.config.RemoveConfigRequest;
+import com.alibaba.nacos.api.config.RemoveConfigResult;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -39,6 +44,7 @@ import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -97,6 +103,65 @@ public class NacosConfigService implements ConfigService {
     @Override
     public String getConfig(String dataId, String group, long timeoutMs) throws NacosException {
         return getConfigInner(namespace, dataId, group, timeoutMs);
+    }
+    
+    @Override
+    public ConfigQueryResult getConfig(GetConfigRequest request) throws NacosException {
+        String dataId = request.getDataId();
+        String group = request.getGroup();
+        long timeoutMs = request.getTimeoutMs();
+        String localMd5 = request.getLocalMd5();
+        
+        // If localMd5 is not explicitly provided, try to compute it from local snapshot
+        if (StringUtils.isBlank(localMd5)) {
+            localMd5 = resolveLocalMd5(dataId, group);
+        }
+        
+        ConfigResponse response = getConfigInnerWithResponse(namespace, dataId, group, timeoutMs,
+            localMd5);
+        
+        ConfigQueryResult result = new ConfigQueryResult();
+        result.setContent(response.getContent());
+        result.setMd5(response.getMd5());
+        result.setConfigType(response.getConfigType());
+        result.setEncryptedDataKey(response.getEncryptedDataKey());
+        return result;
+    }
+    
+    /**
+     * Resolve local MD5 from snapshot or cache for 304 conditional GET.
+     *
+     * <p>First checks the in-memory CacheData (if the config is being listened to),
+     * then falls back to the local snapshot file.</p>
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @return local MD5, or null if no local cache exists
+     */
+    private String resolveLocalMd5(String dataId, String group) {
+        group = blank2defaultGroup(group);
+        // Try in-memory cache first
+        try {
+            com.alibaba.nacos.client.config.impl.CacheData cacheData =
+                worker.getCache(dataId, group, namespace);
+            if (cacheData != null && StringUtils.isNotBlank(cacheData.getMd5())) {
+                return cacheData.getMd5();
+            }
+        } catch (Exception e) {
+            // ignore, fall through to snapshot
+        }
+        // Try local snapshot
+        try {
+            String snapshotContent =
+                LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group,
+                    namespace);
+            if (StringUtils.isNotBlank(snapshotContent)) {
+                return MD5Utils.md5Hex(snapshotContent, Constants.ENCODE);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
     
     @Override
@@ -192,27 +257,88 @@ public class NacosConfigService implements ConfigService {
     @Override
     public boolean publishConfig(String dataId, String group, String content, String type)
         throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null);
+        PublishConfigRequest request = PublishConfigRequest.builder()
+            .dataId(dataId)
+            .group(group)
+            .content(content)
+            .type(type)
+            .build();
+        return publishConfig(request).isSuccess();
+    }
+    
+    @Override
+    public PublishConfigResult publishConfig(PublishConfigRequest request)
+        throws NacosException {
+        String dataId = request.getDataId();
+        String group = request.getGroup();
+        String content = request.getContent();
+        String type = request.getType() != null ? request.getType()
+            : ConfigType.getDefaultType().getType();
+        String casMd5 = request.getCasMd5();
+        
+        group = blank2defaultGroup(group);
+        ParamUtils.checkParam(dataId, group, content);
+        
+        ConfigRequest cr = new ConfigRequest();
+        cr.setDataId(dataId);
+        cr.setTenant(namespace);
+        cr.setGroup(group);
+        cr.setContent(content);
+        cr.setType(type);
+        configFilterChainManager.doFilter(cr, null);
+        content = cr.getContent();
+        String encryptedDataKey = cr.getEncryptedDataKey();
+        
+        boolean success = worker.publishConfig(dataId, group, namespace, null, null, null,
+            content, encryptedDataKey, casMd5, type);
+        
+        if (success) {
+            // Compute MD5 of published content for the result
+            String publishedMd5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            return PublishConfigResult.success(publishedMd5);
+        }
+        return PublishConfigResult.fail(-1, "publish config failed");
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5)
         throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content,
-            ConfigType.getDefaultType().getType(), casMd5);
+        return publishConfigCas(dataId, group, content, casMd5,
+            ConfigType.getDefaultType().getType());
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5,
         String type)
         throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type,
-            casMd5);
+        PublishConfigRequest request = PublishConfigRequest.builder()
+            .dataId(dataId)
+            .group(group)
+            .content(content)
+            .type(type)
+            .casMd5(casMd5)
+            .build();
+        return publishConfig(request).isSuccess();
     }
     
     @Override
     public boolean removeConfig(String dataId, String group) throws NacosException {
-        return removeConfigInner(namespace, dataId, group, null);
+        RemoveConfigRequest request = RemoveConfigRequest.builder()
+            .dataId(dataId)
+            .group(group)
+            .build();
+        return removeConfig(request).isSuccess();
+    }
+    
+    @Override
+    public RemoveConfigResult removeConfig(RemoveConfigRequest request) throws NacosException {
+        String dataId = request.getDataId();
+        String group = request.getGroup();
+        group = blank2defaultGroup(group);
+        ParamUtils.checkKeyParam(dataId, group);
+        boolean success = worker.removeConfig(dataId, group, namespace, null);
+        return success ? RemoveConfigResult.success()
+            : RemoveConfigResult.fail(-1, "remove config failed");
     }
     
     @Override
@@ -293,6 +419,24 @@ public class NacosConfigService implements ConfigService {
     private ConfigResponse getConfigInnerWithResponse(String tenant, String dataId, String group,
         long timeoutMs)
         throws NacosException {
+        return getConfigInnerWithResponse(tenant, dataId, group, timeoutMs, null);
+    }
+    
+    /**
+     * Get config inner with response, supporting 304 conditional GET via localMd5.
+     *
+     * @param tenant    tenant
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs timeout in milliseconds
+     * @param localMd5  local cached MD5 for 304 conditional GET
+     * @return config response
+     * @throws NacosException nacos exception
+     * @since 3.3.0
+     */
+    private ConfigResponse getConfigInnerWithResponse(String tenant, String dataId, String group,
+        long timeoutMs, String localMd5)
+        throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         ConfigResponse cr = new ConfigResponse();
@@ -320,7 +464,7 @@ public class NacosConfigService implements ConfigService {
         
         try {
             ConfigResponse response =
-                worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
+                worker.getServerConfig(dataId, group, tenant, timeoutMs, false, localMd5);
             cr.setContent(response.getContent());
             cr.setMd5(response.getMd5());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
@@ -364,34 +508,6 @@ public class NacosConfigService implements ConfigService {
         result.setConfigType(response.getConfigType());
         result.setEncryptedDataKey(response.getEncryptedDataKey());
         return result;
-    }
-    
-    private boolean removeConfigInner(String tenant, String dataId, String group, String tag)
-        throws NacosException {
-        group = blank2defaultGroup(group);
-        ParamUtils.checkKeyParam(dataId, group);
-        return worker.removeConfig(dataId, group, tenant, tag);
-    }
-    
-    private boolean publishConfigInner(String tenant, String dataId, String group, String tag,
-        String appName,
-        String betaIps, String content, String type, String casMd5) throws NacosException {
-        group = blank2defaultGroup(group);
-        ParamUtils.checkParam(dataId, group, content);
-        
-        ConfigRequest cr = new ConfigRequest();
-        cr.setDataId(dataId);
-        cr.setTenant(tenant);
-        cr.setGroup(group);
-        cr.setContent(content);
-        cr.setType(type);
-        configFilterChainManager.doFilter(cr, null);
-        content = cr.getContent();
-        String encryptedDataKey = cr.getEncryptedDataKey();
-        
-        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content,
-            encryptedDataKey, casMd5,
-            type);
     }
     
     @Override
