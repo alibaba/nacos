@@ -27,6 +27,8 @@ import com.alibaba.nacos.api.config.PublishConfigResult;
 import com.alibaba.nacos.api.config.RemoveConfigRequest;
 import com.alibaba.nacos.api.config.RemoveConfigResult;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -289,15 +291,16 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
         String encryptedDataKey = cr.getEncryptedDataKey();
         
-        boolean success = worker.publishConfig(dataId, group, namespace, null, null, null,
+        ConfigPublishResponse response = worker.publishConfigWithResponse(dataId, group,
+            namespace, null, null, null,
             content, encryptedDataKey, casMd5, type);
         
-        if (success) {
+        if (response.isSuccess()) {
             // Compute MD5 of published content for the result
             String publishedMd5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             return PublishConfigResult.success(publishedMd5);
         }
-        return PublishConfigResult.fail(-1, "publish config failed");
+        return PublishConfigResult.fail(response.getErrorCode(), response.getMessage());
     }
     
     @Override
@@ -336,9 +339,10 @@ public class NacosConfigService implements ConfigService {
         String group = request.getGroup();
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
-        boolean success = worker.removeConfig(dataId, group, namespace, null);
-        return success ? RemoveConfigResult.success()
-            : RemoveConfigResult.fail(-1, "remove config failed");
+        ConfigRemoveResponse response = worker.removeConfigWithResponse(dataId, group, namespace,
+            null);
+        return response.isSuccess() ? RemoveConfigResult.success()
+            : RemoveConfigResult.fail(response.getErrorCode(), response.getMessage());
     }
     
     @Override

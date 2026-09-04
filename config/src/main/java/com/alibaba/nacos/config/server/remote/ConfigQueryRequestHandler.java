@@ -105,7 +105,16 @@ public class ConfigQueryRequestHandler
             if (StringUtils.isNotBlank(localMd5) && chainResponse.getMd5() != null
                 && localMd5.equals(chainResponse.getMd5())
                 && chainResponse.getContent() != null) {
-                return buildNotModifiedResponse(chainResponse.getMd5());
+                // Emit pull log and trace event before returning 304, equivalent to normal path
+                String pullEvent = resolvePullEventType(chainResponse, request.getTag());
+                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp,
+                    chainResponse.getMd5(), TimeUtils.getCurrentTimeStr());
+                final long delayed304 = System.currentTimeMillis() - chainResponse.getLastModified();
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp,
+                    chainResponse.getLastModified(), pullEvent,
+                    ConfigTraceService.PULL_TYPE_OK, delayed304, clientIp, notify, "grpc");
+                return buildNotModifiedResponse(chainResponse.getMd5(),
+                    chainResponse.getConfigType(), chainResponse.getLastModified());
             }
             
             if (chainResponse
@@ -188,17 +197,24 @@ public class ConfigQueryRequestHandler
      * Build a 304 Not-Modified response.
      *
      * <p>When the client's local MD5 matches the server-side config MD5,
-     * return this response without content to save network bandwidth.</p>
+     * return this response without content to save network bandwidth.
+     * Includes non-content metadata (md5, contentType, lastModified) so the
+     * client can fully reconstruct the ConfigResponse.</p>
      *
-     * @param md5 MD5 of the current config content
+     * @param md5          MD5 of the current config content
+     * @param contentType  config type (json, yaml, properties, etc.)
+     * @param lastModified last modified timestamp
      * @return 304 response
      * @since 3.3.0
      */
-    private ConfigQueryResponse buildNotModifiedResponse(String md5) {
+    private ConfigQueryResponse buildNotModifiedResponse(String md5, String contentType,
+        long lastModified) {
         ConfigQueryResponse response = new ConfigQueryResponse();
         response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_MODIFIED,
             "config not modified, use local cache");
         response.setMd5(md5);
+        response.setContentType(contentType);
+        response.setLastModified(lastModified);
         return response;
     }
     

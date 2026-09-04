@@ -383,6 +383,51 @@ public class ClientWorker implements Closeable {
     }
     
     /**
+     * Publish config and return the full response with error details.
+     *
+     * @param dataId           dataId
+     * @param group            group
+     * @param tenant           tenant
+     * @param appName          appName
+     * @param tag              tag
+     * @param betaIps          betaIps
+     * @param content          content
+     * @param encryptedDataKey encryptedDataKey
+     * @param casMd5           casMd5
+     * @param type             type
+     * @return ConfigPublishResponse with success flag and error details
+     * @throws NacosException nacos exception
+     * @since 3.3.0
+     */
+    public ConfigPublishResponse publishConfigWithResponse(String dataId, String group,
+        String tenant, String appName,
+        String tag, String betaIps, String content, String encryptedDataKey, String casMd5,
+        String type)
+        throws NacosException {
+        return ((ConfigRpcTransportClient) agent).publishConfigWithResponse(dataId, group, tenant,
+            appName, tag, betaIps,
+            content, encryptedDataKey, casMd5, type);
+    }
+    
+    /**
+     * Remove config and return the full response with error details.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @param tag    tag
+     * @return ConfigRemoveResponse with success flag and error details
+     * @throws NacosException nacos exception
+     * @since 3.3.0
+     */
+    public ConfigRemoveResponse removeConfigWithResponse(String dataId, String group,
+        String tenant, String tag)
+        throws NacosException {
+        return ((ConfigRpcTransportClient) agent).removeConfigWithResponse(dataId, group, tenant,
+            tag);
+    }
+    
+    /**
      * Add cache data if absent.
      *
      * @param dataId data id if data
@@ -1400,14 +1445,45 @@ public class ClientWorker implements Closeable {
                 configResponse.setEncryptedDataKey(encryptedDataKey);
                 return configResponse;
             } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_MODIFIED) {
-                // 304 Not-Modified: use local cached content from snapshot
+                // 304 Not-Modified: restore content from local cache (snapshot or CacheData)
                 LOGGER.info(
                     "[{}] [get-config] config not modified (304), use local cache, dataId={}, group={}, tenant={}",
                     this.getName(), dataId, group, tenant);
+                
                 String localContent =
                     LocalConfigInfoProcessor.getSnapshot(this.getName(), dataId, group, tenant);
+                
+                // Fallback: if snapshot is empty, try to restore from in-memory CacheData
+                if (StringUtils.isBlank(localContent)) {
+                    CacheData cacheData =
+                        cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
+                    if (cacheData != null && StringUtils.isNotBlank(cacheData.getContent())) {
+                        localContent = cacheData.getContent();
+                        LOGGER.info(
+                            "[{}] [get-config] 304 restored content from CacheData, dataId={}, group={}, tenant={}",
+                            this.getName(), dataId, group, tenant);
+                    }
+                }
+                
+                // If still no local content, fall back to unconditional query
+                if (StringUtils.isBlank(localContent)) {
+                    LOGGER.warn(
+                        "[{}] [get-config] 304 but no local content available, retrying unconditionally, dataId={}, group={}, tenant={}",
+                        this.getName(), dataId, group, tenant);
+                    return queryConfigInner(rpcClient, dataId, group, tenant, readTimeouts, notify,
+                        null);
+                }
+                
                 configResponse.setContent(localContent);
                 configResponse.setMd5(response.getMd5());
+                // Restore configType from 304 response metadata (server now returns it)
+                String configType304;
+                if (StringUtils.isNotBlank(response.getContentType())) {
+                    configType304 = response.getContentType();
+                } else {
+                    configType304 = ConfigType.TEXT.getType();
+                }
+                configResponse.setConfigType(configType304);
                 String localEncryptedDataKey =
                     LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(agent.getName(),
                         dataId, group, tenant);
@@ -1503,6 +1579,32 @@ public class ClientWorker implements Closeable {
             String tag,
             String betaIps, String content, String encryptedDataKey, String casMd5, String type)
             throws NacosException {
+            return publishConfigWithResponse(dataId, group, tenant, appName, tag, betaIps, content,
+                encryptedDataKey, casMd5, type).isSuccess();
+        }
+        
+        /**
+         * Publish config and return the full response with error details.
+         *
+         * @param dataId           dataId
+         * @param group            group
+         * @param tenant           tenant
+         * @param appName          appName
+         * @param tag              tag
+         * @param betaIps          betaIps
+         * @param content          content
+         * @param encryptedDataKey encryptedDataKey
+         * @param casMd5           casMd5
+         * @param type             type
+         * @return ConfigPublishResponse with success flag and error details
+         * @throws NacosException nacos exception
+         * @since 3.3.0
+         */
+        public ConfigPublishResponse publishConfigWithResponse(String dataId, String group,
+            String tenant, String appName,
+            String tag, String betaIps, String content, String encryptedDataKey, String casMd5,
+            String type)
+            throws NacosException {
             try {
                 ConfigPublishRequest request =
                     new ConfigPublishRequest(dataId, group, tenant, content);
@@ -1520,28 +1622,50 @@ public class ClientWorker implements Closeable {
                         "[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
                         this.getName(), dataId, group, tenant, response.getErrorCode(),
                         response.getMessage());
-                    return false;
                 } else {
                     LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}",
                         getName(), dataId, group,
                         tenant);
-                    return true;
                 }
+                return response;
             } catch (Exception e) {
                 LOGGER.warn(
                     "[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
                     this.getName(), dataId, group, tenant, "unknown", e.getMessage());
-                return false;
+                return ConfigPublishResponse.buildFailResponse(-1, e.getMessage());
             }
         }
         
         @Override
         public boolean removeConfig(String dataId, String group, String tenant, String tag)
             throws NacosException {
+            return removeConfigWithResponse(dataId, group, tenant, tag).isSuccess();
+        }
+        
+        /**
+         * Remove config and return the full response with error details.
+         *
+         * @param dataId dataId
+         * @param group  group
+         * @param tenant tenant
+         * @param tag    tag
+         * @return ConfigRemoveResponse with success flag and error details
+         * @throws NacosException nacos exception
+         * @since 3.3.0
+         */
+        public ConfigRemoveResponse removeConfigWithResponse(String dataId, String group,
+            String tenant, String tag)
+            throws NacosException {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             ConfigRemoveResponse response =
                 (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
-            return response.isSuccess();
+            if (!response.isSuccess()) {
+                LOGGER.warn(
+                    "[{}] [remove-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
+                    this.getName(), dataId, group, tenant, response.getErrorCode(),
+                    response.getMessage());
+            }
+            return response;
         }
         
         /**
